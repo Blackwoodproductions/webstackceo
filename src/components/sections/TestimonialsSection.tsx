@@ -90,7 +90,7 @@ const TestimonialsSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="max-w-5xl mx-auto"
+          className="max-w-6xl mx-auto"
         >
           <Carousel
             opts={{
@@ -101,8 +101,8 @@ const TestimonialsSection = () => {
           >
             <CarouselContent className="-ml-4">
               {testimonials.map((testimonial, index) => (
-                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/2">
-                  <div className="h-full glass-card rounded-2xl p-8 relative group hover:glow-primary transition-all duration-500">
+                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                  <div className="h-full glass-card rounded-2xl p-6 relative group hover:glow-primary transition-all duration-500">
                     <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/20" />
                     
                     {/* Star Rating */}
@@ -113,7 +113,7 @@ const TestimonialsSection = () => {
                     </div>
                     
                     {/* Quote */}
-                    <p className="text-foreground/90 text-lg leading-relaxed mb-6">
+                    <p className="text-foreground/90 text-base leading-relaxed mb-6 line-clamp-4">
                       "{testimonial.quote}"
                     </p>
                     
