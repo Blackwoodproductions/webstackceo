@@ -42,8 +42,8 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
           >
-            Your Website's{" "}
-            <span className="gradient-text">Command Center</span>
+            Take Command, Enter Details and{" "}
+            <span className="gradient-text">Operate your Website</span> with Ease!
           </motion.h1>
 
           <motion.p
