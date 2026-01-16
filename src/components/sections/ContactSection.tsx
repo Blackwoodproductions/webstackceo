@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Send, Mail, MessageSquare, User } from "lucide-react";
+import { Send, Mail, MessageSquare, User, Clock, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +41,24 @@ const contactSchema = z.object({
 
 type ContactFormValues = z.infer<typeof contactSchema>;
 
+const benefits = [
+  {
+    icon: Clock,
+    title: "Quick Response",
+    description: "We respond to all inquiries within 24 hours, guaranteed.",
+  },
+  {
+    icon: Shield,
+    title: "No Commitment",
+    description: "Get expert advice with zero pressure. We're here to help.",
+  },
+  {
+    icon: Zap,
+    title: "Free Consultation",
+    description: "Your first strategy call is on us. Let's explore your needs.",
+  },
+];
+
 const ContactSection = () => {
   const { toast } = useToast();
 
@@ -55,8 +73,6 @@ const ContactSection = () => {
   });
 
   const onSubmit = (data: ContactFormValues) => {
-    // For now, just show a success message
-    // In a real app, this would send to an edge function
     console.log("Form submitted:", data);
     toast({
       title: "Message sent!",
@@ -87,17 +103,70 @@ const ContactSection = () => {
               Touch
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Have a question or want to learn more? We'd love to hear from you.
-            Send us a message and we'll respond as soon as possible.
-          </p>
         </motion.div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
+          {/* Left side - Enticing content */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <div>
+              <h3 className="text-3xl md:text-4xl font-bold mb-4">
+                Ready to Transform Your{" "}
+                <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+                  Digital Presence?
+                </span>
+              </h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                Join over 1,000 CEOs who made the switch to Webstack. Whether you 
+                have questions about our platform or want a personalized demo, 
+                our team is ready to help you succeed.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {benefits.map((benefit, index) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="flex items-start gap-4"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center shrink-0">
+                    <benefit.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">{benefit.title}</h4>
+                    <p className="text-muted-foreground">{benefit.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="pt-4">
+              <p className="text-muted-foreground">
+                Or email us directly at{" "}
+                <a
+                  href="mailto:hello@webstack.com"
+                  className="text-primary hover:underline font-medium"
+                >
+                  hello@webstack.com
+                </a>
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Right side - Form */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
             className="glass-card border border-white/10 rounded-2xl p-8"
           >
@@ -202,24 +271,6 @@ const ContactSection = () => {
                 </Button>
               </form>
             </Form>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="text-center mt-8 text-muted-foreground"
-          >
-            <p>
-              Or email us directly at{" "}
-              <a
-                href="mailto:hello@webstack.com"
-                className="text-primary hover:underline font-medium"
-              >
-                hello@webstack.com
-              </a>
-            </p>
           </motion.div>
         </div>
       </div>
