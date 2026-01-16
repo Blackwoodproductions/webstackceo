@@ -93,7 +93,7 @@ const HeroSection = () => {
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
           >
             <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite and{" "}
-            <span className="gradient-text">O</span>perate Like a B<span className="gradient-text">o</span>ss.!!
+            Operate Like a B<span className="gradient-text">o</span>ss.!!
           </motion.h1>
 
           <motion.p
