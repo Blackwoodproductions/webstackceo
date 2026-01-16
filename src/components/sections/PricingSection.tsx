@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, Star } from "lucide-react";
+import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -196,6 +196,33 @@ const PricingSection = () => {
         >
           All plans include a 14-day free trial. No credit card required.
         </motion.p>
+
+        {/* Trust Indicators */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          viewport={{ once: true }}
+          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
+        >
+          {[
+            { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
+            { icon: CreditCard, title: "Secure Payments", desc: "256-bit SSL encryption" },
+            { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
+            { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
+          ].map((item, index) => (
+            <div
+              key={item.title}
+              className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <item.icon className="w-6 h-6 text-primary" />
+              </div>
+              <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
