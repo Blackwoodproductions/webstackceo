@@ -88,12 +88,17 @@ const PricingSection = () => {
               key={plan.name}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ 
+                scale: 1.03, 
+                y: -8,
+                transition: { duration: 0.2 }
+              }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={`relative rounded-2xl p-8 ${
+              className={`relative rounded-2xl p-8 cursor-pointer transition-shadow duration-300 hover:shadow-[0_20px_50px_hsl(var(--primary)/0.15)] ${
                 plan.highlighted
                   ? "bg-gradient-to-b from-primary/20 to-primary/5 border-2 border-primary shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
-                  : "glass-card border border-white/10"
+                  : "glass-card border border-white/10 hover:border-primary/30"
               }`}
             >
               {plan.highlighted && (
