@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { 
   Activity, 
   Server, 
@@ -54,9 +55,17 @@ const features = [
 ];
 
 const FeaturesSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const gridY = useTransform(scrollYProgress, [0, 1], [30, -30]);
+
   return (
-    <section id="features" className="py-24 relative overflow-hidden">
-      <div className="absolute inset-0 grid-pattern opacity-30" />
+    <section ref={sectionRef} id="features" className="py-24 relative overflow-hidden">
+      <motion.div style={{ y: gridY }} className="absolute inset-0 grid-pattern opacity-30" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <motion.div

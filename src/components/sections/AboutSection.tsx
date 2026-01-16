@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { CheckCircle, Award, Users, Building } from "lucide-react";
 
 const stats = [
@@ -8,10 +9,19 @@ const stats = [
 ];
 
 const AboutSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const blob1Y = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const blob2Y = useTransform(scrollYProgress, [0, 1], [-50, 100]);
+
   return (
-    <section id="about" className="py-24 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl" />
+    <section ref={sectionRef} id="about" className="py-24 relative overflow-hidden">
+      <motion.div style={{ y: blob1Y }} className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
+      <motion.div style={{ y: blob2Y }} className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-16 items-center">

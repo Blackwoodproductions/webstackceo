@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { 
   Building2, 
   TrendingUp, 
@@ -30,9 +31,17 @@ const services = [
 ];
 
 const ServicesSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const gridY = useTransform(scrollYProgress, [0, 1], [40, -40]);
+
   return (
-    <section id="services" className="py-24 relative overflow-hidden bg-secondary/30">
-      <div className="absolute inset-0 grid-pattern opacity-20" />
+    <section ref={sectionRef} id="services" className="py-24 relative overflow-hidden bg-secondary/30">
+      <motion.div style={{ y: gridY }} className="absolute inset-0 grid-pattern opacity-20" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <motion.div
