@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-
+import { Twitter, Linkedin, Github } from "lucide-react";
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -58,13 +58,18 @@ const Footer = () => {
             © {currentYear} Webstack.ceo by Blackwood Productions. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            {["Twitter", "LinkedIn", "GitHub"].map((social) => (
+            {[
+              { name: "Twitter", icon: Twitter, href: "#" },
+              { name: "LinkedIn", icon: Linkedin, href: "#" },
+              { name: "GitHub", icon: Github, href: "#" },
+            ].map((social) => (
               <a
-                key={social}
-                href="#"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                key={social.name}
+                href={social.href}
+                className="w-10 h-10 rounded-full glass-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+                aria-label={social.name}
               >
-                {social}
+                <social.icon className="w-5 h-5" />
               </a>
             ))}
           </div>
