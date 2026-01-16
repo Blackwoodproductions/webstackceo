@@ -12,6 +12,7 @@ import CTASection from "@/components/sections/CTASection";
 import Footer from "@/components/layout/Footer";
 import { Separator } from "@/components/ui/separator";
 import BackToTop from "@/components/ui/back-to-top";
+import ScrollProgress from "@/components/ui/scroll-progress";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -22,6 +23,7 @@ const SectionDivider = () => (
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <ScrollProgress />
       <Navbar />
       <main>
         <HeroSection />
