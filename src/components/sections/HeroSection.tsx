@@ -92,8 +92,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
           >
-            <span className="gradient-text">C</span>ommand, <span className="gradient-text">E</span>nter Details and{" "}
-            <span className="gradient-text">O</span>perate like a BOSS!
+            <span className="gradient-text">C</span>ommand, <span className="gradient-text">E</span>nter details and <span className="gradient-text">O</span>perate
+            <br />
+            <span className="text-3xl md:text-5xl lg:text-6xl">your Website like a BOSS.!</span>
           </motion.h1>
 
           <motion.p
