@@ -92,7 +92,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
           >
-            Command and Operate your Website like a BOSS.!
+            Command and Operate your
+            <br />
+            <span className="gradient-text">Website like a BOSS.!!</span>
           </motion.h1>
 
           <motion.p
