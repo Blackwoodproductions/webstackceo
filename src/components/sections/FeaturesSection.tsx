@@ -70,12 +70,12 @@ const FeaturesSection = () => {
             Features
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Everything You Need,{" "}
-            <span className="gradient-text">One Place</span>
+            Stop Paying More,{" "}
+            <span className="gradient-text">Getting Less</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From uptime monitoring to turning anonymous visitors into leads—we handle 
-            the full stack so you can focus on running your business.
+            Join over 1,000 CEOs who trust Webstack to deliver real results. 
+            One platform, every tool you need, zero compromise.
           </p>
         </motion.div>
 
