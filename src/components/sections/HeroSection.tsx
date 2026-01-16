@@ -52,8 +52,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Uptime monitoring, premium hosting, SEO that actually works, and traffic 
-            de-anonymization—everything a CEO needs to dominate online.
+            One unified dashboard that simplifies every task—from basic uptime monitoring 
+            to advanced SEO and traffic intelligence. Everything you need to run a modern, 
+            high-converting website, all in one place.
           </motion.p>
 
           <motion.div
