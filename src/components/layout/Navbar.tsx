@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Moon, Sun } from "lucide-react";
+import { Menu, X, Moon, Sun, Volume2, VolumeX } from "lucide-react";
+import { useSoundContext } from "@/contexts/SoundContext";
+import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const { soundEnabled, toggleSound } = useSoundContext();
+  const { playSound } = useSoundEffects();
 
   useEffect(() => {
     // Check for saved preference or default to dark
@@ -96,6 +100,20 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-4">
           <button
+            onClick={() => {
+              toggleSound();
+              if (!soundEnabled) playSound("success");
+            }}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            aria-label="Toggle sound"
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-5 h-5 text-foreground" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-secondary transition-colors"
             aria-label="Toggle theme"
@@ -116,6 +134,20 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <div className="md:hidden flex items-center gap-2">
+          <button
+            onClick={() => {
+              toggleSound();
+              if (!soundEnabled) playSound("success");
+            }}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            aria-label="Toggle sound"
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-5 h-5 text-foreground" />
+            ) : (
+              <VolumeX className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg hover:bg-secondary transition-colors"
