@@ -52,8 +52,8 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            One unified dashboard to manage analytics, SEO, performance, security, 
-            and marketing—everything a CEO needs to run a successful website.
+            Uptime monitoring, premium hosting, SEO that actually works, and traffic 
+            de-anonymization—everything a CEO needs to dominate online.
           </motion.p>
 
           <motion.div
@@ -103,10 +103,10 @@ const HeroSection = () => {
                   <div className="p-6 bg-gradient-to-br from-background to-secondary/20">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                       {[
-                        { label: "Monthly Visitors", value: "2.4M", change: "+12.5%" },
-                        { label: "Conversion Rate", value: "4.8%", change: "+2.1%" },
-                        { label: "Page Speed", value: "98", change: "+5" },
-                        { label: "SEO Score", value: "94", change: "+8" },
+                        { label: "Uptime", value: "99.99%", change: "This month" },
+                        { label: "Visitors Identified", value: "847", change: "+23 today" },
+                        { label: "Domain Authority", value: "58", change: "+4 this month" },
+                        { label: "Backlinks Built", value: "142", change: "+12 this week" },
                       ].map((stat) => (
                         <div key={stat.label} className="glass-card rounded-xl p-4">
                           <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
