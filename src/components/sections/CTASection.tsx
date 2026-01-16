@@ -37,7 +37,7 @@ const CTASection = () => {
           </h2>
 
           <p className="text-muted-foreground text-lg mb-10 max-w-xl mx-auto">
-            Join 500+ CEOs who've transformed how they manage their websites. 
+            Join 1000+ CEOs who've transformed how they manage their websites. 
             Start your free 14-day trial today—no credit card required.
           </p>
 
