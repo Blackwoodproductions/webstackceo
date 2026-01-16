@@ -70,9 +70,14 @@ const Navbar = () => {
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
             <span className="text-white font-bold text-xl">W</span>
           </div>
-          <span className="text-xl font-bold text-foreground">
-            webstack<span className="gradient-text">.ceo</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-foreground leading-tight">
+              webstack<span className="gradient-text">.ceo</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground tracking-wide">
+              by Blackwood Productions
+            </span>
+          </div>
         </a>
 
         {/* Desktop Navigation */}
