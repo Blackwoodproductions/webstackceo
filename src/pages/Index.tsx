@@ -11,6 +11,7 @@ import AboutSection from "@/components/sections/AboutSection";
 import CTASection from "@/components/sections/CTASection";
 import Footer from "@/components/layout/Footer";
 import { Separator } from "@/components/ui/separator";
+import BackToTop from "@/components/ui/back-to-top";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -44,6 +45,7 @@ const Index = () => {
         <CTASection />
       </main>
       <Footer />
+      <BackToTop />
     </div>
   );
 };
