@@ -5,7 +5,9 @@ import {
   Search, 
   Link2, 
   UserCheck,
-  Eye
+  Eye,
+  PenTool,
+  HelpCircle
 } from "lucide-react";
 
 const features = [
@@ -28,6 +30,16 @@ const features = [
     icon: Link2,
     title: "Off-Page SEO & Link Building",
     description: "Quality inbound links from real business websites. No PBNs, only genuine authority-building partnerships.",
+  },
+  {
+    icon: PenTool,
+    title: "Automated Blog & Content",
+    description: "AI-powered blog posts, articles, and web copy that positions your brand as the authority in your niche.",
+  },
+  {
+    icon: HelpCircle,
+    title: "FAQ Generation",
+    description: "Automatically generate comprehensive FAQs that answer customer questions and boost your search visibility.",
   },
   {
     icon: UserCheck,
@@ -67,7 +79,7 @@ const FeaturesSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
