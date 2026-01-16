@@ -1,22 +1,42 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
+import { useRef } from "react";
 
 const HeroSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const bgY1 = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const bgY2 = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const floatY1 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const floatY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Effects */}
+    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* Background Effects with Parallax */}
       <div className="absolute inset-0 grid-pattern opacity-50" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
+      <motion.div 
+        style={{ y: bgY1 }}
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow" 
+      />
+      <motion.div 
+        style={{ y: bgY2 }}
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" 
+      />
       
-      {/* Floating Elements */}
+      {/* Floating Elements with Parallax */}
       <motion.div
+        style={{ y: floatY1 }}
         animate={{ y: [-10, 10, -10] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:block"
       />
       <motion.div
+        style={{ y: floatY2 }}
         animate={{ y: [10, -10, 10] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         className="absolute bottom-32 left-20 w-16 h-16 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 opacity-60 hidden lg:block"

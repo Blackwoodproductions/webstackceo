@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -81,10 +82,18 @@ const ContactSection = () => {
     form.reset();
   };
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], [40, -40]);
+
   return (
-    <section id="contact" className="py-24 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
+    <section ref={sectionRef} id="contact" className="py-24 relative overflow-hidden">
+      {/* Background effects with Parallax */}
+      <motion.div style={{ y: bgY }} className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
 
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <motion.div

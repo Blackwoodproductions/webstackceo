@@ -1,4 +1,4 @@
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
 import { TrendingUp, Users, Clock, Shield } from "lucide-react";
 
@@ -78,12 +78,23 @@ const AnimatedCounter = ({
 
 const StatsSection = () => {
   const ref = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], [50, -50]);
+
   return (
-    <section className="py-20 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5" />
+    <section ref={sectionRef} className="py-20 relative overflow-hidden">
+      {/* Background with Parallax */}
+      <motion.div 
+        style={{ y: bgY }}
+        className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5" 
+      />
 
       <div className="container mx-auto px-6 relative z-10 max-w-6xl" ref={ref}>
         <motion.div
