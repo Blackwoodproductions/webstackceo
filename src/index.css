@@ -115,6 +115,24 @@
     scroll-behavior: smooth;
   }
 
+  /* Theme transition */
+  html,
+  html *,
+  html *::before,
+  html *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Disable transitions for elements that shouldn't animate */
+  html [data-no-theme-transition],
+  html [data-no-theme-transition] *,
+  html .no-theme-transition,
+  html .no-theme-transition * {
+    transition: none !important;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Space Grotesk', system-ui, sans-serif;
