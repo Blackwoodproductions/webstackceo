@@ -12,20 +12,6 @@ const shortcuts = [
 
 const KeyboardShortcutsHelp = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [hasShown, setHasShown] = useState(false);
-
-  useEffect(() => {
-    // Show hint after 5 seconds if user hasn't seen it
-    const shown = localStorage.getItem("keyboardShortcutsShown");
-    if (!shown) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-        setHasShown(true);
-        localStorage.setItem("keyboardShortcutsShown", "true");
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   useEffect(() => {
     // Toggle help with ? key
@@ -41,14 +27,6 @@ const KeyboardShortcutsHelp = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  // Auto-hide after 8 seconds on first show
-  useEffect(() => {
-    if (isVisible && hasShown) {
-      const timer = setTimeout(() => setIsVisible(false), 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, hasShown]);
 
   return (
     <>
