@@ -16,6 +16,7 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import LoadingScreen from "@/components/ui/loading-screen";
 import SectionIndicator from "@/components/ui/section-indicator";
 import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
+import LiveChatWidget from "@/components/ui/live-chat-widget";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 
 const SectionDivider = () => (
@@ -34,6 +35,7 @@ const Index = () => {
       <ScrollProgress />
       <SectionIndicator />
       <KeyboardShortcutsHelp />
+      <LiveChatWidget />
       <Navbar />
       <main>
         <HeroSection />
