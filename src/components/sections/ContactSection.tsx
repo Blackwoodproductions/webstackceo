@@ -162,10 +162,10 @@ const ContactSection = () => {
               <p className="text-muted-foreground">
                 Or email us directly at{" "}
                 <a
-                  href="mailto:hello@webstack.com"
+                  href="mailto:ceo@webstack.ceo"
                   className="text-primary hover:underline font-medium"
                 >
-                  hello@webstack.com
+                  ceo@webstack.ceo
                 </a>
               </p>
             </div>
