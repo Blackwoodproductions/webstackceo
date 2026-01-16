@@ -15,6 +15,8 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LoadingScreen from "@/components/ui/loading-screen";
 import SectionIndicator from "@/components/ui/section-indicator";
+import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
+import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -23,11 +25,15 @@ const SectionDivider = () => (
 );
 
 const Index = () => {
+  // Enable keyboard navigation
+  useKeyboardNavigation();
+
   return (
     <div className="min-h-screen bg-background">
       <LoadingScreen />
       <ScrollProgress />
       <SectionIndicator />
+      <KeyboardShortcutsHelp />
       <Navbar />
       <main>
         <HeroSection />
