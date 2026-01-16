@@ -106,8 +106,8 @@ const Navbar = () => {
               <Moon className="w-5 h-5 text-foreground" />
             )}
           </button>
-          <Button variant="heroOutline" size="sm">
-            Login
+          <Button variant="heroOutline" size="sm" asChild>
+            <a href="https://dashdev.imagehosting.space/">Login</a>
           </Button>
           <Button variant="hero" size="sm">
             Get Started
@@ -161,8 +161,8 @@ const Navbar = () => {
               </a>
             ))}
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
-              <Button variant="heroOutline" className="w-full">
-                Login
+              <Button variant="heroOutline" className="w-full" asChild>
+                <a href="https://dashdev.imagehosting.space/">Login</a>
               </Button>
               <Button variant="hero" className="w-full">
                 Get Started
