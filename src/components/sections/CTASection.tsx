@@ -46,8 +46,8 @@ const CTASection = () => {
               Start Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="heroOutline" size="xl">
-              Schedule Demo
+            <Button variant="heroOutline" size="xl" asChild>
+              <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">Schedule Demo</a>
             </Button>
           </div>
 
