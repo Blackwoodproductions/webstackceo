@@ -72,7 +72,7 @@ const faqs = [
 const FAQSection = () => {
   return (
     <section id="faq" className="py-24 relative overflow-hidden">
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -95,7 +95,7 @@ const FAQSection = () => {
           </p>
         </motion.div>
 
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="space-y-8">
           {faqs.map((category, categoryIndex) => (
             <motion.div
               key={category.category}

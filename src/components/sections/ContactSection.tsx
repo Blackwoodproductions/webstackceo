@@ -86,7 +86,7 @@ const ContactSection = () => {
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-6 relative z-10 max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -105,7 +105,7 @@ const ContactSection = () => {
           </h2>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left side - Enticing content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
