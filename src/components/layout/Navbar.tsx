@@ -13,10 +13,9 @@ const Navbar = () => {
   const { playSound } = useSoundEffects();
 
   useEffect(() => {
-    // Check for saved preference or default to dark
+    // Check for saved preference, default to dark if no preference saved
     const savedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark);
+    const shouldBeDark = savedTheme ? savedTheme === "dark" : true; // Default to dark
     setIsDark(shouldBeDark);
     document.documentElement.classList.toggle("dark", shouldBeDark);
   }, []);
