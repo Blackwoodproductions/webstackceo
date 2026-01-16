@@ -109,8 +109,8 @@ const Navbar = () => {
           <Button variant="heroOutline" size="sm" asChild>
             <a href="https://dashdev.imagehosting.space/">Login</a>
           </Button>
-          <Button variant="hero" size="sm">
-            Get Started
+          <Button variant="hero" size="sm" asChild>
+            <a href="#pricing" onClick={(e) => scrollToSection(e, "#pricing")}>Get Started</a>
           </Button>
         </div>
 
@@ -164,8 +164,8 @@ const Navbar = () => {
               <Button variant="heroOutline" className="w-full" asChild>
                 <a href="https://dashdev.imagehosting.space/">Login</a>
               </Button>
-              <Button variant="hero" className="w-full">
-                Get Started
+              <Button variant="hero" className="w-full" asChild>
+                <a href="#pricing" onClick={(e) => scrollToSection(e, "#pricing")}>Get Started</a>
               </Button>
             </div>
           </nav>
