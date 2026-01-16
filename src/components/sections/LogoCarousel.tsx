@@ -1,16 +1,28 @@
 import { motion } from "framer-motion";
+import { 
+  Zap, 
+  Rocket, 
+  Sun, 
+  Target, 
+  Layers, 
+  Hexagon, 
+  Triangle, 
+  Diamond,
+  Sparkles,
+  Mountain
+} from "lucide-react";
 
 const companies = [
-  { name: "TechFlow", style: "font-bold" },
-  { name: "Elevate", style: "font-light tracking-widest" },
-  { name: "Brightpath", style: "font-bold italic" },
-  { name: "Velocity", style: "font-black" },
-  { name: "GrowthLab", style: "font-medium tracking-tight" },
-  { name: "Nexus", style: "font-bold tracking-wide" },
-  { name: "Pinnacle", style: "font-semibold" },
-  { name: "Forge", style: "font-black uppercase" },
-  { name: "Quantum", style: "font-light" },
-  { name: "Apex", style: "font-bold uppercase tracking-widest" },
+  { name: "TechFlow", icon: Zap, style: "font-bold" },
+  { name: "Elevate", icon: Rocket, style: "font-light tracking-widest" },
+  { name: "Brightpath", icon: Sun, style: "font-bold italic" },
+  { name: "Velocity", icon: Target, style: "font-black" },
+  { name: "GrowthLab", icon: Layers, style: "font-medium tracking-tight" },
+  { name: "Nexus", icon: Hexagon, style: "font-bold tracking-wide" },
+  { name: "Pinnacle", icon: Triangle, style: "font-semibold" },
+  { name: "Forge", icon: Diamond, style: "font-black uppercase" },
+  { name: "Quantum", icon: Sparkles, style: "font-light" },
+  { name: "Apex", icon: Mountain, style: "font-bold uppercase tracking-widest" },
 ];
 
 const LogoCarousel = () => {
@@ -48,18 +60,22 @@ const LogoCarousel = () => {
               }}
             >
               {/* Double the logos for seamless loop */}
-              {[...companies, ...companies, ...companies].map((company, index) => (
-                <div
-                  key={index}
-                  className="flex-shrink-0 px-6 py-3 opacity-40 hover:opacity-80 transition-opacity duration-300 cursor-default"
-                >
-                  <span
-                    className={`text-xl md:text-2xl text-foreground whitespace-nowrap ${company.style}`}
+              {[...companies, ...companies, ...companies].map((company, index) => {
+                const IconComponent = company.icon;
+                return (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 flex items-center gap-2 px-6 py-3 opacity-40 hover:opacity-80 transition-opacity duration-300 cursor-default group"
                   >
-                    {company.name}
-                  </span>
-                </div>
-              ))}
+                    <IconComponent className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
+                    <span
+                      className={`text-xl md:text-2xl text-foreground whitespace-nowrap ${company.style}`}
+                    >
+                      {company.name}
+                    </span>
+                  </div>
+                );
+              })}
             </motion.div>
           </div>
         </div>
