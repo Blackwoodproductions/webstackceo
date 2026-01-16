@@ -15,11 +15,25 @@ const sections = [
 const SectionIndicator = () => {
   const [activeSection, setActiveSection] = useState("hero");
   const [isVisible, setIsVisible] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isScrollingUp, setIsScrollingUp] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show indicator after scrolling past hero
-      setIsVisible(window.scrollY > 300);
+      const currentScrollY = window.scrollY;
+      const isAtBottom = window.innerHeight + currentScrollY >= document.documentElement.scrollHeight - 200;
+      
+      // Detect scroll direction
+      setIsScrollingUp(currentScrollY < lastScrollY);
+      setLastScrollY(currentScrollY);
+
+      // Hide when at the bottom of the page, unless scrolling up
+      if (isAtBottom && !isScrollingUp) {
+        setIsVisible(false);
+      } else {
+        // Show indicator after scrolling past hero
+        setIsVisible(currentScrollY > 300);
+      }
 
       // Find active section
       const sectionElements = sections.map(s => ({
@@ -28,7 +42,7 @@ const SectionIndicator = () => {
       })).filter(s => s.element);
 
       // For hero, check if we're near the top
-      if (window.scrollY < 300) {
+      if (currentScrollY < 300) {
         setActiveSection("hero");
         return;
       }
@@ -48,7 +62,7 @@ const SectionIndicator = () => {
     window.addEventListener("scroll", handleScroll);
     handleScroll(); // Initial check
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [lastScrollY, isScrollingUp]);
 
   const scrollToSection = (sectionId: string) => {
     if (sectionId === "hero") {
