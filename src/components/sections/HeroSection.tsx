@@ -1,7 +1,7 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 const HeroSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -10,35 +10,65 @@ const HeroSection = () => {
     offset: ["start start", "end start"],
   });
 
+  // Mouse position tracking
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Smooth spring physics for mouse following
+  const smoothMouseX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const smoothMouseY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+
+  // Transform mouse position to movement values for different layers
+  const blob1X = useTransform(smoothMouseX, [-0.5, 0.5], [-30, 30]);
+  const blob1Y = useTransform(smoothMouseY, [-0.5, 0.5], [-30, 30]);
+  const blob2X = useTransform(smoothMouseX, [-0.5, 0.5], [25, -25]);
+  const blob2Y = useTransform(smoothMouseY, [-0.5, 0.5], [25, -25]);
+  const float1X = useTransform(smoothMouseX, [-0.5, 0.5], [-50, 50]);
+  const float1Y = useTransform(smoothMouseY, [-0.5, 0.5], [-40, 40]);
+  const float2X = useTransform(smoothMouseX, [-0.5, 0.5], [40, -40]);
+  const float2Y = useTransform(smoothMouseY, [-0.5, 0.5], [35, -35]);
+  const dashboardX = useTransform(smoothMouseX, [-0.5, 0.5], [-8, 8]);
+  const dashboardY = useTransform(smoothMouseY, [-0.5, 0.5], [-5, 5]);
+
+  // Scroll parallax
   const bgY1 = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const bgY2 = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const floatY1 = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const floatY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
+  const floatScrollY1 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const floatScrollY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e;
+      const { innerWidth, innerHeight } = window;
+      // Normalize mouse position to -0.5 to 0.5
+      mouseX.set((clientX / innerWidth) - 0.5);
+      mouseY.set((clientY / innerHeight) - 0.5);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
 
   return (
     <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Effects with Parallax */}
+      {/* Background Effects with Mouse + Scroll Parallax */}
       <div className="absolute inset-0 grid-pattern opacity-50" />
       <motion.div 
-        style={{ y: bgY1 }}
+        style={{ x: blob1X, y: bgY1 }}
         className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow" 
       />
       <motion.div 
-        style={{ y: bgY2 }}
+        style={{ x: blob2X, y: bgY2 }}
         className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" 
       />
       
-      {/* Floating Elements with Parallax */}
+      {/* Floating Elements with Mouse + Scroll Parallax */}
       <motion.div
-        style={{ y: floatY1 }}
-        animate={{ y: [-10, 10, -10] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        style={{ x: float1X, y: floatScrollY1 }}
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:block"
       />
       <motion.div
-        style={{ y: floatY2 }}
-        animate={{ y: [10, -10, 10] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        style={{ x: float2X, y: floatScrollY2 }}
         className="absolute bottom-32 left-20 w-16 h-16 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 opacity-60 hidden lg:block"
       />
 
@@ -105,6 +135,7 @@ const HeroSection = () => {
               <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
+                style={{ x: dashboardX, y: dashboardY }}
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="relative rounded-2xl glass-card p-2 glow-primary"
               >
