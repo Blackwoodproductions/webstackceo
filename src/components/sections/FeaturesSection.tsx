@@ -1,55 +1,43 @@
 import { motion } from "framer-motion";
 import { 
-  BarChart3, 
-  Shield, 
-  Zap, 
+  Activity, 
+  Server, 
   Search, 
-  Globe, 
-  Bell,
-  TrendingUp,
-  Lock
+  Link2, 
+  UserCheck,
+  Eye
 } from "lucide-react";
 
 const features = [
   {
-    icon: BarChart3,
-    title: "Unified Analytics",
-    description: "All your metrics from Google Analytics, social platforms, and marketing tools in one dashboard.",
+    icon: Activity,
+    title: "Site Uptime Monitoring",
+    description: "24/7 monitoring with instant alerts. Know the moment your site goes down and get detailed incident reports.",
+  },
+  {
+    icon: Server,
+    title: "Premium Web Hosting",
+    description: "Enterprise-grade hosting with 99.99% uptime SLA, global CDN, and automatic scaling for peak traffic.",
   },
   {
     icon: Search,
-    title: "SEO Intelligence",
-    description: "Real-time SEO monitoring, keyword tracking, and actionable recommendations.",
+    title: "On-Page SEO",
+    description: "Technical audits, meta optimization, content structure, and Core Web Vitals improvements for higher rankings.",
   },
   {
-    icon: Zap,
-    title: "Performance Monitoring",
-    description: "Page speed, Core Web Vitals, and uptime monitoring with instant alerts.",
+    icon: Link2,
+    title: "Off-Page SEO & Link Building",
+    description: "Quality inbound links from real business websites. No PBNs, only genuine authority-building partnerships.",
   },
   {
-    icon: Shield,
-    title: "Security Suite",
-    description: "SSL monitoring, malware scanning, and vulnerability assessments.",
+    icon: UserCheck,
+    title: "Traffic De-Anonymization",
+    description: "Identify your anonymous website visitors. Turn unknown traffic into qualified leads with company-level insights.",
   },
   {
-    icon: Globe,
-    title: "Global CDN Insights",
-    description: "Understand your global audience with geo-distributed analytics.",
-  },
-  {
-    icon: Bell,
-    title: "Smart Alerts",
-    description: "Customizable notifications for traffic spikes, errors, and opportunities.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Conversion Tracking",
-    description: "Track goals, funnels, and revenue attribution across all channels.",
-  },
-  {
-    icon: Lock,
-    title: "Compliance Dashboard",
-    description: "GDPR, CCPA, and accessibility compliance monitoring.",
+    icon: Eye,
+    title: "Visitor Intelligence",
+    description: "See which companies visit your site, what pages they view, and when they're ready to buy.",
   },
 ];
 
@@ -74,12 +62,12 @@ const FeaturesSection = () => {
             <span className="gradient-text">One Place</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Stop juggling between 15 different tools. Webstack.ceo brings all your 
-            website management essentials into one powerful dashboard.
+            From uptime monitoring to turning anonymous visitors into leads—we handle 
+            the full stack so you can focus on running your business.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}

@@ -1,43 +1,31 @@
 import { motion } from "framer-motion";
 import { 
-  Mail, 
-  Users, 
-  CreditCard, 
-  FileText, 
-  Cloud, 
-  Palette 
+  Building2, 
+  TrendingUp, 
+  Globe2, 
+  BarChart3
 } from "lucide-react";
 
 const services = [
   {
-    icon: Mail,
-    title: "Email Marketing",
-    description: "Campaign analytics, A/B testing insights, and deliverability monitoring.",
+    icon: Building2,
+    title: "Real Business Backlinks",
+    description: "We partner with genuine companies to build your domain authority. No link farms, no shortcuts—only quality.",
   },
   {
-    icon: Users,
-    title: "CRM Integration",
-    description: "Connect your customer data for holistic visitor insights.",
+    icon: TrendingUp,
+    title: "Lead Generation",
+    description: "Convert anonymous traffic into actionable sales leads with company names, contact info, and intent signals.",
   },
   {
-    icon: CreditCard,
-    title: "E-commerce Analytics",
-    description: "Revenue tracking, cart abandonment, and product performance.",
+    icon: Globe2,
+    title: "Global Infrastructure",
+    description: "Your site hosted on enterprise infrastructure with edge locations worldwide for lightning-fast load times.",
   },
   {
-    icon: FileText,
-    title: "Content Management",
-    description: "Content performance tracking and publishing calendar.",
-  },
-  {
-    icon: Cloud,
-    title: "Cloud Hosting Monitor",
-    description: "AWS, Azure, and GCP cost and performance visibility.",
-  },
-  {
-    icon: Palette,
-    title: "Brand Consistency",
-    description: "Monitor brand guidelines across all digital touchpoints.",
+    icon: BarChart3,
+    title: "Performance Analytics",
+    description: "Track uptime, page speed, SEO rankings, and visitor insights all from one unified dashboard.",
   },
 ];
 
@@ -55,19 +43,19 @@ const ServicesSection = () => {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-            Services
+            How It Works
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Integrations That{" "}
-            <span className="gradient-text">Matter</span>
+            Your Complete{" "}
+            <span className="gradient-text">Web Stack</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Connect all your essential business tools and get unified insights 
-            without switching between platforms.
+            Everything works together seamlessly. Host with us, rank higher, 
+            and know exactly who's visiting your site.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {services.map((service, index) => (
             <motion.div
               key={service.title}
