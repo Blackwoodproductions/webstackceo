@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LoadingScreen from "@/components/ui/loading-screen";
+import SectionIndicator from "@/components/ui/section-indicator";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -26,6 +27,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <LoadingScreen />
       <ScrollProgress />
+      <SectionIndicator />
       <Navbar />
       <main>
         <HeroSection />

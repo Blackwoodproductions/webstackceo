@@ -50,7 +50,7 @@ const HeroSection = () => {
   }, [mouseX, mouseY]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Effects with Mouse + Scroll Parallax */}
       <div className="absolute inset-0 grid-pattern opacity-50" />
       <motion.div 
