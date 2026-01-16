@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
 import { Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const plans = [
   {
     name: "Starter",
-    price: 25,
+    monthlyPrice: 25,
+    yearlyPrice: 20,
     description: "Perfect for small businesses just getting started",
     features: [
       "Up to 5 websites",
@@ -19,7 +21,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: 99,
+    monthlyPrice: 99,
+    yearlyPrice: 79,
     description: "For growing teams that need more power",
     features: [
       "Up to 25 websites",
@@ -35,7 +38,8 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: 199,
+    monthlyPrice: 199,
+    yearlyPrice: 159,
     description: "For organizations requiring maximum control",
     features: [
       "Unlimited websites",
@@ -54,6 +58,8 @@ const plans = [
 ];
 
 const PricingSection = () => {
+  const [isYearly, setIsYearly] = useState(false);
+
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
       {/* Background effects */}
@@ -80,6 +86,31 @@ const PricingSection = () => {
             Choose the plan that fits your needs. No hidden fees, no surprises.
             Cancel anytime.
           </p>
+
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+                isYearly ? 'bg-primary' : 'bg-muted'
+              }`}
+            >
+              <motion.div
+                className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md"
+                animate={{ x: isYearly ? 28 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </button>
+            <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Yearly
+            </span>
+            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              Save 20%
+            </span>
+          </div>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -116,9 +147,21 @@ const PricingSection = () => {
                   {plan.description}
                 </p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <motion.span 
+                    key={isYearly ? 'yearly' : 'monthly'}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-4xl font-bold"
+                  >
+                    ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                  </motion.span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
+                {isYearly && (
+                  <p className="text-xs text-primary mt-1">
+                    Billed annually (${plan.yearlyPrice * 12}/year)
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-4 mb-8">
