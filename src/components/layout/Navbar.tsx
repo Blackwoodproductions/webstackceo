@@ -35,9 +35,24 @@ const Navbar = () => {
   const navLinks = [
     { name: "Features", href: "#features" },
     { name: "Services", href: "#services" },
-    { name: "About", href: "#about" },
+    { name: "Pricing", href: "#pricing" },
+    { name: "FAQ", href: "#faq" },
     { name: "Contact", href: "#contact" },
   ];
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const targetId = href.replace("#", "");
+    const element = document.getElementById(targetId);
+    if (element) {
+      const offsetTop = element.offsetTop - 80; // Account for fixed navbar
+      window.scrollTo({
+        top: offsetTop,
+        behavior: "smooth",
+      });
+    }
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <motion.header
@@ -66,6 +81,7 @@ const Navbar = () => {
             <a
               key={link.name}
               href={link.href}
+              onClick={(e) => scrollToSection(e, link.href)}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
             >
               {link.name}
@@ -133,8 +149,8 @@ const Navbar = () => {
               <a
                 key={link.name}
                 href={link.href}
+                onClick={(e) => scrollToSection(e, link.href)}
                 className="text-foreground hover:text-primary transition-colors font-medium py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.name}
               </a>
