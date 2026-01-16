@@ -10,6 +10,13 @@ import ContactSection from "@/components/sections/ContactSection";
 import AboutSection from "@/components/sections/AboutSection";
 import CTASection from "@/components/sections/CTASection";
 import Footer from "@/components/layout/Footer";
+import { Separator } from "@/components/ui/separator";
+
+const SectionDivider = () => (
+  <div className="max-w-6xl mx-auto px-6">
+    <Separator className="bg-border/50" />
+  </div>
+);
 
 const Index = () => {
   return (
@@ -17,14 +24,23 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <SectionDivider />
         <StatsSection />
+        <SectionDivider />
         <FeaturesSection />
+        <SectionDivider />
         <ServicesSection />
+        <SectionDivider />
         <TestimonialsSection />
+        <SectionDivider />
         <PricingSection />
+        <SectionDivider />
         <FAQSection />
+        <SectionDivider />
         <ContactSection />
+        <SectionDivider />
         <AboutSection />
+        <SectionDivider />
         <CTASection />
       </main>
       <Footer />
