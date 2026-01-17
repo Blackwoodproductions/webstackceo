@@ -39,12 +39,10 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    ...(isHomePage ? [
-      { name: "Features", href: "#features" },
-      { name: "Pricing", href: "#pricing" },
-      { name: "FAQ", href: "#faq" },
-      { name: "Contact", href: "#contact" },
-    ] : []),
+    { name: "Features", href: "/features", isPage: true },
+    { name: "Pricing", href: "/pricing", isPage: true },
+    { name: "FAQ", href: "/faq", isPage: true },
+    { name: "Contact", href: "/contact", isPage: true },
     { name: "About", href: "/about", isPage: true },
     { name: "Careers", href: "/careers", isPage: true },
   ];
@@ -138,7 +136,7 @@ const Navbar = () => {
             <a href="https://dashdev.imagehosting.space/">Login</a>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <a href="#pricing" onClick={(e) => handleNavClick(e, "#pricing")}>Get Started</a>
+            <a href="/pricing">Get Started</a>
           </Button>
         </div>
 
@@ -207,7 +205,7 @@ const Navbar = () => {
                 <a href="https://dashdev.imagehosting.space/">Login</a>
               </Button>
               <Button variant="hero" className="w-full" asChild>
-                <a href="#pricing" onClick={(e) => handleNavClick(e, "#pricing")}>Get Started</a>
+                <a href="/pricing">Get Started</a>
               </Button>
             </div>
           </nav>
