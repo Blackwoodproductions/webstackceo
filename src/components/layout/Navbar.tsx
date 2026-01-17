@@ -1,16 +1,37 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Moon, Sun, Volume2, VolumeX } from "lucide-react";
+import { 
+  Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
+  Search, Link2, PenTool, HelpCircle, UserCheck, Eye,
+  MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server
+} from "lucide-react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
+
+const featureItems = [
+  { icon: Search, name: "On-Page SEO", href: "/features/on-page-seo" },
+  { icon: Link2, name: "Off-Page SEO", href: "/features/off-page-seo" },
+  { icon: PenTool, name: "Automated Blog", href: "/features/automated-blog" },
+  { icon: HelpCircle, name: "FAQ Generation", href: "/features/faq-generation" },
+  { icon: UserCheck, name: "Traffic De-Anonymization", href: "/features/traffic-de-anonymization" },
+  { icon: Eye, name: "Visitor Intelligence", href: "/features/visitor-intelligence" },
+  { icon: MousePointerClick, name: "PPC Landing Pages", href: "/features/ppc-landing-pages" },
+  { icon: TrendingUp, name: "Domain Authority", href: "/features/domain-authority" },
+  { icon: BarChart3, name: "Advanced Analytics", href: "/features/advanced-analytics" },
+  { icon: MapPin, name: "GMB Optimization", href: "/features/gmb-optimization" },
+  { icon: Activity, name: "Uptime Monitoring", href: "/features/uptime-monitoring" },
+  { icon: Server, name: "Web Hosting", href: "/features/web-hosting" },
+];
 
 const Navbar = () => {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
+  const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const { soundEnabled, toggleSound } = useSoundContext();
   const { playSound } = useSoundEffects();
@@ -39,7 +60,6 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: "Features", href: "/features", isPage: true },
     { name: "Pricing", href: "/pricing", isPage: true },
     { name: "FAQ", href: "/faq", isPage: true },
     { name: "Contact", href: "/contact", isPage: true },
@@ -94,6 +114,58 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
+          {/* Features Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setIsFeaturesOpen(true)}
+            onMouseLeave={() => setIsFeaturesOpen(false)}
+          >
+            <a
+              href="/features"
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium flex items-center gap-1"
+            >
+              Features
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesOpen ? 'rotate-180' : ''}`} />
+            </a>
+            
+            <AnimatePresence>
+              {isFeaturesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
+                >
+                  <div className="bg-background border border-border rounded-2xl shadow-2xl p-6 w-[600px] grid grid-cols-2 gap-2">
+                    <div className="col-span-2 pb-3 mb-3 border-b border-border">
+                      <a 
+                        href="/features"
+                        className="text-sm font-semibold text-primary hover:underline"
+                      >
+                        View All Features →
+                      </a>
+                    </div>
+                    {featureItems.map((feature) => (
+                      <a
+                        key={feature.name}
+                        href={feature.href}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors group"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-cyan-400/30 group-hover:to-violet-500/30 transition-colors">
+                          <feature.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                          {feature.name}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {navLinks.map((link) => (
             <a
               key={link.name}
@@ -187,9 +259,52 @@ const Navbar = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="md:hidden glass-card mt-2 mx-4 rounded-xl p-6"
+          className="md:hidden bg-background border border-border mt-2 mx-4 rounded-xl p-6"
         >
           <nav className="flex flex-col gap-4">
+            {/* Mobile Features Accordion */}
+            <div>
+              <button
+                onClick={() => setIsMobileFeaturesOpen(!isMobileFeaturesOpen)}
+                className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors font-medium py-2"
+              >
+                Features
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileFeaturesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isMobileFeaturesOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-4 pt-2 space-y-2">
+                      <a
+                        href="/features"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-sm text-primary font-medium py-1"
+                      >
+                        View All Features →
+                      </a>
+                      {featureItems.map((feature) => (
+                        <a
+                          key={feature.name}
+                          href={feature.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
+                        >
+                          <feature.icon className="w-4 h-4 text-primary" />
+                          {feature.name}
+                        </a>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {navLinks.map((link) => (
               <a
                 key={link.name}
