@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Search, Star, Award, ExternalLink, Filter, ChevronDown,
@@ -132,59 +133,57 @@ const Marketplace = () => {
       : Globe;
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className={`relative glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-300 ${
-          isSponsored ? "border-2 border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]" : ""
-        }`}
-      >
-        {isSponsored && (
-          <div className="absolute -top-3 left-4">
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
-              <Award className="w-3 h-3" />
-              Sponsored
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center shrink-0">
-            {partner.logo_url ? (
-              <img src={partner.logo_url} alt={partner.company_name} className="w-12 h-12 object-contain rounded-lg" />
-            ) : (
-              <CategoryIcon className="w-8 h-8 text-primary" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-foreground truncate">{partner.company_name}</h3>
-            {partner.marketplace_categories && (
-              <span className="text-xs text-primary font-medium">
-                {partner.marketplace_categories.name}
+      <Link to={`/marketplace/${partner.slug}`}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className={`relative glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-300 cursor-pointer ${
+            isSponsored ? "border-2 border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]" : ""
+          }`}
+        >
+          {isSponsored && (
+            <div className="absolute -top-3 left-4">
+              <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                <Award className="w-3 h-3" />
+                Sponsored
               </span>
-            )}
-            {renderStars(Number(partner.rating))}
-          </div>
-        </div>
-
-        <p className="text-muted-foreground text-sm mt-4 line-clamp-3">
-          {partner.description}
-        </p>
-
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-          <span className="text-xs text-muted-foreground">
-            {partner.review_count} reviews
-          </span>
-          {partner.website_url && (
-            <Button variant="ghost" size="sm" asChild>
-              <a href={partner.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
-                Visit <ExternalLink className="w-3 h-3" />
-              </a>
-            </Button>
+            </div>
           )}
-        </div>
-      </motion.div>
+
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center shrink-0">
+              {partner.logo_url ? (
+                <img src={partner.logo_url} alt={partner.company_name} className="w-12 h-12 object-contain rounded-lg" />
+              ) : (
+                <CategoryIcon className="w-8 h-8 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-foreground truncate">{partner.company_name}</h3>
+              {partner.marketplace_categories && (
+                <span className="text-xs text-primary font-medium">
+                  {partner.marketplace_categories.name}
+                </span>
+              )}
+              {renderStars(Number(partner.rating))}
+            </div>
+          </div>
+
+          <p className="text-muted-foreground text-sm mt-4 line-clamp-3">
+            {partner.description}
+          </p>
+
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+            <span className="text-xs text-muted-foreground">
+              {partner.review_count} reviews
+            </span>
+            <Button variant="ghost" size="sm" className="pointer-events-none">
+              View Profile <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
+          </div>
+        </motion.div>
+      </Link>
     );
   };
 
