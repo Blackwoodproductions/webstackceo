@@ -4,10 +4,30 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
-    Product: ["Features", "Pricing", "Integrations", "Changelog"],
-    Company: ["About", "Blog", "Careers", "Contact"],
-    Resources: ["Documentation", "Help Center", "API", "Status"],
-    Legal: ["Privacy", "Terms", "Security", "Cookies"],
+    Product: [
+      { name: "Features", href: "/#features" },
+      { name: "Pricing", href: "/#pricing" },
+      { name: "Integrations", href: "#" },
+      { name: "Changelog", href: "#" },
+    ],
+    Company: [
+      { name: "About", href: "/about" },
+      { name: "Blog", href: "#" },
+      { name: "Careers", href: "/careers" },
+      { name: "Contact", href: "/#contact" },
+    ],
+    Resources: [
+      { name: "Documentation", href: "#" },
+      { name: "Help Center", href: "#" },
+      { name: "API", href: "#" },
+      { name: "Status", href: "#" },
+    ],
+    Legal: [
+      { name: "Privacy", href: "#" },
+      { name: "Terms", href: "#" },
+      { name: "Security", href: "#" },
+      { name: "Cookies", href: "#" },
+    ],
   };
 
   return (
@@ -39,12 +59,12 @@ const Footer = () => {
               <h4 className="font-semibold text-foreground mb-4">{category}</h4>
               <ul className="space-y-2">
                 {links.map((link) => (
-                  <li key={link}>
+                  <li key={link.name}>
                     <a
-                      href="#"
+                      href={link.href}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {link}
+                      {link.name}
                     </a>
                   </li>
                 ))}
