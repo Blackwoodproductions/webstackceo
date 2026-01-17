@@ -4,6 +4,7 @@ import AboutSection from "@/components/sections/AboutSection";
 import MissionSection from "@/components/sections/MissionSection";
 import TimelineSection from "@/components/sections/TimelineSection";
 import TeamSection from "@/components/sections/TeamSection";
+import PartnershipSection from "@/components/sections/PartnershipSection";
 import CTASection from "@/components/sections/CTASection";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
@@ -28,6 +29,8 @@ const About = () => {
         <TimelineSection />
         <SectionDivider />
         <TeamSection />
+        <SectionDivider />
+        <PartnershipSection />
         <SectionDivider />
         <CTASection />
       </main>
