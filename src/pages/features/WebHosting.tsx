@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
+import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 
 const benefits = [
   { icon: Zap, title: "Lightning Performance", description: "NVMe SSD storage and optimized servers for sub-second load times." },
@@ -21,7 +22,9 @@ const WebHosting = () => {
       <ScrollProgress />
       <Navbar />
       
-      <main className="pt-20">
+      <main>
+        <FeatureBreadcrumb featureName="Web Hosting" />
+        
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />
