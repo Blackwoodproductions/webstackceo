@@ -8,20 +8,14 @@ import {
   UserCheck,
   Eye,
   PenTool,
-  HelpCircle
+  HelpCircle,
+  MousePointerClick,
+  TrendingUp,
+  BarChart3,
+  MapPin
 } from "lucide-react";
 
 const features = [
-  {
-    icon: Activity,
-    title: "Site Uptime Monitoring",
-    description: "24/7 monitoring with instant alerts. Know the moment your site goes down and get detailed incident reports.",
-  },
-  {
-    icon: Server,
-    title: "Premium Web Hosting",
-    description: "Enterprise-grade hosting with 99.99% uptime SLA, global CDN, and automatic scaling for peak traffic.",
-  },
   {
     icon: Search,
     title: "On-Page SEO",
@@ -51,6 +45,36 @@ const features = [
     icon: Eye,
     title: "Visitor Intelligence",
     description: "See which companies visit your site, what pages they view, and when they're ready to buy.",
+  },
+  {
+    icon: MousePointerClick,
+    title: "PPC Landing Pages",
+    description: "High-converting landing pages optimized for paid campaigns. Maximize your ad spend with pages built to convert.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Domain Rating & Authority",
+    description: "Boost your DR and DA scores with proven strategies. Build lasting domain authority that drives organic growth.",
+  },
+  {
+    icon: BarChart3,
+    title: "Advanced Rankings & Analytics",
+    description: "Deep insights into your search rankings, competitor analysis, and actionable data to outperform your competition.",
+  },
+  {
+    icon: MapPin,
+    title: "Google My Business Optimization",
+    description: "Dominate local search with optimized GMB profiles. Attract nearby customers with enhanced Google Places visibility.",
+  },
+  {
+    icon: Activity,
+    title: "Site Uptime Monitoring",
+    description: "24/7 monitoring with instant alerts. Know the moment your site goes down and get detailed incident reports.",
+  },
+  {
+    icon: Server,
+    title: "Premium Web Hosting",
+    description: "Enterprise-grade hosting with 99.99% uptime SLA, global CDN, and automatic scaling for peak traffic.",
   },
 ];
 
