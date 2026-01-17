@@ -1,7 +1,29 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Twitter, Linkedin, Github } from "lucide-react";
+import { Twitter, Linkedin, Github, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    toast.success("Thanks for subscribing! Check your inbox for confirmation.");
+    setEmail("");
+    setIsSubmitting(false);
+  };
 
   const footerLinks = {
     Product: [
@@ -35,6 +57,38 @@ const Footer = () => {
       <div className="absolute inset-0 grid-pattern opacity-20" />
       
       <div className="container mx-auto px-6 relative z-10">
+        {/* Newsletter Section */}
+        <div className="glass-card rounded-2xl p-8 mb-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <h3 className="text-xl font-bold text-foreground mb-2">
+                Stay ahead of the curve
+              </h3>
+              <p className="text-muted-foreground text-sm max-w-md">
+                Get weekly insights on web strategy, SEO tips, and exclusive CEO resources delivered to your inbox.
+              </p>
+            </div>
+            <form onSubmit={handleNewsletterSubmit} className="flex w-full md:w-auto gap-2">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full md:w-64 bg-background/50 border-border"
+              />
+              <Button type="submit" variant="hero" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <span className="animate-pulse">...</span>
+                ) : (
+                  <>
+                    Subscribe <Send className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           <div className="col-span-2">
             <a href="/" className="flex items-center gap-2 mb-4">
