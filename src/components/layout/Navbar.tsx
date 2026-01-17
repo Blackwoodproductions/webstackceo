@@ -41,9 +41,15 @@ const Navbar = () => {
     { name: "Pricing", href: "#pricing" },
     { name: "FAQ", href: "#faq" },
     { name: "Contact", href: "#contact" },
+    { name: "About", href: "/about", isPage: true },
   ];
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPage?: boolean) => {
+    if (isPage) {
+      // Let the link navigate normally for page routes
+      setIsMobileMenuOpen(false);
+      return;
+    }
     e.preventDefault();
     const targetId = href.replace("#", "");
     const element = document.getElementById(targetId);
@@ -89,7 +95,7 @@ const Navbar = () => {
             <a
               key={link.name}
               href={link.href}
-              onClick={(e) => scrollToSection(e, link.href)}
+              onClick={(e) => handleNavClick(e, link.href, link.isPage)}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
             >
               {link.name}
@@ -127,7 +133,7 @@ const Navbar = () => {
             <a href="https://dashdev.imagehosting.space/">Login</a>
           </Button>
           <Button variant="hero" size="sm" asChild>
-            <a href="#pricing" onClick={(e) => scrollToSection(e, "#pricing")}>Get Started</a>
+            <a href="#pricing" onClick={(e) => handleNavClick(e, "#pricing")}>Get Started</a>
           </Button>
         </div>
 
@@ -185,7 +191,7 @@ const Navbar = () => {
               <a
                 key={link.name}
                 href={link.href}
-                onClick={(e) => scrollToSection(e, link.href)}
+                onClick={(e) => handleNavClick(e, link.href, link.isPage)}
                 className="text-foreground hover:text-primary transition-colors font-medium py-2"
               >
                 {link.name}
@@ -196,7 +202,7 @@ const Navbar = () => {
                 <a href="https://dashdev.imagehosting.space/">Login</a>
               </Button>
               <Button variant="hero" className="w-full" asChild>
-                <a href="#pricing" onClick={(e) => scrollToSection(e, "#pricing")}>Get Started</a>
+                <a href="#pricing" onClick={(e) => handleNavClick(e, "#pricing")}>Get Started</a>
               </Button>
             </div>
           </nav>
