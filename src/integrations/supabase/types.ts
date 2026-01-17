@@ -14,7 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      marketplace_applications: {
+        Row: {
+          admin_notes: string | null
+          category_id: string | null
+          company_name: string
+          contact_email: string
+          contact_name: string
+          created_at: string
+          description: string
+          id: string
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          website_url: string | null
+          why_join: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category_id?: string | null
+          company_name: string
+          contact_email: string
+          contact_name: string
+          created_at?: string
+          description: string
+          id?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          website_url?: string | null
+          why_join?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category_id?: string | null
+          company_name?: string
+          contact_email?: string
+          contact_name?: string
+          created_at?: string
+          description?: string
+          id?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          website_url?: string | null
+          why_join?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_applications_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      marketplace_partners: {
+        Row: {
+          category_id: string | null
+          company_name: string
+          contact_email: string
+          created_at: string
+          description: string
+          display_order: number
+          id: string
+          is_sponsored: boolean
+          logo_url: string | null
+          ranking_score: number
+          rating: number
+          review_count: number
+          slug: string
+          sponsored_until: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          company_name: string
+          contact_email: string
+          created_at?: string
+          description: string
+          display_order?: number
+          id?: string
+          is_sponsored?: boolean
+          logo_url?: string | null
+          ranking_score?: number
+          rating?: number
+          review_count?: number
+          slug: string
+          sponsored_until?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          company_name?: string
+          contact_email?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          id?: string
+          is_sponsored?: boolean
+          logo_url?: string | null
+          ranking_score?: number
+          rating?: number
+          review_count?: number
+          slug?: string
+          sponsored_until?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_partners_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +173,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      partner_status: "pending" | "approved" | "rejected" | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +300,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      partner_status: ["pending", "approved", "rejected", "suspended"],
+    },
   },
 } as const

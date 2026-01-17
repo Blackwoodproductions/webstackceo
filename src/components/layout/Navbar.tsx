@@ -65,6 +65,7 @@ const Navbar = () => {
     { name: "Contact", href: "/contact", isPage: true },
     { name: "About", href: "/about", isPage: true },
     { name: "Careers", href: "/careers", isPage: true },
+    { name: "Marketplace", href: "/marketplace", isPage: true },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPage?: boolean) => {
