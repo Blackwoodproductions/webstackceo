@@ -138,27 +138,39 @@ const Navbar = () => {
                   className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
                 >
                   <div className="bg-background border border-border rounded-2xl shadow-2xl p-6 w-[600px] grid grid-cols-2 gap-2">
-                    <div className="col-span-2 pb-3 mb-3 border-b border-border">
+                    <motion.div 
+                      className="col-span-2 pb-3 mb-3 border-b border-border"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: 0.05 }}
+                    >
                       <a 
                         href="/features"
                         className="text-sm font-semibold text-primary hover:underline"
                       >
                         View All Features →
                       </a>
-                    </div>
-                    {featureItems.map((feature) => (
-                      <a
+                    </motion.div>
+                    {featureItems.map((feature, index) => (
+                      <motion.a
                         key={feature.name}
                         href={feature.href}
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ 
+                          duration: 0.2, 
+                          delay: 0.05 + (index * 0.03),
+                          ease: "easeOut"
+                        }}
                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors group"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-cyan-400/30 group-hover:to-violet-500/30 transition-colors">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-cyan-400/30 group-hover:to-violet-500/30 group-hover:scale-110 transition-all duration-200">
                           <feature.icon className="w-5 h-5 text-primary" />
                         </div>
                         <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                           {feature.name}
                         </span>
-                      </a>
+                      </motion.a>
                     ))}
                   </div>
                 </motion.div>
