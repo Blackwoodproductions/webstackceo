@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Moon, Sun, Volume2, VolumeX } from "lucide-react";
@@ -6,6 +7,8 @@ import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const Navbar = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
@@ -36,10 +39,12 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: "Features", href: "#features" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "FAQ", href: "#faq" },
-    { name: "Contact", href: "#contact" },
+    ...(isHomePage ? [
+      { name: "Features", href: "#features" },
+      { name: "Pricing", href: "#pricing" },
+      { name: "FAQ", href: "#faq" },
+      { name: "Contact", href: "#contact" },
+    ] : []),
     { name: "About", href: "/about", isPage: true },
     { name: "Careers", href: "/careers", isPage: true },
   ];
