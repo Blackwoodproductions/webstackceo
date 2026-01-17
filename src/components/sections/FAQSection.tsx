@@ -137,7 +137,7 @@ const FAQSection = () => {
           <p className="text-muted-foreground">
             Still have questions?{" "}
             <a
-              href="#contact"
+              href="/contact"
               className="text-primary hover:underline font-medium"
             >
               Contact our support team
