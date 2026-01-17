@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Twitter, Linkedin, Github, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,6 +119,24 @@ const Footer = () => {
                   <li key={link.name}>
                     <a
                       href={link.href}
+                      onClick={(e) => {
+                        // Handle anchor links that need to navigate to homepage first
+                        if (link.href.startsWith("/#")) {
+                          e.preventDefault();
+                          const anchor = link.href.substring(1); // Get "#section"
+                          if (location.pathname !== "/") {
+                            navigate("/");
+                            // Wait for navigation then scroll
+                            setTimeout(() => {
+                              const element = document.querySelector(anchor);
+                              element?.scrollIntoView({ behavior: "smooth" });
+                            }, 100);
+                          } else {
+                            const element = document.querySelector(anchor);
+                            element?.scrollIntoView({ behavior: "smooth" });
+                          }
+                        }
+                      }}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {link.name}
