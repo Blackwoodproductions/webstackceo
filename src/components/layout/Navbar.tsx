@@ -131,13 +131,18 @@ const Navbar = () => {
             <AnimatePresence>
               {isFeaturesOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
                   className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
                 >
-                  <div className="bg-background border border-border rounded-2xl shadow-2xl p-6 w-[600px] grid grid-cols-2 gap-2">
+                  <motion.div 
+                    className="bg-background border border-border/50 rounded-2xl p-6 w-[600px] grid grid-cols-2 gap-2 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
+                    initial={{ boxShadow: "0 10px 30px -10px hsl(var(--primary)/0)" }}
+                    animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
                     <motion.div 
                       className="col-span-2 pb-3 mb-3 border-b border-border"
                       initial={{ opacity: 0, x: -10 }}
@@ -172,7 +177,7 @@ const Navbar = () => {
                         </span>
                       </motion.a>
                     ))}
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
