@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Clock, DollarSign, Briefcase, ChevronRight, Users, Heart, Zap, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
+import JobApplicationDialog from "@/components/JobApplicationDialog";
 
 const benefits = [
   { icon: Heart, title: "Health & Wellness", description: "Comprehensive health, dental, and vision coverage for you and your family" },
@@ -67,6 +69,14 @@ const openPositions = [
 ];
 
 const Careers = () => {
+  const [selectedPosition, setSelectedPosition] = useState<typeof openPositions[0] | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleApply = (position: typeof openPositions[0]) => {
+    setSelectedPosition(position);
+    setIsDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <ScrollProgress />
@@ -208,7 +218,11 @@ const Careers = () => {
                       </div>
                     </div>
                     <div className="flex-shrink-0">
-                      <Button variant="heroOutline" className="group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                      <Button 
+                        variant="heroOutline" 
+                        className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                        onClick={() => handleApply(position)}
+                      >
                         Apply Now <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
@@ -235,6 +249,11 @@ const Careers = () => {
         </section>
       </main>
 
+      <JobApplicationDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        position={selectedPosition}
+      />
       <Footer />
       <BackToTop />
     </div>
