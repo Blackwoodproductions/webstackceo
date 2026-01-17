@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,8 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { User, Mail, Phone, Linkedin, FileText, Briefcase } from "lucide-react";
+import { User, Mail, Phone, Linkedin, FileText, Briefcase, Upload, X, File } from "lucide-react";
 import { toast } from "sonner";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
 const applicationSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
@@ -38,6 +45,9 @@ interface JobApplicationDialogProps {
 
 const JobApplicationDialog = ({ open, onOpenChange, position }: JobApplicationDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -52,9 +62,52 @@ const JobApplicationDialog = ({ open, onOpenChange, position }: JobApplicationDi
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setResumeError(null);
+
+    if (!file) {
+      setResumeFile(null);
+      return;
+    }
+
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      setResumeError("Please upload a PDF or Word document");
+      setResumeFile(null);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setResumeError("File size must be less than 5MB");
+      setResumeFile(null);
+      return;
+    }
+
+    setResumeFile(file);
+  };
+
+  const removeFile = () => {
+    setResumeFile(null);
+    setResumeError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
   const onSubmit = async (data: ApplicationFormData) => {
+    if (!resumeFile) {
+      setResumeError("Please upload your resume");
+      return;
+    }
+
     setIsSubmitting(true);
-    // Simulate API call
+    // Simulate API call - in production, would upload file to storage
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsSubmitting(false);
     
@@ -63,6 +116,7 @@ const JobApplicationDialog = ({ open, onOpenChange, position }: JobApplicationDi
     });
     
     form.reset();
+    setResumeFile(null);
     onOpenChange(false);
   };
 
@@ -160,6 +214,61 @@ const JobApplicationDialog = ({ open, onOpenChange, position }: JobApplicationDi
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Resume Upload */}
+            <div className="space-y-2">
+              <FormLabel className={resumeError ? "text-destructive" : ""}>
+                Resume / CV *
+              </FormLabel>
+              <div
+                className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
+                  resumeFile
+                    ? "border-primary/50 bg-primary/5"
+                    : resumeError
+                    ? "border-destructive/50 bg-destructive/5"
+                    : "border-border hover:border-primary/30 hover:bg-secondary/50"
+                }`}
+              >
+                {resumeFile ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <File className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">{resumeFile.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(resumeFile.size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={removeFile}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center cursor-pointer">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm font-medium text-foreground">Click to upload your resume</span>
+                    <span className="text-xs text-muted-foreground mt-1">PDF or Word document (max 5MB)</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                )}
+              </div>
+              {resumeError && (
+                <p className="text-sm text-destructive">{resumeError}</p>
+              )}
             </div>
 
             <FormField
