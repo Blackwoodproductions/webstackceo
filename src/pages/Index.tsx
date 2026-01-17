@@ -8,8 +8,6 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import PricingSection from "@/components/sections/PricingSection";
 import FAQSection from "@/components/sections/FAQSection";
 import ContactSection from "@/components/sections/ContactSection";
-
-import CTASection from "@/components/sections/CTASection";
 import Footer from "@/components/layout/Footer";
 import { Separator } from "@/components/ui/separator";
 import BackToTop from "@/components/ui/back-to-top";
@@ -53,8 +51,6 @@ const Index = () => {
         <FAQSection />
         <SectionDivider />
         <ContactSection />
-        <SectionDivider />
-        <CTASection />
       </main>
       <Footer />
       <BackToTop />
