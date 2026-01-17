@@ -20,61 +20,73 @@ const features = [
     icon: Search,
     title: "On-Page SEO",
     description: "Technical audits, meta optimization, content structure, and Core Web Vitals improvements for higher rankings.",
+    href: "/features/on-page-seo",
   },
   {
     icon: Link2,
     title: "Off-Page SEO & Link Building",
     description: "Quality inbound links from real business websites. No PBNs, only genuine authority-building partnerships.",
+    href: "/features/off-page-seo",
   },
   {
     icon: PenTool,
     title: "Automated Blog & Content",
     description: "AI-powered blog posts, articles, and web copy that positions your brand as the authority in your niche.",
+    href: "/features/automated-blog",
   },
   {
     icon: HelpCircle,
     title: "FAQ Generation",
     description: "Automatically generate comprehensive FAQs that answer customer questions and boost your search visibility.",
+    href: "/features/faq-generation",
   },
   {
     icon: UserCheck,
     title: "Traffic De-Anonymization",
     description: "Identify your anonymous website visitors. Turn unknown traffic into qualified leads with company-level insights.",
+    href: "/features/traffic-de-anonymization",
   },
   {
     icon: Eye,
     title: "Visitor Intelligence",
     description: "See which companies visit your site, what pages they view, and when they're ready to buy.",
+    href: "/features/visitor-intelligence",
   },
   {
     icon: MousePointerClick,
     title: "PPC Landing Pages",
     description: "High-converting landing pages optimized for paid campaigns. Maximize your ad spend with pages built to convert.",
+    href: "/features/ppc-landing-pages",
   },
   {
     icon: TrendingUp,
     title: "Domain Rating & Authority",
     description: "Boost your DR and DA scores with proven strategies. Build lasting domain authority that drives organic growth.",
+    href: "/features/domain-authority",
   },
   {
     icon: BarChart3,
     title: "Advanced Rankings & Analytics",
     description: "Deep insights into your search rankings, competitor analysis, and actionable data to outperform your competition.",
+    href: "/features/advanced-analytics",
   },
   {
     icon: MapPin,
     title: "Google My Business Optimization",
     description: "Dominate local search with optimized GMB profiles. Attract nearby customers with enhanced Google Places visibility.",
+    href: "/features/gmb-optimization",
   },
   {
     icon: Activity,
     title: "Site Uptime Monitoring",
     description: "24/7 monitoring with instant alerts. Know the moment your site goes down and get detailed incident reports.",
+    href: "/features/uptime-monitoring",
   },
   {
     icon: Server,
     title: "Premium Web Hosting",
     description: "Enterprise-grade hosting with 99.99% uptime SLA, global CDN, and automatic scaling for peak traffic.",
+    href: "/features/web-hosting",
   },
 ];
 
@@ -114,26 +126,27 @@ const FeaturesSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
-            <motion.div
+            <motion.a
               key={feature.title}
+              href={feature.href}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group"
+              className="group block"
             >
-              <div className="h-full glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-500 hover:-translate-y-1">
+              <div className="h-full glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-500 hover:-translate-y-1 cursor-pointer">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                   <feature.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-foreground">
+                <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
                   {feature.title}
                 </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {feature.description}
                 </p>
               </div>
-            </motion.div>
+            </motion.a>
           ))}
         </div>
       </div>
