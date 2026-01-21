@@ -1,13 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Search, Star, Award, ExternalLink, Filter, ChevronDown,
+  Search, Star, Award, ExternalLink, ChevronDown,
   Search as SearchIcon, Link2, PenTool, MousePointerClick, Users, 
-  Mail, Globe, BarChart3, MapPin, Cpu, Shield, TrendingUp
+  Mail, Globe, BarChart3, MapPin, Cpu, Shield, TrendingUp, ArrowUpDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
@@ -51,14 +58,25 @@ interface Partner {
   rating: number;
   review_count: number;
   ranking_score: number;
+  created_at: string;
   marketplace_categories?: Category | null;
 }
+
+type SortOption = "ranking" | "rating" | "reviews" | "newest";
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: "ranking", label: "Top Ranked" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "reviews", label: "Most Reviews" },
+  { value: "newest", label: "Newest" },
+];
 
 const Marketplace = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("ranking");
   const [isLoading, setIsLoading] = useState(true);
   const [isApplicationOpen, setIsApplicationOpen] = useState(false);
 
@@ -98,16 +116,35 @@ const Marketplace = () => {
     setIsLoading(false);
   };
 
-  const filteredPartners = partners.filter((partner) => {
-    const matchesCategory = !selectedCategory || partner.category_id === selectedCategory;
-    const matchesSearch = !searchQuery || 
-      partner.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      partner.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredAndSortedPartners = useMemo(() => {
+    let filtered = partners.filter((partner) => {
+      const matchesCategory = !selectedCategory || partner.category_id === selectedCategory;
+      const matchesSearch = !searchQuery || 
+        partner.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        partner.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
 
-  const sponsoredPartners = filteredPartners.filter(p => p.is_sponsored);
-  const regularPartners = filteredPartners.filter(p => !p.is_sponsored);
+    // Sort partners based on selected option
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "rating":
+          return Number(b.rating) - Number(a.rating);
+        case "reviews":
+          return b.review_count - a.review_count;
+        case "newest":
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        case "ranking":
+        default:
+          return b.ranking_score - a.ranking_score;
+      }
+    });
+
+    return sorted;
+  }, [partners, selectedCategory, searchQuery, sortBy]);
+
+  const sponsoredPartners = filteredAndSortedPartners.filter(p => p.is_sponsored);
+  const regularPartners = filteredAndSortedPartners.filter(p => !p.is_sponsored);
 
   const renderStars = (rating: number) => {
     return (
@@ -234,17 +271,37 @@ const Marketplace = () => {
         {/* Search & Filter Section */}
         <section className="py-8 border-b border-border">
           <div className="container mx-auto px-6 max-w-6xl">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="relative w-full md:w-96">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search partners..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="flex flex-col gap-4">
+              {/* Search and Sort Row */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full sm:w-96">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search partners..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
+              {/* Category Filter Row */}
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant={selectedCategory === null ? "hero" : "heroOutline"}
