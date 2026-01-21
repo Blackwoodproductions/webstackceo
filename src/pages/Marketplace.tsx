@@ -15,6 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
@@ -71,12 +80,15 @@ const sortOptions: { value: SortOption; label: string }[] = [
   { value: "newest", label: "Newest" },
 ];
 
+const PARTNERS_PER_PAGE = 9;
+
 const Marketplace = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("ranking");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isApplicationOpen, setIsApplicationOpen] = useState(false);
 
@@ -145,6 +157,34 @@ const Marketplace = () => {
 
   const sponsoredPartners = filteredAndSortedPartners.filter(p => p.is_sponsored);
   const regularPartners = filteredAndSortedPartners.filter(p => !p.is_sponsored);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(regularPartners.length / PARTNERS_PER_PAGE);
+  const paginatedRegularPartners = regularPartners.slice(
+    (currentPage - 1) * PARTNERS_PER_PAGE,
+    currentPage * PARTNERS_PER_PAGE
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery, sortBy]);
+
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("ellipsis");
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const renderStars = (rating: number) => {
     return (
@@ -390,11 +430,55 @@ const Marketplace = () => {
                 ))}
               </div>
             ) : regularPartners.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {regularPartners.map((partner) => (
-                  <PartnerCard key={partner.id} partner={partner} />
-                ))}
-              </div>
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedRegularPartners.map((partner) => (
+                    <PartnerCard key={partner.id} partner={partner} />
+                  ))}
+                </div>
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-10">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {getPageNumbers().map((page, index) => (
+                          <PaginationItem key={index}>
+                            {page === "ellipsis" ? (
+                              <PaginationEllipsis />
+                            ) : (
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            )}
+                          </PaginationItem>
+                        ))}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                    <p className="text-center text-sm text-muted-foreground mt-4">
+                      Showing {(currentPage - 1) * PARTNERS_PER_PAGE + 1}-{Math.min(currentPage * PARTNERS_PER_PAGE, regularPartners.length)} of {regularPartners.length} partners
+                    </p>
+                  </div>
+                )}
+              </>
             ) : (
               <motion.div
                 initial={{ opacity: 0 }}
