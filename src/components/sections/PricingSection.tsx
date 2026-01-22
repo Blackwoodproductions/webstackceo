@@ -17,7 +17,7 @@ const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; co
 
 const plans = [
   {
-    name: "Growth",
+    name: "Business CEO",
     monthlyPrice: 75,
     yearlyPrice: 60,
     description: "Everything you need to dominate local SEO",
@@ -31,7 +31,7 @@ const plans = [
       "DA - DR BOOSTER",
       "In-depth analytics",
     ],
-    highlighted: true,
+    highlighted: false,
     hasToggle: true,
   },
   {
