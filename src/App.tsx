@@ -70,7 +70,8 @@ const CROGuide = lazy(() => import("./pages/learn/CROGuide"));
 const GlossaryTerm = lazy(() => import("./pages/learn/glossary/GlossaryTerm"));
 const GlossaryIndex = lazy(() => import("./pages/learn/glossary/GlossaryIndex"));
 
-// Lazy load non-critical UI components removed - using only HeroSection code box
+// Lazy load non-critical UI components
+const FloatingCodeBox = lazy(() => import("@/components/ui/floating-code-box"));
 
 // Minimal loading fallback - no heavy animations
 const PageLoader = () => (
@@ -98,6 +99,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
+          <Suspense fallback={null}>
+            <FloatingCodeBox />
+          </Suspense>
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
