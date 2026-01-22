@@ -41,6 +41,7 @@ const directoryPlans = [
     features: [
       "15 keyword phrases",
       "Free directory listing",
+      "AEO and GEO signals",
       "Uptime monitoring",
       "Bi-weekly SEO ranking reports",
       "15 SEO rich content pages",
