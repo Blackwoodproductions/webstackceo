@@ -1,9 +1,10 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 const HeroSection = () => {
+  const [isDashboardHovered, setIsDashboardHovered] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -130,14 +131,33 @@ const HeroSection = () => {
             className="mt-16"
           >
             {/* Dashboard Preview */}
-            <div className="relative">
+            <div 
+              className="relative"
+              onMouseEnter={() => setIsDashboardHovered(true)}
+              onMouseLeave={() => setIsDashboardHovered(false)}
+            >
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
+              {/* Gold glow effect on hover */}
+              <motion.div
+                className="absolute -inset-4 rounded-3xl blur-2xl transition-all duration-500"
+                animate={{
+                  opacity: isDashboardHovered ? 0.6 : 0,
+                  scale: isDashboardHovered ? 1.02 : 1,
+                }}
+                style={{
+                  background: "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.25))",
+                }}
+              />
               <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 style={{ x: dashboardX, y: dashboardY }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="relative rounded-2xl glass-card p-2 glow-primary"
+                className={`relative rounded-2xl glass-card p-2 transition-all duration-500 ${
+                  isDashboardHovered 
+                    ? "shadow-[0_0_60px_rgba(251,191,36,0.4)] border-amber-400/50" 
+                    : "glow-primary"
+                }`}
               >
                 <div className="rounded-xl bg-card overflow-hidden">
                   <div className="bg-secondary/50 px-4 py-3 flex items-center gap-2">
