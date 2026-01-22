@@ -146,9 +146,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 mt-12"
           >
-            <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite
+            <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &
             <br />
-            and Operate Like a B<span className="gradient-text">o</span>ss.!!
+            <span className="ml-4 md:ml-8">Operate like a B<span className="gradient-text">O</span>SS.!</span>
           </motion.h1>
 
           <motion.p
