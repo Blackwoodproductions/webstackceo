@@ -91,13 +91,13 @@ const Footer = () => {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full md:w-64 bg-background/50 border-border transition-all duration-300 hover:border-amber-400/50 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                className="w-full md:w-64 bg-background/50 border-border transition-all duration-300 hover:border-hover-accent/50 focus:border-hover-accent focus:shadow-[var(--hover-accent-glow)]"
               />
               <Button 
                 type="submit" 
                 variant="hero" 
                 disabled={isSubmitting}
-                className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]"
+                className="transition-all duration-300 hover:shadow-[var(--hover-accent-glow)]"
               >
                 {isSubmitting ? (
                   <span className="animate-pulse">...</span>
@@ -174,7 +174,7 @@ const Footer = () => {
                           }
                         }
                       }}
-                      className="text-sm text-muted-foreground hover:text-amber-400 transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
+                      className="text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
                     >
                       {link.name}
                     </a>
@@ -198,7 +198,7 @@ const Footer = () => {
               <a
                 key={social.name}
                 href={social.href}
-                className="w-10 h-10 rounded-full glass-card border border-border flex items-center justify-center text-muted-foreground hover:text-amber-400 hover:border-amber-400/50 hover:shadow-[0_0_15px_rgba(251,191,36,0.4)] transition-all duration-300"
+                className="w-10 h-10 rounded-full glass-card border border-border flex items-center justify-center text-muted-foreground hover:text-hover-accent hover:border-hover-accent/50 hover:shadow-[var(--hover-accent-glow)] transition-all duration-300"
                 aria-label={social.name}
               >
                 <social.icon className="w-5 h-5" />

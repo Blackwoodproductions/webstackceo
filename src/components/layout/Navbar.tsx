@@ -155,7 +155,7 @@ const Navbar = () => {
           >
             <a
               href="/features"
-              className="text-muted-foreground hover:text-amber-400 transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
+              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
             >
               Features
               <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesOpen ? 'rotate-180' : ''}`} />
@@ -184,7 +184,7 @@ const Navbar = () => {
                     >
                       <a 
                         href="/features"
-                        className="text-sm font-semibold text-primary hover:text-amber-400 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-300"
+                        className="text-sm font-semibold text-primary hover:text-hover-accent hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300"
                       >
                         View All Features →
                       </a>
@@ -202,10 +202,10 @@ const Navbar = () => {
                         }}
                         className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300 group"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-amber-400/20 group-hover:to-yellow-500/20 group-hover:shadow-[0_0_15px_rgba(251,191,36,0.4)] group-hover:scale-110 transition-all duration-300">
-                          <feature.icon className="w-5 h-5 text-primary group-hover:text-amber-400 transition-colors duration-300" />
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)] group-hover:scale-110 transition-all duration-300">
+                          <feature.icon className="w-5 h-5 text-primary group-hover:text-hover-accent transition-colors duration-300" />
                         </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-amber-400 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)] transition-all duration-300">
+                        <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300">
                           {feature.name}
                         </span>
                       </motion.a>
@@ -221,7 +221,7 @@ const Navbar = () => {
               key={link.name}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href, link.isPage)}
-              className="text-muted-foreground hover:text-amber-400 transition-all duration-300 font-medium hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
+              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium hover:drop-shadow-[var(--hover-accent-glow)]"
             >
               {link.name}
             </a>

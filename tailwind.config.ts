@@ -69,6 +69,9 @@ export default {
           500: "hsl(262 83% 58%)",
           600: "hsl(262 83% 50%)",
         },
+        "hover-accent": {
+          DEFAULT: "hsl(var(--hover-accent))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
