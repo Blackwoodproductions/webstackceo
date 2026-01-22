@@ -55,6 +55,7 @@ export type Database = {
           description: string
           display_order: number
           email: string
+          google_maps_embed_url: string | null
           id: string
           is_featured: boolean
           logo_url: string | null
@@ -78,6 +79,7 @@ export type Database = {
           description: string
           display_order?: number
           email: string
+          google_maps_embed_url?: string | null
           id?: string
           is_featured?: boolean
           logo_url?: string | null
@@ -101,6 +103,7 @@ export type Database = {
           description?: string
           display_order?: number
           email?: string
+          google_maps_embed_url?: string | null
           id?: string
           is_featured?: boolean
           logo_url?: string | null
