@@ -181,9 +181,9 @@ const ContactSection = () => {
           >
             {/* Fire glow effects */}
             <motion.div
-              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-orange-600/40 via-amber-500/30 to-yellow-400/20 blur-2xl"
+              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-orange-600/25 via-amber-500/18 to-yellow-400/12 blur-2xl"
               animate={{
-                opacity: [0.5, 0.8, 0.6, 0.9, 0.5],
+                opacity: [0.3, 0.48, 0.36, 0.54, 0.3],
                 scale: [1, 1.02, 0.98, 1.03, 1],
               }}
               transition={{
@@ -193,9 +193,9 @@ const ContactSection = () => {
               }}
             />
             <motion.div
-              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-red-600/30 via-orange-500/20 to-transparent blur-3xl"
+              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-red-600/18 via-orange-500/12 to-transparent blur-3xl"
               animate={{
-                opacity: [0.4, 0.7, 0.5, 0.8, 0.4],
+                opacity: [0.24, 0.42, 0.3, 0.48, 0.24],
                 scale: [1.02, 1, 1.04, 0.98, 1.02],
               }}
               transition={{
@@ -206,9 +206,9 @@ const ContactSection = () => {
               }}
             />
             <motion.div
-              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-red-700/20 via-transparent to-transparent blur-3xl"
+              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-red-700/12 via-transparent to-transparent blur-3xl"
               animate={{
-                opacity: [0.3, 0.5, 0.4, 0.6, 0.3],
+                opacity: [0.18, 0.3, 0.24, 0.36, 0.18],
                 y: [0, -10, 5, -15, 0],
               }}
               transition={{
@@ -219,7 +219,7 @@ const ContactSection = () => {
               }}
             />
             
-            <div className="relative glass-card border border-amber-500/30 rounded-2xl p-8 shadow-[0_0_40px_rgba(251,146,60,0.2)]">
+            <div className="relative glass-card border border-amber-500/20 rounded-2xl p-8 shadow-[0_0_40px_rgba(251,146,60,0.12)]">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
