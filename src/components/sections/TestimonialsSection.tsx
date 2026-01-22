@@ -102,8 +102,8 @@ const TestimonialsSection = () => {
             <CarouselContent className="-ml-4">
               {testimonials.map((testimonial, index) => (
                 <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                  <div className="h-full glass-card rounded-2xl p-6 relative group transition-all duration-300 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] hover:border-amber-400/30 border border-transparent">
-                    <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/20 group-hover:text-amber-400/30 transition-colors duration-300" />
+                  <div className="h-full glass-card rounded-2xl p-6 relative group transition-all duration-300 hover:shadow-lg hover:border-primary/30 border border-transparent">
+                    <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/20 group-hover:text-primary/30 transition-colors duration-300" />
                     
                     {/* Star Rating */}
                     <div className="flex gap-1 mb-4">
