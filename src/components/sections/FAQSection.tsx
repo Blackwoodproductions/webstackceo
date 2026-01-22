@@ -91,30 +91,8 @@ export const generateFAQSchema = () => {
 
 const FAQSection = () => {
   return (
-    <section id="faq" className="py-24 relative overflow-hidden">
+    <section id="faq" className="py-12 relative overflow-hidden">
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="text-primary font-medium tracking-wider uppercase text-sm">
-            FAQ
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold mt-4 mb-6">
-            Frequently Asked{" "}
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              Questions
-            </span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Everything you need to know about Webstack. Can't find what you're
-            looking for? Reach out to our support team.
-          </p>
-        </motion.div>
-
         <div className="space-y-8">
           {faqData.map((category, categoryIndex) => (
             <motion.div
