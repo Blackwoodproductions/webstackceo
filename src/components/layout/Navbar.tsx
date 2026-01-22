@@ -101,8 +101,8 @@ const Navbar = () => {
       <div className="container mx-auto px-6 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center relative">
-            <Shield className="w-6 h-6 text-white" />
-            <span className="absolute text-white font-bold text-[8px] tracking-tight">AI</span>
+            <Shield className="w-7 h-7 text-white" />
+            <span className="absolute text-white font-bold text-[9px] tracking-tight">AI</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-foreground leading-tight">
