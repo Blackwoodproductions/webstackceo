@@ -34,6 +34,7 @@ import WebHosting from "./pages/features/WebHosting";
 import SocialSignals from "./pages/features/SocialSignals";
 import Directory from "./pages/Directory";
 import DirectoryDetail from "./pages/DirectoryDetail";
+import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/features/social-signals" element={<SocialSignals />} />
             <Route path="/directory" element={<Directory />} />
             <Route path="/directory/:slug" element={<DirectoryDetail />} />
+            <Route path="/integrations" element={<Integrations />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

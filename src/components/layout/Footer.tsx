@@ -46,7 +46,7 @@ const Footer = () => {
     Product: [
       { name: "Features", href: "/#features" },
       { name: "Pricing", href: "/#pricing" },
-      { name: "Integrations", href: "#" },
+      { name: "Integrations", href: "/integrations" },
       { name: "Changelog", href: "#" },
     ],
     Company: [
