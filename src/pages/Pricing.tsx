@@ -58,12 +58,12 @@ const Pricing = () => {
                 Pricing Plans
               </span>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Scale Your Agency with{" "}
-                <span className="gradient-text">Niche Linking</span>
+                Your Complete{" "}
+                <span className="gradient-text">SEO Command Center</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Transparent pricing for SEO agencies and marketing companies. We categorize 
-                your client sites and automate niche-relevant backlinks at scale.
+                All-in-one dashboard for SEO agencies and marketing companies. Analytics, 
+                link building, content automation, and client management — all in one place.
               </p>
             </motion.div>
           </div>
