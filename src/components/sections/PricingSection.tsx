@@ -167,7 +167,7 @@ const PricingSection = () => {
 
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4">
+                <p className="text-muted-foreground text-sm mb-4 min-h-[40px] flex items-center justify-center">
                   {plan.description}
                 </p>
                 <div className="flex items-baseline justify-center gap-1">
