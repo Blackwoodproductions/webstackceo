@@ -31,6 +31,7 @@ import AdvancedAnalytics from "./pages/features/AdvancedAnalytics";
 import GMBOptimization from "./pages/features/GMBOptimization";
 import UptimeMonitoring from "./pages/features/UptimeMonitoring";
 import WebHosting from "./pages/features/WebHosting";
+import SocialSignals from "./pages/features/SocialSignals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/features/gmb-optimization" element={<GMBOptimization />} />
             <Route path="/features/uptime-monitoring" element={<UptimeMonitoring />} />
             <Route path="/features/web-hosting" element={<WebHosting />} />
+            <Route path="/features/social-signals" element={<SocialSignals />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
