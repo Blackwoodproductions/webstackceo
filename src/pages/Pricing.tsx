@@ -5,10 +5,24 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import PricingSection from "@/components/sections/PricingSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import { motion } from "framer-motion";
+import SEO from "@/components/SEO";
 
 const Pricing = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Pricing - Affordable Plans for Every Business"
+        description="Transparent pricing for Webstack.ceo. Choose from Starter ($97/mo), Professional ($197/mo), or Enterprise ($297/mo) plans. No hidden fees, cancel anytime."
+        keywords="pricing plans, SaaS pricing, website management pricing, SEO tools pricing, monthly subscription, enterprise pricing"
+        canonical="/pricing"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "PriceSpecification",
+          "name": "Webstack.ceo Pricing",
+          "description": "Transparent pricing with no hidden fees",
+          "priceCurrency": "USD"
+        }}
+      />
       <ScrollProgress />
       <Navbar />
       

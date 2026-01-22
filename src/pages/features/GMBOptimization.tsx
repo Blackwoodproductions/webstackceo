@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Search, title: "Local SEO", description: "Optimize for 'near me' searches and local pack rankings." },
@@ -19,6 +20,12 @@ const benefits = [
 const GMBOptimization = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Google My Business Optimization - Local SEO Services"
+        description="Dominate local search with GMB optimization. Review management, local SEO, visual content, and click-to-call tracking to attract more customers."
+        keywords="Google My Business, GMB optimization, local SEO, review management, local search, business listing, Google Maps"
+        canonical="/features/gmb-optimization"
+      />
       <ScrollProgress />
       <Navbar />
       

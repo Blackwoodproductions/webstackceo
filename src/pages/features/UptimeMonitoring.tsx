@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Bell, title: "Instant Alerts", description: "Get notified within seconds when your site goes down via SMS, email, or Slack." },
@@ -19,6 +20,12 @@ const benefits = [
 const UptimeMonitoring = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Uptime Monitoring - 24/7 Website Availability Tracking"
+        description="Monitor your website 24/7 with 1-minute checks from global locations. Get instant alerts via SMS, email, or Slack when your site goes down."
+        keywords="uptime monitoring, website monitoring, downtime alerts, SSL monitoring, server monitoring, 24/7 monitoring"
+        canonical="/features/uptime-monitoring"
+      />
       <ScrollProgress />
       <Navbar />
       

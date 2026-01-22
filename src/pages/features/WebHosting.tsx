@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Zap, title: "Lightning Performance", description: "NVMe SSD storage and optimized servers for sub-second load times." },
@@ -19,6 +20,12 @@ const benefits = [
 const WebHosting = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Premium Web Hosting - Fast, Secure, Scalable"
+        description="Enterprise-grade web hosting with NVMe SSD storage, global CDN, 99.99% uptime SLA, DDoS protection, and automatic backups."
+        keywords="web hosting, premium hosting, fast hosting, secure hosting, CDN, SSD hosting, managed hosting"
+        canonical="/features/web-hosting"
+      />
       <ScrollProgress />
       <Navbar />
       

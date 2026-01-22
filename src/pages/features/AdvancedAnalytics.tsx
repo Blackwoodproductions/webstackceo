@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: TrendingUp, title: "Rank Tracking", description: "Monitor your keyword positions daily across all search engines and locations." },
@@ -19,6 +20,12 @@ const benefits = [
 const AdvancedAnalytics = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Advanced Analytics - SEO Rank Tracking & Reporting"
+        description="Track keyword rankings, analyze competitors, and get automated SEO reports. Monitor your search performance with real-time analytics dashboard."
+        keywords="SEO analytics, rank tracking, keyword research, competitor analysis, SERP tracking, SEO reports"
+        canonical="/features/advanced-analytics"
+      />
       <ScrollProgress />
       <Navbar />
       

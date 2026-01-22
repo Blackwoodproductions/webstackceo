@@ -4,10 +4,32 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import { motion } from "framer-motion";
+import SEO from "@/components/SEO";
 
 const Features = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Features - Complete Website Management Suite"
+        description="Explore Webstack.ceo's powerful features: SEO analytics, rank tracking, domain authority building, uptime monitoring, visitor intelligence, and more."
+        keywords="SEO features, website analytics, rank tracking, domain authority, uptime monitoring, visitor intelligence, automated blogging, PPC landing pages"
+        canonical="/features"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": "Webstack.ceo Features",
+          "description": "Complete suite of website management tools",
+          "numberOfItems": 12,
+          "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Advanced Analytics"},
+            {"@type": "ListItem", "position": 2, "name": "On-Page SEO"},
+            {"@type": "ListItem", "position": 3, "name": "Off-Page SEO"},
+            {"@type": "ListItem", "position": 4, "name": "Domain Authority Building"},
+            {"@type": "ListItem", "position": 5, "name": "Uptime Monitoring"},
+            {"@type": "ListItem", "position": 6, "name": "Web Hosting"}
+          ]
+        }}
+      />
       <ScrollProgress />
       <Navbar />
       

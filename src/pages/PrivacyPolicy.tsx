@@ -4,12 +4,20 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LegalBreadcrumb from "@/components/ui/legal-breadcrumb";
+import SEO from "@/components/SEO";
 
 const PrivacyPolicy = () => {
   const lastUpdated = "January 17, 2026";
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy - Data Protection"
+        description="Learn how Webstack.ceo collects, uses, and protects your data. GDPR and CCPA compliant privacy policy. Last updated January 2026."
+        keywords="privacy policy, data protection, GDPR, CCPA, data security, personal information"
+        canonical="/privacy"
+        noIndex={false}
+      />
       <ScrollProgress />
       <Navbar />
       

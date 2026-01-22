@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Award, title: "DR/DA Growth", description: "Systematic strategies to increase your Domain Rating and Domain Authority scores." },
@@ -19,6 +20,12 @@ const benefits = [
 const DomainAuthority = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Domain Authority Building - Increase Your DR & DA"
+        description="Grow your Domain Rating and Domain Authority with proven strategies. Quality backlinks, competitor analysis, and monthly progress reports."
+        keywords="domain authority, domain rating, DR, DA, backlinks, link building, SEO authority"
+        canonical="/features/domain-authority"
+      />
       <ScrollProgress />
       <Navbar />
       

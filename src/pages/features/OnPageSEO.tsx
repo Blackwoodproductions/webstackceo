@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: FileText, title: "Meta Tag Optimization", description: "Perfectly crafted title tags and meta descriptions that drive clicks and rankings." },
@@ -19,6 +20,12 @@ const benefits = [
 const OnPageSEO = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="On-Page SEO - Technical Optimization Services"
+        description="Professional on-page SEO optimization including meta tags, schema markup, Core Web Vitals, image optimization, and keyword placement."
+        keywords="on-page SEO, technical SEO, meta tags, schema markup, Core Web Vitals, image optimization, internal linking"
+        canonical="/features/on-page-seo"
+      />
       <ScrollProgress />
       <Navbar />
       

@@ -4,12 +4,20 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LegalBreadcrumb from "@/components/ui/legal-breadcrumb";
+import SEO from "@/components/SEO";
 
 const Cookies = () => {
   const lastUpdated = "January 17, 2026";
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Cookie Policy - How We Use Cookies"
+        description="Understand how Webstack.ceo uses cookies and tracking technologies. Learn about your choices and how to manage cookie preferences."
+        keywords="cookie policy, cookies, tracking, privacy, browser cookies, website cookies"
+        canonical="/cookies"
+        noIndex={false}
+      />
       <ScrollProgress />
       <Navbar />
       

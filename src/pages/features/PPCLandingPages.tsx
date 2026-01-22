@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Zap, title: "Lightning Fast", description: "Sub-second load times that maximize your Quality Score and lower CPC." },
@@ -19,6 +20,12 @@ const benefits = [
 const PPCLandingPages = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="PPC Landing Pages - High-Converting Ad Landing Pages"
+        description="Stop wasting ad spend on generic pages. Custom PPC landing pages with A/B testing, fast load times, and conversion-optimized designs."
+        keywords="PPC landing pages, ad landing pages, conversion optimization, A/B testing, Google Ads landing pages, paid advertising"
+        canonical="/features/ppc-landing-pages"
+      />
       <ScrollProgress />
       <Navbar />
       

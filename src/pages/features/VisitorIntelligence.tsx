@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Building2, title: "Company Profiles", description: "See detailed company information for every identified visitor." },
@@ -19,6 +20,12 @@ const benefits = [
 const VisitorIntelligence = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Visitor Intelligence - Identify Anonymous Website Visitors"
+        description="Turn anonymous website traffic into leads. Identify companies visiting your site, track their behavior, and get real-time alerts for high-value prospects."
+        keywords="visitor intelligence, website visitor tracking, lead identification, B2B leads, company identification, visitor analytics"
+        canonical="/features/visitor-intelligence"
+      />
       <ScrollProgress />
       <Navbar />
       

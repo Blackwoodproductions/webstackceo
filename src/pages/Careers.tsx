@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Heart, title: "Health & Wellness", description: "Comprehensive health, dental, and vision coverage for you and your family" },
@@ -79,6 +80,27 @@ const Careers = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Careers - Join Our Team"
+        description="Build the future of web management with Webstack.ceo. View open positions in engineering, design, marketing, and sales. Remote-first culture with great benefits."
+        keywords="careers, jobs, remote work, tech jobs, software engineer, product designer, marketing jobs, startup jobs"
+        canonical="/careers"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "JobPosting",
+          "hiringOrganization": {
+            "@type": "Organization",
+            "name": "Webstack.ceo"
+          },
+          "jobLocation": {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "Remote"
+            }
+          }
+        }}
+      />
       <ScrollProgress />
       <Navbar />
       
