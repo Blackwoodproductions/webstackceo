@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import PricingSection from "@/components/sections/PricingSection";
+import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import { motion } from "framer-motion";
 
 const Pricing = () => {
@@ -45,6 +46,9 @@ const Pricing = () => {
 
         {/* Pricing Grid */}
         <PricingSection />
+
+        {/* Testimonials */}
+        <TestimonialsSection />
       </main>
 
       <Footer />
