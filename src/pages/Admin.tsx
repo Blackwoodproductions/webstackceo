@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   LayoutDashboard, Users, FileText, Settings, LogOut, 
   CheckCircle, XCircle, Clock, Star, Award, TrendingUp,
-  Plus, Edit, Trash2, Eye, Search
+  Plus, Edit, Trash2, Eye, Search, Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import AdminApplicationsTab from "@/components/admin/AdminApplicationsTab";
 import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
+import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Admin = () => {
   const [stats, setStats] = useState({
     totalPartners: 0,
     pendingApplications: 0,
+    pendingDirectoryListings: 0,
     sponsoredPartners: 0,
     totalCategories: 0,
   });
@@ -82,10 +84,11 @@ const Admin = () => {
   };
 
   const fetchStats = async () => {
-    const [partnersRes, applicationsRes, categoriesRes] = await Promise.all([
+    const [partnersRes, applicationsRes, categoriesRes, directoryRes] = await Promise.all([
       supabase.from("marketplace_partners").select("id, is_sponsored", { count: "exact" }),
       supabase.from("marketplace_applications").select("id", { count: "exact" }).eq("status", "pending"),
       supabase.from("marketplace_categories").select("id", { count: "exact" }),
+      supabase.from("directory_listings").select("id", { count: "exact" }).eq("status", "pending"),
     ]);
 
     const sponsoredCount = partnersRes.data?.filter(p => p.is_sponsored).length ?? 0;
@@ -93,6 +96,7 @@ const Admin = () => {
     setStats({
       totalPartners: partnersRes.count ?? 0,
       pendingApplications: applicationsRes.count ?? 0,
+      pendingDirectoryListings: directoryRes.count ?? 0,
       sponsoredPartners: sponsoredCount,
       totalCategories: categoriesRes.count ?? 0,
     });
@@ -174,8 +178,8 @@ const Admin = () => {
           {[
             { label: "Total Partners", value: stats.totalPartners, icon: Users, color: "text-cyan-400" },
             { label: "Pending Applications", value: stats.pendingApplications, icon: Clock, color: "text-yellow-400" },
+            { label: "Directory Pending", value: stats.pendingDirectoryListings, icon: Building2, color: "text-orange-400" },
             { label: "Sponsored Partners", value: stats.sponsoredPartners, icon: Award, color: "text-violet-400" },
-            { label: "Categories", value: stats.totalCategories, icon: LayoutDashboard, color: "text-green-400" },
           ].map((stat) => (
             <motion.div
               key={stat.label}
@@ -198,7 +202,7 @@ const Admin = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="applications" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Applications
@@ -212,6 +216,15 @@ const Admin = () => {
               <Users className="w-4 h-4" />
               Partners
             </TabsTrigger>
+            <TabsTrigger value="directory" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Directory
+              {stats.pendingDirectoryListings > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {stats.pendingDirectoryListings}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="applications">
@@ -220,6 +233,10 @@ const Admin = () => {
 
           <TabsContent value="partners">
             <AdminPartnersTab onUpdate={fetchStats} />
+          </TabsContent>
+
+          <TabsContent value="directory">
+            <AdminDirectoryTab onUpdate={fetchStats} />
           </TabsContent>
         </Tabs>
       </main>
