@@ -10,6 +10,7 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import { Separator } from "@/components/ui/separator";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -25,6 +26,7 @@ const About = () => {
         description="Learn about Webstack.ceo - 22 years of web development expertise helping CEOs command their online presence. Meet our team and discover our mission."
         keywords="about webstack, web development company, blackwood productions, CEO website tools, digital marketing experts, SEO professionals"
         canonical="/about"
+        ogImage={ogImages.about}
         schema={{
           "@context": "https://schema.org",
           "@type": "AboutPage",

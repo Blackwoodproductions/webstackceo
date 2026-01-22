@@ -32,6 +32,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PartnerApplicationDialog from "@/components/marketplace/PartnerApplicationDialog";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 // Icon mapping for categories
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -273,6 +274,7 @@ const Marketplace = () => {
         description="Discover vetted marketing partners, SEO agencies, and web professionals. Find the right partner for your business needs."
         keywords="marketing partners, SEO agencies, web development partners, digital marketing, service providers"
         canonical="/marketplace"
+        ogImage={ogImages.marketplace}
       />
       <ScrollProgress />
       <Navbar />

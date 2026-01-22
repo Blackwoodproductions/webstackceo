@@ -6,6 +6,7 @@ import FeaturesSection from "@/components/sections/FeaturesSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const Features = () => {
   return (
@@ -15,6 +16,7 @@ const Features = () => {
         description="Explore Webstack.ceo's powerful features: SEO analytics, rank tracking, domain authority building, uptime monitoring, visitor intelligence, and more."
         keywords="SEO features, website analytics, rank tracking, domain authority, uptime monitoring, visitor intelligence, automated blogging, PPC landing pages"
         canonical="/features"
+        ogImage={ogImages.features}
         schema={{
           "@context": "https://schema.org",
           "@type": "ItemList",
