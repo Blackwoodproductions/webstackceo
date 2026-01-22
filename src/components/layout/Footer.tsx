@@ -47,7 +47,7 @@ const Footer = () => {
       { name: "Features", href: "/#features" },
       { name: "Pricing", href: "/#pricing" },
       { name: "Integrations", href: "/integrations" },
-      { name: "Changelog", href: "#" },
+      { name: "Changelog", href: "/changelog" },
     ],
     Company: [
       { name: "About", href: "/about" },
