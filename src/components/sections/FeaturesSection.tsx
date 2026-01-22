@@ -8,11 +8,11 @@ import {
   UserCheck,
   Eye,
   PenTool,
-  HelpCircle,
   MousePointerClick,
   TrendingUp,
   BarChart3,
-  MapPin
+  MapPin,
+  Share2
 } from "lucide-react";
 
 const features = [
@@ -30,15 +30,15 @@ const features = [
   },
   {
     icon: PenTool,
-    title: "Automated Blog & Content",
-    description: "AI-powered blog posts, articles, and web copy that positions your brand as the authority in your niche.",
+    title: "Automated Blog, FAQ & Content",
+    description: "AI-powered blog posts, FAQs, and web copy that positions your brand as the authority and boosts search visibility.",
     href: "/features/automated-blog",
   },
   {
-    icon: HelpCircle,
-    title: "FAQ Generation",
-    description: "Automatically generate comprehensive FAQs that answer customer questions and boost your search visibility.",
-    href: "/features/faq-generation",
+    icon: Share2,
+    title: "Social Signals",
+    description: "Automatically share your latest blog and FAQ posts to X, LinkedIn, and Facebook to amplify reach and engagement.",
+    href: "/features/social-signals",
   },
   {
     icon: UserCheck,
@@ -135,9 +135,9 @@ const FeaturesSection = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="group block"
             >
-              <div className="h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer hover:shadow-[0_0_30px_rgba(251,191,36,0.4)]">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-amber-400/20 group-hover:to-yellow-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
-                  <feature.icon className="w-6 h-6 text-primary group-hover:text-amber-400 transition-colors duration-300" />
+              <div className="h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
+                  <feature.icon className="w-6 h-6 text-primary transition-colors duration-300" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
                   {feature.title}
