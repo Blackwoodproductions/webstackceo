@@ -254,10 +254,10 @@ const Navbar = () => {
               <Moon className="w-5 h-5 text-foreground" />
             )}
           </button>
-          <Button variant="heroOutline" size="sm" asChild>
+          <Button variant="heroOutline" size="sm" asChild className="transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]">
             <a href="https://dashdev.imagehosting.space/">Login</a>
           </Button>
-          <Button variant="hero" size="sm" asChild>
+          <Button variant="hero" size="sm" asChild className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]">
             <a href="/pricing">Get Started</a>
           </Button>
         </div>
@@ -366,10 +366,10 @@ const Navbar = () => {
               </a>
             ))}
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
-              <Button variant="heroOutline" className="w-full" asChild>
+              <Button variant="heroOutline" className="w-full transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]" asChild>
                 <a href="https://dashdev.imagehosting.space/">Login</a>
               </Button>
-              <Button variant="hero" className="w-full" asChild>
+              <Button variant="hero" className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]" asChild>
                 <a href="/pricing">Get Started</a>
               </Button>
             </div>
