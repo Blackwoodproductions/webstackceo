@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Globe, title: "Quality Backlinks", description: "Links from authoritative, relevant websites that Google trusts and rewards." },
@@ -19,6 +20,12 @@ const benefits = [
 const OffPageSEO = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Off-Page SEO - White-Hat Link Building Services"
+        description="Build domain authority with quality backlinks, guest posting, and digital PR. 100% white-hat link building with no risky tactics."
+        keywords="off-page SEO, link building, backlinks, guest posting, digital PR, white-hat SEO, brand mentions"
+        canonical="/features/off-page-seo"
+      />
       <ScrollProgress />
       <Navbar />
       

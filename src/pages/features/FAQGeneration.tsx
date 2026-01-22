@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Search, title: "Search-Optimized", description: "FAQs structured to appear in Google's featured snippets and People Also Ask." },
@@ -19,6 +20,12 @@ const benefits = [
 const FAQGeneration = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="FAQ Generation - AI-Powered FAQ Creation"
+        description="Generate SEO-optimized FAQs with AI. Structured for featured snippets, FAQ schema markup, and automatic updates based on customer questions."
+        keywords="FAQ generation, AI FAQ, featured snippets, FAQ schema, customer questions, search optimization"
+        canonical="/features/faq-generation"
+      />
       <ScrollProgress />
       <Navbar />
       

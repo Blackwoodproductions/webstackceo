@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Building2, title: "Company Identification", description: "See which companies are visiting your site, even if they don't fill out a form." },
@@ -19,6 +20,12 @@ const benefits = [
 const TrafficDeAnonymization = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Traffic De-Anonymization - Turn Anonymous Visitors into Leads"
+        description="Identify anonymous website visitors and turn them into leads. Company identification, contact discovery, and CRM integration for B2B sales teams."
+        keywords="traffic de-anonymization, lead generation, visitor identification, B2B leads, sales intelligence, intent data"
+        canonical="/features/traffic-de-anonymization"
+      />
       <ScrollProgress />
       <Navbar />
       

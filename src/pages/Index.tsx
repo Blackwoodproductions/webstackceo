@@ -3,7 +3,6 @@ import HeroSection from "@/components/sections/HeroSection";
 import LogoCarousel from "@/components/sections/LogoCarousel";
 import StatsSection from "@/components/sections/StatsSection";
 import FeaturesSection from "@/components/sections/FeaturesSection";
-
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import PricingSection from "@/components/sections/PricingSection";
 import ContactSection from "@/components/sections/ContactSection";
@@ -16,6 +15,7 @@ import SectionIndicator from "@/components/ui/section-indicator";
 import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
+import SEO from "@/components/SEO";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -29,6 +29,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Webstack.ceo | Your Website's Command Center"
+        description="One unified dashboard to manage analytics, SEO, performance, security, and marketing—everything a CEO needs to run a successful website. Built by Blackwood Productions."
+        keywords="website management, SEO tools, analytics dashboard, website performance, CEO tools, digital marketing, website security, SaaS platform, web hosting, domain authority, uptime monitoring"
+        canonical="/"
+      />
       <LoadingScreen />
       <ScrollProgress />
       <SectionIndicator />

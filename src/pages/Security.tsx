@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LegalBreadcrumb from "@/components/ui/legal-breadcrumb";
+import SEO from "@/components/SEO";
 
 const securityFeatures = [
   {
@@ -44,6 +45,12 @@ const Security = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Security - Enterprise-Grade Protection"
+        description="Learn about Webstack.ceo's security measures. SOC 2 Type II certified, GDPR compliant, end-to-end encryption, and 24/7 monitoring."
+        keywords="security, data protection, SOC 2, GDPR, encryption, compliance, cybersecurity, enterprise security"
+        canonical="/security"
+      />
       <ScrollProgress />
       <Navbar />
       

@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Sparkles, title: "AI-Powered Writing", description: "Advanced AI creates engaging, original content tailored to your brand voice." },
@@ -19,6 +20,12 @@ const benefits = [
 const AutomatedBlog = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Automated Blog - AI-Powered Content Creation"
+        description="Scale your content marketing with AI-powered blog automation. SEO-optimized articles, consistent publishing, and data-driven topic research."
+        keywords="automated blog, AI content, content marketing, blog automation, SEO content, AI writing, content calendar"
+        canonical="/features/automated-blog"
+      />
       <ScrollProgress />
       <Navbar />
       

@@ -4,12 +4,20 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import LegalBreadcrumb from "@/components/ui/legal-breadcrumb";
+import SEO from "@/components/SEO";
 
 const Terms = () => {
   const lastUpdated = "January 17, 2026";
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Terms of Service - Legal Agreement"
+        description="Read the Terms of Service for Webstack.ceo. Understand your rights and obligations when using our platform. Last updated January 2026."
+        keywords="terms of service, legal terms, user agreement, SaaS terms, service agreement"
+        canonical="/terms"
+        noIndex={false}
+      />
       <ScrollProgress />
       <Navbar />
       

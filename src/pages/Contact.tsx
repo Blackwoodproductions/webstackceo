@@ -4,10 +4,23 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import ContactSection from "@/components/sections/ContactSection";
 import { motion } from "framer-motion";
+import SEO from "@/components/SEO";
 
 const Contact = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Contact Us - Get in Touch"
+        description="Contact Webstack.ceo for questions about our platform, pricing, or to schedule a demo. Our team is here to help you succeed online."
+        keywords="contact us, get in touch, customer support, schedule demo, webstack support, sales inquiry"
+        canonical="/contact"
+        schema={{
+          "@context": "https://schema.org",
+          "@type": "ContactPage",
+          "name": "Contact Webstack.ceo",
+          "description": "Get in touch with our team"
+        }}
+      />
       <ScrollProgress />
       <Navbar />
       

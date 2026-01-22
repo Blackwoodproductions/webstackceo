@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
+import SEO from "@/components/SEO";
 
 const benefits = [
   { icon: Zap, title: "Automatic Posting", description: "New blog and FAQ posts are automatically shared to your connected social accounts." },
@@ -19,6 +20,12 @@ const benefits = [
 const SocialSignals = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Social Signals - Automated Social Media Sharing"
+        description="Automatically share your content across Twitter, LinkedIn, and Facebook. Engagement tracking and scheduled posting for maximum reach."
+        keywords="social signals, social media automation, content sharing, Twitter automation, LinkedIn posting, Facebook sharing"
+        canonical="/features/social-signals"
+      />
       <ScrollProgress />
       <Navbar />
       
