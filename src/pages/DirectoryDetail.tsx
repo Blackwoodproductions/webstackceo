@@ -320,6 +320,28 @@ const DirectoryDetail = () => {
                     </p>
                   </div>
                 )}
+
+                {/* Google Maps Embed */}
+                {listing.google_maps_embed_url && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="w-5 h-5 text-primary" />
+                      <h3 className="font-medium">Location</h3>
+                    </div>
+                    <div className="rounded-xl overflow-hidden aspect-video">
+                      <iframe
+                        src={listing.google_maps_embed_url}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title={`${listing.business_name} location map`}
+                      />
+                    </div>
+                  </div>
+                )}
               </motion.div>
 
               {/* Contact Form */}
