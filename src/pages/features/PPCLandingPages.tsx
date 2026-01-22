@@ -30,7 +30,7 @@ const PPCLandingPages = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="PPC Landing Pages" />
+        <FeatureBreadcrumb featureName="PPC Landing Pages" featureKeyword="High-converting PPC landing pages for Google Ads campaigns" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

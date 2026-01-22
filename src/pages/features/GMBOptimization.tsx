@@ -30,7 +30,7 @@ const GMBOptimization = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="GMB Optimization" />
+        <FeatureBreadcrumb featureName="GMB Optimization" featureKeyword="Google My Business optimization for local SEO and map rankings" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

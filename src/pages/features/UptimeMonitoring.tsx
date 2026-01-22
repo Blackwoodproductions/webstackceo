@@ -30,7 +30,7 @@ const UptimeMonitoring = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Uptime Monitoring" />
+        <FeatureBreadcrumb featureName="Uptime Monitoring" featureKeyword="24/7 website uptime monitoring with instant downtime alerts" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

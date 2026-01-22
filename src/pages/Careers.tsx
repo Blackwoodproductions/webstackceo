@@ -8,6 +8,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import JobApplicationDialog from "@/components/JobApplicationDialog";
 import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const benefits = [
   { icon: Heart, title: "Health & Wellness", description: "Comprehensive health, dental, and vision coverage for you and your family" },
@@ -103,8 +104,16 @@ const Careers = () => {
       />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Careers",
+            altText: "View remote job opportunities and open positions"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />

@@ -30,7 +30,7 @@ const SocialSignals = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Social Signals" />
+        <FeatureBreadcrumb featureName="Social Signals" featureKeyword="Automated social media sharing for Twitter, LinkedIn, and Facebook" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

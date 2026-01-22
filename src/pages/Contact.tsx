@@ -5,6 +5,7 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import ContactSection from "@/components/sections/ContactSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const Contact = () => {
   return (
@@ -23,8 +24,16 @@ const Contact = () => {
       />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Contact",
+            altText: "Contact our website management support team"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />

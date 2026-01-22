@@ -30,7 +30,7 @@ const FAQGeneration = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="FAQ Generation" />
+        <FeatureBreadcrumb featureName="FAQ Generation" featureKeyword="AI-generated FAQ pages with schema markup for featured snippets" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

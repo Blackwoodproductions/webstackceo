@@ -30,7 +30,7 @@ const WebHosting = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Web Hosting" />
+        <FeatureBreadcrumb featureName="Web Hosting" featureKeyword="Premium SSD web hosting with 99.99% uptime and global CDN" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

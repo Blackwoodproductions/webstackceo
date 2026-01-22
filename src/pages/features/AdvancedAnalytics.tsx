@@ -30,7 +30,7 @@ const AdvancedAnalytics = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Advanced Analytics" />
+        <FeatureBreadcrumb featureName="Advanced Analytics" featureKeyword="SEO rank tracking and analytics dashboard for website performance" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">
