@@ -221,7 +221,7 @@ const Navbar = () => {
               key={link.name}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href, link.isPage)}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+              className="text-muted-foreground hover:text-amber-400 transition-all duration-300 font-medium hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
             >
               {link.name}
             </a>
