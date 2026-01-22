@@ -253,7 +253,7 @@ const ContactSection = () => {
                         <FormControl>
                           <Input
                             placeholder="Your name"
-                            className="bg-background/50 border-white/10 focus:border-primary"
+                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
                             {...field}
                           />
                         </FormControl>
@@ -275,7 +275,7 @@ const ContactSection = () => {
                           <Input
                             type="email"
                             placeholder="your@email.com"
-                            className="bg-background/50 border-white/10 focus:border-primary"
+                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
                             {...field}
                           />
                         </FormControl>
@@ -297,7 +297,7 @@ const ContactSection = () => {
                       <FormControl>
                         <Input
                           placeholder="What's this about?"
-                          className="bg-background/50 border-white/10 focus:border-primary"
+                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
                           {...field}
                         />
                       </FormControl>
@@ -315,7 +315,7 @@ const ContactSection = () => {
                       <FormControl>
                         <Textarea
                           placeholder="Tell us more about your inquiry..."
-                          className="bg-background/50 border-white/10 focus:border-primary min-h-[150px] resize-none"
+                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50 min-h-[150px] resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -328,7 +328,7 @@ const ContactSection = () => {
                   type="submit"
                   variant="hero"
                   size="lg"
-                  className="w-full"
+                  className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]"
                   disabled={form.formState.isSubmitting}
                 >
                   <Send className="w-4 h-4 mr-2" />
