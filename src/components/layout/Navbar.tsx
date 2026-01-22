@@ -106,7 +106,7 @@ const Navbar = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-foreground leading-tight">
-              webstack<span className="gradient-text transition-all duration-300 group-hover:text-amber-400 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">.ceo</span>
+              webstack<span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent transition-all duration-300 group-hover:from-amber-400 group-hover:to-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">.ceo</span>
             </span>
             <span className="text-[10px] text-muted-foreground tracking-wide">
               by Blackwood Productions
