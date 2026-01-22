@@ -52,7 +52,7 @@ const plans = [
       "Multi-client analytics dashboard",
       "Reseller training & resources",
     ],
-    highlighted: false,
+    highlighted: true,
     hasToggle: true,
   },
   {
