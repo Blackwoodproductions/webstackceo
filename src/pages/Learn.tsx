@@ -301,9 +301,30 @@ const Learn = () => {
                         </li>
                       ))}
                     </ul>
-                  </motion.div>
-                );
-              })}
+                </motion.div>
+              );
+            })}
+
+            {/* Glossary Quick Access */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="glass-card rounded-2xl p-6 bg-gradient-to-br from-cyan-400/5 to-violet-500/5 border border-primary/20"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mb-4">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">SEO Glossary</h3>
+              <p className="text-sm text-muted-foreground mb-4">A-Z reference of essential SEO terminology</p>
+              
+              <Link 
+                to="/learn/glossary"
+                className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all"
+              >
+                Browse All Terms <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
             </div>
           </div>
         </section>
