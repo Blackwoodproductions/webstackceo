@@ -11,6 +11,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ArticleNavigation from "@/components/ui/article-navigation";
 
 const DomainAuthorityGuide = () => {
   return (
@@ -311,6 +312,15 @@ const DomainAuthorityGuide = () => {
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Article Navigation */}
+              <ArticleNavigation
+                previous={{
+                  title: "Mastering Website Analytics",
+                  href: "/learn/analytics-guide",
+                  category: "Analytics & Intelligence"
+                }}
+              />
 
             </div>
           </div>

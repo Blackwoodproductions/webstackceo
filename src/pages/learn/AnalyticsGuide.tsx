@@ -12,6 +12,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ArticleNavigation from "@/components/ui/article-navigation";
 
 const AnalyticsGuide = () => {
   return (
@@ -328,10 +329,24 @@ const AnalyticsGuide = () => {
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
-                    <Link to="/learn/visitor-intelligence-guide">Learn About Visitor Intelligence</Link>
+                    <Link to="/learn/domain-authority-guide">Learn About Domain Authority</Link>
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Article Navigation */}
+              <ArticleNavigation
+                previous={{
+                  title: "Off-Page SEO: Building Authority",
+                  href: "/learn/off-page-seo-guide",
+                  category: "SEO Fundamentals"
+                }}
+                next={{
+                  title: "Domain Authority: The Complete Guide",
+                  href: "/learn/domain-authority-guide",
+                  category: "Authority Building"
+                }}
+              />
 
             </div>
           </div>

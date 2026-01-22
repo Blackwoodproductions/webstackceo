@@ -11,6 +11,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ArticleNavigation from "@/components/ui/article-navigation";
 
 const OnPageSEOGuide = () => {
   return (
@@ -328,6 +329,15 @@ const OnPageSEOGuide = () => {
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Article Navigation */}
+              <ArticleNavigation
+                next={{
+                  title: "Off-Page SEO: Building Authority",
+                  href: "/learn/off-page-seo-guide",
+                  category: "SEO Fundamentals"
+                }}
+              />
 
             </div>
           </div>
