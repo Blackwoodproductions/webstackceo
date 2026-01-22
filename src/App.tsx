@@ -36,6 +36,11 @@ import Directory from "./pages/Directory";
 import DirectoryDetail from "./pages/DirectoryDetail";
 import Integrations from "./pages/Integrations";
 import Changelog from "./pages/Changelog";
+import Learn from "./pages/Learn";
+import OnPageSEOGuide from "./pages/learn/OnPageSEOGuide";
+import OffPageSEOGuide from "./pages/learn/OffPageSEOGuide";
+import AnalyticsGuide from "./pages/learn/AnalyticsGuide";
+import DomainAuthorityGuide from "./pages/learn/DomainAuthorityGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +85,11 @@ const App = () => (
             <Route path="/directory/:slug" element={<DirectoryDetail />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/changelog" element={<Changelog />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/learn/on-page-seo-guide" element={<OnPageSEOGuide />} />
+            <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
+            <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
+            <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
