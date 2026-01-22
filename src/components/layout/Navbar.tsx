@@ -79,7 +79,6 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
-    { name: "Marketplace", href: "/marketplace", isPage: true },
   ];
 
   const blogSubLinks = [
