@@ -2,11 +2,14 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
-import FAQSection from "@/components/sections/FAQSection";
+import FAQSection, { generateFAQSchema } from "@/components/sections/FAQSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 
 const FAQ = () => {
+  // Generate dynamic FAQ schema from actual content
+  const faqSchema = generateFAQSchema();
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
@@ -14,12 +17,7 @@ const FAQ = () => {
         description="Find answers to common questions about Webstack.ceo. Learn about our pricing, features, support, integrations, and how to get started."
         keywords="FAQ, frequently asked questions, help center, webstack support, pricing questions, feature questions, getting started"
         canonical="/faq"
-        schema={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          "name": "Webstack.ceo FAQ",
-          "description": "Frequently asked questions about our platform"
-        }}
+        schema={faqSchema}
       />
       <ScrollProgress />
       <Navbar />
