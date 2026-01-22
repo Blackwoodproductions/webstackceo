@@ -135,7 +135,7 @@ const FeaturesSection = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="group block"
             >
-              <div className="h-full glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-500 hover:-translate-y-1 cursor-pointer">
+              <div className="h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer hover:shadow-[0_0_30px_rgba(251,191,36,0.4)]">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 group-hover:from-amber-400 group-hover:to-yellow-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
                   <feature.icon className="w-6 h-6 text-white" />
                 </div>
