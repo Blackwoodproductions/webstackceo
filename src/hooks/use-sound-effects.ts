@@ -1,44 +1,42 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 type SoundType = "hover" | "click" | "success" | "whoosh" | "code";
 
+// Global audio unlock - runs once when module loads
+let audioUnlockRegistered = false;
+let sharedAudioContext: AudioContext | null = null;
+
+const getSharedAudioContext = () => {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioContext;
+};
+
+const unlockAudio = () => {
+  try {
+    const ctx = getSharedAudioContext();
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+  } catch {
+    // Ignore
+  }
+};
+
+if (typeof window !== "undefined" && !audioUnlockRegistered) {
+  audioUnlockRegistered = true;
+  window.addEventListener("pointerdown", unlockAudio, { once: true });
+  window.addEventListener("keydown", unlockAudio, { once: true });
+}
+
 export const useSoundEffects = () => {
-  const audioContextRef = useRef<AudioContext | null>(null);
   // Use wall-clock time for debounce because AudioContext.currentTime doesn't advance while suspended.
   const lastCodeSoundAtMsRef = useRef<number>(0);
 
-  const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    return audioContextRef.current;
-  }, []);
-
-  // Ensure audio can start even when sound was already enabled from localStorage.
-  // Many browsers require an explicit user gesture (pointerdown/keydown) to unlock AudioContext.
-  useEffect(() => {
-    const unlock = () => {
-      try {
-        const ctx = getAudioContext();
-        if (ctx.state === "suspended") {
-          void ctx.resume();
-        }
-      } catch {
-        // Ignore
-      }
-    };
-
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("keydown", unlock, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
-    };
-  }, [getAudioContext]);
-
   const playSound = useCallback((type: SoundType) => {
     try {
-      const ctx = getAudioContext();
+      const ctx = getSharedAudioContext();
 
       const exec = () => {
         const now = ctx.currentTime;
@@ -174,7 +172,7 @@ export const useSoundEffects = () => {
       // Silently fail if audio is not supported
       console.debug("Audio not supported:", e);
     }
-  }, [getAudioContext]);
+  }, []);
 
   const triggerHaptic = useCallback((type: "light" | "medium" | "heavy" = "light") => {
     if ("vibrate" in navigator) {
