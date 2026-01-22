@@ -27,7 +27,7 @@ const plans = [
       "Bi-weekly SEO ranking reports",
       "15 SEO rich content pages",
       "25 relevant business partners",
-      "Up to 125 targeted internal links",
+      "Up to 125 targeted Deep Links",
       "DA - DR BOOSTER",
       "In-depth analytics",
     ],
