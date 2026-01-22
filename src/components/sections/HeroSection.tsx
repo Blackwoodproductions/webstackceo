@@ -88,14 +88,14 @@ const HeroSection = () => {
             'return data',
             '};',
           ].map((codeLine, rowIndex) => (
-            <div 
+          <div 
               key={rowIndex} 
-              className="text-amber-400 text-[7px] font-mono leading-[11px] overflow-hidden"
+              className="text-primary text-[7px] font-mono leading-[11px] overflow-hidden"
             >
               <span 
                 className="inline-block"
                 style={{ 
-                  textShadow: '0 0 6px rgba(251, 191, 36, 0.7)',
+                  textShadow: '0 0 6px hsl(var(--primary) / 0.7)',
                   animation: `typewrite 3s steps(${codeLine.length}) infinite`,
                   animationDelay: `${rowIndex * 0.5}s`,
                   width: '0',
@@ -106,11 +106,11 @@ const HeroSection = () => {
                 {codeLine}
               </span>
               <span 
-                className="inline-block w-[3px] h-[8px] bg-amber-400 ml-[1px] align-middle"
+                className="inline-block w-[3px] h-[8px] bg-primary ml-[1px] align-middle"
                 style={{
                   animation: `blink 0.8s step-end infinite, cursorMove 3s steps(${codeLine.length}) infinite`,
                   animationDelay: `${rowIndex * 0.5}s`,
-                  boxShadow: '0 0 4px rgba(251, 191, 36, 0.8)'
+                  boxShadow: '0 0 4px hsl(var(--primary) / 0.8)'
                 }}
               />
             </div>
