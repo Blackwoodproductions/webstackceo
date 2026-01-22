@@ -12,24 +12,24 @@ const Features = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Features - Complete Website Management Suite"
-        description="Explore Webstack.ceo's powerful features: SEO analytics, rank tracking, domain authority building, uptime monitoring, visitor intelligence, and more."
-        keywords="SEO features, website analytics, rank tracking, domain authority, uptime monitoring, visitor intelligence, automated blogging, PPC landing pages"
+        title="Features - White-Label SEO Tools for Agencies"
+        description="Explore Webstack.ceo's agency tools: automated niche linking, white-label dashboards, bulk client management, domain authority building, and more."
+        keywords="agency SEO features, white label SEO tools, niche link building, bulk client management, automated backlinks, reseller SEO tools"
         canonical="/features"
         ogImage={ogImages.features}
         schema={{
           "@context": "https://schema.org",
           "@type": "ItemList",
-          "name": "Webstack.ceo Features",
-          "description": "Complete suite of website management tools",
+          "name": "Webstack.ceo Agency Features",
+          "description": "Complete suite of white-label SEO tools for agencies",
           "numberOfItems": 12,
           "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Advanced Analytics"},
+            {"@type": "ListItem", "position": 1, "name": "Niche Link Building"},
             {"@type": "ListItem", "position": 2, "name": "On-Page SEO"},
-            {"@type": "ListItem", "position": 3, "name": "Off-Page SEO"},
+            {"@type": "ListItem", "position": 3, "name": "White-Label Dashboards"},
             {"@type": "ListItem", "position": 4, "name": "Domain Authority Building"},
-            {"@type": "ListItem", "position": 5, "name": "Uptime Monitoring"},
-            {"@type": "ListItem", "position": 6, "name": "Web Hosting"}
+            {"@type": "ListItem", "position": 5, "name": "Bulk Client Management"},
+            {"@type": "ListItem", "position": 6, "name": "Automated Content"}
           ]
         }}
       />
@@ -39,7 +39,7 @@ const Features = () => {
         items={[
           { 
             label: "Features",
-            altText: "Explore all SEO and website management features"
+            altText: "Explore all white-label SEO features for agencies"
           }
         ]}
       />
@@ -62,15 +62,16 @@ const Features = () => {
               className="text-center"
             >
               <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Our Features
+                Agency Features
               </span>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Everything You Need to{" "}
-                <span className="gradient-text">Dominate Online</span>
+                White-Label Tools to{" "}
+                <span className="gradient-text">Scale Your Agency</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                A complete suite of SEO, analytics, and web management tools designed 
-                specifically for CEOs who demand results without the complexity.
+                A complete suite of SEO and link building tools designed for agencies 
+                and marketing companies. Categorize client sites, automate niche linking, 
+                and deliver results at scale.
               </p>
             </motion.div>
           </div>

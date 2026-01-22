@@ -19,13 +19,13 @@ const features = [
   {
     icon: Search,
     title: "On-Page SEO",
-    description: "Technical audits, meta optimization, content structure, and Core Web Vitals improvements for higher rankings.",
+    description: "Technical audits, meta optimization, and Core Web Vitals improvements you can resell to your agency clients.",
     href: "/features/on-page-seo",
   },
   {
     icon: Link2,
-    title: "Off-Page SEO & Link Building",
-    description: "Quality inbound links from real business websites. No PBNs, only genuine authority-building partnerships.",
+    title: "Niche Link Building",
+    description: "Automated categorization of client websites enables highly relevant, niche-specific backlinks at scale. No PBNs.",
     href: "/features/off-page-seo",
   },
   {
@@ -112,15 +112,15 @@ const FeaturesSection = () => {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-            Features
+            Agency Features
           </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Stop Paying More,{" "}
-            <span className="gradient-text">Getting Less</span>
+            Scale Your Agency,{" "}
+            <span className="gradient-text">Not Your Overhead</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Join over 1,000 CEOs who trust Webstack to deliver real results. 
-            One platform, every tool you need, zero compromise.
+            Trusted by 1,000+ SEO agencies and marketing companies. White-label tools 
+            that categorize client sites and automate niche linking—so you can focus on growth.
           </p>
         </motion.div>
 

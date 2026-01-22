@@ -44,17 +44,16 @@ const MissionSection = () => {
               Our <span className="gradient-text">Mission</span>
             </h2>
             <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              To empower every CEO with the tools, insights, and confidence to command their digital presence. 
-              We believe that technology should serve leaders, not complicate their lives.
+              To empower SEO agencies and marketing companies with automation that actually works. 
+              We believe agencies should spend time closing deals, not managing link building campaigns.
             </p>
             
             <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-violet-500/20 rounded-full blur-2xl" />
               <h3 className="text-xl font-bold text-foreground mb-4 relative z-10">Our Vision</h3>
               <p className="text-muted-foreground relative z-10 leading-relaxed">
-                A world where every business leader has complete visibility and control over their 
-                website performance, enabling them to make data-driven decisions that drive growth 
-                and success.
+                A world where every SEO agency can deliver niche-relevant backlinks at scale—automatically. 
+                When your clients onboard, we categorize their sites and handle the rest.
               </p>
             </div>
           </motion.div>

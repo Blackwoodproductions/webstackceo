@@ -129,8 +129,8 @@ const PricingSection = () => {
             </span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Choose the plan that fits your needs. No hidden fees, no surprises.
-            Cancel anytime.
+            Built for SEO agencies and marketing companies. Scale your clients with 
+            automated niche linking. No hidden fees, cancel anytime.
           </p>
 
           {/* Billing Toggle */}

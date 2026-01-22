@@ -146,9 +146,10 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 mt-12"
           >
-            <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &
+            <span className="gradient-text">N</span>iche Linking on{" "}
+            <span className="gradient-text">A</span>utopilot
             <br />
-            <span className="ml-4 md:ml-8">Operate like a B<span className="gradient-text">O</span>SS.!</span>
+            <span className="ml-4 md:ml-8">for <span className="gradient-text">SEO</span> Agencies</span>
           </motion.h1>
 
           <motion.p
@@ -157,9 +158,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            One unified dashboard that simplifies every task—from basic uptime monitoring 
-            to advanced SEO and traffic intelligence. Everything you need to run a modern, 
-            high-converting website, all in one place.
+            When your clients onboard, we categorize each website by niche—enabling automated, 
+            highly relevant backlink building at scale. White-label SEO tools built specifically 
+            for agencies and marketing companies who demand results.
           </motion.p>
 
 

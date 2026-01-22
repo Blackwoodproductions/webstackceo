@@ -13,16 +13,16 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Pricing - Affordable Plans for Every Business"
-        description="Transparent pricing for Webstack.ceo. Choose from Starter ($97/mo), Professional ($197/mo), or Enterprise ($297/mo) plans. No hidden fees, cancel anytime."
-        keywords="pricing plans, SaaS pricing, website management pricing, SEO tools pricing, monthly subscription, enterprise pricing"
+        title="Pricing - Agency Plans for SEO & Marketing Companies"
+        description="Transparent pricing for SEO agencies and marketing companies. Business CEO ($75/mo), White Label ($499/mo), or Super Reseller ($1499/mo). Scale your agency with niche linking automation."
+        keywords="SEO agency pricing, white label SEO pricing, reseller SEO plans, agency tools pricing, link building pricing, marketing agency software"
         canonical="/pricing"
         ogImage={ogImages.pricing}
         schema={{
           "@context": "https://schema.org",
           "@type": "PriceSpecification",
-          "name": "Webstack.ceo Pricing",
-          "description": "Transparent pricing with no hidden fees",
+          "name": "Webstack.ceo Agency Pricing",
+          "description": "Transparent pricing for SEO agencies with automated niche linking",
           "priceCurrency": "USD"
         }}
       />
@@ -58,12 +58,12 @@ const Pricing = () => {
                 Pricing Plans
               </span>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Invest in Your{" "}
-                <span className="gradient-text">Digital Success</span>
+                Scale Your Agency with{" "}
+                <span className="gradient-text">Niche Linking</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                Transparent pricing with no hidden fees. Choose the plan that fits 
-                your business needs and scale as you grow.
+                Transparent pricing for SEO agencies and marketing companies. We categorize 
+                your client sites and automate niche-relevant backlinks at scale.
               </p>
             </motion.div>
           </div>

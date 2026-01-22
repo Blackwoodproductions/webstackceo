@@ -22,16 +22,16 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="About Us - Our Story & Mission"
-        description="Learn about Webstack.ceo - 22 years of web development expertise helping CEOs command their online presence. Meet our team and discover our mission."
-        keywords="about webstack, web development company, blackwood productions, CEO website tools, digital marketing experts, SEO professionals"
+        title="About Us - 22 Years Powering SEO Agencies"
+        description="Learn about Webstack.ceo - 22 years of experience building tools for SEO agencies and marketing companies. Our automated niche categorization powers link building at scale."
+        keywords="about webstack, SEO agency tools, blackwood productions, white label SEO, niche link building, marketing agency partner"
         canonical="/about"
         ogImage={ogImages.about}
         schema={{
           "@context": "https://schema.org",
           "@type": "AboutPage",
           "name": "About Webstack.ceo",
-          "description": "Learn about our 22 years of web development expertise",
+          "description": "22 years of experience powering SEO agencies with automated niche linking",
           "mainEntity": {
             "@type": "Organization",
             "name": "Blackwood Productions",

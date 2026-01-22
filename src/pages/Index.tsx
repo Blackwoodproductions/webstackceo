@@ -31,9 +31,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Webstack.ceo | Your Website's Command Center"
-        description="One unified dashboard to manage analytics, SEO, performance, security, and marketing—everything a CEO needs to run a successful website. Built by Blackwood Productions."
-        keywords="website management, SEO tools, analytics dashboard, website performance, CEO tools, digital marketing, website security, SaaS platform, web hosting, domain authority, uptime monitoring"
+        title="Webstack.ceo | Niche Linking on Autopilot for SEO Agencies"
+        description="White-label SEO tools for agencies and marketing companies. We categorize client websites by niche to enable automated, relevant backlink building at scale. Built by Blackwood Productions."
+        keywords="SEO agency tools, white label SEO, niche link building, automated backlinks, marketing agency software, reseller SEO platform, link building automation, agency SEO tools"
         canonical="/"
         ogImage={ogImages.home}
       />
