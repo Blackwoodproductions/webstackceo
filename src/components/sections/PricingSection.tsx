@@ -38,7 +38,7 @@ const plans = [
       "Dedicated account manager",
       "Advanced security & encryption",
       "Client onboarding assistance",
-      "Monthly strategy calls",
+      "Multi-client analytics dashboard",
       "Reseller training & resources",
     ],
     highlighted: false,
