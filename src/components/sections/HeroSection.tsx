@@ -162,17 +162,6 @@ const HeroSection = () => {
             high-converting website, all in one place.
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mb-8"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm font-medium text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Trusted by 1000+ CEOs worldwide
-            </span>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
