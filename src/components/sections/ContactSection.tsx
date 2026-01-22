@@ -180,9 +180,9 @@ const ContactSection = () => {
             viewport={{ once: true }}
             className="relative"
           >
-            {/* Fire glow effects */}
+            {/* Gold glow effects */}
             <motion.div
-              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-orange-600/25 via-amber-500/18 to-yellow-400/12 blur-2xl"
+              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-amber-500/25 via-yellow-400/18 to-yellow-300/12 blur-2xl"
               animate={{
                 opacity: isFormActive ? [0.39, 0.62, 0.47, 0.7, 0.39] : [0.3, 0.48, 0.36, 0.54, 0.3],
                 scale: isFormActive ? [1, 1.04, 0.97, 1.05, 1] : [1, 1.02, 0.98, 1.03, 1],
@@ -194,7 +194,7 @@ const ContactSection = () => {
               }}
             />
             <motion.div
-              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-red-600/18 via-orange-500/12 to-transparent blur-3xl"
+              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-amber-400/18 via-yellow-500/12 to-transparent blur-3xl"
               animate={{
                 opacity: isFormActive ? [0.31, 0.55, 0.39, 0.62, 0.31] : [0.24, 0.42, 0.3, 0.48, 0.24],
                 scale: isFormActive ? [1.03, 1, 1.06, 0.97, 1.03] : [1.02, 1, 1.04, 0.98, 1.02],
@@ -207,7 +207,7 @@ const ContactSection = () => {
               }}
             />
             <motion.div
-              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-red-700/12 via-transparent to-transparent blur-3xl"
+              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-yellow-500/12 via-transparent to-transparent blur-3xl"
               animate={{
                 opacity: isFormActive ? [0.23, 0.39, 0.31, 0.47, 0.23] : [0.18, 0.3, 0.24, 0.36, 0.18],
                 y: isFormActive ? [0, -15, 8, -20, 0] : [0, -10, 5, -15, 0],
@@ -223,8 +223,8 @@ const ContactSection = () => {
             <div 
               className={`relative glass-card rounded-2xl p-8 transition-all duration-300 ${
                 isFormActive 
-                  ? "border border-amber-500/35 shadow-[0_0_50px_rgba(251,146,60,0.2)]" 
-                  : "border border-amber-500/20 shadow-[0_0_40px_rgba(251,146,60,0.12)]"
+                  ? "border border-amber-400/40 shadow-[0_0_50px_rgba(251,191,36,0.25)]" 
+                  : "border border-amber-400/20 shadow-[0_0_40px_rgba(251,191,36,0.15)]"
               }`}
               onMouseEnter={() => setIsFormActive(true)}
               onMouseLeave={() => setIsFormActive(false)}
