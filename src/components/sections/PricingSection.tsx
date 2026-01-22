@@ -1,59 +1,64 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon } from "lucide-react";
+import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const plans = [
   {
-    name: "Starter",
-    monthlyPrice: 25,
-    yearlyPrice: 20,
-    description: "Perfect for small businesses just getting started",
+    name: "Growth",
+    monthlyPrice: 75,
+    yearlyPrice: 60,
+    description: "Everything you need to dominate local SEO",
     features: [
-      "Up to 5 websites",
-      "Basic uptime monitoring",
-      "Weekly SEO reports",
-      "Email support",
-      "Basic analytics dashboard",
-      "SSL certificates included",
-    ],
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    monthlyPrice: 99,
-    yearlyPrice: 79,
-    description: "For growing teams that need more power",
-    features: [
-      "Up to 25 websites",
-      "Real-time uptime monitoring",
-      "Daily SEO reports & recommendations",
-      "Priority email & chat support",
-      "Advanced analytics & insights",
-      "Custom domain management",
-      "A/B testing tools",
-      "Performance optimization",
+      "15 keyword phrases",
+      "Uptime monitoring",
+      "Bi-weekly SEO ranking reports",
+      "15 SEO rich content pages",
+      "25 relevant business partners",
+      "Up to 125 targeted internal links",
+      "DA - DR BOOSTER",
+      "In-depth analytics",
     ],
     highlighted: true,
+    hasToggle: true,
   },
   {
-    name: "Enterprise",
-    monthlyPrice: 199,
-    yearlyPrice: 159,
-    description: "For organizations requiring maximum control",
+    name: "White Label",
+    monthlyPrice: 499,
+    yearlyPrice: 399,
+    description: "Resell our services under your brand",
     features: [
-      "Unlimited websites",
-      "24/7 uptime monitoring with alerts",
-      "Real-time SEO intelligence",
+      "Everything in Growth plan",
+      "$3.00 per keyword phrase",
+      "White-label dashboard",
+      "Custom branding",
+      "Priority support",
+      "Bulk client management",
+      "Reseller reporting tools",
       "Dedicated account manager",
-      "White-label reporting",
-      "API access",
-      "Custom integrations",
-      "SLA guarantee",
-      "Advanced security features",
-      "Team collaboration tools",
     ],
     highlighted: false,
+    hasToggle: true,
+  },
+  {
+    name: "Super Reseller",
+    monthlyPrice: null,
+    yearlyPrice: null,
+    description: "Enterprise API access for agencies at scale",
+    features: [
+      "Full API access",
+      "Pull data to your own systems",
+      "Custom integrations",
+      "Volume-based pricing",
+      "White-label everything",
+      "Priority enterprise support",
+      "Custom SLA agreements",
+      "Dedicated success team",
+    ],
+    highlighted: false,
+    hasToggle: false,
+    isCustom: true,
   },
 ];
 
@@ -146,21 +151,29 @@ const PricingSection = () => {
                 <p className="text-muted-foreground text-sm mb-4">
                   {plan.description}
                 </p>
-                <div className="flex items-baseline justify-center gap-1">
-                  <motion.span 
-                    key={isYearly ? 'yearly' : 'monthly'}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-4xl font-bold"
-                  >
-                    ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                  </motion.span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-                {isYearly && (
-                  <p className="text-xs text-primary mt-1">
-                    Billed annually (${plan.yearlyPrice * 12}/year)
-                  </p>
+                {plan.isCustom ? (
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-3xl font-bold">Custom Pricing</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <motion.span 
+                        key={isYearly ? 'yearly' : 'monthly'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-4xl font-bold"
+                      >
+                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      </motion.span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                    {isYearly && plan.yearlyPrice && (
+                      <p className="text-xs text-primary mt-1">
+                        Billed annually (${plan.yearlyPrice * 12}/year)
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -175,13 +188,27 @@ const PricingSection = () => {
                 ))}
               </ul>
 
-              <Button
-                variant={plan.highlighted ? "hero" : "heroOutline"}
-                className="w-full"
-                size="lg"
-              >
-                Get Started
-              </Button>
+              {plan.isCustom ? (
+                <Button
+                  asChild
+                  variant={plan.highlighted ? "hero" : "heroOutline"}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Link to="/contact">
+                    <Phone className="w-4 h-4 mr-2" />
+                    Book a Call
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  variant={plan.highlighted ? "hero" : "heroOutline"}
+                  className="w-full"
+                  size="lg"
+                >
+                  Get Started
+                </Button>
+              )}
             </motion.div>
           ))}
         </div>
