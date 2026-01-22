@@ -66,8 +66,41 @@ const HeroSection = () => {
       {/* Floating Elements with Mouse + Scroll Parallax */}
       <motion.div
         style={{ x: float1X, y: floatScrollY1 }}
-        className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:block"
-      />
+        className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
+      >
+        {/* Matrix-style streaming animation */}
+        <div className="absolute inset-0 flex justify-around">
+          {[...Array(5)].map((_, colIndex) => (
+            <div 
+              key={colIndex} 
+              className="flex flex-col text-amber-400 text-xs font-mono opacity-80"
+              style={{
+                animation: `matrixRain ${2 + colIndex * 0.3}s linear infinite`,
+                animationDelay: `${colIndex * 0.2}s`,
+              }}
+            >
+              {[...Array(12)].map((_, i) => (
+                <span 
+                  key={i} 
+                  className="leading-tight"
+                  style={{ 
+                    opacity: 0.3 + (i * 0.06),
+                    textShadow: '0 0 8px rgba(251, 191, 36, 0.8)'
+                  }}
+                >
+                  {String.fromCharCode(0x30A0 + Math.random() * 96)}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+        <style>{`
+          @keyframes matrixRain {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+          }
+        `}</style>
+      </motion.div>
       <motion.div
         style={{ x: float2X, y: floatScrollY2 }}
         className={`absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 ${
