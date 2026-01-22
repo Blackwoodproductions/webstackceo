@@ -56,7 +56,7 @@ const Footer = () => {
       { name: "Contact", href: "/#contact" },
     ],
     Resources: [
-      { name: "Documentation", href: "/learn" },
+      { name: "Learning Center", href: "/learn" },
       { name: "Help Center", href: "#" },
       { name: "API", href: "#" },
       { name: "Status", href: "#" },
