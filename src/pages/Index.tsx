@@ -37,7 +37,6 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
-        <LogoCarousel />
         <SectionDivider />
         <StatsSection />
         <SectionDivider />
@@ -46,6 +45,7 @@ const Index = () => {
         <TestimonialsSection />
         <SectionDivider />
         <PricingSection />
+        <LogoCarousel />
         <SectionDivider />
         <ContactSection />
       </main>
