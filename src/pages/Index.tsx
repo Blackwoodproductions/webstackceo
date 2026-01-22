@@ -16,6 +16,7 @@ import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import SEO from "@/components/SEO";
+import ogImages from "@/assets/og";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -34,6 +35,7 @@ const Index = () => {
         description="One unified dashboard to manage analytics, SEO, performance, security, and marketing—everything a CEO needs to run a successful website. Built by Blackwood Productions."
         keywords="website management, SEO tools, analytics dashboard, website performance, CEO tools, digital marketing, website security, SaaS platform, web hosting, domain authority, uptime monitoring"
         canonical="/"
+        ogImage={ogImages.home}
       />
       <LoadingScreen />
       <ScrollProgress />

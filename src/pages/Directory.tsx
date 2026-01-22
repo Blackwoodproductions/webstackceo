@@ -18,6 +18,7 @@ import {
 import DirectoryListingDialog from "@/components/directory/DirectoryListingDialog";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const iconMap: Record<string, any> = {
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
@@ -157,6 +158,7 @@ const Directory = () => {
         description="Browse our curated business directory. Find local businesses, read reviews, and connect with service providers in your area."
         keywords="business directory, local businesses, business listings, find businesses, local services"
         canonical="/directory"
+        ogImage={ogImages.directory}
       />
       <ScrollProgress />
       <Navbar />

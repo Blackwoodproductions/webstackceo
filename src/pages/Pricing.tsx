@@ -7,6 +7,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const Pricing = () => {
   return (
@@ -16,6 +17,7 @@ const Pricing = () => {
         description="Transparent pricing for Webstack.ceo. Choose from Starter ($97/mo), Professional ($197/mo), or Enterprise ($297/mo) plans. No hidden fees, cancel anytime."
         keywords="pricing plans, SaaS pricing, website management pricing, SEO tools pricing, monthly subscription, enterprise pricing"
         canonical="/pricing"
+        ogImage={ogImages.pricing}
         schema={{
           "@context": "https://schema.org",
           "@type": "PriceSpecification",

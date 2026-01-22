@@ -6,6 +6,7 @@ import ContactSection from "@/components/sections/ContactSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const Contact = () => {
   return (
@@ -15,6 +16,7 @@ const Contact = () => {
         description="Contact Webstack.ceo for questions about our platform, pricing, or to schedule a demo. Our team is here to help you succeed online."
         keywords="contact us, get in touch, customer support, schedule demo, webstack support, sales inquiry"
         canonical="/contact"
+        ogImage={ogImages.contact}
         schema={{
           "@context": "https://schema.org",
           "@type": "ContactPage",

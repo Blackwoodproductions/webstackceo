@@ -6,6 +6,7 @@ import FAQSection, { generateFAQSchema } from "@/components/sections/FAQSection"
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ogImages from "@/assets/og";
 
 const FAQ = () => {
   // Generate dynamic FAQ schema from actual content
@@ -18,6 +19,7 @@ const FAQ = () => {
         description="Find answers to common questions about Webstack.ceo. Learn about our pricing, features, support, integrations, and how to get started."
         keywords="FAQ, frequently asked questions, help center, webstack support, pricing questions, feature questions, getting started"
         canonical="/faq"
+        ogImage={ogImages.faq}
         schema={faqSchema}
       />
       <ScrollProgress />
