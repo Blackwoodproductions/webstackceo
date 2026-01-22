@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, Shield } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 
 const HeroSection = () => {
@@ -70,8 +70,19 @@ const HeroSection = () => {
       />
       <motion.div
         style={{ x: float2X, y: floatScrollY2 }}
-        className="absolute bottom-32 left-20 w-16 h-16 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 opacity-60 hidden lg:block"
-      />
+        className={`absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 ${
+          isDashboardHovered 
+            ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
+            : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
+        }`}
+      >
+        <Shield className={`w-10 h-10 transition-colors duration-500 ${
+          isDashboardHovered ? "text-amber-400" : "text-primary"
+        }`} />
+        <span className={`absolute font-bold text-[7px] tracking-tight transition-colors duration-500 ${
+          isDashboardHovered ? "text-amber-400" : "text-primary"
+        }`}>AI</span>
+      </motion.div>
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
