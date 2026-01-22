@@ -1,3 +1,5 @@
+# Robots.txt for Webstack.ceo
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +14,10 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap location
+Sitemap: https://webstackceo.lovable.app/sitemap.xml
+
+# Disallow admin and auth pages
+Disallow: /admin
+Disallow: /auth
