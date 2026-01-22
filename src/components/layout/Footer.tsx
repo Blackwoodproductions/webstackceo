@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Twitter, Linkedin, Github, Send, Shield } from "lucide-react";
@@ -12,6 +12,20 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLogoGold, setIsLogoGold] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+
+  // Auto-animate logo to gold every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsLogoGold(true);
+      // Stay gold for 3 seconds, then fade back
+      setTimeout(() => {
+        setIsLogoGold(false);
+      }, 3000);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,13 +108,30 @@ const Footer = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           <div className="col-span-2">
-            <a href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-amber-400/20 group-hover:to-yellow-500/20 flex items-center justify-center relative transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110">
-                <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-300" />
-                <span className="absolute text-primary font-bold text-[9px] tracking-tight transition-all duration-300 group-hover:text-amber-400">AI</span>
+            <a 
+              href="/" 
+              className="flex items-center gap-2 mb-4"
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
+            >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-700 ${
+                isLogoHovered || isLogoGold 
+                  ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] scale-110" 
+                  : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
+              }`}>
+                <Shield className={`w-7 h-7 transition-colors duration-700 ${
+                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+                }`} />
+                <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-700 ${
+                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+                }`}>AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
-                webstack<span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent transition-all duration-300 group-hover:from-amber-400 group-hover:to-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">.ceo</span>
+                webstack<span className={`bg-clip-text text-transparent transition-all duration-700 ${
+                  isLogoHovered || isLogoGold 
+                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" 
+                    : "bg-gradient-to-r from-cyan-400 to-violet-500"
+                }`}>.ceo</span>
               </span>
             </a>
             <p className="text-muted-foreground text-sm mb-4 max-w-xs">

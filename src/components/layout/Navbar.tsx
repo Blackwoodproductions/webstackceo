@@ -33,8 +33,22 @@ const Navbar = () => {
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
+  const [isLogoGold, setIsLogoGold] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const { soundEnabled, toggleSound } = useSoundContext();
   const { playSound } = useSoundEffects();
+
+  // Auto-animate logo to gold every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsLogoGold(true);
+      // Stay gold for 3 seconds, then fade back
+      setTimeout(() => {
+        setIsLogoGold(false);
+      }, 3000);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Check for saved preference, default to dark if no preference saved
@@ -99,14 +113,31 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-amber-400/20 group-hover:to-yellow-500/20 flex items-center justify-center relative transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110">
-            <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-300" />
-            <span className="absolute text-primary font-bold text-[9px] tracking-tight transition-all duration-300 group-hover:text-amber-400">AI</span>
+        <a 
+          href="/" 
+          className="flex items-center gap-2"
+          onMouseEnter={() => setIsLogoHovered(true)}
+          onMouseLeave={() => setIsLogoHovered(false)}
+        >
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-700 ${
+            isLogoHovered || isLogoGold 
+              ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] scale-110" 
+              : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
+          }`}>
+            <Shield className={`w-7 h-7 transition-colors duration-700 ${
+              isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+            }`} />
+            <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-700 ${
+              isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+            }`}>AI</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-foreground leading-tight">
-              webstack<span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent transition-all duration-300 group-hover:from-amber-400 group-hover:to-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">.ceo</span>
+              webstack<span className={`bg-clip-text text-transparent transition-all duration-700 ${
+                isLogoHovered || isLogoGold 
+                  ? "bg-gradient-to-r from-amber-400 to-yellow-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" 
+                  : "bg-gradient-to-r from-cyan-400 to-violet-500"
+              }`}>.ceo</span>
             </span>
             <span className="text-[10px] text-muted-foreground tracking-wide">
               by Blackwood Productions
