@@ -2,9 +2,14 @@ import { motion, useScroll, useTransform, useMotionValue, useSpring } from "fram
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Shield } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import { useSoundContext } from "@/contexts/SoundContext";
+import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
+  const [isCodeBoxHovered, setIsCodeBoxHovered] = useState(false);
+  const { soundEnabled } = useSoundContext();
+  const { playSound } = useSoundEffects();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -66,7 +71,14 @@ const HeroSection = () => {
       {/* Floating Elements with Mouse + Scroll Parallax */}
       <motion.div
         style={{ x: float1X, y: floatScrollY1 }}
-        className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
+        className={`absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer transition-all duration-300 ${
+          isCodeBoxHovered ? "shadow-[0_0_25px_rgba(251,191,36,0.5)] border-amber-400/50" : ""
+        }`}
+        onMouseEnter={() => {
+          setIsCodeBoxHovered(true);
+          if (soundEnabled) playSound("code");
+        }}
+        onMouseLeave={() => setIsCodeBoxHovered(false)}
       >
         {/* Real code typing animation */}
         <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
