@@ -68,31 +68,34 @@ const HeroSection = () => {
         style={{ x: float1X, y: floatScrollY1 }}
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
       >
-        {/* Matrix-style streaming animation */}
+        {/* Code streaming animation */}
         <div className="absolute inset-0 flex justify-around">
-          {[...Array(5)].map((_, colIndex) => (
-            <div 
-              key={colIndex} 
-              className="flex flex-col text-amber-400 text-xs font-mono opacity-80"
-              style={{
-                animation: `matrixRain ${2 + colIndex * 0.3}s linear infinite`,
-                animationDelay: `${colIndex * 0.2}s`,
-              }}
-            >
-              {[...Array(12)].map((_, i) => (
-                <span 
-                  key={i} 
-                  className="leading-tight"
-                  style={{ 
-                    opacity: 0.3 + (i * 0.06),
-                    textShadow: '0 0 8px rgba(251, 191, 36, 0.8)'
-                  }}
-                >
-                  {String.fromCharCode(0x30A0 + Math.random() * 96)}
-                </span>
-              ))}
-            </div>
-          ))}
+          {[...Array(5)].map((_, colIndex) => {
+            const codeChars = ['0', '1', '{', '}', '(', ')', ';', ':', '<', '>', '/', '*', '+', '=', '[', ']', 'fn', 'if', '&&', '||', '=>', '++', '--', '!=', '=='];
+            return (
+              <div 
+                key={colIndex} 
+                className="flex flex-col text-amber-400 text-[10px] font-mono opacity-80"
+                style={{
+                  animation: `matrixRain ${2 + colIndex * 0.3}s linear infinite`,
+                  animationDelay: `${colIndex * 0.2}s`,
+                }}
+              >
+                {[...Array(12)].map((_, i) => (
+                  <span 
+                    key={i} 
+                    className="leading-tight"
+                    style={{ 
+                      opacity: 0.3 + (i * 0.06),
+                      textShadow: '0 0 8px rgba(251, 191, 36, 0.8)'
+                    }}
+                  >
+                    {codeChars[Math.floor(Math.random() * codeChars.length)]}
+                  </span>
+                ))}
+              </div>
+            );
+          })}
         </div>
         <style>{`
           @keyframes matrixRain {
