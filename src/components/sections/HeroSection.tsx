@@ -76,10 +76,10 @@ const HeroSection = () => {
             : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
         }`}
       >
-        <Shield className={`w-10 h-10 transition-colors duration-500 ${
+        <Shield className={`w-[46px] h-[46px] transition-colors duration-500 ${
           isDashboardHovered ? "text-amber-400" : "text-primary"
         }`} />
-        <span className={`absolute font-bold text-[7px] tracking-tight transition-colors duration-500 ${
+        <span className={`absolute font-bold text-[8px] tracking-tight transition-colors duration-500 ${
           isDashboardHovered ? "text-amber-400" : "text-primary"
         }`}>AI</span>
       </motion.div>
