@@ -215,8 +215,8 @@ const Marketplace = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className={`relative glass-card rounded-2xl p-6 hover:glow-primary transition-all duration-300 cursor-pointer ${
-            isSponsored ? "border-2 border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]" : ""
+          className={`relative glass-card rounded-2xl p-6 transition-all duration-300 cursor-pointer hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] hover:border-amber-400/30 border ${
+            isSponsored ? "border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.15)]" : "border-transparent"
           }`}
         >
           {isSponsored && (
