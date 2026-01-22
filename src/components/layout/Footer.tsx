@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Twitter, Linkedin, Github, Send } from "lucide-react";
+import { Twitter, Linkedin, Github, Send, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -95,8 +95,9 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           <div className="col-span-2">
             <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
-                <span className="text-white font-bold text-xl">W</span>
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center relative">
+                <Shield className="w-7 h-7 text-white" />
+                <span className="absolute text-white font-bold text-[9px] tracking-tight">AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
                 webstack<span className="gradient-text">.ceo</span>
