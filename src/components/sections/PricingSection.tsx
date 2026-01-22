@@ -112,52 +112,30 @@ const PricingSection = () => {
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="text-primary font-medium tracking-wider uppercase text-sm">
-            Pricing
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center gap-4 mb-12">
+          <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Monthly
           </span>
-          <h2 className="text-4xl md:text-5xl font-bold mt-4 mb-6">
-            Simple, Transparent{" "}
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              Pricing
-            </span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Everything you need to manage, grow, and scale your clients. Full-featured 
-            SEO dashboard with analytics, automation, and white-label options.
-          </p>
-
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Monthly
-            </span>
-            <button
-              onClick={() => setIsYearly(!isYearly)}
-              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
-                isYearly ? 'bg-primary' : 'bg-muted'
-              }`}
-            >
-              <motion.div
-                className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md"
-                animate={{ x: isYearly ? 28 : 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            </button>
-            <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Yearly
-            </span>
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              Save 20%
-            </span>
-          </div>
-        </motion.div>
+          <button
+            onClick={() => setIsYearly(!isYearly)}
+            className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+              isYearly ? 'bg-primary' : 'bg-muted'
+            }`}
+          >
+            <motion.div
+              className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md"
+              animate={{ x: isYearly ? 28 : 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            />
+          </button>
+          <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Yearly
+          </span>
+          <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            Save 20%
+          </span>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {plans.map((plan, index) => (
