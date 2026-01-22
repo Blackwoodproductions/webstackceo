@@ -123,10 +123,10 @@ const StatsSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="glass-card border border-white/10 rounded-2xl p-6 md:p-8 text-center group hover:border-amber-400/30 hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] transition-all duration-300"
+              className="glass-card border border-white/10 rounded-2xl p-6 md:p-8 text-center group transition-all duration-300"
             >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-amber-400/20 group-hover:to-yellow-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
-                <stat.icon className="w-6 h-6 text-primary group-hover:text-amber-400 transition-colors duration-300" />
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center transition-all duration-300">
+                <stat.icon className="w-6 h-6 text-primary transition-colors duration-300" />
               </div>
               <AnimatedCounter
                 value={stat.value}
