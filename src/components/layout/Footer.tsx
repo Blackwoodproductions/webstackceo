@@ -95,9 +95,9 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           <div className="col-span-2">
             <a href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center relative transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] group-hover:scale-110">
-                <Shield className="w-7 h-7 text-white transition-transform duration-300 group-hover:scale-105" />
-                <span className="absolute text-white font-bold text-[9px] tracking-tight transition-all duration-300 group-hover:text-amber-300">AI</span>
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-amber-400/20 group-hover:to-yellow-500/20 flex items-center justify-center relative transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110">
+                <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-300" />
+                <span className="absolute text-primary font-bold text-[9px] tracking-tight transition-all duration-300 group-hover:text-amber-400">AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
                 webstack<span className="gradient-text">.ceo</span>
