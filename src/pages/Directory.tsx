@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -13,7 +13,7 @@ import {
   Search, MapPin, Phone, Globe, Star, Building2,
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
   Sparkles, Landmark, Scale, GraduationCap, Music, Building, 
-  Laptop, Plane, Dumbbell, Check, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Zap, Crown, Shield
+  Laptop, Plane, Dumbbell, Check, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame
 } from "lucide-react";
 import DirectoryListingDialog from "@/components/directory/DirectoryListingDialog";
 
@@ -31,6 +31,19 @@ const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; co
   "DA - DR BOOSTER": { icon: Zap, label: "Power", color: "from-amber-400 to-orange-500" },
   "Up to 40% off normal keyword pricing": { icon: Crown, label: "Deal", color: "from-violet-400 to-purple-500" },
   "Up to 60% off normal pricing": { icon: Crown, label: "Best Deal", color: "from-cyan-400 to-blue-500" },
+};
+
+// Calculate positions left based on current date (decreases throughout month)
+const getPositionsLeft = () => {
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const monthSeed = now.getMonth() + now.getFullYear() * 12;
+  
+  const baseDecrease = Math.floor(dayOfMonth * 0.7);
+  const randomVariance = ((monthSeed * dayOfMonth * 7) % 5) - 2;
+  const positionsLeft = Math.max(3, 21 - baseDecrease + randomVariance);
+  
+  return positionsLeft;
 };
 
 const directoryPlans = [
@@ -52,6 +65,8 @@ const directoryPlans = [
       "In-depth analytics",
     ],
     highlighted: false,
+    originalPrice: 150,
+    hasScarcity: true,
   },
   {
     name: "White Label",
@@ -95,6 +110,7 @@ const Directory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
+  const positionsLeft = useMemo(() => getPositionsLeft(), []);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["directory-categories"],
@@ -413,7 +429,14 @@ const Directory = () => {
                     <p className="text-muted-foreground text-sm mb-4 min-h-[40px] flex items-center justify-center">
                       {plan.description}
                     </p>
-                    <div className="flex items-baseline justify-center gap-1">
+                    
+                    {/* Price display with original price strikethrough for Business CEO */}
+                    <div className="flex items-baseline justify-center gap-2">
+                      {plan.originalPrice && !isYearly && (
+                        <span className="text-xl text-muted-foreground line-through">
+                          ${plan.originalPrice}
+                        </span>
+                      )}
                       <motion.span 
                         key={isYearly ? 'yearly' : 'monthly'}
                         initial={{ opacity: 0, y: -10 }}
@@ -424,10 +447,39 @@ const Directory = () => {
                       </motion.span>
                       <span className="text-muted-foreground">/month</span>
                     </div>
+                    
+                    {/* Half off badge for Business CEO */}
+                    {plan.originalPrice && !isYearly && (
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="inline-block mt-2"
+                      >
+                        <span className="bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                          50% OFF
+                        </span>
+                      </motion.div>
+                    )}
+                    
                     {isYearly && plan.yearlyPrice && (
                       <p className="text-xs text-primary mt-1">
                         Billed annually (${plan.yearlyPrice * 12}/year)
                       </p>
+                    )}
+                    
+                    {/* Scarcity indicator */}
+                    {plan.hasScarcity && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-4 flex items-center justify-center gap-2"
+                      >
+                        <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
+                        <span className="text-sm font-medium text-orange-500">
+                          Only {positionsLeft} spots left this month!
+                        </span>
+                      </motion.div>
                     )}
                   </div>
 
