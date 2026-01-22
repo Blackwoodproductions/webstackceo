@@ -4,8 +4,8 @@ import { CheckCircle, Award, Users, Building } from "lucide-react";
 
 const stats = [
   { icon: Building, value: "22", label: "Years in Business" },
-  { icon: Users, value: "1000+", label: "CEOs Trust Us" },
-  { icon: Award, value: "50+", label: "Industry Awards" },
+  { icon: Users, value: "1000+", label: "Agency Partners" },
+  { icon: Award, value: "50K+", label: "Sites Categorized" },
 ];
 
 const AboutSection = () => {
@@ -39,23 +39,23 @@ const AboutSection = () => {
               <span className="gradient-text">Blackwood Productions</span>
             </h2>
             <p className="text-muted-foreground text-lg mb-6 leading-relaxed">
-              For over two decades, Blackwood Productions has been at the forefront 
-              of web technology, helping businesses build and maintain their digital 
-              presence. Webstack.ceo is the culmination of 22 years of experience, 
-              designed specifically for CEOs who demand excellence.
+              For over two decades, Blackwood Productions has powered SEO agencies 
+              and marketing companies with enterprise-grade tools. Webstack.ceo is 
+              the culmination of 22 years of experience, built specifically for 
+              agencies who want to scale without the overhead.
             </p>
             <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              We understand the challenges of running a successful website—the 
-              countless metrics to track, tools to manage, and decisions to make. 
-              That's why we built a unified command center that puts you in control.
+              Our secret? When your clients onboard, we categorize each website by 
+              niche—unlocking automated, highly relevant backlink building across 
+              your entire portfolio. True niche linking on autopilot.
             </p>
 
             <div className="space-y-4">
               {[
-                "Enterprise-grade security and reliability",
-                "24/7 dedicated support for CEOs",
-                "Continuous updates and new integrations",
-                "White-glove onboarding experience",
+                "Automated niche categorization for every client site",
+                "White-label dashboards and reports",
+                "Bulk client management at scale",
+                "Dedicated agency success team",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
@@ -103,9 +103,9 @@ const AboutSection = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-violet-500/20 rounded-full blur-2xl" />
               <blockquote className="relative z-10">
                 <p className="text-lg text-foreground italic mb-4">
-                  "After 22 years of building websites and helping businesses succeed 
-                  online, we've distilled everything into one platform. Webstack.ceo 
-                  is the tool I wish I had when I started."
+                  "We built what every SEO agency needs: a system that categorizes 
+                  client sites and builds niche-relevant links automatically. It's 
+                  the unfair advantage we wish we had 22 years ago."
                 </p>
                 <footer className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center text-white font-bold">

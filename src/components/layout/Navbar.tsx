@@ -12,7 +12,7 @@ import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const featureItems = [
   { icon: Search, name: "On-Page SEO", href: "/features/on-page-seo" },
-  { icon: Link2, name: "Off-Page SEO", href: "/features/off-page-seo" },
+  { icon: Link2, name: "Niche Link Building", href: "/features/off-page-seo" },
   { icon: PenTool, name: "Automated Blog", href: "/features/automated-blog" },
   { icon: HelpCircle, name: "FAQ Generation", href: "/features/faq-generation" },
   { icon: UserCheck, name: "Traffic De-Anonymization", href: "/features/traffic-de-anonymization" },

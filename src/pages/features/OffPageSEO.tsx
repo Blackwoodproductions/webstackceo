@@ -9,28 +9,28 @@ import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
 
 const benefits = [
-  { icon: Globe, title: "Quality Backlinks", description: "Links from authoritative, relevant websites that Google trusts and rewards." },
-  { icon: Users, title: "Guest Posting", description: "Thought leadership content placed on industry publications that drive referral traffic." },
-  { icon: TrendingUp, title: "Digital PR", description: "Media mentions and press coverage that build brand authority and earn natural links." },
-  { icon: Shield, title: "No PBNs", description: "100% white-hat link building with no private blog networks or risky tactics." },
-  { icon: Award, title: "Brand Mentions", description: "Unlinked brand mentions converted to powerful backlinks across the web." },
-  { icon: Link2, title: "Competitor Analysis", description: "Reverse-engineer your competitors' best links and acquire them for your site." },
+  { icon: Globe, title: "Niche Categorization", description: "Every client site is categorized by niche, enabling highly relevant link placements across your portfolio." },
+  { icon: Users, title: "Automated Outreach", description: "Our system matches sites by niche and builds contextual links automatically—no manual work required." },
+  { icon: TrendingUp, title: "Portfolio-Wide Scale", description: "The more clients you onboard, the stronger the niche network. Links improve across all your sites." },
+  { icon: Shield, title: "No PBNs", description: "100% white-hat link building with real business websites. No private blog networks or risky tactics." },
+  { icon: Award, title: "Agency-Ready", description: "White-label reports and dashboards you can brand as your own for client delivery." },
+  { icon: Link2, title: "Niche Matching", description: "Links are placed on relevant sites in the same or complementary niches for maximum SEO impact." },
 ];
 
 const OffPageSEO = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Off-Page SEO - White-Hat Link Building Services"
-        description="Build domain authority with quality backlinks, guest posting, and digital PR. 100% white-hat link building with no risky tactics."
-        keywords="off-page SEO, link building, backlinks, guest posting, digital PR, white-hat SEO, brand mentions"
+        title="Niche Link Building - Automated Backlinks for Agencies"
+        description="Automated niche-specific link building for SEO agencies. We categorize client websites and build relevant backlinks at scale. White-label ready."
+        keywords="niche link building, automated backlinks, SEO agency tools, white label links, niche categorization, link building automation"
         canonical="/features/off-page-seo"
       />
       <ScrollProgress />
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Off-Page SEO" featureKeyword="White-hat link building and backlink acquisition services" />
+        <FeatureBreadcrumb featureName="Niche Link Building" featureKeyword="Automated niche-specific backlink building for agencies" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">
@@ -52,11 +52,11 @@ const OffPageSEO = () => {
                 <Link2 className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Off-Page SEO & <span className="gradient-text">Link Building</span>
+                Niche <span className="gradient-text">Link Building</span> on Autopilot
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-                Quality inbound links from real business websites. No PBNs, only genuine 
-                authority-building partnerships that Google rewards.
+                When your agency onboards clients, we categorize each site by niche—then 
+                automatically build highly relevant backlinks across your entire portfolio.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="hero" size="lg" asChild>
@@ -80,13 +80,13 @@ const OffPageSEO = () => {
               className="text-center mb-16"
             >
               <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Our Approach
+                How It Works
               </span>
               <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                White-Hat <span className="gradient-text">Link Building</span>
+                Categorize Once, <span className="gradient-text">Link Forever</span>
               </h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Sustainable strategies that build lasting authority without risking penalties.
+                Our niche categorization system powers automated, relevant link building at scale.
               </p>
             </motion.div>
 
@@ -121,10 +121,10 @@ const OffPageSEO = () => {
               className="text-center mb-16"
             >
               <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Quality Standards
+                Agency Standards
               </span>
               <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Links That <span className="gradient-text">Actually Work</span>
+                Links Your Clients <span className="gradient-text">Will Love</span>
               </h2>
             </motion.div>
 
@@ -137,23 +137,23 @@ const OffPageSEO = () => {
                   <ul className="space-y-3 text-muted-foreground">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Outreach to relevant, high-authority websites</span>
+                      <span>Automatic niche categorization on client onboarding</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Guest posts on established industry publications</span>
+                      <span>Links matched by industry and relevance</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Digital PR and journalist outreach</span>
+                      <span>Portfolio-wide link building at scale</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Resource page link building</span>
+                      <span>White-label reports for client delivery</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span>Broken link reclamation</span>
+                      <span>Real business websites, no spam</span>
                     </li>
                   </ul>
                 </div>
@@ -199,15 +199,15 @@ const OffPageSEO = () => {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Authority <span className="gradient-text">Built to Last</span>
+                Scale That <span className="gradient-text">Works for Agencies</span>
               </h2>
             </motion.div>
 
             <div className="grid md:grid-cols-3 gap-8">
               {[
-                { stat: "50+", label: "Average DR of acquired links" },
-                { stat: "15-25", label: "Quality links built per month" },
-                { stat: "0", label: "Penalty risk with our methods" },
+                { stat: "50K+", label: "Sites categorized by niche" },
+                { stat: "1000+", label: "Agency partners" },
+                { stat: "100%", label: "White-hat methods only" },
               ].map((item, index) => (
                 <motion.div
                   key={item.label}
@@ -234,13 +234,13 @@ const OffPageSEO = () => {
               viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                Build Your <span className="gradient-text">Authority Empire</span>
+                Scale Your Agency with <span className="gradient-text">Niche Linking</span>
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Quality links that compound over time and deliver lasting results.
+                Onboard clients, we categorize and link. It's that simple.
               </p>
               <Button variant="hero" size="lg" asChild>
-                <a href="/#pricing">Start Link Building <ArrowRight className="ml-2 w-5 h-5" /></a>
+                <a href="/pricing">Get Started <ArrowRight className="ml-2 w-5 h-5" /></a>
               </Button>
             </motion.div>
           </div>
