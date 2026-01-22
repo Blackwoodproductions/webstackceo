@@ -1,33 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, memo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Twitter, Linkedin, Github, Send, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-const Footer = () => {
+const Footer = memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
 
-  // Auto-animate logo to gold every 15 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsLogoGold(true);
-      // Stay gold for 3 seconds, then fade back
-      setTimeout(() => {
-        setIsLogoGold(false);
-      }, 3000);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+  const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Please enter a valid email address");
@@ -35,12 +21,11 @@ const Footer = () => {
     }
     
     setIsSubmitting(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     toast.success("Thanks for subscribing! Check your inbox for confirmation.");
     setEmail("");
     setIsSubmitting(false);
-  };
+  }, [email]);
 
   const footerLinks = {
     Product: [
@@ -68,6 +53,23 @@ const Footer = () => {
       { name: "Cookies", href: "/cookies" },
     ],
   };
+
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("/#")) {
+      e.preventDefault();
+      const anchor = href.substring(1);
+      if (location.pathname !== "/") {
+        navigate("/");
+        setTimeout(() => {
+          const element = document.querySelector(anchor);
+          element?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      } else {
+        const element = document.querySelector(anchor);
+        element?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <footer className="border-t border-border py-16 relative overflow-hidden">
@@ -119,21 +121,21 @@ const Footer = () => {
               onMouseEnter={() => setIsLogoHovered(true)}
               onMouseLeave={() => setIsLogoHovered(false)}
             >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-700 ${
-                isLogoHovered || isLogoGold 
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-300 ${
+                isLogoHovered 
                   ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] scale-110" 
                   : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
               }`}>
-                <Shield className={`w-7 h-7 transition-colors duration-700 ${
-                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+                <Shield className={`w-7 h-7 transition-colors duration-300 ${
+                  isLogoHovered ? "text-amber-400" : "text-primary"
                 }`} />
-                <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-700 ${
-                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
+                <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-300 ${
+                  isLogoHovered ? "text-amber-400" : "text-primary"
                 }`}>AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
-                webstack<span className={`bg-clip-text text-transparent transition-all duration-700 ${
-                  isLogoHovered || isLogoGold 
+                webstack<span className={`bg-clip-text text-transparent transition-all duration-300 ${
+                  isLogoHovered 
                     ? "bg-gradient-to-r from-amber-400 to-yellow-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" 
                     : "bg-gradient-to-r from-cyan-400 to-violet-500"
                 }`}>.ceo</span>
@@ -156,24 +158,7 @@ const Footer = () => {
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      onClick={(e) => {
-                        // Handle anchor links that need to navigate to homepage first
-                        if (link.href.startsWith("/#")) {
-                          e.preventDefault();
-                          const anchor = link.href.substring(1); // Get "#section"
-                          if (location.pathname !== "/") {
-                            navigate("/");
-                            // Wait for navigation then scroll
-                            setTimeout(() => {
-                              const element = document.querySelector(anchor);
-                              element?.scrollIntoView({ behavior: "smooth" });
-                            }, 100);
-                          } else {
-                            const element = document.querySelector(anchor);
-                            element?.scrollIntoView({ behavior: "smooth" });
-                          }
-                        }
-                      }}
+                      onClick={(e) => handleLinkClick(e, link.href)}
                       className="text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
                     >
                       {link.name}
@@ -209,6 +194,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;
