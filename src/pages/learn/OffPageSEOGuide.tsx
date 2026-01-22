@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
-  Link2, Users, FileText, Share2, Award, Target, AlertTriangle
+  Link2, Users, FileText, Share2, Award, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const offPageSEOTerms = [
   { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as 'votes of confidence'.", slug: "backlinks" },
@@ -45,11 +45,7 @@ const OffPageSEOGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-violet-400/10 via-transparent to-cyan-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -67,7 +63,7 @@ const OffPageSEOGuide = () => {
               <p className="text-xl text-muted-foreground">
                 While on-page SEO optimizes your website, off-page SEO builds your reputation across the internet. Learn how to establish authority that search engines trust.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -77,12 +73,7 @@ const OffPageSEOGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <TrendingUp className="w-6 h-6 text-primary" />
                   What is Off-Page SEO?
@@ -93,15 +84,10 @@ const OffPageSEOGuide = () => {
                 <p className="text-muted-foreground">
                   Think of on-page SEO as your resume, and off-page SEO as your reputation. Both matter, but your reputation—what others say about you—often carries more weight.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* Why It Matters */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   Why Off-Page SEO Matters for Business
@@ -127,15 +113,10 @@ const OffPageSEOGuide = () => {
                     📊 <strong>The Data:</strong> A study of 1 million Google search results found that the #1 result has an average of 3.8x more backlinks than positions #2-#10.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Link Building */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Link2 className="w-6 h-6 text-primary" />
                   1. Link Building: The Foundation
@@ -172,15 +153,10 @@ const OffPageSEOGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Brand Mentions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Award className="w-6 h-6 text-primary" />
                   2. Brand Mentions & Citations
@@ -202,15 +178,10 @@ const OffPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Social Signals */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Share2 className="w-6 h-6 text-primary" />
                   3. Social Signals
@@ -232,15 +203,10 @@ const OffPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Content Marketing */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={250} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <FileText className="w-6 h-6 text-primary" />
                   4. Content Marketing for Links
@@ -261,15 +227,10 @@ const OffPageSEOGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Influencer Outreach */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={300} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Users className="w-6 h-6 text-primary" />
                   5. Influencer & Outreach Marketing
@@ -291,15 +252,10 @@ const OffPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-violet-400/10 to-cyan-500/10"
-              >
+              <FadeIn delay={350} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-violet-400/10 to-cyan-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Build Your Domain Authority?
                 </h2>
@@ -316,7 +272,7 @@ const OffPageSEOGuide = () => {
                     <Link to="/learn/domain-authority-guide">Learn About Domain Authority</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={offPageSEOTerms} />

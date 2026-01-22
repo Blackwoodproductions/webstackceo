@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Link2, CheckCircle2, ArrowRight, ArrowLeft, 
-  Target, AlertTriangle, Zap, TrendingUp, Shield
+  Target, AlertTriangle, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const linkBuildingTerms = [
   { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as votes of confidence.", slug: "backlinks" },
@@ -44,11 +44,7 @@ const LinkBuildingGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-transparent to-rose-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -66,7 +62,7 @@ const LinkBuildingGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Backlinks remain one of Google's top ranking factors. Learn how to build links ethically and effectively.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -76,12 +72,7 @@ const LinkBuildingGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Link2 className="w-6 h-6 text-primary" />
                   Why Links Still Matter
@@ -92,15 +83,10 @@ const LinkBuildingGuide = () => {
                 <p className="text-muted-foreground">
                   But not all links are created equal. Quality matters far more than quantity, and spammy link building can get you penalized.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* Strategies */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Zap className="w-6 h-6 text-primary" />
                   Effective Link Building Strategies
@@ -120,15 +106,10 @@ const LinkBuildingGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* What to Avoid */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   What to Avoid
@@ -150,15 +131,10 @@ const LinkBuildingGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Best Practices */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Target className="w-6 h-6 text-primary" />
                   Link Building Best Practices
@@ -178,15 +154,10 @@ const LinkBuildingGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-pink-400/10 to-rose-500/10"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-pink-400/10 to-rose-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Build Authority?
                 </h2>
@@ -203,7 +174,7 @@ const LinkBuildingGuide = () => {
                     <Link to="/pricing">Start Free Trial</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={linkBuildingTerms} />

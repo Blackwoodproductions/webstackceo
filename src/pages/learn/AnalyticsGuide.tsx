@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   BarChart3, CheckCircle2, ArrowRight, ArrowLeft, 
   TrendingUp, Users, Target, Clock, AlertTriangle,
@@ -14,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const analyticsTerms = [
   { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
@@ -45,11 +45,7 @@ const AnalyticsGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-violet-400/10 via-transparent to-cyan-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -67,7 +63,7 @@ const AnalyticsGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Data without insight is just noise. Learn how to transform your analytics into actionable strategies that drive real business growth.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -77,12 +73,7 @@ const AnalyticsGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <BarChart3 className="w-6 h-6 text-primary" />
                   Why Analytics Matter for CEOs
@@ -93,15 +84,10 @@ const AnalyticsGuide = () => {
                 <p className="text-muted-foreground">
                   As a CEO, you don't need to become a data scientist—but you do need to know which metrics matter, what they mean, and how to act on them.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* The Cost of Ignoring Analytics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   The Cost of Flying Blind
@@ -128,15 +114,10 @@ const AnalyticsGuide = () => {
                     💰 <strong>The Reality:</strong> Businesses using analytics are 5x more likely to make faster decisions and 3x more likely to execute those decisions as intended.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Key Metrics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Activity className="w-6 h-6 text-primary" />
                   Essential Metrics Every CEO Should Track
@@ -146,36 +127,12 @@ const AnalyticsGuide = () => {
                 </p>
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
                   {[
-                    { 
-                      title: "Traffic Sources", 
-                      desc: "Know where your visitors come from (organic, paid, social, referral)",
-                      icon: TrendingUp 
-                    },
-                    { 
-                      title: "Conversion Rate", 
-                      desc: "Percentage of visitors who take desired actions",
-                      icon: Target 
-                    },
-                    { 
-                      title: "Bounce Rate", 
-                      desc: "Visitors who leave without interacting",
-                      icon: Activity 
-                    },
-                    { 
-                      title: "Session Duration", 
-                      desc: "How long users engage with your content",
-                      icon: Clock 
-                    },
-                    { 
-                      title: "Pages Per Session", 
-                      desc: "Content engagement and site navigation",
-                      icon: PieChart 
-                    },
-                    { 
-                      title: "User Demographics", 
-                      desc: "Who your visitors actually are",
-                      icon: Users 
-                    }
+                    { title: "Traffic Sources", desc: "Know where your visitors come from (organic, paid, social, referral)", icon: TrendingUp },
+                    { title: "Conversion Rate", desc: "Percentage of visitors who take desired actions", icon: Target },
+                    { title: "Bounce Rate", desc: "Visitors who leave without interacting", icon: Activity },
+                    { title: "Session Duration", desc: "How long users engage with your content", icon: Clock },
+                    { title: "Pages Per Session", desc: "Content engagement and site navigation", icon: PieChart },
+                    { title: "User Demographics", desc: "Who your visitors actually are", icon: Users }
                   ].map((metric, i) => (
                     <div key={i} className="bg-secondary/50 rounded-xl p-4 flex items-start gap-3">
                       <metric.icon className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -186,15 +143,10 @@ const AnalyticsGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Traffic Analysis */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <LineChart className="w-6 h-6 text-primary" />
                   Understanding Traffic Sources
@@ -204,31 +156,11 @@ const AnalyticsGuide = () => {
                 </p>
                 <div className="space-y-4">
                   {[
-                    { 
-                      source: "Organic Search", 
-                      desc: "Free traffic from Google, Bing, etc. The holy grail of sustainable growth.",
-                      color: "text-emerald-400"
-                    },
-                    { 
-                      source: "Paid Search/Ads", 
-                      desc: "Traffic you pay for. Track ROI closely to ensure profitability.",
-                      color: "text-amber-400"
-                    },
-                    { 
-                      source: "Social Media", 
-                      desc: "Traffic from Facebook, LinkedIn, Twitter, etc. Great for brand awareness.",
-                      color: "text-blue-400"
-                    },
-                    { 
-                      source: "Referral", 
-                      desc: "Visitors from other websites linking to you. Sign of authority.",
-                      color: "text-violet-400"
-                    },
-                    { 
-                      source: "Direct", 
-                      desc: "Users typing your URL directly. Indicates brand recognition.",
-                      color: "text-cyan-400"
-                    }
+                    { source: "Organic Search", desc: "Free traffic from Google, Bing, etc. The holy grail of sustainable growth.", color: "text-emerald-400" },
+                    { source: "Paid Search/Ads", desc: "Traffic you pay for. Track ROI closely to ensure profitability.", color: "text-amber-400" },
+                    { source: "Social Media", desc: "Traffic from Facebook, LinkedIn, Twitter, etc. Great for brand awareness.", color: "text-blue-400" },
+                    { source: "Referral", desc: "Visitors from other websites linking to you. Sign of authority.", color: "text-violet-400" },
+                    { source: "Direct", desc: "Users typing your URL directly. Indicates brand recognition.", color: "text-cyan-400" }
                   ].map((item, i) => (
                     <div key={i} className="bg-secondary/50 rounded-xl p-4">
                       <p className={`font-medium mb-1 ${item.color}`}>{item.source}</p>
@@ -236,15 +168,10 @@ const AnalyticsGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Conversion Tracking */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Target className="w-6 h-6 text-primary" />
                   Conversion Tracking: From Visitor to Customer
@@ -273,15 +200,10 @@ const AnalyticsGuide = () => {
                     Customers rarely convert on their first visit. Set up attribution modeling to understand the full customer journey—from first touch to final conversion.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Actionable Insights */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={250} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <TrendingUp className="w-6 h-6 text-primary" />
                   Turning Data Into Action
@@ -291,22 +213,10 @@ const AnalyticsGuide = () => {
                 </p>
                 <div className="space-y-4">
                   {[
-                    { 
-                      insight: "High traffic, low conversion", 
-                      action: "Review landing page messaging and CTA placement. Consider user experience testing."
-                    },
-                    { 
-                      insight: "High bounce rate on key pages", 
-                      action: "Check page load speed, content relevance, and mobile experience."
-                    },
-                    { 
-                      insight: "Traffic dropping from organic search", 
-                      action: "Audit for technical SEO issues, check for algorithm updates, analyze competitor movements."
-                    },
-                    { 
-                      insight: "One traffic source dominates", 
-                      action: "Diversify channels to reduce risk. Don't put all eggs in one basket."
-                    }
+                    { insight: "High traffic, low conversion", action: "Review landing page messaging and CTA placement. Consider user experience testing." },
+                    { insight: "High bounce rate on key pages", action: "Check page load speed, content relevance, and mobile experience." },
+                    { insight: "Traffic dropping from organic search", action: "Audit for technical SEO issues, check for algorithm updates, analyze competitor movements." },
+                    { insight: "One traffic source dominates", action: "Diversify channels to reduce risk. Don't put all eggs in one basket." }
                   ].map((item, i) => (
                     <div key={i} className="bg-secondary/50 rounded-xl p-4">
                       <p className="text-foreground font-medium mb-1">📊 {item.insight}</p>
@@ -314,15 +224,10 @@ const AnalyticsGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-violet-400/10 to-cyan-500/10"
-              >
+              <FadeIn delay={300} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-violet-400/10 to-cyan-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready for Analytics That Make Sense?
                 </h2>
@@ -339,7 +244,7 @@ const AnalyticsGuide = () => {
                     <Link to="/learn/domain-authority-guide">Learn About Domain Authority</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={analyticsTerms} />

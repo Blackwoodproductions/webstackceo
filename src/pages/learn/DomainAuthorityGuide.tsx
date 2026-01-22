@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
   Award, Link2, Shield, AlertTriangle, BarChart3, Target
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const domainAuthorityTerms = [
   { term: "Domain Authority", shortDescription: "A score (1-100) predicting how likely a website is to rank in search results.", slug: "domain-authority" },
@@ -44,11 +44,7 @@ const DomainAuthorityGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-transparent to-violet-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -66,7 +62,7 @@ const DomainAuthorityGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Domain Authority is one of the most important metrics in SEO. Learn what it is, how it works, and exactly how to improve it.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -76,12 +72,7 @@ const DomainAuthorityGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* What is DA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Award className="w-6 h-6 text-primary" />
                   What is Domain Authority?
@@ -109,15 +100,10 @@ const DomainAuthorityGuide = () => {
                     <p className="text-xs text-foreground mt-2">Industry leaders</p>
                   </div>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* DA vs DR */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <BarChart3 className="w-6 h-6 text-primary" />
                   DA vs DR: Understanding the Difference
@@ -148,15 +134,10 @@ const DomainAuthorityGuide = () => {
                 <p className="text-muted-foreground mt-4">
                   <strong className="text-foreground">Pro tip:</strong> Track both metrics but don't obsess over either. Focus on building genuine authority through quality content and natural link acquisition.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* Why It Matters */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   Why Domain Authority Matters for Your Business
@@ -183,15 +164,10 @@ const DomainAuthorityGuide = () => {
                     📊 <strong>Research shows:</strong> The average DA of top 10 Google results is 77. Competing in most industries requires building authority over time.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* How to Improve */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <TrendingUp className="w-6 h-6 text-primary" />
                   How to Improve Your Domain Authority
@@ -252,15 +228,10 @@ const DomainAuthorityGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Common Mistakes */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Common DA Building Mistakes to Avoid
                 </h2>
@@ -293,15 +264,10 @@ const DomainAuthorityGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-pink-400/10 to-violet-500/10"
-              >
+              <FadeIn delay={250} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-pink-400/10 to-violet-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Build Your Domain Authority?
                 </h2>
@@ -318,7 +284,7 @@ const DomainAuthorityGuide = () => {
                     <Link to="/learn/off-page-seo-guide">Learn Off-Page SEO</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={domainAuthorityTerms} />

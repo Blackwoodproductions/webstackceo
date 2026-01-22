@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Search, CheckCircle2, ArrowRight, ArrowLeft, BookOpen,
   FileText, Code, Image, Link2, Gauge, AlertTriangle
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const onPageSEOTerms = [
   { term: "Title Tag", shortDescription: "The HTML element that defines the title shown in search results and browser tabs.", slug: "title-tag" },
@@ -48,11 +48,7 @@ const OnPageSEOGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -70,7 +66,7 @@ const OnPageSEOGuide = () => {
               <p className="text-xl text-muted-foreground">
                 On-page SEO is the foundation of your search visibility. Learn how to optimize every element of your pages to rank higher and drive more organic traffic.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -80,12 +76,7 @@ const OnPageSEOGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Search className="w-6 h-6 text-primary" />
                   What is On-Page SEO?
@@ -96,15 +87,10 @@ const OnPageSEOGuide = () => {
                 <p className="text-muted-foreground">
                   Think of on-page SEO as speaking Google's language. You're helping search engines understand what your page is about, who it's for, and why it deserves to rank above competitors.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* Why It Matters */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   Why On-Page SEO is Critical for CEOs
@@ -130,15 +116,10 @@ const OnPageSEOGuide = () => {
                     💡 <strong>The ROI Reality:</strong> Companies that invest in on-page SEO see an average of 14.6% conversion rate from organic search, compared to just 1.7% from outbound methods like cold calling.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Title Tags */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <FileText className="w-6 h-6 text-primary" />
                   1. Title Tags: Your First Impression
@@ -165,15 +146,10 @@ const OnPageSEOGuide = () => {
                   <p className="text-muted-foreground mb-2">❌ Bad: "Home | Company Name"</p>
                   <p className="text-emerald-400">✅ Good: "Enterprise SEO Tools for CEOs | Webstack.ceo"</p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Meta Descriptions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Code className="w-6 h-6 text-primary" />
                   2. Meta Descriptions: Your Sales Pitch
@@ -196,15 +172,10 @@ const OnPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Header Structure */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <BookOpen className="w-6 h-6 text-primary" />
                   3. Header Structure: Organize for Humans & Bots
@@ -221,15 +192,10 @@ const OnPageSEOGuide = () => {
                     <p className="text-muted-foreground pl-12">H4: Sub-subsection Heading</p>
                   </div>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Images */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={250} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Image className="w-6 h-6 text-primary" />
                   4. Image Optimization
@@ -251,15 +217,10 @@ const OnPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Internal Linking */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={300} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Link2 className="w-6 h-6 text-primary" />
                   5. Internal Linking Strategy
@@ -281,15 +242,10 @@ const OnPageSEOGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Core Web Vitals */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={350} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Gauge className="w-6 h-6 text-primary" />
                   6. Core Web Vitals & Page Experience
@@ -314,15 +270,10 @@ const OnPageSEOGuide = () => {
                     <p className="text-xs text-foreground mt-2">Target: &lt; 0.1</p>
                   </div>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-cyan-400/10 to-violet-500/10"
-              >
+              <FadeIn delay={400} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-cyan-400/10 to-violet-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Automate Your On-Page SEO?
                 </h2>
@@ -339,7 +290,7 @@ const OnPageSEOGuide = () => {
                     <Link to="/pricing">Start Free Trial</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={onPageSEOTerms} />
