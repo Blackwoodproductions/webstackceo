@@ -100,7 +100,7 @@ const Footer = () => {
                 <span className="absolute text-primary font-bold text-[9px] tracking-tight transition-all duration-300 group-hover:text-amber-400">AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
-                webstack<span className="gradient-text">.ceo</span>
+                webstack<span className="gradient-text transition-all duration-300 group-hover:text-amber-400 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">.ceo</span>
               </span>
             </a>
             <p className="text-muted-foreground text-sm mb-4 max-w-xs">
