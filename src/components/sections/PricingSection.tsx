@@ -6,7 +6,7 @@ import { useState } from "react";
 // Premium features that get special badges
 const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; color: string }> = {
   "Free directory listing": { icon: Star, label: "Included", color: "from-emerald-400 to-green-500" },
-  "Free marketplace submission": { icon: Star, label: "Included", color: "from-emerald-400 to-green-500" },
+  "Free Marketplace Listing": { icon: Star, label: "Included", color: "from-emerald-400 to-green-500" },
   "DA - DR BOOSTER": { icon: Zap, label: "Power", color: "from-amber-400 to-orange-500" },
   "Up to 40% off normal keyword pricing": { icon: Crown, label: "Deal", color: "from-violet-400 to-purple-500" },
   "Up to 60% off normal pricing": { icon: Crown, label: "Best Deal", color: "from-cyan-400 to-blue-500" },
@@ -44,7 +44,7 @@ const plans = [
     description: "Resell our services under your brand",
     features: [
       "Everything in Growth plan",
-      "Free marketplace submission",
+      "Free Marketplace Listing",
       "Up to 40% off normal keyword pricing",
       "White-label dashboard & reports",
       "Custom branding on all deliverables",
