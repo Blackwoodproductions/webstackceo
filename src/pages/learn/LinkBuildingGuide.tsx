@@ -1,0 +1,236 @@
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { 
+  Link2, CheckCircle2, ArrowRight, ArrowLeft, 
+  Target, AlertTriangle, Zap, TrendingUp, Shield
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import BackToTop from "@/components/ui/back-to-top";
+import ScrollProgress from "@/components/ui/scroll-progress";
+import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import ArticleNavigation from "@/components/ui/article-navigation";
+import GlossaryLegend from "@/components/ui/glossary-legend";
+
+const linkBuildingTerms = [
+  { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as votes of confidence.", slug: "backlinks" },
+  { term: "Domain Authority", shortDescription: "A score predicting how likely a website is to rank in search results.", slug: "domain-authority" },
+  { term: "Anchor Text", shortDescription: "The clickable, visible text in a hyperlink that provides context.", slug: "anchor-text" },
+];
+
+const LinkBuildingGuide = () => {
+  return (
+    <div className="min-h-screen bg-background">
+      <SEO
+        title="Link Building Best Practices Guide - Learning Center"
+        description="Master ethical link building strategies. Learn about guest posting, broken link building, digital PR, and earning high-quality backlinks."
+        keywords="link building, backlinks, guest posting, digital PR, broken link building, link outreach, SEO links"
+        canonical="/learn/link-building-guide"
+      />
+      <ScrollProgress />
+      <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { label: "Learning Center", href: "/learn", altText: "Back to all guides" },
+          { label: "Link Building Guide", altText: "Link building best practices" }
+        ]}
+      />
+      
+      <main className="pt-4">
+        {/* Hero */}
+        <section className="py-16 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-transparent to-rose-500/10" />
+          
+          <div className="container mx-auto px-6 max-w-4xl relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
+                <ArrowLeft className="w-4 h-4" /> Back to Learning Center
+              </Link>
+              
+              <div className="flex items-center gap-3 mb-4">
+                <span className="px-3 py-1 rounded-full bg-pink-400/10 text-pink-400 text-sm font-medium">
+                  Authority Building
+                </span>
+                <span className="text-sm text-muted-foreground">14 min read</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+                Link Building: <span className="gradient-text">Best Practices</span>
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Backlinks remain one of Google's top ranking factors. Learn how to build links ethically and effectively.
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Content */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <div className="prose prose-lg prose-invert max-w-none">
+              
+              {/* Introduction */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl p-8 mb-8"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Link2 className="w-6 h-6 text-primary" />
+                  Why Links Still Matter
+                </h2>
+                <p className="text-muted-foreground mb-4">
+                  Despite years of algorithm updates, backlinks remain one of Google's strongest ranking signals. Links from authoritative, relevant websites tell Google your content is trustworthy and valuable.
+                </p>
+                <p className="text-muted-foreground">
+                  But not all links are created equal. Quality matters far more than quantity, and spammy link building can get you penalized.
+                </p>
+              </motion.div>
+
+              {/* Strategies */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl p-8 mb-8"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Zap className="w-6 h-6 text-primary" />
+                  Effective Link Building Strategies
+                </h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { title: "Guest Posting", desc: "Write quality content for relevant industry publications" },
+                    { title: "Digital PR", desc: "Create newsworthy content and pitch to journalists" },
+                    { title: "Broken Link Building", desc: "Find broken links and offer your content as replacement" },
+                    { title: "Resource Link Building", desc: "Create comprehensive resources others want to reference" },
+                    { title: "HARO (Help a Reporter)", desc: "Provide expert quotes for media coverage" },
+                    { title: "Competitor Analysis", desc: "Replicate competitors' best backlinks" }
+                  ].map((item, i) => (
+                    <div key={i} className="bg-secondary/50 rounded-xl p-4">
+                      <p className="text-foreground font-medium mb-1">{item.title}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* What to Avoid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl p-8 mb-8"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <AlertTriangle className="w-6 h-6 text-amber-400" />
+                  What to Avoid
+                </h2>
+                <ul className="space-y-2">
+                  {[
+                    "Buying links from PBNs (Private Blog Networks)",
+                    "Excessive link exchanges (\"you link to me, I'll link to you\")",
+                    "Low-quality directory submissions",
+                    "Comment spam with keyword-rich anchor text",
+                    "Automated link building tools",
+                    "Links from irrelevant or low-quality websites"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-red-400/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-red-400 text-xs">✕</span>
+                      </span>
+                      <span className="text-foreground">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              {/* Best Practices */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl p-8 mb-8"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Target className="w-6 h-6 text-primary" />
+                  Link Building Best Practices
+                </h2>
+                <ul className="space-y-2">
+                  {[
+                    "Focus on relevance—links from your industry matter most",
+                    "Prioritize authority—one link from NYT beats 100 from spam sites",
+                    "Diversify anchor text to look natural",
+                    "Build relationships, not just links",
+                    "Create link-worthy content first, then promote",
+                    "Monitor your backlink profile for toxic links"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-foreground">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              {/* CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-pink-400/10 to-rose-500/10"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4">
+                  Ready to Build Authority?
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Webstack.ceo helps you identify link opportunities and track your backlink growth.
+                </p>
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button variant="hero" size="lg" asChild>
+                    <Link to="/features/off-page-seo">
+                      Explore Link Features <ArrowRight className="w-5 h-5 ml-2" />
+                    </Link>
+                  </Button>
+                  <Button variant="heroOutline" size="lg" asChild>
+                    <Link to="/pricing">Start Free Trial</Link>
+                  </Button>
+                </div>
+              </motion.div>
+
+              {/* Glossary Legend */}
+              <GlossaryLegend terms={linkBuildingTerms} />
+
+              {/* Article Navigation */}
+              <ArticleNavigation
+                previous={{
+                  title: "Domain Authority Explained",
+                  href: "/learn/domain-authority-guide",
+                  category: "Authority Building"
+                }}
+                next={{
+                  title: "Uptime Monitoring Essentials",
+                  href: "/learn/uptime-monitoring-guide",
+                  category: "Performance & Reliability"
+                }}
+              />
+
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+      <BackToTop />
+    </div>
+  );
+};
+
+export default LinkBuildingGuide;
