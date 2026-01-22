@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      directory_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      directory_listings: {
+        Row: {
+          address: string | null
+          business_name: string
+          category_id: string | null
+          city: string | null
+          contact_name: string
+          created_at: string
+          description: string
+          display_order: number
+          email: string
+          id: string
+          is_featured: boolean
+          logo_url: string | null
+          phone: string | null
+          slug: string
+          state: string | null
+          status: string
+          subscription_end: string | null
+          subscription_start: string | null
+          updated_at: string
+          website_url: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          category_id?: string | null
+          city?: string | null
+          contact_name: string
+          created_at?: string
+          description: string
+          display_order?: number
+          email: string
+          id?: string
+          is_featured?: boolean
+          logo_url?: string | null
+          phone?: string | null
+          slug: string
+          state?: string | null
+          status?: string
+          subscription_end?: string | null
+          subscription_start?: string | null
+          updated_at?: string
+          website_url?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          category_id?: string | null
+          city?: string | null
+          contact_name?: string
+          created_at?: string
+          description?: string
+          display_order?: number
+          email?: string
+          id?: string
+          is_featured?: boolean
+          logo_url?: string | null
+          phone?: string | null
+          slug?: string
+          state?: string | null
+          status?: string
+          subscription_end?: string | null
+          subscription_start?: string | null
+          updated_at?: string
+          website_url?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "directory_listings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "directory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_applications: {
         Row: {
           admin_notes: string | null

@@ -283,6 +283,14 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
+          {/* Directory link */}
+          <a
+            href="/directory"
+            className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium hover:drop-shadow-[var(--hover-accent-glow)]"
+          >
+            Directory
+          </a>
+
           {/* Marketplace link */}
           <a
             href="/marketplace"
@@ -464,6 +472,15 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Directory link */}
+            <a
+              href="/directory"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-foreground hover:text-primary transition-colors font-medium py-2"
+            >
+              Directory
+            </a>
 
             {/* Marketplace link */}
             <a
