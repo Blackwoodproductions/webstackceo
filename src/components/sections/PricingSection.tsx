@@ -30,13 +30,16 @@ const plans = [
     description: "Resell our services under your brand",
     features: [
       "Everything in Growth plan",
-      "$3.00 per keyword phrase",
-      "White-label dashboard",
-      "Custom branding",
-      "Priority support",
-      "Bulk client management",
-      "Reseller reporting tools",
+      "Up to 40% off normal keyword pricing",
+      "White-label dashboard & reports",
+      "Custom branding on all deliverables",
+      "Priority 24/7 support",
+      "Bulk client management tools",
       "Dedicated account manager",
+      "Advanced security & encryption",
+      "Client onboarding assistance",
+      "Monthly strategy calls",
+      "Reseller training & resources",
     ],
     highlighted: false,
     hasToggle: true,
@@ -45,16 +48,23 @@ const plans = [
     name: "Super Reseller",
     monthlyPrice: null,
     yearlyPrice: null,
+    priceLabel: "Up to 60% Off",
     description: "Enterprise API access for agencies at scale",
     features: [
-      "Full API access",
+      "Everything in White Label plan",
+      "Up to 60% off normal pricing",
+      "Full API access to all data",
       "Pull data to your own systems",
-      "Custom integrations",
-      "Volume-based pricing",
+      "Custom integrations & webhooks",
+      "Volume-based enterprise pricing",
       "White-label everything",
+      "Dedicated success team",
       "Priority enterprise support",
       "Custom SLA agreements",
-      "Dedicated success team",
+      "SOC 2 compliant infrastructure",
+      "Dedicated security protocols",
+      "Quarterly business reviews",
+      "Early access to new features",
     ],
     highlighted: false,
     hasToggle: false,
@@ -152,8 +162,11 @@ const PricingSection = () => {
                   {plan.description}
                 </p>
                 {plan.isCustom ? (
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-3xl font-bold">Custom Pricing</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+                      {plan.priceLabel || "Custom Pricing"}
+                    </span>
+                    <span className="text-sm text-muted-foreground">Book a call to discuss</span>
                   </div>
                 ) : (
                   <>
