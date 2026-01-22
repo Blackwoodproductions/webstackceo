@@ -34,6 +34,8 @@ const Navbar = () => {
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isMobileContactOpen, setIsMobileContactOpen] = useState(false);
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [isMobileResourcesOpen, setIsMobileResourcesOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -77,8 +79,12 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
-    { name: "FAQ", href: "/faq", isPage: true },
+    { name: "Blog", href: "/blog", isPage: true },
     { name: "Marketplace", href: "/marketplace", isPage: true },
+  ];
+
+  const resourcesSubLinks = [
+    { name: "FAQ", href: "/faq" },
   ];
 
   const contactSubLinks = [
@@ -283,6 +289,56 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
+          {/* Resources Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setIsResourcesOpen(true)}
+            onMouseLeave={() => setIsResourcesOpen(false)}
+          >
+            <button
+              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+            >
+              Resources
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isResourcesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {isResourcesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
+                >
+                  <motion.div 
+                    className="bg-background border border-border/50 rounded-xl p-2 min-w-[140px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
+                    initial={{ boxShadow: "0 10px 30px -10px hsl(var(--primary)/0)" }}
+                    animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    {resourcesSubLinks.map((subLink, index) => (
+                      <motion.a
+                        key={subLink.name}
+                        href={subLink.href}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ 
+                          duration: 0.2, 
+                          delay: 0.05 + (index * 0.03),
+                          ease: "easeOut"
+                        }}
+                        className="block px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:text-hover-accent hover:bg-secondary hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300"
+                      >
+                        {subLink.name}
+                      </motion.a>
+                    ))}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Directory link */}
           <a
             href="/directory"
@@ -458,6 +514,41 @@ const Navbar = () => {
                   >
                     <div className="pl-4 pt-2 space-y-2">
                       {contactSubLinks.map((subLink) => (
+                        <a
+                          key={subLink.name}
+                          href={subLink.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
+                        >
+                          {subLink.name}
+                        </a>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Mobile Resources Accordion */}
+            <div>
+              <button
+                onClick={() => setIsMobileResourcesOpen(!isMobileResourcesOpen)}
+                className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors font-medium py-2"
+              >
+                Resources
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileResourcesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isMobileResourcesOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-4 pt-2 space-y-2">
+                      {resourcesSubLinks.map((subLink) => (
                         <a
                           key={subLink.name}
                           href={subLink.href}
