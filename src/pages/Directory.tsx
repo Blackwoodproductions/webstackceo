@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -187,73 +188,72 @@ const Directory = () => {
                     ? iconMap[listing.directory_categories.icon] 
                     : Building2;
                   return (
-                    <motion.div
+                    <Link
                       key={listing.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={`glass-card rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 ${
-                        listing.is_featured ? "ring-2 ring-amber-400/50" : ""
-                      }`}
+                      to={`/directory/${listing.slug}`}
                     >
-                      {listing.is_featured && (
-                        <span className="inline-block px-3 py-1 rounded-full bg-amber-400/20 text-amber-400 text-xs font-medium mb-3">
-                          Featured
-                        </span>
-                      )}
-                      
-                      <div className="flex items-start gap-4 mb-4">
-                        {listing.logo_url ? (
-                          <img 
-                            src={listing.logo_url} 
-                            alt={listing.business_name}
-                            className="w-16 h-16 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center">
-                            <CategoryIcon className="w-8 h-8 text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-foreground">
-                            {listing.business_name}
-                          </h3>
-                          <span className="text-sm text-muted-foreground">
-                            {listing.directory_categories?.name}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={`glass-card rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 cursor-pointer h-full ${
+                          listing.is_featured ? "ring-2 ring-amber-400/50" : ""
+                        }`}
+                      >
+                        {listing.is_featured && (
+                          <span className="inline-block px-3 py-1 rounded-full bg-amber-400/20 text-amber-400 text-xs font-medium mb-3">
+                            Featured
                           </span>
+                        )}
+                        
+                        <div className="flex items-start gap-4 mb-4">
+                          {listing.logo_url ? (
+                            <img 
+                              src={listing.logo_url} 
+                              alt={listing.business_name}
+                              className="w-16 h-16 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center">
+                              <CategoryIcon className="w-8 h-8 text-primary" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg text-foreground">
+                              {listing.business_name}
+                            </h3>
+                            <span className="text-sm text-muted-foreground">
+                              {listing.directory_categories?.name}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                        {listing.description}
-                      </p>
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                          {listing.description}
+                        </p>
 
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        {listing.city && listing.state && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>{listing.city}, {listing.state}</span>
-                          </div>
-                        )}
-                        {listing.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            <span>{listing.phone}</span>
-                          </div>
-                        )}
-                        {listing.website_url && (
-                          <a 
-                            href={listing.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-primary hover:text-hover-accent transition-colors"
-                          >
-                            <Globe className="w-4 h-4" />
-                            <span>Visit Website</span>
-                          </a>
-                        )}
-                      </div>
-                    </motion.div>
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          {listing.city && listing.state && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              <span>{listing.city}, {listing.state}</span>
+                            </div>
+                          )}
+                          {listing.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              <span>{listing.phone}</span>
+                            </div>
+                          )}
+                          {listing.website_url && (
+                            <div className="flex items-center gap-2 text-primary">
+                              <Globe className="w-4 h-4" />
+                              <span>Visit Website</span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    </Link>
                   );
                 })}
               </div>

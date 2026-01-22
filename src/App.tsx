@@ -33,6 +33,7 @@ import UptimeMonitoring from "./pages/features/UptimeMonitoring";
 import WebHosting from "./pages/features/WebHosting";
 import SocialSignals from "./pages/features/SocialSignals";
 import Directory from "./pages/Directory";
+import DirectoryDetail from "./pages/DirectoryDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/features/web-hosting" element={<WebHosting />} />
             <Route path="/features/social-signals" element={<SocialSignals />} />
             <Route path="/directory" element={<Directory />} />
+            <Route path="/directory/:slug" element={<DirectoryDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
