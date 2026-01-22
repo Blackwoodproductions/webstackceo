@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SoundProvider } from "@/contexts/SoundContext";
 import FloatingCodeBox from "@/components/ui/floating-code-box";
+import ScrollToTop from "@/components/ui/scroll-to-top";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Careers from "./pages/Careers";
@@ -59,6 +60,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <FloatingCodeBox />
           <Routes>
             <Route path="/" element={<Index />} />
