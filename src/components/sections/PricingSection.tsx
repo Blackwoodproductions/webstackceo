@@ -241,16 +241,6 @@ const PricingSection = () => {
           ))}
         </div>
 
-        {/* Comparison note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-center text-muted-foreground mt-12"
-        >
-          All plans include a 14-day free trial. No credit card required.
-        </motion.p>
 
         {/* Trust Indicators */}
         <motion.div
