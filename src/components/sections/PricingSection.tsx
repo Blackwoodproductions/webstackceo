@@ -129,8 +129,8 @@ const PricingSection = () => {
             </span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Built for SEO agencies and marketing companies. Scale your clients with 
-            automated niche linking. No hidden fees, cancel anytime.
+            Everything you need to manage, grow, and scale your clients. Full-featured 
+            SEO dashboard with analytics, automation, and white-label options.
           </p>
 
           {/* Billing Toggle */}
