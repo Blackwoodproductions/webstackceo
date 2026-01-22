@@ -4,133 +4,164 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SoundProvider } from "@/contexts/SoundContext";
-import FloatingCodeBox from "@/components/ui/floating-code-box";
+import { lazy, Suspense } from "react";
 import ScrollToTop from "@/components/ui/scroll-to-top";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Careers from "./pages/Careers";
-import Features from "./pages/Features";
-import Pricing from "./pages/Pricing";
-import FAQ from "./pages/FAQ";
-import Contact from "./pages/Contact";
-import Marketplace from "./pages/Marketplace";
-import PartnerDetail from "./pages/PartnerDetail";
-import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Terms from "./pages/Terms";
-import Security from "./pages/Security";
-import Cookies from "./pages/Cookies";
-import OnPageSEO from "./pages/features/OnPageSEO";
-import OffPageSEO from "./pages/features/OffPageSEO";
-import AutomatedBlog from "./pages/features/AutomatedBlog";
-import FAQGeneration from "./pages/features/FAQGeneration";
-import TrafficDeAnonymization from "./pages/features/TrafficDeAnonymization";
-import VisitorIntelligence from "./pages/features/VisitorIntelligence";
-import PPCLandingPages from "./pages/features/PPCLandingPages";
-import DomainAuthority from "./pages/features/DomainAuthority";
-import AdvancedAnalytics from "./pages/features/AdvancedAnalytics";
-import GMBOptimization from "./pages/features/GMBOptimization";
-import UptimeMonitoring from "./pages/features/UptimeMonitoring";
-import WebHosting from "./pages/features/WebHosting";
-import SocialSignals from "./pages/features/SocialSignals";
-import Directory from "./pages/Directory";
-import DirectoryDetail from "./pages/DirectoryDetail";
-import Integrations from "./pages/Integrations";
-import Changelog from "./pages/Changelog";
-import Learn from "./pages/Learn";
-import OnPageSEOGuide from "./pages/learn/OnPageSEOGuide";
-import OffPageSEOGuide from "./pages/learn/OffPageSEOGuide";
-import AnalyticsGuide from "./pages/learn/AnalyticsGuide";
-import DomainAuthorityGuide from "./pages/learn/DomainAuthorityGuide";
-import VisitorIntelligenceGuide from "./pages/learn/VisitorIntelligenceGuide";
-import GMBOptimizationGuide from "./pages/learn/GMBOptimizationGuide";
-import AutomatedBloggingGuide from "./pages/learn/AutomatedBloggingGuide";
-import UptimeMonitoringGuide from "./pages/learn/UptimeMonitoringGuide";
-import TechnicalSEOGuide from "./pages/learn/TechnicalSEOGuide";
-import TrafficDeanonymizationGuide from "./pages/learn/TrafficDeanonymizationGuide";
-import FAQGenerationGuide from "./pages/learn/FAQGenerationGuide";
-import SocialSignalsGuide from "./pages/learn/SocialSignalsGuide";
-import LocalSEOGuide from "./pages/learn/LocalSEOGuide";
-import LinkBuildingGuide from "./pages/learn/LinkBuildingGuide";
-import WebHostingGuide from "./pages/learn/WebHostingGuide";
-import CoreWebVitalsGuide from "./pages/learn/CoreWebVitalsGuide";
-import PPCLandingPagesGuide from "./pages/learn/PPCLandingPagesGuide";
-import CROGuide from "./pages/learn/CROGuide";
-import GlossaryTerm from "./pages/learn/glossary/GlossaryTerm";
-import GlossaryIndex from "./pages/learn/glossary/GlossaryIndex";
-import Sitemap from "./pages/Sitemap";
-import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Critical path - loaded immediately
+import Index from "./pages/Index";
+
+// Lazy load all other pages for code splitting
+const About = lazy(() => import("./pages/About"));
+const Careers = lazy(() => import("./pages/Careers"));
+const Features = lazy(() => import("./pages/Features"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Admin = lazy(() => import("./pages/Admin"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Security = lazy(() => import("./pages/Security"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const Directory = lazy(() => import("./pages/Directory"));
+const DirectoryDetail = lazy(() => import("./pages/DirectoryDetail"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const Changelog = lazy(() => import("./pages/Changelog"));
+const Learn = lazy(() => import("./pages/Learn"));
+const Sitemap = lazy(() => import("./pages/Sitemap"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Feature pages - lazy loaded
+const OnPageSEO = lazy(() => import("./pages/features/OnPageSEO"));
+const OffPageSEO = lazy(() => import("./pages/features/OffPageSEO"));
+const AutomatedBlog = lazy(() => import("./pages/features/AutomatedBlog"));
+const FAQGeneration = lazy(() => import("./pages/features/FAQGeneration"));
+const TrafficDeAnonymization = lazy(() => import("./pages/features/TrafficDeAnonymization"));
+const VisitorIntelligence = lazy(() => import("./pages/features/VisitorIntelligence"));
+const PPCLandingPages = lazy(() => import("./pages/features/PPCLandingPages"));
+const DomainAuthority = lazy(() => import("./pages/features/DomainAuthority"));
+const AdvancedAnalytics = lazy(() => import("./pages/features/AdvancedAnalytics"));
+const GMBOptimization = lazy(() => import("./pages/features/GMBOptimization"));
+const UptimeMonitoring = lazy(() => import("./pages/features/UptimeMonitoring"));
+const WebHosting = lazy(() => import("./pages/features/WebHosting"));
+const SocialSignals = lazy(() => import("./pages/features/SocialSignals"));
+
+// Learn pages - lazy loaded
+const OnPageSEOGuide = lazy(() => import("./pages/learn/OnPageSEOGuide"));
+const OffPageSEOGuide = lazy(() => import("./pages/learn/OffPageSEOGuide"));
+const AnalyticsGuide = lazy(() => import("./pages/learn/AnalyticsGuide"));
+const DomainAuthorityGuide = lazy(() => import("./pages/learn/DomainAuthorityGuide"));
+const VisitorIntelligenceGuide = lazy(() => import("./pages/learn/VisitorIntelligenceGuide"));
+const GMBOptimizationGuide = lazy(() => import("./pages/learn/GMBOptimizationGuide"));
+const AutomatedBloggingGuide = lazy(() => import("./pages/learn/AutomatedBloggingGuide"));
+const UptimeMonitoringGuide = lazy(() => import("./pages/learn/UptimeMonitoringGuide"));
+const TechnicalSEOGuide = lazy(() => import("./pages/learn/TechnicalSEOGuide"));
+const TrafficDeanonymizationGuide = lazy(() => import("./pages/learn/TrafficDeanonymizationGuide"));
+const FAQGenerationGuide = lazy(() => import("./pages/learn/FAQGenerationGuide"));
+const SocialSignalsGuide = lazy(() => import("./pages/learn/SocialSignalsGuide"));
+const LocalSEOGuide = lazy(() => import("./pages/learn/LocalSEOGuide"));
+const LinkBuildingGuide = lazy(() => import("./pages/learn/LinkBuildingGuide"));
+const WebHostingGuide = lazy(() => import("./pages/learn/WebHostingGuide"));
+const CoreWebVitalsGuide = lazy(() => import("./pages/learn/CoreWebVitalsGuide"));
+const PPCLandingPagesGuide = lazy(() => import("./pages/learn/PPCLandingPagesGuide"));
+const CROGuide = lazy(() => import("./pages/learn/CROGuide"));
+const GlossaryTerm = lazy(() => import("./pages/learn/glossary/GlossaryTerm"));
+const GlossaryIndex = lazy(() => import("./pages/learn/glossary/GlossaryIndex"));
+
+// Lazy load non-critical UI components
+const FloatingCodeBox = lazy(() => import("@/components/ui/floating-code-box"));
+
+// Minimal loading fallback - no heavy animations
+const PageLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <SoundProvider>
-      <TooltipProvider>
+      <TooltipProvider delayDuration={300}>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
-          <FloatingCodeBox />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/marketplace/:slug" element={<PartnerDetail />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/cookies" element={<Cookies />} />
-            <Route path="/features/on-page-seo" element={<OnPageSEO />} />
-            <Route path="/features/off-page-seo" element={<OffPageSEO />} />
-            <Route path="/features/automated-blog" element={<AutomatedBlog />} />
-            <Route path="/features/faq-generation" element={<FAQGeneration />} />
-            <Route path="/features/traffic-de-anonymization" element={<TrafficDeAnonymization />} />
-            <Route path="/features/visitor-intelligence" element={<VisitorIntelligence />} />
-            <Route path="/features/ppc-landing-pages" element={<PPCLandingPages />} />
-            <Route path="/features/domain-authority" element={<DomainAuthority />} />
-            <Route path="/features/advanced-analytics" element={<AdvancedAnalytics />} />
-            <Route path="/features/gmb-optimization" element={<GMBOptimization />} />
-            <Route path="/features/uptime-monitoring" element={<UptimeMonitoring />} />
-            <Route path="/features/web-hosting" element={<WebHosting />} />
-            <Route path="/features/social-signals" element={<SocialSignals />} />
-            <Route path="/directory" element={<Directory />} />
-            <Route path="/directory/:slug" element={<DirectoryDetail />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/changelog" element={<Changelog />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/learn/on-page-seo-guide" element={<OnPageSEOGuide />} />
-            <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
-            <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
-            <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
-            <Route path="/learn/visitor-intelligence-guide" element={<VisitorIntelligenceGuide />} />
-            <Route path="/learn/gmb-optimization-guide" element={<GMBOptimizationGuide />} />
-            <Route path="/learn/automated-blogging-guide" element={<AutomatedBloggingGuide />} />
-            <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
-            <Route path="/learn/glossary" element={<GlossaryIndex />} />
-            <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
-            <Route path="/learn/technical-seo-guide" element={<TechnicalSEOGuide />} />
-            <Route path="/learn/traffic-deanonymization-guide" element={<TrafficDeanonymizationGuide />} />
-            <Route path="/learn/faq-generation-guide" element={<FAQGenerationGuide />} />
-            <Route path="/learn/social-signals-guide" element={<SocialSignalsGuide />} />
-            <Route path="/learn/local-seo-guide" element={<LocalSEOGuide />} />
-            <Route path="/learn/link-building-guide" element={<LinkBuildingGuide />} />
-            <Route path="/learn/web-hosting-guide" element={<WebHostingGuide />} />
-            <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
-            <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
-            <Route path="/learn/cro-guide" element={<CROGuide />} />
-            <Route path="/sitemap" element={<Sitemap />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={null}>
+            <FloatingCodeBox />
+          </Suspense>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/marketplace/:slug" element={<PartnerDetail />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/features/on-page-seo" element={<OnPageSEO />} />
+              <Route path="/features/off-page-seo" element={<OffPageSEO />} />
+              <Route path="/features/automated-blog" element={<AutomatedBlog />} />
+              <Route path="/features/faq-generation" element={<FAQGeneration />} />
+              <Route path="/features/traffic-de-anonymization" element={<TrafficDeAnonymization />} />
+              <Route path="/features/visitor-intelligence" element={<VisitorIntelligence />} />
+              <Route path="/features/ppc-landing-pages" element={<PPCLandingPages />} />
+              <Route path="/features/domain-authority" element={<DomainAuthority />} />
+              <Route path="/features/advanced-analytics" element={<AdvancedAnalytics />} />
+              <Route path="/features/gmb-optimization" element={<GMBOptimization />} />
+              <Route path="/features/uptime-monitoring" element={<UptimeMonitoring />} />
+              <Route path="/features/web-hosting" element={<WebHosting />} />
+              <Route path="/features/social-signals" element={<SocialSignals />} />
+              <Route path="/directory" element={<Directory />} />
+              <Route path="/directory/:slug" element={<DirectoryDetail />} />
+              <Route path="/integrations" element={<Integrations />} />
+              <Route path="/changelog" element={<Changelog />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/learn/on-page-seo-guide" element={<OnPageSEOGuide />} />
+              <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
+              <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
+              <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
+              <Route path="/learn/visitor-intelligence-guide" element={<VisitorIntelligenceGuide />} />
+              <Route path="/learn/gmb-optimization-guide" element={<GMBOptimizationGuide />} />
+              <Route path="/learn/automated-blogging-guide" element={<AutomatedBloggingGuide />} />
+              <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
+              <Route path="/learn/glossary" element={<GlossaryIndex />} />
+              <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
+              <Route path="/learn/technical-seo-guide" element={<TechnicalSEOGuide />} />
+              <Route path="/learn/traffic-deanonymization-guide" element={<TrafficDeanonymizationGuide />} />
+              <Route path="/learn/faq-generation-guide" element={<FAQGenerationGuide />} />
+              <Route path="/learn/social-signals-guide" element={<SocialSignalsGuide />} />
+              <Route path="/learn/local-seo-guide" element={<LocalSEOGuide />} />
+              <Route path="/learn/link-building-guide" element={<LinkBuildingGuide />} />
+              <Route path="/learn/web-hosting-guide" element={<WebHostingGuide />} />
+              <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
+              <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
+              <Route path="/learn/cro-guide" element={<CROGuide />} />
+              <Route path="/sitemap" element={<Sitemap />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </SoundProvider>

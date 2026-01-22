@@ -1,6 +1,7 @@
 import { motion, useScroll, useSpring } from "framer-motion";
+import { memo } from "react";
 
-const ScrollProgress = () => {
+const ScrollProgress = memo(() => {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -10,10 +11,12 @@ const ScrollProgress = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-violet-500 origin-left z-[60]"
+      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 to-violet-500 origin-left z-[60] will-change-transform"
       style={{ scaleX }}
     />
   );
-};
+});
+
+ScrollProgress.displayName = "ScrollProgress";
 
 export default ScrollProgress;
