@@ -47,7 +47,6 @@ const plans = [
       "Priority 24/7 support",
       "Bulk client management tools",
       "Dedicated account manager",
-      "Advanced security & encryption",
       "Client onboarding assistance",
       "Multi-client analytics dashboard",
       "Reseller training & resources",
