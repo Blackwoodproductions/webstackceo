@@ -34,8 +34,8 @@ const Navbar = () => {
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isMobileContactOpen, setIsMobileContactOpen] = useState(false);
-  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
-  const [isMobileResourcesOpen, setIsMobileResourcesOpen] = useState(false);
+  const [isBlogOpen, setIsBlogOpen] = useState(false);
+  const [isMobileBlogOpen, setIsMobileBlogOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -79,11 +79,11 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
-    { name: "Blog", href: "/blog", isPage: true },
     { name: "Marketplace", href: "/marketplace", isPage: true },
   ];
 
-  const resourcesSubLinks = [
+  const blogSubLinks = [
+    { name: "Blog", href: "/blog" },
     { name: "FAQ", href: "/faq" },
   ];
 
@@ -289,21 +289,22 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
-          {/* Resources Dropdown */}
+          {/* Blog Dropdown */}
           <div 
             className="relative"
-            onMouseEnter={() => setIsResourcesOpen(true)}
-            onMouseLeave={() => setIsResourcesOpen(false)}
+            onMouseEnter={() => setIsBlogOpen(true)}
+            onMouseLeave={() => setIsBlogOpen(false)}
           >
-            <button
+            <a
+              href="/blog"
               className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
             >
-              Resources
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isResourcesOpen ? 'rotate-180' : ''}`} />
-            </button>
+              Blog
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isBlogOpen ? 'rotate-180' : ''}`} />
+            </a>
             
             <AnimatePresence>
-              {isResourcesOpen && (
+              {isBlogOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -317,7 +318,7 @@ const Navbar = () => {
                     animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                   >
-                    {resourcesSubLinks.map((subLink, index) => (
+                    {blogSubLinks.map((subLink, index) => (
                       <motion.a
                         key={subLink.name}
                         href={subLink.href}
@@ -529,17 +530,17 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* Mobile Resources Accordion */}
+            {/* Mobile Blog Accordion */}
             <div>
               <button
-                onClick={() => setIsMobileResourcesOpen(!isMobileResourcesOpen)}
+                onClick={() => setIsMobileBlogOpen(!isMobileBlogOpen)}
                 className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors font-medium py-2"
               >
-                Resources
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileResourcesOpen ? 'rotate-180' : ''}`} />
+                Blog
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileBlogOpen ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
-                {isMobileResourcesOpen && (
+                {isMobileBlogOpen && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
@@ -548,7 +549,7 @@ const Navbar = () => {
                     className="overflow-hidden"
                   >
                     <div className="pl-4 pt-2 space-y-2">
-                      {resourcesSubLinks.map((subLink) => (
+                      {blogSubLinks.map((subLink) => (
                         <a
                           key={subLink.name}
                           href={subLink.href}
