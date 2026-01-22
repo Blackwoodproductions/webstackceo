@@ -1,6 +1,6 @@
 import { Link, useParams, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -8,6 +8,12 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+
+interface ExternalResource {
+  title: string;
+  source: string;
+  url: string;
+}
 
 interface TermData {
   term: string;
@@ -17,6 +23,7 @@ interface TermData {
   bestPractices: string[];
   relatedTerms: string[];
   relatedGuide?: { title: string; href: string };
+  externalResources: ExternalResource[];
 }
 
 const glossaryData: Record<string, TermData> = {
@@ -38,7 +45,11 @@ const glossaryData: Record<string, TermData> = {
       "Write for humans first—make it compelling and click-worthy"
     ],
     relatedTerms: ["meta-description", "header-tags", "serp"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Title Tag - HTML Element Reference", source: "MDN Web Docs", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title" },
+      { title: "What Are Title Tags? How to Write Title Tags for SEO", source: "Ahrefs", url: "https://ahrefs.com/blog/title-tag-seo/" }
+    ]
   },
   "meta-description": {
     term: "Meta Description",
@@ -58,7 +69,11 @@ const glossaryData: Record<string, TermData> = {
       "Add a call-to-action when appropriate ('Learn more', 'Get started')"
     ],
     relatedTerms: ["title-tag", "serp", "ctr"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Meta Description", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Meta_element#The_description_attribute" },
+      { title: "How to Write the Perfect Meta Description", source: "Moz", url: "https://moz.com/learn/seo/meta-description" }
+    ]
   },
   "header-tags": {
     term: "Header Tags (H1-H6)",
@@ -79,7 +94,11 @@ const glossaryData: Record<string, TermData> = {
       "Use headings to create a scannable content outline"
     ],
     relatedTerms: ["title-tag", "content-structure", "accessibility"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Heading Elements (H1-H6)", source: "MDN Web Docs", url: "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements" },
+      { title: "How to Use Header Tags for SEO", source: "Semrush", url: "https://www.semrush.com/blog/header-tags/" }
+    ]
   },
   "alt-text": {
     term: "Alt Text (Alternative Text)",
@@ -100,7 +119,11 @@ const glossaryData: Record<string, TermData> = {
       "Leave alt empty (\"\") for purely decorative images"
     ],
     relatedTerms: ["image-seo", "accessibility", "core-web-vitals"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Alternative Text - Web Accessibility", source: "W3C WAI", url: "https://www.w3.org/WAI/tutorials/images/decision-tree/" },
+      { title: "Image Alt Text: What It Is & How to Write It", source: "Ahrefs", url: "https://ahrefs.com/blog/alt-text/" }
+    ]
   },
   "core-web-vitals": {
     term: "Core Web Vitals",
@@ -122,7 +145,11 @@ const glossaryData: Record<string, TermData> = {
       "Use a Content Delivery Network (CDN) for faster delivery"
     ],
     relatedTerms: ["lcp", "inp", "cls", "page-speed"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Core Web Vitals", source: "Google Developers", url: "https://developers.google.com/search/docs/appearance/core-web-vitals" },
+      { title: "Web Vitals", source: "web.dev (Google)", url: "https://web.dev/articles/vitals" }
+    ]
   },
   "backlinks": {
     term: "Backlinks",
@@ -144,7 +171,11 @@ const glossaryData: Record<string, TermData> = {
       "Disavow harmful links using Google's Disavow Tool"
     ],
     relatedTerms: ["domain-authority", "anchor-text", "link-building"],
-    relatedGuide: { title: "Off-Page SEO Guide", href: "/learn/off-page-seo-guide" }
+    relatedGuide: { title: "Off-Page SEO Guide", href: "/learn/off-page-seo-guide" },
+    externalResources: [
+      { title: "Backlink", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Backlink" },
+      { title: "What Are Backlinks? And How to Build Them", source: "Ahrefs", url: "https://ahrefs.com/blog/backlinks/" }
+    ]
   },
   "domain-authority": {
     term: "Domain Authority (DA)",
@@ -166,7 +197,11 @@ const glossaryData: Record<string, TermData> = {
       "Monitor competitor DA to understand the competitive landscape"
     ],
     relatedTerms: ["backlinks", "domain-rating", "page-authority"],
-    relatedGuide: { title: "Domain Authority Guide", href: "/learn/domain-authority-guide" }
+    relatedGuide: { title: "Domain Authority Guide", href: "/learn/domain-authority-guide" },
+    externalResources: [
+      { title: "What Is Domain Authority?", source: "Moz", url: "https://moz.com/learn/seo/domain-authority" },
+      { title: "Domain Authority vs Domain Rating", source: "Ahrefs", url: "https://ahrefs.com/blog/domain-rating/" }
+    ]
   },
   "anchor-text": {
     term: "Anchor Text",
@@ -188,7 +223,11 @@ const glossaryData: Record<string, TermData> = {
       "Monitor your anchor text distribution regularly"
     ],
     relatedTerms: ["backlinks", "internal-linking", "link-building"],
-    relatedGuide: { title: "Off-Page SEO Guide", href: "/learn/off-page-seo-guide" }
+    relatedGuide: { title: "Off-Page SEO Guide", href: "/learn/off-page-seo-guide" },
+    externalResources: [
+      { title: "Anchor Text", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Anchor_text" },
+      { title: "Anchor Text: A Data Driven Guide", source: "Backlinko", url: "https://backlinko.com/hub/seo/anchor-text" }
+    ]
   },
   "bounce-rate": {
     term: "Bounce Rate",
@@ -210,7 +249,11 @@ const glossaryData: Record<string, TermData> = {
       "Segment bounce rate by traffic source for better insights"
     ],
     relatedTerms: ["session-duration", "conversion-rate", "user-experience"],
-    relatedGuide: { title: "Analytics Guide", href: "/learn/analytics-guide" }
+    relatedGuide: { title: "Analytics Guide", href: "/learn/analytics-guide" },
+    externalResources: [
+      { title: "Bounce Rate", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Bounce_rate" },
+      { title: "Bounce Rate Benchmarks: What's a Good Bounce Rate?", source: "Semrush", url: "https://www.semrush.com/blog/bounce-rate/" }
+    ]
   },
   "conversion-rate": {
     term: "Conversion Rate",
@@ -232,7 +275,11 @@ const glossaryData: Record<string, TermData> = {
       "Track micro-conversions along the customer journey"
     ],
     relatedTerms: ["bounce-rate", "cta", "landing-page"],
-    relatedGuide: { title: "Analytics Guide", href: "/learn/analytics-guide" }
+    relatedGuide: { title: "Analytics Guide", href: "/learn/analytics-guide" },
+    externalResources: [
+      { title: "Conversion Rate Optimization", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Conversion_rate_optimization" },
+      { title: "What is Conversion Rate? How to Calculate and Improve", source: "HubSpot", url: "https://blog.hubspot.com/marketing/conversion-rate" }
+    ]
   },
   "serp": {
     term: "SERP (Search Engine Results Page)",
@@ -254,7 +301,11 @@ const glossaryData: Record<string, TermData> = {
       "Optimize title tags and meta descriptions for CTR"
     ],
     relatedTerms: ["title-tag", "meta-description", "featured-snippet"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Search Engine Results Page", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Search_engine_results_page" },
+      { title: "What Are SERPs? Search Engine Results Pages Explained", source: "Moz", url: "https://moz.com/learn/seo/serp-features" }
+    ]
   },
   "internal-linking": {
     term: "Internal Linking",
@@ -276,7 +327,11 @@ const glossaryData: Record<string, TermData> = {
       "Add contextual links within content, not just navigation"
     ],
     relatedTerms: ["anchor-text", "backlinks", "site-architecture"],
-    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" }
+    relatedGuide: { title: "On-Page SEO Guide", href: "/learn/on-page-seo-guide" },
+    externalResources: [
+      { title: "Internal Links for SEO: An Actionable Guide", source: "Ahrefs", url: "https://ahrefs.com/blog/internal-links-for-seo/" },
+      { title: "Internal Link Building: The Ultimate Guide", source: "Moz", url: "https://moz.com/blog/internal-linking-strategy" }
+    ]
   }
 };
 
@@ -395,6 +450,45 @@ const GlossaryTerm = () => {
                   ))}
                 </ul>
               </motion.div>
+
+              {/* Authoritative Resources */}
+              {termData.externalResources && termData.externalResources.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="glass-card rounded-2xl p-8"
+                >
+                  <h2 className="text-xl font-bold text-foreground mb-4">Authoritative Resources</h2>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Learn more from these trusted industry sources:
+                  </p>
+                  <div className="space-y-3">
+                    {termData.externalResources.map((resource, i) => (
+                      <a
+                        key={i}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-start gap-4 p-4 rounded-xl bg-secondary/30 hover:bg-primary/10 transition-colors border border-border/50 hover:border-primary/30"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <ExternalLink className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-foreground font-medium group-hover:text-primary transition-colors flex items-center gap-2">
+                            {resource.title}
+                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {resource.source}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               {/* Related Terms */}
               {relatedTermsData.length > 0 && (
