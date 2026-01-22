@@ -1,7 +1,19 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon } from "lucide-react";
+import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+
+// Premium features that get special badges
+const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; color: string }> = {
+  "DA - DR BOOSTER": { icon: Zap, label: "Power", color: "from-amber-400 to-orange-500" },
+  "Up to 40% off normal keyword pricing": { icon: Crown, label: "Deal", color: "from-violet-400 to-purple-500" },
+  "Up to 60% off normal pricing": { icon: Crown, label: "Best Deal", color: "from-cyan-400 to-blue-500" },
+  "Full API access to all data": { icon: Sparkles, label: "Pro", color: "from-pink-400 to-rose-500" },
+  "SOC 2 compliant infrastructure": { icon: Shield, label: "Secure", color: "from-emerald-400 to-green-500" },
+  "Dedicated success team": { icon: Star, label: "VIP", color: "from-amber-400 to-yellow-500" },
+  "Priority enterprise support": { icon: HeadphonesIcon, label: "Priority", color: "from-blue-400 to-indigo-500" },
+  "Advanced security & encryption": { icon: Shield, label: "Secure", color: "from-emerald-400 to-green-500" },
+};
 
 const plans = [
   {
@@ -177,14 +189,45 @@ const PricingSection = () => {
               </div>
 
               <ul className="space-y-4 mb-8">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm text-muted-foreground">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
+                {plan.features.map((feature, featureIndex) => {
+                  const premium = premiumFeatures[feature];
+                  const PremiumIcon = premium?.icon;
+                  
+                  return (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <span className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                        {feature}
+                        {premium && (
+                          <motion.span
+                            initial={{ scale: 0, opacity: 0 }}
+                            whileInView={{ scale: 1, opacity: 1 }}
+                            transition={{ 
+                              delay: featureIndex * 0.05, 
+                              type: "spring", 
+                              stiffness: 400, 
+                              damping: 15 
+                            }}
+                            viewport={{ once: true }}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r ${premium.color} shadow-sm`}
+                          >
+                            <motion.span
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{ 
+                                duration: 2, 
+                                repeat: Infinity, 
+                                repeatDelay: 3 
+                              }}
+                            >
+                              <PremiumIcon className="w-3 h-3" />
+                            </motion.span>
+                            {premium.label}
+                          </motion.span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
 
               <Button
