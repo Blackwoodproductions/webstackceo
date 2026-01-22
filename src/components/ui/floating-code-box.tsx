@@ -13,13 +13,23 @@ const FloatingCodeBox = memo(() => {
     if (isHomepage) return;
 
     // Some environments (certain embedded previews / older browsers) may not support
-    // requestIdleCallback; if it throws, it can blank the whole app.
-    const w = window as any;
-    const handle = w?.requestIdleCallback
-      ? w.requestIdleCallback(() => setIsVisible(true), { timeout: 1000 })
-      : window.setTimeout(() => setIsVisible(true), 1);
+    // requestIdleCallback; use setTimeout as a safe fallback.
+    let handle: number;
+    const hasIdle = typeof window !== "undefined" && "requestIdleCallback" in window;
 
-    return () => (w?.cancelIdleCallback ? w.cancelIdleCallback(handle) : window.clearTimeout(handle));
+    if (hasIdle) {
+      handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(() => setIsVisible(true), { timeout: 1000 });
+    } else {
+      handle = setTimeout(() => setIsVisible(true), 1) as unknown as number;
+    }
+
+    return () => {
+      if (hasIdle) {
+        (window as unknown as { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
+      }
+    };
   }, [isHomepage]);
 
   if (isHomepage || !isVisible) return null;
