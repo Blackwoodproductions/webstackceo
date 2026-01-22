@@ -6,7 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqs = [
+export const faqData = [
   {
     category: "Pricing",
     questions: [
@@ -69,6 +69,26 @@ const faqs = [
   },
 ];
 
+// Helper function to generate FAQ schema from the data
+export const generateFAQSchema = () => {
+  const allQuestions = faqData.flatMap(category => 
+    category.questions.map(q => ({
+      "@type": "Question",
+      "name": q.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": q.answer
+      }
+    }))
+  );
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": allQuestions
+  };
+};
+
 const FAQSection = () => {
   return (
     <section id="faq" className="py-24 relative overflow-hidden">
@@ -96,7 +116,7 @@ const FAQSection = () => {
         </motion.div>
 
         <div className="space-y-8">
-          {faqs.map((category, categoryIndex) => (
+          {faqData.map((category, categoryIndex) => (
             <motion.div
               key={category.category}
               initial={{ opacity: 0, y: 20 }}
