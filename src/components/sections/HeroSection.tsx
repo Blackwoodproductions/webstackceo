@@ -140,18 +140,6 @@ const HeroSection = () => {
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-6"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm font-medium text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Trusted by 1000+ CEOs worldwide
-            </span>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,6 +175,18 @@ const HeroSection = () => {
               <Play className="w-5 h-5" />
               Watch Demo
             </Button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-8"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm font-medium text-muted-foreground">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              Trusted by 1000+ CEOs worldwide
+            </span>
           </motion.div>
 
           <motion.div
