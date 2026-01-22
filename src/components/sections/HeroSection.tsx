@@ -144,7 +144,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6"
+            className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 mt-12"
           >
             <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite and{" "}
             Operate Like a B<span className="gradient-text">o</span>ss.!!
@@ -162,6 +162,18 @@ const HeroSection = () => {
           </motion.p>
 
           <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="mb-8"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm font-medium text-muted-foreground">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              Trusted by 1000+ CEOs worldwide
+            </span>
+          </motion.div>
+
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -175,18 +187,6 @@ const HeroSection = () => {
               <Play className="w-5 h-5" />
               Watch Demo
             </Button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-8"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm font-medium text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              Trusted by 1000+ CEOs worldwide
-            </span>
           </motion.div>
 
           <motion.div
