@@ -124,6 +124,118 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Learning Center -->
+  <url>
+    <loc>https://webstackceo.lovable.app/learn</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/on-page-seo-guide</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/off-page-seo-guide</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/analytics-guide</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/domain-authority-guide</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Glossary -->
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/title-tag</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/meta-description</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/header-tags</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/alt-text</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/core-web-vitals</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/backlinks</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/domain-authority</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/anchor-text</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/bounce-rate</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/conversion-rate</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/serp</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/internal-linking</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
   <!-- Marketplace & Directory -->
   <url>
     <loc>https://webstackceo.lovable.app/marketplace</loc>
@@ -138,6 +250,20 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Other Pages -->
+  <url>
+    <loc>https://webstackceo.lovable.app/integrations</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/changelog</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
   <!-- Legal Pages -->
   <url>
     <loc>https://webstackceo.lovable.app/terms</loc>
@@ -146,7 +272,7 @@
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://webstackceo.lovable.app/privacy</loc>
+    <loc>https://webstackceo.lovable.app/privacy-policy</loc>
     <lastmod>2026-01-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
