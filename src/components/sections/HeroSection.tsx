@@ -71,9 +71,7 @@ const HeroSection = () => {
       {/* Floating Elements with Mouse + Scroll Parallax */}
       <motion.div
         style={{ x: float1X, y: floatScrollY1 }}
-        className={`absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer transition-all duration-300 ${
-          isCodeBoxHovered ? "shadow-[0_0_25px_rgba(251,191,36,0.5)] border-amber-400/50" : ""
-        }`}
+        className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer transition-all duration-300"
         onMouseEnter={() => {
           setIsCodeBoxHovered(true);
           if (soundEnabled) playSound("code");
@@ -134,18 +132,10 @@ const HeroSection = () => {
       </motion.div>
       <motion.div
         style={{ x: float2X, y: floatScrollY2 }}
-        className={`absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 ${
-          isDashboardHovered 
-            ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
-            : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
-        }`}
+        className="absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
       >
-        <Shield className={`w-[46px] h-[46px] transition-colors duration-500 ${
-          isDashboardHovered ? "text-amber-400" : "text-primary"
-        }`} />
-        <span className={`absolute font-bold text-[12px] tracking-tight transition-colors duration-500 ${
-          isDashboardHovered ? "text-amber-400" : "text-primary"
-        }`}>AI</span>
+        <Shield className="w-[46px] h-[46px] text-primary transition-colors duration-500" />
+        <span className="absolute font-bold text-[12px] tracking-tight text-primary transition-colors duration-500">AI</span>
       </motion.div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -193,8 +183,8 @@ const HeroSection = () => {
               Start Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="glass" size="xl" className="group transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_25px_rgba(251,191,36,0.4)]">
-              <Play className="w-5 h-5 transition-colors duration-300 group-hover:text-amber-400" />
+            <Button variant="glass" size="xl" className="group">
+              <Play className="w-5 h-5" />
               Watch Demo
             </Button>
           </motion.div>
@@ -212,27 +202,12 @@ const HeroSection = () => {
               onMouseLeave={() => setIsDashboardHovered(false)}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10 pointer-events-none" />
-              {/* Gold glow effect on hover */}
-              <motion.div
-                className="absolute -inset-4 rounded-3xl blur-2xl transition-all duration-500"
-                animate={{
-                  opacity: isDashboardHovered ? 0.6 : 0,
-                  scale: isDashboardHovered ? 1.02 : 1,
-                }}
-                style={{
-                  background: "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.2), rgba(251, 191, 36, 0.25))",
-                }}
-              />
               <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 style={{ x: dashboardX, y: dashboardY }}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className={`relative rounded-2xl glass-card p-2 transition-all duration-500 ${
-                  isDashboardHovered 
-                    ? "shadow-[0_0_60px_rgba(251,191,36,0.4)] border-amber-400/50" 
-                    : "glow-primary"
-                }`}
+                className="relative rounded-2xl glass-card p-2 glow-primary transition-all duration-500"
               >
                 <div className="rounded-xl bg-card overflow-hidden">
                   <div className="bg-secondary/50 px-4 py-3 flex items-center gap-2">

@@ -1,5 +1,5 @@
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -62,7 +62,7 @@ const benefits = [
 
 const ContactSection = () => {
   const { toast } = useToast();
-  const [isFormActive, setIsFormActive] = useState(false);
+  
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -180,60 +180,8 @@ const ContactSection = () => {
             viewport={{ once: true }}
             className="relative"
           >
-            {/* Gold glow effects */}
-            <motion.div
-              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-amber-500/25 via-yellow-400/18 to-yellow-300/12 blur-2xl"
-              animate={{
-                opacity: isFormActive ? [0.39, 0.62, 0.47, 0.7, 0.39] : [0.3, 0.48, 0.36, 0.54, 0.3],
-                scale: isFormActive ? [1, 1.04, 0.97, 1.05, 1] : [1, 1.02, 0.98, 1.03, 1],
-              }}
-              transition={{
-                duration: isFormActive ? 1.5 : 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-amber-400/18 via-yellow-500/12 to-transparent blur-3xl"
-              animate={{
-                opacity: isFormActive ? [0.31, 0.55, 0.39, 0.62, 0.31] : [0.24, 0.42, 0.3, 0.48, 0.24],
-                scale: isFormActive ? [1.03, 1, 1.06, 0.97, 1.03] : [1.02, 1, 1.04, 0.98, 1.02],
-              }}
-              transition={{
-                duration: isFormActive ? 2 : 2.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.3,
-              }}
-            />
-            <motion.div
-              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-yellow-500/12 via-transparent to-transparent blur-3xl"
-              animate={{
-                opacity: isFormActive ? [0.23, 0.39, 0.31, 0.47, 0.23] : [0.18, 0.3, 0.24, 0.36, 0.18],
-                y: isFormActive ? [0, -15, 8, -20, 0] : [0, -10, 5, -15, 0],
-              }}
-              transition={{
-                duration: isFormActive ? 2.5 : 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.6,
-              }}
-            />
-            
             <div 
-              className={`relative glass-card rounded-2xl p-8 transition-all duration-300 ${
-                isFormActive 
-                  ? "border border-amber-400/40 shadow-[0_0_50px_rgba(251,191,36,0.25)]" 
-                  : "border border-amber-400/20 shadow-[0_0_40px_rgba(251,191,36,0.15)]"
-              }`}
-              onMouseEnter={() => setIsFormActive(true)}
-              onMouseLeave={() => setIsFormActive(false)}
-              onFocus={() => setIsFormActive(true)}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget)) {
-                  setIsFormActive(false);
-                }
-              }}
+              className="relative glass-card rounded-2xl p-8 border border-white/10 transition-all duration-300"
             >
             <Form {...form}>
               <form
@@ -253,7 +201,7 @@ const ContactSection = () => {
                         <FormControl>
                           <Input
                             placeholder="Your name"
-                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
+                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-primary focus:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
                             {...field}
                           />
                         </FormControl>
@@ -275,7 +223,7 @@ const ContactSection = () => {
                           <Input
                             type="email"
                             placeholder="your@email.com"
-                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
+                            className="bg-background/50 border-white/10 transition-all duration-300 focus:border-primary focus:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
                             {...field}
                           />
                         </FormControl>
@@ -297,7 +245,7 @@ const ContactSection = () => {
                       <FormControl>
                         <Input
                           placeholder="What's this about?"
-                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50"
+                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-primary focus:shadow-[0_0_15px_hsl(var(--primary)/0.3)]"
                           {...field}
                         />
                       </FormControl>
@@ -315,7 +263,7 @@ const ContactSection = () => {
                       <FormControl>
                         <Textarea
                           placeholder="Tell us more about your inquiry..."
-                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-amber-400 focus:shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:border-amber-400/50 min-h-[150px] resize-none"
+                          className="bg-background/50 border-white/10 transition-all duration-300 focus:border-primary focus:shadow-[0_0_15px_hsl(var(--primary)/0.3)] min-h-[150px] resize-none"
                           {...field}
                         />
                       </FormControl>
@@ -328,7 +276,7 @@ const ContactSection = () => {
                   type="submit"
                   variant="hero"
                   size="lg"
-                  className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]"
+                  className="w-full"
                   disabled={form.formState.isSubmitting}
                 >
                   <Send className="w-4 h-4 mr-2" />
