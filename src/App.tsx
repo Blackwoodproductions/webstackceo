@@ -47,8 +47,19 @@ import VisitorIntelligenceGuide from "./pages/learn/VisitorIntelligenceGuide";
 import GMBOptimizationGuide from "./pages/learn/GMBOptimizationGuide";
 import AutomatedBloggingGuide from "./pages/learn/AutomatedBloggingGuide";
 import UptimeMonitoringGuide from "./pages/learn/UptimeMonitoringGuide";
+import TechnicalSEOGuide from "./pages/learn/TechnicalSEOGuide";
+import TrafficDeanonymizationGuide from "./pages/learn/TrafficDeanonymizationGuide";
+import FAQGenerationGuide from "./pages/learn/FAQGenerationGuide";
+import SocialSignalsGuide from "./pages/learn/SocialSignalsGuide";
+import LocalSEOGuide from "./pages/learn/LocalSEOGuide";
+import LinkBuildingGuide from "./pages/learn/LinkBuildingGuide";
+import WebHostingGuide from "./pages/learn/WebHostingGuide";
+import CoreWebVitalsGuide from "./pages/learn/CoreWebVitalsGuide";
+import PPCLandingPagesGuide from "./pages/learn/PPCLandingPagesGuide";
+import CROGuide from "./pages/learn/CROGuide";
 import GlossaryTerm from "./pages/learn/glossary/GlossaryTerm";
 import GlossaryIndex from "./pages/learn/glossary/GlossaryIndex";
+import Sitemap from "./pages/Sitemap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,6 +117,17 @@ const App = () => (
             <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
             <Route path="/learn/glossary" element={<GlossaryIndex />} />
             <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
+            <Route path="/learn/technical-seo-guide" element={<TechnicalSEOGuide />} />
+            <Route path="/learn/traffic-deanonymization-guide" element={<TrafficDeanonymizationGuide />} />
+            <Route path="/learn/faq-generation-guide" element={<FAQGenerationGuide />} />
+            <Route path="/learn/social-signals-guide" element={<SocialSignalsGuide />} />
+            <Route path="/learn/local-seo-guide" element={<LocalSEOGuide />} />
+            <Route path="/learn/link-building-guide" element={<LinkBuildingGuide />} />
+            <Route path="/learn/web-hosting-guide" element={<WebHostingGuide />} />
+            <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
+            <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
+            <Route path="/learn/cro-guide" element={<CROGuide />} />
+            <Route path="/sitemap" element={<Sitemap />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
