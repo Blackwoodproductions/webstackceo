@@ -41,6 +41,7 @@ import OnPageSEOGuide from "./pages/learn/OnPageSEOGuide";
 import OffPageSEOGuide from "./pages/learn/OffPageSEOGuide";
 import AnalyticsGuide from "./pages/learn/AnalyticsGuide";
 import DomainAuthorityGuide from "./pages/learn/DomainAuthorityGuide";
+import GlossaryTerm from "./pages/learn/glossary/GlossaryTerm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
             <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
             <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
+            <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
