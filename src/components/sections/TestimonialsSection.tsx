@@ -62,28 +62,10 @@ const TestimonialsSection = () => {
   const gridY = useTransform(scrollYProgress, [0, 1], [30, -30]);
 
   return (
-    <section ref={sectionRef} id="testimonials" className="py-24 relative overflow-hidden bg-secondary/30">
+    <section ref={sectionRef} id="testimonials" className="py-16 relative overflow-hidden bg-secondary/30">
       <motion.div style={{ y: gridY }} className="absolute inset-0 grid-pattern opacity-20" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-            Testimonials
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Trusted by{" "}
-            <span className="gradient-text">Industry Leaders</span>
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Join over 1,000 CEOs who have transformed their online presence with Webstack.
-          </p>
-        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}

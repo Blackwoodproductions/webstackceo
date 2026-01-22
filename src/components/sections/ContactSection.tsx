@@ -92,28 +92,11 @@ const ContactSection = () => {
   const bgY = useTransform(scrollYProgress, [0, 1], [40, -40]);
 
   return (
-    <section ref={sectionRef} id="contact" className="py-24 relative overflow-hidden">
+    <section ref={sectionRef} id="contact" className="py-12 relative overflow-hidden">
       {/* Background effects with Parallax */}
       <motion.div style={{ y: bgY }} className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
 
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="text-primary font-medium tracking-wider uppercase text-sm">
-            Contact Us
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold mt-4 mb-6">
-            Get In{" "}
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              Touch
-            </span>
-          </h2>
-        </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left side - Enticing content */}
