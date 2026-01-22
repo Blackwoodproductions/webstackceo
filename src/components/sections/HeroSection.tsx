@@ -117,8 +117,8 @@ const HeroSection = () => {
               Start Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="glass" size="xl" className="group">
-              <Play className="w-5 h-5" />
+            <Button variant="glass" size="xl" className="group transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_25px_rgba(251,191,36,0.4)]">
+              <Play className="w-5 h-5 transition-colors duration-300 group-hover:text-amber-400" />
               Watch Demo
             </Button>
           </motion.div>
