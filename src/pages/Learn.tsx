@@ -108,11 +108,11 @@ const featuredGuides = [
     tag: "Essential Reading"
   },
   {
-    title: "Building Domain Authority",
-    description: "A step-by-step playbook for building the authority and trust signals that Google rewards.",
-    href: "/learn/domain-authority-guide",
-    icon: Rocket,
-    tag: "Advanced"
+    title: "SEO Glossary A-Z",
+    description: "Master SEO terminology with our complete glossary. Clear definitions for every term you need to know.",
+    href: "/learn/glossary",
+    icon: BookOpen,
+    tag: "Reference"
   }
 ];
 
