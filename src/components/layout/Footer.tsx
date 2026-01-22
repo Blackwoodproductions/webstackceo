@@ -57,9 +57,9 @@ const Footer = () => {
     ],
     Resources: [
       { name: "Learning Center", href: "/learn" },
-      { name: "Help Center", href: "#" },
-      { name: "API", href: "#" },
-      { name: "Status", href: "#" },
+      { name: "SEO Glossary", href: "/learn/glossary" },
+      { name: "Sitemap", href: "/sitemap" },
+      { name: "FAQ", href: "/faq" },
     ],
     Legal: [
       { name: "Privacy", href: "/privacy-policy" },
