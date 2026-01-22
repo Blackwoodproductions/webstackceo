@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
   Search, Link2, PenTool, HelpCircle, UserCheck, Eye,
-  MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server
+  MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield
 } from "lucide-react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
@@ -100,8 +100,9 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
-            <span className="text-white font-bold text-xl">W</span>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center relative">
+            <Shield className="w-6 h-6 text-white" />
+            <span className="absolute text-white font-bold text-[8px] tracking-tight">AI</span>
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold text-foreground leading-tight">
