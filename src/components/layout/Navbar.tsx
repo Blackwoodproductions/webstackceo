@@ -97,6 +97,7 @@ const Navbar = () => {
   const submitSiteSubLinks = [
     { name: "Directory", href: "/directory" },
     { name: "Marketplace", href: "/marketplace" },
+    { name: "CEO Special Offer", href: "/pricing", highlight: true },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPage?: boolean) => {
@@ -385,8 +386,13 @@ const Navbar = () => {
                           delay: 0.05 + (index * 0.03),
                           ease: "easeOut"
                         }}
-                        className="block px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:text-hover-accent hover:bg-secondary hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300"
+                        className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                          subLink.highlight 
+                            ? "bg-gradient-to-r from-amber-400/10 to-yellow-500/10 text-amber-500 hover:from-amber-400/20 hover:to-yellow-500/20 hover:text-amber-400 border border-amber-400/30" 
+                            : "text-foreground hover:text-hover-accent hover:bg-secondary hover:drop-shadow-[var(--hover-accent-glow)]"
+                        }`}
                       >
+                        {subLink.highlight && <span className="mr-1">✨</span>}
                         {subLink.name}
                       </motion.a>
                     ))}
@@ -629,8 +635,13 @@ const Navbar = () => {
                           key={subLink.name}
                           href={subLink.href}
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className="block text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
+                          className={`block text-sm py-1 transition-colors ${
+                            subLink.highlight 
+                              ? "text-amber-500 font-medium" 
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
                         >
+                          {subLink.highlight && <span className="mr-1">✨</span>}
                           {subLink.name}
                         </a>
                       ))}
