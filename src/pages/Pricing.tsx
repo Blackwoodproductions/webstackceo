@@ -6,6 +6,7 @@ import PricingSection from "@/components/sections/PricingSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const Pricing = () => {
   return (
@@ -25,8 +26,16 @@ const Pricing = () => {
       />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Pricing",
+            altText: "View SEO and website management pricing plans"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />

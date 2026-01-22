@@ -30,6 +30,8 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import { supabase } from "@/integrations/supabase/client";
 import PartnerApplicationDialog from "@/components/marketplace/PartnerApplicationDialog";
+import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 // Icon mapping for categories
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -266,10 +268,24 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Partner Marketplace - Find Trusted Service Providers"
+        description="Discover vetted marketing partners, SEO agencies, and web professionals. Find the right partner for your business needs."
+        keywords="marketing partners, SEO agencies, web development partners, digital marketing, service providers"
+        canonical="/marketplace"
+      />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Marketplace",
+            altText: "Browse trusted marketing and SEO partner directory"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />

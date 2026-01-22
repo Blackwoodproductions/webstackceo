@@ -30,7 +30,7 @@ const VisitorIntelligence = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Visitor Intelligence" />
+        <FeatureBreadcrumb featureName="Visitor Intelligence" featureKeyword="Identify anonymous website visitors and convert to B2B leads" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

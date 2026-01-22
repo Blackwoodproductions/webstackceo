@@ -30,7 +30,7 @@ const OffPageSEO = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Off-Page SEO" />
+        <FeatureBreadcrumb featureName="Off-Page SEO" featureKeyword="White-hat link building and backlink acquisition services" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

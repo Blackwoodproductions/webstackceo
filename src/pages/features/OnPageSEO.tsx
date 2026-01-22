@@ -30,7 +30,7 @@ const OnPageSEO = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="On-Page SEO" />
+        <FeatureBreadcrumb featureName="On-Page SEO" featureKeyword="Technical SEO optimization for meta tags, schema, and Core Web Vitals" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

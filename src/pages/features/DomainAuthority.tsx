@@ -30,7 +30,7 @@ const DomainAuthority = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Domain Authority" />
+        <FeatureBreadcrumb featureName="Domain Authority" featureKeyword="Increase Domain Rating and Domain Authority with quality backlinks" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

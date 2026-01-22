@@ -30,7 +30,7 @@ const AutomatedBlog = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Automated Blog" />
+        <FeatureBreadcrumb featureName="Automated Blog" featureKeyword="AI-powered content creation and automated blog publishing" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

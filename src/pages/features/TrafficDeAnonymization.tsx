@@ -30,7 +30,7 @@ const TrafficDeAnonymization = () => {
       <Navbar />
       
       <main>
-        <FeatureBreadcrumb featureName="Traffic De-Anonymization" />
+        <FeatureBreadcrumb featureName="Traffic De-Anonymization" featureKeyword="Turn anonymous website visitors into qualified B2B sales leads" />
         
         {/* Hero Section */}
         <section className="py-24 relative overflow-hidden">

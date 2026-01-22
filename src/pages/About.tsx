@@ -9,6 +9,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import { Separator } from "@/components/ui/separator";
 import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -38,7 +39,15 @@ const About = () => {
       />
       <ScrollProgress />
       <Navbar />
-      <main className="pt-20">
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "About Us",
+            altText: "Learn about our web development expertise and team"
+          }
+        ]}
+      />
+      <main>
         <AboutSection />
         <SectionDivider />
         <MissionSection />

@@ -16,6 +16,8 @@ import {
   Laptop, Plane, Dumbbell, Check, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame
 } from "lucide-react";
 import DirectoryListingDialog from "@/components/directory/DirectoryListingDialog";
+import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const iconMap: Record<string, any> = {
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
@@ -150,10 +152,24 @@ const Directory = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Business Directory - Find Local Businesses"
+        description="Browse our curated business directory. Find local businesses, read reviews, and connect with service providers in your area."
+        keywords="business directory, local businesses, business listings, find businesses, local services"
+        canonical="/directory"
+      />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Directory",
+            altText: "Browse local business directory listings"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />

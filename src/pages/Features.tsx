@@ -5,6 +5,7 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
+import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 
 const Features = () => {
   return (
@@ -32,8 +33,16 @@ const Features = () => {
       />
       <ScrollProgress />
       <Navbar />
+      <SEOBreadcrumb
+        items={[
+          { 
+            label: "Features",
+            altText: "Explore all SEO and website management features"
+          }
+        ]}
+      />
       
-      <main className="pt-20">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 via-transparent to-violet-500/10" />
