@@ -70,7 +70,6 @@ const plans = [
       "Dedicated success team",
       "Priority enterprise support",
       "Custom SLA agreements",
-      "SOC 2 compliant infrastructure",
       "Dedicated security protocols",
       "Early access to new features",
     ],
