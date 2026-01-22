@@ -41,6 +41,10 @@ import OnPageSEOGuide from "./pages/learn/OnPageSEOGuide";
 import OffPageSEOGuide from "./pages/learn/OffPageSEOGuide";
 import AnalyticsGuide from "./pages/learn/AnalyticsGuide";
 import DomainAuthorityGuide from "./pages/learn/DomainAuthorityGuide";
+import VisitorIntelligenceGuide from "./pages/learn/VisitorIntelligenceGuide";
+import GMBOptimizationGuide from "./pages/learn/GMBOptimizationGuide";
+import AutomatedBloggingGuide from "./pages/learn/AutomatedBloggingGuide";
+import UptimeMonitoringGuide from "./pages/learn/UptimeMonitoringGuide";
 import GlossaryTerm from "./pages/learn/glossary/GlossaryTerm";
 import GlossaryIndex from "./pages/learn/glossary/GlossaryIndex";
 import NotFound from "./pages/NotFound";
@@ -92,6 +96,10 @@ const App = () => (
             <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
             <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
             <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
+            <Route path="/learn/visitor-intelligence-guide" element={<VisitorIntelligenceGuide />} />
+            <Route path="/learn/gmb-optimization-guide" element={<GMBOptimizationGuide />} />
+            <Route path="/learn/automated-blogging-guide" element={<AutomatedBloggingGuide />} />
+            <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
             <Route path="/learn/glossary" element={<GlossaryIndex />} />
             <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
