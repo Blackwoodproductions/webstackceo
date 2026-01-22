@@ -68,25 +68,25 @@ const HeroSection = () => {
         style={{ x: float1X, y: floatScrollY1 }}
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
       >
-        {/* Code streaming animation */}
-        <div className="absolute inset-0 flex justify-around">
-          {[...Array(5)].map((_, colIndex) => {
-            const codeChars = ['0', '1', '{', '}', '(', ')', ';', ':', '<', '>', '/', '*', '+', '=', '[', ']', 'fn', 'if', '&&', '||', '=>', '++', '--', '!=', '=='];
+        {/* Code typing animation - left to right */}
+        <div className="absolute inset-0 flex flex-col justify-around py-2">
+          {[...Array(6)].map((_, rowIndex) => {
+            const codeChars = ['0', '1', '{', '}', '(', ')', ';', ':', '<', '>', '/', '*', '+', '=', '[', ']', 'fn', 'if', '&&', '=>', '++', '!=', '=='];
             return (
               <div 
-                key={colIndex} 
-                className="flex flex-col text-amber-400 text-[10px] font-mono opacity-80"
+                key={rowIndex} 
+                className="flex text-amber-400 text-[9px] font-mono opacity-80 whitespace-nowrap"
                 style={{
-                  animation: `matrixRain ${2 + colIndex * 0.3}s linear infinite`,
-                  animationDelay: `${colIndex * 0.2}s`,
+                  animation: `codeType ${3 + rowIndex * 0.4}s linear infinite`,
+                  animationDelay: `${rowIndex * 0.3}s`,
                 }}
               >
-                {[...Array(12)].map((_, i) => (
+                {[...Array(15)].map((_, i) => (
                   <span 
                     key={i} 
-                    className="leading-tight"
+                    className="mx-[1px]"
                     style={{ 
-                      opacity: 0.3 + (i * 0.06),
+                      opacity: 0.4 + (i * 0.04),
                       textShadow: '0 0 8px rgba(251, 191, 36, 0.8)'
                     }}
                   >
@@ -98,9 +98,9 @@ const HeroSection = () => {
           })}
         </div>
         <style>{`
-          @keyframes matrixRain {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
+          @keyframes codeType {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
           }
         `}</style>
       </motion.div>
