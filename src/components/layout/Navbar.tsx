@@ -95,7 +95,7 @@ const Navbar = () => {
   ];
 
   const submitSiteSubLinks = [
-    { name: "CEO Special Offer", href: "/pricing", highlight: true },
+    { name: "SIGN UP", href: "/pricing", highlight: true },
     { name: "Directory", href: "/directory" },
     { name: "Marketplace", href: "/marketplace" },
   ];
