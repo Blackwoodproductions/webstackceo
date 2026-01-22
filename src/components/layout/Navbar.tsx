@@ -95,9 +95,9 @@ const Navbar = () => {
   ];
 
   const submitSiteSubLinks = [
+    { name: "CEO Special Offer", href: "/pricing", highlight: true },
     { name: "Directory", href: "/directory" },
     { name: "Marketplace", href: "/marketplace" },
-    { name: "CEO Special Offer", href: "/pricing", highlight: true },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPage?: boolean) => {
