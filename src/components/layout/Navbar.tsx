@@ -36,6 +36,8 @@ const Navbar = () => {
   const [isMobileContactOpen, setIsMobileContactOpen] = useState(false);
   const [isBlogOpen, setIsBlogOpen] = useState(false);
   const [isMobileBlogOpen, setIsMobileBlogOpen] = useState(false);
+  const [isSubmitSiteOpen, setIsSubmitSiteOpen] = useState(false);
+  const [isMobileSubmitSiteOpen, setIsMobileSubmitSiteOpen] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -90,6 +92,11 @@ const Navbar = () => {
     { name: "Contact", href: "/contact" },
     { name: "About", href: "/about" },
     { name: "Careers", href: "/careers" },
+  ];
+
+  const submitSiteSubLinks = [
+    { name: "Directory", href: "/directory" },
+    { name: "Marketplace", href: "/marketplace" },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, isPage?: boolean) => {
@@ -339,21 +346,55 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
-          {/* Directory link */}
-          <a
-            href="/directory"
-            className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium hover:drop-shadow-[var(--hover-accent-glow)]"
+          {/* Submit Site Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setIsSubmitSiteOpen(true)}
+            onMouseLeave={() => setIsSubmitSiteOpen(false)}
           >
-            Directory
-          </a>
-
-          {/* Marketplace link */}
-          <a
-            href="/marketplace"
-            className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium hover:drop-shadow-[var(--hover-accent-glow)]"
-          >
-            Marketplace
-          </a>
+            <button
+              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+            >
+              Submit Site
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSubmitSiteOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            <AnimatePresence>
+              {isSubmitSiteOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
+                >
+                  <motion.div 
+                    className="bg-background border border-border/50 rounded-xl p-2 min-w-[160px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
+                    initial={{ boxShadow: "0 10px 30px -10px hsl(var(--primary)/0)" }}
+                    animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    {submitSiteSubLinks.map((subLink, index) => (
+                      <motion.a
+                        key={subLink.name}
+                        href={subLink.href}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ 
+                          duration: 0.2, 
+                          delay: 0.05 + (index * 0.03),
+                          ease: "easeOut"
+                        }}
+                        className="block px-4 py-2 rounded-lg text-sm font-medium text-foreground hover:text-hover-accent hover:bg-secondary hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300"
+                      >
+                        {subLink.name}
+                      </motion.a>
+                    ))}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
@@ -564,23 +605,40 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* Directory link */}
-            <a
-              href="/directory"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-            >
-              Directory
-            </a>
-
-            {/* Marketplace link */}
-            <a
-              href="/marketplace"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-foreground hover:text-primary transition-colors font-medium py-2"
-            >
-              Marketplace
-            </a>
+            {/* Mobile Submit Site Accordion */}
+            <div>
+              <button
+                onClick={() => setIsMobileSubmitSiteOpen(!isMobileSubmitSiteOpen)}
+                className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors font-medium py-2"
+              >
+                Submit Site
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileSubmitSiteOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isMobileSubmitSiteOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-4 pt-2 space-y-2">
+                      {submitSiteSubLinks.map((subLink) => (
+                        <a
+                          key={subLink.name}
+                          href={subLink.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
+                        >
+                          {subLink.name}
+                        </a>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
               <Button variant="heroOutline" className="w-full transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]" asChild>
                 <a href="https://dashdev.imagehosting.space/">Login</a>

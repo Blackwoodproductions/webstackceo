@@ -23,6 +23,7 @@ const plans = [
     description: "Everything you need to dominate local SEO",
     features: [
       "15 keyword phrases",
+      "Free directory listing",
       "Uptime monitoring",
       "Bi-weekly SEO ranking reports",
       "15 SEO rich content pages",
