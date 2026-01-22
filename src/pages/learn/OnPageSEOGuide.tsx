@@ -12,6 +12,17 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
+import GlossaryLegend from "@/components/ui/glossary-legend";
+
+const onPageSEOTerms = [
+  { term: "Title Tag", shortDescription: "The HTML element that defines the title shown in search results and browser tabs.", slug: "title-tag" },
+  { term: "Meta Description", shortDescription: "A brief summary of page content that appears below the title in search results.", slug: "meta-description" },
+  { term: "Header Tags (H1-H6)", shortDescription: "HTML elements that define headings, creating hierarchical content structure.", slug: "header-tags" },
+  { term: "Alt Text", shortDescription: "Descriptive text for images that helps search engines and screen readers.", slug: "alt-text" },
+  { term: "Core Web Vitals", shortDescription: "Google's metrics for loading performance, interactivity, and visual stability.", slug: "core-web-vitals" },
+  { term: "Internal Linking", shortDescription: "Links connecting pages within your website to distribute authority.", slug: "internal-linking" },
+  { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
+];
 
 const OnPageSEOGuide = () => {
   return (
@@ -329,6 +340,9 @@ const OnPageSEOGuide = () => {
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Glossary Legend */}
+              <GlossaryLegend terms={onPageSEOTerms} />
 
               {/* Article Navigation */}
               <ArticleNavigation
