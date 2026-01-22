@@ -69,39 +69,54 @@ const HeroSection = () => {
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
       >
         {/* Real code typing animation */}
-        <div className="absolute inset-0 flex flex-col justify-around py-1.5 px-1">
+        <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
           {[
-            'const App = () =>',
-            '  return <div>',
-            'useState(false)',
-            'className="flex"',
-            'onClick={handle}',
-            'export default',
+            'const ai =',
+            '  analyze()',
+            'if (ready)',
+            '  deploy();',
+            'return data',
+            '};',
           ].map((codeLine, rowIndex) => (
             <div 
               key={rowIndex} 
-              className="flex text-amber-400 text-[7px] font-mono whitespace-nowrap overflow-hidden"
-              style={{
-                animation: `codeType ${4 + rowIndex * 0.5}s linear infinite`,
-                animationDelay: `${rowIndex * 0.4}s`,
-              }}
+              className="text-amber-400 text-[7px] font-mono leading-[11px] overflow-hidden"
             >
               <span 
+                className="inline-block"
                 style={{ 
-                  textShadow: '0 0 6px rgba(251, 191, 36, 0.7)'
+                  textShadow: '0 0 6px rgba(251, 191, 36, 0.7)',
+                  animation: `typewrite 3s steps(${codeLine.length}) infinite`,
+                  animationDelay: `${rowIndex * 0.5}s`,
+                  width: '0',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {codeLine}
               </span>
+              <span 
+                className="inline-block w-[3px] h-[8px] bg-amber-400 ml-[1px] align-middle"
+                style={{
+                  animation: `blink 0.8s step-end infinite, cursorMove 3s steps(${codeLine.length}) infinite`,
+                  animationDelay: `${rowIndex * 0.5}s`,
+                  boxShadow: '0 0 4px rgba(251, 191, 36, 0.8)'
+                }}
+              />
             </div>
           ))}
         </div>
         <style>{`
-          @keyframes codeType {
-            0% { transform: translateX(-100%); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateX(100%); opacity: 0; }
+          @keyframes typewrite {
+            0%, 100% { width: 0; }
+            50%, 90% { width: 100%; }
+          }
+          @keyframes blink {
+            50% { opacity: 0; }
+          }
+          @keyframes cursorMove {
+            0%, 100% { transform: translateX(0); }
+            50%, 90% { transform: translateX(0); }
           }
         `}</style>
       </motion.div>
