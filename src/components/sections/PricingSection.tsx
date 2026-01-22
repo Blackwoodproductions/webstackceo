@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Phone } from "lucide-react";
+import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 const plans = [
   {
@@ -46,9 +45,8 @@ const plans = [
   },
   {
     name: "Super Reseller",
-    monthlyPrice: null,
-    yearlyPrice: null,
-    priceLabel: "Up to 60% Off",
+    monthlyPrice: 1499,
+    yearlyPrice: 1199,
     description: "Enterprise API access for agencies at scale",
     features: [
       "Everything in White Label plan",
@@ -67,8 +65,7 @@ const plans = [
       "Early access to new features",
     ],
     highlighted: false,
-    hasToggle: false,
-    isCustom: true,
+    hasToggle: true,
   },
 ];
 
@@ -161,32 +158,21 @@ const PricingSection = () => {
                 <p className="text-muted-foreground text-sm mb-4">
                   {plan.description}
                 </p>
-                {plan.isCustom ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-                      {plan.priceLabel || "Custom Pricing"}
-                    </span>
-                    <span className="text-sm text-muted-foreground">Book a call to discuss</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <motion.span 
-                        key={isYearly ? 'yearly' : 'monthly'}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-4xl font-bold"
-                      >
-                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                      </motion.span>
-                      <span className="text-muted-foreground">/month</span>
-                    </div>
-                    {isYearly && plan.yearlyPrice && (
-                      <p className="text-xs text-primary mt-1">
-                        Billed annually (${plan.yearlyPrice * 12}/year)
-                      </p>
-                    )}
-                  </>
+                <div className="flex items-baseline justify-center gap-1">
+                  <motion.span 
+                    key={isYearly ? 'yearly' : 'monthly'}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-4xl font-bold"
+                  >
+                    ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                  </motion.span>
+                  <span className="text-muted-foreground">/month</span>
+                </div>
+                {isYearly && plan.yearlyPrice && (
+                  <p className="text-xs text-primary mt-1">
+                    Billed annually (${plan.yearlyPrice * 12}/year)
+                  </p>
                 )}
               </div>
 
@@ -201,27 +187,13 @@ const PricingSection = () => {
                 ))}
               </ul>
 
-              {plan.isCustom ? (
-                <Button
-                  asChild
-                  variant={plan.highlighted ? "hero" : "heroOutline"}
-                  className="w-full"
-                  size="lg"
-                >
-                  <Link to="/contact">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Book a Call
-                  </Link>
-                </Button>
-              ) : (
-                <Button
-                  variant={plan.highlighted ? "hero" : "heroOutline"}
-                  className="w-full"
-                  size="lg"
-                >
-                  Get Started
-                </Button>
-              )}
+              <Button
+                variant={plan.highlighted ? "hero" : "heroOutline"}
+                className="w-full"
+                size="lg"
+              >
+                Get Started
+              </Button>
             </motion.div>
           ))}
         </div>
