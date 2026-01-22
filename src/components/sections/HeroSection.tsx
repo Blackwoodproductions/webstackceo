@@ -68,39 +68,40 @@ const HeroSection = () => {
         style={{ x: float1X, y: floatScrollY1 }}
         className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden"
       >
-        {/* Code typing animation - left to right */}
-        <div className="absolute inset-0 flex flex-col justify-around py-2">
-          {[...Array(6)].map((_, rowIndex) => {
-            const codeChars = ['0', '1', '{', '}', '(', ')', ';', ':', '<', '>', '/', '*', '+', '=', '[', ']', 'fn', 'if', '&&', '=>', '++', '!=', '=='];
-            return (
-              <div 
-                key={rowIndex} 
-                className="flex text-amber-400 text-[9px] font-mono opacity-80 whitespace-nowrap"
-                style={{
-                  animation: `codeType ${3 + rowIndex * 0.4}s linear infinite`,
-                  animationDelay: `${rowIndex * 0.3}s`,
+        {/* Real code typing animation */}
+        <div className="absolute inset-0 flex flex-col justify-around py-1.5 px-1">
+          {[
+            'const App = () =>',
+            '  return <div>',
+            'useState(false)',
+            'className="flex"',
+            'onClick={handle}',
+            'export default',
+          ].map((codeLine, rowIndex) => (
+            <div 
+              key={rowIndex} 
+              className="flex text-amber-400 text-[7px] font-mono whitespace-nowrap overflow-hidden"
+              style={{
+                animation: `codeType ${4 + rowIndex * 0.5}s linear infinite`,
+                animationDelay: `${rowIndex * 0.4}s`,
+              }}
+            >
+              <span 
+                style={{ 
+                  textShadow: '0 0 6px rgba(251, 191, 36, 0.7)'
                 }}
               >
-                {[...Array(15)].map((_, i) => (
-                  <span 
-                    key={i} 
-                    className="mx-[1px]"
-                    style={{ 
-                      opacity: 0.4 + (i * 0.04),
-                      textShadow: '0 0 8px rgba(251, 191, 36, 0.8)'
-                    }}
-                  >
-                    {codeChars[Math.floor(Math.random() * codeChars.length)]}
-                  </span>
-                ))}
-              </div>
-            );
-          })}
+                {codeLine}
+              </span>
+            </div>
+          ))}
         </div>
         <style>{`
           @keyframes codeType {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
           }
         `}</style>
       </motion.div>
