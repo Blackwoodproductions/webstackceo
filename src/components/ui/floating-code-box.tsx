@@ -11,8 +11,15 @@ const FloatingCodeBox = memo(() => {
   // Delay render to not block initial page paint
   useEffect(() => {
     if (isHomepage) return;
-    const timer = requestIdleCallback(() => setIsVisible(true), { timeout: 1000 });
-    return () => cancelIdleCallback(timer);
+
+    // Some environments (certain embedded previews / older browsers) may not support
+    // requestIdleCallback; if it throws, it can blank the whole app.
+    const w = window as any;
+    const handle = w?.requestIdleCallback
+      ? w.requestIdleCallback(() => setIsVisible(true), { timeout: 1000 })
+      : window.setTimeout(() => setIsVisible(true), 1);
+
+    return () => (w?.cancelIdleCallback ? w.cancelIdleCallback(handle) : window.clearTimeout(handle));
   }, [isHomepage]);
 
   if (isHomepage || !isVisible) return null;
