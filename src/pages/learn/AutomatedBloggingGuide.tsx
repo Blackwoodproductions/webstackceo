@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   FileText, CheckCircle2, ArrowRight, ArrowLeft, 
-  Sparkles, Target, Clock, TrendingUp, AlertTriangle, Zap, Search
+  Sparkles, Target, AlertTriangle, Zap, Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const automatedBloggingTerms = [
   { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
@@ -43,11 +43,7 @@ const AutomatedBloggingGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-green-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -65,7 +61,7 @@ const AutomatedBloggingGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Content is king, but creating it consistently is hard. Learn how automated blogging can help you publish SEO-optimized content at scale.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -75,12 +71,7 @@ const AutomatedBloggingGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Sparkles className="w-6 h-6 text-primary" />
                   What is Automated Blogging?
@@ -91,15 +82,10 @@ const AutomatedBloggingGuide = () => {
                 <p className="text-muted-foreground">
                   Think of it as having a team of tireless assistants who can draft content, suggest improvements, and handle the technical SEO work—while you focus on strategy and adding your unique expertise.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* Why It Matters */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-6 h-6 text-amber-400" />
                   The Content Challenge for CEOs
@@ -126,15 +112,10 @@ const AutomatedBloggingGuide = () => {
                     ⚡ <strong>The Solution:</strong> Automated blogging lets you maintain a consistent publishing schedule without burning out your team or budget.
                   </p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* How It Works */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Zap className="w-6 h-6 text-primary" />
                   The Automated Blogging Workflow
@@ -159,15 +140,10 @@ const AutomatedBloggingGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Best Practices */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Target className="w-6 h-6 text-primary" />
                   Automated Blogging Best Practices
@@ -187,15 +163,10 @@ const AutomatedBloggingGuide = () => {
                     </li>
                   ))}
                 </ul>
-              </motion.div>
+              </FadeIn>
 
               {/* Content Quality */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Search className="w-6 h-6 text-primary" />
                   Ensuring Quality at Scale
@@ -216,15 +187,10 @@ const AutomatedBloggingGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-emerald-400/10 to-green-500/10"
-              >
+              <FadeIn delay={250} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-emerald-400/10 to-green-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Scale Your Content?
                 </h2>
@@ -241,7 +207,7 @@ const AutomatedBloggingGuide = () => {
                     <Link to="/pricing">Start Free Trial</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={automatedBloggingTerms} />

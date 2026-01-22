@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Activity, CheckCircle2, ArrowRight, ArrowLeft, 
-  Zap, Clock, MousePointer, AlertTriangle, Target
+  Zap, Clock, MousePointer, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const cwvTerms = [
   { term: "Core Web Vitals", shortDescription: "Google's metrics for page experience including loading, interactivity, and visual stability.", slug: "core-web-vitals" },
@@ -43,11 +43,7 @@ const CoreWebVitalsGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 via-transparent to-emerald-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -65,7 +61,7 @@ const CoreWebVitalsGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Google's Core Web Vitals are now ranking factors. Learn what they measure and how to optimize them.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -75,12 +71,7 @@ const CoreWebVitalsGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Activity className="w-6 h-6 text-primary" />
                   What Are Core Web Vitals?
@@ -91,15 +82,10 @@ const CoreWebVitalsGuide = () => {
                 <p className="text-muted-foreground">
                   Since 2021, these metrics are part of Google's ranking algorithm, making them essential for SEO success.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* The Three Metrics */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Zap className="w-6 h-6 text-primary" />
                   The Three Core Web Vitals
@@ -111,7 +97,7 @@ const CoreWebVitalsGuide = () => {
                       <h3 className="text-lg font-bold text-foreground">LCP - Largest Contentful Paint</h3>
                     </div>
                     <p className="text-muted-foreground mb-3">Measures loading performance—how long it takes for the main content to load.</p>
-                    <div className="flex gap-4 text-sm">
+                    <div className="flex gap-4 text-sm flex-wrap">
                       <span className="px-3 py-1 rounded-full bg-green-400/20 text-green-400">Good: ≤2.5s</span>
                       <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-400">Needs Work: ≤4.0s</span>
                       <span className="px-3 py-1 rounded-full bg-red-400/20 text-red-400">Poor: &gt;4.0s</span>
@@ -124,7 +110,7 @@ const CoreWebVitalsGuide = () => {
                       <h3 className="text-lg font-bold text-foreground">INP - Interaction to Next Paint</h3>
                     </div>
                     <p className="text-muted-foreground mb-3">Measures interactivity—how quickly the page responds to user interactions.</p>
-                    <div className="flex gap-4 text-sm">
+                    <div className="flex gap-4 text-sm flex-wrap">
                       <span className="px-3 py-1 rounded-full bg-green-400/20 text-green-400">Good: ≤200ms</span>
                       <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-400">Needs Work: ≤500ms</span>
                       <span className="px-3 py-1 rounded-full bg-red-400/20 text-red-400">Poor: &gt;500ms</span>
@@ -137,22 +123,17 @@ const CoreWebVitalsGuide = () => {
                       <h3 className="text-lg font-bold text-foreground">CLS - Cumulative Layout Shift</h3>
                     </div>
                     <p className="text-muted-foreground mb-3">Measures visual stability—how much the page layout shifts during loading.</p>
-                    <div className="flex gap-4 text-sm">
+                    <div className="flex gap-4 text-sm flex-wrap">
                       <span className="px-3 py-1 rounded-full bg-green-400/20 text-green-400">Good: ≤0.1</span>
                       <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-400">Needs Work: ≤0.25</span>
                       <span className="px-3 py-1 rounded-full bg-red-400/20 text-red-400">Poor: &gt;0.25</span>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Optimization Tips */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Target className="w-6 h-6 text-primary" />
                   Optimization Strategies
@@ -207,15 +188,10 @@ const CoreWebVitalsGuide = () => {
                     </ul>
                   </div>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-green-400/10 to-emerald-500/10"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-green-400/10 to-emerald-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Optimize Your Vitals?
                 </h2>
@@ -232,7 +208,7 @@ const CoreWebVitalsGuide = () => {
                     <Link to="/pricing">Start Free Trial</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={cwvTerms} />

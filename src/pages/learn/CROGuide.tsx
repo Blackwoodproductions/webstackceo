@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
-  Target, Zap, BarChart3, AlertTriangle, Users
+  Target, Zap, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import FadeIn from "@/components/ui/fade-in";
 
 const croTerms = [
   { term: "Conversion Rate", shortDescription: "The percentage of visitors who complete a desired action or goal.", slug: "conversion-rate" },
@@ -43,11 +43,7 @@ const CROGuide = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-red-500/10" />
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
+            <FadeIn>
               <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
                 <ArrowLeft className="w-4 h-4" /> Back to Learning Center
               </Link>
@@ -65,7 +61,7 @@ const CROGuide = () => {
               <p className="text-xl text-muted-foreground">
                 Traffic means nothing without conversions. Learn how to systematically improve your website's ability to convert visitors.
               </p>
-            </motion.div>
+            </FadeIn>
           </div>
         </section>
 
@@ -75,12 +71,7 @@ const CROGuide = () => {
             <div className="prose prose-lg prose-invert max-w-none">
               
               {/* Introduction */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <TrendingUp className="w-6 h-6 text-primary" />
                   What is Conversion Rate Optimization?
@@ -91,15 +82,10 @@ const CROGuide = () => {
                 <p className="text-muted-foreground">
                   Unlike traffic acquisition (SEO, ads), CRO maximizes the value of traffic you already have. A 1% improvement in conversion rate can mean thousands in additional revenue.
                 </p>
-              </motion.div>
+              </FadeIn>
 
               {/* The Math */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={50} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <BarChart3 className="w-6 h-6 text-primary" />
                   The Power of CRO
@@ -118,15 +104,10 @@ const CROGuide = () => {
                   </div>
                   <p className="text-emerald-400 mt-4 font-semibold">That's 50% more customers without spending more on traffic!</p>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CRO Process */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={100} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Zap className="w-6 h-6 text-primary" />
                   The CRO Process
@@ -150,15 +131,10 @@ const CROGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Key Areas */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 mb-8"
-              >
+              <FadeIn delay={150} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Target className="w-6 h-6 text-primary" />
                   Key Areas to Optimize
@@ -178,15 +154,10 @@ const CROGuide = () => {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-orange-400/10 to-red-500/10"
-              >
+              <FadeIn delay={200} className="glass-card rounded-2xl p-8 text-center bg-gradient-to-br from-orange-400/10 to-red-500/10">
                 <h2 className="text-2xl font-bold text-foreground mb-4">
                   Ready to Boost Conversions?
                 </h2>
@@ -203,7 +174,7 @@ const CROGuide = () => {
                     <Link to="/pricing">Start Free Trial</Link>
                   </Button>
                 </div>
-              </motion.div>
+              </FadeIn>
 
               {/* Glossary Legend */}
               <GlossaryLegend terms={croTerms} />
