@@ -79,7 +79,7 @@ const HeroSection = () => {
         <Shield className={`w-[46px] h-[46px] transition-colors duration-500 ${
           isDashboardHovered ? "text-amber-400" : "text-primary"
         }`} />
-        <span className={`absolute font-bold text-[11px] tracking-tight transition-colors duration-500 ${
+        <span className={`absolute font-bold text-[12px] tracking-tight transition-colors duration-500 ${
           isDashboardHovered ? "text-amber-400" : "text-primary"
         }`}>AI</span>
       </motion.div>
