@@ -72,7 +72,6 @@ const plans = [
       "Custom SLA agreements",
       "SOC 2 compliant infrastructure",
       "Dedicated security protocols",
-      "Quarterly business reviews",
       "Early access to new features",
     ],
     highlighted: false,
