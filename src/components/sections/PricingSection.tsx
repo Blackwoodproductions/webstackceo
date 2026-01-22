@@ -75,6 +75,7 @@ const plans = [
     ],
     highlighted: false,
     hasToggle: true,
+    buttonText: "Book a Call",
   },
 ];
 
@@ -232,7 +233,7 @@ const PricingSection = () => {
                 className="w-full"
                 size="lg"
               >
-                Get Started
+                {plan.buttonText || "Get Started"}
               </Button>
             </motion.div>
           ))}
