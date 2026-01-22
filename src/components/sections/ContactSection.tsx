@@ -177,8 +177,49 @@ const ContactSection = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="glass-card border border-white/10 rounded-2xl p-8"
+            className="relative"
           >
+            {/* Fire glow effects */}
+            <motion.div
+              className="absolute -inset-4 rounded-3xl bg-gradient-to-t from-orange-600/40 via-amber-500/30 to-yellow-400/20 blur-2xl"
+              animate={{
+                opacity: [0.5, 0.8, 0.6, 0.9, 0.5],
+                scale: [1, 1.02, 0.98, 1.03, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+            <motion.div
+              className="absolute -inset-6 rounded-3xl bg-gradient-to-t from-red-600/30 via-orange-500/20 to-transparent blur-3xl"
+              animate={{
+                opacity: [0.4, 0.7, 0.5, 0.8, 0.4],
+                scale: [1.02, 1, 1.04, 0.98, 1.02],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.3,
+              }}
+            />
+            <motion.div
+              className="absolute -inset-8 rounded-3xl bg-gradient-to-t from-red-700/20 via-transparent to-transparent blur-3xl"
+              animate={{
+                opacity: [0.3, 0.5, 0.4, 0.6, 0.3],
+                y: [0, -10, 5, -15, 0],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.6,
+              }}
+            />
+            
+            <div className="relative glass-card border border-amber-500/30 rounded-2xl p-8 shadow-[0_0_40px_rgba(251,146,60,0.2)]">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -280,6 +321,7 @@ const ContactSection = () => {
                 </Button>
               </form>
             </Form>
+            </div>
           </motion.div>
         </div>
       </div>
