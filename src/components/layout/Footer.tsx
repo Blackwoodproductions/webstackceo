@@ -1,4 +1,4 @@
-import { useState, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Twitter, Linkedin, Github, Send, Shield, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,16 @@ const Footer = memo(() => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [isLogoGold, setIsLogoGold] = useState(false);
+
+  // Listen for logo gold state changes from Navbar
+  useEffect(() => {
+    const handleLogoGoldChange = (e: CustomEvent<{ isGold: boolean }>) => {
+      setIsLogoGold(e.detail.isGold);
+    };
+    window.addEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+  }, []);
 
   const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,21 +139,21 @@ const Footer = memo(() => {
               onMouseEnter={() => setIsLogoHovered(true)}
               onMouseLeave={() => setIsLogoHovered(false)}
             >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-300 ${
-                isLogoHovered 
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative transition-all duration-700 ${
+                isLogoHovered || isLogoGold
                   ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] scale-110" 
                   : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
               }`}>
-                <Shield className={`w-7 h-7 transition-colors duration-300 ${
-                  isLogoHovered ? "text-amber-400" : "text-primary"
+                <Shield className={`w-7 h-7 transition-colors duration-700 ${
+                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
                 }`} />
-                <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-300 ${
-                  isLogoHovered ? "text-amber-400" : "text-primary"
+                <span className={`absolute font-bold text-[9px] tracking-tight transition-all duration-700 ${
+                  isLogoHovered || isLogoGold ? "text-amber-400" : "text-primary"
                 }`}>AI</span>
               </div>
               <span className="text-xl font-bold text-foreground">
-                webstack<span className={`bg-clip-text text-transparent transition-all duration-300 ${
-                  isLogoHovered 
+                webstack<span className={`bg-clip-text text-transparent transition-all duration-700 ${
+                  isLogoHovered || isLogoGold
                     ? "bg-gradient-to-r from-amber-400 to-yellow-500 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" 
                     : "bg-gradient-to-r from-cyan-400 to-violet-500"
                 }`}>.ceo</span>
