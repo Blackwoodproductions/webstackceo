@@ -1,5 +1,13 @@
+# Enable RewriteEngine
+RewriteEngine On
+
 # Redirect www to non-www (works for both HTTP and HTTPS)
-# Update the domain name below to match your actual domain
-RewriteEngine on
 RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
 RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# Handle SPA routing - redirect all requests to index.html
+# This allows React Router to handle client-side routing
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
