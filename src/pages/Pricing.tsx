@@ -59,7 +59,7 @@ const Pricing = () => {
               </span>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Your Complete{" "}
-                <span className="gradient-text">SEO Command Center</span>
+                <span className="gradient-text">Web Command Center</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 All-in-one dashboard for SEO agencies and marketing companies. Analytics, 
