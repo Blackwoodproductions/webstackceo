@@ -186,6 +186,10 @@ const LinkBuildingGuide = () => {
                       <p className="text-foreground font-medium mb-1">📑 Resources Page</p>
                       <p className="text-sm text-muted-foreground">A topical index of the 3 keyword pages above, reinforcing the silo's thematic relevance</p>
                     </div>
+                    <div className="bg-secondary/50 rounded-xl p-4">
+                      <p className="text-foreground font-medium mb-1">🔗 Real Business Links</p>
+                      <p className="text-sm text-muted-foreground">All inbound links come from real, relevant business websites in your niche—not PBNs or spam sites</p>
+                    </div>
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                       <p className="text-sm text-foreground">
                         <strong>Note:</strong> If you already have a money page, we skip creating the main keyword page and send links directly to your existing URL.

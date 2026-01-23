@@ -170,6 +170,13 @@ const OffPageSEO = () => {
                         <p className="text-sm text-muted-foreground">All link equity channels through the silo to boost your money page</p>
                       </div>
                     </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-medium text-foreground">Real Business Websites</p>
+                        <p className="text-sm text-muted-foreground">All inbound links come from real, relevant business websites in your niche—not PBNs or spam sites</p>
+                      </div>
+                    </li>
                   </ul>
                   <div className="mt-6 p-4 bg-primary/10 rounded-xl border border-primary/20">
                     <p className="text-sm text-foreground">
