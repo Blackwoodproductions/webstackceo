@@ -67,6 +67,10 @@ const WebHostingGuide = lazy(() => import("./pages/learn/WebHostingGuide"));
 const CoreWebVitalsGuide = lazy(() => import("./pages/learn/CoreWebVitalsGuide"));
 const PPCLandingPagesGuide = lazy(() => import("./pages/learn/PPCLandingPagesGuide"));
 const CROGuide = lazy(() => import("./pages/learn/CROGuide"));
+const KeywordResearchGuide = lazy(() => import("./pages/learn/KeywordResearchGuide"));
+const ContentMarketingGuide = lazy(() => import("./pages/learn/ContentMarketingGuide"));
+const MobileSEOGuide = lazy(() => import("./pages/learn/MobileSEOGuide"));
+const EcommerceSEOGuide = lazy(() => import("./pages/learn/EcommerceSEOGuide"));
 const GlossaryTerm = lazy(() => import("./pages/learn/glossary/GlossaryTerm"));
 const GlossaryIndex = lazy(() => import("./pages/learn/glossary/GlossaryIndex"));
 
@@ -157,6 +161,10 @@ const App = () => (
               <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
               <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
               <Route path="/learn/cro-guide" element={<CROGuide />} />
+              <Route path="/learn/keyword-research-guide" element={<KeywordResearchGuide />} />
+              <Route path="/learn/content-marketing-guide" element={<ContentMarketingGuide />} />
+              <Route path="/learn/mobile-seo-guide" element={<MobileSEOGuide />} />
+              <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
               <Route path="/sitemap" element={<Sitemap />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
