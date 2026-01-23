@@ -73,19 +73,6 @@ const AdvancedAnalytics = () => {
         {/* What's Included */}
         <section className="py-24 bg-secondary/20">
           <div className="container mx-auto px-6 max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Full Suite
-              </span>
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Everything You Need to <span className="gradient-text">Dominate</span>
-              </h2>
-            </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {benefits.map((benefit, index) => (
