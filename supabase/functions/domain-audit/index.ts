@@ -116,8 +116,13 @@ serve(async (req) => {
           console.log("Ahrefs metrics response:", JSON.stringify(metricsData));
         }
 
+        // Extract domain rating - API returns nested object {domain_rating: {domain_rating: number, ahrefs_rank: number}}
+        const drValue = typeof drData.domain_rating === 'object' 
+          ? drData.domain_rating.domain_rating 
+          : drData.domain_rating;
+        
         result.ahrefs = {
-          domainRating: drData.domain_rating || drData.domainRating || 0,
+          domainRating: Math.round(drValue || 0),
           backlinks: metricsData?.metrics?.backlinks || metricsData?.backlinks || 0,
           referringDomains: metricsData?.metrics?.refdomains || metricsData?.refdomains || 0,
           organicTraffic: metricsData?.metrics?.org_traffic || metricsData?.organic?.traffic || 0,
