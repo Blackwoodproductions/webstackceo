@@ -72,22 +72,21 @@ const GlossaryTerm = () => {
               </div>
               
               {/* H1 with optional Feature Link */}
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                {termData.relatedFeature ? (
-                  <Link 
-                    to={termData.relatedFeature.href}
-                    className="hover:text-primary transition-colors group inline-flex items-center gap-3 flex-wrap"
-                  >
+              {termData.relatedFeature ? (
+                <Link 
+                  to={termData.relatedFeature.href}
+                  className="group inline-flex items-center gap-3 hover:opacity-80 transition-opacity mb-4"
+                >
+                  <h1 className="text-4xl md:text-5xl font-bold">
                     {termData.term}
-                    <span className="text-lg font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                      <Sparkles className="w-4 h-4" />
-                      See our {termData.relatedFeature.title} feature
-                    </span>
-                  </Link>
-                ) : (
-                  termData.term
-                )}
-              </h1>
+                  </h1>
+                  <ArrowRight className="w-8 h-8 text-primary opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300" />
+                </Link>
+              ) : (
+                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                  {termData.term}
+                </h1>
+              )}
               <p className="text-xl text-muted-foreground mb-6">
                 {termData.shortDescription}
               </p>
