@@ -7,7 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
-
+import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 const benefits = [
   { icon: Globe, title: "Niche Categorization", description: "Every client site is categorized by niche, enabling highly relevant link placements across your portfolio." },
   { icon: Users, title: "Automated Outreach", description: "Our system matches sites by niche and builds contextual links automatically—no manual work required." },
@@ -111,8 +111,92 @@ const OffPageSEO = () => {
           </div>
         </section>
 
-        {/* Link Quality */}
+        {/* Diamond Flow - Content Silo Structure */}
         <section className="py-24">
+          <div className="container mx-auto px-6 max-w-6xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
+                Our Link Strategy
+              </span>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                The <span className="gradient-text">Diamond Flow</span> Architecture
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+                We build content silos that channel link equity directly to your money pages. If you already have a money page, 
+                we skip creating the main keyword page and send links straight to yours.
+              </p>
+            </motion.div>
+
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="order-2 lg:order-1"
+              >
+                <div className="glass-card rounded-2xl p-8">
+                  <h3 className="text-xl font-bold text-foreground mb-6">How It Works:</h3>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-medium text-foreground">Money Page (Your Target URL)</p>
+                        <p className="text-sm text-muted-foreground">Your existing conversion page or one we create for your main keyword</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-medium text-foreground">Supporting Pages (2 per cluster)</p>
+                        <p className="text-sm text-muted-foreground">We create niche-relevant content that links up to your money page</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-medium text-foreground">Resources Page (Link Partners)</p>
+                        <p className="text-sm text-muted-foreground">Curated partner links that strengthen the entire silo structure</p>
+                      </div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                      <div>
+                        <p className="font-medium text-foreground">Inbound Links Flow Upward</p>
+                        <p className="text-sm text-muted-foreground">All link equity channels through the silo to boost your money page</p>
+                      </div>
+                    </li>
+                  </ul>
+                  <div className="mt-6 p-4 bg-primary/10 rounded-xl border border-primary/20">
+                    <p className="text-sm text-foreground">
+                      <strong>Already have a money page?</strong> We skip creating the main keyword page and build supporting pages that link directly to your existing high-value URL.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="order-1 lg:order-2"
+              >
+                <img 
+                  src={diamondFlowImg} 
+                  alt="BRON SEO Diamond Flow - Content silo structure showing money page, supporting pages, and resources page with inbound link flow" 
+                  className="rounded-2xl shadow-2xl w-full"
+                />
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Link Quality */}
+        <section className="py-24 bg-secondary/20">
           <div className="container mx-auto px-6 max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

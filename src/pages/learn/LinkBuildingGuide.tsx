@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { 
   Link2, CheckCircle2, ArrowRight, ArrowLeft, 
-  Target, AlertTriangle, Zap
+  Target, AlertTriangle, Zap, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -13,7 +13,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
-
+import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 const linkBuildingTerms = [
   { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as votes of confidence.", slug: "backlinks" },
   { term: "Domain Authority", shortDescription: "A score predicting how likely a website is to rank in search results.", slug: "domain-authority" },
@@ -154,6 +154,45 @@ const LinkBuildingGuide = () => {
                     </li>
                   ))}
                 </ul>
+              </FadeIn>
+
+              {/* Diamond Flow - Content Silo */}
+              <FadeIn delay={175} className="glass-card rounded-2xl p-8 mb-8 bg-gradient-to-br from-cyan-400/5 to-violet-500/5">
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Layers className="w-6 h-6 text-primary" />
+                  Content Silo Link Architecture
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  The most effective link building uses a structured content silo approach. We call this the <strong className="text-foreground">Diamond Flow</strong>—a bottom-up power structure that channels link equity to your most valuable pages.
+                </p>
+                <div className="grid md:grid-cols-2 gap-6 items-center">
+                  <div>
+                    <img 
+                      src={diamondFlowImg} 
+                      alt="BRON SEO Diamond Flow showing content silo structure with money page, supporting pages, and resources page" 
+                      className="rounded-xl shadow-lg w-full"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <div className="bg-secondary/50 rounded-xl p-4">
+                      <p className="text-foreground font-medium mb-1">💰 Money Page</p>
+                      <p className="text-sm text-muted-foreground">Your target URL—either your existing page or one we create for your main keyword</p>
+                    </div>
+                    <div className="bg-secondary/50 rounded-xl p-4">
+                      <p className="text-foreground font-medium mb-1">📄 Supporting Pages</p>
+                      <p className="text-sm text-muted-foreground">2 pages per cluster with relevant content linking up to your money page</p>
+                    </div>
+                    <div className="bg-secondary/50 rounded-xl p-4">
+                      <p className="text-foreground font-medium mb-1">🔗 Resources Page</p>
+                      <p className="text-sm text-muted-foreground">Link partner directory that strengthens the entire silo structure</p>
+                    </div>
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <p className="text-sm text-foreground">
+                        <strong>Note:</strong> If you already have a money page, we skip creating the main keyword page and send links directly to your existing URL.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </FadeIn>
 
               {/* CTA */}
