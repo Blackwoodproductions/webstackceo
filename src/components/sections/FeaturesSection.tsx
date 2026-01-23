@@ -104,25 +104,6 @@ const FeaturesSection = () => {
       <motion.div style={{ y: gridY }} className="absolute inset-0 grid-pattern opacity-30" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
-        
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            Everything You Need to Dominate
-          </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            <span className="text-foreground">One Platform.</span>{" "}
-            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              Unlimited Growth.
-            </span>
-          </h2>
-        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
