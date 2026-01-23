@@ -2,7 +2,7 @@ import { memo, useState, useEffect } from "react";
 
 const FloatingCodeBox = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(false);
+  const [topPosition, setTopPosition] = useState('8rem');
 
   // Delay render to not block initial page paint
   useEffect(() => {
@@ -24,20 +24,35 @@ const FloatingCodeBox = memo(() => {
     };
   }, []);
 
-  // Handle scroll to stop below contact form, above footer's "Stay ahead" section
+  // Handle scroll to stop above footer
   useEffect(() => {
     const handleScroll = () => {
       const footer = document.querySelector('footer');
-      if (footer) {
-        const footerRect = footer.getBoundingClientRect();
-        const stopPoint = window.innerHeight - 80; // Stop right at footer top
-        setIsAtBottom(footerRect.top < stopPoint);
+      if (!footer) return;
+
+      const footerRect = footer.getBoundingClientRect();
+      const elementHeight = 80; // 20 * 4 = h-20
+      const buffer = 40; // Space above footer
+      const defaultTop = 128; // 8rem = 128px
+      
+      // Calculate max position (above footer)
+      const maxTop = footerRect.top - elementHeight - buffer;
+      
+      if (defaultTop > maxTop) {
+        // Element would overlap footer, cap it
+        setTopPosition(`${maxTop}px`);
+      } else {
+        setTopPosition('8rem');
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   if (!isVisible) return null;
@@ -53,11 +68,8 @@ const FloatingCodeBox = memo(() => {
 
   return (
     <div 
-      className="fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in"
-      style={{
-        top: isAtBottom ? 'auto' : '8rem',
-        bottom: isAtBottom ? '220px' : 'auto',
-      }}
+      className="fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in transition-all duration-300"
+      style={{ top: topPosition }}
     >
       <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
         {codeLines.map((codeLine, rowIndex) => (

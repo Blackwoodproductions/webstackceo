@@ -1,10 +1,11 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Shield } from "lucide-react";
 
 const FloatingAIShield = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [isShieldGold, setIsShieldGold] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(false);
+  const [topPosition, setTopPosition] = useState('78%');
+  const maxBottomRef = useRef<number | null>(null);
 
   // Delay render to not block initial page paint
   useEffect(() => {
@@ -35,35 +36,49 @@ const FloatingAIShield = memo(() => {
     return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
   }, []);
 
-  // Handle scroll to stop below contact form, above footer's "Stay ahead" section
+  // Handle scroll to stop above footer
   useEffect(() => {
     const handleScroll = () => {
       const footer = document.querySelector('footer');
-      if (footer) {
-        const footerRect = footer.getBoundingClientRect();
-        const stopPoint = window.innerHeight - 80; // Stop right at footer top
-        setIsAtBottom(footerRect.top < stopPoint);
+      if (!footer) return;
+
+      const footerRect = footer.getBoundingClientRect();
+      const elementHeight = 64; // 16 * 4 = h-16
+      const buffer = 40; // Space above footer
+      const defaultTop = window.innerHeight * 0.78;
+      
+      // Calculate where element would naturally be
+      const naturalTop = defaultTop;
+      // Calculate max position (above footer)
+      const maxTop = footerRect.top - elementHeight - buffer;
+      
+      if (naturalTop > maxTop) {
+        // Element would overlap footer, cap it
+        setTopPosition(`${maxTop}px`);
+      } else {
+        setTopPosition('78%');
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   if (!isVisible) return null;
 
   return (
     <div 
-      className={`fixed left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-700 ${
+      className={`fixed left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-300 ${
         isShieldGold 
           ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
           : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
       }`}
-      style={{
-        top: isAtBottom ? 'auto' : '78%',
-        bottom: isAtBottom ? '220px' : 'auto',
-      }}
+      style={{ top: topPosition }}
     >
       <Shield className={`w-[42px] h-[42px] transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`} />
       <span className={`absolute font-bold text-[11px] tracking-tight transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`}>AI</span>
