@@ -455,6 +455,7 @@ export const generateServicesPDF = async () => {
     { title: 'Main Keyword Page', desc: 'If the client doesn\'t have a money page, we create one targeting their primary keyword. If they do, we skip this step.' },
     { title: 'Supporting Pages (2 per cluster)', desc: 'We create niche-relevant content pages that link upward to the money page, passing authority.' },
     { title: 'Resources Page (Topical Index)', desc: 'A comprehensive index of the 3 keyword pages above, reinforcing the silo\'s topical relevance and thematic authority.' },
+    { title: 'Real Business Websites', desc: 'All inbound links come from real, relevant business websites in your niche—not PBNs, link farms, or spam sites.' },
   ];
 
   diamondSteps.forEach((step, index) => {

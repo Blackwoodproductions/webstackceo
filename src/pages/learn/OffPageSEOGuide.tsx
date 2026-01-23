@@ -201,6 +201,13 @@ const OffPageSEOGuide = () => {
                         <p className="text-sm text-muted-foreground">All link equity is channeled to boost your money page</p>
                       </div>
                     </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-foreground font-medium">Real Business Websites</p>
+                        <p className="text-sm text-muted-foreground">All inbound links come from real, relevant business websites in your niche—not PBNs or spam sites</p>
+                      </div>
+                    </div>
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 mt-4">
                       <p className="text-sm text-foreground">
                         <strong>Already have a money page?</strong> We skip the main keyword page and link directly to your existing URL.
