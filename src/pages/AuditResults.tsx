@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,6 +7,7 @@ import SEO from "@/components/SEO";
 import BackToTop from "@/components/ui/back-to-top";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import {
   Gauge,
   FileCode,
@@ -17,13 +18,24 @@ import {
   AlertTriangle,
   ArrowLeft,
   Download,
-  Zap,
   Clock,
   Globe,
-  Lock,
-  FileText,
+  Link2,
+  Smartphone,
+  Heading,
   Image,
-  ExternalLink,
+  FileText,
+  Bot,
+  Star,
+  Check,
+  ShieldCheck,
+  CreditCard,
+  HeadphonesIcon,
+  Sparkles,
+  Zap,
+  Crown,
+  Flame,
+  Plus,
 } from "lucide-react";
 
 interface AuditCheck {
@@ -40,9 +52,95 @@ interface AuditCategory {
   checks: AuditCheck[];
 }
 
+// Pricing data (simplified from PricingSection)
+const getPositionsLeft = () => {
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const monthSeed = now.getMonth() + now.getFullYear() * 12;
+  const baseDecrease = Math.floor(dayOfMonth * 0.7);
+  const randomVariance = ((monthSeed * dayOfMonth * 7) % 5) - 2;
+  return Math.max(3, 21 - baseDecrease + randomVariance);
+};
+
+const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; color: string }> = {
+  "Free directory listing": { icon: Star, label: "Included", color: "from-emerald-400 to-green-500" },
+  "Free Marketplace Listing": { icon: Star, label: "Included", color: "from-emerald-400 to-green-500" },
+  "AEO and GEO signals": { icon: Sparkles, label: "AI Ready", color: "from-fuchsia-400 to-pink-500" },
+  "DA - DR BOOSTER": { icon: Zap, label: "Power", color: "from-amber-400 to-orange-500" },
+  "Up to 40% off normal keyword pricing": { icon: Crown, label: "Deal", color: "from-violet-400 to-purple-500" },
+  "Up to 60% off normal pricing": { icon: Crown, label: "Best Deal", color: "from-cyan-400 to-blue-500" },
+};
+
+const addOns = [
+  { name: "On-Page SEO", icon: Sparkles },
+  { name: "PPC Landing Pages", icon: Zap },
+  { name: "Lovable Premium Hosting", icon: Shield },
+];
+
+const plans = [
+  {
+    name: "Business CEO",
+    monthlyPrice: 75,
+    yearlyPrice: 60,
+    description: "Everything you need to dominate local SEO",
+    features: [
+      "15 keyword phrases",
+      "Free directory listing",
+      "AEO and GEO signals",
+      "Uptime monitoring",
+      "Bi-weekly SEO ranking reports",
+      "15 SEO rich content pages",
+      "25 relevant business partners",
+      "Up to 125 targeted Deep Links",
+      "DA - DR BOOSTER",
+      "In-depth analytics",
+    ],
+    highlighted: false,
+    hasToggle: true,
+    originalPrice: 150,
+    hasScarcity: true,
+  },
+  {
+    name: "White Label",
+    monthlyPrice: 499,
+    yearlyPrice: 399,
+    description: "Resell our services under your brand",
+    features: [
+      "Everything in Growth plan",
+      "Free Marketplace Listing",
+      "Up to 40% off normal keyword pricing",
+      "White-label dashboard & reports",
+      "Custom branding on all deliverables",
+      "Priority 24/7 support",
+      "Bulk client management tools",
+      "Dedicated account manager",
+    ],
+    highlighted: true,
+    hasToggle: true,
+  },
+  {
+    name: "Super Reseller",
+    monthlyPrice: 1499,
+    yearlyPrice: 1199,
+    description: "Enterprise API access for agencies at scale",
+    features: [
+      "Everything in White Label plan",
+      "Up to 60% off normal pricing",
+      "Full API access to all data",
+      "Pull data to your own systems",
+      "Custom integrations & webhooks",
+      "Volume-based enterprise pricing",
+      "Dedicated success team",
+      "Priority enterprise support",
+    ],
+    highlighted: false,
+    hasToggle: true,
+    buttonText: "Book a Call",
+  },
+];
+
 // Generate simulated audit results based on domain
 const generateAuditResults = (domain: string): AuditCategory[] => {
-  // Use domain hash to generate consistent but varied results
   const hash = domain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   
   const randomScore = (base: number, variance: number) => {
@@ -50,10 +148,16 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
     return Math.min(100, Math.max(0, Math.round(base + offset)));
   };
 
+  const randomValue = (min: number, max: number) => {
+    return Math.round(min + ((hash % 100) / 100) * (max - min));
+  };
+
   const speedScore = randomScore(72, 20);
   const schemaScore = randomScore(45, 30);
   const metaScore = randomScore(68, 25);
   const securityScore = randomScore(85, 15);
+  const backlinkScore = randomScore(55, 35);
+  const technicalScore = randomScore(65, 25);
 
   return [
     {
@@ -89,6 +193,81 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
           name: "Image Optimization",
           status: hash % 3 === 0 ? "fail" : hash % 3 === 1 ? "warning" : "pass",
           description: "Images should be compressed and use modern formats like WebP",
+        },
+      ],
+    },
+    {
+      title: "Backlink Profile",
+      icon: Link2,
+      score: backlinkScore,
+      checks: [
+        {
+          name: "Total Backlinks",
+          status: backlinkScore > 60 ? "pass" : backlinkScore > 35 ? "warning" : "fail",
+          value: `${randomValue(15, 850).toLocaleString()} links`,
+          description: "More quality backlinks improve domain authority and rankings",
+        },
+        {
+          name: "Referring Domains",
+          status: backlinkScore > 50 ? "pass" : backlinkScore > 30 ? "warning" : "fail",
+          value: `${randomValue(8, 120)} domains`,
+          description: "Links from diverse domains carry more weight than many from one",
+        },
+        {
+          name: "Domain Authority (DA)",
+          status: backlinkScore > 55 ? "pass" : backlinkScore > 40 ? "warning" : "fail",
+          value: `${randomValue(15, 55)}/100`,
+          description: "Higher DA indicates stronger site authority and trust",
+        },
+        {
+          name: "Toxic Link Ratio",
+          status: hash % 4 === 0 ? "fail" : hash % 3 === 0 ? "warning" : "pass",
+          value: `${randomValue(2, 18)}%`,
+          description: "High ratio of toxic/spammy links can hurt rankings",
+        },
+        {
+          name: "Anchor Text Diversity",
+          status: backlinkScore > 45 ? "pass" : "warning",
+          description: "Natural anchor text variation signals organic link building",
+        },
+      ],
+    },
+    {
+      title: "Technical SEO",
+      icon: FileText,
+      score: technicalScore,
+      checks: [
+        {
+          name: "Mobile Friendliness",
+          status: technicalScore > 60 ? "pass" : technicalScore > 40 ? "warning" : "fail",
+          description: "Site must be fully responsive for mobile-first indexing",
+        },
+        {
+          name: "Heading Structure (H1-H6)",
+          status: hash % 3 !== 0 ? "pass" : "warning",
+          value: hash % 3 !== 0 ? "Valid hierarchy" : "Multiple H1s found",
+          description: "Proper heading hierarchy helps search engines understand content",
+        },
+        {
+          name: "Image Alt Attributes",
+          status: technicalScore > 55 ? "pass" : technicalScore > 35 ? "warning" : "fail",
+          value: `${randomValue(65, 95)}% coverage`,
+          description: "Alt text improves accessibility and image SEO",
+        },
+        {
+          name: "Sitemap.xml Present",
+          status: hash % 5 !== 0 ? "pass" : "fail",
+          description: "XML sitemap helps search engines discover and index pages",
+        },
+        {
+          name: "Robots.txt Configured",
+          status: technicalScore > 50 ? "pass" : "warning",
+          description: "Proper robots.txt controls crawler access to your site",
+        },
+        {
+          name: "Canonical Tags",
+          status: technicalScore > 60 ? "pass" : hash % 2 === 0 ? "warning" : "fail",
+          description: "Canonicals prevent duplicate content issues",
         },
       ],
     },
@@ -152,14 +331,9 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
           description: "Twitter cards enhance link previews on Twitter/X",
         },
         {
-          name: "Canonical URL",
-          status: metaScore > 55 ? "pass" : "warning",
-          description: "Canonical URLs prevent duplicate content issues",
-        },
-        {
-          name: "Robots Meta Tag",
+          name: "Viewport Meta Tag",
           status: "pass",
-          description: "Robots meta tag controls search engine crawling behavior",
+          description: "Viewport meta enables proper mobile rendering",
         },
       ],
     },
@@ -194,11 +368,6 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
           status: securityScore > 70 ? "pass" : "fail",
           description: "Prevents clickjacking attacks by controlling iframe embedding",
         },
-        {
-          name: "Content Security Policy",
-          status: securityScore > 85 ? "pass" : hash % 3 === 0 ? "warning" : "fail",
-          description: "CSP helps prevent XSS and data injection attacks",
-        },
       ],
     },
   ];
@@ -232,6 +401,8 @@ const AuditResults = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [auditResults, setAuditResults] = useState<AuditCategory[]>([]);
+  const [isYearly, setIsYearly] = useState(false);
+  const positionsLeft = useMemo(() => getPositionsLeft(), []);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -241,11 +412,10 @@ const AuditResults = () => {
       return;
     }
 
-    // Simulate loading time for audit
     const timer = setTimeout(() => {
       setAuditResults(generateAuditResults(decodedDomain));
       setIsLoading(false);
-    }, 2000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, [decodedDomain, navigate]);
@@ -282,9 +452,11 @@ const AuditResults = () => {
               <div className="flex flex-col gap-3 max-w-md mx-auto text-left">
                 {[
                   { icon: Gauge, text: "Measuring page speed metrics..." },
+                  { icon: Link2, text: "Analyzing backlink profile..." },
                   { icon: FileCode, text: "Scanning for schema markup..." },
-                  { icon: Search, text: "Analyzing meta tags..." },
-                  { icon: Shield, text: "Checking security headers..." },
+                  { icon: Search, text: "Checking meta tags..." },
+                  { icon: FileText, text: "Reviewing technical SEO..." },
+                  { icon: Shield, text: "Verifying security headers..." },
                 ].map((item, i) => (
                   <motion.div
                     key={item.text}
@@ -295,8 +467,14 @@ const AuditResults = () => {
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.text}</span>
-                    {i < 3 && (
-                      <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />
+                    {i < 5 && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: (i + 1) * 0.4 }}
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />
+                      </motion.div>
                     )}
                   </motion.div>
                 ))}
@@ -312,7 +490,7 @@ const AuditResults = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title={`SEO Audit Results for ${decodedDomain} | Webstack.ceo`}
-        description={`Comprehensive SEO audit results for ${decodedDomain}. Check page speed, schema markup, meta tags, and security analysis.`}
+        description={`Comprehensive SEO audit results for ${decodedDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
         noIndex
       />
       <Navbar />
@@ -403,84 +581,79 @@ const AuditResults = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
+            className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-12"
           >
             {auditResults.map((category, i) => (
               <motion.div
                 key={category.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.1 }}
-                className="p-6 rounded-2xl bg-card border border-border/50"
+                transition={{ delay: 0.1 + i * 0.05 }}
+                className="p-4 rounded-2xl bg-card border border-border/50"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
-                    <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
+                    <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
                   </div>
-                  <span className="font-medium">{category.title}</span>
+                  <span className="font-medium text-sm truncate">{category.title}</span>
                 </div>
-                <div className="flex items-end gap-2">
-                  <span className={`text-3xl font-bold ${getScoreColor(category.score)}`}>
+                <div className="flex items-end gap-1">
+                  <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
                     {category.score}
                   </span>
-                  <span className="text-sm text-muted-foreground mb-1">/100</span>
+                  <span className="text-xs text-muted-foreground mb-1">/100</span>
                 </div>
-                <Progress
-                  value={category.score}
-                  className="h-2 mt-3"
-                />
+                <Progress value={category.score} className="h-1.5 mt-2" />
               </motion.div>
             ))}
           </motion.div>
 
           {/* Detailed Results */}
-          <div className="space-y-8">
+          <div className="grid lg:grid-cols-2 gap-6 mb-16">
             {auditResults.map((category, catIndex) => (
               <motion.div
                 key={category.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + catIndex * 0.1 }}
+                transition={{ delay: 0.2 + catIndex * 0.05 }}
                 className="rounded-2xl bg-card border border-border/50 overflow-hidden"
               >
-                <div className="p-6 border-b border-border/50 flex items-center justify-between">
+                <div className="p-5 border-b border-border/50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
                       <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
                     </div>
                     <div>
-                      <h2 className="font-semibold text-lg">{category.title}</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {category.checks.filter((c) => c.status === "pass").length} of{" "}
-                        {category.checks.length} checks passed
+                      <h2 className="font-semibold">{category.title}</h2>
+                      <p className="text-xs text-muted-foreground">
+                        {category.checks.filter((c) => c.status === "pass").length}/{category.checks.length} passed
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xl font-bold ${getScoreColor(category.score)}`}>
                       {category.score}
                     </span>
-                    <span className="text-sm text-muted-foreground">/100</span>
                   </div>
                 </div>
 
-                <div className="divide-y divide-border/50">
-                  {category.checks.map((check, checkIndex) => (
+                <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
+                  {category.checks.map((check) => (
                     <div
                       key={check.name}
-                      className="p-4 flex items-start gap-4 hover:bg-muted/30 transition-colors"
+                      className="p-3 flex items-start gap-3 hover:bg-muted/30 transition-colors"
                     >
                       {getStatusIcon(check.status)}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{check.name}</span>
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-medium text-sm">{check.name}</span>
                           {check.value && (
-                            <span className="text-sm px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
                               {check.value}
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground line-clamp-2">
                           {check.description}
                         </p>
                       </div>
@@ -491,34 +664,183 @@ const AuditResults = () => {
             ))}
           </div>
 
-          {/* CTA Section */}
+          {/* Pricing Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-12 p-8 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-amber-500/10 border border-primary/20 text-center"
+            transition={{ delay: 0.5 }}
+            className="mt-16"
           >
-            <Zap className="w-10 h-10 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">Ready to Improve Your SEO?</h3>
-            <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-              Let our team of experts help you fix these issues and boost your search rankings.
-              Get started with a custom SEO strategy today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-cyan-500 via-violet-500 to-amber-500 hover:from-cyan-600 hover:via-violet-600 hover:to-amber-600"
-                onClick={() => navigate("/pricing")}
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold mb-3">
+                Fix These Issues with{" "}
+                <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-amber-400 bg-clip-text text-transparent">
+                  Professional SEO
+                </span>
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Let our team of experts improve your SEO scores and boost your search rankings with our comprehensive plans.
+              </p>
+            </div>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-10">
+              <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Monthly
+              </span>
+              <button
+                onClick={() => setIsYearly(!isYearly)}
+                className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${
+                  isYearly ? 'bg-primary' : 'bg-muted'
+                }`}
               >
-                View Pricing Plans
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate("/contact")}
-              >
-                Contact Us
-              </Button>
+                <motion.div
+                  className="absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md"
+                  animate={{ x: isYearly ? 28 : 0 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              </button>
+              <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Yearly
+              </span>
+              <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                Save 20%
+              </span>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {plans.map((plan, index) => (
+                <motion.div
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`relative rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
+                    plan.highlighted
+                      ? "bg-gradient-to-b from-primary/20 to-primary/5 border-2 border-primary shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
+                      : "glass-card border border-white/10"
+                  }`}
+                >
+                  {plan.highlighted && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current" />
+                        Most Popular
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                    <p className="text-muted-foreground text-xs mb-3">{plan.description}</p>
+                    
+                    <div className="flex items-baseline justify-center gap-2">
+                      {plan.originalPrice && !isYearly && (
+                        <span className="text-lg text-muted-foreground line-through">
+                          ${plan.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-3xl font-bold">
+                        ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      </span>
+                      <span className="text-muted-foreground text-sm">/mo</span>
+                    </div>
+                    
+                    {plan.originalPrice && !isYearly && (
+                      <span className="inline-block mt-2 bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        50% OFF
+                      </span>
+                    )}
+                    
+                    {plan.hasScarcity && (
+                      <div className="mt-3 flex items-center justify-center gap-1">
+                        <Flame className="w-3 h-3 text-orange-500 animate-pulse" />
+                        <span className="text-xs font-medium text-orange-500">
+                          Only {positionsLeft} spots left!
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <ul className="space-y-2 mb-6 text-sm">
+                    {plan.features.slice(0, 6).map((feature) => {
+                      const premium = premiumFeatures[feature];
+                      return (
+                        <li key={feature} className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground text-xs flex items-center gap-1 flex-wrap">
+                            {feature}
+                            {premium && (
+                              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold text-white bg-gradient-to-r ${premium.color}`}>
+                                {premium.label}
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
+                    {plan.features.length > 6 && (
+                      <li className="text-xs text-primary font-medium pl-6">
+                        +{plan.features.length - 6} more features
+                      </li>
+                    )}
+                  </ul>
+
+                  {/* Add-ons */}
+                  <div className="mb-4 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-1 mb-2">
+                      <Plus className="w-3 h-3 text-primary" />
+                      <span className="text-xs font-semibold">Add-ons</span>
+                    </div>
+                    <ul className="space-y-1">
+                      {addOns.map((addon) => (
+                        <li key={addon.name} className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{addon.name}</span>
+                          <span className="text-primary text-[10px]">Contact</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {plan.buttonText === "Book a Call" ? (
+                    <Button variant="heroOutline" className="w-full" size="sm" asChild>
+                      <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                        {plan.buttonText}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={plan.highlighted ? "hero" : "heroOutline"}
+                      className="w-full"
+                      size="sm"
+                    >
+                      Get Started
+                    </Button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            <StripePaymentIcons className="mt-8" />
+
+            {/* Trust Indicators */}
+            <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: ShieldCheck, title: "30-Day Money Back" },
+                { icon: CreditCard, title: "Secure Payments" },
+                { icon: Clock, title: "Cancel Anytime" },
+                { icon: HeadphonesIcon, title: "24/7 Support" },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-center gap-2 p-3 rounded-xl glass-card border border-white/10"
+                >
+                  <item.icon className="w-5 h-5 text-primary" />
+                  <span className="text-xs font-medium">{item.title}</span>
+                </div>
+              ))}
             </div>
           </motion.div>
         </div>
