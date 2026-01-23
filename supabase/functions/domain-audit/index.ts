@@ -60,10 +60,13 @@ serve(async (req) => {
     };
 
     try {
+      // Ahrefs API v3 requires a date parameter
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      
       // Ahrefs Domain Rating API
-      // Using the Ahrefs API v3
       const ahrefsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating");
       ahrefsUrl.searchParams.set("target", cleanDomain);
+      ahrefsUrl.searchParams.set("date", today);
       ahrefsUrl.searchParams.set("output", "json");
 
       console.log(`Calling Ahrefs API: ${ahrefsUrl.toString()}`);
@@ -96,6 +99,7 @@ serve(async (req) => {
         // Now get backlinks metrics
         const backlinksUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics");
         backlinksUrl.searchParams.set("target", cleanDomain);
+        backlinksUrl.searchParams.set("date", today);
         backlinksUrl.searchParams.set("output", "json");
 
         const backlinksResponse = await fetch(backlinksUrl.toString(), {
