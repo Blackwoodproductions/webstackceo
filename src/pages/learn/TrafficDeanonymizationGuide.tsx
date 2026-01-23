@@ -63,13 +63,12 @@ const TrafficDeanonymizationGuide = () => {
                 <span className="text-sm text-muted-foreground">8 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Traffic De-Anonymization: <span className="gradient-text">Reveal Your Visitors</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Traffic De-Anonymization" featureHref="/features/traffic-de-anonymization" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Traffic De-Anonymization:" 
+                gradientText="Reveal Your Visitors" 
+                featureHref="/features/traffic-de-anonymization" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Turn anonymous website traffic into actionable sales intelligence. Learn how to identify the companies visiting your site.
               </p>
             </motion.div>

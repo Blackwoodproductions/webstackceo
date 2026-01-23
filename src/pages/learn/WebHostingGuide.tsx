@@ -63,13 +63,13 @@ const WebHostingGuide = () => {
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Web Hosting: <span className="gradient-text">The SEO Foundation</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Web Hosting" featureHref="/features/web-hosting" isAddOn />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Web Hosting:" 
+                gradientText="The SEO Foundation" 
+                featureHref="/features/web-hosting" 
+                isAddOn 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Your hosting provider directly impacts page speed, uptime, and security—all critical SEO factors.
               </p>
             </motion.div>

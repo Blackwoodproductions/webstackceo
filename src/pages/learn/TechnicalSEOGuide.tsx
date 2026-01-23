@@ -63,13 +63,12 @@ const TechnicalSEOGuide = () => {
                 <span className="text-sm text-muted-foreground">15 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Technical SEO: <span className="gradient-text">The Foundation</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Uptime Monitoring" featureHref="/features/uptime-monitoring" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Technical SEO:" 
+                gradientText="The Foundation" 
+                featureHref="/features/uptime-monitoring" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Technical SEO ensures search engines can crawl, index, and render your website properly. Without it, even the best content won't rank.
               </p>
             </motion.div>

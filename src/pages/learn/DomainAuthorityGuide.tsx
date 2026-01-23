@@ -59,13 +59,12 @@ const DomainAuthorityGuide = () => {
                 <span className="text-sm text-muted-foreground">12 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Domain Authority: <span className="gradient-text">The Complete Guide</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Domain Authority" featureHref="/features/domain-authority" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Domain Authority:" 
+                gradientText="The Complete Guide" 
+                featureHref="/features/domain-authority" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Domain Authority is one of the most important metrics in SEO. Learn what it is, how it works, and exactly how to improve it.
               </p>
             </FadeIn>

@@ -60,13 +60,12 @@ const OffPageSEOGuide = () => {
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Off-Page SEO: <span className="gradient-text">Building Authority</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Off-Page SEO" featureHref="/features/off-page-seo" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Off-Page SEO:" 
+                gradientText="Building Authority" 
+                featureHref="/features/off-page-seo" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 While on-page SEO optimizes your website, off-page SEO builds your reputation across the internet. Learn how to establish authority that search engines trust.
               </p>
             </FadeIn>

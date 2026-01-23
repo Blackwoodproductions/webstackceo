@@ -63,13 +63,12 @@ const VisitorIntelligenceGuide = () => {
                 <span className="text-sm text-muted-foreground">11 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Visitor Intelligence: <span className="gradient-text">Know Your Audience</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Visitor Intelligence" featureHref="/features/visitor-intelligence" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Visitor Intelligence:" 
+                gradientText="Know Your Audience" 
+                featureHref="/features/visitor-intelligence" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Transform anonymous website traffic into actionable insights. Learn how to identify, understand, and convert your website visitors.
               </p>
             </motion.div>

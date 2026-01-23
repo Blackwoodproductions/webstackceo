@@ -59,13 +59,13 @@ const CoreWebVitalsGuide = () => {
                 <span className="text-sm text-muted-foreground">12 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Core Web Vitals: <span className="gradient-text">The Complete Guide</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Web Hosting" featureHref="/features/web-hosting" isAddOn />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Core Web Vitals:" 
+                gradientText="The Complete Guide" 
+                featureHref="/features/web-hosting" 
+                isAddOn 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Google's Core Web Vitals are now ranking factors. Learn what they measure and how to optimize them.
               </p>
             </FadeIn>
