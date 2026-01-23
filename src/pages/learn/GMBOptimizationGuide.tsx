@@ -12,6 +12,16 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
+import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import { getTermsByGuide } from "@/data/glossaryData";
+
+// Get terms linked to this guide from shared glossary
+const gmbTerms = getTermsByGuide("/learn/gmb-optimization-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const GMBOptimizationGuide = () => {
   return (
@@ -53,9 +63,12 @@ const GMBOptimizationGuide = () => {
                 <span className="text-sm text-muted-foreground">13 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Google Business Profile: <span className="gradient-text">Complete Mastery</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="GMB Optimization" featureHref="/features/gmb-optimization" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Your Google Business Profile is often the first thing customers see. Learn how to optimize it for maximum visibility and conversions.
               </p>
@@ -264,6 +277,9 @@ const GMBOptimizationGuide = () => {
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Glossary Terms */}
+              <GlossaryLegend terms={gmbTerms} title="Key Terms in This Guide" />
 
               {/* Article Navigation */}
               <ArticleNavigation

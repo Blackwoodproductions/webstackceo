@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -62,9 +63,12 @@ const FAQGenerationGuide = () => {
                 <span className="text-sm text-muted-foreground">7 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 FAQ Generation: <span className="gradient-text">Answer to Rank</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="FAQ Generation" featureHref="/features/faq-generation" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 FAQ content is a secret weapon for SEO. Learn how to generate, optimize, and leverage FAQs to dominate search results.
               </p>

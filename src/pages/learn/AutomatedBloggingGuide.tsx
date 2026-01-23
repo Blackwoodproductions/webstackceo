@@ -12,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -58,9 +59,12 @@ const AutomatedBloggingGuide = () => {
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Automated Blogging: <span className="gradient-text">Scale Your Content</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Automated Blog" featureHref="/features/automated-blog" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Content is king, but creating it consistently is hard. Learn how automated blogging can help you publish SEO-optimized content at scale.
               </p>

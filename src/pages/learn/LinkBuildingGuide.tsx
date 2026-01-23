@@ -12,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 import { getTermsByGuide } from "@/data/glossaryData";
@@ -59,9 +60,12 @@ const LinkBuildingGuide = () => {
                 <span className="text-sm text-muted-foreground">14 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Link Building: <span className="gradient-text">Best Practices</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Domain Authority" featureHref="/features/domain-authority" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Backlinks remain one of Google's top ranking factors. Learn how to build links ethically and effectively.
               </p>

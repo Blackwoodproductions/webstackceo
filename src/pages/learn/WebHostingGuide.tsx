@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -62,9 +63,12 @@ const WebHostingGuide = () => {
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Web Hosting: <span className="gradient-text">The SEO Foundation</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Web Hosting" featureHref="/features/web-hosting" isAddOn />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Your hosting provider directly impacts page speed, uptime, and security—all critical SEO factors.
               </p>

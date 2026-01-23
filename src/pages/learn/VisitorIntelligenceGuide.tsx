@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -62,9 +63,12 @@ const VisitorIntelligenceGuide = () => {
                 <span className="text-sm text-muted-foreground">11 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Visitor Intelligence: <span className="gradient-text">Know Your Audience</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Visitor Intelligence" featureHref="/features/visitor-intelligence" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Transform anonymous website traffic into actionable insights. Learn how to identify, understand, and convert your website visitors.
               </p>

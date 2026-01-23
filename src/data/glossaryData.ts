@@ -791,7 +791,7 @@ export const glossaryTerms: GlossaryTermData[] = [
       "Use location-specific keywords on your website"
     ],
     relatedTerms: ["google-business-profile", "local-seo", "nap-consistency"],
-    relatedGuide: learningGuides.localSEO,
+    relatedGuide: learningGuides.gmbOptimization,
     relatedFeature: featurePages.gmbOptimization,
     externalResources: [
       { title: "Local Pack Ranking Factors", source: "Moz Local Search Ranking Factors", url: "https://moz.com/local-search-ranking-factors" }
@@ -818,10 +818,66 @@ export const glossaryTerms: GlossaryTermData[] = [
       "Monitor for duplicate or incorrect listings"
     ],
     relatedTerms: ["local-seo", "local-citations", "google-business-profile"],
-    relatedGuide: learningGuides.localSEO,
+    relatedGuide: learningGuides.gmbOptimization,
     relatedFeature: featurePages.gmbOptimization,
     externalResources: [
       { title: "NAP Consistency for Local SEO", source: "BrightLocal", url: "https://www.brightlocal.com/learn/local-seo/introduction-to-local-seo/citation-and-nap-consistency/" }
+    ]
+  },
+  {
+    term: "Local SEO",
+    slug: "local-seo",
+    shortDescription: "Optimization strategies to increase visibility in local search results and map listings.",
+    fullDescription: "Local SEO is the practice of optimizing a business's online presence to attract more customers from relevant local searches. These searches take place on Google and other search engines, often with 'near me' or geographic modifiers. Local SEO includes optimizing Google Business Profile, building local citations, managing reviews, and creating location-specific content.",
+    category: "Local SEO",
+    whyItMatters: [
+      "46% of all Google searches have local intent",
+      "88% of mobile local searches result in a call or visit within 24 hours",
+      "Drives foot traffic to physical locations",
+      "Helps compete with larger competitors in specific areas",
+      "Essential for service-area and multi-location businesses"
+    ],
+    bestPractices: [
+      "Optimize and maintain your Google Business Profile",
+      "Build consistent NAP citations across directories",
+      "Encourage and respond to customer reviews",
+      "Create location-specific landing pages",
+      "Use local schema markup on your website",
+      "Build local backlinks from community organizations"
+    ],
+    relatedTerms: ["google-business-profile", "local-pack", "nap-consistency", "local-citations"],
+    relatedGuide: learningGuides.localSEO,
+    relatedFeature: featurePages.gmbOptimization,
+    externalResources: [
+      { title: "Local SEO", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Local_search_(Internet)" },
+      { title: "The Complete Guide to Local SEO", source: "Moz", url: "https://moz.com/learn/seo/local" }
+    ]
+  },
+  {
+    term: "Local Citations",
+    slug: "local-citations",
+    shortDescription: "Online mentions of your business name, address, and phone number on directories and websites.",
+    fullDescription: "Local citations are any online mention of your business's name, address, and phone number (NAP). Citations can occur on local business directories, websites, apps, and social platforms. They help search engines verify your business information and improve local search rankings.",
+    category: "Local SEO",
+    whyItMatters: [
+      "Helps search engines verify business legitimacy",
+      "Improves local search rankings",
+      "Increases online visibility across platforms",
+      "Builds trust with potential customers",
+      "Supports NAP consistency efforts"
+    ],
+    bestPractices: [
+      "List on major directories (Yelp, Yellow Pages, BBB)",
+      "Ensure 100% consistent NAP information",
+      "Include industry-specific directories",
+      "Monitor and update citations regularly",
+      "Remove or correct duplicate listings"
+    ],
+    relatedTerms: ["nap-consistency", "local-seo", "google-business-profile"],
+    relatedGuide: learningGuides.localSEO,
+    relatedFeature: featurePages.gmbOptimization,
+    externalResources: [
+      { title: "What Are Local Citations?", source: "BrightLocal", url: "https://www.brightlocal.com/learn/local-seo/introduction-to-local-seo/what-are-local-citations/" }
     ]
   },
 
