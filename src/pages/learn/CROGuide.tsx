@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { 
-  TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
+  TrendingUp, CheckCircle2, ArrowRight, 
   Target, Zap, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,9 +48,12 @@ const CROGuide = () => {
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
             <FadeIn>
-              <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
-                <ArrowLeft className="w-4 h-4" /> Back to Learning Center
-              </Link>
+              <GuideFeatureLink 
+                title="CRO:" 
+                gradientText="Turn Visitors Into Customers" 
+                featureHref="/features/ppc-landing-pages" 
+                isAddOn 
+              />
               
               <div className="flex items-center gap-3 mb-4">
                 <span className="px-3 py-1 rounded-full bg-orange-400/10 text-orange-400 text-sm font-medium">
@@ -59,13 +62,7 @@ const CROGuide = () => {
                 <span className="text-sm text-muted-foreground">13 min read</span>
               </div>
               
-              <GuideFeatureLink 
-                title="CRO:" 
-                gradientText="Turn Visitors Into Customers" 
-                featureHref="/features/ppc-landing-pages" 
-                isAddOn 
-              />
-              <p className="text-xl text-muted-foreground mt-6">
+              <p className="text-xl text-muted-foreground">
                 Traffic means nothing without conversions. Learn how to systematically improve your website's ability to convert visitors.
               </p>
             </FadeIn>

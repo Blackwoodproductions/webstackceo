@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Server, CheckCircle2, ArrowRight, ArrowLeft, 
+  Server, CheckCircle2, ArrowRight, 
   Zap, Shield, Globe, AlertTriangle, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,9 +52,12 @@ const WebHostingGuide = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
-                <ArrowLeft className="w-4 h-4" /> Back to Learning Center
-              </Link>
+              <GuideFeatureLink 
+                title="Web Hosting:" 
+                gradientText="The SEO Foundation" 
+                featureHref="/features/web-hosting" 
+                isAddOn 
+              />
               
               <div className="flex items-center gap-3 mb-4">
                 <span className="px-3 py-1 rounded-full bg-sky-400/10 text-sky-400 text-sm font-medium">
@@ -63,13 +66,7 @@ const WebHostingGuide = () => {
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
               
-              <GuideFeatureLink 
-                title="Web Hosting:" 
-                gradientText="The SEO Foundation" 
-                featureHref="/features/web-hosting" 
-                isAddOn 
-              />
-              <p className="text-xl text-muted-foreground mt-6">
+              <p className="text-xl text-muted-foreground">
                 Your hosting provider directly impacts page speed, uptime, and security—all critical SEO factors.
               </p>
             </motion.div>
