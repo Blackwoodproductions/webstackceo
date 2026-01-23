@@ -59,13 +59,13 @@ const PPCLandingPagesGuide = () => {
                 <span className="text-sm text-muted-foreground">11 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                PPC Landing Pages: <span className="gradient-text">Convert Clicks to Customers</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="PPC Landing Pages" featureHref="/features/ppc-landing-pages" isAddOn />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="PPC Landing Pages:" 
+                gradientText="Convert Clicks to Customers" 
+                featureHref="/features/ppc-landing-pages" 
+                isAddOn 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Your landing page determines whether paid traffic becomes paying customers. Master the art of high-converting landing pages.
               </p>
             </FadeIn>

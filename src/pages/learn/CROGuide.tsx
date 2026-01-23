@@ -59,13 +59,13 @@ const CROGuide = () => {
                 <span className="text-sm text-muted-foreground">13 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                CRO: <span className="gradient-text">Turn Visitors Into Customers</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="PPC Landing Pages" featureHref="/features/ppc-landing-pages" isAddOn />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="CRO:" 
+                gradientText="Turn Visitors Into Customers" 
+                featureHref="/features/ppc-landing-pages" 
+                isAddOn 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Traffic means nothing without conversions. Learn how to systematically improve your website's ability to convert visitors.
               </p>
             </FadeIn>

@@ -63,13 +63,12 @@ const UptimeMonitoringGuide = () => {
                 <span className="text-sm text-muted-foreground">8 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Uptime Monitoring: <span className="gradient-text">Never Miss a Beat</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Uptime Monitoring" featureHref="/features/uptime-monitoring" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Uptime Monitoring:" 
+                gradientText="Never Miss a Beat" 
+                featureHref="/features/uptime-monitoring" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 When your website goes down, you lose customers, revenue, and search rankings. Learn how to monitor uptime and respond to incidents fast.
               </p>
             </motion.div>

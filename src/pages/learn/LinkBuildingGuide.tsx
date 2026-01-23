@@ -60,13 +60,12 @@ const LinkBuildingGuide = () => {
                 <span className="text-sm text-muted-foreground">14 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Link Building: <span className="gradient-text">Best Practices</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Domain Authority" featureHref="/features/domain-authority" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Link Building:" 
+                gradientText="Best Practices" 
+                featureHref="/features/domain-authority" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Backlinks remain one of Google's top ranking factors. Learn how to build links ethically and effectively.
               </p>
             </FadeIn>

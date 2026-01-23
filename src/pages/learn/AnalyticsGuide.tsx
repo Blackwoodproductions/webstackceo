@@ -60,13 +60,12 @@ const AnalyticsGuide = () => {
                 <span className="text-sm text-muted-foreground">14 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Mastering <span className="gradient-text">Website Analytics</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Advanced Analytics" featureHref="/features/advanced-analytics" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Mastering" 
+                gradientText="Website Analytics" 
+                featureHref="/features/advanced-analytics" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Data without insight is just noise. Learn how to transform your analytics into actionable strategies that drive real business growth.
               </p>
             </FadeIn>

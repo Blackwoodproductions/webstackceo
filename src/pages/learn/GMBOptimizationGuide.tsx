@@ -63,13 +63,12 @@ const GMBOptimizationGuide = () => {
                 <span className="text-sm text-muted-foreground">13 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Google Business Profile: <span className="gradient-text">Complete Mastery</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="GMB Optimization" featureHref="/features/gmb-optimization" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Google Business Profile:" 
+                gradientText="Complete Mastery" 
+                featureHref="/features/gmb-optimization" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Your Google Business Profile is often the first thing customers see. Learn how to optimize it for maximum visibility and conversions.
               </p>
             </motion.div>

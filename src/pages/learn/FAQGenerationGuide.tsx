@@ -63,13 +63,12 @@ const FAQGenerationGuide = () => {
                 <span className="text-sm text-muted-foreground">7 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                FAQ Generation: <span className="gradient-text">Answer to Rank</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="FAQ Generation" featureHref="/features/faq-generation" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="FAQ Generation:" 
+                gradientText="Answer to Rank" 
+                featureHref="/features/faq-generation" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 FAQ content is a secret weapon for SEO. Learn how to generate, optimize, and leverage FAQs to dominate search results.
               </p>
             </motion.div>

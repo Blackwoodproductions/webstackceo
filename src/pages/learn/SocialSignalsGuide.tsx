@@ -63,13 +63,12 @@ const SocialSignalsGuide = () => {
                 <span className="text-sm text-muted-foreground">9 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                Social Signals: <span className="gradient-text">The SEO Connection</span>
-              </h1>
-              <div className="mb-6">
-                <GuideFeatureLink featureTitle="Social Signals" featureHref="/features/social-signals" />
-              </div>
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="Social Signals:" 
+                gradientText="The SEO Connection" 
+                featureHref="/features/social-signals" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Understand how social media engagement influences search visibility and how to leverage it for SEO success.
               </p>
             </motion.div>
