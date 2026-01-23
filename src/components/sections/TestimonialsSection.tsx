@@ -50,6 +50,46 @@ const testimonials = [
     rating: 5,
     image: "AF",
   },
+  {
+    name: "James Mitchell",
+    title: "CEO, Apex Consulting",
+    company: "Apex",
+    quote: "The AI-powered content automation is a game changer. We've published 3x more blog posts with half the effort. Our domain authority jumped 15 points.",
+    rating: 5,
+    image: "JM",
+  },
+  {
+    name: "Rachel Kim",
+    title: "CEO, Bloom Marketing",
+    company: "Bloom",
+    quote: "Impressive link building results. The niche categorization is spot-on. Only minor hiccup was learning the interface, but the tutorials helped.",
+    rating: 4,
+    image: "RK",
+  },
+  {
+    name: "Thomas Wright",
+    title: "CEO, Summit Ventures",
+    company: "Summit",
+    quote: "Cut out our SEO agency completely and saved $4,000/month. The platform does everything they did, but faster and with better reporting.",
+    rating: 5,
+    image: "TW",
+  },
+  {
+    name: "Lisa Hernandez",
+    title: "CEO, Coastal Brands",
+    company: "Coastal",
+    quote: "The uptime monitoring alone has saved us from three potential disasters. Real-time alerts mean we fix issues before customers even notice.",
+    rating: 5,
+    image: "LH",
+  },
+  {
+    name: "Michael Brooks",
+    title: "CEO, Quantum Digital",
+    company: "Quantum",
+    quote: "Very powerful platform with tons of features. Took our team about a week to get fully ramped up, but now we can't imagine working without it.",
+    rating: 4,
+    image: "MB",
+  },
 ];
 
 const TestimonialsSection = () => {
