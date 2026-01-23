@@ -353,8 +353,8 @@ const Learn = () => {
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button variant="hero" size="lg" asChild>
-                  <a href="/pricing">
-                    Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    Book a Call <ArrowRight className="w-5 h-5 ml-2" />
                   </a>
                 </Button>
                 <Button variant="heroOutline" size="lg" asChild>

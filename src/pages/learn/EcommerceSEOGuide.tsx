@@ -204,7 +204,7 @@ const EcommerceSEOGuide = () => {
                     </Link>
                   </Button>
                   <Button variant="heroOutline" size="lg" asChild>
-                    <Link to="/pricing">Start Free Trial</Link>
+                    <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">Book a Call</a>
                   </Button>
                 </div>
               </FadeIn>

@@ -336,12 +336,12 @@ const Changelog = () => {
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
                 Join thousands of CEOs who trust Webstack.ceo to manage their online presence. 
-                Start your free trial today and get access to all the latest updates.
+                Book a call today and get access to all the latest updates.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button variant="hero" size="lg" asChild>
-                  <a href="/pricing">
-                    Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    Book a Call <ArrowRight className="w-5 h-5 ml-2" />
                   </a>
                 </Button>
                 <Button variant="heroOutline" size="lg" asChild>

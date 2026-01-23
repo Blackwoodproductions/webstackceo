@@ -16,9 +16,9 @@ export const faqData = [
           "Absolutely! You can upgrade or downgrade your plan at any time. When upgrading, you'll be charged the prorated difference. When downgrading, the change will take effect at your next billing cycle.",
       },
       {
-        question: "Is there a free trial?",
+        question: "How do I get started?",
         answer:
-          "Yes! All plans come with a 14-day free trial. No credit card required to get started. You'll have full access to all features in your chosen plan during the trial period.",
+          "Book a call with our team to discuss your needs and find the best plan for your business. We'll walk you through the platform and help you get set up quickly.",
       },
       {
         question: "What payment methods do you accept?",
