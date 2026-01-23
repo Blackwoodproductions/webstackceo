@@ -195,13 +195,13 @@ const Navbar = () => {
                   className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
                 >
                   <motion.div 
-                    className="bg-background border border-border/50 rounded-2xl p-6 w-[600px] grid grid-cols-2 gap-2 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
+                    className="bg-background border border-border/50 rounded-2xl p-6 w-[750px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
                     initial={{ boxShadow: "0 10px 30px -10px hsl(var(--primary)/0)" }}
                     animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                   >
                     <motion.div 
-                      className="col-span-2 pb-3 mb-3 border-b border-border"
+                      className="pb-3 mb-3 border-b border-border"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.2, delay: 0.05 }}
@@ -214,32 +214,34 @@ const Navbar = () => {
                       </a>
                     </motion.div>
                     
-                    {/* Included Features */}
-                    {includedFeatures.map((feature, index) => (
-                      <motion.a
-                        key={feature.name}
-                        href={feature.href}
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ 
-                          duration: 0.2, 
-                          delay: 0.05 + (index * 0.03),
-                          ease: "easeOut"
-                        }}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300 group"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)] group-hover:scale-110 transition-all duration-300">
-                          <feature.icon className="w-5 h-5 text-primary group-hover:text-hover-accent transition-colors duration-300" />
-                        </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300">
-                          {feature.name}
-                        </span>
-                      </motion.a>
-                    ))}
+                    {/* Included Features - 3 column grid */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {includedFeatures.map((feature, index) => (
+                        <motion.a
+                          key={feature.name}
+                          href={feature.href}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ 
+                            duration: 0.2, 
+                            delay: 0.05 + (index * 0.03),
+                            ease: "easeOut"
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300 group"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)] group-hover:scale-110 transition-all duration-300 flex-shrink-0">
+                            <feature.icon className="w-4 h-4 text-primary group-hover:text-hover-accent transition-colors duration-300" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300">
+                            {feature.name}
+                          </span>
+                        </motion.a>
+                      ))}
+                    </div>
                     
                     {/* Add-ons Separator */}
                     <motion.div 
-                      className="col-span-2 pt-3 mt-1 border-t border-border"
+                      className="pt-3 mb-3 border-t border-border"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2, delay: 0.3 }}
@@ -251,31 +253,33 @@ const Navbar = () => {
                       </span>
                     </motion.div>
                     
-                    {/* Add-on Features */}
-                    {addOnFeatures.map((feature, index) => (
-                      <motion.a
-                        key={feature.name}
-                        href={feature.href}
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ 
-                          duration: 0.2, 
-                          delay: 0.35 + (index * 0.03),
-                          ease: "easeOut"
-                        }}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-amber-500/10 transition-all duration-300 group bg-amber-500/5"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center group-hover:from-amber-400/30 group-hover:to-orange-500/30 group-hover:scale-110 transition-all duration-300">
-                          <feature.icon className="w-5 h-5 text-amber-500 group-hover:text-amber-400 transition-colors duration-300" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground group-hover:text-amber-500 transition-all duration-300">
-                            {feature.name}
-                          </span>
-                          <span className="text-[10px] text-violet-400">Coming Soon</span>
-                        </div>
-                      </motion.a>
-                    ))}
+                    {/* Add-on Features - horizontal row */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {addOnFeatures.map((feature, index) => (
+                        <motion.a
+                          key={feature.name}
+                          href={feature.href}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ 
+                            duration: 0.2, 
+                            delay: 0.35 + (index * 0.03),
+                            ease: "easeOut"
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-amber-500/10 transition-all duration-300 group bg-amber-500/5"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center group-hover:from-amber-400/30 group-hover:to-orange-500/30 group-hover:scale-110 transition-all duration-300 flex-shrink-0">
+                            <feature.icon className="w-4 h-4 text-amber-500 group-hover:text-amber-400 transition-colors duration-300" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground group-hover:text-amber-500 transition-all duration-300">
+                              {feature.name}
+                            </span>
+                            <span className="text-[10px] text-violet-400">Coming Soon</span>
+                          </div>
+                        </motion.a>
+                      ))}
+                    </div>
                   </motion.div>
                 </motion.div>
               )}
