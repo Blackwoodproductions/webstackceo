@@ -14,6 +14,7 @@ import LoadingScreen from "@/components/ui/loading-screen";
 import SectionIndicator from "@/components/ui/section-indicator";
 import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
+import InteractiveGrid from "@/components/ui/interactive-grid";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import SEO from "@/components/SEO";
 import ogImages from "@/assets/og";
@@ -29,7 +30,9 @@ const Index = () => {
   useKeyboardNavigation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Full-page interactive grid */}
+      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       <SEO
         title="Webstack.ceo | Niche Linking on Autopilot for SEO Agencies"
         description="White-label SEO tools for agencies and marketing companies. We categorize client websites by niche to enable automated, relevant backlink building at scale. Built by Blackwood Productions."
