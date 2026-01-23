@@ -89,7 +89,7 @@ const addOnFeatures = [
   },
   {
     icon: Server,
-    title: "Premium Web Hosting",
+    title: "Lovable Premium Hosting",
     description: "Enterprise-grade hosting with 99.99% uptime SLA, global CDN, and automatic scaling for peak traffic.",
     href: "/features/web-hosting",
   },

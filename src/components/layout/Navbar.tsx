@@ -25,7 +25,7 @@ const includedFeatures = [
 const addOnFeatures = [
   { icon: Search, name: "On-Page SEO", href: "/features/on-page-seo" },
   { icon: MousePointerClick, name: "PPC Landing Pages", href: "/features/ppc-landing-pages" },
-  { icon: Server, name: "Premium Web Hosting", href: "/features/web-hosting" },
+  { icon: Server, name: "Lovable Premium Hosting", href: "/features/web-hosting" },
 ];
 
 const Navbar = () => {
