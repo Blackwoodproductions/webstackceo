@@ -8,6 +8,8 @@ import BackToTop from "@/components/ui/back-to-top";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Gauge,
   FileCode,
@@ -36,6 +38,7 @@ import {
   Crown,
   Flame,
   Plus,
+  ExternalLink,
 } from "lucide-react";
 
 interface AuditCheck {
@@ -50,6 +53,15 @@ interface AuditCategory {
   icon: React.ElementType;
   score: number;
   checks: AuditCheck[];
+  isRealData?: boolean;
+}
+
+interface AhrefsMetrics {
+  domainRating: number;
+  backlinks: number;
+  referringDomains: number;
+  organicTraffic: number;
+  organicKeywords: number;
 }
 
 // Pricing data (simplified from PricingSection)
@@ -139,8 +151,8 @@ const plans = [
   },
 ];
 
-// Generate simulated audit results based on domain
-const generateAuditResults = (domain: string): AuditCategory[] => {
+// Generate audit results - now accepts optional real Ahrefs data
+const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null): AuditCategory[] => {
   const hash = domain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   
   const randomScore = (base: number, variance: number) => {
@@ -156,8 +168,19 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
   const schemaScore = randomScore(45, 30);
   const metaScore = randomScore(68, 25);
   const securityScore = randomScore(85, 15);
-  const backlinkScore = randomScore(55, 35);
   const technicalScore = randomScore(65, 25);
+
+  // Calculate backlink score from real Ahrefs data or use simulated
+  let backlinkScore: number;
+  let hasRealBacklinkData = false;
+  
+  if (ahrefsData) {
+    // Convert Domain Rating to score (DR is already 0-100)
+    backlinkScore = ahrefsData.domainRating;
+    hasRealBacklinkData = true;
+  } else {
+    backlinkScore = randomScore(55, 35);
+  }
 
   return [
     {
@@ -200,7 +223,39 @@ const generateAuditResults = (domain: string): AuditCategory[] => {
       title: "Backlink Profile",
       icon: Link2,
       score: backlinkScore,
-      checks: [
+      isRealData: hasRealBacklinkData,
+      checks: ahrefsData ? [
+        {
+          name: "Domain Rating (DR)",
+          status: ahrefsData.domainRating >= 50 ? "pass" : ahrefsData.domainRating >= 25 ? "warning" : "fail",
+          value: `${ahrefsData.domainRating}/100`,
+          description: "Ahrefs Domain Rating - measures website authority (real data)",
+        },
+        {
+          name: "Total Backlinks",
+          status: ahrefsData.backlinks >= 100 ? "pass" : ahrefsData.backlinks >= 20 ? "warning" : "fail",
+          value: `${ahrefsData.backlinks.toLocaleString()} links`,
+          description: "Total number of backlinks pointing to this domain (real data)",
+        },
+        {
+          name: "Referring Domains",
+          status: ahrefsData.referringDomains >= 30 ? "pass" : ahrefsData.referringDomains >= 10 ? "warning" : "fail",
+          value: `${ahrefsData.referringDomains.toLocaleString()} domains`,
+          description: "Unique domains linking to this website (real data)",
+        },
+        {
+          name: "Organic Traffic",
+          status: ahrefsData.organicTraffic >= 500 ? "pass" : ahrefsData.organicTraffic >= 100 ? "warning" : "fail",
+          value: `${ahrefsData.organicTraffic.toLocaleString()} visits/mo`,
+          description: "Estimated monthly organic search traffic (real data)",
+        },
+        {
+          name: "Organic Keywords",
+          status: ahrefsData.organicKeywords >= 50 ? "pass" : ahrefsData.organicKeywords >= 10 ? "warning" : "fail",
+          value: `${ahrefsData.organicKeywords.toLocaleString()} keywords`,
+          description: "Keywords this domain ranks for in search results (real data)",
+        },
+      ] : [
         {
           name: "Total Backlinks",
           status: backlinkScore > 60 ? "pass" : backlinkScore > 35 ? "warning" : "fail",
@@ -402,6 +457,7 @@ const AuditResults = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [auditResults, setAuditResults] = useState<AuditCategory[]>([]);
   const [isYearly, setIsYearly] = useState(false);
+  const [ahrefsError, setAhrefsError] = useState<string | null>(null);
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
@@ -412,11 +468,41 @@ const AuditResults = () => {
       return;
     }
 
-    const timer = setTimeout(() => {
-      setAuditResults(generateAuditResults(decodedDomain));
-      setIsLoading(false);
-    }, 2500);
+    const fetchAuditData = async () => {
+      try {
+        // Call the edge function to get real Ahrefs data
+        const { data, error } = await supabase.functions.invoke('domain-audit', {
+          body: { domain: decodedDomain }
+        });
 
+        if (error) {
+          console.error('Edge function error:', error);
+          // Fall back to simulated data
+          setAuditResults(generateAuditResults(decodedDomain, null));
+          toast.error('Could not fetch real backlink data - showing simulated results');
+        } else {
+          const ahrefsData = data?.ahrefs || null;
+          
+          if (data?.ahrefsError) {
+            setAhrefsError(data.ahrefsError);
+            toast.warning(`Ahrefs: ${data.ahrefsError} - showing simulated backlink data`);
+          } else if (ahrefsData) {
+            toast.success('Real Ahrefs backlink data loaded!');
+          }
+          
+          setAuditResults(generateAuditResults(decodedDomain, ahrefsData));
+        }
+      } catch (err) {
+        console.error('Audit fetch error:', err);
+        setAuditResults(generateAuditResults(decodedDomain, null));
+        toast.error('Error fetching audit data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Add a small delay for UX then fetch
+    const timer = setTimeout(fetchAuditData, 1500);
     return () => clearTimeout(timer);
   }, [decodedDomain, navigate]);
 
@@ -589,13 +675,18 @@ const AuditResults = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                className="p-4 rounded-2xl bg-card border border-border/50"
+                className={`p-4 rounded-2xl bg-card border ${category.isRealData ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50'}`}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
                     <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
                   </div>
                   <span className="font-medium text-sm truncate">{category.title}</span>
+                  {category.isRealData && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                      Live
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-end gap-1">
                   <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
@@ -624,7 +715,15 @@ const AuditResults = () => {
                       <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
                     </div>
                     <div>
-                      <h2 className="font-semibold">{category.title}</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-semibold">{category.title}</h2>
+                        {category.isRealData && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3" />
+                            Ahrefs Data
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {category.checks.filter((c) => c.status === "pass").length}/{category.checks.length} passed
                       </p>
