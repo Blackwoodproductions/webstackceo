@@ -953,6 +953,178 @@ const AuditResults = () => {
             ))}
           </div>
 
+          {/* Recommended Features Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-16 mb-16"
+          >
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Recommended Solutions</span>
+              </div>
+              <h2 className="text-3xl font-bold mb-3">
+                Features to Improve{" "}
+                <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-amber-400 bg-clip-text text-transparent">
+                  {decodedDomain}
+                </span>
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Based on your audit results, these features can help boost your site's performance and rankings.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* On-Page SEO */}
+              <a
+                href="/features/on-page-seo"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 group-hover:scale-110 transition-transform">
+                    <FileCode className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">On-Page SEO</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-semibold">Add-on</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Optimize meta tags, headings, schema markup, and content structure for better rankings.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+
+              {/* Domain Authority */}
+              <a
+                href="/features/off-page-seo"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 group-hover:scale-110 transition-transform">
+                    <Link2 className="w-6 h-6 text-cyan-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">Niche Link Building</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Included</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Build high-quality backlinks from authoritative sites to boost your domain rating.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+
+              {/* Advanced Analytics */}
+              <a
+                href="/features/advanced-analytics"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 group-hover:scale-110 transition-transform">
+                    <BarChart3 className="w-6 h-6 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">Advanced Analytics</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Included</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Track rankings, traffic, and conversions with AI-powered insights and reports.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+
+              {/* Uptime Monitoring */}
+              <a
+                href="/features/uptime-monitoring"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 group-hover:scale-110 transition-transform">
+                    <Gauge className="w-6 h-6 text-violet-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">Uptime Monitoring</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Included</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      24/7 monitoring with instant alerts when your site goes down or slows.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+
+              {/* Web Hosting */}
+              <a
+                href="/features/web-hosting"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-amber-500/50 transition-all hover:shadow-lg hover:shadow-amber-500/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 group-hover:scale-110 transition-transform">
+                    <Globe className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="font-semibold">Premium Hosting</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-semibold">Add-on</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Coming Soon</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Blazing fast hosting with server-side rendering for maximum SEO performance.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+
+              {/* PPC Landing Pages */}
+              <a
+                href="/features/ppc-landing-pages"
+                className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-amber-500/50 transition-all hover:shadow-lg hover:shadow-amber-500/5"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 group-hover:scale-110 transition-transform">
+                    <Target className="w-6 h-6 text-rose-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold">PPC Landing Pages</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-semibold">Add-on</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      High-converting landing pages designed to maximize your ad spend ROI.
+                    </p>
+                    <span className="text-xs text-primary font-medium group-hover:underline">Learn more →</span>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            {/* View All Features CTA */}
+            <div className="text-center mt-8">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate("/features")}
+                className="gap-2"
+              >
+                View All Features
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+
           {/* Pricing Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
