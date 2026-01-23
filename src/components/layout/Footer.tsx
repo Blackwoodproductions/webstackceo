@@ -1,10 +1,11 @@
 import { useState, memo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Twitter, Linkedin, Github, Send, Shield } from "lucide-react";
+import { Twitter, Linkedin, Github, Send, Shield, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { VisaIcon, MastercardIcon, AmexIcon, DiscoverIcon, StripeLogo } from "@/components/ui/stripe-payment-icons";
+import { generateServicesPDF } from "@/lib/generateServicesPDF";
 
 const Footer = memo(() => {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ const Footer = memo(() => {
       { name: "SEO Glossary", href: "/learn/glossary" },
       { name: "Sitemap", href: "/sitemap" },
       { name: "FAQ", href: "/faq" },
+      { name: "Download Brochure", href: "#", isDownload: true },
     ],
     Legal: [
       { name: "Privacy", href: "/privacy-policy" },
@@ -55,7 +57,13 @@ const Footer = memo(() => {
     ],
   };
 
-  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string, isDownload?: boolean) => {
+    if (isDownload) {
+      e.preventDefault();
+      generateServicesPDF();
+      toast.success("Downloading services brochure...");
+      return;
+    }
     if (href.startsWith("/#")) {
       e.preventDefault();
       const anchor = href.substring(1);
@@ -159,9 +167,12 @@ const Footer = memo(() => {
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      onClick={(e) => handleLinkClick(e, link.href)}
-                      className="text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
+                      onClick={(e) => handleLinkClick(e, link.href, (link as any).isDownload)}
+                      className={`text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)] ${
+                        (link as any).isDownload ? 'flex items-center gap-1' : ''
+                      }`}
                     >
+                      {(link as any).isDownload && <FileDown className="w-3 h-3" />}
                       {link.name}
                     </a>
                   </li>
