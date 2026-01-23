@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -87,7 +88,7 @@ const OffPageSEOGuide = () => {
                   Off-page SEO encompasses all the activities you do outside of your website to improve search rankings. It's how the internet perceives your brand, authority, and trustworthiness.
                 </p>
                 <p className="text-muted-foreground">
-                  Think of on-page SEO as your resume, and off-page SEO as your reputation. Both matter, but your reputation—what others say about you—often carries more weight.
+                  Think of <GlossaryTooltip term="on-page-seo">on-page SEO</GlossaryTooltip> as your resume, and off-page SEO as your reputation. Both matter, but your reputation—what others say about you—often carries more weight.
                 </p>
               </FadeIn>
 
@@ -127,7 +128,7 @@ const OffPageSEOGuide = () => {
                   1. Link Building: The Foundation
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Backlinks remain one of Google's top ranking factors. But not all links are equal—quality matters far more than quantity.
+                  <GlossaryTooltip term="backlinks">Backlinks</GlossaryTooltip> remain one of Google's top ranking factors. But not all links are equal—quality matters far more than quantity.
                 </p>
                 <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">High-Value Link Sources:</h3>
                 <ul className="space-y-2 mb-6">

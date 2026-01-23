@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -92,10 +93,10 @@ const FAQGenerationGuide = () => {
                   Why FAQs Matter for SEO
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  FAQ content directly answers the questions your customers are asking—and these are the same questions they're typing into Google. By providing clear, helpful answers, you position your site to capture featured snippets and voice search results.
+                  FAQ content directly answers the questions your customers are asking—and these are the same questions they're typing into Google. By providing clear, helpful answers, you position your site to capture <GlossaryTooltip term="featured-snippet">featured snippets</GlossaryTooltip> and voice search results.
                 </p>
                 <p className="text-muted-foreground">
-                  Plus, FAQ schema markup can give your listings enhanced visibility in search results with expandable question-and-answer sections.
+                  Plus, <GlossaryTooltip term="schema-markup">FAQ schema markup</GlossaryTooltip> can give your listings enhanced visibility in search results with expandable question-and-answer sections.
                 </p>
               </motion.div>
 

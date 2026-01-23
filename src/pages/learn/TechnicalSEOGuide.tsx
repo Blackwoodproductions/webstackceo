@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -95,7 +96,7 @@ const TechnicalSEOGuide = () => {
                   Technical SEO refers to optimizing your website's infrastructure so search engines can efficiently crawl, understand, and index your content. It's the foundation that all other SEO efforts build upon.
                 </p>
                 <p className="text-muted-foreground">
-                  Think of technical SEO as building a house: you need a solid foundation before you can focus on the interior design (content) or curb appeal (links).
+                  Think of technical SEO as building a house: you need a solid foundation before you can focus on the interior design (<GlossaryTooltip term="on-page-seo">content</GlossaryTooltip>) or curb appeal (<GlossaryTooltip term="backlinks">links</GlossaryTooltip>).
                 </p>
               </motion.div>
 

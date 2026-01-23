@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -98,7 +99,7 @@ const WebHostingGuide = () => {
                   Your web host is the foundation of your online presence. A slow or unreliable host can tank your search rankings, while a fast, secure host gives you a competitive edge.
                 </p>
                 <p className="text-muted-foreground">
-                  Google has confirmed that page speed is a ranking factor, and Core Web Vitals are now part of the algorithm. Your hosting directly affects these metrics.
+                  Google has confirmed that <GlossaryTooltip term="page-speed">page speed</GlossaryTooltip> is a ranking factor, and <GlossaryTooltip term="core-web-vitals">Core Web Vitals</GlossaryTooltip> are now part of the algorithm. Your hosting directly affects these metrics.
                 </p>
               </motion.div>
 

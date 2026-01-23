@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -83,10 +84,10 @@ const DomainAuthorityGuide = () => {
                   What is Domain Authority?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Domain Authority (DA) is a search engine ranking score developed by Moz that predicts how likely a website is to rank in search engine results. Scores range from 1 to 100, with higher scores corresponding to greater ranking ability.
+                  <GlossaryTooltip term="domain-authority">Domain Authority</GlossaryTooltip> (DA) is a search engine ranking score developed by Moz that predicts how likely a website is to rank in search engine results. Scores range from 1 to 100, with higher scores corresponding to greater ranking ability.
                 </p>
                 <p className="text-muted-foreground mb-4">
-                  <strong className="text-foreground">Important:</strong> DA is not a Google ranking factor. It's a third-party metric that helps SEOs understand a site's competitive strength. However, the factors that influence DA (like quality backlinks) are the same factors Google uses.
+                  <strong className="text-foreground">Important:</strong> DA is not a Google ranking factor. It's a third-party metric that helps SEOs understand a site's competitive strength. However, the factors that influence DA (like quality <GlossaryTooltip term="backlinks">backlinks</GlossaryTooltip>) are the same factors Google uses.
                 </p>
                 <div className="grid md:grid-cols-3 gap-4 mt-6">
                   <div className="bg-secondary/50 rounded-xl p-4 text-center">

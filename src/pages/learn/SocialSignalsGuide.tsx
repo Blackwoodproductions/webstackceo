@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -92,10 +93,10 @@ const SocialSignalsGuide = () => {
                   What Are Social Signals?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Social signals are engagement metrics from social media platforms—likes, shares, comments, and mentions. While not direct ranking factors, they create ripple effects that positively impact SEO.
+                  Social signals are engagement metrics from social media platforms—likes, shares, comments, and mentions. While not direct <GlossaryTooltip term="ranking-factors">ranking factors</GlossaryTooltip>, they create ripple effects that positively impact SEO.
                 </p>
                 <p className="text-muted-foreground">
-                  Think of social signals as amplifiers: they increase content visibility, drive traffic, and create opportunities for natural backlinks.
+                  Think of social signals as amplifiers: they increase content visibility, drive <GlossaryTooltip term="organic-traffic">traffic</GlossaryTooltip>, and create opportunities for natural <GlossaryTooltip term="backlinks">backlinks</GlossaryTooltip>.
                 </p>
               </motion.div>
 

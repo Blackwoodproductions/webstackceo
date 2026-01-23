@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { 
   Smartphone, CheckCircle2, ArrowRight, ArrowLeft, 
-  Zap, Eye, TouchpadIcon, AlertTriangle
+  Zap, Target, TrendingUp, Search, AlertTriangle, Eye, Hand
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -164,7 +165,7 @@ const MobileSEOGuide = () => {
               {/* Mobile UX */}
               <FadeIn delay={200} className="glass-card rounded-2xl p-8 mb-8">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
-                  <TouchpadIcon className="w-6 h-6 text-primary" />
+                  <Hand className="w-6 h-6 text-primary" />
                   Mobile UX Optimization
                 </h2>
                 <ul className="space-y-2">

@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -89,7 +90,7 @@ const CROGuide = () => {
                   CRO is the systematic process of increasing the percentage of website visitors who take a desired action—whether that's making a purchase, filling out a form, or signing up for a newsletter.
                 </p>
                 <p className="text-muted-foreground">
-                  Unlike traffic acquisition (SEO, ads), CRO maximizes the value of traffic you already have. A 1% improvement in conversion rate can mean thousands in additional revenue.
+                  Unlike traffic acquisition (SEO, ads), CRO maximizes the value of traffic you already have. A 1% improvement in <GlossaryTooltip term="conversion-rate">conversion rate</GlossaryTooltip> can mean thousands in additional revenue.
                 </p>
               </FadeIn>
 

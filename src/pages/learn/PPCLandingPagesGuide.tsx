@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -86,7 +87,7 @@ const PPCLandingPagesGuide = () => {
                   Why PPC Landing Pages Matter
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  A dedicated landing page for your PPC campaigns can double or triple your conversion rate compared to sending traffic to your homepage. The key is creating a focused experience that matches visitor intent.
+                  A dedicated landing page for your PPC campaigns can double or triple your <GlossaryTooltip term="conversion-rate">conversion rate</GlossaryTooltip> compared to sending traffic to your homepage. The key is creating a focused experience that matches visitor intent.
                 </p>
                 <p className="text-muted-foreground">
                   Google also rewards relevant landing pages with higher Quality Scores, reducing your cost per click and improving ad positions.
