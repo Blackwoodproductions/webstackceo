@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -62,9 +63,12 @@ const TrafficDeanonymizationGuide = () => {
                 <span className="text-sm text-muted-foreground">8 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Traffic De-Anonymization: <span className="gradient-text">Reveal Your Visitors</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Traffic De-Anonymization" featureHref="/features/traffic-de-anonymization" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Turn anonymous website traffic into actionable sales intelligence. Learn how to identify the companies visiting your site.
               </p>

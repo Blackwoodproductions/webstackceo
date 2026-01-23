@@ -12,6 +12,16 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
+import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import { getTermsByGuide } from "@/data/glossaryData";
+
+// Get terms linked to this guide from shared glossary
+const localSEOTerms = getTermsByGuide("/learn/local-seo-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const LocalSEOGuide = () => {
   return (
@@ -53,9 +63,12 @@ const LocalSEOGuide = () => {
                 <span className="text-sm text-muted-foreground">11 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Local SEO: <span className="gradient-text">Ranking Factors That Matter</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="GMB Optimization" featureHref="/features/gmb-optimization" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Learn the key ranking factors that determine who appears in local search results and the coveted Local Pack.
               </p>
@@ -202,6 +215,9 @@ const LocalSEOGuide = () => {
                   </Button>
                 </div>
               </motion.div>
+
+              {/* Glossary Terms */}
+              <GlossaryLegend terms={localSEOTerms} title="Key Terms in This Guide" />
 
               {/* Article Navigation */}
               <ArticleNavigation

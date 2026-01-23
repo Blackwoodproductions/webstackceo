@@ -12,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -58,9 +59,12 @@ const OnPageSEOGuide = () => {
                 <span className="text-sm text-muted-foreground">12 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 The Complete Guide to <span className="gradient-text">On-Page SEO</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="On-Page SEO" featureHref="/features/on-page-seo" isAddOn />
+              </div>
               <p className="text-xl text-muted-foreground">
                 On-page SEO is the foundation of your search visibility. Learn how to optimize every element of your pages to rank higher and drive more organic traffic.
               </p>

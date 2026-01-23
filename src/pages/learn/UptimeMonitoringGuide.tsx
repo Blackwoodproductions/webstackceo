@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -62,9 +63,12 @@ const UptimeMonitoringGuide = () => {
                 <span className="text-sm text-muted-foreground">8 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Uptime Monitoring: <span className="gradient-text">Never Miss a Beat</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Uptime Monitoring" featureHref="/features/uptime-monitoring" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 When your website goes down, you lose customers, revenue, and search rankings. Learn how to monitor uptime and respond to incidents fast.
               </p>

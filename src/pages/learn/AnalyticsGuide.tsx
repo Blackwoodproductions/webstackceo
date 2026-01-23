@@ -13,6 +13,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -59,9 +60,12 @@ const AnalyticsGuide = () => {
                 <span className="text-sm text-muted-foreground">14 min read</span>
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
                 Mastering <span className="gradient-text">Website Analytics</span>
               </h1>
+              <div className="mb-6">
+                <GuideFeatureLink featureTitle="Advanced Analytics" featureHref="/features/advanced-analytics" />
+              </div>
               <p className="text-xl text-muted-foreground">
                 Data without insight is just noise. Learn how to transform your analytics into actionable strategies that drive real business growth.
               </p>
