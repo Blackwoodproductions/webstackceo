@@ -4,6 +4,7 @@ import { Shield } from "lucide-react";
 const FloatingAIShield = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [isShieldGold, setIsShieldGold] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(false);
 
   // Delay render to not block initial page paint
   useEffect(() => {
@@ -34,15 +35,35 @@ const FloatingAIShield = memo(() => {
     return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
   }, []);
 
+  // Handle scroll to stop at bottom (same as floating code box)
+  useEffect(() => {
+    const handleScroll = () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const footerRect = footer.getBoundingClientRect();
+        const stopPoint = window.innerHeight - 120; // Stop 120px from bottom
+        setIsAtBottom(footerRect.top < stopPoint);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (!isVisible) return null;
 
   return (
     <div 
-      className={`fixed top-[62%] left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-700 ${
+      className={`fixed left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-700 ${
         isShieldGold 
           ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
           : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
       }`}
+      style={{
+        top: isAtBottom ? 'auto' : '68%',
+        bottom: isAtBottom ? '120px' : 'auto',
+      }}
     >
       <Shield className={`w-[42px] h-[42px] transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`} />
       <span className={`absolute font-bold text-[11px] tracking-tight transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`}>AI</span>
