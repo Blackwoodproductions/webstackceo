@@ -1,77 +1,19 @@
 import { motion } from "framer-motion";
 
-// SVG Logo Components for reliable rendering
-const FoxLogo = () => (
-  <svg viewBox="0 0 100 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="32" className="fill-current" style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'Arial Black, sans-serif', letterSpacing: '-2px' }}>FOX</text>
-  </svg>
-);
-
-const NbcLogo = () => (
-  <svg viewBox="0 0 100 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="32" className="fill-current" style={{ fontSize: '32px', fontWeight: 700, fontFamily: 'Arial, sans-serif', letterSpacing: '1px' }}>NBC</text>
-  </svg>
-);
-
-const CbsLogo = () => (
-  <svg viewBox="0 0 100 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="32" className="fill-current" style={{ fontSize: '32px', fontWeight: 700, fontFamily: 'Arial, sans-serif', letterSpacing: '2px' }}>CBS</text>
-  </svg>
-);
-
-const AbcLogo = () => (
-  <svg viewBox="0 0 100 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="32" className="fill-current" style={{ fontSize: '32px', fontWeight: 700, fontFamily: 'Arial, sans-serif', letterSpacing: '2px' }}>ABC</text>
-  </svg>
-);
-
-const ForbesLogo = () => (
-  <svg viewBox="0 0 140 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="32" className="fill-current" style={{ fontSize: '30px', fontWeight: 400, fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>Forbes</text>
-  </svg>
-);
-
-const BloombergLogo = () => (
-  <svg viewBox="0 0 180 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="30" className="fill-current" style={{ fontSize: '26px', fontWeight: 700, fontFamily: 'Arial, sans-serif', letterSpacing: '1px' }}>Bloomberg</text>
-  </svg>
-);
-
-const ReutersLogo = () => (
-  <svg viewBox="0 0 140 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="30" className="fill-current" style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'Arial, sans-serif' }}>Reuters</text>
-  </svg>
-);
-
-const UsaTodayLogo = () => (
-  <svg viewBox="0 0 180 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="30" className="fill-current" style={{ fontSize: '24px', fontWeight: 900, fontFamily: 'Arial Black, sans-serif', letterSpacing: '-1px' }}>USA TODAY</text>
-  </svg>
-);
-
-const MarketWatchLogo = () => (
-  <svg viewBox="0 0 200 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="30" className="fill-current" style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Georgia, serif' }}>MarketWatch</text>
-  </svg>
-);
-
-const BusinessInsiderLogo = () => (
-  <svg viewBox="0 0 240 40" className="h-8 md:h-10 w-auto">
-    <text x="0" y="30" className="fill-current" style={{ fontSize: '22px', fontWeight: 700, fontFamily: 'Arial, sans-serif' }}>Business Insider</text>
-  </svg>
-);
+import forbesLogo from "@/assets/logos/forbes.png";
+import bloombergLogo from "@/assets/logos/bloomberg.png";
+import reutersLogo from "@/assets/logos/reuters.png";
+import usatodayLogo from "@/assets/logos/usatoday.png";
+import marketwatchLogo from "@/assets/logos/marketwatch.png";
+import businessinsiderLogo from "@/assets/logos/businessinsider.png";
 
 const mediaOutlets = [
-  { name: "FOX", Logo: FoxLogo },
-  { name: "NBC", Logo: NbcLogo },
-  { name: "CBS", Logo: CbsLogo },
-  { name: "ABC", Logo: AbcLogo },
-  { name: "USA TODAY", Logo: UsaTodayLogo },
-  { name: "Forbes", Logo: ForbesLogo },
-  { name: "Bloomberg", Logo: BloombergLogo },
-  { name: "Reuters", Logo: ReutersLogo },
-  { name: "MarketWatch", Logo: MarketWatchLogo },
-  { name: "Business Insider", Logo: BusinessInsiderLogo },
+  { name: "Forbes", logo: forbesLogo },
+  { name: "Bloomberg", logo: bloombergLogo },
+  { name: "Reuters", logo: reutersLogo },
+  { name: "USA Today", logo: usatodayLogo },
+  { name: "MarketWatch", logo: marketwatchLogo },
+  { name: "Business Insider", logo: businessinsiderLogo },
 ];
 
 const AsSeenOnSection = () => {
@@ -107,9 +49,14 @@ const AsSeenOnSection = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.05 * index }}
-              className="flex items-center justify-center text-foreground/50 hover:text-foreground transition-all duration-300"
+              className="flex items-center justify-center hover:scale-105 transition-transform duration-300"
             >
-              <outlet.Logo />
+              <img
+                src={outlet.logo}
+                alt={`${outlet.name} logo`}
+                className="h-8 md:h-10 w-auto object-contain"
+                loading="lazy"
+              />
             </motion.div>
           ))}
         </motion.div>
