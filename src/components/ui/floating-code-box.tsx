@@ -1,17 +1,10 @@
 import { memo, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 
 const FloatingCodeBox = memo(() => {
-  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
-  
-  // Don't show on homepage - it has its own code box in HeroSection
-  const isHomepage = location.pathname === "/";
 
   // Delay render to not block initial page paint
   useEffect(() => {
-    if (isHomepage) return;
-
     // Some environments (certain embedded previews / older browsers) may not support
     // requestIdleCallback; use setTimeout as a safe fallback.
     let handle: number;
@@ -30,9 +23,9 @@ const FloatingCodeBox = memo(() => {
         clearTimeout(handle);
       }
     };
-  }, [isHomepage]);
+  }, []);
 
-  if (isHomepage || !isVisible) return null;
+  if (!isVisible) return null;
 
   const codeLines = [
     'const ai =',
