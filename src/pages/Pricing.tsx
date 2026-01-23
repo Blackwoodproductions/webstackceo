@@ -66,9 +66,9 @@ const Pricing = () => {
                 <span className="gradient-text">Web Command Center</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
-                All-in-one dashboard for SEO agencies and marketing companies — or any CEO 
-                who wants to cut out the middleman and buy direct. Analytics, link building, 
-                content automation, and client management — all on autopilot and managed by AI.
+                Built for SEO agencies, marketing companies, and CEOs who want to cut out 
+                the middleman. Analytics, link building, content automation, and client 
+                management — all on autopilot, all managed by AI.
               </p>
               <Button
                 variant="outline"
