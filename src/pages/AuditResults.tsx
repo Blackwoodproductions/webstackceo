@@ -747,7 +747,7 @@ const AuditResults = () => {
     if (dashboardMetrics && (dashboardMetrics.domainRating < 50 || dashboardMetrics.referringDomains < 50)) {
       recs.push({
         title: 'BRON: Boost Domain Rating & Authority',
-        description: 'BRON (Backlink Ranking Optimization Network) delivers real business website deep links into your clustered topical content using our Diamond Flow methodology—all link flow goes up into your site, boosting your whole domain. BRON reverse engineers the top 5 ranked pages to create keyword clusters that Google loves.',
+        description: 'BRON (Backlink Ranking Optimization Network) delivers real business website deep links into your clustered topical content using our proprietary Diamond Flow methodology. Unlike PBNs or spam networks, BRON sources links exclusively from legitimate, niche-relevant business websites. All link equity flows upward through your content silos into your money pages, boosting your entire domain\'s authority. BRON automatically reverse engineers the top 5 ranked pages for your target keywords to create the exact keyword clusters that Google rewards with higher rankings.',
         priority: 'high',
         category: 'Authority & Links',
         icon: Link2,
@@ -757,14 +757,16 @@ const AuditResults = () => {
           'Domain Rating & Domain Authority boosting',
           'Links directed to your money page',
           'Weekly keyword ranking reports',
-          'Top 5 competitor keyword cluster analysis'
+          'Top 5 competitor keyword cluster analysis',
+          'Niche-relevant link sourcing'
         ],
         service: 'BRON',
+        comingSoon: ['AEO & GEO tracking'],
       });
     } else if (dashboardMetrics && dashboardMetrics.domainRating >= 50) {
       recs.push({
         title: 'BRON: Scale Your Link Authority',
-        description: 'Continue growing your Domain Rating with BRON\'s Diamond Flow architecture. Real business website links flow into your keyword clusters and money pages. Weekly ranking reports track your keyword positions.',
+        description: 'Continue accelerating your Domain Rating growth with BRON\'s Diamond Flow architecture. Real business website links flow strategically into your keyword clusters and money pages, creating a powerful authority network. Weekly ranking reports track your keyword positions across search engines, while our system continuously reverse engineers top-performing competitors to identify new cluster opportunities and link placement strategies.',
         priority: 'medium',
         category: 'Authority & Links',
         icon: TrendingUp,
@@ -773,9 +775,11 @@ const AuditResults = () => {
           'Clustered topical content links',
           'Money page link targeting',
           'Weekly ranking reports',
-          'Keyword cluster optimization'
+          'Keyword cluster optimization',
+          'Competitor reverse engineering'
         ],
         service: 'BRON',
+        comingSoon: ['AEO & GEO tracking'],
       });
     }
 
