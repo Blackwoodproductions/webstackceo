@@ -57,13 +57,15 @@ const OnPageSEOGuide = () => {
                   SEO Fundamentals
                 </span>
                 <span className="text-sm text-muted-foreground">12 min read</span>
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-sm font-medium border border-amber-500/30">
+                  Add-on
+                </span>
               </div>
               
               <GuideFeatureLink 
                 title="The Complete Guide to" 
                 gradientText="On-Page SEO" 
                 featureHref="/features/on-page-seo" 
-                isAddOn 
               />
               <p className="text-xl text-muted-foreground mt-6">
                 On-page SEO is the foundation of your search visibility. Learn how to optimize every element of your pages to rank higher and drive more organic traffic.
