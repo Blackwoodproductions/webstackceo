@@ -727,6 +727,7 @@ const AuditResults = () => {
       category: string;
       icon: React.ElementType;
       actions: string[];
+      service?: string;
     }[] = [];
 
     // Find categories by title
@@ -739,6 +740,68 @@ const AuditResults = () => {
     const meta = getCategory('Meta Tags');
     const security = getCategory('Security');
 
+    // Backlink recommendations - BRON Service
+    if (backlinks) {
+      if (dashboardMetrics && dashboardMetrics.domainRating < 30) {
+        recs.push({
+          title: 'Build Domain Authority with BRON',
+          description: 'Your Domain Rating is low. Our BRON service targets long-tail keywords and applies them to your website in a cluster formation using our Diamond Flow methodology.',
+          priority: 'high',
+          category: 'Backlinks',
+          icon: Link2,
+          actions: ['Keyword cluster targeting', 'Diamond Flow link silos', 'Niche-relevant backlinks', 'Real business websites'],
+          service: 'BRON',
+        });
+      } else if (dashboardMetrics && dashboardMetrics.referringDomains < 50) {
+        recs.push({
+          title: 'Expand Link Profile with BRON',
+          description: 'BRON builds diversified backlinks from real, relevant business websites—not PBNs or spam—using our proven Diamond Flow architecture.',
+          priority: 'medium',
+          category: 'Backlinks',
+          icon: Globe,
+          actions: ['Content silo creation', 'Supporting pages', 'Resources indexing', 'Authority flow'],
+          service: 'BRON',
+        });
+      }
+    }
+
+    // Topical Authority & Content - CADE Plugin
+    if (dashboardMetrics && (dashboardMetrics.organicTraffic < 500 || dashboardMetrics.organicKeywords < 100)) {
+      recs.push({
+        title: 'Build Topical Authority with CADE',
+        description: 'Our CADE plugin creates ongoing content that builds topical authority, with smart internal linking and separate URLs for each FAQ question—going the extra mile other agencies skip.',
+        priority: 'high',
+        category: 'Content',
+        icon: FileText,
+        actions: ['Automated content creation', 'Individual FAQ URLs', 'Internal link building', 'Topical clusters'],
+        service: 'CADE',
+      });
+    }
+
+    // Social & GMB Signals - CADE Plugin
+    recs.push({
+      title: 'Amplify with Social & GMB Signals',
+      description: 'CADE automatically distributes your content across social channels and Google Business Profile, creating the signals that boost local and organic visibility.',
+      priority: dashboardMetrics && dashboardMetrics.organicTraffic < 300 ? 'high' : 'medium',
+      category: 'Signals',
+      icon: Users,
+      actions: ['Social signal automation', 'GMB post scheduling', 'Multi-platform distribution', 'Engagement tracking'],
+      service: 'CADE',
+    });
+
+    // Schema recommendations
+    if (schema && schema.score < 60) {
+      recs.push({
+        title: 'Implement Schema Markup',
+        description: 'CADE automatically generates FAQ schema with individual URLs for each question, enabling rich snippets that competitors miss.',
+        priority: schema.score < 40 ? 'high' : 'medium',
+        category: 'Schema',
+        icon: FileCode,
+        actions: ['FAQ schema with URLs', 'Organization schema', 'Local business markup', 'Rich snippet optimization'],
+        service: 'CADE',
+      });
+    }
+
     // Page Speed recommendations
     if (pageSpeed && pageSpeed.score < 70) {
       recs.push({
@@ -750,41 +813,6 @@ const AuditResults = () => {
         category: 'Page Speed',
         icon: Gauge,
         actions: ['Optimize images', 'Enable caching', 'Minify CSS/JS', 'Use a CDN'],
-      });
-    }
-
-    // Backlink recommendations
-    if (backlinks) {
-      if (dashboardMetrics && dashboardMetrics.domainRating < 30) {
-        recs.push({
-          title: 'Build Domain Authority',
-          description: 'Your Domain Rating is low. Quality backlinks from relevant sites will boost your authority.',
-          priority: 'high',
-          category: 'Backlinks',
-          icon: Link2,
-          actions: ['Guest posting', 'HARO outreach', 'Broken link building', 'Digital PR'],
-        });
-      } else if (dashboardMetrics && dashboardMetrics.referringDomains < 50) {
-        recs.push({
-          title: 'Diversify Link Sources',
-          description: 'Increase the variety of domains linking to you for a more natural backlink profile.',
-          priority: 'medium',
-          category: 'Backlinks',
-          icon: Globe,
-          actions: ['Niche directories', 'Industry partnerships', 'Content syndication'],
-        });
-      }
-    }
-
-    // Schema recommendations
-    if (schema && schema.score < 60) {
-      recs.push({
-        title: 'Implement Schema Markup',
-        description: 'Structured data helps search engines understand your content and can enable rich snippets.',
-        priority: schema.score < 40 ? 'high' : 'medium',
-        category: 'Schema',
-        icon: FileCode,
-        actions: ['Add Organization schema', 'Implement FAQ schema', 'Add breadcrumbs', 'Local business markup'],
       });
     }
 
@@ -821,18 +849,6 @@ const AuditResults = () => {
         category: 'Security',
         icon: Shield,
         actions: ['Enable HTTPS', 'Add CSP headers', 'Implement HSTS', 'Fix mixed content'],
-      });
-    }
-
-    // Traffic growth recommendation if traffic is low
-    if (dashboardMetrics && dashboardMetrics.organicTraffic < 500) {
-      recs.push({
-        title: 'Grow Organic Traffic',
-        description: 'Your organic traffic has room for significant growth with the right SEO strategy.',
-        priority: 'medium',
-        category: 'Growth',
-        icon: TrendingUp,
-        actions: ['Target long-tail keywords', 'Create pillar content', 'Build topical authority', 'Internal linking'],
       });
     }
 
@@ -1297,6 +1313,15 @@ const AuditResults = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold">{rec.title}</h3>
+                        {rec.service && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            rec.service === 'BRON'
+                              ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
+                              : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
+                          }`}>
+                            {rec.service}
+                          </span>
+                        )}
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                           rec.priority === 'high'
                             ? 'bg-red-500/20 text-red-600 dark:text-red-400'
