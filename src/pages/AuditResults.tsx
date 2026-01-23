@@ -787,7 +787,7 @@ const AuditResults = () => {
     if (dashboardMetrics && (dashboardMetrics.organicTraffic < 500 || dashboardMetrics.organicKeywords < 100)) {
       recs.push({
         title: 'CADE: Build Topical Authority',
-        description: 'CADE (Content Automation and Domain Enhancement) creates ongoing content with 7 different blog types. Each blog generates 3-5 FAQs dropped throughout the week, then posted to your social media for social signals that build topical authority. CADE reverse engineers your top 5 competitors on autopilot.',
+        description: 'CADE (Content Automation and Domain Enhancement) creates ongoing content with 7 different blog types designed to establish your site as the topical authority in your niche. Each blog generates 3-5 FAQs with individual URLs—going the extra mile that other agencies skip. These FAQs are dripped throughout the week, then posted to your social media channels for engagement signals that Google uses to measure topical relevance. CADE continuously reverse engineers your top 5 competitors on complete autopilot, identifying content gaps and opportunities.',
         priority: 'high',
         category: 'Content & Signals',
         icon: FileText,
@@ -796,7 +796,8 @@ const AuditResults = () => {
           '3-5 FAQs per blog with individual URLs',
           'Social media posting for social signals',
           'Internal linking to keyword clusters',
-          'Top 5 competitor reverse engineering'
+          'Top 5 competitor reverse engineering',
+          'Automated content gap analysis'
         ],
         service: 'CADE',
         comingSoon: ['GMB signals', 'On-page optimization'],
@@ -804,8 +805,8 @@ const AuditResults = () => {
     } else {
       recs.push({
         title: 'CADE: Amplify Content & Signals',
-        description: 'CADE delivers ongoing content with 7 blog types, each generating 3-5 FAQs with individual URLs—going the extra mile other agencies skip. Content is posted to social media for engagement signals and internally linked to your clusters and relevant pages.',
-        priority: 'medium',
+        description: 'CADE (Content Automation and Domain Enhancement) delivers ongoing content with 7 strategically designed blog types, each generating 3-5 FAQs with individual URLs—going the extra mile other agencies skip. Content is automatically posted to your social media channels for engagement signals that build topical authority. CADE\'s smart internal linking connects new content to your keyword clusters and money pages, while continuously analyzing your top 5 competitors to identify new opportunities and content gaps.',
+        priority: 'high',
         category: 'Content & Signals',
         icon: Users,
         actions: [
@@ -813,7 +814,8 @@ const AuditResults = () => {
           'Individual FAQ URLs for each question',
           'Social signal distribution',
           'Smart internal linking',
-          'Competitor analysis on autopilot'
+          'Competitor analysis on autopilot',
+          'Automated content gap analysis'
         ],
         service: 'CADE',
         comingSoon: ['GMB signals', 'On-page optimization'],
