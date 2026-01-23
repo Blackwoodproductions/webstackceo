@@ -22,8 +22,8 @@ const testimonials = [
     name: "Marcus Johnson",
     title: "CEO, Elevate Commerce",
     company: "Elevate",
-    quote: "The traffic de-anonymization feature alone paid for our subscription in the first month. We're now converting visitors we never knew existed.",
-    rating: 5,
+    quote: "Great platform overall. The traffic de-anonymization paid for itself quickly. Initial setup took longer than expected, but support helped us through it.",
+    rating: 4,
     image: "MJ",
   },
   {
@@ -38,8 +38,8 @@ const testimonials = [
     name: "David Park",
     title: "CEO, Velocity SaaS",
     company: "Velocity",
-    quote: "The SEO results speak for themselves—we went from page 5 to page 1 in just 3 months. Real backlinks from real businesses made all the difference.",
-    rating: 5,
+    quote: "Solid SEO results—went from page 5 to page 1 in 3 months. Wish the reporting dashboard had a few more customization options, but overall very impressed.",
+    rating: 4,
     image: "DP",
   },
   {
@@ -104,8 +104,11 @@ const TestimonialsSection = () => {
                     
                     {/* Star Rating */}
                     <div className="flex gap-1 mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`w-5 h-5 ${i < testimonial.rating ? 'fill-yellow-400 text-yellow-400' : 'fill-muted text-muted'}`} 
+                        />
                       ))}
                     </div>
                     
@@ -162,7 +165,7 @@ const TestimonialsSection = () => {
             { value: "1,000+", label: "CEOs Trust Us" },
             { value: "99.9%", label: "Satisfaction Rate" },
             { value: "340%", label: "Avg Traffic Increase" },
-            { value: "4.9/5", label: "Average Rating" },
+            { value: "4.6/5", label: "Average Rating" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-3xl md:text-4xl font-bold gradient-text mb-1">{stat.value}</p>
