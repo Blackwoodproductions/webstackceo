@@ -3,20 +3,20 @@ import { Linkedin, Mail } from "lucide-react";
 
 const teamMembers = [
   {
-    name: "Que Ratansi",
-    role: "Founder & CEO",
-    bio: "Visionary leader driving Webstack.ceo's mission to empower SEO agencies with automated niche linking at scale.",
-    initials: "QR",
+    name: "Robert Bibb",
+    role: "Founder & CTO",
+    bio: "SEO technology expert with deep expertise in local search optimization and scalable link building architecture.",
+    initials: "RB",
     gradient: "from-cyan-400 to-violet-500",
-    linkedin: "https://www.linkedin.com/in/que-ratansi/",
+    linkedin: "https://www.linkedin.com/in/seolocalitcom/",
   },
   {
-    name: "Aaron Addleman",
-    role: "Chief Technology Officer",
-    bio: "SEO technology expert with deep expertise in local search optimization and scalable link building architecture.",
-    initials: "AA",
+    name: "Que Ratansi",
+    role: "CEO",
+    bio: "Visionary leader driving Webstack.ceo's mission to empower SEO agencies with automated niche linking at scale.",
+    initials: "QR",
     gradient: "from-violet-500 to-pink-500",
-    linkedin: "https://www.linkedin.com/in/seolocalitcom/",
+    linkedin: "https://www.linkedin.com/in/que-ratansi/",
   },
 ];
 
