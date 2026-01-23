@@ -1,13 +1,12 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Shield } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
-  const [isShieldGold, setIsShieldGold] = useState(false);
   const { soundEnabled } = useSoundContext();
   const { playSound } = useSoundEffects();
   const sectionRef = useRef<HTMLElement>(null);
@@ -15,15 +14,6 @@ const HeroSection = () => {
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-
-  // Listen for logo gold state changes from Navbar
-  useEffect(() => {
-    const handleLogoGoldChange = (e: CustomEvent<{ isGold: boolean }>) => {
-      setIsShieldGold(e.detail.isGold);
-    };
-    window.addEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
-    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
-  }, []);
 
   // Mouse position tracking
   const mouseX = useMotionValue(0);
@@ -35,21 +25,13 @@ const HeroSection = () => {
 
   // Transform mouse position to movement values for different layers
   const blob1X = useTransform(smoothMouseX, [-0.5, 0.5], [-30, 30]);
-  const blob1Y = useTransform(smoothMouseY, [-0.5, 0.5], [-30, 30]);
   const blob2X = useTransform(smoothMouseX, [-0.5, 0.5], [25, -25]);
-  const blob2Y = useTransform(smoothMouseY, [-0.5, 0.5], [25, -25]);
-  const float1X = useTransform(smoothMouseX, [-0.5, 0.5], [-50, 50]);
-  const float1Y = useTransform(smoothMouseY, [-0.5, 0.5], [-40, 40]);
-  const float2X = useTransform(smoothMouseX, [-0.5, 0.5], [40, -40]);
-  const float2Y = useTransform(smoothMouseY, [-0.5, 0.5], [35, -35]);
   const dashboardX = useTransform(smoothMouseX, [-0.5, 0.5], [-8, 8]);
   const dashboardY = useTransform(smoothMouseY, [-0.5, 0.5], [-5, 5]);
 
   // Scroll parallax
   const bgY1 = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const bgY2 = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const floatScrollY1 = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const floatScrollY2 = useTransform(scrollYProgress, [0, 1], [0, 80]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -75,20 +57,6 @@ const HeroSection = () => {
         style={{ x: blob2X, y: bgY2 }}
         className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" 
       />
-      
-      
-      {/* Floating Element with Mouse + Scroll Parallax */}
-      <motion.div
-        style={{ x: float2X, y: floatScrollY2 }}
-        className={`absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-700 ${
-          isShieldGold 
-            ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
-            : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
-        }`}
-      >
-        <Shield className={`w-[46px] h-[46px] transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`} />
-        <span className={`absolute font-bold text-[12px] tracking-tight transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`}>AI</span>
-      </motion.div>
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
