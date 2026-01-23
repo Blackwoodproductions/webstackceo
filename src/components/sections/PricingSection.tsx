@@ -296,13 +296,26 @@ const PricingSection = () => {
                 </ul>
               </div>
 
-              <Button
-                variant={plan.highlighted ? "hero" : "heroOutline"}
-                className="w-full"
-                size="lg"
-              >
-                {plan.buttonText || "Get Started"}
-              </Button>
+              {plan.buttonText === "Book a Call" ? (
+                <Button
+                  variant="heroOutline"
+                  className="w-full"
+                  size="lg"
+                  asChild
+                >
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    {plan.buttonText}
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  variant={plan.highlighted ? "hero" : "heroOutline"}
+                  className="w-full"
+                  size="lg"
+                >
+                  {plan.buttonText || "Get Started"}
+                </Button>
+              )}
             </motion.div>
           ))}
         </div>

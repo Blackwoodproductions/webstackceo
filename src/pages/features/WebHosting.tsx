@@ -71,7 +71,7 @@ const WebHosting = () => {
                   <a href="/#pricing">Get Premium Hosting <ArrowRight className="ml-2 w-5 h-5" /></a>
                 </Button>
                 <Button variant="heroOutline" size="lg" asChild>
-                  <a href="/#contact">Talk to Sales</a>
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">Talk to Sales</a>
                 </Button>
               </div>
             </motion.div>

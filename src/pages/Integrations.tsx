@@ -292,7 +292,7 @@ const Integrations = () => {
                   </a>
                 </Button>
                 <Button variant="heroOutline" size="lg" asChild>
-                  <a href="/contact">
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
                     Talk to Sales <ExternalLink className="w-4 h-4 ml-2" />
                   </a>
                 </Button>
