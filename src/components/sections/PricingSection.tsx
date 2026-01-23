@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame } from "lucide-react";
+import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import StripePaymentIcons, { StripeLogo } from "@/components/ui/stripe-payment-icons";
@@ -33,6 +33,13 @@ const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; co
   "Priority enterprise support": { icon: HeadphonesIcon, label: "Priority", color: "from-blue-400 to-indigo-500" },
   "Advanced security & encryption": { icon: Shield, label: "Secure", color: "from-emerald-400 to-green-500" },
 };
+
+// Add-ons available for all plans
+const addOns = [
+  { name: "On-Page SEO", icon: Sparkles },
+  { name: "PPC Landing Pages", icon: Zap },
+  { name: "Premium Web Hosting", icon: Shield },
+];
 
 const plans = [
   {
@@ -266,6 +273,28 @@ const PricingSection = () => {
                   );
                 })}
               </ul>
+
+              {/* Add-ons Section */}
+              <div className="mb-6 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-3">
+                  <Plus className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">Available Add-ons</span>
+                </div>
+                <ul className="space-y-2">
+                  {addOns.map((addon) => {
+                    const AddonIcon = addon.icon;
+                    return (
+                      <li key={addon.name} className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <AddonIcon className="w-4 h-4 text-primary/60" />
+                          {addon.name}
+                        </span>
+                        <span className="text-xs text-primary font-medium">Contact</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
 
               <Button
                 variant={plan.highlighted ? "hero" : "heroOutline"}
