@@ -454,7 +454,7 @@ export const generateServicesPDF = async () => {
     { title: 'Money Page (Top)', desc: 'Your client\'s target URL—either their existing page or one we create for their main keyword. All link equity flows here.' },
     { title: 'Main Keyword Page', desc: 'If the client doesn\'t have a money page, we create one targeting their primary keyword. If they do, we skip this step.' },
     { title: 'Supporting Pages (2 per cluster)', desc: 'We create niche-relevant content pages that link upward to the money page, passing authority.' },
-    { title: 'Resources Page', desc: 'A curated link partner directory that adds external authority and strengthens the entire silo structure.' },
+    { title: 'Resources Page (Topical Index)', desc: 'A comprehensive index of the 3 keyword pages above, reinforcing the silo\'s topical relevance and thematic authority.' },
   ];
 
   diamondSteps.forEach((step, index) => {

@@ -183,8 +183,8 @@ const LinkBuildingGuide = () => {
                       <p className="text-sm text-muted-foreground">2 pages per cluster with relevant content linking up to your money page</p>
                     </div>
                     <div className="bg-secondary/50 rounded-xl p-4">
-                      <p className="text-foreground font-medium mb-1">🔗 Resources Page</p>
-                      <p className="text-sm text-muted-foreground">Link partner directory that strengthens the entire silo structure</p>
+                      <p className="text-foreground font-medium mb-1">📑 Resources Page</p>
+                      <p className="text-sm text-muted-foreground">A topical index of the 3 keyword pages above, reinforcing the silo's thematic relevance</p>
                     </div>
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
                       <p className="text-sm text-foreground">
