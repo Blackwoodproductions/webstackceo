@@ -4,6 +4,7 @@ import { ArrowRight, Play, Shield } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
+import InteractiveGrid from "@/components/ui/interactive-grid";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
@@ -67,7 +68,7 @@ const HeroSection = () => {
   return (
     <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
       {/* Background Effects with Mouse + Scroll Parallax */}
-      <div className="absolute inset-0 grid-pattern opacity-50" />
+      <InteractiveGrid className="opacity-60" glowRadius={180} glowIntensity={0.5} />
       <motion.div 
         style={{ x: blob1X, y: bgY1 }}
         className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow" 
