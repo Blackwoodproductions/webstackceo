@@ -89,7 +89,7 @@ const StatsSection = () => {
   const bgY = useTransform(scrollYProgress, [0, 1], [50, -50]);
 
   return (
-    <section ref={sectionRef} className="py-20 relative overflow-hidden">
+    <section id="stats" ref={sectionRef} className="py-20 relative overflow-hidden">
       {/* Background with Parallax */}
       <motion.div 
         style={{ y: bgY }}
