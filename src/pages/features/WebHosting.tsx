@@ -21,7 +21,7 @@ const WebHosting = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Premium Web Hosting - Fast, Secure, Scalable"
+        title="Lovable Premium Hosting - Fast, Secure, Scalable"
         description="Enterprise-grade web hosting with NVMe SSD storage, global CDN, 99.99% uptime SLA, DDoS protection, and automatic backups."
         keywords="web hosting, premium hosting, fast hosting, secure hosting, CDN, SSD hosting, managed hosting"
         canonical="/features/web-hosting"
@@ -52,7 +52,7 @@ const WebHosting = () => {
                 <Server className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Premium Web <span className="gradient-text">Hosting</span>
+                Lovable Premium <span className="gradient-text">Hosting</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
                 Enterprise-grade hosting with 99.99% uptime SLA, global CDN, 
@@ -70,88 +70,6 @@ const WebHosting = () => {
           </div>
         </section>
 
-        {/* Comparison */}
-        <section className="py-24 bg-secondary/20">
-          <div className="container mx-auto px-6 max-w-4xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Why Our Hosting
-              </span>
-              <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                Not Your Average <span className="gradient-text">Host</span>
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8"
-              >
-                <h3 className="text-xl font-bold text-foreground mb-4">Typical Shared Hosting</h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500">✕</span>
-                    <span>Slow load times on shared resources</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500">✕</span>
-                    <span>Frequent downtime during traffic spikes</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500">✕</span>
-                    <span>Basic security with extra charges for features</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500">✕</span>
-                    <span>Limited support and slow response times</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500">✕</span>
-                    <span>Manual scaling requires plan upgrades</span>
-                  </li>
-                </ul>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="glass-card rounded-2xl p-8 border-primary/50"
-              >
-                <h3 className="text-xl font-bold text-foreground mb-4">Webstack.ceo Hosting</h3>
-                <ul className="space-y-3 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span>Sub-second load times with NVMe SSDs</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span>99.99% uptime with automatic failover</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span>Enterprise security suite included</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span>24/7 expert support with fast response</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span>Automatic scaling handles any traffic</span>
-                  </li>
-                </ul>
-              </motion.div>
-            </div>
-          </div>
-        </section>
 
         {/* What's Included */}
         <section className="py-24">
