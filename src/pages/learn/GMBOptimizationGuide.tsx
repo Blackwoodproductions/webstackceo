@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -92,10 +93,10 @@ const GMBOptimizationGuide = () => {
                   What is Google Business Profile?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Google Business Profile (formerly Google My Business) is a free tool that lets you manage how your business appears on Google Search and Maps. It's the foundation of local SEO and directly impacts whether customers find—and choose—your business.
+                  <GlossaryTooltip term="google-business-profile">Google Business Profile</GlossaryTooltip> (formerly Google My Business) is a free tool that lets you manage how your business appears on Google Search and Maps. It's the foundation of local SEO and directly impacts whether customers find—and choose—your business.
                 </p>
                 <p className="text-muted-foreground">
-                  When someone searches "restaurants near me" or "plumber in [city]," they see the Local Pack—those prominent business listings with ratings and contact info. Your Google Business Profile determines if you appear there.
+                  When someone searches "restaurants near me" or "plumber in [city]," they see the <GlossaryTooltip term="local-pack">Local Pack</GlossaryTooltip>—those prominent business listings with ratings and contact info. Your Google Business Profile determines if you appear there.
                 </p>
               </motion.div>
 

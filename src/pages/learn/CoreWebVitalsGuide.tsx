@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -84,7 +85,7 @@ const CoreWebVitalsGuide = () => {
                   What Are Core Web Vitals?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Core Web Vitals are a set of specific metrics that Google uses to measure real-world user experience on web pages. They focus on three aspects: loading performance, interactivity, and visual stability.
+                  <GlossaryTooltip term="core-web-vitals">Core Web Vitals</GlossaryTooltip> are a set of specific metrics that Google uses to measure real-world user experience on web pages. They focus on three aspects: loading performance, interactivity, and visual stability.
                 </p>
                 <p className="text-muted-foreground">
                   Since 2021, these metrics are part of Google's ranking algorithm, making them essential for SEO success.

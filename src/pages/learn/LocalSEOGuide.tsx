@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -95,7 +96,7 @@ const LocalSEOGuide = () => {
                   Local SEO optimizes your online presence to attract customers from nearby geographic areas. When someone searches "pizza near me" or "plumber in Chicago," local SEO determines who shows up.
                 </p>
                 <p className="text-muted-foreground">
-                  The Local Pack—those three business listings with a map—appears in 93% of searches with local intent. Getting into that pack can transform your business.
+                  The <GlossaryTooltip term="local-pack">Local Pack</GlossaryTooltip>—those three business listings with a map—appears in 93% of searches with local intent. Getting into that pack can transform your business.
                 </p>
               </motion.div>
 

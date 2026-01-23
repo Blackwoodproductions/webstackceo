@@ -14,6 +14,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -95,7 +96,7 @@ const UptimeMonitoringGuide = () => {
                   Uptime monitoring continuously checks whether your website is accessible and functioning properly. When something goes wrong, it alerts you immediately so you can fix the problem before customers notice.
                 </p>
                 <p className="text-muted-foreground">
-                  Modern uptime monitoring goes beyond simple "is it online" checks—it monitors page speed, SSL certificates, specific page content, API endpoints, and more.
+                  Modern uptime monitoring goes beyond simple "is it online" checks—it monitors <GlossaryTooltip term="page-speed">page speed</GlossaryTooltip>, SSL certificates, specific page content, API endpoints, and more.
                 </p>
               </motion.div>
 

@@ -15,6 +15,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -87,7 +88,7 @@ const AnalyticsGuide = () => {
                   Your website generates thousands of data points every day. The difference between successful companies and struggling ones often comes down to who can extract meaning from that data.
                 </p>
                 <p className="text-muted-foreground">
-                  As a CEO, you don't need to become a data scientist—but you do need to know which metrics matter, what they mean, and how to act on them.
+                  As a CEO, you don't need to become a data scientist—but you do need to know which metrics matter, what they mean, and how to act on them to improve <GlossaryTooltip term="conversion-rate">conversion rates</GlossaryTooltip> and <GlossaryTooltip term="organic-traffic">organic traffic</GlossaryTooltip>.
                 </p>
               </FadeIn>
 

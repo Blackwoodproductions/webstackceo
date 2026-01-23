@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { 
   Search, CheckCircle2, ArrowRight, ArrowLeft, 
-  Target, Lightbulb, TrendingUp, BarChart3
+  Target, TrendingUp, BarChart3, Lightbulb
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary

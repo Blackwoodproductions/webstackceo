@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -84,7 +85,7 @@ const LinkBuildingGuide = () => {
                   Why Links Still Matter
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Despite years of algorithm updates, backlinks remain one of Google's strongest ranking signals. Links from authoritative, relevant websites tell Google your content is trustworthy and valuable.
+                  Despite years of algorithm updates, <GlossaryTooltip term="backlinks">backlinks</GlossaryTooltip> remain one of Google's strongest ranking signals. Links from authoritative, relevant websites tell Google your content is trustworthy and valuable.
                 </p>
                 <p className="text-muted-foreground">
                   But not all links are created equal. Quality matters far more than quantity, and spammy link building can get you penalized.

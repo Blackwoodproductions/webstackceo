@@ -14,6 +14,7 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
 
 // Get terms linked to this guide from shared glossary
@@ -83,7 +84,7 @@ const AutomatedBloggingGuide = () => {
                   What is Automated Blogging?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  Automated blogging uses AI and automation tools to streamline content creation—from keyword research and topic ideation to writing, optimization, and publishing. The goal isn't to remove humans entirely, but to multiply their output.
+                  Automated blogging uses AI and automation tools to streamline content creation—from <GlossaryTooltip term="keyword-research">keyword research</GlossaryTooltip> and topic ideation to writing, optimization, and publishing. The goal isn't to remove humans entirely, but to multiply their output.
                 </p>
                 <p className="text-muted-foreground">
                   Think of it as having a team of tireless assistants who can draft content, suggest improvements, and handle the technical SEO work—while you focus on strategy and adding your unique expertise.
