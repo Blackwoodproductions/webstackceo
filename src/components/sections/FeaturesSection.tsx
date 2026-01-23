@@ -135,10 +135,10 @@ const FeaturesSection = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             className="group block relative"
             >
-              {/* Blue glow effect on hover */}
-              <div className="absolute inset-0 bg-cyan-400/0 rounded-2xl blur-xl transition-all duration-500 group-hover:bg-cyan-400/30 group-hover:scale-110" />
+              {/* Blue glow effect on hover - positioned behind */}
+              <div className="absolute inset-0 -z-10 bg-cyan-400/0 rounded-2xl blur-xl transition-all duration-500 group-hover:bg-cyan-400/30 group-hover:scale-110" />
               
-              <div className="relative h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer">
+              <div className="h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
                   <feature.icon className="w-6 h-6 text-primary transition-colors duration-300" />
                 </div>
