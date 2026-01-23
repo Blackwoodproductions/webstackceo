@@ -718,6 +718,131 @@ const AuditResults = () => {
     ? Math.round(auditResults.reduce((sum, cat) => sum + cat.score, 0) / auditResults.length)
     : 0;
 
+  // Generate recommendations based on audit scores
+  const recommendations = useMemo(() => {
+    const recs: {
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+      category: string;
+      icon: React.ElementType;
+      actions: string[];
+    }[] = [];
+
+    // Find categories by title
+    const getCategory = (title: string) => auditResults.find(c => c.title === title);
+    
+    const pageSpeed = getCategory('Page Speed');
+    const backlinks = getCategory('Backlink Profile');
+    const technical = getCategory('Technical SEO');
+    const schema = getCategory('Schema Markup');
+    const meta = getCategory('Meta Tags');
+    const security = getCategory('Security');
+
+    // Page Speed recommendations
+    if (pageSpeed && pageSpeed.score < 70) {
+      recs.push({
+        title: 'Improve Page Speed',
+        description: pageSpeed.score < 50 
+          ? 'Critical: Your page speed is severely impacting user experience and rankings.'
+          : 'Your site loads slower than competitors, hurting conversions and SEO.',
+        priority: pageSpeed.score < 50 ? 'high' : 'medium',
+        category: 'Page Speed',
+        icon: Gauge,
+        actions: ['Optimize images', 'Enable caching', 'Minify CSS/JS', 'Use a CDN'],
+      });
+    }
+
+    // Backlink recommendations
+    if (backlinks) {
+      if (dashboardMetrics && dashboardMetrics.domainRating < 30) {
+        recs.push({
+          title: 'Build Domain Authority',
+          description: 'Your Domain Rating is low. Quality backlinks from relevant sites will boost your authority.',
+          priority: 'high',
+          category: 'Backlinks',
+          icon: Link2,
+          actions: ['Guest posting', 'HARO outreach', 'Broken link building', 'Digital PR'],
+        });
+      } else if (dashboardMetrics && dashboardMetrics.referringDomains < 50) {
+        recs.push({
+          title: 'Diversify Link Sources',
+          description: 'Increase the variety of domains linking to you for a more natural backlink profile.',
+          priority: 'medium',
+          category: 'Backlinks',
+          icon: Globe,
+          actions: ['Niche directories', 'Industry partnerships', 'Content syndication'],
+        });
+      }
+    }
+
+    // Schema recommendations
+    if (schema && schema.score < 60) {
+      recs.push({
+        title: 'Implement Schema Markup',
+        description: 'Structured data helps search engines understand your content and can enable rich snippets.',
+        priority: schema.score < 40 ? 'high' : 'medium',
+        category: 'Schema',
+        icon: FileCode,
+        actions: ['Add Organization schema', 'Implement FAQ schema', 'Add breadcrumbs', 'Local business markup'],
+      });
+    }
+
+    // Technical SEO recommendations
+    if (technical && technical.score < 70) {
+      recs.push({
+        title: 'Fix Technical SEO Issues',
+        description: 'Technical issues are preventing search engines from properly crawling and indexing your site.',
+        priority: technical.score < 50 ? 'high' : 'medium',
+        category: 'Technical',
+        icon: FileText,
+        actions: ['Fix mobile issues', 'Update sitemap', 'Optimize robots.txt', 'Add canonical tags'],
+      });
+    }
+
+    // Meta tags recommendations
+    if (meta && meta.score < 70) {
+      recs.push({
+        title: 'Optimize Meta Tags',
+        description: 'Your meta titles and descriptions need improvement to boost click-through rates.',
+        priority: meta.score < 50 ? 'high' : 'medium',
+        category: 'Meta Tags',
+        icon: Search,
+        actions: ['Write compelling titles', 'Optimize descriptions', 'Add OG tags', 'Target keywords'],
+      });
+    }
+
+    // Security recommendations
+    if (security && security.score < 80) {
+      recs.push({
+        title: 'Enhance Security Headers',
+        description: 'Security issues can hurt trust signals and may impact your search rankings.',
+        priority: security.score < 60 ? 'high' : 'low',
+        category: 'Security',
+        icon: Shield,
+        actions: ['Enable HTTPS', 'Add CSP headers', 'Implement HSTS', 'Fix mixed content'],
+      });
+    }
+
+    // Traffic growth recommendation if traffic is low
+    if (dashboardMetrics && dashboardMetrics.organicTraffic < 500) {
+      recs.push({
+        title: 'Grow Organic Traffic',
+        description: 'Your organic traffic has room for significant growth with the right SEO strategy.',
+        priority: 'medium',
+        category: 'Growth',
+        icon: TrendingUp,
+        actions: ['Target long-tail keywords', 'Create pillar content', 'Build topical authority', 'Internal linking'],
+      });
+    }
+
+    // Sort by priority
+    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    recs.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+    return recs.slice(0, 6); // Limit to 6 recommendations
+  }, [auditResults, dashboardMetrics]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -1120,6 +1245,102 @@ const AuditResults = () => {
                     </motion.div>
                   );
                 })}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Actionable Recommendations */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-8"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-xl font-bold">Actionable Recommendations</h2>
+              <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 font-semibold">
+                {recommendations.filter(r => r.priority === 'high').length} High Priority
+              </span>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              {recommendations.map((rec, i) => (
+                <motion.div
+                  key={rec.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.05 }}
+                  className={`p-5 rounded-2xl border ${
+                    rec.priority === 'high' 
+                      ? 'bg-gradient-to-br from-red-500/5 to-orange-500/5 border-red-500/20' 
+                      : rec.priority === 'medium'
+                      ? 'bg-gradient-to-br from-amber-500/5 to-yellow-500/5 border-amber-500/20'
+                      : 'bg-card border-border/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2 rounded-lg shrink-0 ${
+                      rec.priority === 'high'
+                        ? 'bg-red-500/10'
+                        : rec.priority === 'medium'
+                        ? 'bg-amber-500/10'
+                        : 'bg-primary/10'
+                    }`}>
+                      <rec.icon className={`w-5 h-5 ${
+                        rec.priority === 'high'
+                          ? 'text-red-500'
+                          : rec.priority === 'medium'
+                          ? 'text-amber-500'
+                          : 'text-primary'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold">{rec.title}</h3>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          rec.priority === 'high'
+                            ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                            : rec.priority === 'medium'
+                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                            : 'bg-primary/20 text-primary'
+                        }`}>
+                          {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {rec.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {rec.actions.map((action, j) => (
+                          <span 
+                            key={j}
+                            className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3 text-green-500" />
+                            {action}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/10 border border-primary/20">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-lg mb-1">Need help implementing these recommendations?</h3>
+                  <p className="text-sm text-muted-foreground">Our SEO experts can help you improve your rankings and drive more organic traffic.</p>
+                </div>
+                <Button className="shrink-0 gap-2" asChild>
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    <Phone className="w-4 h-4" />
+                    Book a Free Consultation
+                  </a>
+                </Button>
               </div>
             </div>
           </motion.div>
