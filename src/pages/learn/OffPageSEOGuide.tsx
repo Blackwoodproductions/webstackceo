@@ -190,8 +190,8 @@ const OffPageSEOGuide = () => {
                     <div className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-foreground font-medium">Resources Page</p>
-                        <p className="text-sm text-muted-foreground">Link partners that add authority to the entire silo</p>
+                        <p className="text-foreground font-medium">Resources Page (Topical Index)</p>
+                        <p className="text-sm text-muted-foreground">An index of the 3 keyword pages above, reinforcing topical authority</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">

@@ -159,8 +159,8 @@ const OffPageSEO = () => {
                     <li className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
                       <div>
-                        <p className="font-medium text-foreground">Resources Page (Link Partners)</p>
-                        <p className="text-sm text-muted-foreground">Curated partner links that strengthen the entire silo structure</p>
+                        <p className="font-medium text-foreground">Resources Page (Topical Index)</p>
+                        <p className="text-sm text-muted-foreground">A comprehensive index of the 3 keyword pages above, strengthening topical relevance</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
