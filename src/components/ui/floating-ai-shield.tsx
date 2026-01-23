@@ -35,19 +35,19 @@ const FloatingAIShield = memo(() => {
     return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
   }, []);
 
-  // Handle scroll to stop at bottom (same as floating code box)
+  // Handle scroll to stop above footer's "Stay ahead" section
   useEffect(() => {
     const handleScroll = () => {
       const footer = document.querySelector('footer');
       if (footer) {
         const footerRect = footer.getBoundingClientRect();
-        const stopPoint = window.innerHeight - 120; // Stop 120px from bottom
+        const stopPoint = window.innerHeight - 200; // Stop well above footer
         setIsAtBottom(footerRect.top < stopPoint);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial state
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -62,7 +62,7 @@ const FloatingAIShield = memo(() => {
       }`}
       style={{
         top: isAtBottom ? 'auto' : '78%',
-        bottom: isAtBottom ? '120px' : 'auto',
+        bottom: isAtBottom ? '220px' : 'auto',
       }}
     >
       <Shield className={`w-[42px] h-[42px] transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`} />
