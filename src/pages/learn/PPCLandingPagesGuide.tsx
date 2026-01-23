@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { 
-  MousePointerClick, CheckCircle2, ArrowRight, 
+  MousePointerClick, CheckCircle2, ArrowRight, ArrowLeft,
   Target, Zap, DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,21 +48,26 @@ const PPCLandingPagesGuide = () => {
           
           <div className="container mx-auto px-6 max-w-4xl relative z-10">
             <FadeIn>
-              <GuideFeatureLink 
-                title="PPC Landing Pages:" 
-                gradientText="Convert Clicks to Customers" 
-                featureHref="/features/ppc-landing-pages" 
-                isAddOn 
-              />
+              <Link to="/learn" className="inline-flex items-center gap-2 text-primary hover:underline mb-6">
+                <ArrowLeft className="w-4 h-4" /> Back to Learning Center
+              </Link>
               
               <div className="flex items-center gap-3 mb-4">
                 <span className="px-3 py-1 rounded-full bg-red-400/10 text-red-400 text-sm font-medium">
                   Conversion Optimization
                 </span>
                 <span className="text-sm text-muted-foreground">11 min read</span>
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-sm font-medium border border-amber-500/30">
+                  Add-on
+                </span>
               </div>
               
-              <p className="text-xl text-muted-foreground">
+              <GuideFeatureLink 
+                title="PPC Landing Pages:" 
+                gradientText="Convert Clicks to Customers" 
+                featureHref="/features/ppc-landing-pages" 
+              />
+              <p className="text-xl text-muted-foreground mt-6">
                 Your landing page determines whether paid traffic becomes paying customers. Master the art of high-converting landing pages.
               </p>
             </FadeIn>
