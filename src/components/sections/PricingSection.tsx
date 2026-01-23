@@ -113,6 +113,22 @@ const PricingSection = () => {
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+            <span className="text-foreground">Simple Pricing.</span>{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+              Serious Results.
+            </span>
+          </h2>
+        </motion.div>
+
         {/* Billing Toggle */}
         <div className="flex items-center justify-center gap-4 mb-12">
           <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
