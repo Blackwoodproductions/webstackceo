@@ -13,10 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const faqTerms = [
-  { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
-];
+// Get terms linked to this guide from shared glossary
+const faqTerms = getTermsByGuide("/learn/faq-generation-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const FAQGenerationGuide = () => {
   return (

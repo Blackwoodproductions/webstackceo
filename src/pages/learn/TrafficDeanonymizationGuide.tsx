@@ -13,10 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const deanonymizationTerms = [
-  { term: "Conversion Rate", shortDescription: "The percentage of visitors who complete a desired action or goal.", slug: "conversion-rate" },
-];
+// Get terms linked to this guide from shared glossary
+const deanonymizationTerms = getTermsByGuide("/learn/traffic-deanonymization-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const TrafficDeanonymizationGuide = () => {
   return (

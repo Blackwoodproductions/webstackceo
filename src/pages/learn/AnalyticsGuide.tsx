@@ -14,12 +14,14 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const analyticsTerms = [
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
-  { term: "Conversion Rate", shortDescription: "The percentage of visitors who complete a desired action or goal.", slug: "conversion-rate" },
-  { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
-];
+// Get terms linked to this guide from shared glossary
+const analyticsTerms = getTermsByGuide("/learn/analytics-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const AnalyticsGuide = () => {
   return (

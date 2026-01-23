@@ -13,10 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const socialTerms = [
-  { term: "Domain Authority", shortDescription: "A score predicting how likely a website is to rank in search results.", slug: "domain-authority" },
-];
+// Get terms linked to this guide from shared glossary
+const socialTerms = getTermsByGuide("/learn/social-signals-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const SocialSignalsGuide = () => {
   return (

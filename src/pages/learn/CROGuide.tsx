@@ -13,11 +13,14 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const croTerms = [
-  { term: "Conversion Rate", shortDescription: "The percentage of visitors who complete a desired action or goal.", slug: "conversion-rate" },
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
-];
+// Get terms linked to this guide from shared glossary
+const croTerms = getTermsByGuide("/learn/cro-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const CROGuide = () => {
   return (

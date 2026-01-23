@@ -13,12 +13,14 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const domainAuthorityTerms = [
-  { term: "Domain Authority", shortDescription: "A score (1-100) predicting how likely a website is to rank in search results.", slug: "domain-authority" },
-  { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as 'votes of confidence'.", slug: "backlinks" },
-  { term: "Anchor Text", shortDescription: "The clickable, visible text in a hyperlink that provides context.", slug: "anchor-text" },
-];
+// Get terms linked to this guide from shared glossary
+const domainAuthorityTerms = getTermsByGuide("/learn/domain-authority-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const DomainAuthorityGuide = () => {
   return (
