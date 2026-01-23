@@ -56,7 +56,9 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
+  Phone,
 } from "lucide-react";
+import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 
 interface AuditCheck {
   name: string;
@@ -829,11 +831,16 @@ const AuditResults = () => {
                   </p>
                 </div>
 
-                <Button className="gap-2 w-fit">
-                  <Download className="w-4 h-4" />
-                  Export PDF
+                <Button className="gap-2 w-fit" asChild>
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    <Phone className="w-4 h-4" />
+                    Book a Call
+                  </a>
                 </Button>
               </div>
+
+              {/* Floating Export PDF Button */}
+              <FloatingExportPDF domain={decodedDomain} />
 
               {/* Main Dials Row */}
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-6">
