@@ -937,146 +937,133 @@ const AuditResults = () => {
                   </div>
                 </div>
               )}
+
+              {/* Historical Trend Chart - Integrated */}
+              {historyData && historyData.length > 0 && (
+                <div className="pt-6 border-t border-border/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">2-Year Performance Trend</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {/* Inline Legend */}
+                      <div className="hidden md:flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-xs text-muted-foreground">Traffic</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span className="text-xs text-muted-foreground">Keywords</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <span className="text-xs text-muted-foreground">DR</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-violet-500" />
+                          <span className="text-xs text-muted-foreground">Value</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-[180px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={historyData}
+                        margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis
+                          dataKey="date"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                          }}
+                        />
+                        <YAxis
+                          yAxisId="left"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
+                          width={40}
+                        />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          domain={[0, 100]}
+                          width={30}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            fontSize: '12px',
+                          }}
+                          labelFormatter={(value) => {
+                            const date = new Date(value);
+                            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                          }}
+                          formatter={(value: number, name: string) => {
+                            if (name === 'Domain Rating') return [value, name];
+                            if (name === 'Traffic Value') return [`$${value.toLocaleString()}`, name];
+                            return [value.toLocaleString(), name];
+                          }}
+                        />
+                        <Line
+                          yAxisId="left"
+                          type="monotone"
+                          dataKey="organicTraffic"
+                          name="Organic Traffic"
+                          stroke="hsl(142, 76%, 36%)"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4, fill: "hsl(142, 76%, 36%)" }}
+                        />
+                        <Line
+                          yAxisId="left"
+                          dataKey="organicKeywords"
+                          name="Keywords"
+                          stroke="hsl(38, 92%, 50%)"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4, fill: "hsl(38, 92%, 50%)" }}
+                        />
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="domainRating"
+                          name="Domain Rating"
+                          stroke="hsl(var(--primary))"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                        />
+                        <Line
+                          yAxisId="left"
+                          type="monotone"
+                          dataKey="trafficValue"
+                          name="Traffic Value"
+                          stroke="hsl(280, 80%, 60%)"
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4, fill: "hsl(280, 80%, 60%)" }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
-
-          {/* Historical Trend Chart */}
-          {historyData && historyData.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-12"
-            >
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20">
-                      <Calendar className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold">2-Year Performance Trend</h2>
-                      <p className="text-sm text-muted-foreground">Historical data from Ahrefs</p>
-                    </div>
-                  </div>
-                  <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
-                    <ExternalLink className="w-3 h-3" />
-                    Live Data
-                  </span>
-                </div>
-
-                <div className="h-[350px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={historyData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                      <XAxis
-                        dataKey="date"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                        }}
-                      />
-                      <YAxis
-                        yAxisId="left"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
-                      />
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
-                        domain={[0, 100]}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        }}
-                        labelFormatter={(value) => {
-                          const date = new Date(value);
-                          return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                        }}
-                        formatter={(value: number, name: string) => {
-                          if (name === 'Domain Rating') return [value, name];
-                          if (name === 'Traffic Value') return [`$${value.toLocaleString()}`, name];
-                          return [value.toLocaleString(), name];
-                        }}
-                      />
-                      <Legend />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="organicTraffic"
-                        name="Organic Traffic"
-                        stroke="hsl(142, 76%, 36%)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: "hsl(142, 76%, 36%)" }}
-                      />
-                      <Line
-                        yAxisId="left"
-                        dataKey="organicKeywords"
-                        name="Keywords"
-                        stroke="hsl(38, 92%, 50%)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: "hsl(38, 92%, 50%)" }}
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="domainRating"
-                        name="Domain Rating"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
-                      />
-                      <Line
-                        yAxisId="left"
-                        type="monotone"
-                        dataKey="trafficValue"
-                        name="Traffic Value"
-                        stroke="hsl(280, 80%, 60%)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: "hsl(280, 80%, 60%)" }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Legend Details */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border/50">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="text-sm text-muted-foreground">Organic Traffic</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-amber-500" />
-                    <span className="text-sm text-muted-foreground">Keywords</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="text-sm text-muted-foreground">Domain Rating</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-violet-500" />
-                    <span className="text-sm text-muted-foreground">Traffic Value ($)</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* Dashboard Metrics - Ahrefs Data */}
           {dashboardMetrics && (
