@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
+import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
 
 interface AuditCheck {
   name: string;
@@ -1277,126 +1278,8 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
-          {/* Actionable Recommendations */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-xl font-bold">Actionable Recommendations</h2>
-              <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 font-semibold">
-                {recommendations.filter(r => r.priority === 'high').length} High Priority
-              </span>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              {recommendations.map((rec, i) => (
-                <motion.div
-                  key={rec.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.05 }}
-                  className={`p-5 rounded-2xl border ${
-                    rec.priority === 'high' 
-                      ? 'bg-gradient-to-br from-red-500/5 to-orange-500/5 border-red-500/20' 
-                      : rec.priority === 'medium'
-                      ? 'bg-gradient-to-br from-amber-500/5 to-yellow-500/5 border-amber-500/20'
-                      : 'bg-card border-border/50'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg shrink-0 ${
-                      rec.priority === 'high'
-                        ? 'bg-red-500/10'
-                        : rec.priority === 'medium'
-                        ? 'bg-amber-500/10'
-                        : 'bg-primary/10'
-                    }`}>
-                      <rec.icon className={`w-5 h-5 ${
-                        rec.priority === 'high'
-                          ? 'text-red-500'
-                          : rec.priority === 'medium'
-                          ? 'text-amber-500'
-                          : 'text-primary'
-                      }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-semibold">{rec.title}</h3>
-                        {rec.service && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                            rec.service === 'BRON'
-                              ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
-                              : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
-                          }`}>
-                            {rec.service}
-                          </span>
-                        )}
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          rec.priority === 'high'
-                            ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                            : rec.priority === 'medium'
-                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                            : 'bg-primary/20 text-primary'
-                        }`}>
-                          {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {rec.category}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {rec.actions.map((action, j) => (
-                          <span 
-                            key={j}
-                            className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
-                          >
-                            <Check className="w-3 h-3 text-green-500" />
-                            {action}
-                          </span>
-                        ))}
-                        {rec.comingSoon?.map((feature, j) => (
-                          <span 
-                            key={`coming-${j}`}
-                            className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
-                          >
-                            <Clock className="w-3 h-3" />
-                            {feature}
-                            <span className="text-[9px] font-semibold">Coming Soon</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/10 border border-primary/20">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-lg mb-1">BRON + CADE included with every dashboard subscription</h3>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>BRON</strong> (Backlink Ranking Optimization Network): Diamond Flow links, DR/DA boosting, weekly ranking reports. 
-                    <strong className="ml-2">CADE</strong> (Content Automation and Domain Enhancement): 7 blog types, FAQ URLs, social signals, competitor analysis.
-                  </p>
-                </div>
-                <Button className="shrink-0 gap-2" asChild>
-                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                    <Phone className="w-4 h-4" />
-                    Book a Free Consultation
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Detailed Results - Collapsible Cards */}
-          <div className="space-y-4 mb-16">
+          {/* Detailed Results - Collapsible Cards - MOVED ABOVE RECOMMENDATIONS */}
+          <div className="space-y-4 mb-8">
             {auditResults.map((category, catIndex) => (
               <motion.div
                 key={category.title}
@@ -1482,6 +1365,137 @@ const AuditResults = () => {
               </motion.div>
             ))}
           </div>
+
+          {/* Actionable Recommendations - NOW BELOW DETAILED REPORTS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-16"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="text-xl font-bold">Actionable Recommendations</h2>
+              <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 font-semibold">
+                {recommendations.filter(r => r.priority === 'high').length} High Priority
+              </span>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              {recommendations.map((rec, i) => (
+                <motion.div
+                  key={rec.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.05 }}
+                  className={`p-5 rounded-2xl border ${
+                    rec.priority === 'high' 
+                      ? 'bg-gradient-to-br from-red-500/5 to-orange-500/5 border-red-500/20' 
+                      : rec.priority === 'medium'
+                      ? 'bg-gradient-to-br from-amber-500/5 to-yellow-500/5 border-amber-500/20'
+                      : 'bg-card border-border/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2 rounded-lg shrink-0 ${
+                      rec.priority === 'high'
+                        ? 'bg-red-500/10'
+                        : rec.priority === 'medium'
+                        ? 'bg-amber-500/10'
+                        : 'bg-primary/10'
+                    }`}>
+                      <rec.icon className={`w-5 h-5 ${
+                        rec.priority === 'high'
+                          ? 'text-red-500'
+                          : rec.priority === 'medium'
+                          ? 'text-amber-500'
+                          : 'text-primary'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold">{rec.title}</h3>
+                        {rec.service && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            rec.service === 'BRON'
+                              ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
+                              : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
+                          }`}>
+                            {rec.service}
+                          </span>
+                        )}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          rec.priority === 'high'
+                            ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                            : rec.priority === 'medium'
+                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                            : 'bg-primary/20 text-primary'
+                        }`}>
+                          {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {rec.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                      
+                      {/* Diamond Flow Image for BRON */}
+                      {rec.service === 'BRON' && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+                          <img 
+                            src={bronDiamondFlow} 
+                            alt="BRON Diamond Flow Architecture"
+                            className="w-full h-auto max-h-48 object-contain p-2"
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {rec.actions.map((action, j) => (
+                          <span 
+                            key={j}
+                            className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3 text-green-500" />
+                            {action}
+                          </span>
+                        ))}
+                        {rec.comingSoon?.map((feature, j) => (
+                          <span 
+                            key={`coming-${j}`}
+                            className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
+                          >
+                            <Clock className="w-3 h-3" />
+                            {feature}
+                            <span className="text-[9px] font-semibold">Coming Soon</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/10 border border-primary/20">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-lg mb-1">BRON + CADE included with every dashboard subscription</h3>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>BRON</strong> (Backlink Ranking Optimization Network): Diamond Flow links, DR/DA boosting, weekly ranking reports. 
+                    <strong className="ml-2">CADE</strong> (Content Automation and Domain Enhancement): 7 blog types, FAQ URLs, social signals, competitor analysis.
+                  </p>
+                </div>
+                <Button className="shrink-0 gap-2" asChild>
+                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                    <Phone className="w-4 h-4" />
+                    Book a Free Consultation
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
 
           {/* Recommended Features Section */}
           <motion.div
