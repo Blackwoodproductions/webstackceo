@@ -3,27 +3,43 @@ import { motion } from "framer-motion";
 const mediaOutlets = [
   {
     name: "FOX",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Fox_Broadcasting_Company_logo_%282019%29.svg/200px-Fox_Broadcasting_Company_logo_%282019%29.svg.png",
+    logo: "https://logo.clearbit.com/fox.com",
   },
   {
     name: "NBC",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/NBC_logo.svg/200px-NBC_logo.svg.png",
+    logo: "https://logo.clearbit.com/nbc.com",
   },
   {
     name: "CBS",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/CBS_logo.svg/200px-CBS_logo.svg.png",
+    logo: "https://logo.clearbit.com/cbs.com",
   },
   {
     name: "ABC",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ABC-2021-LOGO.svg/200px-ABC-2021-LOGO.svg.png",
+    logo: "https://logo.clearbit.com/abc.com",
   },
   {
     name: "USA Today",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/USA_Today_logo_%282020%29.svg/200px-USA_Today_logo_%282020%29.svg.png",
+    logo: "https://logo.clearbit.com/usatoday.com",
   },
   {
-    name: "Digital Journal",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Digital_Journal_Logo.svg/200px-Digital_Journal_Logo.svg.png",
+    name: "Forbes",
+    logo: "https://logo.clearbit.com/forbes.com",
+  },
+  {
+    name: "Bloomberg",
+    logo: "https://logo.clearbit.com/bloomberg.com",
+  },
+  {
+    name: "Reuters",
+    logo: "https://logo.clearbit.com/reuters.com",
+  },
+  {
+    name: "MarketWatch",
+    logo: "https://logo.clearbit.com/marketwatch.com",
+  },
+  {
+    name: "Business Insider",
+    logo: "https://logo.clearbit.com/businessinsider.com",
   },
 ];
 
@@ -65,7 +81,7 @@ const AsSeenOnSection = () => {
               <img
                 src={outlet.logo}
                 alt={`${outlet.name} logo`}
-                className="h-8 md:h-10 w-auto object-contain dark:invert"
+                className="h-10 md:h-12 w-auto object-contain"
                 loading="lazy"
               />
             </motion.div>
