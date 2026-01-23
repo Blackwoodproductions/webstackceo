@@ -7,7 +7,6 @@ import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
-  const [isCodeBoxHovered, setIsCodeBoxHovered] = useState(false);
   const { soundEnabled } = useSoundContext();
   const { playSound } = useSoundEffects();
   const sectionRef = useRef<HTMLElement>(null);
@@ -68,68 +67,8 @@ const HeroSection = () => {
         className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" 
       />
       
-      {/* Floating Elements with Mouse + Scroll Parallax */}
-      <motion.div
-        style={{ x: float1X, y: floatScrollY1 }}
-        className="absolute top-32 right-20 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer transition-all duration-300"
-        onMouseEnter={() => {
-          setIsCodeBoxHovered(true);
-          if (soundEnabled) playSound("code");
-        }}
-        onMouseLeave={() => setIsCodeBoxHovered(false)}
-      >
-        {/* Real code typing animation */}
-        <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
-          {[
-            'const ai =',
-            '  analyze()',
-            'if (ready)',
-            '  deploy();',
-            'return data',
-            '};',
-          ].map((codeLine, rowIndex) => (
-          <div 
-              key={rowIndex} 
-              className="text-primary text-[7px] font-mono leading-[11px] overflow-hidden"
-            >
-              <span 
-                className="inline-block"
-                style={{ 
-                  textShadow: '0 0 6px hsl(var(--primary) / 0.7)',
-                  animation: `typewrite 3s steps(${codeLine.length}) infinite`,
-                  animationDelay: `${rowIndex * 0.5}s`,
-                  width: '0',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {codeLine}
-              </span>
-              <span 
-                className="inline-block w-[3px] h-[8px] bg-primary ml-[1px] align-middle"
-                style={{
-                  animation: `blink 0.8s step-end infinite, cursorMove 3s steps(${codeLine.length}) infinite`,
-                  animationDelay: `${rowIndex * 0.5}s`,
-                  boxShadow: '0 0 4px hsl(var(--primary) / 0.8)'
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        <style>{`
-          @keyframes typewrite {
-            0%, 100% { width: 0; }
-            50%, 90% { width: 100%; }
-          }
-          @keyframes blink {
-            50% { opacity: 0; }
-          }
-          @keyframes cursorMove {
-            0%, 100% { transform: translateX(0); }
-            50%, 90% { transform: translateX(0); }
-          }
-        `}</style>
-      </motion.div>
+      
+      {/* Floating Element with Mouse + Scroll Parallax */}
       <motion.div
         style={{ x: float2X, y: floatScrollY2 }}
         className="absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
