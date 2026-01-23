@@ -161,10 +161,9 @@ const Footer = memo(() => {
                 toast.success("Generating brochure...");
                 await generateServicesPDF();
               }}
-              className="group relative flex items-center gap-1.5 text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
+              className="group flex items-center gap-1.5 text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
             >
-              <span className="absolute -inset-2 rounded-lg bg-primary/20 animate-pulse opacity-60" />
-              <FileDown className="relative w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5 group-hover:animate-bounce" />
+              <FileDown className="w-4 h-4 transition-transform duration-300 group-hover:translate-y-0.5 group-hover:animate-bounce" />
               <span className="relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-hover-accent after:origin-bottom-right after:transition-transform after:duration-300 group-hover:after:scale-x-100 group-hover:after:origin-bottom-left">
                 Download Brochure
               </span>
