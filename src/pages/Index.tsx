@@ -6,6 +6,7 @@ import FeaturesSection from "@/components/sections/FeaturesSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import PricingSection from "@/components/sections/PricingSection";
 import ContactSection from "@/components/sections/ContactSection";
+import AsSeenOnSection from "@/components/sections/AsSeenOnSection";
 import Footer from "@/components/layout/Footer";
 import { Separator } from "@/components/ui/separator";
 import BackToTop from "@/components/ui/back-to-top";
@@ -56,6 +57,8 @@ const Index = () => {
         <LogoCarousel />
         <SectionDivider />
         <ContactSection />
+        <SectionDivider />
+        <AsSeenOnSection />
       </main>
       <Footer />
       <BackToTop />
