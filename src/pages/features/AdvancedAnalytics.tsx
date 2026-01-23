@@ -95,64 +95,6 @@ const AdvancedAnalytics = () => {
           </div>
         </section>
 
-        {/* Dashboard Preview */}
-        <section className="py-24">
-          <div className="container mx-auto px-6 max-w-4xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Dashboard
-              </span>
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Data at Your <span className="gradient-text">Fingertips</span>
-              </h2>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="glass-card rounded-2xl p-8"
-            >
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
-                {[
-                  { label: "Keywords Tracked", value: "1,247" },
-                  { label: "Avg. Position", value: "12.4" },
-                  { label: "Top 10 Rankings", value: "342" },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center p-4 bg-secondary/30 rounded-xl">
-                    <p className="text-3xl font-bold gradient-text">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">Top Ranking Keywords</h4>
-                {[
-                  { keyword: "web management platform", position: 3, change: +2, volume: "2,400" },
-                  { keyword: "CEO website tools", position: 5, change: +4, volume: "1,800" },
-                  { keyword: "enterprise SEO dashboard", position: 8, change: -1, volume: "3,200" },
-                ].map((kw) => (
-                  <div key={kw.keyword} className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg">
-                    <span className="text-foreground">{kw.keyword}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">{kw.volume}/mo</span>
-                      <span className="font-semibold">#{kw.position}</span>
-                      <span className={`text-sm ${kw.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {kw.change > 0 ? `↑${kw.change}` : `↓${Math.abs(kw.change)}`}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        </section>
 
         {/* Competitor Analysis */}
         <section className="py-24 bg-secondary/20">
