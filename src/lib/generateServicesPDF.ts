@@ -1,6 +1,29 @@
 import jsPDF from 'jspdf';
+import diamondFlowImg from '@/assets/bron-seo-diamond-flow.png';
 
-export const generateServicesPDF = () => {
+// Helper to load image as base64
+const loadImageAsBase64 = (src: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } else {
+        reject(new Error('Could not get canvas context'));
+      }
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+};
+
+export const generateServicesPDF = async () => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -360,9 +383,131 @@ export const generateServicesPDF = () => {
   // Footer
   doc.setFontSize(9);
   doc.setTextColor(...colors.textLight);
-  doc.text('Page 2 of 3', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.text('Page 2 of 4', pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-  // ===== PAGE 3: More Services + Pricing + Contact =====
+  // ===== PAGE 3: Diamond Flow Methodology =====
+  doc.addPage();
+  yPos = 20;
+
+  // Page header
+  doc.setFillColor(...colors.dark);
+  doc.rect(0, 0, pageWidth, 25, 'F');
+  doc.setFillColor(...colors.primary);
+  doc.rect(0, 25, pageWidth, 2, 'F');
+  
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.white);
+  doc.text('webstack.ceo', margin, 16);
+  doc.setTextColor(...colors.primary);
+  doc.text(' | Link Building Methodology', margin + 35, 16);
+
+  yPos = 40;
+
+  // Diamond Flow Section Header
+  doc.setFillColor(...colors.primary);
+  doc.roundedRect(margin, yPos, contentWidth, 14, 2, 2, 'F');
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.white);
+  doc.text('THE DIAMOND FLOW: CONTENT SILO ARCHITECTURE', margin + 5, yPos + 10);
+  yPos += 22;
+
+  // Introduction text
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...colors.textLight);
+  const diamondIntro = doc.splitTextToSize(
+    'Our proprietary Diamond Flow architecture creates content silos that channel link equity directly to your money pages. This bottom-up power structure ensures every inbound link strengthens your most valuable URLs.',
+    contentWidth
+  );
+  doc.text(diamondIntro, margin, yPos);
+  yPos += diamondIntro.length * 5 + 8;
+
+  // Load and add the Diamond Flow image
+  try {
+    const imgData = await loadImageAsBase64(diamondFlowImg);
+    const imgWidth = 80;
+    const imgHeight = 100;
+    const imgX = margin + (contentWidth - imgWidth) / 2;
+    doc.addImage(imgData, 'PNG', imgX, yPos, imgWidth, imgHeight);
+    yPos += imgHeight + 10;
+  } catch (error) {
+    console.log('Could not load Diamond Flow image:', error);
+    // Fallback: draw a placeholder
+    doc.setFillColor(...colors.lightBg);
+    doc.roundedRect(margin + 30, yPos, contentWidth - 60, 80, 4, 4, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.textLight);
+    doc.text('[Diamond Flow Diagram]', pageWidth / 2, yPos + 40, { align: 'center' });
+    yPos += 90;
+  }
+
+  // How It Works section
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.dark);
+  doc.text('How the Diamond Flow Works:', margin, yPos);
+  yPos += 10;
+
+  const diamondSteps = [
+    { title: 'Money Page (Top)', desc: 'Your client\'s target URL—either their existing page or one we create for their main keyword. All link equity flows here.' },
+    { title: 'Main Keyword Page', desc: 'If the client doesn\'t have a money page, we create one targeting their primary keyword. If they do, we skip this step.' },
+    { title: 'Supporting Pages (2 per cluster)', desc: 'We create niche-relevant content pages that link upward to the money page, passing authority.' },
+    { title: 'Resources Page', desc: 'A curated link partner directory that adds external authority and strengthens the entire silo structure.' },
+  ];
+
+  diamondSteps.forEach((step, index) => {
+    // Step number circle
+    doc.setFillColor(...colors.primary);
+    doc.circle(margin + 5, yPos + 3, 4, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...colors.white);
+    doc.text(String(index + 1), margin + 3.5, yPos + 5);
+    
+    // Step title
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...colors.dark);
+    doc.text(step.title, margin + 14, yPos + 4);
+    yPos += 7;
+    
+    // Step description
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...colors.textLight);
+    const stepLines = doc.splitTextToSize(step.desc, contentWidth - 20);
+    doc.text(stepLines, margin + 14, yPos);
+    yPos += stepLines.length * 4 + 6;
+  });
+
+  // Key benefit box
+  yPos += 5;
+  doc.setFillColor(230, 245, 248);
+  doc.roundedRect(margin, yPos, contentWidth, 25, 3, 3, 'F');
+  doc.setFillColor(...colors.primary);
+  doc.rect(margin, yPos, 4, 25, 'F');
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.primaryDark);
+  doc.text('Key Benefit:', margin + 10, yPos + 8);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...colors.textLight);
+  const benefitText = doc.splitTextToSize(
+    'All inbound links flow upward through the silo structure, concentrating authority on your money page. This strategic architecture maximizes ranking potential.',
+    contentWidth - 20
+  );
+  doc.text(benefitText, margin + 10, yPos + 15);
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.textLight);
+  doc.text('Page 3 of 4', pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+  // ===== PAGE 4: More Services + Pricing + Contact =====
   doc.addPage();
   yPos = 20;
 
@@ -529,7 +674,7 @@ export const generateServicesPDF = () => {
   );
   
   doc.setTextColor(...colors.white);
-  doc.text('Page 3 of 3', pageWidth / 2, pageHeight - 14, { align: 'center' });
+  doc.text('Page 4 of 4', pageWidth / 2, pageHeight - 14, { align: 'center' });
 
   // Save the PDF
   doc.save('webstack-ceo-services.pdf');

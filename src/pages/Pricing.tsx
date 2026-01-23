@@ -72,9 +72,9 @@ const Pricing = () => {
               <Button
                 variant="outline"
                 className="gap-2"
-                onClick={() => {
-                  generateServicesPDF();
-                  toast.success("Brochure downloaded successfully!");
+                onClick={async () => {
+                  toast.success("Generating brochure...");
+                  await generateServicesPDF();
                 }}
               >
                 <FileDown className="h-4 w-4" />

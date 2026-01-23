@@ -57,11 +57,11 @@ const Footer = memo(() => {
     ],
   };
 
-  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string, isDownload?: boolean) => {
+  const handleLinkClick = useCallback(async (e: React.MouseEvent<HTMLAnchorElement>, href: string, isDownload?: boolean) => {
     if (isDownload) {
       e.preventDefault();
-      generateServicesPDF();
-      toast.success("Downloading services brochure...");
+      toast.success("Generating brochure...");
+      await generateServicesPDF();
       return;
     }
     if (href.startsWith("/#")) {
