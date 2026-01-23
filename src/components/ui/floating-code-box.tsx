@@ -24,19 +24,19 @@ const FloatingCodeBox = memo(() => {
     };
   }, []);
 
-  // Handle scroll to stop at bottom
+  // Handle scroll to stop above footer's "Stay ahead" section
   useEffect(() => {
     const handleScroll = () => {
       const footer = document.querySelector('footer');
       if (footer) {
         const footerRect = footer.getBoundingClientRect();
-        const stopPoint = window.innerHeight - 120; // Stop 120px from bottom
+        const stopPoint = window.innerHeight - 200; // Stop well above footer
         setIsAtBottom(footerRect.top < stopPoint);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Check initial state
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -56,7 +56,7 @@ const FloatingCodeBox = memo(() => {
       className="fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in"
       style={{
         top: isAtBottom ? 'auto' : '8rem',
-        bottom: isAtBottom ? '120px' : 'auto',
+        bottom: isAtBottom ? '220px' : 'auto',
       }}
     >
       <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
