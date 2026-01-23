@@ -278,6 +278,99 @@ export type Database = {
           },
         ]
       }
+      saved_audits: {
+        Row: {
+          ahrefs_rank: number | null
+          backlinks: number | null
+          category: Database["public"]["Enums"]["audit_category"]
+          contact_address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          domain: string
+          domain_rating: number | null
+          favicon_url: string | null
+          glossary_terms: string[] | null
+          id: string
+          logo_url: string | null
+          organic_keywords: number | null
+          organic_traffic: number | null
+          referring_domains: number | null
+          site_description: string | null
+          site_summary: string | null
+          site_title: string | null
+          slug: string
+          social_facebook: string | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_tiktok: string | null
+          social_twitter: string | null
+          social_youtube: string | null
+          traffic_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          ahrefs_rank?: number | null
+          backlinks?: number | null
+          category?: Database["public"]["Enums"]["audit_category"]
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          domain: string
+          domain_rating?: number | null
+          favicon_url?: string | null
+          glossary_terms?: string[] | null
+          id?: string
+          logo_url?: string | null
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          site_description?: string | null
+          site_summary?: string | null
+          site_title?: string | null
+          slug: string
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          traffic_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ahrefs_rank?: number | null
+          backlinks?: number | null
+          category?: Database["public"]["Enums"]["audit_category"]
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          domain?: string
+          domain_rating?: number | null
+          favicon_url?: string | null
+          glossary_terms?: string[] | null
+          id?: string
+          logo_url?: string | null
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          site_description?: string | null
+          site_summary?: string | null
+          site_title?: string | null
+          slug?: string
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          traffic_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -315,6 +408,20 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      audit_category:
+        | "ecommerce"
+        | "saas"
+        | "local_business"
+        | "blog_media"
+        | "professional_services"
+        | "healthcare"
+        | "finance"
+        | "education"
+        | "real_estate"
+        | "hospitality"
+        | "nonprofit"
+        | "technology"
+        | "other"
       partner_status: "pending" | "approved" | "rejected" | "suspended"
     }
     CompositeTypes: {
@@ -444,6 +551,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      audit_category: [
+        "ecommerce",
+        "saas",
+        "local_business",
+        "blog_media",
+        "professional_services",
+        "healthcare",
+        "finance",
+        "education",
+        "real_estate",
+        "hospitality",
+        "nonprofit",
+        "technology",
+        "other",
+      ],
       partner_status: ["pending", "approved", "rejected", "suspended"],
     },
   },

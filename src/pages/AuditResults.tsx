@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { glossaryTerms } from "@/data/glossaryData";
+import { WebsiteProfileSection } from "@/components/audit/WebsiteProfileSection";
 import {
   LineChart,
   Line,
@@ -57,11 +59,34 @@ import {
   ChevronUp,
   Calendar,
   Phone,
+  Save,
 } from "lucide-react";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
 import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
 import cadeContentAutomation from "@/assets/cade-content-automation.png";
+
+interface WebsiteProfile {
+  title: string | null;
+  description: string | null;
+  favicon: string | null;
+  logo: string | null;
+  summary: string | null;
+  socialLinks: {
+    facebook: string | null;
+    twitter: string | null;
+    linkedin: string | null;
+    instagram: string | null;
+    youtube: string | null;
+    tiktok: string | null;
+  };
+  contactInfo: {
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+  };
+  detectedCategory: string;
+}
 
 interface AuditCheck {
   name: string;
@@ -609,8 +634,47 @@ const AuditResults = () => {
   const [ahrefsError, setAhrefsError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
+  
+  // Website profile state
+  const [websiteProfile, setWebsiteProfile] = useState<WebsiteProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
+
+  // Match glossary terms based on audit categories and website profile
+  const matchedGlossaryTerms = useMemo(() => {
+    const relevantTerms: Array<{ term: string; slug: string; shortDescription: string }> = [];
+    const categories = new Set<string>();
+    
+    // Add categories based on audit results
+    auditResults.forEach(cat => {
+      if (cat.title === 'Page Speed') categories.add('Technical SEO');
+      if (cat.title === 'Backlink Profile') categories.add('Off-Page SEO');
+      if (cat.title === 'Technical SEO') categories.add('Technical SEO');
+      if (cat.title === 'Schema Markup') categories.add('Technical SEO');
+      if (cat.title === 'Meta Tags') categories.add('On-Page SEO');
+      if (cat.title === 'Security') categories.add('Technical SEO');
+    });
+    
+    // Always include some core terms
+    categories.add('On-Page SEO');
+    categories.add('Off-Page SEO');
+    
+    // Filter glossary terms by relevant categories
+    glossaryTerms.forEach(term => {
+      if (categories.has(term.category) && relevantTerms.length < 12) {
+        relevantTerms.push({
+          term: term.term,
+          slug: term.slug,
+          shortDescription: term.shortDescription
+        });
+      }
+    });
+    
+    return relevantTerms;
+  }, [auditResults]);
 
   const toggleCategory = (title: string) => {
     setExpandedCategories(prev => {
@@ -623,6 +687,108 @@ const AuditResults = () => {
       return newSet;
     });
   };
+
+  // Fetch website profile
+  useEffect(() => {
+    if (!decodedDomain) return;
+    
+    const fetchWebsiteProfile = async () => {
+      setIsProfileLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('scrape-website', {
+          body: { url: decodedDomain }
+        });
+        
+        if (error) {
+          console.error('Website scrape error:', error);
+        } else if (data?.profile) {
+          setWebsiteProfile(data.profile);
+        }
+      } catch (err) {
+        console.error('Website profile fetch error:', err);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    };
+    
+    fetchWebsiteProfile();
+  }, [decodedDomain]);
+
+  // Save audit to database
+  const saveAudit = async () => {
+    if (!decodedDomain || !dashboardMetrics) return;
+    
+    setIsSaving(true);
+    try {
+      // Create a URL-safe slug
+      const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      
+      const auditData = {
+        domain: decodedDomain,
+        slug,
+        category: (websiteProfile?.detectedCategory || 'other') as any,
+        site_title: websiteProfile?.title,
+        site_description: websiteProfile?.description,
+        site_summary: websiteProfile?.summary,
+        favicon_url: websiteProfile?.favicon,
+        logo_url: websiteProfile?.logo,
+        social_facebook: websiteProfile?.socialLinks?.facebook,
+        social_twitter: websiteProfile?.socialLinks?.twitter,
+        social_linkedin: websiteProfile?.socialLinks?.linkedin,
+        social_instagram: websiteProfile?.socialLinks?.instagram,
+        social_youtube: websiteProfile?.socialLinks?.youtube,
+        social_tiktok: websiteProfile?.socialLinks?.tiktok,
+        contact_email: websiteProfile?.contactInfo?.email,
+        contact_phone: websiteProfile?.contactInfo?.phone,
+        domain_rating: dashboardMetrics.domainRating,
+        ahrefs_rank: dashboardMetrics.ahrefsRank,
+        backlinks: dashboardMetrics.backlinks,
+        referring_domains: dashboardMetrics.referringDomains,
+        organic_traffic: dashboardMetrics.organicTraffic,
+        organic_keywords: dashboardMetrics.organicKeywords,
+        traffic_value: dashboardMetrics.trafficValue,
+        glossary_terms: matchedGlossaryTerms.map(t => t.slug),
+      };
+      
+      // Upsert - update if exists, insert if not
+      const { error } = await supabase
+        .from('saved_audits')
+        .upsert(auditData, { onConflict: 'slug' });
+      
+      if (error) {
+        console.error('Save audit error:', error);
+        toast.error('Failed to save audit');
+      } else {
+        toast.success('Audit saved to Website Audits!');
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error('Save audit error:', err);
+      toast.error('Failed to save audit');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Check if audit already exists
+  useEffect(() => {
+    if (!decodedDomain) return;
+    
+    const checkExisting = async () => {
+      const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      const { data } = await supabase
+        .from('saved_audits')
+        .select('id')
+        .eq('slug', slug)
+        .single();
+      
+      if (data) {
+        setIsSaved(true);
+      }
+    };
+    
+    checkExisting();
+  }, [decodedDomain]);
 
   useEffect(() => {
     if (!decodedDomain) {
@@ -993,12 +1159,37 @@ const AuditResults = () => {
                   </p>
                 </div>
 
-                <Button className="gap-2 w-fit" asChild>
-                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                    <Phone className="w-4 h-4" />
-                    Book a Call
-                  </a>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2" 
+                    onClick={saveAudit}
+                    disabled={isSaving || isSaved}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : isSaved ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save Audit
+                      </>
+                    )}
+                  </Button>
+                  <Button className="gap-2" asChild>
+                    <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                      <Phone className="w-4 h-4" />
+                      Book a Call
+                    </a>
+                  </Button>
+                </div>
               </div>
 
               {/* Floating Export PDF Button */}
@@ -1225,6 +1416,14 @@ const AuditResults = () => {
               )}
             </div>
           </motion.div>
+
+          {/* Website Profile Section */}
+          <WebsiteProfileSection
+            domain={decodedDomain}
+            profile={websiteProfile}
+            matchedGlossaryTerms={matchedGlossaryTerms}
+            isLoading={isProfileLoading}
+          />
 
           {/* Category Scores Overview - Dial Style */}
           <motion.div

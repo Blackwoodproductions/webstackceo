@@ -2,3 +2,6 @@ project_id = "qwnzenimkwtuaqnrcygb"
 
 [functions.domain-audit]
 verify_jwt = false
+
+[functions.scrape-website]
+verify_jwt = false
