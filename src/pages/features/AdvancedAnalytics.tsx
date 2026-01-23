@@ -139,41 +139,6 @@ const AdvancedAnalytics = () => {
           </div>
         </section>
 
-        {/* Results */}
-        <section className="py-24">
-          <div className="container mx-auto px-6 max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Data-Driven <span className="gradient-text">Results</span>
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { stat: "500+", label: "Keywords tracked per account" },
-                { stat: "Daily", label: "Ranking updates" },
-                { stat: "5", label: "Competitor profiles tracked" },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="glass-card rounded-2xl p-8 text-center"
-                >
-                  <div className="text-5xl font-bold gradient-text mb-2">{item.stat}</div>
-                  <p className="text-muted-foreground">{item.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* CTA */}
         <section className="py-24">
