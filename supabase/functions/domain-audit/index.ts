@@ -7,10 +7,14 @@ const corsHeaders = {
 
 interface AhrefsMetrics {
   domainRating: number;
+  ahrefsRank: number;
   backlinks: number;
+  backlinksAllTime: number;
   referringDomains: number;
+  referringDomainsAllTime: number;
   organicTraffic: number;
   organicKeywords: number;
+  trafficValue: number;
 }
 
 interface HistoryDataPoint {
@@ -245,21 +249,30 @@ serve(async (req) => {
           console.error("Ahrefs domain-rating-history error:", await drHistoryResponse.text());
         }
 
-        // Extract domain rating - API returns nested object {domain_rating: {domain_rating: number, ahrefs_rank: number}}
+        // Extract domain rating and rank
         const drValue = typeof drData.domain_rating === 'object' 
           ? drData.domain_rating.domain_rating 
           : drData.domain_rating;
+        const ahrefsRankValue = typeof drData.domain_rating === 'object'
+          ? drData.domain_rating.ahrefs_rank
+          : 0;
         
-        // Extract backlinks stats - data is under metrics.live and metrics.live_refdomains
+        // Extract backlinks stats - data is under metrics
         const backlinksCount = backlinksStatsData?.metrics?.live || backlinksStatsData?.live || 0;
+        const backlinksAllTime = backlinksStatsData?.metrics?.all_time || backlinksStatsData?.all_time || 0;
         const refDomainsCount = backlinksStatsData?.metrics?.live_refdomains || backlinksStatsData?.live_refdomains || 0;
+        const refDomainsAllTime = backlinksStatsData?.metrics?.all_time_refdomains || backlinksStatsData?.all_time_refdomains || 0;
         
         result.ahrefs = {
           domainRating: Math.round(drValue || 0),
+          ahrefsRank: ahrefsRankValue || 0,
           backlinks: backlinksCount,
+          backlinksAllTime: backlinksAllTime,
           referringDomains: refDomainsCount,
+          referringDomainsAllTime: refDomainsAllTime,
           organicTraffic: metricsData?.metrics?.org_traffic || 0,
           organicKeywords: metricsData?.metrics?.org_keywords || 0,
+          trafficValue: metricsData?.metrics?.org_cost || 0,
         };
       }
     } catch (ahrefsErr) {

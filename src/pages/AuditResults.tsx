@@ -195,10 +195,14 @@ const ScoreDial = ({
 // Store Ahrefs metrics separately for dashboard display
 interface DashboardMetrics {
   domainRating: number;
+  ahrefsRank: number;
   backlinks: number;
+  backlinksAllTime: number;
   referringDomains: number;
+  referringDomainsAllTime: number;
   organicTraffic: number;
   organicKeywords: number;
+  trafficValue: number;
   isReal: boolean;
 }
 
@@ -633,10 +637,14 @@ const AuditResults = () => {
           setAuditResults(generateAuditResults(decodedDomain, null));
           setDashboardMetrics({
             domainRating: 0,
+            ahrefsRank: 0,
             backlinks: 0,
+            backlinksAllTime: 0,
             referringDomains: 0,
+            referringDomainsAllTime: 0,
             organicTraffic: 0,
             organicKeywords: 0,
+            trafficValue: 0,
             isReal: false,
           });
           toast.error('Could not fetch real backlink data - showing simulated results');
@@ -660,10 +668,14 @@ const AuditResults = () => {
           if (ahrefsData) {
             setDashboardMetrics({
               domainRating: ahrefsData.domainRating,
+              ahrefsRank: ahrefsData.ahrefsRank || 0,
               backlinks: ahrefsData.backlinks,
+              backlinksAllTime: ahrefsData.backlinksAllTime || 0,
               referringDomains: ahrefsData.referringDomains,
+              referringDomainsAllTime: ahrefsData.referringDomainsAllTime || 0,
               organicTraffic: ahrefsData.organicTraffic,
               organicKeywords: ahrefsData.organicKeywords,
+              trafficValue: ahrefsData.trafficValue || 0,
               isReal: true,
             });
           } else {
@@ -671,10 +683,14 @@ const AuditResults = () => {
             const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
             setDashboardMetrics({
               domainRating: Math.round(30 + (hash % 50)),
+              ahrefsRank: Math.round(1000 + (hash % 5000)),
               backlinks: Math.round(50 + (hash % 800)),
+              backlinksAllTime: Math.round(200 + (hash % 2000)),
               referringDomains: Math.round(10 + (hash % 100)),
+              referringDomainsAllTime: Math.round(50 + (hash % 300)),
               organicTraffic: Math.round(100 + (hash % 2000)),
               organicKeywords: Math.round(20 + (hash % 200)),
+              trafficValue: Math.round(50 + (hash % 500)),
               isReal: false,
             });
           }
@@ -795,10 +811,21 @@ const AuditResults = () => {
                   <div className="flex items-center gap-3 mb-1">
                     <Globe className="w-6 h-6 text-primary" />
                     <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
+                    {dashboardMetrics?.isReal && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
+                        <ExternalLink className="w-3 h-3" />
+                        Live Data
+                      </span>
+                    )}
                   </div>
                   <p className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Clock className="w-4 h-4" />
                     Audit completed just now
+                    {dashboardMetrics?.ahrefsRank > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-muted">
+                        Ahrefs Rank: #{dashboardMetrics.ahrefsRank.toLocaleString()}
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -808,51 +835,89 @@ const AuditResults = () => {
                 </Button>
               </div>
 
-              {/* Dials Row */}
-              <div className="flex items-center justify-between flex-wrap gap-6">
-                {/* Left side - Metric dials */}
-                <div className="flex items-center flex-wrap gap-6 md:gap-10">
-                  {dashboardMetrics && (
-                    <>
-                      <ScoreDial
-                        value={dashboardMetrics.domainRating}
-                        max={100}
-                        label="Domain Rating"
-                        size="md"
-                        color="violet"
-                      />
-                      <ScoreDial
-                        value={dashboardMetrics.organicTraffic}
-                        max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
-                        label="Organic Traffic"
-                        size="md"
-                        color="green"
-                        showPercentage={false}
-                        suffix="/mo"
-                      />
-                      <ScoreDial
-                        value={dashboardMetrics.organicKeywords}
-                        max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
-                        label="Organic Keywords"
-                        size="md"
-                        color="amber"
-                        showPercentage={false}
-                      />
-                    </>
-                  )}
-                </div>
-
-                {/* Right side - Overall Score (larger) */}
-                <div className="flex-shrink-0">
-                  <ScoreDial
-                    value={overallScore}
-                    max={100}
-                    label="Overall Score"
-                    size="lg"
-                    color="primary"
-                  />
-                </div>
+              {/* Main Dials Row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-6">
+                {dashboardMetrics && (
+                  <>
+                    <ScoreDial
+                      value={dashboardMetrics.domainRating}
+                      max={100}
+                      label="Domain Rating"
+                      size="md"
+                      color="violet"
+                    />
+                    <ScoreDial
+                      value={dashboardMetrics.organicTraffic}
+                      max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
+                      label="Organic Traffic"
+                      size="md"
+                      color="green"
+                      showPercentage={false}
+                      suffix="/mo"
+                    />
+                    <ScoreDial
+                      value={dashboardMetrics.trafficValue}
+                      max={Math.max(dashboardMetrics.trafficValue * 1.5, 100)}
+                      label="Traffic Value"
+                      size="md"
+                      color="cyan"
+                      showPercentage={false}
+                      prefix="$"
+                    />
+                    <ScoreDial
+                      value={dashboardMetrics.organicKeywords}
+                      max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
+                      label="Organic Keywords"
+                      size="md"
+                      color="amber"
+                      showPercentage={false}
+                    />
+                    <ScoreDial
+                      value={dashboardMetrics.backlinks}
+                      max={Math.max(dashboardMetrics.backlinks * 1.2, 1000)}
+                      label="Backlinks"
+                      size="md"
+                      color="primary"
+                      showPercentage={false}
+                    />
+                    <ScoreDial
+                      value={dashboardMetrics.referringDomains}
+                      max={Math.max(dashboardMetrics.referringDomains * 1.3, 500)}
+                      label="Referring Domains"
+                      size="md"
+                      color="green"
+                      showPercentage={false}
+                    />
+                  </>
+                )}
               </div>
+
+              {/* Secondary Stats Row */}
+              {dashboardMetrics && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-border/50">
+                  <div className="text-center p-3 rounded-xl bg-muted/30">
+                    <p className="text-2xl font-bold text-foreground">{dashboardMetrics.backlinksAllTime.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">All-Time Backlinks</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-muted/30">
+                    <p className="text-2xl font-bold text-foreground">{dashboardMetrics.referringDomainsAllTime.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">All-Time Ref. Domains</p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-muted/30">
+                    <p className="text-2xl font-bold text-foreground">#{dashboardMetrics.ahrefsRank.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Ahrefs Global Rank</p>
+                  </div>
+                  <div className="flex items-center justify-center p-3 rounded-xl bg-muted/30">
+                    <ScoreDial
+                      value={overallScore}
+                      max={100}
+                      label="SEO Score"
+                      size="sm"
+                      color="primary"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
 
