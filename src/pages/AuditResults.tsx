@@ -89,6 +89,109 @@ interface HistoryDataPoint {
   trafficValue: number;
 }
 
+// Reusable Score Dial Component
+const ScoreDial = ({
+  value,
+  max = 100,
+  label,
+  size = "md",
+  color = "primary",
+  showPercentage = true,
+  prefix = "",
+  suffix = "",
+}: {
+  value: number;
+  max?: number;
+  label: string;
+  size?: "sm" | "md" | "lg";
+  color?: "primary" | "green" | "amber" | "violet" | "cyan";
+  showPercentage?: boolean;
+  prefix?: string;
+  suffix?: string;
+}) => {
+  const percentage = Math.min((value / max) * 100, 100);
+  const circumference = 2 * Math.PI * 40; // radius = 40
+  const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
+  
+  const sizeClasses = {
+    sm: "w-20 h-20",
+    md: "w-24 h-24",
+    lg: "w-28 h-28",
+  };
+  
+  const textSizes = {
+    sm: "text-lg",
+    md: "text-2xl",
+    lg: "text-3xl",
+  };
+  
+  const labelSizes = {
+    sm: "text-[9px]",
+    md: "text-[10px]",
+    lg: "text-xs",
+  };
+  
+  const colorGradients = {
+    primary: { from: "hsl(var(--primary))", to: "hsl(280, 80%, 60%)" },
+    green: { from: "hsl(142, 76%, 36%)", to: "hsl(160, 84%, 39%)" },
+    amber: { from: "hsl(38, 92%, 50%)", to: "hsl(25, 95%, 53%)" },
+    violet: { from: "hsl(280, 80%, 60%)", to: "hsl(300, 80%, 60%)" },
+    cyan: { from: "hsl(190, 95%, 39%)", to: "hsl(210, 100%, 50%)" },
+  };
+  
+  const gradientId = `dial-${label.replace(/\s/g, '-')}-${color}`;
+  
+  const formatValue = (val: number) => {
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
+    return val.toLocaleString();
+  };
+  
+  return (
+    <div className="flex flex-col items-center">
+      <div className={`relative ${sizeClasses[size]}`}>
+        <svg className={`${sizeClasses[size]} transform -rotate-90`} viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="none"
+            className="text-muted/20"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="40"
+            stroke={`url(#${gradientId})`}
+            strokeWidth="8"
+            fill="none"
+            strokeDasharray={strokeDasharray}
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-out"
+          />
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={colorGradients[color].from} />
+              <stop offset="100%" stopColor={colorGradients[color].to} />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`${textSizes[size]} font-bold text-foreground`}>
+            {prefix}{formatValue(value)}{showPercentage && max === 100 ? "" : suffix}
+          </span>
+          {showPercentage && max === 100 && (
+            <span className={`${labelSizes[size]} text-muted-foreground`}>/100</span>
+          )}
+        </div>
+      </div>
+      <span className={`${labelSizes[size]} text-muted-foreground mt-2 text-center font-medium`}>{label}</span>
+    </div>
+  );
+};
+
 // Store Ahrefs metrics separately for dashboard display
 interface DashboardMetrics {
   domainRating: number;
@@ -684,66 +787,65 @@ const AuditResults = () => {
               Back to Home
             </Button>
 
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Globe className="w-6 h-6 text-primary" />
-                  <h1 className="text-3xl font-bold">{decodedDomain}</h1>
-                </div>
-                <p className="text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Audit completed just now
-                </p>
-              </div>
-
-              {/* Overall Score Circle */}
-              <div className="flex items-center gap-6">
-                <div className="relative w-28 h-28">
-                  <svg className="w-28 h-28 transform -rotate-90">
-                    <circle
-                      cx="56"
-                      cy="56"
-                      r="48"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      fill="none"
-                      className="text-muted/20"
-                    />
-                    <circle
-                      cx="56"
-                      cy="56"
-                      r="48"
-                      stroke="url(#scoreGradient)"
-                      strokeWidth="8"
-                      fill="none"
-                      strokeDasharray={`${overallScore * 3.01} 301`}
-                      strokeLinecap="round"
-                    />
-                    <defs>
-                      <linearGradient
-                        id="scoreGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="0%"
-                      >
-                        <stop offset="0%" stopColor="hsl(var(--primary))" />
-                        <stop offset="100%" stopColor="hsl(280, 80%, 60%)" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-3xl font-bold ${getScoreColor(overallScore)}`}>
-                      {overallScore}
-                    </span>
-                    <span className="text-xs text-muted-foreground">Overall</span>
+            <div className="flex flex-col gap-8">
+              {/* Domain Info Row */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe className="w-6 h-6 text-primary" />
+                    <h1 className="text-3xl font-bold">{decodedDomain}</h1>
                   </div>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Audit completed just now
+                  </p>
                 </div>
 
-                <Button className="gap-2">
+                <Button className="gap-2 w-fit">
                   <Download className="w-4 h-4" />
                   Export PDF
                 </Button>
+              </div>
+
+              {/* Key Metrics Dials Row */}
+              <div className="p-6 rounded-2xl bg-card border border-border/50">
+                <div className="flex items-center justify-center flex-wrap gap-8 md:gap-12">
+                  <ScoreDial
+                    value={overallScore}
+                    max={100}
+                    label="Overall Score"
+                    size="lg"
+                    color="primary"
+                  />
+                  {dashboardMetrics && (
+                    <>
+                      <ScoreDial
+                        value={dashboardMetrics.domainRating}
+                        max={100}
+                        label="Domain Rating"
+                        size="lg"
+                        color="violet"
+                      />
+                      <ScoreDial
+                        value={dashboardMetrics.organicTraffic}
+                        max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
+                        label="Organic Traffic"
+                        size="lg"
+                        color="green"
+                        showPercentage={false}
+                        suffix="/mo"
+                      />
+                      <ScoreDial
+                        value={dashboardMetrics.organicKeywords}
+                        max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
+                        label="Organic Keywords"
+                        size="lg"
+                        color="amber"
+                        showPercentage={false}
+                      />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -984,7 +1086,7 @@ const AuditResults = () => {
             </motion.div>
           )}
 
-          {/* Category Scores Overview */}
+          {/* Category Scores Overview - Dial Style */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -992,40 +1094,54 @@ const AuditResults = () => {
             className="mb-8"
           >
             <h2 className="text-xl font-bold mb-6">SEO Health Scores</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-              {auditResults.map((category, i) => (
-                <motion.div
-                  key={category.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.05 }}
-                  className={`p-4 rounded-2xl bg-card border cursor-pointer hover:scale-[1.02] transition-all ${
-                    category.isRealData ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50 hover:border-primary/30'
-                  }`}
-                  onClick={() => toggleCategory(category.title)}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
-                      <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
-                    </div>
-                    <span className="font-medium text-sm truncate">{category.title}</span>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <div className="flex items-end gap-1">
-                      <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
-                        {category.score}
-                      </span>
-                      <span className="text-xs text-muted-foreground mb-1">/100</span>
-                    </div>
-                    {expandedCategories.has(category.title) ? (
-                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <Progress value={category.score} className="h-1.5 mt-2" />
-                </motion.div>
-              ))}
+            <div className="p-6 rounded-2xl bg-card border border-border/50">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                {auditResults.map((category, i) => {
+                  const dialColor = category.score >= 80 ? "green" : category.score >= 60 ? "amber" : "primary";
+                  return (
+                    <motion.div
+                      key={category.title}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 + i * 0.05 }}
+                      className={`flex flex-col items-center p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all ${
+                        category.isRealData ? 'ring-1 ring-primary/30' : ''
+                      }`}
+                      onClick={() => toggleCategory(category.title)}
+                    >
+                      <div className="relative">
+                        <ScoreDial
+                          value={category.score}
+                          max={100}
+                          label=""
+                          size="md"
+                          color={dialColor as "primary" | "green" | "amber" | "violet" | "cyan"}
+                        />
+                        {/* Icon overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="mt-8">
+                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)} opacity-50`} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className="text-sm font-medium text-center">{category.title}</span>
+                        {category.isRealData && (
+                          <ExternalLink className="w-3 h-3 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        {expandedCategories.has(category.title) ? (
+                          <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                        )}
+                        <span className="text-xs text-muted-foreground">Details</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
 
