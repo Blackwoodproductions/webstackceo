@@ -3,13 +3,11 @@ import { motion } from "framer-motion";
 
 const sections = [
   { id: "hero", label: "Home" },
-  { id: "features", label: "Features" },
-  { id: "services", label: "Services" },
+  { id: "stats", label: "Stats" },
   { id: "testimonials", label: "Testimonials" },
+  { id: "features", label: "Features" },
   { id: "pricing", label: "Pricing" },
-  { id: "faq", label: "FAQ" },
   { id: "contact", label: "Contact" },
-  { id: "about", label: "About" },
 ];
 
 const SectionIndicator = () => {
