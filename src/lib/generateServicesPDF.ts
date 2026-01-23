@@ -645,7 +645,7 @@ export const generateServicesPDF = async () => {
   doc.text('Visit webstack.ceo/pricing', margin + 105, yPos + 20);
   doc.setFontSize(9);
   doc.setTextColor(...colors.textLight);
-  doc.text('Start your free trial today. No credit card required.', margin + 105, yPos + 30);
+  doc.text('Book a call today to see how we can help your business.', margin + 105, yPos + 30);
 
   yPos += 50;
 
