@@ -48,6 +48,9 @@ const WebHosting = () => {
               transition={{ duration: 0.6 }}
               className="text-center"
             >
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-6">
+                <Server className="w-10 h-10 text-white" />
+              </div>
               <div className="flex items-center justify-center gap-3 mb-6">
                 <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-sm font-medium border border-amber-500/30">
                   Add-on
@@ -55,9 +58,6 @@ const WebHosting = () => {
                 <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium border border-primary/30">
                   Coming Soon
                 </span>
-              </div>
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-6">
-                <Server className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Lovable Premium <span className="gradient-text">Hosting</span>
