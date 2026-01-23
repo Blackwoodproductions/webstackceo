@@ -45,7 +45,7 @@ const FloatingAIShield = memo(() => {
       const footerRect = footer.getBoundingClientRect();
       const elementHeight = 64; // 16 * 4 = h-16
       const buffer = 40; // Space above footer
-      const defaultTop = window.innerHeight * 0.78;
+      const defaultTop = window.innerHeight * 0.70;
       
       // Calculate where element would naturally be
       const naturalTop = defaultTop;
@@ -56,7 +56,7 @@ const FloatingAIShield = memo(() => {
         // Element would overlap footer, cap it
         setTopPosition(`${maxTop}px`);
       } else {
-        setTopPosition('78%');
+        setTopPosition('70%');
       }
     };
 
