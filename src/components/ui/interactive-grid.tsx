@@ -111,10 +111,10 @@ const InteractiveGrid = ({
           if (intensity > 0) {
             ctx.strokeStyle = computedColor;
             ctx.globalAlpha = intensity * glowIntensity;
-            ctx.lineWidth = 1.5 + intensity * 1.5;
+            ctx.lineWidth = 1;
           } else {
             ctx.strokeStyle = "currentColor";
-            ctx.globalAlpha = 0.1;
+            ctx.globalAlpha = 0.08;
             ctx.lineWidth = 1;
           }
           ctx.stroke();
@@ -141,10 +141,10 @@ const InteractiveGrid = ({
           if (intensity > 0) {
             ctx.strokeStyle = computedColor;
             ctx.globalAlpha = intensity * glowIntensity;
-            ctx.lineWidth = 1.5 + intensity * 1.5;
+            ctx.lineWidth = 1;
           } else {
             ctx.strokeStyle = "currentColor";
-            ctx.globalAlpha = 0.1;
+            ctx.globalAlpha = 0.08;
             ctx.lineWidth = 1;
           }
           ctx.stroke();
@@ -160,11 +160,11 @@ const InteractiveGrid = ({
           const dist = Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my));
           const intensity = Math.max(0, 1 - dist / (glowRadius * 0.8));
           
-          if (intensity > 0.1) {
+          if (intensity > 0.15) {
             ctx.beginPath();
-            ctx.arc(x, y, 2 + intensity * 3, 0, Math.PI * 2);
+            ctx.arc(x, y, 1.5 + intensity * 1.5, 0, Math.PI * 2);
             ctx.fillStyle = computedColor;
-            ctx.globalAlpha = intensity * 0.8;
+            ctx.globalAlpha = intensity * 0.6;
             ctx.fill();
           }
         }
