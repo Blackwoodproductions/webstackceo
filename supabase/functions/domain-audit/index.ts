@@ -13,9 +13,18 @@ interface AhrefsMetrics {
   organicKeywords: number;
 }
 
+interface HistoryDataPoint {
+  date: string;
+  organicTraffic: number;
+  organicKeywords: number;
+  domainRating: number;
+  trafficValue: number;
+}
+
 interface AuditResult {
   ahrefs: AhrefsMetrics | null;
   ahrefsError: string | null;
+  history: HistoryDataPoint[] | null;
 }
 
 serve(async (req) => {
@@ -41,7 +50,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           ahrefs: null, 
-          ahrefsError: "Ahrefs API key not configured" 
+          ahrefsError: "Ahrefs API key not configured",
+          history: null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -57,11 +67,17 @@ serve(async (req) => {
     const result: AuditResult = {
       ahrefs: null,
       ahrefsError: null,
+      history: null,
     };
 
     try {
       // Ahrefs API v3 requires a date parameter
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      // Calculate date 2 years ago
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+      const startDate = twoYearsAgo.toISOString().split('T')[0];
       
       // Ahrefs Domain Rating API
       const ahrefsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating");
@@ -139,6 +155,94 @@ serve(async (req) => {
         if (metricsResponse.ok) {
           metricsData = await metricsResponse.json();
           console.log("Ahrefs metrics response:", JSON.stringify(metricsData));
+        }
+
+        // Fetch historical metrics data
+        const historyUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics-history");
+        historyUrl.searchParams.set("target", cleanDomain);
+        historyUrl.searchParams.set("date_from", startDate);
+        historyUrl.searchParams.set("date_to", today);
+        historyUrl.searchParams.set("history_grouping", "monthly");
+        historyUrl.searchParams.set("output", "json");
+
+        console.log(`Calling Ahrefs metrics-history API: ${historyUrl.toString()}`);
+
+        const historyResponse = await fetch(historyUrl.toString(), {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${AHREFS_API_KEY}`,
+            "Accept": "application/json",
+          },
+        });
+
+        if (historyResponse.ok) {
+          const historyData = await historyResponse.json();
+          console.log("Ahrefs metrics-history response:", JSON.stringify(historyData));
+          
+          // Parse history data - format: { metrics: [{ date, org_traffic, org_keywords, org_cost, ... }] }
+          if (historyData?.metrics && Array.isArray(historyData.metrics)) {
+            result.history = historyData.metrics.map((item: any) => ({
+              date: item.date,
+              organicTraffic: item.org_traffic || 0,
+              organicKeywords: item.org_keywords || 0,
+              domainRating: item.domain_rating || 0,
+              trafficValue: item.org_cost || 0,
+            }));
+          }
+        } else {
+          console.error("Ahrefs metrics-history error:", await historyResponse.text());
+        }
+
+        // Fetch domain rating history if not in metrics history
+        const drHistoryUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating-history");
+        drHistoryUrl.searchParams.set("target", cleanDomain);
+        drHistoryUrl.searchParams.set("date_from", startDate);
+        drHistoryUrl.searchParams.set("date_to", today);
+        drHistoryUrl.searchParams.set("history_grouping", "monthly");
+        drHistoryUrl.searchParams.set("output", "json");
+
+        console.log(`Calling Ahrefs domain-rating-history API: ${drHistoryUrl.toString()}`);
+
+        const drHistoryResponse = await fetch(drHistoryUrl.toString(), {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${AHREFS_API_KEY}`,
+            "Accept": "application/json",
+          },
+        });
+
+        if (drHistoryResponse.ok) {
+          const drHistoryData = await drHistoryResponse.json();
+          console.log("Ahrefs domain-rating-history response:", JSON.stringify(drHistoryData));
+          
+          // Merge DR history into existing history or create new
+          if (drHistoryData?.domain_rating && Array.isArray(drHistoryData.domain_rating)) {
+            const drHistoryMap = new Map(
+              drHistoryData.domain_rating.map((item: any) => [
+                item.date,
+                typeof item.domain_rating === 'object' ? item.domain_rating.domain_rating : item.domain_rating
+              ])
+            );
+            
+            if (result.history) {
+              // Merge DR into existing history
+              result.history = result.history.map(item => ({
+                ...item,
+                domainRating: (drHistoryMap.get(item.date) as number) || item.domainRating,
+              }));
+            } else {
+              // Create history from DR data
+              result.history = drHistoryData.domain_rating.map((item: any) => ({
+                date: item.date,
+                organicTraffic: 0,
+                organicKeywords: 0,
+                domainRating: typeof item.domain_rating === 'object' ? item.domain_rating.domain_rating : item.domain_rating,
+                trafficValue: 0,
+              }));
+            }
+          }
+        } else {
+          console.error("Ahrefs domain-rating-history error:", await drHistoryResponse.text());
         }
 
         // Extract domain rating - API returns nested object {domain_rating: {domain_rating: number, ahrefs_rank: number}}
