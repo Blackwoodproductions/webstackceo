@@ -59,6 +59,7 @@ import {
   Phone,
 } from "lucide-react";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
+import { generateAuditPDF } from "@/lib/generateAuditPDF";
 
 interface AuditCheck {
   name: string;
@@ -840,7 +841,18 @@ const AuditResults = () => {
               </div>
 
               {/* Floating Export PDF Button */}
-              <FloatingExportPDF domain={decodedDomain} />
+              <FloatingExportPDF 
+                domain={decodedDomain} 
+                onExport={() => {
+                  generateAuditPDF({
+                    domain: decodedDomain,
+                    overallScore,
+                    dashboardMetrics,
+                    auditResults,
+                    historyData: historyData || undefined,
+                  });
+                }}
+              />
 
               {/* Main Dials Row */}
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-6">
