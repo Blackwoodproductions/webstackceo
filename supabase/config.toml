@@ -1,1 +1,4 @@
 project_id = "qwnzenimkwtuaqnrcygb"
+
+[functions.domain-audit]
+verify_jwt = false
