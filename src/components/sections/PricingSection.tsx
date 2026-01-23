@@ -38,7 +38,7 @@ const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; co
 const addOns = [
   { name: "On-Page SEO", icon: Sparkles },
   { name: "PPC Landing Pages", icon: Zap },
-  { name: "Premium Web Hosting", icon: Shield },
+  { name: "Lovable Premium Hosting", icon: Shield },
 ];
 
 const plans = [
