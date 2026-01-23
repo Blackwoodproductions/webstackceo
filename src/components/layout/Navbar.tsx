@@ -48,9 +48,12 @@ const Navbar = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setIsLogoGold(true);
+      // Dispatch custom event for other components to sync
+      window.dispatchEvent(new CustomEvent('logoGoldChange', { detail: { isGold: true } }));
       // Stay gold for 3 seconds, then fade back
       setTimeout(() => {
         setIsLogoGold(false);
+        window.dispatchEvent(new CustomEvent('logoGoldChange', { detail: { isGold: false } }));
       }, 3000);
     }, 15000);
     return () => clearInterval(interval);
