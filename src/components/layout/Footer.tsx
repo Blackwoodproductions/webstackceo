@@ -31,16 +31,16 @@ const Footer = memo(() => {
 
   const footerLinks = {
     Product: [
-      { name: "Features", href: "/#features" },
-      { name: "Pricing", href: "/#pricing" },
+      { name: "Features", href: "/features" },
+      { name: "Pricing", href: "/pricing" },
       { name: "Integrations", href: "/integrations" },
       { name: "Changelog", href: "/changelog" },
     ],
     Company: [
       { name: "About", href: "/about" },
-      { name: "Blog", href: "#" },
+      { name: "Blog", href: "/learn" },
       { name: "Careers", href: "/careers" },
-      { name: "Contact", href: "/#contact" },
+      { name: "Contact", href: "/contact" },
     ],
     Resources: [
       { name: "Learning Center", href: "/learn" },
