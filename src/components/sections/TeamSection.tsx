@@ -1,34 +1,22 @@
 import { motion } from "framer-motion";
-import { Linkedin, Twitter, Mail } from "lucide-react";
+import { Linkedin, Mail } from "lucide-react";
 
 const teamMembers = [
   {
-    name: "Marcus Blackwood",
+    name: "Que Ratansi",
     role: "Founder & CEO",
-    bio: "22+ years in web technology. Visionary leader who built Blackwood Productions from the ground up.",
-    initials: "MB",
+    bio: "Visionary leader driving Webstack.ceo's mission to empower SEO agencies with automated niche linking at scale.",
+    initials: "QR",
     gradient: "from-cyan-400 to-violet-500",
+    linkedin: "https://www.linkedin.com/in/que-ratansi/",
   },
   {
-    name: "Sarah Chen",
+    name: "Aaron Addleman",
     role: "Chief Technology Officer",
-    bio: "Former Google engineer with expertise in scalable architecture and AI-driven solutions.",
-    initials: "SC",
+    bio: "SEO technology expert with deep expertise in local search optimization and scalable link building architecture.",
+    initials: "AA",
     gradient: "from-violet-500 to-pink-500",
-  },
-  {
-    name: "James Rodriguez",
-    role: "Head of Product",
-    bio: "Product strategist who has launched 50+ successful SaaS products for Fortune 500 companies.",
-    initials: "JR",
-    gradient: "from-cyan-400 to-emerald-400",
-  },
-  {
-    name: "Emily Watson",
-    role: "Head of Customer Success",
-    bio: "Dedicated to ensuring every CEO gets maximum value from their Webstack.ceo experience.",
-    initials: "EW",
-    gradient: "from-orange-400 to-pink-500",
+    linkedin: "https://www.linkedin.com/in/seolocalitcom/",
   },
 ];
 
@@ -54,7 +42,7 @@ const TeamSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {teamMembers.map((member, index) => (
             <motion.div
               key={member.name}
@@ -73,12 +61,14 @@ const TeamSection = () => {
               <p className="text-sm text-primary font-medium mb-3">{member.role}</p>
               <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{member.bio}</p>
               <div className="flex justify-center gap-3">
-                <button className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 transition-colors">
+                <a 
+                  href={member.linkedin} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 transition-colors"
+                >
                   <Linkedin className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                </button>
-                <button className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 transition-colors">
-                  <Twitter className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                </button>
+                </a>
                 <button className="p-2 rounded-lg bg-secondary/50 hover:bg-primary/20 transition-colors">
                   <Mail className="w-4 h-4 text-muted-foreground hover:text-primary" />
                 </button>
