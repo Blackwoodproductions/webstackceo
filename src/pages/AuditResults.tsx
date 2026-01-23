@@ -740,40 +740,53 @@ const AuditResults = () => {
     const meta = getCategory('Meta Tags');
     const security = getCategory('Security');
 
-    // Backlink recommendations - BRON Service
+    // Backlink & Domain Authority recommendations - BRON Service
     if (backlinks) {
       if (dashboardMetrics && dashboardMetrics.domainRating < 30) {
         recs.push({
-          title: 'Build Domain Authority with BRON',
-          description: 'Your Domain Rating is low. Our BRON service targets long-tail keywords and applies them to your website in a cluster formation using our Diamond Flow methodology.',
+          title: 'Build Domain Authority & Rating',
+          description: 'Your Domain Rating is low. BRON builds content clusters with inbound links from real, relevant business websites to boost your DR and DA—included with your dashboard subscription.',
           priority: 'high',
-          category: 'Backlinks',
+          category: 'Authority',
           icon: Link2,
-          actions: ['Keyword cluster targeting', 'Diamond Flow link silos', 'Niche-relevant backlinks', 'Real business websites'],
+          actions: ['Content clustering', 'Real business backlinks', 'DR/DA boosting', 'Diamond Flow silos'],
           service: 'BRON',
         });
       } else if (dashboardMetrics && dashboardMetrics.referringDomains < 50) {
         recs.push({
-          title: 'Expand Link Profile with BRON',
-          description: 'BRON builds diversified backlinks from real, relevant business websites—not PBNs or spam—using our proven Diamond Flow architecture.',
+          title: 'Expand Your Link Profile',
+          description: 'BRON creates content clusters and builds diversified inbound links from real business websites—not PBNs or spam. Standard with your dashboard subscription.',
           priority: 'medium',
           category: 'Backlinks',
           icon: Globe,
-          actions: ['Content silo creation', 'Supporting pages', 'Resources indexing', 'Authority flow'],
+          actions: ['Content clustering', 'Niche-relevant links', 'Authority flow', 'Real websites only'],
           service: 'BRON',
         });
       }
     }
 
+    // Always show BRON for DR/DA improvement
+    if (dashboardMetrics && dashboardMetrics.domainRating >= 30 && dashboardMetrics.domainRating < 60) {
+      recs.push({
+        title: 'Scale Domain Authority',
+        description: 'BRON accelerates your Domain Rating growth through strategic content clustering and quality inbound links from real business websites.',
+        priority: 'medium',
+        category: 'Authority',
+        icon: TrendingUp,
+        actions: ['Content clusters', 'Link velocity', 'DR/DA growth', 'Authority building'],
+        service: 'BRON',
+      });
+    }
+
     // Topical Authority & Content - CADE Plugin
     if (dashboardMetrics && (dashboardMetrics.organicTraffic < 500 || dashboardMetrics.organicKeywords < 100)) {
       recs.push({
-        title: 'Build Topical Authority with CADE',
-        description: 'Our CADE plugin creates ongoing content that builds topical authority, with smart internal linking and separate URLs for each FAQ question—going the extra mile other agencies skip.',
+        title: 'Build Topical Authority',
+        description: 'CADE creates ongoing content that builds topical authority with smart internal linking and separate URLs for each FAQ question—going the extra mile other agencies skip.',
         priority: 'high',
         category: 'Content',
         icon: FileText,
-        actions: ['Automated content creation', 'Individual FAQ URLs', 'Internal link building', 'Topical clusters'],
+        actions: ['Topical authority', 'Internal linking', 'Individual FAQ URLs', 'Ongoing content'],
         service: 'CADE',
       });
     }
@@ -781,15 +794,15 @@ const AuditResults = () => {
     // Social & GMB Signals - CADE Plugin
     recs.push({
       title: 'Amplify with Social & GMB Signals',
-      description: 'CADE automatically distributes your content across social channels and Google Business Profile, creating the signals that boost local and organic visibility.',
+      description: 'CADE automatically distributes your content across social channels and Google Business Profile, creating the engagement signals that boost visibility. Included with your subscription.',
       priority: dashboardMetrics && dashboardMetrics.organicTraffic < 300 ? 'high' : 'medium',
       category: 'Signals',
       icon: Users,
-      actions: ['Social signal automation', 'GMB post scheduling', 'Multi-platform distribution', 'Engagement tracking'],
+      actions: ['Social signals', 'GMB optimization', 'Multi-platform posting', 'Engagement tracking'],
       service: 'CADE',
     });
 
-    // Schema recommendations
+    // Schema recommendations - CADE
     if (schema && schema.score < 60) {
       recs.push({
         title: 'Implement Schema Markup',
@@ -797,7 +810,7 @@ const AuditResults = () => {
         priority: schema.score < 40 ? 'high' : 'medium',
         category: 'Schema',
         icon: FileCode,
-        actions: ['FAQ schema with URLs', 'Organization schema', 'Local business markup', 'Rich snippet optimization'],
+        actions: ['FAQ URLs', 'Rich snippets', 'Schema automation', 'Structured data'],
         service: 'CADE',
       });
     }
@@ -1357,8 +1370,8 @@ const AuditResults = () => {
             <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/10 border border-primary/20">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-lg mb-1">Need help implementing these recommendations?</h3>
-                  <p className="text-sm text-muted-foreground">Our SEO experts can help you improve your rankings and drive more organic traffic.</p>
+                  <h3 className="font-bold text-lg mb-1">BRON + CADE included with every dashboard subscription</h3>
+                  <p className="text-sm text-muted-foreground">Content clustering, real business backlinks, topical authority, social signals, and more—all on autopilot.</p>
                 </div>
                 <Button className="shrink-0 gap-2" asChild>
                   <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
