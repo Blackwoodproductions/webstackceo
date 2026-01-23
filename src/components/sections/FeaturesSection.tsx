@@ -122,10 +122,6 @@ const FeaturesSection = () => {
               Unlimited Growth.
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-            Stop juggling 12 different tools. Get automated link building, traffic intelligence, 
-            content creation, and analytics — all white-labeled and ready to resell to your clients.
-          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
