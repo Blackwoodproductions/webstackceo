@@ -143,13 +143,57 @@ const Careers = () => {
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
                 Build the Future of <span className="gradient-text">Web Management</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
                 We're on a mission to empower every CEO with the tools they need to dominate online. 
                 Join us and make an impact.
               </p>
-              <Button variant="hero" size="lg" asChild>
-                <a href="#positions">View Open Positions</a>
-              </Button>
+              
+              {/* Open Positions directly in hero */}
+              <div className="max-w-4xl mx-auto space-y-4 text-left">
+                {openPositions.map((position, index) => (
+                  <motion.div
+                    key={position.title}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="glass-card rounded-2xl p-6 hover:glow-accent transition-all duration-300 group cursor-pointer"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-medium">
+                            {position.department}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                          {position.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm mb-3">{position.description}</p>
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" /> {position.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="w-4 h-4" /> {position.type}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" /> {position.salary}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Button 
+                          variant="heroOutline" 
+                          className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                          onClick={() => handleApply(position)}
+                        >
+                          Apply Now <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           </div>
         </section>
@@ -196,80 +240,15 @@ const Careers = () => {
           </div>
         </section>
 
-        {/* Open Positions Section */}
-        <section id="positions" className="py-24">
+        {/* General Application CTA */}
+        <section className="py-24">
           <div className="container mx-auto px-6 max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="inline-block px-4 py-2 rounded-full glass-card text-sm font-medium text-primary mb-4">
-                Open Positions
-              </span>
-              <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                Find Your <span className="gradient-text">Role</span>
-              </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Explore our current openings and find where you can make your mark.
-              </p>
-            </motion.div>
-
-            <div className="space-y-4">
-              {openPositions.map((position, index) => (
-                <motion.div
-                  key={position.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="glass-card rounded-2xl p-6 hover:glow-accent transition-all duration-300 group cursor-pointer"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-medium">
-                          {position.department}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-                        {position.title}
-                      </h3>
-                      <p className="text-muted-foreground text-sm mb-3">{position.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" /> {position.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Briefcase className="w-4 h-4" /> {position.type}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" /> {position.salary}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <Button 
-                        variant="heroOutline" 
-                        className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                        onClick={() => handleApply(position)}
-                      >
-                        Apply Now <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-center mt-12"
+              className="text-center"
             >
               <p className="text-muted-foreground mb-4">
                 Don't see a role that fits? We're always looking for talented people.
