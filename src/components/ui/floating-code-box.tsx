@@ -24,13 +24,13 @@ const FloatingCodeBox = memo(() => {
     };
   }, []);
 
-  // Handle scroll to stop above footer's "Stay ahead" section
+  // Handle scroll to stop below contact form, above footer's "Stay ahead" section
   useEffect(() => {
     const handleScroll = () => {
       const footer = document.querySelector('footer');
       if (footer) {
         const footerRect = footer.getBoundingClientRect();
-        const stopPoint = window.innerHeight - 200; // Stop well above footer
+        const stopPoint = window.innerHeight - 80; // Stop right at footer top
         setIsAtBottom(footerRect.top < stopPoint);
       }
     };
