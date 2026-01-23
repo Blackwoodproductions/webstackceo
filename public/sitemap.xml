@@ -235,7 +235,31 @@
   </url>
   <url>
     <loc>https://webstackceo.lovable.app/learn/cro-guide</loc>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/keyword-research-guide</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/content-marketing-guide</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/mobile-seo-guide</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/ecommerce-seo-guide</loc>
+    <lastmod>2026-01-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -315,7 +339,61 @@
   </url>
   <url>
     <loc>https://webstackceo.lovable.app/learn/glossary/internal-linking</loc>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/long-tail-keywords</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/search-intent</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/keyword-difficulty</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/content-cluster</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/content-calendar</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/mobile-first-indexing</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/responsive-design</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/product-schema</loc>
+    <lastmod>2026-01-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://webstackceo.lovable.app/learn/glossary/faceted-navigation</loc>
+    <lastmod>2026-01-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

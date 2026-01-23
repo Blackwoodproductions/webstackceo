@@ -59,6 +59,10 @@ const sitemapData: SitemapSection[] = [
       { name: "On-Page SEO Guide", href: "/learn/on-page-seo-guide", description: "Master on-page optimization" },
       { name: "Off-Page SEO Guide", href: "/learn/off-page-seo-guide", description: "Build off-page authority" },
       { name: "Technical SEO Guide", href: "/learn/technical-seo-guide", description: "Technical SEO essentials" },
+      { name: "Keyword Research Guide", href: "/learn/keyword-research-guide", description: "Find profitable keywords" },
+      { name: "Content Marketing Guide", href: "/learn/content-marketing-guide", description: "Content strategy for SEO" },
+      { name: "Mobile SEO Guide", href: "/learn/mobile-seo-guide", description: "Mobile-first optimization" },
+      { name: "E-commerce SEO Guide", href: "/learn/ecommerce-seo-guide", description: "Optimize product pages" },
       { name: "Analytics Guide", href: "/learn/analytics-guide", description: "Master website analytics" },
       { name: "Visitor Intelligence Guide", href: "/learn/visitor-intelligence-guide", description: "Know your visitors" },
       { name: "Traffic De-Anonymization Guide", href: "/learn/traffic-deanonymization-guide", description: "Reveal anonymous traffic" },
@@ -245,8 +249,8 @@ const Sitemap = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { label: "Total Pages", value: sitemapData.reduce((acc, s) => acc + s.links.length, 0).toString() },
-                  { label: "Learning Guides", value: "18" },
-                  { label: "Glossary Terms", value: "12" },
+                  { label: "Learning Guides", value: "22" },
+                  { label: "Glossary Terms", value: "20+" },
                   { label: "Features", value: "13" },
                 ].map((stat) => (
                   <div key={stat.label}>

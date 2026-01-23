@@ -12,6 +12,7 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import { getTermsByGuide } from "@/data/glossaryData";
@@ -86,10 +87,10 @@ const OnPageSEOGuide = () => {
                   What is On-Page SEO?
                 </h2>
                 <p className="text-muted-foreground mb-4">
-                  On-page SEO refers to all the optimizations you make directly on your website pages to improve search engine rankings. Unlike off-page SEO (which focuses on external signals like backlinks), on-page SEO is entirely within your control.
+                  On-page SEO refers to all the optimizations you make directly on your website pages to improve search engine rankings. Unlike off-page SEO (which focuses on external signals like <GlossaryTooltip term="backlinks">backlinks</GlossaryTooltip>), on-page SEO is entirely within your control.
                 </p>
                 <p className="text-muted-foreground">
-                  Think of on-page SEO as speaking Google's language. You're helping search engines understand what your page is about, who it's for, and why it deserves to rank above competitors.
+                  Think of on-page SEO as speaking Google's language. You're helping search engines understand what your page is about, who it's for, and why it deserves to rank above competitors in the <GlossaryTooltip term="serp">SERP</GlossaryTooltip>.
                 </p>
               </FadeIn>
 
