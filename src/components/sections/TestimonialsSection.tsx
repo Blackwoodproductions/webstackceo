@@ -66,6 +66,21 @@ const TestimonialsSection = () => {
       <motion.div style={{ y: gridY }} className="absolute inset-0 grid-pattern opacity-20" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+            <span className="text-foreground">What our Customers are</span>{" "}
+            <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+              saying.!
+            </span>
+          </h2>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
