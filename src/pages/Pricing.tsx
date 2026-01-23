@@ -8,6 +8,10 @@ import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
+import { Button } from "@/components/ui/button";
+import { FileDown } from "lucide-react";
+import { generateServicesPDF } from "@/lib/generateServicesPDF";
+import { toast } from "sonner";
 
 const Pricing = () => {
   return (
@@ -61,10 +65,21 @@ const Pricing = () => {
                 Your Complete{" "}
                 <span className="gradient-text">Web Command Center</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
                 All-in-one dashboard for SEO agencies and marketing companies. Analytics, 
                 link building, content automation, and client management — all in one place.
               </p>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  generateServicesPDF();
+                  toast.success("Brochure downloaded successfully!");
+                }}
+              >
+                <FileDown className="h-4 w-4" />
+                Download Services Brochure
+              </Button>
             </motion.div>
           </div>
         </section>
