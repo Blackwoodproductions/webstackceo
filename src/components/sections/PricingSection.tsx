@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame } from "lucide-react";
+import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
+import StripePaymentIcons, { StripeLogo } from "@/components/ui/stripe-payment-icons";
 
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
@@ -278,26 +279,33 @@ const PricingSection = () => {
         </div>
 
 
+        {/* Stripe Payment Icons */}
+        <StripePaymentIcons className="mt-12" />
+
         {/* Trust Indicators */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           viewport={{ once: true }}
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
+          className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6"
         >
           {[
             { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
-            { icon: CreditCard, title: "Secure Payments", desc: "256-bit SSL encryption" },
+            { icon: StripeLogo, title: "Stripe Payments", desc: "Secure payment processing", isStripeLogo: true },
             { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
             { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
-          ].map((item, index) => (
+          ].map((item) => (
             <div
               key={item.title}
               className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                <item.icon className="w-6 h-6 text-primary" />
+                {'isStripeLogo' in item && item.isStripeLogo ? (
+                  <item.icon className="h-5 text-primary" />
+                ) : (
+                  <item.icon className="w-6 h-6 text-primary" />
+                )}
               </div>
               <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
               <p className="text-xs text-muted-foreground">{item.desc}</p>

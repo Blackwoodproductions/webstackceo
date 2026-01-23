@@ -4,6 +4,7 @@ import { Twitter, Linkedin, Github, Send, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { VisaIcon, MastercardIcon, AmexIcon, DiscoverIcon, StripeLogo } from "@/components/ui/stripe-payment-icons";
 
 const Footer = memo(() => {
   const navigate = useNavigate();
@@ -174,6 +175,19 @@ const Footer = memo(() => {
           <p className="text-sm text-muted-foreground">
             © {currentYear} Webstack.ceo by Blackwood Productions. All rights reserved.
           </p>
+          
+          {/* Payment Methods */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:block">Payments by</span>
+            <div className="flex items-center gap-1.5">
+              <VisaIcon />
+              <MastercardIcon />
+              <AmexIcon />
+              <DiscoverIcon />
+            </div>
+            <StripeLogo className="h-4 text-muted-foreground" />
+          </div>
+          
           <div className="flex items-center gap-4">
             {[
               { name: "Twitter", icon: Twitter, href: "#" },

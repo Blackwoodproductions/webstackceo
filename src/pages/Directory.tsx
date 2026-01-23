@@ -13,8 +13,9 @@ import {
   Search, MapPin, Phone, Globe, Star, Building2,
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
   Sparkles, Landmark, Scale, GraduationCap, Music, Building, 
-  Laptop, Plane, Dumbbell, Check, ShieldCheck, CreditCard, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame
+  Laptop, Plane, Dumbbell, Check, ShieldCheck, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame
 } from "lucide-react";
+import StripePaymentIcons, { StripeLogo } from "@/components/ui/stripe-payment-icons";
 import DirectoryListingDialog from "@/components/directory/DirectoryListingDialog";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
@@ -555,17 +556,20 @@ const Directory = () => {
               ))}
             </div>
 
+            {/* Stripe Payment Icons */}
+            <StripePaymentIcons className="mt-12" />
+
             {/* Trust Indicators */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
               viewport={{ once: true }}
-              className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6"
+              className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6"
             >
               {[
                 { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
-                { icon: CreditCard, title: "Secure Payments", desc: "256-bit SSL encryption" },
+                { icon: StripeLogo, title: "Stripe Payments", desc: "Secure payment processing", isStripeLogo: true },
                 { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
                 { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
               ].map((item) => (
@@ -574,7 +578,11 @@ const Directory = () => {
                   className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                    <item.icon className="w-6 h-6 text-primary" />
+                    {'isStripeLogo' in item && item.isStripeLogo ? (
+                      <item.icon className="h-5 text-primary" />
+                    ) : (
+                      <item.icon className="w-6 h-6 text-primary" />
+                    )}
                   </div>
                   <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
