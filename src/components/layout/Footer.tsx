@@ -47,7 +47,6 @@ const Footer = memo(() => {
       { name: "SEO Glossary", href: "/learn/glossary" },
       { name: "Sitemap", href: "/sitemap" },
       { name: "FAQ", href: "/faq" },
-      { name: "Download Brochure", href: "#", isDownload: true },
     ],
     Legal: [
       { name: "Privacy", href: "/privacy-policy" },
@@ -153,10 +152,20 @@ const Footer = memo(() => {
             <p className="text-muted-foreground text-sm mb-4 max-w-xs">
               The unified dashboard for CEOs who demand excellence from their web presence.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-3">
               A product of{" "}
               <span className="text-foreground font-medium">Blackwood Productions</span>
             </p>
+            <button
+              onClick={async () => {
+                toast.success("Generating brochure...");
+                await generateServicesPDF();
+              }}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-hover-accent transition-all duration-300 hover:drop-shadow-[var(--hover-accent-glow)]"
+            >
+              <FileDown className="w-4 h-4" />
+              Download Brochure
+            </button>
           </div>
 
           {Object.entries(footerLinks).map(([category, links]) => (
