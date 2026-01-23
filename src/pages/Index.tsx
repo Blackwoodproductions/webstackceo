@@ -48,9 +48,9 @@ const Index = () => {
         <SectionDivider />
         <StatsSection />
         <SectionDivider />
-        <FeaturesSection />
-        <SectionDivider />
         <TestimonialsSection />
+        <SectionDivider />
+        <FeaturesSection />
         <SectionDivider />
         <PricingSection />
         <LogoCarousel />
