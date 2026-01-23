@@ -3,6 +3,7 @@ import { memo, useState, useEffect } from "react";
 const FloatingCodeBox = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [topPosition, setTopPosition] = useState('8rem');
+  const [isGold, setIsGold] = useState(false);
 
   // Delay render to not block initial page paint
   useEffect(() => {
@@ -22,6 +23,15 @@ const FloatingCodeBox = memo(() => {
         clearTimeout(handle);
       }
     };
+  }, []);
+
+  // Listen for logo gold state changes from Navbar
+  useEffect(() => {
+    const handleLogoGoldChange = (e: CustomEvent<{ isGold: boolean }>) => {
+      setIsGold(e.detail.isGold);
+    };
+    window.addEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
   }, []);
 
   // Handle scroll to stop above footer
@@ -68,29 +78,39 @@ const FloatingCodeBox = memo(() => {
 
   return (
     <div 
-      className="fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in transition-all duration-300"
+      className={`fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in transition-all duration-300 ${
+        isGold ? "shadow-[0_0_20px_rgba(251,191,36,0.4)]" : ""
+      }`}
       style={{ top: topPosition }}
     >
       <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
         {codeLines.map((codeLine, rowIndex) => (
           <div 
             key={rowIndex} 
-            className="text-primary text-[7px] font-mono leading-[11px] overflow-hidden"
+            className={`text-[7px] font-mono leading-[11px] overflow-hidden transition-colors duration-700 ${
+              isGold ? "text-amber-400" : "text-primary"
+            }`}
           >
             <span 
               className="inline-block floating-code-line"
               style={{ 
-                textShadow: '0 0 6px hsl(var(--primary) / 0.7)',
+                textShadow: isGold 
+                  ? '0 0 6px rgba(251, 191, 36, 0.7)' 
+                  : '0 0 6px hsl(var(--primary) / 0.7)',
                 animationDelay: `${rowIndex * 0.5}s`,
               }}
             >
               {codeLine}
             </span>
             <span 
-              className="inline-block w-[3px] h-[8px] bg-primary ml-[1px] align-middle floating-code-cursor"
+              className={`inline-block w-[3px] h-[8px] ml-[1px] align-middle floating-code-cursor transition-colors duration-700 ${
+                isGold ? "bg-amber-400" : "bg-primary"
+              }`}
               style={{
                 animationDelay: `${rowIndex * 0.5}s`,
-                boxShadow: '0 0 4px hsl(var(--primary) / 0.8)'
+                boxShadow: isGold 
+                  ? '0 0 4px rgba(251, 191, 36, 0.8)' 
+                  : '0 0 4px hsl(var(--primary) / 0.8)'
               }}
             />
           </div>
