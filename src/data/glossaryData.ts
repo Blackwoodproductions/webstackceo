@@ -57,6 +57,10 @@ export const learningGuides = {
   linkBuilding: { title: "Link Building Guide", href: "/learn/link-building-guide" },
   coreWebVitals: { title: "Core Web Vitals Guide", href: "/learn/core-web-vitals-guide" },
   cro: { title: "CRO Guide", href: "/learn/cro-guide" },
+  keywordResearch: { title: "Keyword Research Guide", href: "/learn/keyword-research-guide" },
+  contentMarketing: { title: "Content Marketing Guide", href: "/learn/content-marketing-guide" },
+  mobileSEO: { title: "Mobile SEO Guide", href: "/learn/mobile-seo-guide" },
+  ecommerceSEO: { title: "E-commerce SEO Guide", href: "/learn/ecommerce-seo-guide" },
 };
 
 export const glossaryTerms: GlossaryTermData[] = [
@@ -1362,6 +1366,266 @@ export const glossaryTerms: GlossaryTermData[] = [
     externalResources: [
       { title: "Canonical Link Element", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Canonical_link_element" },
       { title: "Consolidate Duplicate URLs", source: "Google Search Central", url: "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls" }
+    ]
+  },
+
+  // ===== KEYWORD RESEARCH TERMS =====
+  {
+    term: "Long-tail Keywords",
+    slug: "long-tail-keywords",
+    shortDescription: "Longer, more specific keyword phrases that typically have lower search volume but higher conversion rates.",
+    fullDescription: "Long-tail keywords are search phrases that contain three or more words and are more specific than broader 'head' terms. While they have lower individual search volume, they often convert better because they indicate more specific intent and face less competition.",
+    category: "Keyword Research",
+    whyItMatters: [
+      "Easier to rank for due to lower competition",
+      "Higher conversion rates from specific intent",
+      "Capture voice search queries",
+      "Accumulate significant traffic in aggregate",
+      "Better match user questions and needs"
+    ],
+    bestPractices: [
+      "Use keyword tools to find long-tail variations",
+      "Answer specific questions in your content",
+      "Create content clusters around related long-tail terms",
+      "Monitor which long-tail terms convert best",
+      "Target long-tail keywords for new sites building authority"
+    ],
+    relatedTerms: ["search-intent", "keyword-difficulty"],
+    relatedGuide: learningGuides.keywordResearch,
+    relatedFeature: featurePages.onPageSEO,
+    externalResources: [
+      { title: "Long Tail Keyword", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Long_tail" },
+      { title: "Long-Tail Keywords: What They Are & How to Use Them", source: "Ahrefs", url: "https://ahrefs.com/blog/long-tail-keywords/" }
+    ]
+  },
+  {
+    term: "Search Intent",
+    slug: "search-intent",
+    shortDescription: "The purpose or goal behind a user's search query—what they're trying to accomplish.",
+    fullDescription: "Search intent (also known as user intent or keyword intent) refers to the underlying goal a user has when typing a query into a search engine. Understanding intent helps you create content that matches what users actually want, improving both rankings and conversions.",
+    category: "Keyword Research",
+    whyItMatters: [
+      "Google prioritizes results that match user intent",
+      "Mismatched intent leads to high bounce rates",
+      "Different intents require different content types",
+      "Intent determines conversion potential",
+      "Understanding intent guides content strategy"
+    ],
+    bestPractices: [
+      "Analyze SERP results to understand what Google thinks intent is",
+      "Match content format to intent (listicles vs. guides vs. product pages)",
+      "Consider intent when selecting keywords to target",
+      "Create content for each stage of the buyer journey",
+      "Update content if intent shifts over time"
+    ],
+    relatedTerms: ["long-tail-keywords", "serp", "content-optimization"],
+    relatedGuide: learningGuides.keywordResearch,
+    relatedFeature: featurePages.onPageSEO,
+    externalResources: [
+      { title: "Search Intent in SEO: What It Is & How to Optimize for It", source: "Ahrefs", url: "https://ahrefs.com/blog/search-intent/" },
+      { title: "Understanding User Intent", source: "Moz", url: "https://moz.com/blog/user-intent" }
+    ]
+  },
+  {
+    term: "Keyword Difficulty",
+    slug: "keyword-difficulty",
+    shortDescription: "A metric estimating how hard it would be to rank on the first page of Google for a specific keyword.",
+    fullDescription: "Keyword difficulty (KD) is a metric used by SEO tools to estimate the competitive level of ranking for a specific keyword. It typically factors in the authority and backlink profiles of currently ranking pages. Higher difficulty means you'll need more authority and better content to compete.",
+    category: "Keyword Research",
+    whyItMatters: [
+      "Helps prioritize which keywords to target",
+      "Prevents wasting resources on impossible targets",
+      "Guides content and link building strategy",
+      "Helps set realistic ranking expectations",
+      "Balances effort vs. potential reward"
+    ],
+    bestPractices: [
+      "Start with lower difficulty keywords for new sites",
+      "Compare difficulty across multiple tools for accuracy",
+      "Consider your current domain authority when choosing targets",
+      "Don't rely solely on KD—analyze actual SERP competitors",
+      "Balance difficulty with search volume and business value"
+    ],
+    relatedTerms: ["domain-authority", "backlinks", "serp"],
+    relatedGuide: learningGuides.keywordResearch,
+    relatedFeature: featurePages.onPageSEO,
+    externalResources: [
+      { title: "What Is Keyword Difficulty?", source: "Ahrefs", url: "https://ahrefs.com/blog/keyword-difficulty/" },
+      { title: "Understanding Keyword Difficulty", source: "Semrush", url: "https://www.semrush.com/blog/keyword-difficulty/" }
+    ]
+  },
+
+  // ===== CONTENT MARKETING TERMS =====
+  {
+    term: "Content Cluster",
+    slug: "content-cluster",
+    shortDescription: "A group of related content pieces organized around a central pillar page to establish topical authority.",
+    fullDescription: "A content cluster (or topic cluster) is an SEO and content strategy where a comprehensive 'pillar page' covers a broad topic, surrounded by 'cluster content' that explores subtopics in depth. Internal links connect the cluster, signaling topical authority to search engines.",
+    category: "Content Marketing",
+    whyItMatters: [
+      "Establishes topical authority for search engines",
+      "Creates logical internal linking structure",
+      "Improves user navigation and experience",
+      "Helps rank for competitive head terms",
+      "Organizes content production and strategy"
+    ],
+    bestPractices: [
+      "Choose pillar topics that align with business goals",
+      "Create comprehensive pillar pages covering the full topic",
+      "Link cluster content back to the pillar page",
+      "Interlink related cluster pieces where relevant",
+      "Update and expand clusters over time"
+    ],
+    relatedTerms: ["internal-linking", "topical-authority", "pillar-page"],
+    relatedGuide: learningGuides.contentMarketing,
+    relatedFeature: featurePages.automatedBlog,
+    externalResources: [
+      { title: "Topic Clusters: What They Are & How They Work", source: "Ahrefs", url: "https://ahrefs.com/blog/topic-clusters/" },
+      { title: "The Topic Cluster Model", source: "HubSpot", url: "https://blog.hubspot.com/marketing/topic-clusters-seo" }
+    ]
+  },
+  {
+    term: "Content Calendar",
+    slug: "content-calendar",
+    shortDescription: "A schedule that plans what content will be created, when it will be published, and on which channels.",
+    fullDescription: "A content calendar (or editorial calendar) is a planning tool that organizes content creation and publication across time. It helps teams maintain consistency, align content with business goals and seasonal trends, and coordinate across multiple channels and contributors.",
+    category: "Content Marketing",
+    whyItMatters: [
+      "Ensures consistent publishing frequency",
+      "Aligns content with marketing campaigns",
+      "Helps plan for seasonal and trending topics",
+      "Improves team coordination and accountability",
+      "Prevents last-minute content scrambles"
+    ],
+    bestPractices: [
+      "Plan content around keyword research and business goals",
+      "Include deadlines for drafts, reviews, and publishing",
+      "Balance content types across the funnel",
+      "Leave room for timely or reactive content",
+      "Review and adjust based on performance data"
+    ],
+    relatedTerms: ["content-cluster", "editorial-workflow"],
+    relatedGuide: learningGuides.contentMarketing,
+    relatedFeature: featurePages.automatedBlog,
+    externalResources: [
+      { title: "Editorial Calendar", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Editorial_calendar" },
+      { title: "How to Create a Content Calendar", source: "Semrush", url: "https://www.semrush.com/blog/content-calendar/" }
+    ]
+  },
+
+  // ===== MOBILE SEO TERMS =====
+  {
+    term: "Mobile-First Indexing",
+    slug: "mobile-first-indexing",
+    shortDescription: "Google's practice of using the mobile version of a website as the primary version for indexing and ranking.",
+    fullDescription: "Mobile-first indexing means Google predominantly uses the mobile version of your website's content for indexing and ranking. Since most users now access the web via mobile devices, Google prioritizes the mobile experience when determining search rankings.",
+    category: "Mobile SEO",
+    whyItMatters: [
+      "Mobile version determines desktop rankings too",
+      "Poor mobile experience hurts all search visibility",
+      "Google has fully switched to mobile-first indexing",
+      "Content parity between mobile and desktop is essential",
+      "Mobile usability is a confirmed ranking factor"
+    ],
+    bestPractices: [
+      "Ensure content parity between mobile and desktop versions",
+      "Use responsive design for consistent experience",
+      "Test mobile usability with Google's tools",
+      "Optimize mobile page speed",
+      "Make sure structured data appears on mobile pages"
+    ],
+    relatedTerms: ["responsive-design", "core-web-vitals", "page-speed"],
+    relatedGuide: learningGuides.mobileSEO,
+    relatedFeature: featurePages.analytics,
+    externalResources: [
+      { title: "Mobile-First Indexing", source: "Google Search Central", url: "https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing" },
+      { title: "Mobile-First Indexing: What You Need to Know", source: "Moz", url: "https://moz.com/blog/mobile-first-indexing" }
+    ]
+  },
+  {
+    term: "Responsive Design",
+    slug: "responsive-design",
+    shortDescription: "A web design approach where pages adapt and display optimally across all device sizes and screen widths.",
+    fullDescription: "Responsive web design is an approach where a website's layout and content automatically adjust to fit the screen size of the device being used. Using flexible grids, images, and CSS media queries, one website serves all devices optimally—desktop, tablet, and mobile.",
+    category: "Mobile SEO",
+    whyItMatters: [
+      "Google's recommended mobile configuration",
+      "Single URL makes link building simpler",
+      "Easier to maintain than separate mobile sites",
+      "Provides consistent user experience across devices",
+      "Future-proofs for new device sizes"
+    ],
+    bestPractices: [
+      "Use flexible grid layouts that adapt to screen width",
+      "Set appropriate viewport meta tag",
+      "Use CSS media queries for breakpoints",
+      "Size touch targets appropriately for mobile",
+      "Test on actual devices, not just emulators"
+    ],
+    relatedTerms: ["mobile-first-indexing", "core-web-vitals", "page-speed"],
+    relatedGuide: learningGuides.mobileSEO,
+    relatedFeature: featurePages.analytics,
+    externalResources: [
+      { title: "Responsive Web Design", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Responsive_web_design" },
+      { title: "Responsive Web Design Basics", source: "web.dev", url: "https://web.dev/articles/responsive-web-design-basics" }
+    ]
+  },
+
+  // ===== E-COMMERCE SEO TERMS =====
+  {
+    term: "Product Schema",
+    slug: "product-schema",
+    shortDescription: "Structured data markup that helps search engines understand product information like price, availability, and reviews.",
+    fullDescription: "Product schema is a type of structured data markup (using Schema.org vocabulary) that provides search engines with detailed product information. When implemented correctly, it can result in rich snippets showing price, availability, ratings, and more directly in search results.",
+    category: "E-commerce SEO",
+    whyItMatters: [
+      "Enables rich snippets with price and ratings",
+      "Increases click-through rates from search results",
+      "Helps products appear in Google Shopping",
+      "Provides search engines with accurate product data",
+      "Differentiates listings from competitors"
+    ],
+    bestPractices: [
+      "Include all required properties (name, image, price)",
+      "Add recommended properties (brand, SKU, availability)",
+      "Keep schema data consistent with visible page content",
+      "Test with Google's Rich Results Test",
+      "Update schema when prices or availability change"
+    ],
+    relatedTerms: ["schema-markup", "rich-snippets", "structured-data"],
+    relatedGuide: learningGuides.ecommerceSEO,
+    relatedFeature: featurePages.onPageSEO,
+    externalResources: [
+      { title: "Product Schema", source: "Schema.org", url: "https://schema.org/Product" },
+      { title: "Product Structured Data", source: "Google Search Central", url: "https://developers.google.com/search/docs/appearance/structured-data/product" }
+    ]
+  },
+  {
+    term: "Faceted Navigation",
+    slug: "faceted-navigation",
+    shortDescription: "A filtering system allowing users to narrow product listings by attributes like size, color, or price.",
+    fullDescription: "Faceted navigation (also called filtered navigation) allows users to refine product listings by selecting multiple attributes or filters. While great for UX, it can create SEO challenges by generating thousands of filterable URL combinations that may cause duplicate content and crawl budget issues.",
+    category: "E-commerce SEO",
+    whyItMatters: [
+      "Essential for e-commerce user experience",
+      "Can create massive duplicate content issues",
+      "May waste crawl budget on low-value URLs",
+      "Filter combinations can dilute page authority",
+      "Proper handling is critical for large catalogs"
+    ],
+    bestPractices: [
+      "Use canonical tags to point filters to main category",
+      "Consider noindex for filtered pages",
+      "Block unnecessary filter combinations in robots.txt",
+      "Allow Google to crawl valuable filter combinations",
+      "Use AJAX-based filtering where appropriate"
+    ],
+    relatedTerms: ["canonical-tag", "crawl-budget", "duplicate-content"],
+    relatedGuide: learningGuides.ecommerceSEO,
+    relatedFeature: featurePages.onPageSEO,
+    externalResources: [
+      { title: "Faceted Search", source: "Wikipedia", url: "https://en.wikipedia.org/wiki/Faceted_search" },
+      { title: "Large Site Optimization: Faceted Navigation", source: "Ahrefs", url: "https://ahrefs.com/blog/faceted-navigation/" }
     ]
   }
 ];

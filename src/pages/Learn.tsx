@@ -25,6 +25,9 @@ const categories = [
       { title: "Complete Guide to On-Page SEO", href: "/learn/on-page-seo-guide", time: "12 min read" },
       { title: "Off-Page SEO: Building Authority", href: "/learn/off-page-seo-guide", time: "10 min read" },
       { title: "Technical SEO Essentials", href: "/learn/technical-seo-guide", time: "15 min read" },
+      { title: "Keyword Research Guide", href: "/learn/keyword-research-guide", time: "14 min read" },
+      { title: "Mobile SEO Optimization", href: "/learn/mobile-seo-guide", time: "11 min read" },
+      { title: "E-commerce SEO Guide", href: "/learn/ecommerce-seo-guide", time: "16 min read" },
     ]
   },
   {
@@ -44,6 +47,7 @@ const categories = [
     icon: FileText,
     color: "from-emerald-400 to-green-500",
     articles: [
+      { title: "Content Marketing Strategy", href: "/learn/content-marketing-guide", time: "15 min read" },
       { title: "Automated Blogging Strategy", href: "/learn/automated-blogging-guide", time: "10 min read" },
       { title: "FAQ Generation for SEO", href: "/learn/faq-generation-guide", time: "7 min read" },
       { title: "Social Signals & SEO Impact", href: "/learn/social-signals-guide", time: "9 min read" },
