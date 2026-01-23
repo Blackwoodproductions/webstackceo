@@ -1396,54 +1396,72 @@ const AuditResults = () => {
                       : 'bg-card border-border/50'
                   }`}
                 >
-                  {/* Side-by-side layout for BRON and CADE */}
+                  {/* Magazine-style layout for BRON and CADE with text wrapping around images */}
                   {rec.service ? (
-                    <div className="flex flex-col lg:flex-row gap-4">
-                      {/* Left side - Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className={`p-2 rounded-lg shrink-0 ${
+                    <div>
+                      {/* Header with icon and badges */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`p-2 rounded-lg shrink-0 ${
+                          rec.priority === 'high'
+                            ? 'bg-red-500/10'
+                            : rec.priority === 'medium'
+                            ? 'bg-amber-500/10'
+                            : 'bg-primary/10'
+                        }`}>
+                          <rec.icon className={`w-5 h-5 ${
                             rec.priority === 'high'
-                              ? 'bg-red-500/10'
+                              ? 'text-red-500'
                               : rec.priority === 'medium'
-                              ? 'bg-amber-500/10'
-                              : 'bg-primary/10'
-                          }`}>
-                            <rec.icon className={`w-5 h-5 ${
+                              ? 'text-amber-500'
+                              : 'text-primary'
+                          }`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-lg">{rec.title}</h3>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                              rec.service === 'BRON'
+                                ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
+                                : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
+                            }`}>
+                              {rec.service}
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                               rec.priority === 'high'
-                                ? 'text-red-500'
+                                ? 'bg-red-500/20 text-red-600 dark:text-red-400'
                                 : rec.priority === 'medium'
-                                ? 'text-amber-500'
-                                : 'text-primary'
-                            }`} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <h3 className="font-semibold">{rec.title}</h3>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                rec.service === 'BRON'
-                                  ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
-                                  : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
-                              }`}>
-                                {rec.service}
-                              </span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                                rec.priority === 'high'
-                                  ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                                  : rec.priority === 'medium'
-                                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                                  : 'bg-primary/20 text-primary'
-                              }`}>
-                                {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
-                              </span>
-                            </div>
+                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                                : 'bg-primary/20 text-primary'
+                            }`}>
+                              {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
+                            </span>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                               {rec.category}
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                        <div className="flex flex-wrap gap-2">
+                      </div>
+                      
+                      {/* Text with floated image */}
+                      <div className="mb-4">
+                        {/* Floated image on the right */}
+                        <div className={`float-right ml-4 mb-2 w-36 sm:w-44 rounded-xl overflow-hidden border ${
+                          rec.service === 'BRON' 
+                            ? 'border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10' 
+                            : 'border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-primary/10'
+                        }`}>
+                          <img 
+                            src={rec.service === 'BRON' ? bronDiamondFlow : cadeContentAutomation} 
+                            alt={rec.service === 'BRON' ? 'BRON Diamond Flow Architecture' : 'CADE Content Automation'}
+                            className="w-full h-auto object-contain"
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{rec.description}</p>
+                      </div>
+                      
+                      {/* Clear float and full-width action list */}
+                      <div className="clear-both pt-2 border-t border-border/30">
+                        <div className="flex flex-wrap gap-2 mt-3">
                           {rec.actions.map((action, j) => (
                             <span 
                               key={j}
@@ -1464,19 +1482,6 @@ const AuditResults = () => {
                             </span>
                           ))}
                         </div>
-                      </div>
-                      
-                      {/* Right side - Full Image */}
-                      <div className={`lg:w-56 shrink-0 rounded-xl overflow-hidden border ${
-                        rec.service === 'BRON' 
-                          ? 'border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10' 
-                          : 'border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-primary/10'
-                      }`}>
-                        <img 
-                          src={rec.service === 'BRON' ? bronDiamondFlow : cadeContentAutomation} 
-                          alt={rec.service === 'BRON' ? 'BRON Diamond Flow Architecture' : 'CADE Content Automation'}
-                          className="w-full h-full object-contain p-2"
-                        />
                       </div>
                     </div>
                   ) : (
