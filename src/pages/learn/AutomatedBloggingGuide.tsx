@@ -42,7 +42,7 @@ const AutomatedBloggingGuide = () => {
         ]}
       />
       
-      <main className="pt-4">
+      <main className="pt-8">
         {/* Hero */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-transparent to-green-500/10" />

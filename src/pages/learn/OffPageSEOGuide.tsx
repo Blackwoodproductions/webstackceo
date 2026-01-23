@@ -43,7 +43,7 @@ const OffPageSEOGuide = () => {
         ]}
       />
       
-      <main className="pt-4">
+      <main className="pt-8">
         {/* Hero */}
         <section className="py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-400/10 via-transparent to-cyan-500/10" />
