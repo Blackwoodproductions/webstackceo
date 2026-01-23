@@ -2,11 +2,10 @@ import { memo, useState, useEffect } from "react";
 
 const FloatingCodeBox = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(false);
 
   // Delay render to not block initial page paint
   useEffect(() => {
-    // Some environments (certain embedded previews / older browsers) may not support
-    // requestIdleCallback; use setTimeout as a safe fallback.
     let handle: number;
     const hasIdle = typeof window !== "undefined" && "requestIdleCallback" in window;
 
@@ -25,6 +24,22 @@ const FloatingCodeBox = memo(() => {
     };
   }, []);
 
+  // Handle scroll to stop at bottom
+  useEffect(() => {
+    const handleScroll = () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const footerRect = footer.getBoundingClientRect();
+        const stopPoint = window.innerHeight - 120; // Stop 120px from bottom
+        setIsAtBottom(footerRect.top < stopPoint);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (!isVisible) return null;
 
   const codeLines = [
@@ -37,7 +52,13 @@ const FloatingCodeBox = memo(() => {
   ];
 
   return (
-    <div className="fixed top-32 right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in">
+    <div 
+      className="fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in"
+      style={{
+        top: isAtBottom ? 'auto' : '8rem',
+        bottom: isAtBottom ? '120px' : 'auto',
+      }}
+    >
       <div className="absolute inset-0 flex flex-col py-1.5 px-1.5">
         {codeLines.map((codeLine, rowIndex) => (
           <div 
