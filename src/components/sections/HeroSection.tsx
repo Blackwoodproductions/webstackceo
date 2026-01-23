@@ -7,6 +7,7 @@ import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
+  const [isShieldGold, setIsShieldGold] = useState(false);
   const { soundEnabled } = useSoundContext();
   const { playSound } = useSoundEffects();
   const sectionRef = useRef<HTMLElement>(null);
@@ -14,6 +15,15 @@ const HeroSection = () => {
     target: sectionRef,
     offset: ["start start", "end start"],
   });
+
+  // Listen for logo gold state changes from Navbar
+  useEffect(() => {
+    const handleLogoGoldChange = (e: CustomEvent<{ isGold: boolean }>) => {
+      setIsShieldGold(e.detail.isGold);
+    };
+    window.addEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+  }, []);
 
   // Mouse position tracking
   const mouseX = useMotionValue(0);
@@ -71,10 +81,14 @@ const HeroSection = () => {
       {/* Floating Element with Mouse + Scroll Parallax */}
       <motion.div
         style={{ x: float2X, y: floatScrollY2 }}
-        className="absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-500 bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
+        className={`absolute bottom-32 left-20 w-16 h-16 rounded-lg flex items-center justify-center hidden lg:flex transition-all duration-700 ${
+          isShieldGold 
+            ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
+            : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
+        }`}
       >
-        <Shield className="w-[46px] h-[46px] text-primary transition-colors duration-500" />
-        <span className="absolute font-bold text-[12px] tracking-tight text-primary transition-colors duration-500">AI</span>
+        <Shield className={`w-[46px] h-[46px] transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`} />
+        <span className={`absolute font-bold text-[12px] tracking-tight transition-colors duration-700 ${isShieldGold ? "text-amber-400" : "text-primary"}`}>AI</span>
       </motion.div>
 
       <div className="container mx-auto px-6 relative z-10">
