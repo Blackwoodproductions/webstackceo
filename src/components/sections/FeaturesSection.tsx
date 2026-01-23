@@ -153,6 +153,7 @@ const FeaturesSection = () => {
             </div>
             <h3 className="text-lg font-semibold text-foreground">Available Add-ons</h3>
             <span className="text-xs font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">Extra Cost</span>
+            <span className="text-xs font-medium text-violet-400 bg-violet-500/20 px-2 py-1 rounded-full">Coming Soon</span>
           </div>
         </motion.div>
 
@@ -171,8 +172,9 @@ const FeaturesSection = () => {
               <div className="absolute inset-0 -z-10 bg-amber-400/0 rounded-2xl blur-xl transition-all duration-500 group-hover:bg-amber-400/20 group-hover:scale-110 pointer-events-none" />
               
               <div className="relative z-10 h-full glass-card rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 cursor-pointer bg-amber-500/5 dark:bg-amber-500/10 backdrop-blur-sm border border-amber-500/20">
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 flex gap-1.5">
                   <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">ADD-ON</span>
+                  <span className="text-[10px] font-semibold text-violet-400 bg-violet-500/20 px-2 py-0.5 rounded-full">Coming Soon</span>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-all duration-300">
                   <feature.icon className="w-6 h-6 text-amber-500 transition-colors duration-300" />
