@@ -38,7 +38,7 @@ const FloatingAIShield = memo(() => {
 
   return (
     <div 
-      className={`fixed top-32 left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-700 ${
+      className={`fixed top-[55%] left-6 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in transition-all duration-700 ${
         isShieldGold 
           ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
           : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20"
