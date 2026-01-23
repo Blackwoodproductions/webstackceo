@@ -10,19 +10,22 @@ import {
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 
-const featureItems = [
-  { icon: Search, name: "On-Page SEO", href: "/features/on-page-seo" },
+const includedFeatures = [
   { icon: Link2, name: "Niche Link Building", href: "/features/off-page-seo" },
   { icon: PenTool, name: "Automated Blog", href: "/features/automated-blog" },
   { icon: HelpCircle, name: "FAQ Generation", href: "/features/faq-generation" },
   { icon: UserCheck, name: "Traffic De-Anonymization", href: "/features/traffic-de-anonymization" },
   { icon: Eye, name: "Visitor Intelligence", href: "/features/visitor-intelligence" },
-  { icon: MousePointerClick, name: "PPC Landing Pages", href: "/features/ppc-landing-pages" },
   { icon: TrendingUp, name: "Domain Authority", href: "/features/domain-authority" },
   { icon: BarChart3, name: "Advanced Analytics", href: "/features/advanced-analytics" },
   { icon: MapPin, name: "GMB Optimization", href: "/features/gmb-optimization" },
   { icon: Activity, name: "Uptime Monitoring", href: "/features/uptime-monitoring" },
-  { icon: Server, name: "Web Hosting", href: "/features/web-hosting" },
+];
+
+const addOnFeatures = [
+  { icon: Search, name: "On-Page SEO", href: "/features/on-page-seo" },
+  { icon: MousePointerClick, name: "PPC Landing Pages", href: "/features/ppc-landing-pages" },
+  { icon: Server, name: "Premium Web Hosting", href: "/features/web-hosting" },
 ];
 
 const Navbar = () => {
@@ -210,7 +213,9 @@ const Navbar = () => {
                         View All Features →
                       </a>
                     </motion.div>
-                    {featureItems.map((feature, index) => (
+                    
+                    {/* Included Features */}
+                    {includedFeatures.map((feature, index) => (
                       <motion.a
                         key={feature.name}
                         href={feature.href}
@@ -227,6 +232,42 @@ const Navbar = () => {
                           <feature.icon className="w-5 h-5 text-primary group-hover:text-hover-accent transition-colors duration-300" />
                         </div>
                         <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300">
+                          {feature.name}
+                        </span>
+                      </motion.a>
+                    ))}
+                    
+                    {/* Add-ons Separator */}
+                    <motion.div 
+                      className="col-span-2 pt-3 mt-1 border-t border-border"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2, delay: 0.3 }}
+                    >
+                      <span className="text-xs font-semibold text-amber-500 flex items-center gap-2">
+                        <span className="bg-amber-500/10 px-2 py-0.5 rounded-full">ADD-ONS</span>
+                        <span className="text-muted-foreground font-normal">Extra Cost</span>
+                      </span>
+                    </motion.div>
+                    
+                    {/* Add-on Features */}
+                    {addOnFeatures.map((feature, index) => (
+                      <motion.a
+                        key={feature.name}
+                        href={feature.href}
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ 
+                          duration: 0.2, 
+                          delay: 0.35 + (index * 0.03),
+                          ease: "easeOut"
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-amber-500/10 transition-all duration-300 group bg-amber-500/5"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center group-hover:from-amber-400/30 group-hover:to-orange-500/30 group-hover:scale-110 transition-all duration-300">
+                          <feature.icon className="w-5 h-5 text-amber-500 group-hover:text-amber-400 transition-colors duration-300" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-amber-500 transition-all duration-300">
                           {feature.name}
                         </span>
                       </motion.a>
@@ -516,7 +557,7 @@ const Navbar = () => {
                       >
                         View All Features →
                       </a>
-                      {featureItems.map((feature) => (
+                      {includedFeatures.map((feature) => (
                         <a
                           key={feature.name}
                           href={feature.href}
@@ -527,6 +568,24 @@ const Navbar = () => {
                           {feature.name}
                         </a>
                       ))}
+                      
+                      {/* Add-ons in Mobile */}
+                      <div className="pt-2 mt-2 border-t border-border">
+                        <span className="text-xs font-semibold text-amber-500 flex items-center gap-2 py-1">
+                          <span className="bg-amber-500/10 px-2 py-0.5 rounded-full">ADD-ONS</span>
+                        </span>
+                        {addOnFeatures.map((feature) => (
+                          <a
+                            key={feature.name}
+                            href={feature.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-amber-500 py-1 transition-colors"
+                          >
+                            <feature.icon className="w-4 h-4 text-amber-500" />
+                            {feature.name}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
