@@ -13,11 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const technicalSEOTerms = [
-  { term: "Core Web Vitals", shortDescription: "Google's metrics for page experience including loading, interactivity, and visual stability.", slug: "core-web-vitals" },
-  { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
-];
+// Get terms linked to this guide from shared glossary
+const technicalSEOTerms = getTermsByGuide("/learn/technical-seo-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const TechnicalSEOGuide = () => {
   return (

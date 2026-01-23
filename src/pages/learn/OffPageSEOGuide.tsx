@@ -14,12 +14,14 @@ import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
-const offPageSEOTerms = [
-  { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as 'votes of confidence'.", slug: "backlinks" },
-  { term: "Domain Authority", shortDescription: "A score (1-100) predicting how likely a website is to rank in search results.", slug: "domain-authority" },
-  { term: "Anchor Text", shortDescription: "The clickable, visible text in a hyperlink that provides context.", slug: "anchor-text" },
-  { term: "Internal Linking", shortDescription: "Links connecting pages within your website to distribute authority.", slug: "internal-linking" },
-];
+import { getTermsByGuide } from "@/data/glossaryData";
+
+// Get terms linked to this guide from shared glossary
+const offPageSEOTerms = getTermsByGuide("/learn/off-page-seo-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const OffPageSEOGuide = () => {
   return (

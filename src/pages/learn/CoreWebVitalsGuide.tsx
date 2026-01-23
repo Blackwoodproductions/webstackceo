@@ -13,11 +13,14 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const cwvTerms = [
-  { term: "Core Web Vitals", shortDescription: "Google's metrics for page experience including loading, interactivity, and visual stability.", slug: "core-web-vitals" },
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
-];
+// Get terms linked to this guide from shared glossary
+const cwvTerms = getTermsByGuide("/learn/core-web-vitals-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const CoreWebVitalsGuide = () => {
   return (

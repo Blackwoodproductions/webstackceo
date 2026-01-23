@@ -13,11 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const uptimeTerms = [
-  { term: "Core Web Vitals", shortDescription: "Google's metrics for loading performance, interactivity, and visual stability.", slug: "core-web-vitals" },
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
-];
+// Get terms linked to this guide from shared glossary
+const uptimeTerms = getTermsByGuide("/learn/uptime-monitoring-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const UptimeMonitoringGuide = () => {
   return (

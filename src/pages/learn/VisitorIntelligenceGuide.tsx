@@ -13,11 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const visitorIntelligenceTerms = [
-  { term: "Conversion Rate", shortDescription: "The percentage of visitors who complete a desired action or goal.", slug: "conversion-rate" },
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave after viewing only one page.", slug: "bounce-rate" },
-];
+// Get terms linked to this guide from shared glossary
+const visitorIntelligenceTerms = getTermsByGuide("/learn/visitor-intelligence-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const VisitorIntelligenceGuide = () => {
   return (

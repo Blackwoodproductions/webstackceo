@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, BookOpen, ArrowRight, ArrowLeft } from "lucide-react";
+import { Search, BookOpen, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -9,28 +9,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
-
-interface GlossaryItem {
-  term: string;
-  shortDescription: string;
-  slug: string;
-  category: string;
-}
-
-const glossaryTerms: GlossaryItem[] = [
-  { term: "Alt Text", shortDescription: "Descriptive text for images that helps search engines and screen readers understand image content.", slug: "alt-text", category: "On-Page SEO" },
-  { term: "Anchor Text", shortDescription: "The clickable, visible text in a hyperlink that provides context about the linked page.", slug: "anchor-text", category: "Link Building" },
-  { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as 'votes of confidence' for search engines.", slug: "backlinks", category: "Off-Page SEO" },
-  { term: "Bounce Rate", shortDescription: "The percentage of visitors who leave a website after viewing only one page.", slug: "bounce-rate", category: "Analytics" },
-  { term: "Conversion Rate", shortDescription: "The percentage of website visitors who complete a desired action or goal.", slug: "conversion-rate", category: "Analytics" },
-  { term: "Core Web Vitals", shortDescription: "Google's metrics measuring loading performance, interactivity, and visual stability of web pages.", slug: "core-web-vitals", category: "Technical SEO" },
-  { term: "Domain Authority", shortDescription: "A score (1-100) predicting how likely a website is to rank in search engine results.", slug: "domain-authority", category: "Off-Page SEO" },
-  { term: "Header Tags (H1-H6)", shortDescription: "HTML elements that define headings and subheadings, creating a hierarchical structure for content.", slug: "header-tags", category: "On-Page SEO" },
-  { term: "Internal Linking", shortDescription: "Links that connect pages within the same website, distributing authority and guiding navigation.", slug: "internal-linking", category: "On-Page SEO" },
-  { term: "Meta Description", shortDescription: "A brief summary of a page's content that appears in search engine results below the title.", slug: "meta-description", category: "On-Page SEO" },
-  { term: "SERP", shortDescription: "Search Engine Results Page—the page displayed by search engines in response to a user's query.", slug: "serp", category: "SEO Fundamentals" },
-  { term: "Title Tag", shortDescription: "The HTML element that defines the title of a web page shown in search results and browser tabs.", slug: "title-tag", category: "On-Page SEO" },
-];
+import { glossaryTerms, getCategories } from "@/data/glossaryData";
 
 // Sort alphabetically
 const sortedTerms = [...glossaryTerms].sort((a, b) => a.term.localeCompare(b.term));
@@ -40,20 +19,32 @@ const alphabet = [...new Set(sortedTerms.map(t => t.term[0].toUpperCase()))].sor
 
 const GlossaryIndex = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  const categories = useMemo(() => getCategories(), []);
 
   const filteredTerms = useMemo(() => {
-    if (!searchQuery.trim()) return sortedTerms;
-    const query = searchQuery.toLowerCase();
-    return sortedTerms.filter(
-      t => t.term.toLowerCase().includes(query) || 
-           t.shortDescription.toLowerCase().includes(query) ||
-           t.category.toLowerCase().includes(query)
-    );
-  }, [searchQuery]);
+    let filtered = sortedTerms;
+    
+    if (selectedCategory) {
+      filtered = filtered.filter(t => t.category === selectedCategory);
+    }
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        t => t.term.toLowerCase().includes(query) || 
+             t.shortDescription.toLowerCase().includes(query) ||
+             t.category.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [searchQuery, selectedCategory]);
 
   // Group filtered terms by first letter
   const groupedTerms = useMemo(() => {
-    const groups: Record<string, GlossaryItem[]> = {};
+    const groups: Record<string, typeof sortedTerms> = {};
     filteredTerms.forEach(term => {
       const letter = term.term[0].toUpperCase();
       if (!groups[letter]) groups[letter] = [];
@@ -71,8 +62,8 @@ const GlossaryIndex = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="SEO Glossary - Complete A-Z of SEO Terms | Learning Center"
-        description="Master SEO terminology with our comprehensive glossary. Learn definitions for title tags, backlinks, domain authority, Core Web Vitals, and more essential SEO terms."
-        keywords="SEO glossary, SEO terms, SEO definitions, title tag, meta description, backlinks, domain authority, Core Web Vitals, anchor text"
+        description="Master SEO terminology with our comprehensive glossary of 40+ terms. Learn definitions for title tags, backlinks, domain authority, Core Web Vitals, and more essential SEO terms."
+        keywords="SEO glossary, SEO terms, SEO definitions, title tag, meta description, backlinks, domain authority, Core Web Vitals, anchor text, schema markup"
         canonical="/learn/glossary"
       />
       <ScrollProgress />
@@ -110,11 +101,11 @@ const GlossaryIndex = () => {
                 SEO <span className="gradient-text">Glossary</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                Your complete A-Z reference for SEO terminology. Search or browse to find clear, actionable definitions for every SEO term you need to know.
+                Your complete A-Z reference for SEO terminology. Each term links to our related features and guides so you can put knowledge into action.
               </p>
 
               {/* Search */}
-              <div className="relative max-w-md">
+              <div className="relative max-w-md mb-6">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type="text"
@@ -123,6 +114,33 @@ const GlossaryIndex = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 bg-background/50 border-border text-lg"
                 />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    !selectedCategory 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                  }`}
+                >
+                  All Categories
+                </button>
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category === selectedCategory ? null : category)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      selectedCategory === category 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
               </div>
             </motion.div>
           </div>
@@ -161,12 +179,13 @@ const GlossaryIndex = () => {
               >
                 <p className="text-muted-foreground text-lg mb-4">
                   No terms found matching "{searchQuery}"
+                  {selectedCategory && ` in ${selectedCategory}`}
                 </p>
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => { setSearchQuery(""); setSelectedCategory(null); }}
                   className="text-primary hover:underline"
                 >
-                  Clear search
+                  Clear filters
                 </button>
               </motion.div>
             ) : (
@@ -195,13 +214,19 @@ const GlossaryIndex = () => {
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
+                              <div className="flex flex-wrap items-center gap-3 mb-2">
                                 <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                                   {term.term}
                                 </h3>
                                 <span className="px-2 py-0.5 rounded-full bg-secondary/50 text-xs text-muted-foreground">
                                   {term.category}
                                 </span>
+                                {term.relatedFeature && (
+                                  <span className="px-2 py-0.5 rounded-full bg-primary/10 text-xs text-primary flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3" />
+                                    {term.relatedFeature.title}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-muted-foreground text-sm line-clamp-2">
                                 {term.shortDescription}
@@ -232,14 +257,23 @@ const GlossaryIndex = () => {
                 Ready to Put This Knowledge Into Action?
               </h2>
               <p className="text-muted-foreground mb-6">
-                Explore our in-depth guides to learn how to apply these SEO concepts to your business.
+                Explore our in-depth guides to learn how to apply these SEO concepts to your business, or see how Webstack.ceo automates them for you.
               </p>
-              <Link
-                to="/learn"
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                Browse All Guides <ArrowRight className="w-5 h-5" />
-              </Link>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Link
+                  to="/learn"
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Browse All Guides <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  to="/features"
+                  className="inline-flex items-center gap-2 bg-secondary text-foreground px-6 py-3 rounded-lg font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Explore Features
+                </Link>
+              </div>
             </motion.div>
           </div>
         </section>

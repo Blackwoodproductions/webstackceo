@@ -13,11 +13,14 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const automatedBloggingTerms = [
-  { term: "SERP", shortDescription: "Search Engine Results Page—what users see after entering a search query.", slug: "serp" },
-  { term: "Internal Linking", shortDescription: "Links connecting pages within your website to distribute authority.", slug: "internal-linking" },
-];
+// Get terms linked to this guide from shared glossary
+const automatedBloggingTerms = getTermsByGuide("/learn/automated-blogging-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const AutomatedBloggingGuide = () => {
   return (

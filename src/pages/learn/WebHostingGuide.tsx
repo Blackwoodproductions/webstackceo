@@ -13,10 +13,14 @@ import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
+import { getTermsByGuide } from "@/data/glossaryData";
 
-const hostingTerms = [
-  { term: "Core Web Vitals", shortDescription: "Google's metrics for page experience including loading, interactivity, and visual stability.", slug: "core-web-vitals" },
-];
+// Get terms linked to this guide from shared glossary
+const hostingTerms = getTermsByGuide("/learn/web-hosting-guide").map(t => ({
+  term: t.term,
+  shortDescription: t.shortDescription,
+  slug: t.slug
+}));
 
 const WebHostingGuide = () => {
   return (
