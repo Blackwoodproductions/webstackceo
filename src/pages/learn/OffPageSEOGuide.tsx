@@ -13,7 +13,7 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ArticleNavigation from "@/components/ui/article-navigation";
 import GlossaryLegend from "@/components/ui/glossary-legend";
 import FadeIn from "@/components/ui/fade-in";
-import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
+import AnimatedDiamondFlow from "@/components/diagrams/AnimatedDiamondFlow";
 const offPageSEOTerms = [
   { term: "Backlinks", shortDescription: "Links from other websites pointing to your site, serving as 'votes of confidence'.", slug: "backlinks" },
   { term: "Domain Authority", shortDescription: "A score (1-100) predicting how likely a website is to rank in search results.", slug: "domain-authority" },
@@ -155,58 +155,23 @@ const OffPageSEOGuide = () => {
                 </div>
               </FadeIn>
 
-              {/* Diamond Flow - Content Silo */}
+              {/* Diamond Flow - Animated Content Silo */}
               <FadeIn delay={125} className="glass-card rounded-2xl p-8 mb-8 bg-gradient-to-br from-violet-400/5 to-cyan-500/5">
                 <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
                   <Layers className="w-6 h-6 text-primary" />
                   The Diamond Flow: Strategic Link Architecture
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Effective off-page SEO requires structure. The <strong className="text-foreground">Diamond Flow</strong> architecture creates content silos that channel link equity directly to your money pages using a bottom-up power structure.
+                  Effective off-page SEO requires structure. The <strong className="text-foreground">Diamond Flow</strong> architecture creates content silos that channel link equity directly to your money pages using a bottom-up power structure. Watch how inbound links from relevant businesses flow upward to boost your money page.
                 </p>
-                <div className="grid md:grid-cols-2 gap-6 items-center">
-                  <div>
-                    <img 
-                      src={diamondFlowImg} 
-                      alt="BRON SEO Diamond Flow showing content silo with money page at top, supporting pages, and resources page with inbound links flowing upward" 
-                      className="rounded-xl shadow-lg w-full"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-foreground font-medium">Money Page at the Top</p>
-                        <p className="text-sm text-muted-foreground">Your client's target URL receives all upward-flowing link equity</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-foreground font-medium">Supporting Pages (2 per cluster)</p>
-                        <p className="text-sm text-muted-foreground">Niche-relevant content we create that links to the money page</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-foreground font-medium">Resources Page (Topical Index)</p>
-                        <p className="text-sm text-muted-foreground">An index of the 3 keyword pages above, reinforcing topical authority</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-foreground font-medium">Inbound Links Flow Upward</p>
-                        <p className="text-sm text-muted-foreground">All link equity is channeled to boost your money page</p>
-                      </div>
-                    </div>
-                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 mt-4">
-                      <p className="text-sm text-foreground">
-                        <strong>Already have a money page?</strong> We skip the main keyword page and link directly to your existing URL.
-                      </p>
-                    </div>
-                  </div>
+                
+                {/* Animated Diagram */}
+                <AnimatedDiamondFlow />
+
+                <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <p className="text-sm text-foreground">
+                    <strong>Already have a money page?</strong> We skip the main keyword page and link directly to your existing URL, sending all supporting page links straight to your target.
+                  </p>
                 </div>
               </FadeIn>
 
