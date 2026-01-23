@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SEO from "@/components/SEO";
@@ -39,6 +39,12 @@ import {
   Flame,
   Plus,
   ExternalLink,
+  TrendingUp,
+  Users,
+  Target,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface AuditCheck {
@@ -62,6 +68,16 @@ interface AhrefsMetrics {
   referringDomains: number;
   organicTraffic: number;
   organicKeywords: number;
+}
+
+// Store Ahrefs metrics separately for dashboard display
+interface DashboardMetrics {
+  domainRating: number;
+  backlinks: number;
+  referringDomains: number;
+  organicTraffic: number;
+  organicKeywords: number;
+  isReal: boolean;
 }
 
 // Pricing data (simplified from PricingSection)
@@ -456,11 +472,25 @@ const AuditResults = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [auditResults, setAuditResults] = useState<AuditCategory[]>([]);
+  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [ahrefsError, setAhrefsError] = useState<string | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
+
+  const toggleCategory = (title: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(title)) {
+        newSet.delete(title);
+      } else {
+        newSet.add(title);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (!decodedDomain) {
@@ -477,8 +507,15 @@ const AuditResults = () => {
 
         if (error) {
           console.error('Edge function error:', error);
-          // Fall back to simulated data
           setAuditResults(generateAuditResults(decodedDomain, null));
+          setDashboardMetrics({
+            domainRating: 0,
+            backlinks: 0,
+            referringDomains: 0,
+            organicTraffic: 0,
+            organicKeywords: 0,
+            isReal: false,
+          });
           toast.error('Could not fetch real backlink data - showing simulated results');
         } else {
           const ahrefsData = data?.ahrefs || null;
@@ -488,6 +525,29 @@ const AuditResults = () => {
             toast.warning(`Ahrefs: ${data.ahrefsError} - showing simulated backlink data`);
           } else if (ahrefsData) {
             toast.success('Real Ahrefs backlink data loaded!');
+          }
+          
+          // Store dashboard metrics separately for prominent display
+          if (ahrefsData) {
+            setDashboardMetrics({
+              domainRating: ahrefsData.domainRating,
+              backlinks: ahrefsData.backlinks,
+              referringDomains: ahrefsData.referringDomains,
+              organicTraffic: ahrefsData.organicTraffic,
+              organicKeywords: ahrefsData.organicKeywords,
+              isReal: true,
+            });
+          } else {
+            // Simulated metrics
+            const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            setDashboardMetrics({
+              domainRating: Math.round(30 + (hash % 50)),
+              backlinks: Math.round(50 + (hash % 800)),
+              referringDomains: Math.round(10 + (hash % 100)),
+              organicTraffic: Math.round(100 + (hash % 2000)),
+              organicKeywords: Math.round(20 + (hash % 200)),
+              isReal: false,
+            });
           }
           
           setAuditResults(generateAuditResults(decodedDomain, ahrefsData));
@@ -662,103 +722,233 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
-          {/* Score Overview Cards */}
+          {/* Dashboard Metrics - Ahrefs Data */}
+          {dashboardMetrics && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-xl font-bold">Ahrefs Metrics</h2>
+                {dashboardMetrics.isReal ? (
+                  <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
+                    <ExternalLink className="w-3 h-3" />
+                    Live Data
+                  </span>
+                ) : (
+                  <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground font-medium">
+                    Simulated
+                  </span>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {/* Domain Rating */}
+                <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Domain Rating</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-4xl font-bold ${getScoreColor(dashboardMetrics.domainRating)}`}>
+                      {dashboardMetrics.domainRating}
+                    </span>
+                    <span className="text-lg text-muted-foreground">/100</span>
+                  </div>
+                  <Progress value={dashboardMetrics.domainRating} className="h-2 mt-3" />
+                </div>
+
+                {/* Total Backlinks */}
+                <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
+                      <Link2 className="w-5 h-5 text-cyan-500" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Backlinks</span>
+                  </div>
+                  <span className="text-4xl font-bold text-foreground">
+                    {dashboardMetrics.backlinks.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Referring Domains */}
+                <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20">
+                      <Globe className="w-5 h-5 text-violet-500" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Referring Domains</span>
+                  </div>
+                  <span className="text-4xl font-bold text-foreground">
+                    {dashboardMetrics.referringDomains.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Organic Traffic */}
+                <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+                      <Users className="w-5 h-5 text-green-500" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Organic Traffic</span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-foreground">
+                      {dashboardMetrics.organicTraffic.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/mo</span>
+                  </div>
+                </div>
+
+                {/* Organic Keywords */}
+                <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-all">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20">
+                      <Target className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Organic Keywords</span>
+                  </div>
+                  <span className="text-4xl font-bold text-foreground">
+                    {dashboardMetrics.organicKeywords.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Category Scores Overview */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-12"
+            transition={{ delay: 0.2 }}
+            className="mb-8"
           >
-            {auditResults.map((category, i) => (
-              <motion.div
-                key={category.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className={`p-4 rounded-2xl bg-card border ${category.isRealData ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50'}`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
-                    <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
+            <h2 className="text-xl font-bold mb-6">SEO Health Scores</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {auditResults.map((category, i) => (
+                <motion.div
+                  key={category.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.05 }}
+                  className={`p-4 rounded-2xl bg-card border cursor-pointer hover:scale-[1.02] transition-all ${
+                    category.isRealData ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border/50 hover:border-primary/30'
+                  }`}
+                  onClick={() => toggleCategory(category.title)}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
+                      <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
+                    </div>
+                    <span className="font-medium text-sm truncate">{category.title}</span>
                   </div>
-                  <span className="font-medium text-sm truncate">{category.title}</span>
-                  {category.isRealData && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                      Live
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-end gap-1">
-                  <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
-                    {category.score}
-                  </span>
-                  <span className="text-xs text-muted-foreground mb-1">/100</span>
-                </div>
-                <Progress value={category.score} className="h-1.5 mt-2" />
-              </motion.div>
-            ))}
+                  <div className="flex items-end justify-between">
+                    <div className="flex items-end gap-1">
+                      <span className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
+                        {category.score}
+                      </span>
+                      <span className="text-xs text-muted-foreground mb-1">/100</span>
+                    </div>
+                    {expandedCategories.has(category.title) ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <Progress value={category.score} className="h-1.5 mt-2" />
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
 
-          {/* Detailed Results */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-16">
+          {/* Detailed Results - Collapsible Cards */}
+          <div className="space-y-4 mb-16">
             {auditResults.map((category, catIndex) => (
               <motion.div
                 key={category.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 + catIndex * 0.05 }}
+                transition={{ delay: 0.3 + catIndex * 0.05 }}
                 className="rounded-2xl bg-card border border-border/50 overflow-hidden"
               >
-                <div className="p-5 border-b border-border/50 flex items-center justify-between">
+                {/* Header - Always Visible */}
+                <button
+                  onClick={() => toggleCategory(category.title)}
+                  className="w-full p-5 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
                       <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
                     </div>
-                    <div>
+                    <div className="text-left">
                       <div className="flex items-center gap-2">
                         <h2 className="font-semibold">{category.title}</h2>
                         {category.isRealData && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
-                            <ExternalLink className="w-3 h-3" />
-                            Ahrefs Data
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
+                            Live Data
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {category.checks.filter((c) => c.status === "pass").length}/{category.checks.length} passed
+                        {category.checks.filter((c) => c.status === "pass").length}/{category.checks.length} checks passed
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className={`text-xl font-bold ${getScoreColor(category.score)}`}>
-                      {category.score}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-border/50 max-h-80 overflow-y-auto">
-                  {category.checks.map((check) => (
-                    <div
-                      key={check.name}
-                      className="p-3 flex items-start gap-3 hover:bg-muted/30 transition-colors"
-                    >
-                      {getStatusIcon(check.status)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="font-medium text-sm">{check.name}</span>
-                          {check.value && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                              {check.value}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {check.description}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xl font-bold ${getScoreColor(category.score)}`}>
+                        {category.score}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/100</span>
                     </div>
-                  ))}
-                </div>
+                    {expandedCategories.has(category.title) ? (
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded Content */}
+                <AnimatePresence>
+                  {expandedCategories.has(category.title) && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-border/50 divide-y divide-border/50">
+                        {category.checks.map((check) => (
+                          <div
+                            key={check.name}
+                            className="p-4 flex items-start gap-3 hover:bg-muted/20 transition-colors"
+                          >
+                            {getStatusIcon(check.status)}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="font-medium">{check.name}</span>
+                                {check.value && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                                    {check.value}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {check.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
