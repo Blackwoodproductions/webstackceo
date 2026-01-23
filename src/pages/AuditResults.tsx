@@ -787,15 +787,16 @@ const AuditResults = () => {
               Back to Home
             </Button>
 
-            <div className="flex flex-col gap-8">
-              {/* Domain Info Row */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Key Metrics Card with Domain Info */}
+            <div className="p-6 rounded-2xl bg-card border border-border/50">
+              {/* Domain Info Header */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pb-6 border-b border-border/50">
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-1">
                     <Globe className="w-6 h-6 text-primary" />
-                    <h1 className="text-3xl font-bold">{decodedDomain}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
                   </div>
-                  <p className="text-muted-foreground flex items-center gap-2">
+                  <p className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Clock className="w-4 h-4" />
                     Audit completed just now
                   </p>
@@ -807,30 +808,24 @@ const AuditResults = () => {
                 </Button>
               </div>
 
-              {/* Key Metrics Dials Row */}
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="flex items-center justify-center flex-wrap gap-8 md:gap-12">
-                  <ScoreDial
-                    value={overallScore}
-                    max={100}
-                    label="Overall Score"
-                    size="lg"
-                    color="primary"
-                  />
+              {/* Dials Row */}
+              <div className="flex items-center justify-between flex-wrap gap-6">
+                {/* Left side - Metric dials */}
+                <div className="flex items-center flex-wrap gap-6 md:gap-10">
                   {dashboardMetrics && (
                     <>
                       <ScoreDial
                         value={dashboardMetrics.domainRating}
                         max={100}
                         label="Domain Rating"
-                        size="lg"
+                        size="md"
                         color="violet"
                       />
                       <ScoreDial
                         value={dashboardMetrics.organicTraffic}
                         max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
                         label="Organic Traffic"
-                        size="lg"
+                        size="md"
                         color="green"
                         showPercentage={false}
                         suffix="/mo"
@@ -839,12 +834,23 @@ const AuditResults = () => {
                         value={dashboardMetrics.organicKeywords}
                         max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
                         label="Organic Keywords"
-                        size="lg"
+                        size="md"
                         color="amber"
                         showPercentage={false}
                       />
                     </>
                   )}
+                </div>
+
+                {/* Right side - Overall Score (larger) */}
+                <div className="flex-shrink-0">
+                  <ScoreDial
+                    value={overallScore}
+                    max={100}
+                    label="Overall Score"
+                    size="lg"
+                    color="primary"
+                  />
                 </div>
               </div>
             </div>
