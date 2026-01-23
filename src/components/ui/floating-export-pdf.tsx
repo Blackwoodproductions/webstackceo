@@ -79,7 +79,8 @@ const FloatingExportPDF = memo(({ onExport, domain }: FloatingExportPDFProps) =>
   return (
     <Button
       onClick={onExport}
-      className={`fixed right-6 z-40 hidden lg:flex items-center gap-2 animate-fade-in transition-all duration-700 ${
+      size="sm"
+      className={`fixed right-6 z-40 hidden lg:flex flex-col items-center justify-center gap-1 w-20 h-12 px-0 animate-fade-in transition-all duration-700 ${
         isGold 
           ? "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-[0_0_20px_rgba(251,191,36,0.4)]" 
           : ""
@@ -87,7 +88,7 @@ const FloatingExportPDF = memo(({ onExport, domain }: FloatingExportPDFProps) =>
       style={{ top: topPosition }}
     >
       <Download className="w-4 h-4" />
-      Export PDF
+      <span className="text-[9px] leading-none">Export PDF</span>
     </Button>
   );
 });
