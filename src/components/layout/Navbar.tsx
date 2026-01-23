@@ -247,6 +247,7 @@ const Navbar = () => {
                       <span className="text-xs font-semibold text-amber-500 flex items-center gap-2">
                         <span className="bg-amber-500/10 px-2 py-0.5 rounded-full">ADD-ONS</span>
                         <span className="text-muted-foreground font-normal">Extra Cost</span>
+                        <span className="bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full">Coming Soon</span>
                       </span>
                     </motion.div>
                     
@@ -267,9 +268,12 @@ const Navbar = () => {
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center group-hover:from-amber-400/30 group-hover:to-orange-500/30 group-hover:scale-110 transition-all duration-300">
                           <feature.icon className="w-5 h-5 text-amber-500 group-hover:text-amber-400 transition-colors duration-300" />
                         </div>
-                        <span className="text-sm font-medium text-foreground group-hover:text-amber-500 transition-all duration-300">
-                          {feature.name}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-foreground group-hover:text-amber-500 transition-all duration-300">
+                            {feature.name}
+                          </span>
+                          <span className="text-[10px] text-violet-400">Coming Soon</span>
+                        </div>
                       </motion.a>
                     ))}
                   </motion.div>
@@ -573,6 +577,7 @@ const Navbar = () => {
                       <div className="pt-2 mt-2 border-t border-border">
                         <span className="text-xs font-semibold text-amber-500 flex items-center gap-2 py-1">
                           <span className="bg-amber-500/10 px-2 py-0.5 rounded-full">ADD-ONS</span>
+                          <span className="bg-violet-500/20 text-violet-400 px-2 py-0.5 rounded-full">Coming Soon</span>
                         </span>
                         {addOnFeatures.map((feature) => (
                           <a
@@ -582,7 +587,10 @@ const Navbar = () => {
                             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-amber-500 py-1 transition-colors"
                           >
                             <feature.icon className="w-4 h-4 text-amber-500" />
-                            {feature.name}
+                            <span className="flex flex-col">
+                              <span>{feature.name}</span>
+                              <span className="text-[10px] text-violet-400">Coming Soon</span>
+                            </span>
                           </a>
                         ))}
                       </div>
