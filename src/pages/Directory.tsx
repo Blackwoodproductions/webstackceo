@@ -13,9 +13,9 @@ import {
   Search, MapPin, Phone, Globe, Star, Building2,
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
   Sparkles, Landmark, Scale, GraduationCap, Music, Building, 
-  Laptop, Plane, Dumbbell, Check, ShieldCheck, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame
+  Laptop, Plane, Dumbbell, Check, ShieldCheck, Clock, HeadphonesIcon, Zap, Crown, Shield, Flame, CreditCard
 } from "lucide-react";
-import StripePaymentIcons, { StripeLogo } from "@/components/ui/stripe-payment-icons";
+import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import DirectoryListingDialog from "@/components/directory/DirectoryListingDialog";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
@@ -582,7 +582,7 @@ const Directory = () => {
             >
               {[
                 { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
-                { icon: StripeLogo, title: "Stripe Payments", desc: "Secure payment processing", isStripeLogo: true },
+                { icon: CreditCard, title: "Secure Payments", desc: "Stripe payment processing" },
                 { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
                 { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
               ].map((item) => (
@@ -591,11 +591,7 @@ const Directory = () => {
                   className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
                 >
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                    {'isStripeLogo' in item && item.isStripeLogo ? (
-                      <item.icon className="h-5 text-primary" />
-                    ) : (
-                      <item.icon className="w-6 h-6 text-primary" />
-                    )}
+                    <item.icon className="w-6 h-6 text-primary" />
                   </div>
                   <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
