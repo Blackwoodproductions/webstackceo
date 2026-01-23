@@ -96,13 +96,38 @@ serve(async (req) => {
         const drData = await ahrefsResponse.json();
         console.log("Ahrefs DR response:", JSON.stringify(drData));
 
-        // Now get backlinks metrics
-        const backlinksUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics");
-        backlinksUrl.searchParams.set("target", cleanDomain);
-        backlinksUrl.searchParams.set("date", today);
-        backlinksUrl.searchParams.set("output", "json");
+        // Get backlinks stats from the backlinks-stats endpoint
+        const backlinksStatsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/backlinks-stats");
+        backlinksStatsUrl.searchParams.set("target", cleanDomain);
+        backlinksStatsUrl.searchParams.set("date", today);
+        backlinksStatsUrl.searchParams.set("mode", "subdomains");
+        backlinksStatsUrl.searchParams.set("output", "json");
 
-        const backlinksResponse = await fetch(backlinksUrl.toString(), {
+        console.log(`Calling Ahrefs backlinks-stats API: ${backlinksStatsUrl.toString()}`);
+
+        const backlinksStatsResponse = await fetch(backlinksStatsUrl.toString(), {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${AHREFS_API_KEY}`,
+            "Accept": "application/json",
+          },
+        });
+
+        let backlinksStatsData = null;
+        if (backlinksStatsResponse.ok) {
+          backlinksStatsData = await backlinksStatsResponse.json();
+          console.log("Ahrefs backlinks-stats response:", JSON.stringify(backlinksStatsData));
+        } else {
+          console.error("Ahrefs backlinks-stats error:", await backlinksStatsResponse.text());
+        }
+
+        // Now get organic metrics
+        const metricsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics");
+        metricsUrl.searchParams.set("target", cleanDomain);
+        metricsUrl.searchParams.set("date", today);
+        metricsUrl.searchParams.set("output", "json");
+
+        const metricsResponse = await fetch(metricsUrl.toString(), {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${AHREFS_API_KEY}`,
@@ -111,8 +136,8 @@ serve(async (req) => {
         });
 
         let metricsData = null;
-        if (backlinksResponse.ok) {
-          metricsData = await backlinksResponse.json();
+        if (metricsResponse.ok) {
+          metricsData = await metricsResponse.json();
           console.log("Ahrefs metrics response:", JSON.stringify(metricsData));
         }
 
@@ -121,12 +146,16 @@ serve(async (req) => {
           ? drData.domain_rating.domain_rating 
           : drData.domain_rating;
         
+        // Extract backlinks stats - data is under metrics.live and metrics.live_refdomains
+        const backlinksCount = backlinksStatsData?.metrics?.live || backlinksStatsData?.live || 0;
+        const refDomainsCount = backlinksStatsData?.metrics?.live_refdomains || backlinksStatsData?.live_refdomains || 0;
+        
         result.ahrefs = {
           domainRating: Math.round(drValue || 0),
-          backlinks: metricsData?.metrics?.backlinks || metricsData?.backlinks || 0,
-          referringDomains: metricsData?.metrics?.refdomains || metricsData?.refdomains || 0,
-          organicTraffic: metricsData?.metrics?.org_traffic || metricsData?.organic?.traffic || 0,
-          organicKeywords: metricsData?.metrics?.org_keywords || metricsData?.organic?.keywords || 0,
+          backlinks: backlinksCount,
+          referringDomains: refDomainsCount,
+          organicTraffic: metricsData?.metrics?.org_traffic || 0,
+          organicKeywords: metricsData?.metrics?.org_keywords || 0,
         };
       }
     } catch (ahrefsErr) {
