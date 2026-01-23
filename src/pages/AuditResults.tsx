@@ -1233,50 +1233,78 @@ const AuditResults = () => {
             transition={{ delay: 0.2 }}
             className="mb-8"
           >
-            <h2 className="text-xl font-bold mb-6">SEO Health Scores</h2>
+            <h2 className="text-xl font-bold mb-6">Technical Health Overview</h2>
             <div className="p-6 rounded-2xl bg-card border border-border/50">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {auditResults.map((category, i) => {
-                  const dialColor = category.score >= 80 ? "green" : category.score >= 60 ? "amber" : "primary";
+                  const barColor = category.score >= 80 
+                    ? "bg-gradient-to-r from-green-500 to-emerald-400" 
+                    : category.score >= 60 
+                    ? "bg-gradient-to-r from-amber-500 to-orange-400" 
+                    : "bg-gradient-to-r from-red-500 to-rose-400";
+                  const passedChecks = category.checks.filter((c) => c.status === "pass").length;
+                  const totalChecks = category.checks.length;
+                  
                   return (
                     <motion.div
                       key={category.title}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 + i * 0.05 }}
-                      className={`flex flex-col items-center p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all ${
+                      className={`p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all border border-border/30 ${
                         category.isRealData ? 'ring-1 ring-primary/30' : ''
                       }`}
                       onClick={() => toggleCategory(category.title)}
                     >
-                      <div className="relative">
-                        <ScoreDial
-                          value={category.score}
-                          max={100}
-                          label=""
-                          size="md"
-                          color={dialColor as "primary" | "green" | "amber" | "violet" | "cyan"}
-                        />
-                        {/* Icon overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="mt-8">
-                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)} opacity-50`} />
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
+                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
                           </div>
+                          <span className="text-sm font-medium">{category.title}</span>
+                          {category.isRealData && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
+                              LIVE
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold ${getScoreColor(category.score)}`}>
+                            {category.score}
+                          </span>
+                          {expandedCategories.has(category.title) ? (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 mt-2">
-                        <span className="text-sm font-medium text-center">{category.title}</span>
-                        {category.isRealData && (
-                          <ExternalLink className="w-3 h-3 text-primary" />
-                        )}
+                      
+                      {/* Progress bar */}
+                      <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${category.score}%` }}
+                          transition={{ duration: 0.8, delay: 0.3 + i * 0.05, ease: "easeOut" }}
+                          className={`h-full ${barColor} rounded-full`}
+                        />
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        {expandedCategories.has(category.title) ? (
-                          <ChevronUp className="w-3 h-3 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                        )}
-                        <span className="text-xs text-muted-foreground">Details</span>
+                      
+                      {/* Check summary */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{passedChecks}/{totalChecks} checks passed</span>
+                        <div className="flex items-center gap-1">
+                          {passedChecks === totalChecks ? (
+                            <CheckCircle2 className="w-3 h-3 text-green-500" />
+                          ) : passedChecks >= totalChecks / 2 ? (
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          ) : (
+                            <XCircle className="w-3 h-3 text-red-500" />
+                          )}
+                          <span>
+                            {passedChecks === totalChecks ? 'All clear' : passedChecks >= totalChecks / 2 ? 'Needs attention' : 'Critical'}
+                          </span>
+                        </div>
                       </div>
                     </motion.div>
                   );
