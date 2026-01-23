@@ -1,46 +1,16 @@
 import { motion } from "framer-motion";
 
 const mediaOutlets = [
-  {
-    name: "FOX",
-    logo: "https://logo.clearbit.com/fox.com",
-  },
-  {
-    name: "NBC",
-    logo: "https://logo.clearbit.com/nbc.com",
-  },
-  {
-    name: "CBS",
-    logo: "https://logo.clearbit.com/cbs.com",
-  },
-  {
-    name: "ABC",
-    logo: "https://logo.clearbit.com/abc.com",
-  },
-  {
-    name: "USA Today",
-    logo: "https://logo.clearbit.com/usatoday.com",
-  },
-  {
-    name: "Forbes",
-    logo: "https://logo.clearbit.com/forbes.com",
-  },
-  {
-    name: "Bloomberg",
-    logo: "https://logo.clearbit.com/bloomberg.com",
-  },
-  {
-    name: "Reuters",
-    logo: "https://logo.clearbit.com/reuters.com",
-  },
-  {
-    name: "MarketWatch",
-    logo: "https://logo.clearbit.com/marketwatch.com",
-  },
-  {
-    name: "Business Insider",
-    logo: "https://logo.clearbit.com/businessinsider.com",
-  },
+  { name: "FOX" },
+  { name: "NBC" },
+  { name: "CBS" },
+  { name: "ABC" },
+  { name: "USA TODAY" },
+  { name: "FORBES" },
+  { name: "BLOOMBERG" },
+  { name: "REUTERS" },
+  { name: "MARKETWATCH" },
+  { name: "BUSINESS INSIDER" },
 ];
 
 const AsSeenOnSection = () => {
@@ -67,7 +37,7 @@ const AsSeenOnSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-8 md:gap-12"
+          className="flex flex-wrap items-center justify-center gap-6 md:gap-10"
         >
           {mediaOutlets.map((outlet, index) => (
             <motion.div
@@ -75,15 +45,12 @@ const AsSeenOnSection = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 * index }}
-              className="flex items-center justify-center grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300"
+              transition={{ duration: 0.4, delay: 0.05 * index }}
+              className="flex items-center justify-center opacity-50 hover:opacity-100 transition-all duration-300"
             >
-              <img
-                src={outlet.logo}
-                alt={`${outlet.name} logo`}
-                className="h-10 md:h-12 w-auto object-contain"
-                loading="lazy"
-              />
+              <span className="text-lg md:text-xl font-bold tracking-tight text-foreground whitespace-nowrap">
+                {outlet.name}
+              </span>
             </motion.div>
           ))}
         </motion.div>
