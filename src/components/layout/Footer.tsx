@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Twitter, Linkedin, Github, Send, Shield, FileDown } from "lucide-react";
+import { Linkedin, Github, Send, Shield, FileDown, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -222,19 +222,29 @@ const Footer = memo(() => {
           
           <div className="flex items-center gap-4">
             {[
-              { name: "Twitter", icon: Twitter, href: "#" },
+              { name: "X", icon: () => (
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              ), href: "#" },
               { name: "LinkedIn", icon: Linkedin, href: "https://www.linkedin.com/in/seolocalitcom/" },
+              { name: "Facebook", icon: Facebook, href: "#" },
               { name: "GitHub", icon: Github, href: "#" },
-            ].map((social) => (
-              <a
-                key={social.name}
-                href={social.href}
-                className="w-10 h-10 rounded-full glass-card border border-border flex items-center justify-center text-muted-foreground hover:text-hover-accent hover:border-hover-accent/50 hover:shadow-[var(--hover-accent-glow)] transition-all duration-300"
-                aria-label={social.name}
-              >
-                <social.icon className="w-5 h-5" />
-              </a>
-            ))}
+            ].map((social) => {
+              const IconComponent = social.icon;
+              return (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target={social.href !== "#" ? "_blank" : undefined}
+                  rel={social.href !== "#" ? "noopener noreferrer" : undefined}
+                  className="w-10 h-10 rounded-full glass-card border border-border flex items-center justify-center text-muted-foreground hover:text-hover-accent hover:border-hover-accent/50 hover:shadow-[var(--hover-accent-glow)] transition-all duration-300"
+                  aria-label={social.name}
+                >
+                  <IconComponent className="w-5 h-5" />
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>
