@@ -223,7 +223,7 @@ const Footer = memo(() => {
           <div className="flex items-center gap-4">
             {[
               { name: "Twitter", icon: Twitter, href: "#" },
-              { name: "LinkedIn", icon: Linkedin, href: "#" },
+              { name: "LinkedIn", icon: Linkedin, href: "https://www.linkedin.com/in/seolocalitcom/" },
               { name: "GitHub", icon: Github, href: "#" },
             ].map((social) => (
               <a
