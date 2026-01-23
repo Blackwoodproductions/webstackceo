@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus } from "lucide-react";
+import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
-import StripePaymentIcons, { StripeLogo } from "@/components/ui/stripe-payment-icons";
+import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
@@ -334,7 +334,7 @@ const PricingSection = () => {
         >
           {[
             { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
-            { icon: StripeLogo, title: "Stripe Payments", desc: "Secure payment processing", isStripeLogo: true },
+            { icon: CreditCard, title: "Secure Payments", desc: "Stripe payment processing" },
             { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
             { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
           ].map((item) => (
@@ -343,11 +343,7 @@ const PricingSection = () => {
               className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                {'isStripeLogo' in item && item.isStripeLogo ? (
-                  <item.icon className="h-5 text-primary" />
-                ) : (
-                  <item.icon className="w-6 h-6 text-primary" />
-                )}
+                <item.icon className="w-6 h-6 text-primary" />
               </div>
               <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
