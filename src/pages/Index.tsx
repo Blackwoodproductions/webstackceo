@@ -1,6 +1,5 @@
 import Navbar from "@/components/layout/Navbar";
 import HeroSection from "@/components/sections/HeroSection";
-import LogoCarousel from "@/components/sections/LogoCarousel";
 import StatsSection from "@/components/sections/StatsSection";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
@@ -56,7 +55,6 @@ const Index = () => {
         <FeaturesSection />
         <SectionDivider />
         <PricingSection />
-        <LogoCarousel />
         <SectionDivider />
         <ContactSection />
       </main>
