@@ -61,6 +61,7 @@ import {
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
 import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
+import cadeContentAutomation from "@/assets/cade-content-automation.png";
 
 interface AuditCheck {
   name: string;
@@ -1395,83 +1396,138 @@ const AuditResults = () => {
                       : 'bg-card border-border/50'
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-lg shrink-0 ${
-                      rec.priority === 'high'
-                        ? 'bg-red-500/10'
-                        : rec.priority === 'medium'
-                        ? 'bg-amber-500/10'
-                        : 'bg-primary/10'
-                    }`}>
-                      <rec.icon className={`w-5 h-5 ${
-                        rec.priority === 'high'
-                          ? 'text-red-500'
-                          : rec.priority === 'medium'
-                          ? 'text-amber-500'
-                          : 'text-primary'
-                      }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-semibold">{rec.title}</h3>
-                        {rec.service && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                            rec.service === 'BRON'
-                              ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
-                              : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
+                  {/* Side-by-side layout for BRON and CADE */}
+                  {rec.service ? (
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      {/* Left side - Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className={`p-2 rounded-lg shrink-0 ${
+                            rec.priority === 'high'
+                              ? 'bg-red-500/10'
+                              : rec.priority === 'medium'
+                              ? 'bg-amber-500/10'
+                              : 'bg-primary/10'
                           }`}>
-                            {rec.service}
-                          </span>
-                        )}
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          rec.priority === 'high'
-                            ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                            : rec.priority === 'medium'
-                            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                            : 'bg-primary/20 text-primary'
-                        }`}>
-                          {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {rec.category}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                      
-                      {/* Diamond Flow Image for BRON */}
-                      {rec.service === 'BRON' && (
-                        <div className="mb-4 rounded-xl overflow-hidden border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-                          <img 
-                            src={bronDiamondFlow} 
-                            alt="BRON Diamond Flow Architecture"
-                            className="w-full h-auto max-h-48 object-contain p-2"
-                          />
+                            <rec.icon className={`w-5 h-5 ${
+                              rec.priority === 'high'
+                                ? 'text-red-500'
+                                : rec.priority === 'medium'
+                                ? 'text-amber-500'
+                                : 'text-primary'
+                            }`} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h3 className="font-semibold">{rec.title}</h3>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                rec.service === 'BRON'
+                                  ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
+                                  : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
+                              }`}>
+                                {rec.service}
+                              </span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                                rec.priority === 'high'
+                                  ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                                  : rec.priority === 'medium'
+                                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                                  : 'bg-primary/20 text-primary'
+                              }`}>
+                                {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
+                              </span>
+                            </div>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                              {rec.category}
+                            </span>
+                          </div>
                         </div>
-                      )}
+                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {rec.actions.map((action, j) => (
+                            <span 
+                              key={j}
+                              className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
+                            >
+                              <Check className="w-3 h-3 text-green-500" />
+                              {action}
+                            </span>
+                          ))}
+                          {rec.comingSoon?.map((feature, j) => (
+                            <span 
+                              key={`coming-${j}`}
+                              className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
+                            >
+                              <Clock className="w-3 h-3" />
+                              {feature}
+                              <span className="text-[9px] font-semibold">Coming Soon</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                       
-                      <div className="flex flex-wrap gap-2">
-                        {rec.actions.map((action, j) => (
-                          <span 
-                            key={j}
-                            className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
-                          >
-                            <Check className="w-3 h-3 text-green-500" />
-                            {action}
-                          </span>
-                        ))}
-                        {rec.comingSoon?.map((feature, j) => (
-                          <span 
-                            key={`coming-${j}`}
-                            className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
-                          >
-                            <Clock className="w-3 h-3" />
-                            {feature}
-                            <span className="text-[9px] font-semibold">Coming Soon</span>
-                          </span>
-                        ))}
+                      {/* Right side - Full Image */}
+                      <div className={`lg:w-56 shrink-0 rounded-xl overflow-hidden border ${
+                        rec.service === 'BRON' 
+                          ? 'border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10' 
+                          : 'border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-primary/10'
+                      }`}>
+                        <img 
+                          src={rec.service === 'BRON' ? bronDiamondFlow : cadeContentAutomation} 
+                          alt={rec.service === 'BRON' ? 'BRON Diamond Flow Architecture' : 'CADE Content Automation'}
+                          className="w-full h-full object-contain p-2"
+                        />
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* Standard layout for non-service recommendations */
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2 rounded-lg shrink-0 ${
+                        rec.priority === 'high'
+                          ? 'bg-red-500/10'
+                          : rec.priority === 'medium'
+                          ? 'bg-amber-500/10'
+                          : 'bg-primary/10'
+                      }`}>
+                        <rec.icon className={`w-5 h-5 ${
+                          rec.priority === 'high'
+                            ? 'text-red-500'
+                            : rec.priority === 'medium'
+                            ? 'text-amber-500'
+                            : 'text-primary'
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h3 className="font-semibold">{rec.title}</h3>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            rec.priority === 'high'
+                              ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                              : rec.priority === 'medium'
+                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                              : 'bg-primary/20 text-primary'
+                          }`}>
+                            {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
+                          </span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {rec.category}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {rec.actions.map((action, j) => (
+                            <span 
+                              key={j}
+                              className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
+                            >
+                              <Check className="w-3 h-3 text-green-500" />
+                              {action}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
