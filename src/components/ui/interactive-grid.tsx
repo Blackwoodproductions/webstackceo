@@ -49,12 +49,22 @@ const InteractiveGrid = ({
   // Handle mouse movement
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      // For fixed position grids, use viewport coordinates directly
+      // For absolute position grids, use container-relative coordinates
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        mousePos.current = {
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        };
+        const style = window.getComputedStyle(containerRef.current);
+        if (style.position === 'fixed') {
+          mousePos.current = {
+            x: e.clientX,
+            y: e.clientY,
+          };
+        } else {
+          const rect = containerRef.current.getBoundingClientRect();
+          mousePos.current = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+        }
       }
     };
 
