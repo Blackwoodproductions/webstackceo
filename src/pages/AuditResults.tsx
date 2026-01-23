@@ -727,7 +727,8 @@ const AuditResults = () => {
       category: string;
       icon: React.ElementType;
       actions: string[];
-      service?: string;
+      service?: 'BRON' | 'CADE';
+      comingSoon?: string[];
     }[] = [];
 
     // Find categories by title
@@ -740,78 +741,76 @@ const AuditResults = () => {
     const meta = getCategory('Meta Tags');
     const security = getCategory('Security');
 
-    // Backlink & Domain Authority recommendations - BRON Service
-    if (backlinks) {
-      if (dashboardMetrics && dashboardMetrics.domainRating < 30) {
-        recs.push({
-          title: 'Build Domain Authority & Rating',
-          description: 'Your Domain Rating is low. BRON builds content clusters with inbound links from real, relevant business websites to boost your DR and DA—included with your dashboard subscription.',
-          priority: 'high',
-          category: 'Authority',
-          icon: Link2,
-          actions: ['Content clustering', 'Real business backlinks', 'DR/DA boosting', 'Diamond Flow silos'],
-          service: 'BRON',
-        });
-      } else if (dashboardMetrics && dashboardMetrics.referringDomains < 50) {
-        recs.push({
-          title: 'Expand Your Link Profile',
-          description: 'BRON creates content clusters and builds diversified inbound links from real business websites—not PBNs or spam. Standard with your dashboard subscription.',
-          priority: 'medium',
-          category: 'Backlinks',
-          icon: Globe,
-          actions: ['Content clustering', 'Niche-relevant links', 'Authority flow', 'Real websites only'],
-          service: 'BRON',
-        });
-      }
-    }
-
-    // Always show BRON for DR/DA improvement
-    if (dashboardMetrics && dashboardMetrics.domainRating >= 30 && dashboardMetrics.domainRating < 60) {
+    // BRON (Backlink Ranking Optimization Network) - handles DR, DA, link building, keyword clusters
+    if (dashboardMetrics && (dashboardMetrics.domainRating < 50 || dashboardMetrics.referringDomains < 50)) {
       recs.push({
-        title: 'Scale Domain Authority',
-        description: 'BRON accelerates your Domain Rating growth through strategic content clustering and quality inbound links from real business websites.',
+        title: 'BRON: Boost Domain Rating & Authority',
+        description: 'BRON (Backlink Ranking Optimization Network) delivers real business website deep links into your clustered topical content using our Diamond Flow methodology—all link flow goes up into your site, boosting your whole domain. BRON reverse engineers the top 5 ranked pages to create keyword clusters that Google loves.',
+        priority: 'high',
+        category: 'Authority & Links',
+        icon: Link2,
+        actions: [
+          'Deep links from real business websites',
+          'Diamond Flow link architecture',
+          'Domain Rating & Domain Authority boosting',
+          'Links directed to your money page',
+          'Weekly keyword ranking reports',
+          'Top 5 competitor keyword cluster analysis'
+        ],
+        service: 'BRON',
+      });
+    } else if (dashboardMetrics && dashboardMetrics.domainRating >= 50) {
+      recs.push({
+        title: 'BRON: Scale Your Link Authority',
+        description: 'Continue growing your Domain Rating with BRON\'s Diamond Flow architecture. Real business website links flow into your keyword clusters and money pages. Weekly ranking reports track your keyword positions.',
         priority: 'medium',
-        category: 'Authority',
+        category: 'Authority & Links',
         icon: TrendingUp,
-        actions: ['Content clusters', 'Link velocity', 'DR/DA growth', 'Authority building'],
+        actions: [
+          'Diamond Flow link silos',
+          'Clustered topical content links',
+          'Money page link targeting',
+          'Weekly ranking reports',
+          'Keyword cluster optimization'
+        ],
         service: 'BRON',
       });
     }
 
-    // Topical Authority & Content - CADE Plugin
+    // CADE (Content Automation and Domain Enhancement) - handles content, social signals, GMB, internal linking
     if (dashboardMetrics && (dashboardMetrics.organicTraffic < 500 || dashboardMetrics.organicKeywords < 100)) {
       recs.push({
-        title: 'Build Topical Authority',
-        description: 'CADE creates ongoing content that builds topical authority with smart internal linking and separate URLs for each FAQ question—going the extra mile other agencies skip.',
+        title: 'CADE: Build Topical Authority',
+        description: 'CADE (Content Automation and Domain Enhancement) creates ongoing content with 7 different blog types. Each blog generates 3-5 FAQs dropped throughout the week, then posted to your social media for social signals that build topical authority. CADE reverse engineers your top 5 competitors on autopilot.',
         priority: 'high',
-        category: 'Content',
+        category: 'Content & Signals',
         icon: FileText,
-        actions: ['Topical authority', 'Internal linking', 'Individual FAQ URLs', 'Ongoing content'],
+        actions: [
+          '7 types of automated blog content',
+          '3-5 FAQs per blog with individual URLs',
+          'Social media posting for social signals',
+          'Internal linking to keyword clusters',
+          'Top 5 competitor reverse engineering'
+        ],
         service: 'CADE',
+        comingSoon: ['GMB signals', 'On-page optimization'],
       });
-    }
-
-    // Social & GMB Signals - CADE Plugin
-    recs.push({
-      title: 'Amplify with Social & GMB Signals',
-      description: 'CADE automatically distributes your content across social channels and Google Business Profile, creating the engagement signals that boost visibility. Included with your subscription.',
-      priority: dashboardMetrics && dashboardMetrics.organicTraffic < 300 ? 'high' : 'medium',
-      category: 'Signals',
-      icon: Users,
-      actions: ['Social signals', 'GMB optimization', 'Multi-platform posting', 'Engagement tracking'],
-      service: 'CADE',
-    });
-
-    // Schema recommendations - CADE
-    if (schema && schema.score < 60) {
+    } else {
       recs.push({
-        title: 'Implement Schema Markup',
-        description: 'CADE automatically generates FAQ schema with individual URLs for each question, enabling rich snippets that competitors miss.',
-        priority: schema.score < 40 ? 'high' : 'medium',
-        category: 'Schema',
-        icon: FileCode,
-        actions: ['FAQ URLs', 'Rich snippets', 'Schema automation', 'Structured data'],
+        title: 'CADE: Amplify Content & Signals',
+        description: 'CADE delivers ongoing content with 7 blog types, each generating 3-5 FAQs with individual URLs—going the extra mile other agencies skip. Content is posted to social media for engagement signals and internally linked to your clusters and relevant pages.',
+        priority: 'medium',
+        category: 'Content & Signals',
+        icon: Users,
+        actions: [
+          'Ongoing 7-type blog automation',
+          'Individual FAQ URLs for each question',
+          'Social signal distribution',
+          'Smart internal linking',
+          'Competitor analysis on autopilot'
+        ],
         service: 'CADE',
+        comingSoon: ['GMB signals', 'On-page optimization'],
       });
     }
 
@@ -1359,6 +1358,16 @@ const AuditResults = () => {
                             {action}
                           </span>
                         ))}
+                        {rec.comingSoon?.map((feature, j) => (
+                          <span 
+                            key={`coming-${j}`}
+                            className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
+                          >
+                            <Clock className="w-3 h-3" />
+                            {feature}
+                            <span className="text-[9px] font-semibold">Coming Soon</span>
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1371,7 +1380,10 @@ const AuditResults = () => {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-lg mb-1">BRON + CADE included with every dashboard subscription</h3>
-                  <p className="text-sm text-muted-foreground">Content clustering, real business backlinks, topical authority, social signals, and more—all on autopilot.</p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>BRON</strong> (Backlink Ranking Optimization Network): Diamond Flow links, DR/DA boosting, weekly ranking reports. 
+                    <strong className="ml-2">CADE</strong> (Content Automation and Domain Enhancement): 7 blog types, FAQ URLs, social signals, competitor analysis.
+                  </p>
                 </div>
                 <Button className="shrink-0 gap-2" asChild>
                   <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
