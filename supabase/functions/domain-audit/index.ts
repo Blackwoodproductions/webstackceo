@@ -192,7 +192,8 @@ serve(async (req) => {
               // Estimate keywords as ~proportion of current (not available in history)
               organicKeywords: Math.round((item.org_traffic || 0) * 0.45),
               domainRating: 0, // Will be filled from DR history
-              trafficValue: item.org_cost || 0,
+              // org_cost is returned in cents, convert to dollars
+              trafficValue: Math.round((item.org_cost || 0) / 100),
             }));
           }
         } else {
@@ -267,6 +268,9 @@ serve(async (req) => {
         const refDomainsCount = backlinksStatsData?.metrics?.live_refdomains || backlinksStatsData?.live_refdomains || 0;
         const refDomainsAllTime = backlinksStatsData?.metrics?.all_time_refdomains || backlinksStatsData?.all_time_refdomains || 0;
         
+        // org_cost is returned in cents, convert to dollars
+        const trafficValueDollars = Math.round((metricsData?.metrics?.org_cost || 0) / 100);
+        
         result.ahrefs = {
           domainRating: Math.round(drValue || 0),
           ahrefsRank: ahrefsRankValue || 0,
@@ -276,7 +280,7 @@ serve(async (req) => {
           referringDomainsAllTime: refDomainsAllTime,
           organicTraffic: metricsData?.metrics?.org_traffic || 0,
           organicKeywords: metricsData?.metrics?.org_keywords || 0,
-          trafficValue: metricsData?.metrics?.org_cost || 0,
+          trafficValue: trafficValueDollars,
         };
       }
     } catch (ahrefsErr) {
