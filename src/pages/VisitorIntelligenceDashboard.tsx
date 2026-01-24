@@ -792,15 +792,31 @@ const MarketingDashboard = () => {
                 });
               }
               
-              // Prefer the tracked-domain selection for the header UI so GSC auto-selection
-              // can't visually (or functionally) override the user's domain choice.
-              const currentValue = selectedTrackedDomain || selectedGscSiteUrl;
+              const cleanDomainLabel = (v: string) =>
+                v
+                  .replace('sc-domain:', '')
+                  .replace('https://', '')
+                  .replace('http://', '')
+                  .replace(/\/$/, '');
+
+              // IMPORTANT: Radix Select must receive a `value` that exactly matches one of the
+              // SelectItem values. For domains that are BOTH (GSC + tracking), the SelectItem
+              // value is the GSC siteUrl, while the tracked-domain state is the clean hostname.
+              // If we pass the clean hostname as `value`, Radix can reset/snap to the first item.
+              const selectedByTrackedLabel = selectedTrackedDomain
+                ? allDomains.find((d) => d.label === selectedTrackedDomain)
+                : undefined;
+
+              const selectValue =
+                selectedByTrackedLabel?.value || selectedGscSiteUrl || selectedTrackedDomain || '';
+
+              const displayLabel = selectValue ? cleanDomainLabel(selectValue) : '';
               
               if (allDomains.length > 0) {
                 return (
                   <>
                     <Select 
-                      value={currentValue} 
+                      value={selectValue} 
                       onValueChange={(value) => {
                         const selected = allDomains.find(d => d.value === value);
                         if (selected) {
@@ -826,9 +842,8 @@ const MarketingDashboard = () => {
                       <SelectTrigger className="w-[200px] h-7 text-sm bg-background border-border">
                         <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-cyan-500" />
                         <span className="truncate max-w-[150px]">
-                          {currentValue ? (currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '').length > 20 
-                            ? currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '').slice(0, 20) + '...'
-                            : currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, ''))
+                          {displayLabel
+                            ? (displayLabel.length > 20 ? `${displayLabel.slice(0, 20)}...` : displayLabel)
                             : 'Select domain'}
                         </span>
                       </SelectTrigger>
