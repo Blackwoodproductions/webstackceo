@@ -1291,49 +1291,27 @@ const AuditResults = () => {
                           </span>
                         )}
                       </p>
-                      
-                      {/* Link Active Notification */}
-                      <AnimatePresence>
-                        {showLinkActiveNotification && isClaimed && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                            className="mt-3 flex items-center gap-2"
-                          >
-                            <motion.div
-                              animate={{ x: [0, 8, 0] }}
-                              transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                              className="text-green-500"
-                            >
-                              <ArrowRight className="w-5 h-5 rotate-[225deg]" />
-                            </motion.div>
-                            <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
-                              <p className="text-sm font-medium text-green-400 flex items-center gap-2">
-                                <Link2 className="w-4 h-4" />
-                                {justClaimed 
-                                  ? "Your do-follow link is now active! Click the domain above to visit."
-                                  : "This website owner claimed their free do-follow link!"
-                                }
-                              </p>
-                            </div>
-                            <button 
-                              onClick={() => setShowLinkActiveNotification(false)}
-                              className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
                   </div>
 
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {/* Claimed Badge */}
+                  {isClaimed && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="px-3 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 flex items-center gap-2"
+                    >
+                      <Link2 className="w-4 h-4 text-green-400" />
+                      <span className="text-sm font-medium text-green-400">
+                        {justClaimed ? "Link Active!" : "Owner Claimed"}
+                      </span>
+                    </motion.div>
+                  )}
+                  
                   <Button 
                     variant="outline" 
                     className="gap-2 min-w-[180px] justify-center" 
