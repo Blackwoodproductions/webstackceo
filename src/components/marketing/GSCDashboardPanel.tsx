@@ -1084,113 +1084,147 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           )}
 
           {activeDropdown === 'countries' && (
-            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Globe className="w-4 h-4 text-violet-500" />
                   Top Countries
                 </h4>
                 <Badge variant="secondary" className="text-[10px]">{countryData.length} total</Badge>
               </div>
-              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
                 {countryData.slice(0, 25).map((row, i) => {
                   const countryCode = row.keys[0].toLowerCase();
                   const totalClicks = countryData.reduce((sum, c) => sum + c.clicks, 0);
                   const percentage = totalClicks > 0 ? (row.clicks / totalClicks) * 100 : 0;
                   const isTopCountry = i < 3;
-                  
-                  // Country flag emojis
-                  const getCountryFlag = (code: string) => {
-                    const flags: Record<string, string> = {
-                      usa: '🇺🇸', gbr: '🇬🇧', can: '🇨🇦', aus: '🇦🇺', deu: '🇩🇪',
-                      fra: '🇫🇷', esp: '🇪🇸', ita: '🇮🇹', nld: '🇳🇱', bra: '🇧🇷',
-                      mex: '🇲🇽', ind: '🇮🇳', jpn: '🇯🇵', kor: '🇰🇷', chn: '🇨🇳',
-                      rus: '🇷🇺', pol: '🇵🇱', swe: '🇸🇪', nor: '🇳🇴', dnk: '🇩🇰',
-                      fin: '🇫🇮', che: '🇨🇭', aut: '🇦🇹', bel: '🇧🇪', prt: '🇵🇹',
-                      irl: '🇮🇪', nzl: '🇳🇿', sgp: '🇸🇬', hkg: '🇭🇰', phl: '🇵🇭',
-                      idn: '🇮🇩', tha: '🇹🇭', mys: '🇲🇾', vnm: '🇻🇳', are: '🇦🇪',
-                      sau: '🇸🇦', zaf: '🇿🇦', egy: '🇪🇬', arg: '🇦🇷', col: '🇨🇴',
-                      chl: '🇨🇱', per: '🇵🇪', ukr: '🇺🇦', tur: '🇹🇷', isr: '🇮🇱',
-                      pak: '🇵🇰', bgd: '🇧🇩', nga: '🇳🇬', ken: '🇰🇪', gha: '🇬🇭',
-                    };
-                    return flags[code] || '🌍';
-                  };
+                  const nodeSize = isTopCountry ? 28 : 22;
+                  const nodeColor = isTopCountry ? '#8b5cf6' : '#6b7280';
                   
                   const getCountryName = (code: string) => {
                     const names: Record<string, string> = {
-                      usa: 'United States', gbr: 'United Kingdom', can: 'Canada', aus: 'Australia', deu: 'Germany',
+                      usa: 'USA', gbr: 'UK', can: 'Canada', aus: 'Australia', deu: 'Germany',
                       fra: 'France', esp: 'Spain', ita: 'Italy', nld: 'Netherlands', bra: 'Brazil',
-                      mex: 'Mexico', ind: 'India', jpn: 'Japan', kor: 'South Korea', chn: 'China',
+                      mex: 'Mexico', ind: 'India', jpn: 'Japan', kor: 'S. Korea', chn: 'China',
                       rus: 'Russia', pol: 'Poland', swe: 'Sweden', nor: 'Norway', dnk: 'Denmark',
                       fin: 'Finland', che: 'Switzerland', aut: 'Austria', bel: 'Belgium', prt: 'Portugal',
                       irl: 'Ireland', nzl: 'New Zealand', sgp: 'Singapore', hkg: 'Hong Kong', phl: 'Philippines',
+                      idn: 'Indonesia', tha: 'Thailand', mys: 'Malaysia', vnm: 'Vietnam', are: 'UAE',
+                      sau: 'Saudi Arabia', zaf: 'S. Africa', egy: 'Egypt', arg: 'Argentina', col: 'Colombia',
                     };
                     return names[code] || code.toUpperCase();
+                  };
+                  
+                  // Simplified country map SVG paths (silhouettes)
+                  const getCountryMapPath = (code: string) => {
+                    const maps: Record<string, string> = {
+                      usa: 'M2 8h3l1-2h2l1 1h3l1-1h2l1 2h2l-1 3-2 1-1 2h-2l-1-1-2 1-3-1-2 2-2-1v-3l-1-1z',
+                      gbr: 'M6 2l2 1v2l-1 2 1 2v2l-1 2-2-1-1 1-1-2 1-2-1-2v-2l2-2z',
+                      can: 'M1 6h2l1-2h2l1 1 2-1h3l1 2h2l1 1-1 2-2 1h-2l-1 1h-3l-2-1-1 1-2-1v-2z',
+                      aus: 'M3 4l3-1 4 1 2 2v3l-1 3-3 1-4-1-2-3 1-3z',
+                      deu: 'M5 2l3 1 1 2v3l-1 2-2 1-2-1-1-2v-3l2-3z',
+                      fra: 'M4 2l4 1 1 3-1 3-2 2-3-1-1-3 1-3z',
+                      esp: 'M3 4l5-1 2 2v3l-2 2-4 1-2-2v-3z',
+                      ita: 'M5 1l2 1 1 3-1 4-2 3-1-2 1-4v-3z',
+                      bra: 'M4 2l4 1 3 3v4l-2 3-4 1-3-2-1-4 1-4z',
+                      ind: 'M4 1l4 2 2 4-1 4-3 2-3-1-1-4 1-5z',
+                      jpn: 'M5 2c2 0 3 1 3 3s-1 4-2 5l-2-1c-1-2 0-5 1-7z',
+                      chn: 'M2 3l5-1 4 2 1 4-2 4-4 1-3-2-1-4z',
+                      mex: 'M2 4l3-2 4 1 2 3-1 4-3 2-4-1-1-4z',
+                      kor: 'M5 2l2 1 1 3-1 3-2 1-2-1v-4l2-3z',
+                      rus: 'M1 5l4-2h6l3 2v3l-2 2h-4l-3 1-3-1-1-3z',
+                      nld: 'M5 3l2 1v4l-2 2-2-1v-4z',
+                      pol: 'M4 3l4 1 1 3-2 2-3 1-2-2v-3z',
+                      swe: 'M5 1l2 2v5l-1 3-2-1-1-4v-4z',
+                      che: 'M4 4l4 1v3l-2 2-3-1v-3z',
+                      aut: 'M3 5l5-1 2 2-1 2-4 1-2-2z',
+                      bel: 'M4 4l3 1v3l-2 1-2-1v-2z',
+                      prt: 'M5 3l2 1v5l-2 2-1-3v-4z',
+                      irl: 'M4 3l3 1 1 3-2 2-3-1v-3z',
+                      nzl: 'M4 3l3 2v3l-2 2-2-1v-4z',
+                      arg: 'M5 1l2 2v6l-1 3-2-1v-7z',
+                      col: 'M4 3l3 1 1 3-2 3-3-1v-4z',
+                    };
+                    return maps[code] || 'M4 4a4 4 0 1 0 8 0a4 4 0 1 0-8 0'; // Circle fallback
                   };
                   
                   return (
                     <div 
                       key={i} 
-                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
-                        isTopCountry 
-                          ? 'bg-violet-500/10 border-violet-500/30 hover:border-violet-500/50' 
-                          : 'bg-secondary/30 border-border hover:border-violet-500/30'
-                      }`}
+                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
+                      style={{ width: '85px' }}
                     >
-                      {/* Rank badge */}
-                      <div className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        isTopCountry ? 'bg-violet-500 text-white' : 'bg-secondary text-muted-foreground'
-                      }`}>
-                        {i + 1}
-                      </div>
-                      
-                      {/* Percentage badge */}
-                      <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-secondary text-[9px] font-medium">
-                        {percentage.toFixed(0)}%
-                      </div>
-                      
-                      {/* Country flag */}
-                      <div className={`w-12 h-10 rounded-lg flex items-center justify-center mb-2 text-2xl ${
-                        isTopCountry ? 'bg-violet-500/20' : 'bg-secondary'
-                      }`}>
-                        {getCountryFlag(countryCode)}
+                      {/* Circular node with country map silhouette */}
+                      <div className="relative mb-2">
+                        {/* Glow ring for top countries */}
+                        {isTopCountry && (
+                          <div 
+                            className="absolute inset-0 rounded-full animate-pulse"
+                            style={{
+                              width: nodeSize * 2 + 12,
+                              height: nodeSize * 2 + 12,
+                              left: '50%',
+                              top: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              background: `radial-gradient(circle, ${nodeColor}25 0%, transparent 70%)`,
+                            }}
+                          />
+                        )}
+                        
+                        {/* Main circle with country map inside */}
+                        <div 
+                          className="rounded-full flex items-center justify-center relative overflow-hidden"
+                          style={{
+                            width: nodeSize * 2,
+                            height: nodeSize * 2,
+                            background: 'hsl(var(--background))',
+                            border: `${isTopCountry ? 3 : 2}px solid ${nodeColor}`,
+                            boxShadow: isTopCountry ? `0 0 12px ${nodeColor}40` : 'none',
+                          }}
+                        >
+                          {/* Country map silhouette */}
+                          <svg 
+                            viewBox="0 0 16 16" 
+                            className="w-full h-full p-1.5"
+                            style={{ fill: nodeColor }}
+                          >
+                            <path d={getCountryMapPath(countryCode)} />
+                          </svg>
+                          
+                          {/* Rank badge - top left */}
+                          <div 
+                            className="absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                            style={{ background: nodeColor }}
+                          >
+                            {i + 1}
+                          </div>
+                          
+                          {/* Percentage badge - bottom right */}
+                          <div 
+                            className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                            style={{ background: '#06b6d4' }}
+                          >
+                            {percentage.toFixed(0)}%
+                          </div>
+                        </div>
                       </div>
                       
                       {/* Country name */}
-                      <p className="text-xs font-medium truncate mb-2" title={getCountryName(countryCode)}>
+                      <p className="text-[10px] font-medium text-center truncate w-full" title={getCountryName(countryCode)}>
                         {getCountryName(countryCode)}
                       </p>
                       
-                      {/* Stats */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Clicks</span>
-                          <span className="text-xs font-bold text-violet-500">{row.clicks}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Impr</span>
-                          <span className="text-[10px]">{row.impressions}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">CTR</span>
-                          <span className={`text-[10px] font-medium ${row.ctr > 0.05 ? 'text-green-500' : 'text-muted-foreground'}`}>
-                            {(row.ctr * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                        {/* Position indicator */}
-                        <div className="flex items-center gap-1 pt-1 border-t border-border/50">
-                          <TrendingUp className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Pos:</span>
-                          <Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[9px] px-1 py-0">
-                            {row.position.toFixed(1)}
-                          </Badge>
-                        </div>
+                      {/* Mini stats row */}
+                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
+                        <span className="font-medium text-violet-500">{row.clicks}</span>
+                        <span className="text-[6px]">•</span>
+                        <span>{row.impressions > 999 ? `${(row.impressions / 1000).toFixed(1)}k` : row.impressions}</span>
                       </div>
                     </div>
                   );
                 })}
                 {countryData.length === 0 && (
-                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                  <div className="w-full text-center text-muted-foreground text-xs py-8">
                     {isFetching ? "Loading..." : "No country data found"}
                   </div>
                 )}
