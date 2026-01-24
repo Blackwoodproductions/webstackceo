@@ -2,7 +2,14 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GitBranch, Zap, Users } from 'lucide-react';
+import { GitBranch, Zap, Users, Calendar } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PageNode {
   path: string;
@@ -21,6 +28,31 @@ interface LiveVisitor {
   previousPath: string | null;
   timestamp: number;
 }
+
+type TimeRange = '30days' | 'lastMonth' | '6months' | '1year' | 'all';
+
+const getTimeRangeFilter = (range: TimeRange): Date | null => {
+  const now = new Date();
+  switch (range) {
+    case '30days':
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return thirtyDaysAgo;
+    case 'lastMonth':
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return lastMonth;
+    case '6months':
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      return sixMonthsAgo;
+    case '1year':
+      const oneYearAgo = new Date(now);
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      return oneYearAgo;
+    case 'all':
+      return null;
+  }
+};
 
 // Complete site structure based on the project's actual routing
 const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }[] = [
@@ -129,29 +161,10 @@ interface VisitorFlowDiagramProps {
 const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState<TimeRange>('30days');
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
 
-  // Calculate stats for today, month, and all time
-  const stats = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const todayViews = pageViews.filter(pv => new Date(pv.created_at) >= startOfToday);
-    const monthViews = pageViews.filter(pv => new Date(pv.created_at) >= startOfMonth);
-    
-    // Count unique sessions
-    const todaySessions = new Set(todayViews.map(pv => pv.session_id)).size;
-    const monthSessions = new Set(monthViews.map(pv => pv.session_id)).size;
-    const allSessions = new Set(pageViews.map(pv => pv.session_id)).size;
-    
-    return {
-      today: { views: todayViews.length, sessions: todaySessions },
-      month: { views: monthViews.length, sessions: monthSessions },
-      all: { views: pageViews.length, sessions: allSessions }
-    };
-  }, [pageViews]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -250,8 +263,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   }, []);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
-    // Always use all data for node positioning - stats shown separately
-    const filteredViews = pageViews;
+    const filterDate = getTimeRangeFilter(timeRange);
+    const filteredViews = filterDate 
+      ? pageViews.filter(pv => new Date(pv.created_at) >= filterDate)
+      : pageViews;
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
@@ -374,15 +389,14 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       pathHeatmap: pathTransitions,
       maxPathVisits: maxPV
     };
-  }, [pageViews]);
+  }, [pageViews, timeRange]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
-    if (!isVisited) return '#6b7280';
-    if (intensity > 0.7) return '#ef4444';
-    if (intensity > 0.5) return '#f97316';
-    if (intensity > 0.3) return '#eab308';
-    if (intensity > 0.1) return '#84cc16';
-    return '#22c55e';
+    if (!isVisited) return '#6b7280'; // gray for unvisited
+    if (intensity > 0.7) return '#3b82f6'; // blue for high
+    if (intensity > 0.4) return '#22c55e'; // green for medium
+    if (intensity > 0.1) return '#eab308'; // yellow for low
+    return '#eab308'; // yellow default for visited
   }, []);
 
   if (loading) {
@@ -622,7 +636,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             <GitBranch className="w-5 h-5 text-violet-500" />
           </div>
           <div>
-            <h3 className="font-bold text-foreground">Live Site Traffic</h3>
+            <h3 className="font-bold text-foreground">Site Traffic Flow</h3>
             <p className="text-xs text-muted-foreground">
               {visitedCount} of {totalCount} pages visited
             </p>
@@ -636,26 +650,43 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           )}
         </div>
         
-        {/* Stats: Today | Month | All Time */}
-        <div className="flex items-center gap-6">
-          <div className="text-center">
-            <div className="text-lg font-bold text-foreground">{stats.today.sessions}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Today</div>
+        <div className="flex items-center gap-4">
+          {/* Time Range Selector */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue placeholder="Select range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30days">Last 30 Days</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+                <SelectItem value="6months">Last 6 Months</SelectItem>
+                <SelectItem value="1year">Last Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="w-px h-8 bg-border" />
-          <div className="text-center">
-            <div className="text-lg font-bold text-foreground">{stats.month.sessions}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">This Month</div>
-          </div>
-          <div className="w-px h-8 bg-border" />
-          <div className="text-center">
-            <div className="text-lg font-bold text-foreground">{stats.all.sessions}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">All Time</div>
-          </div>
-          
-          {/* Simplified legend */}
-          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground ml-4 pl-4 border-l border-border">
+
+          {/* Legend */}
+          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground pl-4 border-l border-border">
             <span className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-gray-500 opacity-40" />
+              Unvisited
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-5 h-1 rounded bg-yellow-500" />
+              Low
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-5 h-1 rounded bg-green-500" />
+              Medium
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-5 h-1 rounded bg-blue-500" />
+              High
+            </span>
+            <span className="flex items-center gap-1 ml-2">
               <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
               Live
             </span>
