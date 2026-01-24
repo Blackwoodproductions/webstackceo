@@ -197,6 +197,10 @@ export interface VisitorFlowSummary {
   totalVisits: number;
   activeVisitors: number;
   timeRange: TimeRange;
+  uniqueSessions: number;
+  avgPagesPerSession: number;
+  externalReferrals: number;
+  topEntryPage: string | null;
 }
 
 interface VisitorFlowDiagramProps {
@@ -760,14 +764,29 @@ const VisitorFlowDiagram = ({
       
       const totalVisits = nodes.reduce((sum, n) => sum + n.visits, 0);
       
+      // Calculate unique sessions from pageViews
+      const uniqueSessionIds = new Set(pageViews.map(pv => pv.session_id));
+      const uniqueSessions = uniqueSessionIds.size;
+      const avgPagesPerSession = uniqueSessions > 0 ? Math.round((totalVisits / uniqueSessions) * 10) / 10 : 0;
+      
+      // Count external referrals
+      const externalReferrals = externalReferrerSessions.length;
+      
+      // Find top entry page
+      const topEntryPage = topPages.length > 0 ? topPages[0].path : null;
+      
       onSummaryUpdate({
         topPages,
         totalVisits,
         activeVisitors: liveVisitors.length,
         timeRange,
+        uniqueSessions,
+        avgPagesPerSession,
+        externalReferrals,
+        topEntryPage,
       });
     }
-  }, [nodes, liveVisitors, visitorsByNodeForSummary, externalCountsByPage, externalReferrerPages, timeRange, onSummaryUpdate]);
+  }, [nodes, liveVisitors, visitorsByNodeForSummary, externalCountsByPage, externalReferrerPages, externalReferrerSessions, pageViews, timeRange, onSummaryUpdate]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited

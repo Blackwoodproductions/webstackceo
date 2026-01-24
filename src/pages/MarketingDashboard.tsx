@@ -610,18 +610,29 @@ const MarketingDashboard = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             {flowSummary && (
-              <div className="flex items-center gap-2">
+              <>
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                  {flowSummary.totalVisits} visits
+                  <Eye className="w-3 h-3 mr-1" />{flowSummary.totalVisits} views
                 </Badge>
+                <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
+                  <Users className="w-3 h-3 mr-1" />{flowSummary.uniqueSessions} sessions
+                </Badge>
+                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                  <MousePointer className="w-3 h-3 mr-1" />{flowSummary.avgPagesPerSession} pg/session
+                </Badge>
+                {flowSummary.externalReferrals > 0 && (
+                  <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
+                    <TrendingUp className="w-3 h-3 mr-1" />{flowSummary.externalReferrals} referrals
+                  </Badge>
+                )}
                 {flowSummary.activeVisitors > 0 && (
                   <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
                     <Activity className="w-3 h-3 mr-1" />{flowSummary.activeVisitors} live
                   </Badge>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
