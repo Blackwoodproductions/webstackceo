@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
+import { generateAPIDocs } from '@/lib/generateAPIDocs';
 
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
@@ -820,8 +821,20 @@ const MarketingDashboard = () => {
             )}
           </div>
           
-          {/* Right: Chat Controls */}
+          {/* Right: API Docs & Chat Controls */}
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* API Docs Download */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateAPIDocs()}
+              className="h-7 gap-1.5 text-xs"
+              title="Download API Documentation PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">API Docs</span>
+            </Button>
+            
             <div className="flex items-center gap-2">
               <Switch
                 id="chat-online"

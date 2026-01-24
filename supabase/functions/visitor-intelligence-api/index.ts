@@ -963,6 +963,99 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'docs': {
+        // Return API documentation as JSON (for programmatic access)
+        responseData = {
+          documentation: {
+            title: 'Visitor Intelligence API Documentation',
+            version: '1.0.0',
+            baseUrl: 'https://qwnzenimkwtuaqnrcygb.supabase.co/functions/v1/visitor-intelligence-api',
+            authentication: {
+              type: 'API Key',
+              headers: ['x-api-key: YOUR_API_KEY', 'Authorization: Bearer YOUR_API_KEY'],
+            },
+            commonParameters: {
+              action: { required: true, description: 'API action to perform' },
+              days: { default: 7, max: 365, description: 'Number of days to query' },
+              limit: { default: 100, max: 1000, description: 'Results per page' },
+              page: { default: 1, description: 'Page number for pagination' },
+            },
+            endpoints: {
+              visitorIntelligence: [
+                { action: 'summary', method: 'GET', description: 'Get comprehensive dashboard summary with metrics, funnel stats, and referrer breakdown', params: ['days'] },
+                { action: 'sessions', method: 'GET', description: 'List all visitor sessions with pagination', params: ['days', 'limit', 'page'] },
+                { action: 'active-sessions', method: 'GET', description: 'Get currently active visitors (last 5 minutes)', params: ['limit', 'page'] },
+                { action: 'page-views', method: 'GET', description: 'List all page views with timestamps and engagement data', params: ['days', 'limit', 'page'] },
+                { action: 'page-stats', method: 'GET', description: 'Aggregated statistics per page', params: ['days', 'limit'] },
+                { action: 'tool-interactions', method: 'GET', description: 'List all tool/widget interactions', params: ['days', 'limit', 'page'] },
+                { action: 'tool-stats', method: 'GET', description: 'Aggregated tool usage statistics', params: ['days', 'limit'] },
+                { action: 'leads', method: 'GET', description: 'List all leads with optional status filtering', params: ['days', 'limit', 'page', 'status'] },
+                { action: 'lead-funnel', method: 'GET', description: 'Get lead funnel breakdown by stage', params: ['days'] },
+                { action: 'daily-stats', method: 'GET', description: 'Daily breakdown of sessions, page views, and leads', params: ['days'] },
+                { action: 'session-detail', method: 'GET', description: 'Get full session journey with all interactions', params: ['session_id'] },
+              ],
+              domainAudit: [
+                { action: 'audit-domain', method: 'GET', description: 'Perform live SEO audit using Ahrefs API', params: ['domain'] },
+                { action: 'audit-full', method: 'GET', description: 'Perform full audit: fetch live data and save to database', params: ['domain', 'email'] },
+                { action: 'audit-list', method: 'GET', description: 'List all saved audits with pagination', params: ['category', 'search', 'limit', 'page'] },
+                { action: 'audit-get', method: 'GET', description: 'Get a specific saved audit', params: ['domain', 'slug'] },
+                { action: 'audit-save', method: 'POST', description: 'Save or update an audit record', params: ['JSON body'] },
+                { action: 'audit-stats', method: 'GET', description: 'Get aggregate statistics across all audits', params: [] },
+                { action: 'audit-categories', method: 'GET', description: 'List all audit categories with counts', params: [] },
+              ],
+              documentation: [
+                { action: 'docs', method: 'GET', description: 'Get this API documentation as JSON', params: [] },
+              ],
+            },
+            dataModels: {
+              VisitorSession: {
+                id: 'string - Unique session UUID',
+                session_id: 'string - Client-generated session identifier',
+                first_page: 'string - Entry page path',
+                referrer: 'string - Traffic source URL',
+                started_at: 'timestamp - Session start time',
+                last_activity_at: 'timestamp - Last activity time',
+                user_agent: 'string - Browser user agent',
+              },
+              Lead: {
+                id: 'string - Unique lead UUID',
+                email: 'string - Lead email address',
+                phone: 'string - Phone number',
+                full_name: 'string - Contact name',
+                domain: 'string - Website domain',
+                funnel_stage: 'string - Current pipeline stage',
+                status: 'string - open or closed',
+                closed_amount: 'number - Revenue if closed',
+              },
+              AhrefsMetrics: {
+                domainRating: 'number - Domain Rating (0-100)',
+                ahrefsRank: 'number - Global Ahrefs rank',
+                backlinks: 'number - Live backlink count',
+                referringDomains: 'number - Unique referring domains',
+                organicTraffic: 'number - Monthly organic traffic',
+                organicKeywords: 'number - Ranking keywords count',
+                trafficValue: 'number - Traffic value in USD',
+              },
+            },
+            examples: {
+              php: `<?php
+$apiKey = "YOUR_API_KEY";
+$baseUrl = "https://qwnzenimkwtuaqnrcygb.supabase.co/functions/v1/visitor-intelligence-api";
+$ch = curl_init($baseUrl . "?action=summary&days=7");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["x-api-key: " . $apiKey]);
+$response = json_decode(curl_exec($ch), true);`,
+              javascript: `const response = await fetch(
+  "https://qwnzenimkwtuaqnrcygb.supabase.co/functions/v1/visitor-intelligence-api?action=summary&days=7",
+  { headers: { "x-api-key": "YOUR_API_KEY" } }
+);
+const data = await response.json();`,
+            },
+          }
+        };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ 
@@ -972,7 +1065,9 @@ Deno.serve(async (req) => {
               'summary', 'sessions', 'active-sessions', 'page-views', 'page-stats',
               'tool-interactions', 'tool-stats', 'leads', 'lead-funnel', 'daily-stats', 'session-detail',
               // Domain Audit
-              'audit-domain', 'audit-list', 'audit-get', 'audit-save', 'audit-full', 'audit-stats', 'audit-categories'
+              'audit-domain', 'audit-list', 'audit-get', 'audit-save', 'audit-full', 'audit-stats', 'audit-categories',
+              // Documentation
+              'docs'
             ]
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
