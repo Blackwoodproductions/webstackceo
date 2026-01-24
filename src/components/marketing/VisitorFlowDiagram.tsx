@@ -27,13 +27,16 @@ interface LiveVisitor {
   timestamp: number;
 }
 
+type ReferrerType = 'google' | 'direct' | 'social' | 'bing' | 'email' | 'referral';
+
 interface DemoVisit {
   id: string;
   path: string;
   previousPath: string | null;
   timestamp: number;
   opacity: number;
-  isEntryPoint: boolean; // True if this is the first page in a session (not home)
+  isEntryPoint: boolean;
+  referrer?: ReferrerType;
 }
 
 type TimeRange = 'today' | 'week' | 'month' | 'all';
@@ -187,6 +190,22 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       // Entry point = new external visitor landing on non-home page
       const isEntryPoint = isNewExternalVisitor && randomPath !== '/';
       
+      // Random referrer for external visitors
+      const referrerTypes: ReferrerType[] = ['google', 'direct', 'social', 'bing', 'email', 'referral'];
+      const referrerWeights = [0.4, 0.25, 0.15, 0.08, 0.07, 0.05]; // Google most common
+      let referrer: ReferrerType | undefined;
+      if (isNewExternalVisitor) {
+        const rand = Math.random();
+        let cumulative = 0;
+        for (let i = 0; i < referrerTypes.length; i++) {
+          cumulative += referrerWeights[i];
+          if (rand < cumulative) {
+            referrer = referrerTypes[i];
+            break;
+          }
+        }
+      }
+      
       // Add demo visit
       setDemoVisits(prev => [...prev, {
         id: visitId,
@@ -194,7 +213,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         previousPath: previousPath !== randomPath ? previousPath : null,
         timestamp: Date.now(),
         opacity: 1,
-        isEntryPoint: isEntryPoint
+        isEntryPoint: isEntryPoint,
+        referrer: referrer
       }]);
 
       // Add demo path ONLY for internal navigation (not external entry)
@@ -1188,24 +1208,60 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                             />
                           </line>
                         ))}
-                        {/* Entry badge */}
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y - nodeSize - 12}
-                          r={6}
-                          fill="#f97316"
-                          opacity={demoVisit?.opacity || 1}
-                        />
-                        <text
-                          x={pos.x}
-                          y={pos.y - nodeSize - 8}
-                          textAnchor="middle"
-                          fill="white"
-                          style={{ fontSize: '7px', fontWeight: 'bold' }}
-                          opacity={demoVisit?.opacity || 1}
-                        >
-                          ⚡
-                        </text>
+                        {/* Referrer badge */}
+                        {(() => {
+                          const referrer = demoVisit?.referrer;
+                          const getReferrerConfig = (ref: ReferrerType | undefined) => {
+                            switch (ref) {
+                              case 'google': return { label: 'Google', color: '#4285f4', icon: 'G' };
+                              case 'bing': return { label: 'Bing', color: '#00809d', icon: 'B' };
+                              case 'social': return { label: 'Social', color: '#e1306c', icon: '◎' };
+                              case 'email': return { label: 'Email', color: '#ea4335', icon: '✉' };
+                              case 'referral': return { label: 'Referral', color: '#34a853', icon: '↗' };
+                              case 'direct': 
+                              default: return { label: 'Direct', color: '#6b7280', icon: '⚡' };
+                            }
+                          };
+                          const config = getReferrerConfig(referrer);
+                          const badgeWidth = config.label.length * 5 + 16;
+                          
+                          return (
+                            <>
+                              {/* Badge background */}
+                              <rect
+                                x={pos.x - badgeWidth / 2}
+                                y={pos.y - nodeSize - 24}
+                                width={badgeWidth}
+                                height={14}
+                                rx={7}
+                                fill={config.color}
+                                opacity={demoVisit?.opacity || 1}
+                              />
+                              {/* Badge icon */}
+                              <text
+                                x={pos.x - badgeWidth / 2 + 8}
+                                y={pos.y - nodeSize - 14}
+                                textAnchor="middle"
+                                fill="white"
+                                style={{ fontSize: '8px', fontWeight: 'bold' }}
+                                opacity={demoVisit?.opacity || 1}
+                              >
+                                {config.icon}
+                              </text>
+                              {/* Badge text */}
+                              <text
+                                x={pos.x + 4}
+                                y={pos.y - nodeSize - 14}
+                                textAnchor="middle"
+                                fill="white"
+                                style={{ fontSize: '8px', fontWeight: '600' }}
+                                opacity={demoVisit?.opacity || 1}
+                              >
+                                {config.label}
+                              </text>
+                            </>
+                          );
+                        })()}
                       </>
                     ) : (
                       /* Normal purple demo ring */
