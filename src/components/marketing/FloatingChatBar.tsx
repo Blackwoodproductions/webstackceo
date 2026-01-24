@@ -219,6 +219,19 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
 
   return (
     <div className="fixed bottom-0 right-0 z-50 flex items-end gap-2 p-4">
+      {/* Always show status indicator when online */}
+      {openChats.length === 0 && pendingCount === 0 && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border shadow-lg"
+        >
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-sm text-muted-foreground">Chat ready</span>
+          <MessageCircle className="w-4 h-4 text-muted-foreground" />
+        </motion.div>
+      )}
+
       {/* Pending chats indicator */}
       {pendingCount > 0 && (
         <motion.div
