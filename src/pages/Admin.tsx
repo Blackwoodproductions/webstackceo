@@ -16,6 +16,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import AdminApplicationsTab from "@/components/admin/AdminApplicationsTab";
 import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
+import InteractiveGrid from "@/components/ui/interactive-grid";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -151,8 +152,8 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background grid pattern */}
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none z-0" />
+      {/* Full-page interactive grid background */}
+      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
