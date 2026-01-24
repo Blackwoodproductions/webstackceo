@@ -320,8 +320,10 @@ const MarketingDashboard = () => {
   }, [selectedDomainKey, selectedTrackedDomain, selectedGscSiteUrl, selectedGscDomain]);
 
   const isGscSiteSelected = !!selectedGscSiteUrl;
-  const shouldShowInstallPrompt = gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking;
-  const shouldShowViPanels = !isGscSiteSelected || gscDomainHasTracking;
+  // Check if selected domain is a user-added domain (no tracking installed yet)
+  const isUserAddedDomainWithoutTracking = userAddedDomains.includes(selectedDomainLabel) && !trackedDomains.includes(selectedDomainLabel);
+  const shouldShowInstallPrompt = isUserAddedDomainWithoutTracking || (gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking);
+  const shouldShowViPanels = !isUserAddedDomainWithoutTracking && (!isGscSiteSelected || gscDomainHasTracking);
 
   // Enforce a single source of truth between the top domain selector and the GSC panel.
   // If a tracked domain is selected and it doesn't exist in GSC, the GSC site MUST be cleared.
