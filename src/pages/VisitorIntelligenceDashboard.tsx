@@ -170,6 +170,17 @@ const MarketingDashboard = () => {
   // Tracked domains from visitor intelligence (domains with tracking code installed)
   const [trackedDomains, setTrackedDomains] = useState<string[]>([]);
   const [selectedTrackedDomain, setSelectedTrackedDomain] = useState<string>("");
+  
+  // Track whether currently selected domain is in GSC
+  const isCurrentDomainInGsc = useMemo(() => {
+    if (!gscAuthenticated || gscSites.length === 0) return false;
+    const currentDomain = selectedGscDomain || selectedTrackedDomain;
+    if (!currentDomain) return false;
+    return gscSites.some(site => {
+      const cleanSite = normalizeDomain(site.siteUrl);
+      return cleanSite === currentDomain;
+    });
+  }, [gscAuthenticated, gscSites, selectedGscDomain, selectedTrackedDomain]);
 
   // Persist chat online status
   useEffect(() => {
@@ -291,9 +302,14 @@ const MarketingDashboard = () => {
   const shouldShowInstallPrompt = gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking;
   const shouldShowViPanels = !isGscSiteSelected || gscDomainHasTracking;
 
+  // Keep ref in sync with currently selected domain (GSC site or tracked domain)
   useEffect(() => {
-    selectedGscDomainRef.current = normalizeDomain(selectedGscSiteUrl);
-  }, [selectedGscSiteUrl]);
+    const currentDomain = selectedGscSiteUrl 
+      ? normalizeDomain(selectedGscSiteUrl) 
+      : selectedTrackedDomain || '';
+    selectedGscDomainRef.current = currentDomain;
+    console.log('[Domain Ref] Updated to:', currentDomain);
+  }, [selectedGscSiteUrl, selectedTrackedDomain]);
 
   // Pull Google profile (avatar) from the GSC OAuth session for header display
   useEffect(() => {
@@ -920,19 +936,27 @@ const MarketingDashboard = () => {
                           const cachedTracking = gscTrackingByDomain[selected.label];
                           setGscDomainHasTracking(selected.hasTracking || cachedTracking === true);
                           
+                          // Update the ref immediately to prevent race conditions
+                          selectedGscDomainRef.current = selected.label;
+                          
                           if (selected.source === 'gsc') {
+                            // GSC-only domain: set GSC site URL, clear tracked domain
                             setSelectedGscSiteUrl(value);
                             setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain('');
+                            console.log('[Domain Selector] Selected GSC-only domain:', selected.label, 'URL:', value);
                           } else if (selected.source === 'both') {
+                            // Domain has both VI and GSC: set both
                             setSelectedGscSiteUrl(value);
                             setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain(selected.label);
+                            console.log('[Domain Selector] Selected VI+GSC domain:', selected.label, 'URL:', value);
                           } else {
-                            // Tracking-only domain
+                            // Tracking-only domain: clear GSC site URL to signal VI-only mode
                             setSelectedTrackedDomain(value);
                             setSelectedGscDomain(value);
-                            setSelectedGscSiteUrl('');
+                            setSelectedGscSiteUrl(''); // Clear GSC URL - this tells GSC panel to show empty state
+                            console.log('[Domain Selector] Selected VI-only domain:', selected.label);
                           }
                         }
                       }}
@@ -1762,16 +1786,23 @@ f.parentNode.insertBefore(j,f);
           <GSCDashboardPanel 
             externalSelectedSite={selectedGscSiteUrl}
             onSiteChange={(site) => {
-              // When GSC domain changes, update state
+              // When GSC internal domain changes (from GSC panel's own dropdown if any),
+              // update parent state. This is only called when GSC panel internally changes.
+              // We need to sync parent state with what GSC panel reports.
               const cleanDomain = normalizeDomain(site);
-              setSelectedGscDomain(cleanDomain);
-              setSelectedGscSiteUrl(site);
+              
+              // Only update if this is a new selection, not an echo of our own change
+              if (cleanDomain !== selectedGscDomainRef.current) {
+                setSelectedGscDomain(cleanDomain);
+                setSelectedGscSiteUrl(site);
+                selectedGscDomainRef.current = cleanDomain;
 
-              // If we already know tracking status for this domain, apply it immediately.
-              const cached = gscTrackingByDomain[cleanDomain];
-              const isTracked = trackedDomains.includes(cleanDomain);
-              setGscDomainHasTracking(isTracked ? true : cached === true);
-              console.log('GSC site changed:', cleanDomain);
+                // If we already know tracking status for this domain, apply it immediately.
+                const cached = gscTrackingByDomain[cleanDomain];
+                const isTracked = trackedDomains.includes(cleanDomain);
+                setGscDomainHasTracking(isTracked ? true : cached === true);
+                console.log('[GSC Panel Callback] Site changed to:', cleanDomain);
+              }
             }}
             onDataLoaded={(data) => {
               // Receive GSC metrics when loaded
@@ -1797,35 +1828,42 @@ f.parentNode.insertBefore(j,f);
              onSitesLoaded={(sites) => {
               // Store available GSC sites for header dropdown
               setGscSites(sites);
-              // Auto-select first site ONLY if NO tracked domain is already selected
-              // Priority: trackedDomains > GSC sites
-              if (sites.length > 0 && !selectedGscSiteUrl && !selectedTrackedDomain) {
+              console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
+              
+              // Only auto-select if nothing is currently selected
+              const hasExistingSelection = selectedGscSiteUrl || selectedTrackedDomain || selectedGscDomain;
+              if (sites.length > 0 && !hasExistingSelection) {
                 // Check if any GSC site matches a tracked domain - prefer that one
                 const matchingTrackedSite = sites.find(site => {
-                  const cleanDomain = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  const cleanDomain = normalizeDomain(site.siteUrl);
                   return trackedDomains.includes(cleanDomain);
                 });
                 
                 if (matchingTrackedSite) {
                   // Use the tracked domain that has GSC
-                  const cleanDomain = matchingTrackedSite.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  const cleanDomain = normalizeDomain(matchingTrackedSite.siteUrl);
                   setSelectedGscSiteUrl(matchingTrackedSite.siteUrl);
                   setSelectedGscDomain(cleanDomain);
                   setSelectedTrackedDomain(cleanDomain);
+                  selectedGscDomainRef.current = cleanDomain;
                   setGscDomainHasTracking(true); // Known tracked domain
+                  console.log('[GSC] Auto-selected matching tracked domain:', cleanDomain);
                 } else {
                   // No matching tracked domain, use first GSC site
+                  const cleanDomain = normalizeDomain(sites[0].siteUrl);
                   setSelectedGscSiteUrl(sites[0].siteUrl);
-                  const cleanDomain = sites[0].siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
                   setSelectedGscDomain(cleanDomain);
+                  selectedGscDomainRef.current = cleanDomain;
                   // Check if this is a known tracked domain
                   const isTracked = trackedDomains.includes(cleanDomain);
                   setGscDomainHasTracking(isTracked);
+                  console.log('[GSC] Auto-selected first GSC site:', cleanDomain);
                 }
               }
             }}
             onAuthStatusChange={(isAuth) => {
               setGscAuthenticated(isAuth);
+              console.log('[GSC] Auth status changed:', isAuth);
             }}
           />
         </div>
