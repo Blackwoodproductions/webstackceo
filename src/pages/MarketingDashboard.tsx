@@ -414,19 +414,19 @@ const MarketingDashboard = () => {
 
       <main className="container mx-auto px-6 py-8">
         {/* Main Layout - Traffic Sources & Funnel on Left, Stats & Flow on Right */}
-        <div className="grid lg:grid-cols-4 gap-6 mb-6">
-          {/* Left Column - Traffic Sources + Vertical Conversion Funnel */}
+        <div className="grid lg:grid-cols-5 gap-6 mb-6">
+          {/* Left Column - Traffic Sources + Vertical Conversion Funnel (narrower) */}
           <div className="lg:col-span-1 space-y-6">
             {/* Traffic Sources at Top Left */}
             <ReferrerBreakdownChart sessions={sessions} />
             
             {/* Vertical Conversion Funnel */}
             <Card className="p-4">
-              <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-foreground">Conversion Funnel</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <h2 className="font-bold text-foreground text-sm">Funnel</h2>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {funnelSteps.map((step, index) => {
                   const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
                   const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
@@ -435,16 +435,16 @@ const MarketingDashboard = () => {
                   
                   return (
                     <div key={step.label}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
-                          <step.icon className="w-5 h-5 text-white" />
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
+                          <step.icon className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-foreground">{step.label}</span>
-                            <span className="text-lg font-bold">{step.count.toLocaleString()}</span>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-xs font-medium text-foreground truncate">{step.label}</span>
+                            <span className="text-sm font-bold">{step.count.toLocaleString()}</span>
                           </div>
-                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                             <div 
                               className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
                               style={{ width: `${percentage}%` }}
@@ -453,10 +453,10 @@ const MarketingDashboard = () => {
                         </div>
                       </div>
                       {index < funnelSteps.length - 1 && (
-                        <div className="flex items-center gap-2 ml-4 my-1">
-                          <div className="w-0.5 h-4 bg-muted-foreground/20" />
+                        <div className="flex items-center gap-1 ml-3 my-0.5">
+                          <div className="w-0.5 h-3 bg-muted-foreground/20" />
                           {conversionFromPrev && (
-                            <span className="text-[10px] text-muted-foreground">{conversionFromPrev}% →</span>
+                            <span className="text-[9px] text-muted-foreground">{conversionFromPrev}%</span>
                           )}
                         </div>
                       )}
@@ -467,88 +467,88 @@ const MarketingDashboard = () => {
             </Card>
           </div>
 
-          {/* Right Column - Stats + Flow Diagram */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* Right Column - Stats + Flow Diagram (wider) */}
+          <div className="lg:col-span-4 space-y-6">
             {/* Quick Stats Row - Key Conversion Metrics (no duplicates with funnel) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Active Visitors - Live */}
-              <Card className="p-5 border-green-500/30 bg-green-500/5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-green-500/20 relative">
-                    <Activity className="w-6 h-6 text-green-500" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+              <Card className="p-4 border-green-500/30 bg-green-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-green-500/20 relative flex-shrink-0">
+                    <Activity className="w-5 h-5 text-green-500" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-green-500">{activeVisitors}</p>
-                    <p className="text-sm text-muted-foreground">Active Now</p>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-green-500 leading-tight">{activeVisitors}</p>
+                    <p className="text-xs text-muted-foreground">Active Now</p>
                   </div>
                 </div>
               </Card>
               {/* New Visitors Today */}
-              <Card className="p-5 border-cyan-500/30 bg-cyan-500/5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-cyan-500/20">
-                    <UserCheck className="w-6 h-6 text-cyan-500" />
+              <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
+                    <UserCheck className="w-5 h-5 text-cyan-500" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-cyan-500">{newVisitorsToday}</p>
-                    <p className="text-sm text-muted-foreground">New Today</p>
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
+                    <p className="text-xs text-muted-foreground">New Today</p>
                   </div>
                 </div>
               </Card>
               {/* Visitor to Lead Conversion Rate */}
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-violet-500/10">
-                    <TrendingUp className="w-6 h-6 text-violet-500" />
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-violet-500/10 flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 text-violet-500" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-foreground leading-tight">
                       {funnelStats.visitors > 0 ? ((funnelStats.leads / funnelStats.visitors) * 100).toFixed(1) : '0'}%
                     </p>
-                    <p className="text-sm text-muted-foreground">Lead Rate</p>
+                    <p className="text-xs text-muted-foreground">Lead Rate</p>
                   </div>
                 </div>
               </Card>
               {/* Close Rate */}
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-amber-500/10">
-                    <Target className="w-6 h-6 text-amber-500" />
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
+                    <Target className="w-5 h-5 text-amber-500" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-foreground leading-tight">
                       {funnelStats.leads > 0 ? ((funnelStats.closedLeads / funnelStats.leads) * 100).toFixed(1) : '0'}%
                     </p>
-                    <p className="text-sm text-muted-foreground">Close Rate</p>
+                    <p className="text-xs text-muted-foreground">Close Rate</p>
                   </div>
                 </div>
               </Card>
               {/* Total Revenue from Closed Leads */}
-              <Card className="p-5 border-green-500/30 bg-green-500/5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-green-500/20">
-                    <DollarSign className="w-6 h-6 text-green-500" />
+              <Card className="p-4 border-green-500/30 bg-green-500/5">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
+                    <DollarSign className="w-5 h-5 text-green-500" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-green-500">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-green-500 leading-tight truncate">
                       ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
                     </p>
-                    <p className="text-sm text-muted-foreground">Revenue</p>
+                    <p className="text-xs text-muted-foreground">Revenue</p>
                   </div>
                 </div>
               </Card>
               {/* Tool Engagement Rate */}
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-pink-500/10">
-                    <MousePointer className="w-6 h-6 text-pink-500" />
+              <Card className="p-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
+                    <MousePointer className="w-5 h-5 text-pink-500" />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-foreground">
+                  <div className="min-w-0">
+                    <p className="text-2xl font-bold text-foreground leading-tight">
                       {funnelStats.visitors > 0 ? ((filteredData.toolInteractions.length / funnelStats.visitors) * 100).toFixed(1) : '0'}%
                     </p>
-                    <p className="text-sm text-muted-foreground">Engagement</p>
+                    <p className="text-xs text-muted-foreground">Engagement</p>
                   </div>
                 </div>
               </Card>
