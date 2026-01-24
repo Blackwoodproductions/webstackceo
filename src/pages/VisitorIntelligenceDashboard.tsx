@@ -315,9 +315,27 @@ const MarketingDashboard = () => {
           withCompanyInfo: lead.company_employees ? Math.max(0, prev.withCompanyInfo - 1) : prev.withCompanyInfo,
         }));
 
-        // If it's the demo lead, respawn it after 5 seconds
+        // If it's the demo lead, respawn it after 5 seconds (only if none exists)
         if (isDemoLead) {
           setTimeout(async () => {
+            // Check if a demo lead already exists
+            const { data: existingDemo } = await supabase
+              .from('leads')
+              .select('id')
+              .eq('metric_type', 'demo_respawn')
+              .maybeSingle();
+
+            if (existingDemo) {
+              // Demo lead already exists, just refresh the list
+              const { data: freshLeads } = await supabase
+                .from('leads')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(100);
+              if (freshLeads) setLeads(freshLeads as Lead[]);
+              return;
+            }
+
             const { data: respawnedLead, error: respawnError } = await supabase
               .from('leads')
               .insert({
