@@ -680,7 +680,7 @@ const MarketingDashboard = () => {
       case 'emailed':
         return <Badge className="text-[10px] bg-violet-500">✉️ Emailed</Badge>;
       case 'considering':
-        return <Badge className="text-[10px] bg-amber-500">🤔 Considering</Badge>;
+        return <Badge className="text-[10px] bg-amber-500">Considering</Badge>;
       default:
         return <Badge variant="outline" className="text-[10px]">Open</Badge>;
     }
@@ -982,7 +982,8 @@ const MarketingDashboard = () => {
               if (viDomains.length > 0) {
                 return (
                   <>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-primary" />
                       <Select
                         value={selectValue} 
                         onValueChange={(value) => {
@@ -1627,7 +1628,7 @@ f.parentNode.insertBefore(j,f);
                                   <SelectItem value="open">Open</SelectItem>
                                   <SelectItem value="called">📞 Called</SelectItem>
                                   <SelectItem value="emailed">✉️ Emailed</SelectItem>
-                                  <SelectItem value="considering">🤔 Considering</SelectItem>
+                                  <SelectItem value="considering">Considering</SelectItem>
                                   <SelectItem value="closed">💰 Closed</SelectItem>
                                   <SelectItem value="deleted" className="text-red-400">🗑️ Delete</SelectItem>
                                 </SelectContent>
