@@ -637,7 +637,8 @@ const MarketingDashboard = () => {
                 <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
               </div>
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
+            {/* Always render diagram for summary data, but hide visually when collapsed */}
+            <div className={siteArchOpen ? 'pt-4' : 'hidden'}>
               {pageFilter && (
                 <div className="mb-4 flex items-center gap-2">
                   <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -660,7 +661,7 @@ const MarketingDashboard = () => {
                 customDateRange={diagramCustomDateRange}
                 onCustomDateRangeChange={setDiagramCustomDateRange}
               />
-            </CollapsibleContent>
+            </div>
           </Card>
         </Collapsible>
 
