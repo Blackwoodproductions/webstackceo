@@ -1338,7 +1338,11 @@ const AuditResults = () => {
                       Book a Call
                     </a>
                   </Button>
-                  <Button variant="outline" className="gap-2 min-w-[140px] justify-center" asChild>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                    asChild
+                  >
                     <a href="/pricing">
                       <Sparkles className="w-4 h-4" />
                       Get Started
