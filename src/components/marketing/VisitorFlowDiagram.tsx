@@ -347,13 +347,13 @@ const VisitorFlowDiagram = () => {
   // Layout configuration
   const svgWidth = 1500;
   const baseY = 50;
-  const rowHeight = 90;
-  const sectionGap = 50;
+  const rowHeight = 85;
+  const sectionGap = 60;
   
-  // Row sizes
+  // Row sizes - more per row since we have full width now
   const l1RegularRowSize = 12;
-  const megaChildRowSize = 13;
-  const otherL2RowSize = 10;
+  const megaChildRowSize = 14;
+  const otherL2RowSize = 12;
   const l3RowSize = 10;
   
   // Calculate rows needed for each section
@@ -363,24 +363,22 @@ const VisitorFlowDiagram = () => {
   const otherL2Rows = Math.ceil(otherL2.length / otherL2RowSize);
   const l3Rows = Math.ceil(depth3.length / l3RowSize);
   
-  // Calculate Y positions for each section
-  const l1RegularStartY = baseY + 100;
+  // Calculate Y positions for each section - stacked vertically
+  const l1RegularStartY = baseY + 90;
   const l1RegularEndY = l1RegularStartY + l1RegularRows * rowHeight;
   
-  const megaParentY = l1RegularEndY + sectionGap;
-  
-  // Features section (left half)
-  const featuresChildrenStartY = megaParentY + rowHeight;
+  // Features section - full width
+  const featuresParentY = l1RegularEndY + sectionGap;
+  const featuresChildrenStartY = featuresParentY + 70;
   const featuresEndY = featuresChildrenStartY + featuresRows * rowHeight;
   
-  // Learn section (right half) - starts at same Y as features
-  const learnChildrenStartY = megaParentY + rowHeight;
+  // Learn section - below Features, full width
+  const learnParentY = featuresEndY + sectionGap;
+  const learnChildrenStartY = learnParentY + 70;
   const learnEndY = learnChildrenStartY + learnRows * rowHeight;
   
-  const megaSectionEndY = Math.max(featuresEndY, learnEndY);
-  
   // Other L2 pages
-  const otherL2StartY = megaSectionEndY + sectionGap;
+  const otherL2StartY = learnEndY + sectionGap;
   const otherL2EndY = otherL2StartY + (otherL2Rows > 0 ? otherL2Rows * rowHeight : 0);
   
   // L3+ pages
@@ -408,33 +406,33 @@ const VisitorFlowDiagram = () => {
       };
     });
     
-    // Mega parent row - Features on left, Learn on right
-    positions['/features'] = { x: svgWidth * 0.25, y: megaParentY };
-    positions['/learn'] = { x: svgWidth * 0.75, y: megaParentY };
+    // Features parent - centered
+    positions['/features'] = { x: svgWidth / 2, y: featuresParentY };
     
-    // Features children - left half of screen
-    const featuresWidth = svgWidth * 0.48;
+    // Features children - full width
+    const fullWidth = svgWidth - 80;
     featuresChildren.forEach((node, i) => {
       const row = Math.floor(i / megaChildRowSize);
       const indexInRow = i % megaChildRowSize;
       const nodesInThisRow = Math.min(megaChildRowSize, featuresChildren.length - row * megaChildRowSize);
-      const spacing = featuresWidth / (nodesInThisRow + 1);
+      const spacing = fullWidth / (nodesInThisRow + 1);
       positions[node.path] = { 
-        x: 20 + spacing * (indexInRow + 1), 
+        x: 40 + spacing * (indexInRow + 1), 
         y: featuresChildrenStartY + row * rowHeight 
       };
     });
     
-    // Learn children - right half of screen
-    const learnWidth = svgWidth * 0.48;
-    const learnStartX = svgWidth * 0.52;
+    // Learn parent - centered
+    positions['/learn'] = { x: svgWidth / 2, y: learnParentY };
+    
+    // Learn children - full width
     learnChildren.forEach((node, i) => {
       const row = Math.floor(i / megaChildRowSize);
       const indexInRow = i % megaChildRowSize;
       const nodesInThisRow = Math.min(megaChildRowSize, learnChildren.length - row * megaChildRowSize);
-      const spacing = learnWidth / (nodesInThisRow + 1);
+      const spacing = fullWidth / (nodesInThisRow + 1);
       positions[node.path] = { 
-        x: learnStartX + spacing * (indexInRow + 1), 
+        x: 40 + spacing * (indexInRow + 1), 
         y: learnChildrenStartY + row * rowHeight 
       };
     });
@@ -784,7 +782,8 @@ const VisitorFlowDiagram = () => {
           {/* Depth labels */}
           <text x={12} y={baseY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
           <text x={12} y={l1RegularStartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
-          <text x={12} y={megaParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Features / Learn</text>
+          <text x={12} y={featuresParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Features</text>
+          <text x={12} y={learnParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Learn</text>
           {otherL2.length > 0 && (
             <text x={12} y={otherL2StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Other L2</text>
           )}
