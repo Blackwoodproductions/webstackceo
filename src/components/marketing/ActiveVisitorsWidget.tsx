@@ -281,22 +281,31 @@ const ActiveVisitorsWidget = () => {
                     </div>
                   </div>
 
-                  {/* Data collected indicators */}
+                  {/* Data collected indicators - only show if we have data */}
+                  {(session.hasEmail || session.hasPhone || session.hasName || session.hasCompanyInfo) && (
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
                     <span className="text-[10px] text-muted-foreground">Data:</span>
                     <div className="flex gap-1">
-                      <div className={`p-1 rounded ${session.hasEmail ? 'bg-blue-500/20' : 'bg-muted/50'}`}>
-                        <Mail className={`w-3 h-3 ${session.hasEmail ? 'text-blue-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1 rounded ${session.hasPhone ? 'bg-amber-500/20' : 'bg-muted/50'}`}>
-                        <Phone className={`w-3 h-3 ${session.hasPhone ? 'text-amber-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1 rounded ${session.hasName ? 'bg-orange-500/20' : 'bg-muted/50'}`}>
-                        <User className={`w-3 h-3 ${session.hasName ? 'text-orange-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1 rounded ${session.hasCompanyInfo ? 'bg-green-500/20' : 'bg-muted/50'}`}>
-                        <Building className={`w-3 h-3 ${session.hasCompanyInfo ? 'text-green-400' : 'text-muted-foreground/30'}`} />
-                      </div>
+                      {session.hasEmail && (
+                        <div className="p-1 rounded bg-blue-500/20">
+                          <Mail className="w-3 h-3 text-blue-400" />
+                        </div>
+                      )}
+                      {session.hasPhone && (
+                        <div className="p-1 rounded bg-amber-500/20">
+                          <Phone className="w-3 h-3 text-amber-400" />
+                        </div>
+                      )}
+                      {session.hasName && (
+                        <div className="p-1 rounded bg-orange-500/20">
+                          <User className="w-3 h-3 text-orange-400" />
+                        </div>
+                      )}
+                      {session.hasCompanyInfo && (
+                        <div className="p-1 rounded bg-green-500/20">
+                          <Building className="w-3 h-3 text-green-400" />
+                        </div>
+                      )}
                     </div>
                     {session.referrer && (
                       <span className="text-[10px] text-muted-foreground ml-auto truncate max-w-[120px]">
@@ -304,6 +313,7 @@ const ActiveVisitorsWidget = () => {
                       </span>
                     )}
                   </div>
+                  )}
                 </div>
               );
             })}
