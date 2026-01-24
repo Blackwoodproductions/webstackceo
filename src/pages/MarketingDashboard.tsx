@@ -602,9 +602,6 @@ const MarketingDashboard = () => {
                 <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-400 border-rose-500/30">
                   <ArrowRight className="w-3 h-3 mr-1" />{flowSummary.bounceRate}% bounce
                 </Badge>
-                <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
-                  <TrendingUp className="w-3 h-3 mr-1" />{flowSummary.topSource}
-                </Badge>
                 <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
                   <UserCheck className="w-3 h-3 mr-1" />{flowSummary.newVisitorsToday} new today
                 </Badge>
