@@ -186,15 +186,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
   const [demoMode, setDemoMode] = useState(false);
   const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; isExternal?: boolean }[]>([]);
+  const [externalReferrerPages, setExternalReferrerPages] = useState<Set<string>>(new Set());
 
-  // Fetch initial data including active sessions
+  // Fetch initial data including active sessions and external referrers
   useEffect(() => {
     const fetchData = async () => {
       try {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         
-        // Fetch page views and active sessions in parallel
-        const [pageViewsRes, activeSessionsRes] = await Promise.all([
+        // Fetch page views, active sessions, and sessions with external referrers in parallel
+        const [pageViewsRes, activeSessionsRes, referrerSessionsRes] = await Promise.all([
           supabase
             .from('page_views')
             .select('page_path, created_at, session_id')
@@ -203,10 +204,39 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           supabase
             .from('visitor_sessions')
             .select('session_id, last_activity_at')
-            .gte('last_activity_at', fiveMinutesAgo)
+            .gte('last_activity_at', fiveMinutesAgo),
+          supabase
+            .from('visitor_sessions')
+            .select('first_page, referrer')
+            .not('referrer', 'is', null)
         ]);
         
         setPageViews(pageViewsRes.data || []);
+        
+        // Track pages that have external referrers
+        if (referrerSessionsRes.data) {
+          const externalPages = new Set<string>();
+          referrerSessionsRes.data.forEach(session => {
+            if (session.referrer && session.first_page) {
+              // Check if referrer is external (not our own domain)
+              try {
+                const referrerHost = new URL(session.referrer).hostname;
+                if (!referrerHost.includes('localhost') && 
+                    !referrerHost.includes('lovable.app') &&
+                    !referrerHost.includes('webstackceo')) {
+                  let cleanPath = session.first_page.split('#')[0].split('?')[0];
+                  if (cleanPath.startsWith('/audit/') || cleanPath === '/audit') {
+                    cleanPath = '/audits';
+                  }
+                  externalPages.add(cleanPath);
+                }
+              } catch (e) {
+                // Invalid URL, skip
+              }
+            }
+          });
+          setExternalReferrerPages(externalPages);
+        }
         
         // Get last page for each active session
         if (activeSessionsRes.data && activeSessionsRes.data.length > 0) {
@@ -987,6 +1017,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               <div className="w-3 h-3 rounded-full bg-gray-500 opacity-40" />
               Unvisited
             </span>
+            <span className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full border-2 border-orange-500 border-dashed" />
+              External
+            </span>
             {demoMode && (
               <span className="flex items-center gap-1 text-purple-400">
                 <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
@@ -1283,6 +1317,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const opacity = isDimmed ? 0.2 : baseOpacity;
             const liveCount = visitorsByNode[node.path] || 0;
             const hasLiveVisitor = liveCount > 0;
+            const hasExternalReferrer = externalReferrerPages.has(node.path);
             
             const handleNodeClick = () => {
               if (onPageFilter) {
@@ -1358,29 +1393,70 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   strokeWidth={hasLiveVisitor ? 3 : node.isVisited ? 2.5 : 1.5}
                   strokeDasharray={node.isVisited ? "none" : "3 2"}
                 />
-                {/* Today's visit count in center */}
-                {node.todayVisits > 0 ? (
-                  <text
-                    x={pos.x}
-                    y={pos.y + (nodeSize > 10 ? 4 : 3)}
-                    textAnchor="middle"
-                    fill={hasLiveVisitor ? "#22c55e" : color}
-                    style={{ 
-                      fontSize: nodeSize > 14 ? '10px' : nodeSize > 10 ? '8px' : '6px', 
-                      fontWeight: 'bold' 
-                    }}
-                  >
-                    {node.todayVisits}
-                  </text>
-                ) : (
-                  /* Inner dot for unvisited today */
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r={nodeSize * 0.25}
-                    fill={hasLiveVisitor ? "#22c55e" : color}
-                    opacity={node.isVisited ? 0.5 : 0.3}
-                  />
+                {/* Inner dot */}
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={nodeSize * 0.3}
+                  fill={hasLiveVisitor ? "#22c55e" : color}
+                  opacity={node.isVisited ? 0.6 : 0.3}
+                />
+                {/* External referrer starburst effect */}
+                {hasExternalReferrer && (
+                  <>
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={nodeSize + 16}
+                      fill="none"
+                      stroke="#f97316"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      opacity={0.7}
+                    >
+                      <animate
+                        attributeName="r"
+                        values={`${nodeSize + 10};${nodeSize + 20};${nodeSize + 10}`}
+                        dur="2s"
+                        repeatCount="indefinite"
+                      />
+                      <animate
+                        attributeName="opacity"
+                        values="0.7;0.3;0.7"
+                        dur="2s"
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                    {/* Starburst rays */}
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+                      const rad = (angle * Math.PI) / 180;
+                      const x1 = pos.x + Math.cos(rad) * (nodeSize + 4);
+                      const y1 = pos.y + Math.sin(rad) * (nodeSize + 4);
+                      const x2 = pos.x + Math.cos(rad) * (nodeSize + 12);
+                      const y2 = pos.y + Math.sin(rad) * (nodeSize + 12);
+                      return (
+                        <line
+                          key={angle}
+                          x1={x1}
+                          y1={y1}
+                          x2={x2}
+                          y2={y2}
+                          stroke="#f97316"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          opacity={0.8}
+                        >
+                          <animate
+                            attributeName="opacity"
+                            values="0.8;0.3;0.8"
+                            dur="1.5s"
+                            begin={`${angle / 360}s`}
+                            repeatCount="indefinite"
+                          />
+                        </line>
+                      );
+                    })}
+                  </>
                 )}
                 {/* Live visitor count badge - top right (GREEN) */}
                 {hasLiveVisitor && (
