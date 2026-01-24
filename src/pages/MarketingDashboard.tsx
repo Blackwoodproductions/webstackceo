@@ -89,6 +89,8 @@ const MarketingDashboard = () => {
   const [pageViews, setPageViews] = useState<PageView[]>([]);
   const [toolInteractions, setToolInteractions] = useState<ToolInteraction[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeVisitors, setActiveVisitors] = useState(0);
+  const [newVisitorsToday, setNewVisitorsToday] = useState(0);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -146,6 +148,12 @@ const MarketingDashboard = () => {
   const fetchAllData = async () => {
     setRefreshing(true);
     try {
+      // Calculate time boundaries
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayStartISO = todayStart.toISOString();
+
       // Fetch all data in parallel
       const [
         leadsRes,
@@ -160,6 +168,9 @@ const MarketingDashboard = () => {
         leadsWithPhone,
         leadsWithName,
         leadsWithCompany,
+        // Active & Today counts
+        activeVisitorsRes,
+        newVisitorsTodayRes,
       ] = await Promise.all([
         supabase.from('leads').select('*').order('created_at', { ascending: false }).limit(100),
         supabase.from('visitor_sessions').select('*').order('started_at', { ascending: false }).limit(100),
@@ -173,6 +184,10 @@ const MarketingDashboard = () => {
         supabase.from('leads').select('id', { count: 'exact', head: true }).not('phone', 'is', null),
         supabase.from('leads').select('id', { count: 'exact', head: true }).not('full_name', 'is', null),
         supabase.from('leads').select('id', { count: 'exact', head: true }).not('company_employees', 'is', null),
+        // Active visitors (last 5 min)
+        supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).gte('last_activity_at', fiveMinutesAgo),
+        // New visitors today
+        supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).gte('started_at', todayStartISO),
       ]);
 
       if (leadsRes.data) setLeads(leadsRes.data as Lead[]);
@@ -189,6 +204,9 @@ const MarketingDashboard = () => {
         withName: leadsWithName.count || 0,
         withCompanyInfo: leadsWithCompany.count || 0,
       });
+
+      setActiveVisitors(activeVisitorsRes.count || 0);
+      setNewVisitorsToday(newVisitorsTodayRes.count || 0);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -297,7 +315,32 @@ const MarketingDashboard = () => {
 
       <main className="container mx-auto px-6 py-8">
         {/* Quick Stats Row - Top */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+          {/* Active Visitors - Live */}
+          <Card className="p-4 border-green-500/30 bg-green-500/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/20 relative">
+                <Activity className="w-5 h-5 text-green-500" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-500">{activeVisitors}</p>
+                <p className="text-xs text-muted-foreground">Active Now</p>
+              </div>
+            </div>
+          </Card>
+          {/* New Visitors Today */}
+          <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-cyan-500/20">
+                <UserCheck className="w-5 h-5 text-cyan-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-cyan-500">{newVisitorsToday}</p>
+                <p className="text-xs text-muted-foreground">New Today</p>
+              </div>
+            </div>
+          </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
