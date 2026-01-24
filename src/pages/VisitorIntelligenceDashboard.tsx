@@ -893,7 +893,7 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-4 px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen bg-background relative animate-fade-in pt-4 px-6 md:px-10 lg:px-16">
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
@@ -901,8 +901,8 @@ const MarketingDashboard = () => {
       />
 
       {/* Header */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1800px] mx-auto">
-        <div className="px-6 py-4 flex items-center justify-between">
+      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
+        <div className="px-8 py-4 flex items-center justify-between">
           {/* Left: Logo */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
@@ -969,8 +969,8 @@ const MarketingDashboard = () => {
       </header>
 
       {/* Date Range Selector Bar */}
-      <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1800px] mx-auto">
-        <div className="px-6 py-2 flex items-center justify-between">
+      <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1530px] mx-auto">
+        <div className="px-8 py-2 flex items-center justify-between">
           {/* Left: VI Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* VI Domain Selector - only shows VI tracked domains */}
@@ -1194,7 +1194,7 @@ const MarketingDashboard = () => {
       </div>
 
       {/* Main Layout */}
-      <div className="flex min-h-[calc(100vh-180px)] max-w-[1800px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
+      <div className="flex min-h-[calc(100vh-180px)] max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
