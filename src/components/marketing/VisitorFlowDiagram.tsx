@@ -596,49 +596,34 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const color = getHeatColor(intensity, edge.isVisited);
             const opacity = edge.isVisited ? 0.7 : 0.2;
             
-            // Calculate a path that avoids other nodes
-            // Check all nodes except from/to and find ones that might be in the way
-            const nodeRadius = 20; // Buffer zone around nodes
-            const allNodePositions = Object.entries(positions).filter(
-              ([path]) => path !== edge.from && path !== edge.to
-            );
+            // Use elbow routing: go down from parent, horizontal, then down to child
+            // This prevents lines from crossing sibling nodes
+            const verticalDropFromParent = 30; // How far down to go before horizontal
+            const verticalRiseToChild = 16; // How far above child to start dropping
             
-            // Determine if we need to route around nodes
-            const minX = Math.min(fromPos.x, toPos.x) - nodeRadius;
-            const maxX = Math.max(fromPos.x, toPos.x) + nodeRadius;
-            const minY = fromPos.y + 16;
-            const maxY = toPos.y - 16;
+            // Calculate intermediate Y position - midway between parent bottom and child top
+            const parentBottomY = fromPos.y + 16;
+            const childTopY = toPos.y - verticalRiseToChild;
+            const elbowY = parentBottomY + verticalDropFromParent;
             
-            // Find nodes in the path's bounding box
-            const nodesInWay = allNodePositions.filter(([, pos]) => 
-              pos.x > minX && pos.x < maxX && pos.y > minY && pos.y < maxY
-            );
+            // Create elbow path: down -> horizontal -> down
+            const cornerRadius = 8;
+            const dx = toPos.x - fromPos.x;
+            const signX = dx >= 0 ? 1 : -1;
             
-            // Calculate path - use outside routing if nodes are in the way
             let pathD: string;
             
-            if (nodesInWay.length === 0) {
-              // Simple curved path
-              const midY = (fromPos.y + toPos.y) / 2;
-              pathD = `M ${fromPos.x} ${fromPos.y + 16} 
-                       Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                       Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
+            if (Math.abs(dx) < 5) {
+              // Straight vertical line
+              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
             } else {
-              // Route around nodes - go to the side first
-              const goLeft = fromPos.x > svgWidth / 2;
-              const sideOffset = goLeft ? -60 : 60;
-              const sideX = goLeft ? Math.max(30, Math.min(fromPos.x, toPos.x) - 50) : Math.min(svgWidth - 30, Math.max(fromPos.x, toPos.x) + 50);
-              const midY = (fromPos.y + toPos.y) / 2;
-              
+              // Elbow path with rounded corners
               pathD = `M ${fromPos.x} ${fromPos.y + 16}
-                       L ${fromPos.x} ${fromPos.y + 35}
-                       Q ${fromPos.x} ${fromPos.y + 45}, ${fromPos.x + sideOffset * 0.3} ${fromPos.y + 45}
-                       L ${sideX} ${fromPos.y + 45}
-                       Q ${sideX + (goLeft ? -10 : 10)} ${fromPos.y + 45}, ${sideX + (goLeft ? -10 : 10)} ${midY}
-                       L ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 45}
-                       Q ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 35}, ${sideX} ${toPos.y - 35}
-                       L ${toPos.x + sideOffset * 0.3} ${toPos.y - 35}
-                       Q ${toPos.x} ${toPos.y - 35}, ${toPos.x} ${toPos.y - 16}`;
+                       L ${fromPos.x} ${elbowY - cornerRadius}
+                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
+                       L ${toPos.x - signX * cornerRadius} ${elbowY}
+                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
+                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
             }
             
             return (
@@ -672,43 +657,25 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const toPos = positions[activePath.to];
             if (!fromPos || !toPos) return null;
             
-            // Use same routing logic as static edges
-            const nodeRadius = 20;
-            const allNodePositions = Object.entries(positions).filter(
-              ([path]) => path !== activePath.from && path !== activePath.to
-            );
-            
-            const minX = Math.min(fromPos.x, toPos.x) - nodeRadius;
-            const maxX = Math.max(fromPos.x, toPos.x) + nodeRadius;
-            const minY = fromPos.y + 16;
-            const maxY = toPos.y - 16;
-            
-            const nodesInWay = allNodePositions.filter(([, pos]) => 
-              pos.x > minX && pos.x < maxX && pos.y > minY && pos.y < maxY
-            );
+            // Use same elbow routing as static edges
+            const verticalDropFromParent = 30;
+            const verticalRiseToChild = 16;
+            const elbowY = fromPos.y + 16 + verticalDropFromParent;
+            const cornerRadius = 8;
+            const dx = toPos.x - fromPos.x;
+            const signX = dx >= 0 ? 1 : -1;
             
             let pathD: string;
             
-            if (nodesInWay.length === 0) {
-              const midY = (fromPos.y + toPos.y) / 2;
-              pathD = `M ${fromPos.x} ${fromPos.y + 16} 
-                       Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                       Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
+            if (Math.abs(dx) < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
             } else {
-              const goLeft = fromPos.x > svgWidth / 2;
-              const sideOffset = goLeft ? -60 : 60;
-              const sideX = goLeft ? Math.max(30, Math.min(fromPos.x, toPos.x) - 50) : Math.min(svgWidth - 30, Math.max(fromPos.x, toPos.x) + 50);
-              const midY = (fromPos.y + toPos.y) / 2;
-              
               pathD = `M ${fromPos.x} ${fromPos.y + 16}
-                       L ${fromPos.x} ${fromPos.y + 35}
-                       Q ${fromPos.x} ${fromPos.y + 45}, ${fromPos.x + sideOffset * 0.3} ${fromPos.y + 45}
-                       L ${sideX} ${fromPos.y + 45}
-                       Q ${sideX + (goLeft ? -10 : 10)} ${fromPos.y + 45}, ${sideX + (goLeft ? -10 : 10)} ${midY}
-                       L ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 45}
-                       Q ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 35}, ${sideX} ${toPos.y - 35}
-                       L ${toPos.x + sideOffset * 0.3} ${toPos.y - 35}
-                       Q ${toPos.x} ${toPos.y - 35}, ${toPos.x} ${toPos.y - 16}`;
+                       L ${fromPos.x} ${elbowY - cornerRadius}
+                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
+                       L ${toPos.x - signX * cornerRadius} ${elbowY}
+                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
+                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
             }
             
             return (
