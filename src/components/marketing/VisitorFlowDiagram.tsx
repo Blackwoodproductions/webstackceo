@@ -248,7 +248,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     return () => clearInterval(cleanup);
   }, []);
 
-  const { nodes, maxVisits, visitedCount, totalCount } = useMemo(() => {
+  const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
     const filterDate = getTimeRangeFilter(timeRange);
     
     const filteredViews = filterDate 
@@ -259,6 +259,39 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     filteredViews.forEach(pv => {
       const path = pv.page_path.split('#')[0].split('?')[0];
       visitCounts[path] = (visitCounts[path] || 0) + 1;
+    });
+
+    // Calculate actual visitor paths (transitions from page A to page B)
+    const pathTransitions: Record<string, number> = {};
+    
+    // Group page views by session and sort by time
+    const sessionViews: Record<string, { path: string; time: Date }[]> = {};
+    filteredViews.forEach(pv => {
+      const path = pv.page_path.split('#')[0].split('?')[0];
+      if (!sessionViews[pv.session_id]) {
+        sessionViews[pv.session_id] = [];
+      }
+      sessionViews[pv.session_id].push({ path, time: new Date(pv.created_at) });
+    });
+    
+    // For each session, track unique page transitions
+    Object.values(sessionViews).forEach(views => {
+      views.sort((a, b) => a.time.getTime() - b.time.getTime());
+      
+      // Track unique transitions per session to avoid counting refreshes
+      const seenTransitions = new Set<string>();
+      let lastPath: string | null = null;
+      
+      views.forEach(view => {
+        if (lastPath && lastPath !== view.path) {
+          const transitionKey = `${lastPath}|${view.path}`;
+          if (!seenTransitions.has(transitionKey)) {
+            seenTransitions.add(transitionKey);
+            pathTransitions[transitionKey] = (pathTransitions[transitionKey] || 0) + 1;
+          }
+        }
+        lastPath = view.path;
+      });
     });
 
     const nodeMap: Record<string, PageNode> = {};
@@ -307,8 +340,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
 
     const maxV = Math.max(...nodeList.map(n => n.visits), 1);
     const visited = nodeList.filter(n => n.isVisited).length;
+    const maxPV = Math.max(...Object.values(pathTransitions), 1);
 
-    return { nodes: nodeList, maxVisits: maxV, visitedCount: visited, totalCount: nodeList.length };
+    return { 
+      nodes: nodeList, 
+      maxVisits: maxV, 
+      visitedCount: visited, 
+      totalCount: nodeList.length,
+      pathHeatmap: pathTransitions,
+      maxPathVisits: maxPV
+    };
   }, [pageViews, timeRange]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
@@ -478,15 +519,29 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const positions = getNodePositions();
   const allDisplayedNodes = [...depth0, ...depth1Regular, ...depth1Mega, ...featuresChildren, ...learnChildren, ...otherL2, ...depth3];
 
-  // Generate static edges
-  const edges: { from: string; to: string; visits: number; isVisited: boolean }[] = [];
+  // Generate static edges (structural parent-child relationships)
+  const structuralEdges: { from: string; to: string; visits: number; isVisited: boolean }[] = [];
   allDisplayedNodes.forEach(node => {
     if (node.parent && positions[node.parent] && positions[node.path]) {
-      edges.push({ 
+      structuralEdges.push({ 
         from: node.parent, 
         to: node.path, 
         visits: node.visits,
         isVisited: node.isVisited 
+      });
+    }
+  });
+
+  // Generate actual visitor path edges (heatmap paths)
+  const visitorPathEdges: { from: string; to: string; count: number; intensity: number }[] = [];
+  Object.entries(pathHeatmap).forEach(([key, count]) => {
+    const [from, to] = key.split('|');
+    if (positions[from] && positions[to]) {
+      visitorPathEdges.push({
+        from,
+        to,
+        count,
+        intensity: count / maxPathVisits
       });
     }
   });
@@ -585,16 +640,20 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             </filter>
           </defs>
 
-          {/* Draw static edges */}
-          {edges.map((edge, i) => {
+          {/* Draw structural edges (dimmed) */}
+          {structuralEdges.map((edge, i) => {
             const fromPos = positions[edge.from];
             const toPos = positions[edge.to];
             if (!fromPos || !toPos) return null;
             
-            const intensity = edge.visits / maxVisits;
-            const strokeWidth = edge.isVisited ? Math.max(1.5, Math.min(5, intensity * 6 + 1)) : 1;
-            const color = getHeatColor(intensity, edge.isVisited);
-            const opacity = edge.isVisited ? 0.7 : 0.2;
+            // Check if this path has actual visitor traffic
+            const pathKey = `${edge.from}|${edge.to}`;
+            const pathTraffic = pathHeatmap[pathKey] || 0;
+            const hasTraffic = pathTraffic > 0;
+            
+            // Structural edges are very dim, just showing site structure
+            const baseOpacity = hasTraffic ? 0 : (edge.isVisited ? 0.15 : 0.08);
+            const color = '#6b7280';
             
             // Use elbow routing: go down from parent, horizontal, then down to child
             // This prevents lines from crossing sibling nodes
@@ -626,27 +685,108 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                        L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
             }
             
+            // Skip rendering if there's actual traffic (will be drawn by heatmap paths)
+            if (hasTraffic) return null;
+            
             return (
-              <g key={`edge-${i}`}>
-                {edge.isVisited && (
-                  <path
-                    d={pathD}
-                    fill="none"
-                    stroke={color}
-                    strokeWidth={strokeWidth + 2}
-                    strokeOpacity={0.12}
-                    strokeLinecap="round"
-                  />
-                )}
+              <g key={`struct-edge-${i}`}>
                 <path
                   d={pathD}
                   fill="none"
                   stroke={color}
-                  strokeWidth={strokeWidth}
-                  strokeOpacity={opacity}
+                  strokeWidth={1}
+                  strokeOpacity={baseOpacity}
                   strokeLinecap="round"
-                  strokeDasharray={edge.isVisited ? "none" : "3 2"}
+                  strokeDasharray="3 2"
                 />
+              </g>
+            );
+          })}
+
+          {/* Draw heatmap visitor paths - brighter = more traffic */}
+          {visitorPathEdges.map((pathEdge, i) => {
+            const fromPos = positions[pathEdge.from];
+            const toPos = positions[pathEdge.to];
+            if (!fromPos || !toPos) return null;
+            
+            // Heatmap colors based on intensity
+            const intensity = pathEdge.intensity;
+            let heatColor: string;
+            let glowIntensity: number;
+            
+            if (intensity > 0.8) {
+              heatColor = '#ef4444'; // Bright red - hottest
+              glowIntensity = 1;
+            } else if (intensity > 0.6) {
+              heatColor = '#f97316'; // Orange
+              glowIntensity = 0.8;
+            } else if (intensity > 0.4) {
+              heatColor = '#eab308'; // Yellow
+              glowIntensity = 0.6;
+            } else if (intensity > 0.2) {
+              heatColor = '#84cc16'; // Lime green
+              glowIntensity = 0.4;
+            } else {
+              heatColor = '#22c55e'; // Green - coolest
+              glowIntensity = 0.3;
+            }
+            
+            const strokeWidth = Math.max(2, Math.min(8, intensity * 10 + 2));
+            
+            // Use elbow routing
+            const verticalDropFromParent = 30;
+            const verticalRiseToChild = 16;
+            const elbowY = fromPos.y + 16 + verticalDropFromParent;
+            const cornerRadius = 8;
+            const dx = toPos.x - fromPos.x;
+            const signX = dx >= 0 ? 1 : -1;
+            
+            let pathD: string;
+            
+            if (Math.abs(dx) < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+            } else {
+              pathD = `M ${fromPos.x} ${fromPos.y + 16}
+                       L ${fromPos.x} ${elbowY - cornerRadius}
+                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
+                       L ${toPos.x - signX * cornerRadius} ${elbowY}
+                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
+                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+            }
+            
+            return (
+              <g key={`heatmap-edge-${i}`}>
+                {/* Glow effect for high traffic paths */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={heatColor}
+                  strokeWidth={strokeWidth + 6}
+                  strokeOpacity={glowIntensity * 0.3}
+                  strokeLinecap="round"
+                  filter="url(#glow)"
+                />
+                {/* Main path */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={heatColor}
+                  strokeWidth={strokeWidth}
+                  strokeOpacity={0.9}
+                  strokeLinecap="round"
+                />
+                {/* Path label showing count */}
+                {pathEdge.count > 1 && (
+                  <text
+                    x={(fromPos.x + toPos.x) / 2}
+                    y={elbowY - 8}
+                    textAnchor="middle"
+                    fill={heatColor}
+                    style={{ fontSize: '9px', fontWeight: 'bold' }}
+                  >
+                    {pathEdge.count}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -926,7 +1066,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
         <span>{allDisplayedNodes.length} pages shown</span>
         <span className="hidden sm:inline">{allDisplayedNodes.filter(n => n.isVisited).length} visited</span>
-        <span className="hidden md:inline">{edges.length} paths</span>
+        <span className="hidden md:inline">{visitorPathEdges.length} visitor paths</span>
         <span>Peak: {maxVisits} visits</span>
         {liveVisitors.length > 0 && (
           <span className="text-cyan-400 flex items-center gap-1">
