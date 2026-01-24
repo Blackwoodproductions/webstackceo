@@ -164,30 +164,45 @@ export type Database = {
       }
       leads: {
         Row: {
+          annual_revenue: string | null
+          company_employees: string | null
           created_at: string
           domain: string | null
           email: string
+          full_name: string | null
+          funnel_stage: string | null
           id: string
           metric_type: string
           phone: string | null
+          qualification_step: number | null
           source_page: string | null
         }
         Insert: {
+          annual_revenue?: string | null
+          company_employees?: string | null
           created_at?: string
           domain?: string | null
           email: string
+          full_name?: string | null
+          funnel_stage?: string | null
           id?: string
           metric_type: string
           phone?: string | null
+          qualification_step?: number | null
           source_page?: string | null
         }
         Update: {
+          annual_revenue?: string | null
+          company_employees?: string | null
           created_at?: string
           domain?: string | null
           email?: string
+          full_name?: string | null
+          funnel_stage?: string | null
           id?: string
           metric_type?: string
           phone?: string | null
+          qualification_step?: number | null
           source_page?: string | null
         }
         Relationships: []

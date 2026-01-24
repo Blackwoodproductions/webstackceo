@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { saveLeadGlobal, trackToolInteractionGlobal, getGlobalSessionId } from "@/hooks/use-visitor-tracking";
+import { trackToolInteractionGlobal, getGlobalSessionId } from "@/hooks/use-visitor-tracking";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search,
   Link2,
@@ -22,9 +23,41 @@ import {
   ExternalLink,
   ArrowRight,
   Phone,
+  User,
+  Building,
+  DollarSign,
 } from "lucide-react";
 
 const RATE_LIMIT_KEY = 'webstack_metric_checks';
+
+// Save lead with all qualification data
+const saveLeadWithQualification = async (
+  email: string,
+  phone: string | null,
+  domain: string,
+  metricType: string,
+  fullName: string | null,
+  companyEmployees: string | null,
+  annualRevenue: string | null,
+  qualificationStep: number
+) => {
+  try {
+    await supabase.from('leads').insert({
+      email,
+      phone,
+      domain,
+      metric_type: metricType,
+      source_page: window.location.pathname,
+      full_name: fullName,
+      company_employees: companyEmployees,
+      annual_revenue: annualRevenue,
+      qualification_step: qualificationStep,
+      funnel_stage: qualificationStep >= 3 ? 'qualified' : qualificationStep >= 1 ? 'engaged' : 'visitor',
+    });
+  } catch (error) {
+    console.error('Failed to save lead:', error);
+  }
+};
 
 type MetricType = 
   | "backlinks"
@@ -162,10 +195,40 @@ const incrementCheckCount = (): number => {
   return newCount;
 };
 
+// Progressive questions after 2 checks
+const getQualificationStep = (count: number): number => {
+  if (count < 2) return 0; // Just email
+  if (count === 2) return 1; // Email + phone
+  if (count === 3) return 2; // Email + phone + name
+  if (count === 4) return 3; // Email + phone + name + employees
+  return 4; // All fields including revenue
+};
+
+const employeeOptions = [
+  "1-10",
+  "11-50",
+  "51-200",
+  "201-500",
+  "501-1000",
+  "1000+",
+];
+
+const revenueOptions = [
+  "Under $100K",
+  "$100K - $500K",
+  "$500K - $1M",
+  "$1M - $5M",
+  "$5M - $10M",
+  "$10M+",
+];
+
 const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps) => {
   const [domain, setDomain] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [companyEmployees, setCompanyEmployees] = useState("");
+  const [annualRevenue, setAnnualRevenue] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Hidden field for bots
   const [captcha, setCaptcha] = useState(generateCaptcha);
   const [captchaInput, setCaptchaInput] = useState("");
@@ -176,12 +239,13 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
   const [results, setResults] = useState<MetricResult | null>(null);
   const [emailError, setEmailError] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const [requirePhone, setRequirePhone] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [qualificationStep, setQualificationStep] = useState(0);
 
-  // Check if phone is required (after 2 checks)
+  // Check qualification step on mount
   useEffect(() => {
     const count = getCheckCount();
-    setRequirePhone(count >= 2);
+    setQualificationStep(getQualificationStep(count));
   }, []);
 
   const config = metricConfigs[metricType];
@@ -302,9 +366,9 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
   const handleDomainSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!domain.trim()) return;
-    // Check rate limit and update requirePhone state
+    // Check rate limit and update qualification step
     const count = getCheckCount();
-    setRequirePhone(count >= 2);
+    setQualificationStep(getQualificationStep(count));
     setShowEmailCapture(true);
   };
 
@@ -330,14 +394,22 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
       return;
     }
 
-    // Phone validation if required
-    if (requirePhone) {
+    // Phone validation (step 1+)
+    if (qualificationStep >= 1) {
       if (!phone.trim()) {
-        setPhoneError("Phone number is required for additional checks");
+        setPhoneError("Phone number is required");
         return;
       }
       if (!validatePhone(phone.trim())) {
         setPhoneError("Please enter a valid phone number");
+        return;
+      }
+    }
+
+    // Name validation (step 2+)
+    if (qualificationStep >= 2) {
+      if (!fullName.trim()) {
+        setNameError("Your full name is required");
         return;
       }
     }
@@ -360,13 +432,22 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     // Increment check count
     incrementCheckCount();
     
-    // Save lead to database
-    await saveLeadGlobal(email.trim(), requirePhone ? phone.trim() : null, domain.trim(), metricType);
+    // Save lead to database with all qualification data
+    await saveLeadWithQualification(
+      email.trim(), 
+      qualificationStep >= 1 ? phone.trim() : null, 
+      domain.trim(), 
+      metricType,
+      qualificationStep >= 2 ? fullName.trim() : null,
+      qualificationStep >= 3 ? companyEmployees : null,
+      qualificationStep >= 4 ? annualRevenue : null,
+      qualificationStep
+    );
     
     // Track tool interaction
     await trackToolInteractionGlobal('QuickMetricCheck', metricType, {
       domain: domain.trim(),
-      hasPhone: requirePhone,
+      qualificationStep,
     });
     
     // Simulate API call delay
@@ -414,8 +495,12 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     setShowEmailCapture(false);
     setEmail("");
     setPhone("");
+    setFullName("");
+    setCompanyEmployees("");
+    setAnnualRevenue("");
     setEmailError("");
     setPhoneError("");
+    setNameError("");
     setCaptcha(generateCaptcha()); // Reset captcha
     setCaptchaInput("");
     setCaptchaError("");
@@ -495,14 +580,17 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
             </div>
             
             <p className="text-sm text-muted-foreground">
-              Enter your {requirePhone ? 'details' : 'email'} to receive your instant {config.title.toLowerCase()} report.
+              Enter your {qualificationStep >= 1 ? 'details' : 'email'} to receive your instant {config.title.toLowerCase()} report.
             </p>
 
-            {requirePhone && (
+            {qualificationStep >= 1 && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                 <Phone className="w-4 h-4 text-amber-500" />
                 <span className="text-xs text-amber-600 dark:text-amber-400">
-                  Phone number required for additional checks
+                  {qualificationStep === 1 && "Phone number required for additional checks"}
+                  {qualificationStep === 2 && "Phone & name required for additional checks"}
+                  {qualificationStep === 3 && "A few quick questions for your personalized report"}
+                  {qualificationStep >= 4 && "Complete profile for your custom recommendations"}
                 </span>
               </div>
             )}
@@ -536,9 +624,13 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
                 )}
               </div>
 
-              {/* Phone field - shown after 2 checks */}
-              {requirePhone && (
+              {/* Phone field - step 1+ */}
+              {qualificationStep >= 1 && (
                 <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Phone Number</span>
+                  </div>
                   <Input
                     type="tel"
                     placeholder="(555) 123-4567"
@@ -552,6 +644,69 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
                   {phoneError && (
                     <p className="text-xs text-red-500 mt-1">{phoneError}</p>
                   )}
+                </div>
+              )}
+
+              {/* Full name - step 2+ */}
+              {qualificationStep >= 2 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <User className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Full Name</span>
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="John Smith"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      setNameError("");
+                    }}
+                    className={nameError ? "border-red-500" : ""}
+                  />
+                  {nameError && (
+                    <p className="text-xs text-red-500 mt-1">{nameError}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Company employees - step 3+ */}
+              {qualificationStep >= 3 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Building className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Company Size</span>
+                  </div>
+                  <Select value={companyEmployees} onValueChange={setCompanyEmployees}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How many employees?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employeeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt} employees</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Annual revenue - step 4+ */}
+              {qualificationStep >= 4 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Annual Revenue</span>
+                  </div>
+                  <Select value={annualRevenue} onValueChange={setAnnualRevenue}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Estimated annual revenue?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {revenueOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
               
