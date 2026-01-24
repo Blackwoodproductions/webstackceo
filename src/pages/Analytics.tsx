@@ -5,7 +5,7 @@ import {
   Search, TrendingUp, TrendingDown, MousePointer, Eye, Target,
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
   RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
-  LogOut, Settings, ChevronDown, ExternalLink
+  LogOut, Settings, ChevronDown, ExternalLink, Key
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -16,6 +16,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
@@ -38,8 +48,8 @@ import {
   Cell,
 } from "recharts";
 
-// Google OAuth Config
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Google OAuth Config - check localStorage first, then env var
+const getGoogleClientId = () => localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
@@ -91,6 +101,10 @@ const Analytics = () => {
   const [sitemaps, setSitemaps] = useState<SitemapInfo[]>([]);
   
   const [isFetching, setIsFetching] = useState(false);
+  
+  // Client ID configuration
+  const [showClientIdDialog, setShowClientIdDialog] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState("");
 
   // Check for stored token on mount
   useEffect(() => {
@@ -139,24 +153,44 @@ const Analytics = () => {
   }, [selectedSite, dateRange, accessToken]);
 
   const handleGoogleLogin = () => {
-    if (!GOOGLE_CLIENT_ID) {
-      toast({
-        title: "Configuration Required",
-        description: "Google OAuth is not configured. Please add your Google Client ID.",
-        variant: "destructive",
-      });
+    const clientId = getGoogleClientId();
+    if (!clientId) {
+      setShowClientIdDialog(true);
       return;
     }
 
     const redirectUri = window.location.origin + "/analytics";
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("response_type", "token");
     authUrl.searchParams.set("scope", GOOGLE_SCOPES);
     authUrl.searchParams.set("prompt", "consent");
     
     window.location.href = authUrl.toString();
+  };
+
+  const handleSaveClientId = () => {
+    if (!clientIdInput.trim()) {
+      toast({
+        title: "Client ID Required",
+        description: "Please enter your Google OAuth Client ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    localStorage.setItem("gsc_client_id", clientIdInput.trim());
+    setShowClientIdDialog(false);
+    toast({
+      title: "Client ID Saved",
+      description: "Now connecting to Google Search Console...",
+    });
+    
+    // Trigger login after saving
+    setTimeout(() => {
+      handleGoogleLogin();
+    }, 500);
   };
 
   const handleLogout = () => {
@@ -400,6 +434,54 @@ const Analytics = () => {
             </motion.div>
           </div>
         </main>
+
+        {/* Client ID Configuration Dialog */}
+        <Dialog open={showClientIdDialog} onOpenChange={setShowClientIdDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                Configure Google OAuth
+              </DialogTitle>
+              <DialogDescription>
+                To connect Google Search Console, you need to set up a Google Cloud OAuth Client ID.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientId">Google OAuth Client ID</Label>
+                <Input
+                  id="clientId"
+                  placeholder="123456789-abcdefg.apps.googleusercontent.com"
+                  value={clientIdInput}
+                  onChange={(e) => setClientIdInput(e.target.value)}
+                />
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+                <p className="font-medium">Setup Instructions:</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Cloud Console</a></li>
+                  <li>Create a new OAuth 2.0 Client ID (Web application)</li>
+                  <li>Add <code className="bg-background px-1 rounded">{window.location.origin}</code> to Authorized JavaScript origins</li>
+                  <li>Add <code className="bg-background px-1 rounded">{window.location.origin}/analytics</code> to Authorized redirect URIs</li>
+                  <li>Enable the Search Console API in your project</li>
+                  <li>Copy the Client ID and paste it above</li>
+                </ol>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowClientIdDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveClientId}>
+                Save & Connect
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         
         <Footer />
       </div>
