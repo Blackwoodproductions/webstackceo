@@ -126,9 +126,12 @@ interface MetricResult {
 
 const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps) => {
   const [domain, setDomain] = useState("");
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<MetricResult | null>(null);
+  const [emailError, setEmailError] = useState("");
 
   const config = metricConfigs[metricType];
   const IconComponent = config.icon;
@@ -234,9 +237,30 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleDomainSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!domain.trim()) return;
+    setShowEmailCapture(true);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailError("");
+    
+    if (!email.trim()) {
+      setEmailError("Please enter your email");
+      return;
+    }
+    
+    if (!validateEmail(email.trim())) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
 
     setIsLoading(true);
     
@@ -263,6 +287,7 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
               { label: "Organic Traffic", value: `${realMetrics.organicTraffic?.toLocaleString() || "N/A"}/mo`, status: realMetrics.organicTraffic > 500 ? "pass" : "warning", description: "Estimated monthly visits" },
             ],
           });
+          setShowEmailCapture(false);
           setShowResults(true);
           setIsLoading(false);
           return;
@@ -275,8 +300,15 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     // Fall back to mock data
     const mockResults = generateMockResults(domain.trim(), metricType);
     setResults(mockResults);
+    setShowEmailCapture(false);
     setShowResults(true);
     setIsLoading(false);
+  };
+
+  const handleCloseEmailCapture = () => {
+    setShowEmailCapture(false);
+    setEmail("");
+    setEmailError("");
   };
 
   const getStatusIcon = (status: "pass" | "warning" | "fail") => {
@@ -311,7 +343,7 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleDomainSubmit} className="flex gap-2">
           <div className="relative flex-1">
             <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -324,18 +356,79 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
           </div>
           <Button 
             type="submit" 
-            disabled={isLoading || !domain.trim()}
+            disabled={!domain.trim()}
             className={`gap-2 bg-gradient-to-r ${config.color} hover:opacity-90`}
           >
-            {isLoading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
+            <Search className="w-4 h-4" />
             {config.ctaText}
           </Button>
         </form>
       </motion.div>
+
+      {/* Email Capture Modal */}
+      <Dialog open={showEmailCapture} onOpenChange={handleCloseEmailCapture}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
+                <IconComponent className="w-4 h-4 text-white" />
+              </div>
+              Almost there!
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">{domain}</span>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              Enter your email to receive your instant {config.title.toLowerCase()} report.
+            </p>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <div>
+                <Input
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError("");
+                  }}
+                  className={emailError ? "border-red-500" : ""}
+                />
+                {emailError && (
+                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                )}
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className={`w-full gap-2 bg-gradient-to-r ${config.color} hover:opacity-90`}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    Get My Results
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <p className="text-xs text-muted-foreground text-center">
+              We respect your privacy. No spam, ever.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Results Modal */}
       <Dialog open={showResults} onOpenChange={setShowResults}>
