@@ -3,6 +3,7 @@ import {
   Activity, CheckCircle2, ArrowRight, ArrowLeft, 
   Zap, Clock, MousePointer, Target
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -70,6 +71,13 @@ const CoreWebVitalsGuide = () => {
                 Google's Core Web Vitals are now ranking factors. Learn what they measure and how to optimize them.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="page_speed" />
           </div>
         </section>
 

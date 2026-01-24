@@ -3,6 +3,7 @@ import {
   FileText, CheckCircle2, ArrowRight, ArrowLeft, 
   Sparkles, Target, AlertTriangle, Zap, Search
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const AutomatedBloggingGuide = () => {
                 Content is king, but creating it consistently is hard. Learn how automated blogging can help you publish SEO-optimized content at scale.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="keywords" />
           </div>
         </section>
 

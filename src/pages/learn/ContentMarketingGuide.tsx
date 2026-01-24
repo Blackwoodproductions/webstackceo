@@ -3,6 +3,7 @@ import {
   FileText, CheckCircle2, ArrowRight, ArrowLeft, 
   Target, TrendingUp, Users, Layers, Calendar
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const ContentMarketingGuide = () => {
                 Content marketing is how brands build trust, establish authority, and attract customers organically. Learn to create a strategy that delivers results.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="keywords" />
           </div>
         </section>
 

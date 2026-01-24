@@ -3,6 +3,7 @@ import {
   Search, CheckCircle2, ArrowRight, ArrowLeft, 
   Target, TrendingUp, BarChart3, Lightbulb
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const KeywordResearchGuide = () => {
                 Every successful SEO campaign starts with keyword research. Learn how to discover what your audience is searching for and how to target those terms effectively.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="keywords" />
           </div>
         </section>
 

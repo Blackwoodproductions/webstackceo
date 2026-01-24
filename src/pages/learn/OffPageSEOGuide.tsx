@@ -3,6 +3,7 @@ import {
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
   Link2, Users, FileText, Share2, Award, AlertTriangle, Layers
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -70,6 +71,13 @@ const OffPageSEOGuide = () => {
                 While on-page SEO optimizes your website, off-page SEO builds your reputation across the internet. Learn how to establish authority that search engines trust.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="backlinks" />
           </div>
         </section>
 

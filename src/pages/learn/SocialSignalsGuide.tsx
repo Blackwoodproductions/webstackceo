@@ -4,6 +4,7 @@ import {
   Share2, CheckCircle2, ArrowRight, ArrowLeft, 
   ThumbsUp, MessageCircle, TrendingUp, AlertTriangle, Zap
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const SocialSignalsGuide = () => {
                 Understand how social media engagement influences search visibility and how to leverage it for SEO success.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="backlinks" />
           </div>
         </section>
 

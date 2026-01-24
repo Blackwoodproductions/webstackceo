@@ -4,6 +4,7 @@ import {
   MapPin, CheckCircle2, ArrowRight, ArrowLeft, 
   Star, Clock, Image, MessageSquare, TrendingUp, AlertTriangle, Phone
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const GMBOptimizationGuide = () => {
                 Your Google Business Profile is often the first thing customers see. Learn how to optimize it for maximum visibility and conversions.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 

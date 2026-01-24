@@ -4,6 +4,7 @@ import {
   HelpCircle, CheckCircle2, ArrowRight, ArrowLeft, 
   Search, MessageSquare, Target, AlertTriangle, Zap
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const FAQGenerationGuide = () => {
                 FAQ content is a secret weapon for SEO. Learn how to generate, optimize, and leverage FAQs to dominate search results.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="schema" />
           </div>
         </section>
 

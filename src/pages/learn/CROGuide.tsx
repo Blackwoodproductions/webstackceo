@@ -3,6 +3,7 @@ import {
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft,
   Target, Zap, BarChart3
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -72,6 +73,13 @@ const CROGuide = () => {
                 Traffic means nothing without conversions. Learn how to systematically improve your website's ability to convert visitors.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 
