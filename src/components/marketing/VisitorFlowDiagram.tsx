@@ -596,15 +596,56 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const color = getHeatColor(intensity, edge.isVisited);
             const opacity = edge.isVisited ? 0.7 : 0.2;
             
-            const midY = (fromPos.y + toPos.y) / 2;
+            // Calculate a path that avoids other nodes
+            // Check all nodes except from/to and find ones that might be in the way
+            const nodeRadius = 20; // Buffer zone around nodes
+            const allNodePositions = Object.entries(positions).filter(
+              ([path]) => path !== edge.from && path !== edge.to
+            );
+            
+            // Determine if we need to route around nodes
+            const minX = Math.min(fromPos.x, toPos.x) - nodeRadius;
+            const maxX = Math.max(fromPos.x, toPos.x) + nodeRadius;
+            const minY = fromPos.y + 16;
+            const maxY = toPos.y - 16;
+            
+            // Find nodes in the path's bounding box
+            const nodesInWay = allNodePositions.filter(([, pos]) => 
+              pos.x > minX && pos.x < maxX && pos.y > minY && pos.y < maxY
+            );
+            
+            // Calculate path - use outside routing if nodes are in the way
+            let pathD: string;
+            
+            if (nodesInWay.length === 0) {
+              // Simple curved path
+              const midY = (fromPos.y + toPos.y) / 2;
+              pathD = `M ${fromPos.x} ${fromPos.y + 16} 
+                       Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
+                       Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
+            } else {
+              // Route around nodes - go to the side first
+              const goLeft = fromPos.x > svgWidth / 2;
+              const sideOffset = goLeft ? -60 : 60;
+              const sideX = goLeft ? Math.max(30, Math.min(fromPos.x, toPos.x) - 50) : Math.min(svgWidth - 30, Math.max(fromPos.x, toPos.x) + 50);
+              const midY = (fromPos.y + toPos.y) / 2;
+              
+              pathD = `M ${fromPos.x} ${fromPos.y + 16}
+                       L ${fromPos.x} ${fromPos.y + 35}
+                       Q ${fromPos.x} ${fromPos.y + 45}, ${fromPos.x + sideOffset * 0.3} ${fromPos.y + 45}
+                       L ${sideX} ${fromPos.y + 45}
+                       Q ${sideX + (goLeft ? -10 : 10)} ${fromPos.y + 45}, ${sideX + (goLeft ? -10 : 10)} ${midY}
+                       L ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 45}
+                       Q ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 35}, ${sideX} ${toPos.y - 35}
+                       L ${toPos.x + sideOffset * 0.3} ${toPos.y - 35}
+                       Q ${toPos.x} ${toPos.y - 35}, ${toPos.x} ${toPos.y - 16}`;
+            }
             
             return (
               <g key={`edge-${i}`}>
                 {edge.isVisited && (
                   <path
-                    d={`M ${fromPos.x} ${fromPos.y + 16} 
-                        Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                        Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`}
+                    d={pathD}
                     fill="none"
                     stroke={color}
                     strokeWidth={strokeWidth + 2}
@@ -613,9 +654,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   />
                 )}
                 <path
-                  d={`M ${fromPos.x} ${fromPos.y + 16} 
-                      Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                      Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`}
+                  d={pathD}
                   fill="none"
                   stroke={color}
                   strokeWidth={strokeWidth}
@@ -628,18 +667,52 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           })}
 
           {/* Animated live visitor paths */}
-          {activePaths.map((path) => {
-            const fromPos = positions[path.from];
-            const toPos = positions[path.to];
+          {activePaths.map((activePath) => {
+            const fromPos = positions[activePath.from];
+            const toPos = positions[activePath.to];
             if (!fromPos || !toPos) return null;
             
-            const midY = (fromPos.y + toPos.y) / 2;
-            const pathD = `M ${fromPos.x} ${fromPos.y + 16} 
-                          Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                          Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
+            // Use same routing logic as static edges
+            const nodeRadius = 20;
+            const allNodePositions = Object.entries(positions).filter(
+              ([path]) => path !== activePath.from && path !== activePath.to
+            );
+            
+            const minX = Math.min(fromPos.x, toPos.x) - nodeRadius;
+            const maxX = Math.max(fromPos.x, toPos.x) + nodeRadius;
+            const minY = fromPos.y + 16;
+            const maxY = toPos.y - 16;
+            
+            const nodesInWay = allNodePositions.filter(([, pos]) => 
+              pos.x > minX && pos.x < maxX && pos.y > minY && pos.y < maxY
+            );
+            
+            let pathD: string;
+            
+            if (nodesInWay.length === 0) {
+              const midY = (fromPos.y + toPos.y) / 2;
+              pathD = `M ${fromPos.x} ${fromPos.y + 16} 
+                       Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
+                       Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
+            } else {
+              const goLeft = fromPos.x > svgWidth / 2;
+              const sideOffset = goLeft ? -60 : 60;
+              const sideX = goLeft ? Math.max(30, Math.min(fromPos.x, toPos.x) - 50) : Math.min(svgWidth - 30, Math.max(fromPos.x, toPos.x) + 50);
+              const midY = (fromPos.y + toPos.y) / 2;
+              
+              pathD = `M ${fromPos.x} ${fromPos.y + 16}
+                       L ${fromPos.x} ${fromPos.y + 35}
+                       Q ${fromPos.x} ${fromPos.y + 45}, ${fromPos.x + sideOffset * 0.3} ${fromPos.y + 45}
+                       L ${sideX} ${fromPos.y + 45}
+                       Q ${sideX + (goLeft ? -10 : 10)} ${fromPos.y + 45}, ${sideX + (goLeft ? -10 : 10)} ${midY}
+                       L ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 45}
+                       Q ${sideX + (goLeft ? -10 : 10)} ${toPos.y - 35}, ${sideX} ${toPos.y - 35}
+                       L ${toPos.x + sideOffset * 0.3} ${toPos.y - 35}
+                       Q ${toPos.x} ${toPos.y - 35}, ${toPos.x} ${toPos.y - 16}`;
+            }
             
             return (
-              <g key={path.id}>
+              <g key={activePath.id}>
                 {/* Glowing path */}
                 <path
                   d={pathD}
