@@ -807,16 +807,21 @@ const MarketingDashboard = () => {
                       }}
                     >
                       <SelectTrigger className="w-[200px] h-7 text-sm bg-background border-border">
-                        <Globe className="w-3 h-3 mr-1.5 text-cyan-500" />
-                        <SelectValue placeholder="Select domain" />
+                        <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-cyan-500" />
+                        <span className="truncate max-w-[150px]">
+                          {currentValue ? (currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '').length > 20 
+                            ? currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '').slice(0, 20) + '...'
+                            : currentValue.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, ''))
+                            : 'Select domain'}
+                        </span>
                       </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[280px]">
                         {allDomains.map((domain) => (
                           <SelectItem key={domain.value} value={domain.value} className="text-xs">
                             <div className="flex items-center gap-2">
-                              <span>{domain.label}</span>
+                              <span className="truncate max-w-[180px]" title={domain.label}>{domain.label.length > 25 ? domain.label.slice(0, 25) + '...' : domain.label}</span>
                               {domain.source === 'gsc' && (
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30 flex-shrink-0">GSC</Badge>
                               )}
                             </div>
                           </SelectItem>
