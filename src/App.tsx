@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SoundProvider } from "@/contexts/SoundContext";
+import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import ScrollToTop from "@/components/ui/scroll-to-top";
 
@@ -104,10 +105,11 @@ import { VisitorTrackingProvider } from "@/components/VisitorTrackingProvider";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <SoundProvider>
-      <TooltipProvider delayDuration={300}>
-        <Toaster />
-        <Sonner />
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <SoundProvider>
+        <TooltipProvider delayDuration={300}>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <VisitorTrackingProvider>
             <ScrollToTop />
@@ -186,7 +188,8 @@ const App = () => (
           </VisitorTrackingProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </SoundProvider>
+      </SoundProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
