@@ -44,10 +44,10 @@ const getTimeRangeFilter = (range: TimeRange, customStart?: Date): Date | null =
   const now = new Date();
   switch (range) {
     case 'live':
-      // Last 15 minutes for "live" view
-      const fifteenMinAgo = new Date(now);
-      fifteenMinAgo.setMinutes(fifteenMinAgo.getMinutes() - 15);
-      return fifteenMinAgo;
+      // Last 24 hours
+      const twentyFourHoursAgo = new Date(now);
+      twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+      return twentyFourHoursAgo;
     case 'yesterday':
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
@@ -953,7 +953,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 <SelectValue placeholder="Select range" />
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                <SelectItem value="live">Live Now</SelectItem>
+                <SelectItem value="live">Last 24 Hours</SelectItem>
                 <SelectItem value="yesterday">Yesterday</SelectItem>
                 <SelectItem value="week">Last Week</SelectItem>
                 <SelectItem value="month">Last Month</SelectItem>
