@@ -160,15 +160,15 @@ const ScoreDial = ({
   };
   
   const textSizes = {
-    sm: "text-lg",
-    md: "text-2xl",
-    lg: "text-3xl",
+    sm: "text-sm",
+    md: "text-base",
+    lg: "text-lg",
   };
   
   const labelSizes = {
-    sm: "text-[9px]",
-    md: "text-[10px]",
-    lg: "text-xs",
+    sm: "text-[8px]",
+    md: "text-[9px]",
+    lg: "text-[10px]",
   };
   
   const colorGradients = {
@@ -1161,8 +1161,8 @@ const AuditResults = () => {
     return (
       <div className="min-h-screen bg-background">
         <SEO
-          title={`Analyzing ${decodedDomain} | Free SEO Audit`}
-          description={`Running comprehensive SEO audit for ${decodedDomain}`}
+          title={`Analyzing ${decodedDomain} | Free Domain Audit`}
+          description={`Running comprehensive domain audit for ${decodedDomain}`}
           noIndex
         />
         <Navbar />
@@ -1180,7 +1180,7 @@ const AuditResults = () => {
               </div>
               <h1 className="text-2xl font-bold mb-2">Analyzing {decodedDomain}</h1>
               <p className="text-muted-foreground mb-8">
-                Running comprehensive SEO checks...
+                Running comprehensive domain audit...
               </p>
               <div className="flex flex-col gap-3 max-w-md mx-auto text-left">
                 {[
@@ -1222,8 +1222,8 @@ const AuditResults = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`SEO Audit Results for ${decodedDomain} | Webstack.ceo`}
-        description={`Comprehensive SEO audit results for ${decodedDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
+        title={`Domain Audit Results for ${decodedDomain} | Webstack.ceo`}
+        description={`Comprehensive domain audit results for ${decodedDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
         noIndex
       />
       <Navbar />

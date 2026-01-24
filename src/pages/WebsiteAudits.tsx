@@ -117,8 +117,8 @@ const WebsiteAudits = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Website Audits | SEO Analysis Archive"
-        description="Browse our archive of website SEO audits. Find detailed analysis of websites across various industries including e-commerce, SaaS, local businesses, and more."
+        title="Domain Audits | Analysis Archive"
+        description="Browse our archive of domain audits. Find detailed analysis of websites across various industries including e-commerce, SaaS, local businesses, and more."
       />
       <Navbar />
       <BackToTop />
@@ -133,16 +133,16 @@ const WebsiteAudits = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
               <Search className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">SEO Audit Archive</span>
+              <span className="text-sm font-medium text-primary">Domain Audit Archive</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Website{" "}
+              Domain{" "}
               <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-amber-400 bg-clip-text text-transparent">
                 Audits
               </span>
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Browse our collection of SEO audits across different industries. Each audit includes
+              Browse our collection of domain audits across different industries. Each audit includes
               detailed metrics, recommendations, and insights.
             </p>
           </motion.div>
