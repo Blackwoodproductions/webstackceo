@@ -940,14 +940,13 @@ const MarketingDashboard = () => {
             {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
             {(() => {
               // Build unified list: VI-only first, then VI+GSC (allowing multiple GSC properties per domain), then GSC-only.
-              // IMPORTANT: do NOT de-duplicate GSC sites by normalized domain; users may have multiple properties
-              // (sc-domain vs URL-prefix, http vs https, www vs non-www) that must be selectable.
+              // IMPORTANT: the selector UI is domain-first (as requested). We select by *domain label*
+              // and internally map to a canonical GSC property (preferring sc-domain: when available).
               type DomainEntry = {
-                value: string; // Select value (GSC siteUrl OR tracked domain)
+                value: string; // Select value (normalized domain label)
                 label: string; // normalized domain label used for matching
                 source: 'gsc' | 'tracking' | 'both';
                 hasTracking: boolean;
-                gscKind?: 'domain' | 'url';
               };
 
               const viOnlyDomains: DomainEntry[] = [];
@@ -967,40 +966,28 @@ const MarketingDashboard = () => {
                 }
               }
 
-              // Categorize tracked domains
+              const pickCanonicalGscSiteUrl = (domain: string): string => {
+                const sites = gscSitesByLabel.get(domain) || [];
+                if (!sites.length) return "";
+                const scDomain = sites.find((s) => s.siteUrl.startsWith("sc-domain:"));
+                return (scDomain || sites[0]).siteUrl;
+              };
+
+              // Categorize tracked domains (domain-first)
               for (const domain of trackedDomains) {
-                const matchingGscSites = gscSitesByLabel.get(domain) || [];
-                if (gscAuthenticated && matchingGscSites.length > 0) {
-                  // Domain has both VI tracking and one-or-more GSC properties
-                  for (const site of matchingGscSites) {
-                    bothDomains.push({
-                      value: site.siteUrl,
-                      label: domain,
-                      source: 'both',
-                      hasTracking: true,
-                      gscKind: site.siteUrl.startsWith('sc-domain:') ? 'domain' : 'url',
-                    });
-                  }
+                const hasGsc = gscAuthenticated && (gscSitesByLabel.get(domain)?.length || 0) > 0;
+                if (hasGsc) {
+                  bothDomains.push({ value: domain, label: domain, source: 'both', hasTracking: true });
                 } else {
-                  // VI-only
                   viOnlyDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: true });
                 }
               }
 
-              // Add remaining GSC-only sites (only when GSC connected)
+              // Add remaining GSC-only domains
               if (gscAuthenticated) {
-                for (const [label, sites] of gscSitesByLabel.entries()) {
-                  // Skip any label that is VI tracked (those are represented in bothDomains already)
+                for (const label of gscSitesByLabel.keys()) {
                   if (trackedDomains.includes(label)) continue;
-                  for (const site of sites) {
-                    gscOnlyDomains.push({
-                      value: site.siteUrl,
-                      label,
-                      source: 'gsc',
-                      hasTracking: false,
-                      gscKind: site.siteUrl.startsWith('sc-domain:') ? 'domain' : 'url',
-                    });
-                  }
+                  gscOnlyDomains.push({ value: label, label, source: 'gsc', hasTracking: false });
                 }
               }
 
@@ -1008,16 +995,13 @@ const MarketingDashboard = () => {
                 ? [...viOnlyDomains, ...bothDomains, ...gscOnlyDomains]
                 : [...viOnlyDomains, ...bothDomains.map(d => ({ ...d, source: 'tracking' as const }))];
 
-              // Guarantee unique SelectItem values.
-              const allDomains = Array.from(
-                new Map(allDomainsRaw.map((d) => [d.value, d])).values()
-              );
+              // Unique by domain
+              const allDomains = Array.from(new Map(allDomainsRaw.map((d) => [d.value, d])).values());
 
-              // For the header selector, prefer the exact GSC property URL when set.
-              const rawSelectValue = selectedGscSiteUrl || selectedTrackedDomain || '';
+              // Selector is domain-first
+              const rawSelectValue = selectedTrackedDomain || selectedGscDomain || '';
               const selectValue = allDomains.some((d) => d.value === rawSelectValue) ? rawSelectValue : '';
-
-              const displayLabel = selectValue ? normalizeDomain(selectValue) : '';
+              const displayLabel = selectValue || '';
               
               if (allDomains.length > 0) {
                 return (
@@ -1034,15 +1018,17 @@ const MarketingDashboard = () => {
                           selectedGscDomainRef.current = selected.label;
                           
                           if (selected.source === 'gsc') {
-                            // GSC-only domain: set GSC site URL, clear tracked domain
-                            setSelectedGscSiteUrl(value);
-                            setSelectedGscDomain(selected.label);
+                              // GSC-only domain: set canonical GSC site URL, clear tracked domain
+                              const siteUrl = pickCanonicalGscSiteUrl(selected.label);
+                              setSelectedGscSiteUrl(siteUrl);
+                              setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain('');
                             console.log('[Domain Selector] Selected GSC-only domain:', selected.label, 'URL:', value);
                           } else if (selected.source === 'both') {
-                            // Domain has both VI and GSC: set both
-                            setSelectedGscSiteUrl(value);
-                            setSelectedGscDomain(selected.label);
+                              // Domain has both VI and GSC: set both (canonical GSC property)
+                              const siteUrl = pickCanonicalGscSiteUrl(selected.label);
+                              setSelectedGscSiteUrl(siteUrl);
+                              setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain(selected.label);
                             console.log('[Domain Selector] Selected VI+GSC domain:', selected.label, 'URL:', value);
                           } else {
