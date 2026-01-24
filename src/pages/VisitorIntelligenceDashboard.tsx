@@ -161,6 +161,8 @@ const MarketingDashboard = () => {
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
   // GSC domain tracking status
+  // Single source-of-truth for the header domain selector (domain-first)
+  const [selectedDomainKey, setSelectedDomainKey] = useState<string>("");
   const [selectedGscDomain, setSelectedGscDomain] = useState<string | null>(null);
   const [gscDomainHasTracking, setGscDomainHasTracking] = useState<boolean>(true); // Default to true until we check
   const [gscTrackingByDomain, setGscTrackingByDomain] = useState<Record<string, boolean>>({});
@@ -284,6 +286,7 @@ const MarketingDashboard = () => {
       if (allowedDomains.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
         setSelectedTrackedDomain(allowedDomains[0]);
         setSelectedGscDomain(allowedDomains[0]);
+        setSelectedDomainKey(allowedDomains[0]);
         // Ensure tracking status is TRUE for known tracked domains
         setGscDomainHasTracking(true);
       }
@@ -298,10 +301,10 @@ const MarketingDashboard = () => {
   }, []);
 
   const selectedDomainLabel = useMemo(() => {
-    // IMPORTANT: the top dropdown is driven by selectedTrackedDomain when present,
-    // so the label used across the UI must prioritize that to avoid mismatches.
+    // UI should always be domain-first.
+    if (selectedDomainKey) return selectedDomainKey;
     return normalizeDomain(selectedTrackedDomain || selectedGscSiteUrl || selectedGscDomain || "");
-  }, [selectedTrackedDomain, selectedGscSiteUrl, selectedGscDomain]);
+  }, [selectedDomainKey, selectedTrackedDomain, selectedGscSiteUrl, selectedGscDomain]);
 
   const isGscSiteSelected = !!selectedGscSiteUrl;
   const shouldShowInstallPrompt = gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking;
@@ -999,7 +1002,7 @@ const MarketingDashboard = () => {
               const allDomains = Array.from(new Map(allDomainsRaw.map((d) => [d.value, d])).values());
 
               // Selector is domain-first
-              const rawSelectValue = selectedTrackedDomain || selectedGscDomain || '';
+              const rawSelectValue = selectedDomainKey || selectedTrackedDomain || selectedGscDomain || '';
               const selectValue = allDomains.some((d) => d.value === rawSelectValue) ? rawSelectValue : '';
               const displayLabel = selectValue || '';
               
@@ -1011,6 +1014,9 @@ const MarketingDashboard = () => {
                       onValueChange={(value) => {
                         const selected = allDomains.find(d => d.value === value);
                         if (selected) {
+                            // Keep selector stable even when other states are cleared (e.g., GSC-only selection).
+                            setSelectedDomainKey(selected.label);
+
                           const cachedTracking = gscTrackingByDomain[selected.label];
                           setGscDomainHasTracking(selected.hasTracking || cachedTracking === true);
                           
@@ -1033,6 +1039,7 @@ const MarketingDashboard = () => {
                             console.log('[Domain Selector] Selected VI+GSC domain:', selected.label, 'URL:', value);
                           } else {
                             // Tracking-only domain: clear GSC site URL to signal VI-only mode
+                              setSelectedDomainKey(value);
                             setSelectedTrackedDomain(value);
                             setSelectedGscDomain(value);
                             setSelectedGscSiteUrl(''); // Clear GSC URL - this tells GSC panel to show empty state
@@ -1084,23 +1091,9 @@ const MarketingDashboard = () => {
                             textValue={domain.label}
                             className="text-xs"
                           >
-                            <div className="flex items-center justify-between gap-2 w-full">
-                              <span className="truncate max-w-[220px]" title={domain.label}>
-                                {domain.label}
-                              </span>
-                              <span className="flex items-center gap-1 flex-shrink-0">
-                                {(domain.source === 'tracking' || domain.source === 'both') && (
-                                  <Badge variant="secondary" className="h-5 px-2 text-[10px]">
-                                    VI
-                                  </Badge>
-                                )}
-                                {(domain.source === 'gsc' || domain.source === 'both') && (
-                                  <Badge variant="secondary" className="h-5 px-2 text-[10px]">
-                                    GSC
-                                  </Badge>
-                                )}
-                              </span>
-                            </div>
+                            <span className="truncate max-w-[320px]" title={domain.label}>
+                              {domain.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1852,6 +1845,7 @@ f.parentNode.insertBefore(j,f);
               if (cleanDomain !== selectedGscDomainRef.current) {
                 setSelectedGscDomain(cleanDomain);
                 setSelectedGscSiteUrl(site);
+                setSelectedDomainKey(cleanDomain);
                 selectedGscDomainRef.current = cleanDomain;
 
                 // If we already know tracking status for this domain, apply it immediately.
@@ -1902,6 +1896,7 @@ f.parentNode.insertBefore(j,f);
                   setSelectedGscSiteUrl(matchingTrackedSite.siteUrl);
                   setSelectedGscDomain(cleanDomain);
                   setSelectedTrackedDomain(cleanDomain);
+                  setSelectedDomainKey(cleanDomain);
                   selectedGscDomainRef.current = cleanDomain;
                   setGscDomainHasTracking(true); // Known tracked domain
                   console.log('[GSC] Auto-selected matching tracked domain:', cleanDomain);
@@ -1910,6 +1905,7 @@ f.parentNode.insertBefore(j,f);
                   const cleanDomain = normalizeDomain(sites[0].siteUrl);
                   setSelectedGscSiteUrl(sites[0].siteUrl);
                   setSelectedGscDomain(cleanDomain);
+                  setSelectedDomainKey(cleanDomain);
                   selectedGscDomainRef.current = cleanDomain;
                   // Check if this is a known tracked domain
                   const isTracked = trackedDomains.includes(cleanDomain);
