@@ -650,9 +650,11 @@ const AuditResults = () => {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isClaimed, setIsClaimed] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [submitterEmail, setSubmitterEmail] = useState("");
   const [showLinkActiveNotification, setShowLinkActiveNotification] = useState(false);
+  const [justClaimed, setJustClaimed] = useState(false); // true when user just claimed in this session
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -863,10 +865,10 @@ const AuditResults = () => {
         toast.error('Failed to save audit');
       } else {
         setIsSaved(true);
+        setIsClaimed(true);
+        setJustClaimed(true);
         setShowEmailDialog(false);
         setShowLinkActiveNotification(true);
-        // Auto-hide notification after 10 seconds
-        setTimeout(() => setShowLinkActiveNotification(false), 10000);
       }
     } catch (err) {
       console.error('Save audit error:', err);
@@ -876,7 +878,7 @@ const AuditResults = () => {
     }
   };
 
-  // Check if audit already exists
+  // Check if audit already exists and is claimed
   useEffect(() => {
     if (!decodedDomain) return;
     
@@ -884,12 +886,16 @@ const AuditResults = () => {
       const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
       const { data } = await supabase
         .from('saved_audits')
-        .select('id')
+        .select('id, submitter_email')
         .eq('slug', slug)
         .single();
       
       if (data) {
         setIsSaved(true);
+        if (data.submitter_email) {
+          setIsClaimed(true);
+          setShowLinkActiveNotification(true);
+        }
       }
     };
     
@@ -1288,7 +1294,7 @@ const AuditResults = () => {
                       
                       {/* Link Active Notification */}
                       <AnimatePresence>
-                        {showLinkActiveNotification && (
+                        {showLinkActiveNotification && isClaimed && (
                           <motion.div
                             initial={{ opacity: 0, y: -10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1297,16 +1303,19 @@ const AuditResults = () => {
                             className="mt-3 flex items-center gap-2"
                           >
                             <motion.div
-                              animate={{ x: [0, -5, 0] }}
-                              transition={{ duration: 0.6, repeat: Infinity, repeatType: "reverse" }}
+                              animate={{ x: [0, 8, 0] }}
+                              transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
                               className="text-green-500"
                             >
-                              <ArrowRight className="w-5 h-5 rotate-180" />
+                              <ArrowRight className="w-5 h-5 rotate-[225deg]" />
                             </motion.div>
                             <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
                               <p className="text-sm font-medium text-green-400 flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4" />
-                                Your do-follow link is now active! Click the domain above to visit.
+                                <Link2 className="w-4 h-4" />
+                                {justClaimed 
+                                  ? "Your do-follow link is now active! Click the domain above to visit."
+                                  : "This website owner claimed their free do-follow link!"
+                                }
                               </p>
                             </div>
                             <button 
