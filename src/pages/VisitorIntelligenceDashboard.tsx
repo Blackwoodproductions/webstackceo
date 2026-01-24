@@ -736,8 +736,8 @@ const MarketingDashboard = () => {
         <div className="px-6 py-2 flex items-center justify-between">
           {/* Left: Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Domain Selector - only show in header when GSC is authenticated AND tracking is installed */}
-            {gscAuthenticated && gscSites.length > 0 && gscDomainHasTracking && (
+            {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
+            {gscAuthenticated && gscSites.length > 0 && (
               <>
                 <Select 
                   value={selectedGscSiteUrl} 

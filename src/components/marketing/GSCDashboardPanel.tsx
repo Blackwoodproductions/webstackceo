@@ -898,26 +898,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Controls - Domain and Date selectors left, dropdowns right */}
+          {/* Controls - Date selector left, dropdowns right */}
           <div className="flex flex-wrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3">
-            {/* Left side - Domain & Date selectors */}
+            {/* Left side - Date selector only (domain controlled by header) */}
             <div className="flex items-center gap-2">
-              <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger className="w-[200px] h-8 text-xs font-medium">
-                  <Globe className="w-3 h-3 mr-1.5 text-primary" />
-                  <SelectValue placeholder="Select site" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
-                  {sites.map((site) => (
-                    <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
-                      {site.siteUrl.replace('sc-domain:', '').replace('https://', '')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="w-px h-6 bg-border" />
-
               <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
                 <SelectTrigger className="w-[110px] h-8 text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
