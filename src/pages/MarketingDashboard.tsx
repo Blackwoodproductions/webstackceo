@@ -20,8 +20,9 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
@@ -84,6 +85,7 @@ interface FunnelStats {
 }
 
 const MarketingDashboard = () => {
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -400,7 +402,15 @@ const MarketingDashboard = () => {
               </div>
             </a>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-9 h-9 p-0"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
