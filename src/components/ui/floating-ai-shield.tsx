@@ -43,7 +43,7 @@ const FloatingAIShield = memo(() => {
       if (!footer) return;
 
       const footerRect = footer.getBoundingClientRect();
-      const elementHeight = 64; // 16 * 4 = h-16
+      const elementHeight = 56; // 14 * 4 = h-14
       const buffer = 40; // Space above footer
       const defaultTop = window.innerHeight * 0.70;
       
@@ -56,7 +56,7 @@ const FloatingAIShield = memo(() => {
         // Element would overlap footer, cap it
         setTopPosition(`${maxTop}px`);
       } else {
-        setTopPosition('70%');
+        setTopPosition('72%');
       }
     };
 
@@ -73,7 +73,7 @@ const FloatingAIShield = memo(() => {
 
   return (
     <div 
-      className={`fixed left-20 w-16 h-16 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in ${
+      className={`fixed left-6 w-14 h-14 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in ${
         isShieldGold 
           ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] transition-[background,box-shadow] duration-700" 
           : "bg-gradient-to-br from-cyan-400/20 to-violet-500/20 transition-[background,box-shadow] duration-700"
