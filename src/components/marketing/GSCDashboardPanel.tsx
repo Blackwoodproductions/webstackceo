@@ -1088,7 +1088,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
           {/* Dropdown Content Panels */}
           {activeDropdown === 'queries' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Search className="w-4 h-4 text-primary" />
@@ -1191,7 +1191,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           )}
 
           {activeDropdown === 'pages' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <FileText className="w-4 h-4 text-cyan-500" />
@@ -1311,7 +1311,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           )}
 
           {activeDropdown === 'countries' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Globe className="w-4 h-4 text-violet-500" />
