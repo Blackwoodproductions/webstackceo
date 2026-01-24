@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { saveLeadGlobal, trackToolInteractionGlobal, getGlobalSessionId } from "@/hooks/use-visitor-tracking";
 import {
   Search,
   Link2,
@@ -20,7 +21,10 @@ import {
   AlertTriangle,
   ExternalLink,
   ArrowRight,
+  Phone,
 } from "lucide-react";
+
+const RATE_LIMIT_KEY = 'webstack_metric_checks';
 
 type MetricType = 
   | "backlinks"
@@ -131,9 +135,37 @@ const generateCaptcha = () => {
   return { question: `${a} + ${b}`, answer: a + b };
 };
 
+// Get check count from localStorage
+const getCheckCount = (): number => {
+  try {
+    const data = localStorage.getItem(RATE_LIMIT_KEY);
+    if (!data) return 0;
+    const parsed = JSON.parse(data);
+    // Reset if older than 24 hours
+    if (Date.now() - parsed.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(RATE_LIMIT_KEY);
+      return 0;
+    }
+    return parsed.count || 0;
+  } catch {
+    return 0;
+  }
+};
+
+const incrementCheckCount = (): number => {
+  const currentCount = getCheckCount();
+  const newCount = currentCount + 1;
+  localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({
+    count: newCount,
+    timestamp: Date.now()
+  }));
+  return newCount;
+};
+
 const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps) => {
   const [domain, setDomain] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Hidden field for bots
   const [captcha, setCaptcha] = useState(generateCaptcha);
   const [captchaInput, setCaptchaInput] = useState("");
@@ -143,6 +175,14 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<MetricResult | null>(null);
   const [emailError, setEmailError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [requirePhone, setRequirePhone] = useState(false);
+
+  // Check if phone is required (after 2 checks)
+  useEffect(() => {
+    const count = getCheckCount();
+    setRequirePhone(count >= 2);
+  }, []);
 
   const config = metricConfigs[metricType];
   const IconComponent = config.icon;
@@ -253,15 +293,25 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     return emailRegex.test(email);
   };
 
+  const validatePhone = (phone: string) => {
+    // Allow common phone formats
+    const phoneRegex = /^[\d\s\-\+\(\)]{7,20}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
   const handleDomainSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!domain.trim()) return;
+    // Check rate limit and update requirePhone state
+    const count = getCheckCount();
+    setRequirePhone(count >= 2);
     setShowEmailCapture(true);
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEmailError("");
+    setPhoneError("");
     setCaptchaError("");
     
     // Honeypot check - if filled, it's a bot
@@ -279,6 +329,18 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
       setEmailError("Please enter a valid email address");
       return;
     }
+
+    // Phone validation if required
+    if (requirePhone) {
+      if (!phone.trim()) {
+        setPhoneError("Phone number is required for additional checks");
+        return;
+      }
+      if (!validatePhone(phone.trim())) {
+        setPhoneError("Please enter a valid phone number");
+        return;
+      }
+    }
     
     // Captcha validation
     if (!captchaInput.trim()) {
@@ -294,6 +356,18 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     }
 
     setIsLoading(true);
+    
+    // Increment check count
+    incrementCheckCount();
+    
+    // Save lead to database
+    await saveLeadGlobal(email.trim(), requirePhone ? phone.trim() : null, domain.trim(), metricType);
+    
+    // Track tool interaction
+    await trackToolInteractionGlobal('QuickMetricCheck', metricType, {
+      domain: domain.trim(),
+      hasPhone: requirePhone,
+    });
     
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -339,7 +413,9 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
   const handleCloseEmailCapture = () => {
     setShowEmailCapture(false);
     setEmail("");
+    setPhone("");
     setEmailError("");
+    setPhoneError("");
     setCaptcha(generateCaptcha()); // Reset captcha
     setCaptchaInput("");
     setCaptchaError("");
@@ -419,8 +495,17 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
             </div>
             
             <p className="text-sm text-muted-foreground">
-              Enter your email to receive your instant {config.title.toLowerCase()} report.
+              Enter your {requirePhone ? 'details' : 'email'} to receive your instant {config.title.toLowerCase()} report.
             </p>
+
+            {requirePhone && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <Phone className="w-4 h-4 text-amber-500" />
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  Phone number required for additional checks
+                </span>
+              </div>
+            )}
 
             <form onSubmit={handleEmailSubmit} className="space-y-3">
               {/* Honeypot - hidden from humans, visible to bots */}
@@ -450,6 +535,25 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
                   <p className="text-xs text-red-500 mt-1">{emailError}</p>
                 )}
               </div>
+
+              {/* Phone field - shown after 2 checks */}
+              {requirePhone && (
+                <div>
+                  <Input
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setPhoneError("");
+                    }}
+                    className={phoneError ? "border-red-500" : ""}
+                  />
+                  {phoneError && (
+                    <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+                  )}
+                </div>
+              )}
               
               {/* Math CAPTCHA */}
               <div>

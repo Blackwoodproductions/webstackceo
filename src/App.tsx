@@ -21,6 +21,7 @@ const Marketplace = lazy(() => import("./pages/Marketplace"));
 const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
+const MarketingDashboard = lazy(() => import("./pages/MarketingDashboard"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Security = lazy(() => import("./pages/Security"));
@@ -97,6 +98,8 @@ const queryClient = new QueryClient({
   },
 });
 
+import { VisitorTrackingProvider } from "@/components/VisitorTrackingProvider";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <SoundProvider>
@@ -104,13 +107,14 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <ScrollToTop />
-          <Suspense fallback={null}>
-            <FloatingCodeBox />
-          </Suspense>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
+          <VisitorTrackingProvider>
+            <ScrollToTop />
+            <Suspense fallback={null}>
+              <FloatingCodeBox />
+            </Suspense>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
               <Route path="/about" element={<About />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/features" element={<Features />} />
@@ -121,6 +125,7 @@ const App = () => (
               <Route path="/marketplace/:slug" element={<PartnerDetail />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/marketing-dashboard" element={<MarketingDashboard />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/security" element={<Security />} />
@@ -174,6 +179,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </VisitorTrackingProvider>
         </BrowserRouter>
       </TooltipProvider>
     </SoundProvider>
