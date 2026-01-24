@@ -676,29 +676,56 @@ const MarketingDashboard = () => {
                 {/* Mini summary when collapsed - diagram-style icons */}
                 {!siteArchOpen && flowSummary && flowSummary.topPages.length > 0 && (
                   <div className="flex items-center gap-3 mr-4">
-                    <div className="flex items-center gap-2">
-                      {flowSummary.topPages.slice(0, 6).map((page, i) => {
-                        // Match diagram colors: intensity-based heat
+                    <div className="flex items-center gap-3">
+                      {flowSummary.topPages.slice(0, 6).map((page) => {
+                        // Match diagram colors: intensity-based heat (blue for high, green for medium, yellow for low)
                         const maxVisits = flowSummary.topPages[0]?.visits || 1;
                         const intensity = page.visits / maxVisits;
-                        const heatColor = intensity > 0.7 ? '#22c55e' : intensity > 0.4 ? '#f59e0b' : intensity > 0.1 ? '#ef4444' : '#6b7280';
-                        const isTopPage = i === 0;
-                        const nodeSize = isTopPage ? 18 : 14;
+                        const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : intensity > 0.1 ? '#eab308' : '#eab308';
+                        const hasLiveVisitor = page.liveCount > 0;
+                        const hasExternalReferrer = page.hasExternalReferrer;
+                        const nodeSize = 16;
+                        const svgSize = nodeSize * 2 + 20;
+                        const cx = svgSize / 2;
+                        const cy = svgSize / 2;
                         
                         return (
                           <div
                             key={page.path}
                             className="relative group"
-                            title={`${page.name}: ${page.visits} visits`}
+                            title={`${page.name}: ${page.visits} visits${page.liveCount > 0 ? `, ${page.liveCount} live` : ''}${page.externalCount > 0 ? `, ${page.externalCount} external` : ''}`}
                           >
-                            <svg width={nodeSize * 2 + 12} height={nodeSize * 2 + 12} className="overflow-visible">
-                              {/* Starburst effect for top pages */}
-                              {isTopPage && (
+                            <svg width={svgSize} height={svgSize} className="overflow-visible">
+                              {/* Live visitor pulsing ring */}
+                              {hasLiveVisitor && (
                                 <>
                                   <circle
-                                    cx={nodeSize + 6}
-                                    cy={nodeSize + 6}
-                                    r={nodeSize + 6}
+                                    cx={cx}
+                                    cy={cy}
+                                    r={nodeSize + 8}
+                                    fill="none"
+                                    stroke="#22c55e"
+                                    strokeWidth={1.5}
+                                    strokeOpacity={0.6}
+                                    className="animate-ping"
+                                    style={{ transformOrigin: `${cx}px ${cy}px` }}
+                                  />
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={nodeSize + 5}
+                                    fill="#22c55e"
+                                    opacity={0.15}
+                                  />
+                                </>
+                              )}
+                              {/* External referrer starburst effect */}
+                              {hasExternalReferrer && (
+                                <>
+                                  <circle
+                                    cx={cx}
+                                    cy={cy}
+                                    r={nodeSize + 10}
                                     fill="none"
                                     stroke="#f97316"
                                     strokeWidth={1.5}
@@ -707,7 +734,7 @@ const MarketingDashboard = () => {
                                   >
                                     <animate
                                       attributeName="r"
-                                      values={`${nodeSize + 4};${nodeSize + 10};${nodeSize + 4}`}
+                                      values={`${nodeSize + 6};${nodeSize + 12};${nodeSize + 6}`}
                                       dur="2s"
                                       repeatCount="indefinite"
                                     />
@@ -719,14 +746,12 @@ const MarketingDashboard = () => {
                                     />
                                   </circle>
                                   {/* Starburst rays */}
-                                  {[0, 60, 120, 180, 240, 300].map((angle) => {
+                                  {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
                                     const rad = (angle * Math.PI) / 180;
-                                    const cx = nodeSize + 6;
-                                    const cy = nodeSize + 6;
-                                    const x1 = cx + Math.cos(rad) * (nodeSize + 2);
-                                    const y1 = cy + Math.sin(rad) * (nodeSize + 2);
-                                    const x2 = cx + Math.cos(rad) * (nodeSize + 6);
-                                    const y2 = cy + Math.sin(rad) * (nodeSize + 6);
+                                    const x1 = cx + Math.cos(rad) * (nodeSize + 3);
+                                    const y1 = cy + Math.sin(rad) * (nodeSize + 3);
+                                    const x2 = cx + Math.cos(rad) * (nodeSize + 8);
+                                    const y2 = cy + Math.sin(rad) * (nodeSize + 8);
                                     return (
                                       <line
                                         key={angle}
@@ -751,37 +776,79 @@ const MarketingDashboard = () => {
                                   })}
                                 </>
                               )}
-                              {/* Glow for visited */}
-                              <circle
-                                cx={nodeSize + 6}
-                                cy={nodeSize + 6}
-                                r={nodeSize + 3}
-                                fill={heatColor}
-                                opacity={0.15}
-                              />
+                              {/* Glow for visited (when no live visitor) */}
+                              {!hasLiveVisitor && (
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={nodeSize + 4}
+                                  fill={heatColor}
+                                  opacity={0.15}
+                                />
+                              )}
                               {/* Node circle */}
                               <circle
-                                cx={nodeSize + 6}
-                                cy={nodeSize + 6}
+                                cx={cx}
+                                cy={cy}
                                 r={nodeSize}
                                 fill="hsl(var(--background))"
-                                stroke={heatColor}
-                                strokeWidth={2}
+                                stroke={hasLiveVisitor ? "#22c55e" : heatColor}
+                                strokeWidth={hasLiveVisitor ? 2.5 : 2}
                               />
-                              {/* Visit count in center */}
+                              {/* Visit count in center (purple) */}
                               <text
-                                x={nodeSize + 6}
-                                y={nodeSize + 10}
+                                x={cx}
+                                y={cy + 4}
                                 textAnchor="middle"
                                 fill="#8b5cf6"
                                 style={{ fontSize: page.visits > 99 ? '9px' : '11px', fontWeight: 'bold' }}
                               >
                                 {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
                               </text>
+                              {/* Live visitor count badge - top right (GREEN) */}
+                              {page.liveCount > 0 && (
+                                <>
+                                  <circle
+                                    cx={cx + nodeSize - 2}
+                                    cy={cy - nodeSize + 2}
+                                    r={7}
+                                    fill="#22c55e"
+                                  />
+                                  <text
+                                    x={cx + nodeSize - 2}
+                                    y={cy - nodeSize + 5}
+                                    textAnchor="middle"
+                                    fill="white"
+                                    style={{ fontSize: '8px', fontWeight: 'bold' }}
+                                  >
+                                    {page.liveCount}
+                                  </text>
+                                </>
+                              )}
+                              {/* External referrer count badge - bottom left (ORANGE) */}
+                              {page.externalCount > 0 && (
+                                <>
+                                  <circle
+                                    cx={cx - nodeSize + 2}
+                                    cy={cy + nodeSize - 2}
+                                    r={7}
+                                    fill="#f97316"
+                                  />
+                                  <text
+                                    x={cx - nodeSize + 2}
+                                    y={cy + nodeSize + 1}
+                                    textAnchor="middle"
+                                    fill="white"
+                                    style={{ fontSize: '8px', fontWeight: 'bold' }}
+                                  >
+                                    {page.externalCount > 99 ? '99+' : page.externalCount}
+                                  </text>
+                                </>
+                              )}
                             </svg>
-                            {/* Page name tooltip below */}
-                            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap font-medium opacity-70 group-hover:opacity-100 transition-opacity">
-                              {page.name.length > 8 ? page.name.slice(0, 8) + '…' : page.name}
+                            {/* Page name below */}
+                            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+                              {page.name.length > 10 ? page.name.slice(0, 10) + '…' : page.name}
                             </span>
                           </div>
                         );
