@@ -35,20 +35,28 @@ const FloatingLiveStats = memo(() => {
 
       const containerHeight = container.offsetHeight || 90;
       const gap = 24; // Gap between stats and AI shield
-      const minTop = 70; // Minimum distance from top of viewport
+      const defaultTop = window.innerHeight * 0.38; // Below section indicator at 15%
+      const minTop = 200; // Below section indicator
       
       if (aiShield) {
         const shieldRect = aiShield.getBoundingClientRect();
+        const shieldOpacity = parseFloat(window.getComputedStyle(aiShield).opacity) || 1;
+        
+        // If shield is fading, we can use more space
+        if (shieldOpacity < 0.5) {
+          setTopPosition('38%');
+          return;
+        }
+        
         // Stats should end (bottom edge) above where AI shield starts (top edge)
         const statsBottomLimit = shieldRect.top - gap;
         const requiredStatsTop = statsBottomLimit - containerHeight;
         
-        // Clamp to minimum
-        const finalTop = Math.max(minTop, requiredStatsTop);
+        // Clamp to minimum (below section indicator)
+        const finalTop = Math.max(minTop, Math.min(requiredStatsTop, defaultTop));
         setTopPosition(`${finalTop}px`);
       } else {
-        // No AI shield found, use default
-        setTopPosition('22%');
+        setTopPosition('38%');
       }
     };
 
