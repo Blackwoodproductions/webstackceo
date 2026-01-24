@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Eye, ArrowRight, BarChart3, Clock, MousePointer, Building2, Target, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,13 @@ const benefits = [
 
 const VisitorIntelligence = () => {
   const { resolvedTheme } = useTheme();
-  const dashboardScreenshot = resolvedTheme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const dashboardScreenshot = mounted && resolvedTheme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
   
   return (
     <div className="min-h-screen bg-background">

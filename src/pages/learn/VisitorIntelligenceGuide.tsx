@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -30,7 +31,13 @@ const visitorIntelligenceTerms = getTermsByGuide("/learn/visitor-intelligence-gu
 
 const VisitorIntelligenceGuide = () => {
   const { resolvedTheme } = useTheme();
-  const dashboardScreenshot = resolvedTheme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const dashboardScreenshot = mounted && resolvedTheme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
   
   return (
     <div className="min-h-screen bg-background">
