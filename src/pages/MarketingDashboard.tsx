@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import ActiveVisitorsWidget from '@/components/marketing/ActiveVisitorsWidget';
 import PageEngagementHeatmap from '@/components/marketing/PageEngagementHeatmap';
+import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
 interface Lead {
   id: string;
   email: string;
@@ -439,6 +440,11 @@ const MarketingDashboard = () => {
 
           {/* Active Visitors Widget */}
           <ActiveVisitorsWidget />
+        </div>
+
+        {/* Visitor Flow Diagram */}
+        <div className="mb-8">
+          <VisitorFlowDiagram />
         </div>
 
         {/* Heatmap Row */}
