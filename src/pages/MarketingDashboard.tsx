@@ -553,10 +553,15 @@ const MarketingDashboard = () => {
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Range & Pages stacked */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-primary" />
+            {/* Range & Pages stacked with aligned icons */}
+            <div className="flex gap-1">
+              {/* Icons column */}
+              <div className="flex flex-col gap-1 items-center w-5">
+                <CalendarIcon className="w-4 h-4 text-primary mt-1.5" />
+                {pageFilter && <Filter className="w-4 h-4 text-purple-400 mt-1.5" />}
+              </div>
+              {/* Selectors column */}
+              <div className="flex flex-col gap-1">
                 <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
                   <SelectTrigger className="w-[130px] h-7 text-sm bg-background border-border">
                     <SelectValue placeholder="Range" />
@@ -571,16 +576,13 @@ const MarketingDashboard = () => {
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              {pageFilter && (
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-purple-400" />
+                {pageFilter && (
                   <Badge variant="secondary" className="flex items-center gap-2 px-2 py-0.5 h-7 bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
                     {pageFilter === '/' ? 'Homepage' : pageFilter}
                     <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
                   </Badge>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             {diagramTimeRange === 'custom' && (
               <div className="flex items-center gap-2">
