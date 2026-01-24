@@ -141,6 +141,8 @@ export interface GSCDashboardPanelProps {
   onSitesLoaded?: (sites: { siteUrl: string; permissionLevel: string }[]) => void;
   onAuthStatusChange?: (isAuthenticated: boolean) => void;
   externalSelectedSite?: string; // Allow parent to control selected site
+  externalDateRange?: DateRangeType; // Optional parent-controlled date range
+  hideDateSelector?: boolean; // When true, hide internal date selector UI
 }
 
 const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
@@ -151,7 +153,16 @@ const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactN
   discover: { label: "Discover", icon: <Sparkles className="w-4 h-4" />, color: "#8b5cf6" },
 };
 
-export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus, onSitesLoaded, onAuthStatusChange, externalSelectedSite }: GSCDashboardPanelProps) => {
+export const GSCDashboardPanel = ({
+  onSiteChange,
+  onDataLoaded,
+  onTrackingStatus,
+  onSitesLoaded,
+  onAuthStatusChange,
+  externalSelectedSite,
+  externalDateRange,
+  hideDateSelector,
+}: GSCDashboardPanelProps) => {
   const { toast } = useToast();
   
   // Auth state
@@ -165,6 +176,14 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const [dateRange, setDateRange] = useState<DateRangeType>("28");
   const [searchType, setSearchType] = useState<SearchType>("web");
   const [searchFilter, setSearchFilter] = useState("");
+
+  // Parent can control the date range (used when VI + GSC are integrated)
+  useEffect(() => {
+    if (!externalDateRange) return;
+    if (externalDateRange !== dateRange) {
+      setDateRange(externalDateRange);
+    }
+  }, [externalDateRange, dateRange]);
   
   // Performance data
   const [queryData, setQueryData] = useState<PerformanceRow[]>([]);
@@ -987,22 +1006,25 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <CardContent className="space-y-4">
           {/* Controls - Date selector left, dropdowns right */}
           <div className="flex flex-wrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3">
-            {/* Left side - Date selector only (domain controlled by header) */}
-            <div className="flex items-center gap-2">
-              <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
-                  <SelectItem value="7">7 days</SelectItem>
-                  <SelectItem value="28">28 days</SelectItem>
-                  <SelectItem value="90">3 months</SelectItem>
-                  <SelectItem value="180">6 months</SelectItem>
-                  <SelectItem value="365">12 months</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Left side - Date selector only (domain controlled by header)
+                Hidden when parent integrates the date range (VI+GSC). */}
+            {!hideDateSelector && (
+              <div className="flex items-center gap-2">
+                <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
+                  <SelectTrigger className="w-[110px] h-8 text-xs bg-background border-border">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border z-50">
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="28">28 days</SelectItem>
+                    <SelectItem value="90">3 months</SelectItem>
+                    <SelectItem value="180">6 months</SelectItem>
+                    <SelectItem value="365">12 months</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Right side - Data dropdowns & Refresh */}
             <div className="flex items-center gap-1">

@@ -295,12 +295,76 @@ const MarketingDashboard = () => {
   }, []);
 
   const selectedDomainLabel = useMemo(() => {
-    return normalizeDomain(selectedGscSiteUrl || selectedTrackedDomain || selectedGscDomain || "");
-  }, [selectedGscSiteUrl, selectedTrackedDomain, selectedGscDomain]);
+    // IMPORTANT: the top dropdown is driven by selectedTrackedDomain when present,
+    // so the label used across the UI must prioritize that to avoid mismatches.
+    return normalizeDomain(selectedTrackedDomain || selectedGscSiteUrl || selectedGscDomain || "");
+  }, [selectedTrackedDomain, selectedGscSiteUrl, selectedGscDomain]);
 
   const isGscSiteSelected = !!selectedGscSiteUrl;
   const shouldShowInstallPrompt = gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking;
   const shouldShowViPanels = !isGscSiteSelected || gscDomainHasTracking;
+
+  // Enforce a single source of truth between the top domain selector and the GSC panel.
+  // If a tracked domain is selected and it doesn't exist in GSC, the GSC site MUST be cleared.
+  // If it does exist in GSC, ensure selectedGscSiteUrl points to the matching GSC site.
+  useEffect(() => {
+    if (!gscAuthenticated) return;
+    if (!selectedTrackedDomain) return;
+
+    const match = gscSites.find((s) => normalizeDomain(s.siteUrl) === selectedTrackedDomain);
+    if (match) {
+      if (selectedGscSiteUrl !== match.siteUrl) {
+        setSelectedGscSiteUrl(match.siteUrl);
+      }
+    } else {
+      if (selectedGscSiteUrl) {
+        setSelectedGscSiteUrl("");
+      }
+    }
+  }, [gscAuthenticated, gscSites, selectedTrackedDomain, selectedGscSiteUrl]);
+
+  type GscDateRange = "7" | "28" | "90" | "180" | "365";
+  const integratedGscDateRange = useMemo<GscDateRange>(() => {
+    const clampToNearest = (days: number): GscDateRange => {
+      const options: Array<{ d: number; v: GscDateRange }> = [
+        { d: 7, v: "7" },
+        { d: 28, v: "28" },
+        { d: 90, v: "90" },
+        { d: 180, v: "180" },
+        { d: 365, v: "365" },
+      ];
+      let best = options[0];
+      for (const opt of options) {
+        if (Math.abs(opt.d - days) < Math.abs(best.d - days)) best = opt;
+      }
+      return best.v;
+    };
+
+    switch (diagramTimeRange) {
+      case "live":
+      case "yesterday":
+      case "week":
+        return "7";
+      case "month":
+        return "28";
+      case "6months":
+        return "180";
+      case "1year":
+        return "365";
+      case "custom": {
+        const from = diagramCustomDateRange.from;
+        const to = diagramCustomDateRange.to;
+        if (!from || !to) return "28";
+        const ms = Math.abs(to.getTime() - from.getTime());
+        const days = Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24)) + 1);
+        return clampToNearest(days);
+      }
+      default:
+        return "28";
+    }
+  }, [diagramTimeRange, diagramCustomDateRange.from, diagramCustomDateRange.to]);
+
+  const shouldIntegrateGscDate = isGscSiteSelected && gscDomainHasTracking;
 
   // Keep ref in sync with currently selected domain (GSC site or tracked domain)
   useEffect(() => {
@@ -1785,6 +1849,8 @@ f.parentNode.insertBefore(j,f);
         <div className="mb-8">
           <GSCDashboardPanel 
             externalSelectedSite={selectedGscSiteUrl}
+            externalDateRange={shouldIntegrateGscDate ? integratedGscDateRange : undefined}
+            hideDateSelector={shouldIntegrateGscDate}
             onSiteChange={(site) => {
               // When GSC internal domain changes (from GSC panel's own dropdown if any),
               // update parent state. This is only called when GSC panel internally changes.
