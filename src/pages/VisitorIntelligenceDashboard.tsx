@@ -149,6 +149,10 @@ const MarketingDashboard = () => {
   const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
   const [selectedGscSiteUrl, setSelectedGscSiteUrl] = useState<string>("");
+  
+  // Tracked domains from visitor intelligence (domains with tracking code installed)
+  const [trackedDomains, setTrackedDomains] = useState<string[]>([]);
+  const [selectedTrackedDomain, setSelectedTrackedDomain] = useState<string>("");
 
   // Persist chat online status
   useEffect(() => {
@@ -234,6 +238,81 @@ const MarketingDashboard = () => {
     }
     setPrevChatCount(sidebarChats.length);
   }, [sidebarChats.length]);
+
+  // Fetch tracked domains from visitor_sessions (domains with tracking code installed)
+  const fetchTrackedDomains = async () => {
+    try {
+      // Get unique domains from referrer field in visitor_sessions
+      const { data, error } = await supabase
+        .from('visitor_sessions')
+        .select('referrer')
+        .not('referrer', 'is', null)
+        .limit(1000);
+      
+      if (error) throw error;
+      
+      // Extract unique domains from referrers
+      const domains = new Set<string>();
+      data?.forEach(session => {
+        if (session.referrer) {
+          try {
+            const url = new URL(session.referrer);
+            const domain = url.hostname.replace('www.', '');
+            if (domain && !domain.includes('google') && !domain.includes('facebook') && !domain.includes('linkedin')) {
+              domains.add(domain);
+            }
+          } catch {
+            // Not a valid URL, try to extract domain directly
+            const match = session.referrer.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
+            if (match && match[1]) {
+              const domain = match[1].replace('www.', '');
+              if (!domain.includes('google') && !domain.includes('facebook') && !domain.includes('linkedin')) {
+                domains.add(domain);
+              }
+            }
+          }
+        }
+      });
+      
+      // Also check first_page for self-referential domains
+      const { data: pageData } = await supabase
+        .from('visitor_sessions')
+        .select('first_page')
+        .not('first_page', 'is', null)
+        .limit(1000);
+      
+      pageData?.forEach(session => {
+        if (session.first_page) {
+          try {
+            // first_page is usually just a path, but check if it has a domain
+            if (session.first_page.includes('://')) {
+              const url = new URL(session.first_page);
+              const domain = url.hostname.replace('www.', '');
+              if (domain) domains.add(domain);
+            }
+          } catch {
+            // Ignore invalid URLs
+          }
+        }
+      });
+      
+      const domainArray = Array.from(domains);
+      setTrackedDomains(domainArray);
+      
+      // Auto-select first domain if none selected and no GSC sites
+      if (domainArray.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
+        setSelectedTrackedDomain(domainArray[0]);
+        setSelectedGscDomain(domainArray[0]);
+      }
+    } catch (err) {
+      console.error('Error fetching tracked domains:', err);
+    }
+  };
+
+  // Fetch tracked domains on mount
+  useEffect(() => {
+    fetchTrackedDomains();
+  }, []);
 
   const handleCloseLead = async () => {
     if (!closeLeadDialog.lead) return;
@@ -737,39 +816,79 @@ const MarketingDashboard = () => {
           {/* Left: Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
-            {gscAuthenticated && gscSites.length > 0 ? (
-              <>
-                <Select 
-                  value={selectedGscSiteUrl} 
-                  onValueChange={(value) => {
-                    setSelectedGscSiteUrl(value);
-                    const cleanDomain = value.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
-                    setSelectedGscDomain(cleanDomain);
-                  }}
-                >
-                  <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border">
-                    <Globe className="w-3 h-3 mr-1.5 text-cyan-500" />
-                    <SelectValue placeholder="Select domain" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                    {gscSites.map((site) => (
-                      <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
-                        {site.siteUrl.replace('sc-domain:', '').replace('https://', '')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="w-px h-5 bg-border" />
-              </>
-            ) : (
-              <>
-                <Badge variant="outline" className="h-7 text-xs bg-muted/50 text-muted-foreground border-border px-3">
-                  <Globe className="w-3 h-3 mr-1.5" />
-                  Connect GSC below
-                </Badge>
-                <div className="w-px h-5 bg-border" />
-              </>
-            )}
+            {(() => {
+              // Combine GSC sites and tracked domains into unified list
+              const allDomains: { value: string; label: string; source: 'gsc' | 'tracking' }[] = [];
+              
+              // Add GSC sites first (they have priority)
+              if (gscAuthenticated && gscSites.length > 0) {
+                gscSites.forEach(site => {
+                  const cleanLabel = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace(/\/$/, '');
+                  allDomains.push({ value: site.siteUrl, label: cleanLabel, source: 'gsc' });
+                });
+              }
+              
+              // Add tracked domains that aren't already in GSC list
+              trackedDomains.forEach(domain => {
+                const alreadyInGsc = allDomains.some(d => d.label.includes(domain) || domain.includes(d.label.replace(/\/$/, '')));
+                if (!alreadyInGsc) {
+                  allDomains.push({ value: domain, label: domain, source: 'tracking' });
+                }
+              });
+              
+              const currentValue = selectedGscSiteUrl || selectedTrackedDomain;
+              
+              if (allDomains.length > 0) {
+                return (
+                  <>
+                    <Select 
+                      value={currentValue} 
+                      onValueChange={(value) => {
+                        const selected = allDomains.find(d => d.value === value);
+                        if (selected?.source === 'gsc') {
+                          setSelectedGscSiteUrl(value);
+                          const cleanDomain = value.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                          setSelectedGscDomain(cleanDomain);
+                          setSelectedTrackedDomain('');
+                        } else {
+                          setSelectedTrackedDomain(value);
+                          setSelectedGscDomain(value);
+                          setSelectedGscSiteUrl('');
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-[200px] h-7 text-sm bg-background border-border">
+                        <Globe className="w-3 h-3 mr-1.5 text-cyan-500" />
+                        <SelectValue placeholder="Select domain" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                        {allDomains.map((domain) => (
+                          <SelectItem key={domain.value} value={domain.value} className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <span>{domain.label}</span>
+                              {domain.source === 'gsc' && (
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="w-px h-5 bg-border" />
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    <Badge variant="outline" className="h-7 text-xs bg-muted/50 text-muted-foreground border-border px-3">
+                      <Globe className="w-3 h-3 mr-1.5" />
+                      No domains yet
+                    </Badge>
+                    <div className="w-px h-5 bg-border" />
+                  </>
+                );
+              }
+            })()}
             
             {/* Time Range Selector */}
             <div className="flex gap-1">
