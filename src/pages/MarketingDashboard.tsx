@@ -27,6 +27,7 @@ import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
 import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
+import InteractiveGrid from '@/components/ui/interactive-grid';
 interface Lead {
   id: string;
   email: string;
@@ -378,9 +379,9 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Background grid pattern */}
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none z-0" />
+    <div className="min-h-screen bg-background relative animate-fade-in">
+      {/* Full-page interactive grid background */}
+      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       <SEO 
         title="Marketing Dashboard | Webstack.ceo"
         description="Internal marketing analytics dashboard"

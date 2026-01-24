@@ -151,7 +151,7 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative animate-fade-in">
       {/* Full-page interactive grid background */}
       <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       {/* Header */}
