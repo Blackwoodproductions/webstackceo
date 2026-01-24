@@ -1304,49 +1304,82 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </div>
 
           {/* Search Type Breakdown - Performance by Source */}
-          {searchTypeBreakdown.length > 0 && (
-            <div className="bg-secondary/20 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Performance by Source</span>
-                {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
-                  const data = allTypesData[type];
-                  const config = SEARCH_TYPE_CONFIG[type];
-                  const hasData = data.clicks > 0 || data.impressions > 0;
-                  const isActive = searchType === type;
-                  
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => setSearchType(type)}
-                      className={`flex flex-col items-center p-2 rounded-lg transition-all ${
-                        isActive 
-                          ? 'bg-primary/20 border border-primary/50' 
-                          : hasData 
-                            ? 'bg-secondary/50 hover:bg-secondary/80 cursor-pointer' 
-                            : 'bg-secondary/20 opacity-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1 mb-1" style={{ color: config.color }}>
-                        {config.icon}
-                        <span className="text-[10px] font-medium">{config.label}</span>
-                      </div>
-                      {hasData ? (
-                        <>
-                          <span className="text-sm font-bold">{formatNumber(data.clicks)}</span>
-                          <span className="text-[9px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
-                        </>
-                      ) : (
-                        <span className="text-[10px] text-muted-foreground">No data</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="bg-secondary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-500" />
+                Performance by Source
+              </span>
+              {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
             </div>
-          )}
+            <div className="grid grid-cols-5 gap-3">
+              {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
+                const data = allTypesData[type];
+                const config = SEARCH_TYPE_CONFIG[type];
+                const hasData = data.clicks > 0 || data.impressions > 0;
+                const isActive = searchType === type;
+                const totalClicks = Object.values(allTypesData).reduce((sum, d) => sum + d.clicks, 0);
+                const clickPct = totalClicks > 0 ? (data.clicks / totalClicks) * 100 : 0;
+                
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setSearchType(type)}
+                    className={`relative flex flex-col items-center p-3 rounded-xl transition-all border ${
+                      isActive 
+                        ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50 shadow-lg shadow-primary/10' 
+                        : hasData 
+                          ? 'bg-secondary/50 hover:bg-secondary/80 border-border/50 cursor-pointer hover:border-primary/30' 
+                          : 'bg-secondary/20 border-transparent opacity-60'
+                    }`}
+                  >
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
+                    )}
+                    
+                    {/* Icon with colored background */}
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-2"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${config.color}20, ${config.color}10)`,
+                        border: `1px solid ${config.color}30`
+                      }}
+                    >
+                      <div style={{ color: config.color }}>{config.icon}</div>
+                    </div>
+                    
+                    <span className="text-[11px] font-semibold mb-1" style={{ color: isActive ? config.color : undefined }}>
+                      {config.label}
+                    </span>
+                    
+                    {hasData ? (
+                      <>
+                        <span className="text-lg font-bold">{formatNumber(data.clicks)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
+                        {clickPct > 0 && (
+                          <div className="mt-1.5 w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${Math.min(clickPct, 100)}%`,
+                                background: config.color 
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-bold text-muted-foreground">—</span>
+                        <span className="text-[10px] text-muted-foreground">No data</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Current Type KPI Row */}
           <div className="flex items-center gap-2 mb-2">
