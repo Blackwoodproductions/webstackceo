@@ -16,6 +16,7 @@ import {
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import ActiveVisitorsWidget from '@/components/marketing/ActiveVisitorsWidget';
+import PageEngagementHeatmap from '@/components/marketing/PageEngagementHeatmap';
 interface Lead {
   id: string;
   email: string;
@@ -295,9 +296,10 @@ const MarketingDashboard = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8">
-        {/* Active Visitors Widget */}
-        <div className="mb-8">
+        {/* Active Visitors & Heatmap Row */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           <ActiveVisitorsWidget />
+          <PageEngagementHeatmap />
         </div>
 
         {/* Funnel Visualization */}
