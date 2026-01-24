@@ -389,11 +389,13 @@ const MarketingDashboard = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Customer Journey</h1>
-              <p className="text-sm text-muted-foreground">Marketing Funnel Analytics</p>
-            </div>
+            <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <BarChart3 className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Customer Journey</h1>
+                <p className="text-sm text-muted-foreground">Marketing Funnel Analytics</p>
+              </div>
+            </a>
           </div>
           <div className="flex items-center gap-4">
             <Button 
