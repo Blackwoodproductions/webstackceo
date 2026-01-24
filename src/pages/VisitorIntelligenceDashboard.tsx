@@ -820,6 +820,9 @@ const MarketingDashboard = () => {
                       onValueChange={(value) => {
                         const selected = allDomains.find(d => d.value === value);
                         if (selected) {
+                          // Update tracking status based on domain selection
+                          setGscDomainHasTracking(selected.hasTracking);
+                          
                           if (selected.source === 'gsc') {
                             // GSC-only domain
                             setSelectedGscSiteUrl(value);
