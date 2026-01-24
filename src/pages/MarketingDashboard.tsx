@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
@@ -413,19 +414,17 @@ const MarketingDashboard = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8">
-        {/* Main Layout - Traffic Sources & Funnel on Left, Stats & Flow on Right */}
+        {/* Main Layout - Traffic Sources on Left, Stats & Info on Right */}
         <div className="grid lg:grid-cols-5 gap-6 mb-6">
-          {/* Left Column - Traffic Sources only (narrower) */}
+          {/* Left Column - Traffic Sources (stretches to match right column height) */}
           <div className="lg:col-span-1">
-            {/* Traffic Sources at Top Left */}
             <ReferrerBreakdownChart sessions={sessions} />
           </div>
 
-          {/* Right Column - Stats + Funnel + Flow Diagram (wider) */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Quick Stats Row - Key Conversion Metrics (no duplicates with funnel) */}
+          {/* Right Column - Stats + Funnel + Info Boxes */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Quick Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {/* Active Visitors - Live */}
               <Card className="p-4 border-green-500/30 bg-green-500/5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-green-500/20 relative flex-shrink-0">
@@ -438,7 +437,6 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
-              {/* New Visitors Today */}
               <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
@@ -450,7 +448,6 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
-              {/* Visitor to Lead Conversion Rate */}
               <Card className="p-4">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-violet-500/10 flex-shrink-0">
@@ -464,7 +461,6 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
-              {/* Close Rate */}
               <Card className="p-4">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
@@ -478,7 +474,6 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
-              {/* Total Revenue from Closed Leads */}
               <Card className="p-4 border-green-500/30 bg-green-500/5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
@@ -492,7 +487,6 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
-              {/* Tool Engagement Rate */}
               <Card className="p-4">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
@@ -508,13 +502,12 @@ const MarketingDashboard = () => {
               </Card>
             </div>
 
-            {/* Conversion Funnel - Horizontal Boxes */}
+            {/* Conversion Funnel Row */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {funnelSteps.map((step, index) => {
                 const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
                   ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
                   : null;
-                
                 return (
                   <Card key={step.label} className="p-4">
                     <div className="flex items-center gap-2">
@@ -536,9 +529,8 @@ const MarketingDashboard = () => {
               })}
             </div>
 
-            {/* Entry Pages, Top Tools, Recent Leads - Wide Boxes */}
+            {/* Entry Pages, Top Tools, Recent Leads Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Top Entry Pages */}
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-primary" />
@@ -565,8 +557,6 @@ const MarketingDashboard = () => {
                   })()}
                 </div>
               </Card>
-
-              {/* Top Tools Used */}
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <MousePointer className="w-4 h-4 text-pink-500" />
@@ -591,8 +581,6 @@ const MarketingDashboard = () => {
                   })()}
                 </div>
               </Card>
-
-              {/* Recent Leads */}
               <Card className="p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Mail className="w-4 h-4 text-violet-500" />
@@ -617,10 +605,25 @@ const MarketingDashboard = () => {
                 </div>
               </Card>
             </div>
+          </div>
+        </div>
 
-            {/* Site Architecture / Visitor Flow Diagram */}
-            <div>
-              {/* Filter indicator */}
+        {/* Site Architecture - Full Width Collapsible */}
+        <Collapsible defaultOpen className="mb-6">
+          <Card className="p-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full group">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <h2 className="font-bold text-foreground">Site Architecture</h2>
+                {pageFilter && (
+                  <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
+                    Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
+                  </Badge>
+                )}
+              </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
               {pageFilter && (
                 <div className="mb-4 flex items-center gap-2">
                   <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
@@ -643,9 +646,9 @@ const MarketingDashboard = () => {
                 onPageFilter={setPageFilter}
                 activeFilter={pageFilter}
               />
-            </div>
-          </div>
-        </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Leads Section - Full Width */}
         <div className="mb-8">
