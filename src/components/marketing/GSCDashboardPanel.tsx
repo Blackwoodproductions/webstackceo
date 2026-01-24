@@ -159,14 +159,18 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const [showCodeGenerator, setShowCodeGenerator] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  // Check for stored token on mount
+  // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
     const storedToken = sessionStorage.getItem("gsc_access_token");
     const tokenExpiry = sessionStorage.getItem("gsc_token_expiry");
     
+    // Check for valid stored token first
     if (storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+      console.log("[GSC] Found valid stored token, expiry:", new Date(parseInt(tokenExpiry)));
       setAccessToken(storedToken);
       setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
     }
     
     // OAuth callback handling
@@ -174,10 +178,17 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     const code = url.searchParams.get("code");
     const error = url.searchParams.get("error");
     const errorDescription = url.searchParams.get("error_description");
+    
+    console.log("[GSC] OAuth callback check:", { 
+      hasCode: !!code, 
+      hasError: !!error,
+      pathname: window.location.pathname,
+      hasVerifier: !!sessionStorage.getItem("gsc_code_verifier")
+    });
 
     // Handle OAuth error response
     if (error) {
-      console.error("OAuth error:", error, errorDescription);
+      console.error("[GSC] OAuth error:", error, errorDescription);
       toast({
         title: "Google Authentication Error",
         description: errorDescription || error || "Failed to authenticate with Google",
@@ -188,71 +199,90 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
       return;
     }
 
-    if (code && !sessionStorage.getItem("gsc_access_token")) {
+    // Process OAuth code if present
+    if (code) {
+      const verifier = sessionStorage.getItem("gsc_code_verifier");
       const redirectUri = window.location.origin + window.location.pathname;
-      const verifier = sessionStorage.getItem("gsc_code_verifier") || "";
+      
+      console.log("[GSC] Processing OAuth code:", { 
+        redirectUri, 
+        hasVerifier: !!verifier,
+        verifierLength: verifier?.length 
+      });
 
-      if (verifier) {
-        setIsLoading(true);
-        (async () => {
-          try {
-            console.log("Exchanging OAuth code for token...", { redirectUri, hasVerifier: !!verifier });
-            
-            const tokenRes = await supabase.functions.invoke("google-oauth-token", {
-              body: { code, codeVerifier: verifier, redirectUri },
-            });
-
-            console.log("Token exchange response:", tokenRes);
-
-            if (tokenRes.error) {
-              throw new Error(tokenRes.error.message || "Token exchange failed");
-            }
-
-            const tokenJson = tokenRes.data;
-            
-            if (tokenJson?.error) {
-              throw new Error(tokenJson.error_description || tokenJson.error || "Token exchange failed");
-            }
-            
-            if (tokenJson?.access_token) {
-              const expiresIn = Number(tokenJson.expires_in ?? 3600);
-              const expiry = Date.now() + expiresIn * 1000;
-              sessionStorage.setItem("gsc_access_token", tokenJson.access_token);
-              sessionStorage.setItem("gsc_token_expiry", expiry.toString());
-              sessionStorage.removeItem("gsc_code_verifier");
-              setAccessToken(tokenJson.access_token);
-              setIsAuthenticated(true);
-              toast({
-                title: "Connected to Google Search Console",
-                description: "Successfully authenticated with Google",
-              });
-              window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-              throw new Error("No access token received from Google");
-            }
-          } catch (e) {
-            console.error("OAuth token exchange error:", e);
-            toast({
-              title: "Authentication Failed",
-              description: e instanceof Error ? e.message : "Failed to complete Google authentication",
-              variant: "destructive",
-            });
-            sessionStorage.removeItem("gsc_code_verifier");
-            window.history.replaceState({}, document.title, window.location.pathname);
-          } finally {
-            setIsLoading(false);
-          }
-        })();
-      } else {
-        console.error("OAuth code received but no verifier found in session storage");
+      if (!verifier) {
+        console.error("[GSC] No code verifier found - session may have expired or page was reloaded");
         toast({
-          title: "Authentication Error",
-          description: "Session expired. Please try connecting again.",
+          title: "Authentication Session Expired",
+          description: "Please try connecting to Google Search Console again.",
           variant: "destructive",
         });
         window.history.replaceState({}, document.title, window.location.pathname);
         setIsLoading(false);
+        return;
       }
+
+      setIsLoading(true);
+      (async () => {
+        try {
+          console.log("[GSC] Exchanging OAuth code for token...");
+          
+          const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+            body: { code, codeVerifier: verifier, redirectUri },
+          });
+
+          console.log("[GSC] Token exchange response:", { 
+            hasError: !!tokenRes.error, 
+            hasData: !!tokenRes.data,
+            dataKeys: tokenRes.data ? Object.keys(tokenRes.data) : []
+          });
+
+          if (tokenRes.error) {
+            throw new Error(tokenRes.error.message || "Token exchange failed");
+          }
+
+          const tokenJson = tokenRes.data;
+          
+          if (tokenJson?.error) {
+            throw new Error(tokenJson.error_description || tokenJson.error || "Token exchange failed");
+          }
+          
+          if (tokenJson?.access_token) {
+            const expiresIn = Number(tokenJson.expires_in ?? 3600);
+            const expiry = Date.now() + expiresIn * 1000;
+            
+            console.log("[GSC] Token received, storing...", { expiresIn, expiry: new Date(expiry) });
+            
+            sessionStorage.setItem("gsc_access_token", tokenJson.access_token);
+            sessionStorage.setItem("gsc_token_expiry", expiry.toString());
+            sessionStorage.removeItem("gsc_code_verifier");
+            
+            setAccessToken(tokenJson.access_token);
+            setIsAuthenticated(true);
+            
+            toast({
+              title: "Connected to Google Search Console",
+              description: "Successfully authenticated with Google",
+            });
+            
+            // Clean URL after successful auth
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            throw new Error("No access token received from Google");
+          }
+        } catch (e) {
+          console.error("[GSC] OAuth token exchange error:", e);
+          toast({
+            title: "Authentication Failed",
+            description: e instanceof Error ? e.message : "Failed to complete Google authentication",
+            variant: "destructive",
+          });
+          sessionStorage.removeItem("gsc_code_verifier");
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
     } else {
       setIsLoading(false);
     }
