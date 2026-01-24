@@ -673,32 +673,127 @@ const MarketingDashboard = () => {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                {/* Mini summary when collapsed */}
+                {/* Mini summary when collapsed - diagram-style icons */}
                 {!siteArchOpen && flowSummary && flowSummary.topPages.length > 0 && (
-                  <div className="flex items-center gap-2 mr-4">
-                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
-                      {flowSummary.totalVisits} views
-                    </Badge>
-                    <div className="flex items-center gap-1">
-                      {flowSummary.topPages.slice(0, 5).map((page, i) => (
-                        <div
-                          key={page.path}
-                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-border/50 text-[10px]"
-                          title={`${page.name}: ${page.visits} visits`}
-                        >
-                          <div className={`w-2 h-2 rounded-full ${
-                            i === 0 ? 'bg-blue-500' : 
-                            i === 1 ? 'bg-green-500' : 
-                            i === 2 ? 'bg-amber-500' : 'bg-muted-foreground'
-                          }`} />
-                          <span className="text-foreground font-medium">{page.name}</span>
-                          <span className="text-muted-foreground">{page.visits}</span>
-                        </div>
-                      ))}
-                      {flowSummary.topPages.length > 5 && (
-                        <span className="text-[10px] text-muted-foreground">+{flowSummary.topPages.length - 5} more</span>
-                      )}
+                  <div className="flex items-center gap-3 mr-4">
+                    <div className="flex items-center gap-2">
+                      {flowSummary.topPages.slice(0, 6).map((page, i) => {
+                        // Match diagram colors: intensity-based heat
+                        const maxVisits = flowSummary.topPages[0]?.visits || 1;
+                        const intensity = page.visits / maxVisits;
+                        const heatColor = intensity > 0.7 ? '#22c55e' : intensity > 0.4 ? '#f59e0b' : intensity > 0.1 ? '#ef4444' : '#6b7280';
+                        const isTopPage = i === 0;
+                        const nodeSize = isTopPage ? 18 : 14;
+                        
+                        return (
+                          <div
+                            key={page.path}
+                            className="relative group"
+                            title={`${page.name}: ${page.visits} visits`}
+                          >
+                            <svg width={nodeSize * 2 + 12} height={nodeSize * 2 + 12} className="overflow-visible">
+                              {/* Starburst effect for top pages */}
+                              {isTopPage && (
+                                <>
+                                  <circle
+                                    cx={nodeSize + 6}
+                                    cy={nodeSize + 6}
+                                    r={nodeSize + 6}
+                                    fill="none"
+                                    stroke="#f97316"
+                                    strokeWidth={1.5}
+                                    strokeDasharray="3 3"
+                                    opacity={0.7}
+                                  >
+                                    <animate
+                                      attributeName="r"
+                                      values={`${nodeSize + 4};${nodeSize + 10};${nodeSize + 4}`}
+                                      dur="2s"
+                                      repeatCount="indefinite"
+                                    />
+                                    <animate
+                                      attributeName="opacity"
+                                      values="0.7;0.3;0.7"
+                                      dur="2s"
+                                      repeatCount="indefinite"
+                                    />
+                                  </circle>
+                                  {/* Starburst rays */}
+                                  {[0, 60, 120, 180, 240, 300].map((angle) => {
+                                    const rad = (angle * Math.PI) / 180;
+                                    const cx = nodeSize + 6;
+                                    const cy = nodeSize + 6;
+                                    const x1 = cx + Math.cos(rad) * (nodeSize + 2);
+                                    const y1 = cy + Math.sin(rad) * (nodeSize + 2);
+                                    const x2 = cx + Math.cos(rad) * (nodeSize + 6);
+                                    const y2 = cy + Math.sin(rad) * (nodeSize + 6);
+                                    return (
+                                      <line
+                                        key={angle}
+                                        x1={x1}
+                                        y1={y1}
+                                        x2={x2}
+                                        y2={y2}
+                                        stroke="#f97316"
+                                        strokeWidth={1.5}
+                                        strokeLinecap="round"
+                                        opacity={0.7}
+                                      >
+                                        <animate
+                                          attributeName="opacity"
+                                          values="0.7;0.3;0.7"
+                                          dur="1.5s"
+                                          begin={`${angle / 360}s`}
+                                          repeatCount="indefinite"
+                                        />
+                                      </line>
+                                    );
+                                  })}
+                                </>
+                              )}
+                              {/* Glow for visited */}
+                              <circle
+                                cx={nodeSize + 6}
+                                cy={nodeSize + 6}
+                                r={nodeSize + 3}
+                                fill={heatColor}
+                                opacity={0.15}
+                              />
+                              {/* Node circle */}
+                              <circle
+                                cx={nodeSize + 6}
+                                cy={nodeSize + 6}
+                                r={nodeSize}
+                                fill="hsl(var(--background))"
+                                stroke={heatColor}
+                                strokeWidth={2}
+                              />
+                              {/* Visit count in center */}
+                              <text
+                                x={nodeSize + 6}
+                                y={nodeSize + 10}
+                                textAnchor="middle"
+                                fill="#8b5cf6"
+                                style={{ fontSize: page.visits > 99 ? '9px' : '11px', fontWeight: 'bold' }}
+                              >
+                                {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
+                              </text>
+                            </svg>
+                            {/* Page name tooltip below */}
+                            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+                              {page.name.length > 8 ? page.name.slice(0, 8) + '…' : page.name}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
+                    {flowSummary.topPages.length > 6 && (
+                      <span className="text-[10px] text-muted-foreground">+{flowSummary.topPages.length - 6}</span>
+                    )}
+                    <div className="h-6 w-px bg-border/50" />
+                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
+                      {flowSummary.totalVisits} total
+                    </Badge>
                     {flowSummary.activeVisitors > 0 && (
                       <Badge className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
                         <Activity className="w-3 h-3 mr-1" />
