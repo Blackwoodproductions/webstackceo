@@ -622,6 +622,18 @@ const MarketingDashboard = () => {
                 <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                   <MousePointer className="w-3 h-3 mr-1" />{flowSummary.avgPagesPerSession} pg/session
                 </Badge>
+                <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-400 border-rose-500/30">
+                  <ArrowRight className="w-3 h-3 mr-1" />{flowSummary.bounceRate}% bounce
+                </Badge>
+                <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+                  <TrendingUp className="w-3 h-3 mr-1" />{flowSummary.topSource}
+                </Badge>
+                <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                  <UserCheck className="w-3 h-3 mr-1" />{flowSummary.newVisitorsToday} new today
+                </Badge>
+                <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30">
+                  <Zap className="w-3 h-3 mr-1" />{flowSummary.toolInteractions} tool uses
+                </Badge>
                 {flowSummary.externalReferrals > 0 && (
                   <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
                     <TrendingUp className="w-3 h-3 mr-1" />{flowSummary.externalReferrals} referrals
