@@ -753,54 +753,46 @@ const Analytics = () => {
         </div>
 
         {/* Performance Chart */}
-        <Card className="mb-8 overflow-hidden">
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>Performance Over Time</CardTitle>
             <CardDescription>Clicks and impressions trend</CardDescription>
           </CardHeader>
-          <CardContent className="overflow-hidden">
-            <div className="h-[300px] w-full overflow-hidden">
-              <ChartContainer
-                config={{
-                  clicks: { label: "Clicks", color: "hsl(var(--primary))" },
-                  impressions: { label: "Impressions", color: "hsl(var(--muted-foreground))" },
-                }}
-                className="h-full w-full"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                      interval="preserveStartEnd"
-                      minTickGap={50}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                      width={60}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area
-                      type="monotone"
-                      dataKey="clicks"
-                      stroke="hsl(var(--primary))"
-                      fill="url(#clicksGradient)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    interval="preserveStartEnd"
+                    minTickGap={50}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    width={60}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area
+                    type="monotone"
+                    dataKey="clicks"
+                    stroke="hsl(var(--primary))"
+                    fill="url(#clicksGradient)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
