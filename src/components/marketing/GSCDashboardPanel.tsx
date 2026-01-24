@@ -96,10 +96,13 @@ interface SitemapInfo {
 type SearchType = 'web' | 'image' | 'video' | 'news' | 'discover';
 type DateRangeType = "7" | "28" | "90" | "180" | "365";
 
-interface GSCDashboardPanelProps {
+export interface GSCDashboardPanelProps {
   onSiteChange?: (site: string) => void;
   onDataLoaded?: (data: { clicks: number; impressions: number; position: number }) => void;
   onTrackingStatus?: (hasTracking: boolean, domain: string) => void;
+  onSitesLoaded?: (sites: { siteUrl: string; permissionLevel: string }[]) => void;
+  onAuthStatusChange?: (isAuthenticated: boolean) => void;
+  externalSelectedSite?: string; // Allow parent to control selected site
 }
 
 const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
@@ -110,7 +113,7 @@ const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactN
   discover: { label: "Discover", icon: <Sparkles className="w-4 h-4" />, color: "#8b5cf6" },
 };
 
-export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus }: GSCDashboardPanelProps) => {
+export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus, onSitesLoaded, onAuthStatusChange, externalSelectedSite }: GSCDashboardPanelProps) => {
   const { toast } = useToast();
   
   // Auth state
@@ -448,13 +451,31 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
       });
       const siteEntries = response.data?.siteEntry || [];
       setSites(siteEntries);
+      
+      // Notify parent of loaded sites
+      onSitesLoaded?.(siteEntries);
+      
       if (siteEntries.length > 0 && !selectedSite) {
-        setSelectedSite(siteEntries[0].siteUrl);
+        // Use external selection if provided, otherwise default to first site
+        const siteToSelect = externalSelectedSite || siteEntries[0].siteUrl;
+        setSelectedSite(siteToSelect);
       }
     } catch (error) {
       console.error("Error fetching sites:", error);
     }
   };
+
+  // Sync with external selected site
+  useEffect(() => {
+    if (externalSelectedSite && sites.some(s => s.siteUrl === externalSelectedSite)) {
+      setSelectedSite(externalSelectedSite);
+    }
+  }, [externalSelectedSite, sites]);
+
+  // Notify parent of auth status changes
+  useEffect(() => {
+    onAuthStatusChange?.(isAuthenticated);
+  }, [isAuthenticated, onAuthStatusChange]);
 
   const getDaysFromRange = (range: string): number => parseInt(range);
 

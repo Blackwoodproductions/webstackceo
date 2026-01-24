@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -146,6 +146,9 @@ const MarketingDashboard = () => {
   // GSC domain tracking status
   const [selectedGscDomain, setSelectedGscDomain] = useState<string | null>(null);
   const [gscDomainHasTracking, setGscDomainHasTracking] = useState<boolean>(true); // Default to true until we check
+  const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
+  const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
+  const [selectedGscSiteUrl, setSelectedGscSiteUrl] = useState<string>("");
 
   // Persist chat online status
   useEffect(() => {
@@ -720,8 +723,36 @@ const MarketingDashboard = () => {
       {/* Date Range Selector Bar */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="w-full px-6 py-2 flex items-center justify-between">
-          {/* Left: Time Range Selector */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          {/* Left: Domain Selector & Time Range Selector */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Domain Selector - only show when GSC is authenticated */}
+            {gscAuthenticated && gscSites.length > 0 && (
+              <>
+                <Select 
+                  value={selectedGscSiteUrl} 
+                  onValueChange={(value) => {
+                    setSelectedGscSiteUrl(value);
+                    const cleanDomain = value.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                    setSelectedGscDomain(cleanDomain);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border">
+                    <Globe className="w-3 h-3 mr-1.5 text-cyan-500" />
+                    <SelectValue placeholder="Select domain" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                    {gscSites.map((site) => (
+                      <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
+                        {site.siteUrl.replace('sc-domain:', '').replace('https://', '')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="w-px h-5 bg-border" />
+              </>
+            )}
+            
+            {/* Time Range Selector */}
             <div className="flex gap-1">
               <div className="flex flex-col gap-1 items-center w-5">
                 <CalendarIcon className="w-4 h-4 text-primary mt-1.5" />
@@ -1440,10 +1471,12 @@ f.parentNode.insertBefore(j,f);
         {/* Google Search Console Integration */}
         <div className="mb-8">
           <GSCDashboardPanel 
+            externalSelectedSite={selectedGscSiteUrl}
             onSiteChange={(site) => {
               // When GSC domain changes, update state
               const cleanDomain = site.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
               setSelectedGscDomain(cleanDomain);
+              setSelectedGscSiteUrl(site);
               console.log('GSC site changed:', cleanDomain);
             }}
             onDataLoaded={(data) => {
@@ -1454,6 +1487,19 @@ f.parentNode.insertBefore(j,f);
               // Update tracking status for the domain
               setGscDomainHasTracking(hasTracking);
               console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
+            }}
+            onSitesLoaded={(sites) => {
+              // Store available GSC sites for header dropdown
+              setGscSites(sites);
+              // Auto-select first site if none selected
+              if (sites.length > 0 && !selectedGscSiteUrl) {
+                setSelectedGscSiteUrl(sites[0].siteUrl);
+                const cleanDomain = sites[0].siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                setSelectedGscDomain(cleanDomain);
+              }
+            }}
+            onAuthStatusChange={(isAuth) => {
+              setGscAuthenticated(isAuth);
             }}
           />
         </div>
