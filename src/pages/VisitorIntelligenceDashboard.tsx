@@ -767,23 +767,30 @@ const MarketingDashboard = () => {
             {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
             {(() => {
               // Combine GSC sites and tracked domains into unified list
-              const allDomains: { value: string; label: string; source: 'gsc' | 'tracking' }[] = [];
+              // Tracked domains with Visitor Intelligence get priority display
+              const allDomains: { value: string; label: string; source: 'gsc' | 'tracking' | 'both'; hasTracking: boolean }[] = [];
               
-              // Add GSC sites first (they have priority)
+              // First, add tracked domains (these have Visitor Intelligence installed)
+              trackedDomains.forEach(domain => {
+                allDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: true });
+              });
+              
+              // Add GSC sites, marking if they also have tracking
               if (gscAuthenticated && gscSites.length > 0) {
                 gscSites.forEach(site => {
-                  const cleanLabel = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace(/\/$/, '');
-                  allDomains.push({ value: site.siteUrl, label: cleanLabel, source: 'gsc' });
+                  const cleanLabel = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  // Check if this GSC site matches a tracked domain (exact match only)
+                  const matchingTracked = allDomains.find(d => d.label === cleanLabel);
+                  if (matchingTracked) {
+                    // Update existing tracked domain to show it also has GSC
+                    matchingTracked.source = 'both';
+                    matchingTracked.value = site.siteUrl; // Use GSC URL for API calls
+                  } else {
+                    // Add as GSC-only domain
+                    allDomains.push({ value: site.siteUrl, label: cleanLabel, source: 'gsc', hasTracking: false });
+                  }
                 });
               }
-              
-              // Add tracked domains that aren't already in GSC list
-              trackedDomains.forEach(domain => {
-                const alreadyInGsc = allDomains.some(d => d.label.includes(domain) || domain.includes(d.label.replace(/\/$/, '')));
-                if (!alreadyInGsc) {
-                  allDomains.push({ value: domain, label: domain, source: 'tracking' });
-                }
-              });
               
               const currentValue = selectedGscSiteUrl || selectedTrackedDomain;
               
@@ -794,15 +801,23 @@ const MarketingDashboard = () => {
                       value={currentValue} 
                       onValueChange={(value) => {
                         const selected = allDomains.find(d => d.value === value);
-                        if (selected?.source === 'gsc') {
-                          setSelectedGscSiteUrl(value);
-                          const cleanDomain = value.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
-                          setSelectedGscDomain(cleanDomain);
-                          setSelectedTrackedDomain('');
-                        } else {
-                          setSelectedTrackedDomain(value);
-                          setSelectedGscDomain(value);
-                          setSelectedGscSiteUrl('');
+                        if (selected) {
+                          if (selected.source === 'gsc') {
+                            // GSC-only domain
+                            setSelectedGscSiteUrl(value);
+                            setSelectedGscDomain(selected.label);
+                            setSelectedTrackedDomain('');
+                          } else if (selected.source === 'both') {
+                            // Domain has both tracking and GSC
+                            setSelectedGscSiteUrl(value);
+                            setSelectedGscDomain(selected.label);
+                            setSelectedTrackedDomain(selected.label);
+                          } else {
+                            // Tracking-only domain
+                            setSelectedTrackedDomain(value);
+                            setSelectedGscDomain(value);
+                            setSelectedGscSiteUrl('');
+                          }
                         }
                       }}
                     >
@@ -815,14 +830,19 @@ const MarketingDashboard = () => {
                             : 'Select domain'}
                         </span>
                       </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[280px]">
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[300px]">
                         {allDomains.map((domain) => (
                           <SelectItem key={domain.value} value={domain.value} className="text-xs">
                             <div className="flex items-center gap-2">
-                              <span className="truncate max-w-[180px]" title={domain.label}>{domain.label.length > 25 ? domain.label.slice(0, 25) + '...' : domain.label}</span>
-                              {domain.source === 'gsc' && (
-                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30 flex-shrink-0">GSC</Badge>
-                              )}
+                              <span className="truncate max-w-[140px]" title={domain.label}>{domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}</span>
+                              <div className="flex gap-1 flex-shrink-0">
+                                {domain.hasTracking && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
+                                )}
+                                {(domain.source === 'gsc' || domain.source === 'both') && (
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
+                                )}
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
