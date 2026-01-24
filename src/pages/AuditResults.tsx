@@ -67,6 +67,7 @@ import {
   ArrowRight,
   Mail,
   Gift,
+  X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -651,6 +652,7 @@ const AuditResults = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [submitterEmail, setSubmitterEmail] = useState("");
+  const [showLinkActiveNotification, setShowLinkActiveNotification] = useState(false);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -847,9 +849,11 @@ const AuditResults = () => {
         console.error('Save audit error:', error);
         toast.error('Failed to save audit');
       } else {
-        toast.success('Audit saved! We\'ll send your do-follow link details to your email.');
         setIsSaved(true);
         setShowEmailDialog(false);
+        setShowLinkActiveNotification(true);
+        // Auto-hide notification after 10 seconds
+        setTimeout(() => setShowLinkActiveNotification(false), 10000);
       }
     } catch (err) {
       console.error('Save audit error:', err);
@@ -1268,6 +1272,39 @@ const AuditResults = () => {
                           </span>
                         )}
                       </p>
+                      
+                      {/* Link Active Notification */}
+                      <AnimatePresence>
+                        {showLinkActiveNotification && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            className="mt-3 flex items-center gap-2"
+                          >
+                            <motion.div
+                              animate={{ x: [0, -5, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, repeatType: "reverse" }}
+                              className="text-green-500"
+                            >
+                              <ArrowRight className="w-5 h-5 rotate-180" />
+                            </motion.div>
+                            <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
+                              <p className="text-sm font-medium text-green-400 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Your do-follow link is now active! Click the domain above to visit.
+                              </p>
+                            </div>
+                            <button 
+                              onClick={() => setShowLinkActiveNotification(false)}
+                              className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
