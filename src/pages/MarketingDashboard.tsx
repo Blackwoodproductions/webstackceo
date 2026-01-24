@@ -419,7 +419,7 @@ const MarketingDashboard = () => {
             <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <BarChart3 className="w-8 h-8 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Customer Journey</h1>
+                <h1 className="text-2xl font-bold text-foreground">Visitor Intelligence</h1>
                 <p className="text-sm text-muted-foreground">Marketing Funnel Analytics</p>
               </div>
             </a>
@@ -552,51 +552,92 @@ const MarketingDashboard = () => {
       <div className="flex min-h-[calc(100vh-140px)]">
         {/* Left Sidebar - Collapsed Icons (only visible when diagram is closed) */}
         {!siteArchOpen && (
-          <div className="w-16 flex-shrink-0 border-r border-border bg-card/50">
+          <div className="w-48 flex-shrink-0 border-r border-border bg-card/50">
             <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
               {/* Sidebar Header - Click to expand */}
               <button 
                 onClick={() => setSiteArchOpen(true)}
-                className="flex flex-col items-center gap-1 p-3 border-b border-border hover:bg-secondary/30 transition-colors"
+                className="flex items-center gap-2 p-3 border-b border-border hover:bg-secondary/30 transition-colors"
                 title="Open Visitor Intelligence"
               >
                 <BarChart3 className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-foreground flex-1 text-left">Pages</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
               
-              {/* Page Icons */}
-              <div className="flex-1 flex flex-col items-center gap-2 py-4 overflow-auto">
-                {flowSummary && flowSummary.topPages.slice(0, 10).map((page) => {
+              {/* Page Icons with Names */}
+              <div className="flex-1 flex flex-col gap-1 py-3 px-2 overflow-auto">
+                {flowSummary && flowSummary.topPages.slice(0, 12).map((page) => {
                   const maxVisits = flowSummary.topPages[0]?.visits || 1;
                   const intensity = page.visits / maxVisits;
                   const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : '#eab308';
                   const hasLiveVisitor = page.liveCount > 0;
+                  const hasExternalReferrer = page.hasExternalReferrer;
                   
                   return (
                     <div
                       key={page.path}
-                      className="relative group cursor-pointer hover:scale-110 transition-transform"
-                      title={`${page.name}: ${page.visits} visits`}
-                      onClick={() => setPageFilter(page.path)}
+                      className={`relative flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-secondary/50 transition-colors ${pageFilter === page.path ? 'bg-primary/10 border border-primary/30' : ''}`}
+                      onClick={() => setPageFilter(page.path === pageFilter ? null : page.path)}
                     >
-                      <svg width={40} height={40} className="overflow-visible">
-                        {hasLiveVisitor && (
-                          <circle cx={20} cy={20} r={18} fill="#22c55e" opacity={0.15} className="animate-pulse" />
-                        )}
-                        <circle cx={20} cy={20} r={14} fill="hsl(var(--background))" stroke={hasLiveVisitor ? "#22c55e" : heatColor} strokeWidth={2} />
-                        <text x={20} y={24} textAnchor="middle" fill="#8b5cf6" style={{ fontSize: '10px', fontWeight: 'bold' }}>
-                          {page.visits > 99 ? '99+' : page.visits}
-                        </text>
-                        {hasLiveVisitor && (
-                          <>
-                            <circle cx={30} cy={10} r={6} fill="#22c55e" />
-                            <text x={30} y={13} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.liveCount}</text>
-                          </>
-                        )}
-                      </svg>
+                      <div className="relative flex-shrink-0">
+                        <svg width={44} height={44} className="overflow-visible">
+                          {/* External referrer starburst */}
+                          {hasExternalReferrer && (
+                            <>
+                              <circle cx={22} cy={22} r={20} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.7}>
+                                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
+                              </circle>
+                              {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+                                const rad = (angle * Math.PI) / 180;
+                                const x1 = 22 + Math.cos(rad) * 14;
+                                const y1 = 22 + Math.sin(rad) * 14;
+                                const x2 = 22 + Math.cos(rad) * 19;
+                                const y2 = 22 + Math.sin(rad) * 19;
+                                return (
+                                  <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f97316" strokeWidth={1.5} strokeLinecap="round" opacity={0.7}>
+                                    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" begin={`${angle / 360}s`} repeatCount="indefinite" />
+                                  </line>
+                                );
+                              })}
+                            </>
+                          )}
+                          {/* Live visitor glow */}
+                          {hasLiveVisitor && (
+                            <circle cx={22} cy={22} r={18} fill="#22c55e" opacity={0.2} className="animate-pulse" />
+                          )}
+                          {/* Main circle */}
+                          <circle cx={22} cy={22} r={14} fill="hsl(var(--background))" stroke={hasLiveVisitor ? "#22c55e" : heatColor} strokeWidth={2.5} />
+                          <text x={22} y={26} textAnchor="middle" fill="#8b5cf6" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                            {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
+                          </text>
+                          {/* Live count badge */}
+                          {hasLiveVisitor && (
+                            <>
+                              <circle cx={34} cy={10} r={7} fill="#22c55e" />
+                              <text x={34} y={13} textAnchor="middle" fill="white" style={{ fontSize: '9px', fontWeight: 'bold' }}>{page.liveCount}</text>
+                            </>
+                          )}
+                          {/* External count badge */}
+                          {page.externalCount > 0 && (
+                            <>
+                              <circle cx={10} cy={34} r={7} fill="#f97316" />
+                              <text x={10} y={37} textAnchor="middle" fill="white" style={{ fontSize: '9px', fontWeight: 'bold' }}>{page.externalCount > 99 ? '99+' : page.externalCount}</text>
+                            </>
+                          )}
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{page.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{page.visits} visits</p>
+                      </div>
                     </div>
                   );
                 })}
+                {(!flowSummary || flowSummary.topPages.length === 0) && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No page data</p>
+                )}
               </div>
             </div>
           </div>
