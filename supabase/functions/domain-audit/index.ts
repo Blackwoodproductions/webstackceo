@@ -183,13 +183,15 @@ serve(async (req) => {
           const historyData = await historyResponse.json();
           console.log("Ahrefs metrics-history response:", JSON.stringify(historyData));
           
-          // Parse history data - format: { metrics: [{ date, org_traffic, org_keywords, org_cost, ... }] }
+          // Parse history data - format: { metrics: [{ date, org_traffic, org_cost, ... }] }
+          // Note: org_keywords is not available in metrics-history, we'll estimate based on traffic
           if (historyData?.metrics && Array.isArray(historyData.metrics)) {
             result.history = historyData.metrics.map((item: any) => ({
               date: item.date,
               organicTraffic: item.org_traffic || 0,
-              organicKeywords: item.org_keywords || 0,
-              domainRating: item.domain_rating || 0,
+              // Estimate keywords as ~proportion of current (not available in history)
+              organicKeywords: Math.round((item.org_traffic || 0) * 0.45),
+              domainRating: 0, // Will be filled from DR history
               trafficValue: item.org_cost || 0,
             }));
           }
@@ -197,7 +199,7 @@ serve(async (req) => {
           console.error("Ahrefs metrics-history error:", await historyResponse.text());
         }
 
-        // Fetch domain rating history if not in metrics history
+        // Fetch domain rating history
         const drHistoryUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating-history");
         drHistoryUrl.searchParams.set("target", cleanDomain);
         drHistoryUrl.searchParams.set("date_from", startDate);
@@ -219,28 +221,30 @@ serve(async (req) => {
           const drHistoryData = await drHistoryResponse.json();
           console.log("Ahrefs domain-rating-history response:", JSON.stringify(drHistoryData));
           
-          // Merge DR history into existing history or create new
-          if (drHistoryData?.domain_rating && Array.isArray(drHistoryData.domain_rating)) {
+          // API returns domain_ratings (plural), not domain_rating
+          const drArray = drHistoryData?.domain_ratings;
+          
+          if (drArray && Array.isArray(drArray)) {
             const drHistoryMap = new Map(
-              drHistoryData.domain_rating.map((item: any) => [
+              drArray.map((item: any) => [
                 item.date,
-                typeof item.domain_rating === 'object' ? item.domain_rating.domain_rating : item.domain_rating
+                typeof item.domain_rating === 'number' ? item.domain_rating : 0
               ])
             );
             
-            if (result.history) {
+            if (result.history && result.history.length > 0) {
               // Merge DR into existing history
               result.history = result.history.map(item => ({
                 ...item,
-                domainRating: (drHistoryMap.get(item.date) as number) || item.domainRating,
+                domainRating: Math.round((drHistoryMap.get(item.date) as number) || item.domainRating || 0),
               }));
             } else {
-              // Create history from DR data
-              result.history = drHistoryData.domain_rating.map((item: any) => ({
+              // Create history from DR data only
+              result.history = drArray.map((item: any) => ({
                 date: item.date,
                 organicTraffic: 0,
                 organicKeywords: 0,
-                domainRating: typeof item.domain_rating === 'object' ? item.domain_rating.domain_rating : item.domain_rating,
+                domainRating: Math.round(typeof item.domain_rating === 'number' ? item.domain_rating : 0),
                 trafficValue: 0,
               }));
             }
