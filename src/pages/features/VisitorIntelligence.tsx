@@ -159,6 +159,7 @@ const VisitorIntelligence = () => {
               className="rounded-2xl overflow-hidden border border-border shadow-2xl"
             >
               <img 
+                key={dashboardScreenshot}
                 src={dashboardScreenshot} 
                 alt="Visitor Intelligence Dashboard showing real-time analytics, visitor flow diagram, and engagement metrics" 
                 className="w-full h-auto"

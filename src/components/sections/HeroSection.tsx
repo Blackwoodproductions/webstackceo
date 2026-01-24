@@ -197,6 +197,7 @@ const HeroSection = () => {
                     </div>
                   </div>
                   <img 
+                    key={dashboardImage}
                     src={dashboardImage} 
                     alt="Visitor Intelligence Dashboard showing real-time analytics, KPI metrics, conversion funnel, and leads table"
                     className="w-full h-auto"
