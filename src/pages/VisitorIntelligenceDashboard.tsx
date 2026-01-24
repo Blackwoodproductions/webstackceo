@@ -856,43 +856,50 @@ const MarketingDashboard = () => {
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
             {(() => {
-              // Combine GSC sites and tracked domains into unified list
-              // Tracked domains with Visitor Intelligence get priority display
-              const allDomains: { value: string; label: string; source: 'gsc' | 'tracking' | 'both'; hasTracking: boolean }[] = [];
-              
-              // First, add tracked domains (these have Visitor Intelligence installed)
-              trackedDomains.forEach(domain => {
-                allDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: true });
-              });
-              
-              // Add GSC sites, marking if they also have tracking
+              // Build unified list: VI-only first, then BOTH, then GSC-only (when GSC connected)
+              type DomainEntry = { value: string; label: string; source: 'gsc' | 'tracking' | 'both'; hasTracking: boolean };
+              const viOnlyDomains: DomainEntry[] = [];
+              const bothDomains: DomainEntry[] = [];
+              const gscOnlyDomains: DomainEntry[] = [];
+
+              // Build set of GSC domain labels for matching
+              const gscDomainLabels = new Set<string>();
+              const gscSiteUrlByLabel: Record<string, string> = {};
               if (gscAuthenticated && gscSites.length > 0) {
                 gscSites.forEach(site => {
-                  const cleanLabel = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
-                  // Check if this GSC site matches a tracked domain (exact match only)
-                  const matchingTracked = allDomains.find(d => d.label === cleanLabel);
-                  if (matchingTracked) {
-                    // Update existing tracked domain to show it also has GSC
-                    matchingTracked.source = 'both';
-                    matchingTracked.value = site.siteUrl; // Use GSC URL for API calls
-                  } else {
-                    // Add as GSC-only domain
-                    allDomains.push({ value: site.siteUrl, label: cleanLabel, source: 'gsc', hasTracking: false });
-                  }
+                  const cleanLabel = normalizeDomain(site.siteUrl);
+                  gscDomainLabels.add(cleanLabel);
+                  gscSiteUrlByLabel[cleanLabel] = site.siteUrl;
                 });
               }
-              
-              const cleanDomainLabel = (v: string) =>
-                v
-                  .replace('sc-domain:', '')
-                  .replace('https://', '')
-                  .replace('http://', '')
-                  .replace(/\/$/, '');
 
-              // IMPORTANT: Radix Select must receive a `value` that exactly matches one of the
-              // SelectItem values. For domains that are BOTH (GSC + tracking), the SelectItem
-              // value is the GSC siteUrl, while the tracked-domain state is the clean hostname.
-              // If we pass the clean hostname as `value`, Radix can reset/snap to the first item.
+              // Categorize tracked domains
+              trackedDomains.forEach(domain => {
+                if (gscDomainLabels.has(domain)) {
+                  // Has both VI and GSC
+                  bothDomains.push({ value: gscSiteUrlByLabel[domain], label: domain, source: 'both', hasTracking: true });
+                  gscDomainLabels.delete(domain); // Remove from set so we don't add again
+                } else {
+                  // VI-only
+                  viOnlyDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: true });
+                }
+              });
+
+              // Add remaining GSC-only domains (only when GSC connected)
+              if (gscAuthenticated) {
+                gscDomainLabels.forEach(label => {
+                  gscOnlyDomains.push({ value: gscSiteUrlByLabel[label], label, source: 'gsc', hasTracking: false });
+                });
+              }
+
+              // When GSC NOT connected: only show VI domains (viOnly + both treated as viOnly)
+              // When GSC IS connected: show VI-only first, then both, then GSC-only
+              const allDomains: DomainEntry[] = gscAuthenticated
+                ? [...viOnlyDomains, ...bothDomains, ...gscOnlyDomains]
+                : [...viOnlyDomains, ...bothDomains.map(d => ({ ...d, source: 'tracking' as const }))]; // treat "both" as tracking when not GSC connected
+
+              const cleanDomainLabel = (v: string) => normalizeDomain(v);
+
               const selectedByTrackedLabel = selectedTrackedDomain
                 ? allDomains.find((d) => d.label === selectedTrackedDomain)
                 : undefined;
@@ -910,17 +917,14 @@ const MarketingDashboard = () => {
                       onValueChange={(value) => {
                         const selected = allDomains.find(d => d.value === value);
                         if (selected) {
-                          // Update tracking status based on domain selection
                           const cachedTracking = gscTrackingByDomain[selected.label];
                           setGscDomainHasTracking(selected.hasTracking || cachedTracking === true);
                           
                           if (selected.source === 'gsc') {
-                            // GSC-only domain
                             setSelectedGscSiteUrl(value);
                             setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain('');
                           } else if (selected.source === 'both') {
-                            // Domain has both tracking and GSC
                             setSelectedGscSiteUrl(value);
                             setSelectedGscDomain(selected.label);
                             setSelectedTrackedDomain(selected.label);
@@ -933,32 +937,94 @@ const MarketingDashboard = () => {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-[200px] h-7 text-sm bg-background border-border">
+                      <SelectTrigger className="w-[260px] h-7 text-sm bg-background border-border">
                         <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-cyan-500" />
-                        <span className="truncate max-w-[150px]">
+                        <span className="truncate max-w-[200px]">
                           {displayLabel
-                            ? (displayLabel.length > 20 ? `${displayLabel.slice(0, 20)}...` : displayLabel)
+                            ? (displayLabel.length > 25 ? `${displayLabel.slice(0, 25)}...` : displayLabel)
                             : 'Select domain'}
                         </span>
                       </SelectTrigger>
-                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[300px]">
-                        {allDomains.map((domain) => (
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
+                        {/* VI-only section header */}
+                        {viOnlyDomains.length > 0 && gscAuthenticated && (
+                          <div className="px-2 py-1 text-[10px] font-semibold text-green-500 bg-green-500/5 border-b border-border">
+                            VI Tracking Only
+                          </div>
+                        )}
+                        {viOnlyDomains.map((domain) => (
+                          <SelectItem key={domain.value} value={domain.value} className="text-xs">
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate max-w-[140px]" title={domain.label}>
+                                  {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
+                                </span>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
+                              </div>
+                              {gscAuthenticated && (
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-500 border-amber-500/30 cursor-pointer hover:bg-amber-500/20">
+                                  + GSC
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                        
+                        {/* Both section header */}
+                        {bothDomains.length > 0 && gscAuthenticated && (
+                          <div className="px-2 py-1 text-[10px] font-semibold text-violet-400 bg-violet-500/5 border-b border-border mt-1">
+                            VI + GSC Connected
+                          </div>
+                        )}
+                        {bothDomains.map((domain) => (
                           <SelectItem key={domain.value} value={domain.value} className="text-xs">
                             <div className="flex items-center gap-2">
-                              <span className="truncate max-w-[140px]" title={domain.label}>{domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}</span>
+                              <span className="truncate max-w-[140px]" title={domain.label}>
+                                {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
+                              </span>
                               <div className="flex gap-1 flex-shrink-0">
-                                {domain.hasTracking && (
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
-                                )}
-                                {(domain.source === 'gsc' || domain.source === 'both') && (
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
-                                )}
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
                               </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                        
+                        {/* GSC-only section header */}
+                        {gscOnlyDomains.length > 0 && (
+                          <div className="px-2 py-1 text-[10px] font-semibold text-cyan-400 bg-cyan-500/5 border-b border-border mt-1">
+                            GSC Only (No VI Tracking)
+                          </div>
+                        )}
+                        {gscOnlyDomains.map((domain) => (
+                          <SelectItem key={domain.value} value={domain.value} className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate max-w-[140px]" title={domain.label}>
+                                {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
+                              </span>
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Show Connect to GSC button when VI-only domain is selected and GSC is connected */}
+                    {gscAuthenticated && viOnlyDomains.some(d => d.value === selectValue) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1.5 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                        onClick={() => {
+                          // Open Google Search Console in new tab to add the property
+                          const domainToAdd = cleanDomainLabel(selectValue);
+                          window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain%3A${encodeURIComponent(domainToAdd)}`, '_blank');
+                        }}
+                      >
+                        <Search className="w-3 h-3" />
+                        Add to GSC
+                      </Button>
+                    )}
                     <div className="w-px h-5 bg-border" />
                   </>
                 );
