@@ -1006,16 +1006,12 @@ const MarketingDashboard = () => {
                                 key={domain}
                                 value={domain}
                                 className="text-xs"
+                                indicator={hasViTracking ? (
+                                  <Globe className="w-3.5 h-3.5 text-primary" />
+                                ) : undefined}
                               >
-                                <span className="flex items-center justify-between w-full gap-2">
-                                  <span className="truncate max-w-[280px]" title={domain}>
-                                    {domain}
-                                  </span>
-                                  {hasViTracking && (
-                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 flex-shrink-0">
-                                      VI
-                                    </Badge>
-                                  )}
+                                <span className="truncate max-w-[300px]" title={domain}>
+                                  {domain}
                                 </span>
                               </SelectItem>
                             );
