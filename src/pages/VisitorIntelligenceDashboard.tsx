@@ -533,7 +533,7 @@ const MarketingDashboard = () => {
 
       {/* Date Range Selector Bar */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-2 flex items-center gap-4">
+        <div className="container mx-auto px-6 py-2 flex items-center justify-between">
           {/* Left: Time Range Selector */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <div className="flex gap-1">
