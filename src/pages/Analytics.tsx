@@ -55,6 +55,26 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters",
 ].join(" ");
 
+function base64UrlEncode(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let str = "";
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function generateCodeVerifier(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes.buffer);
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return base64UrlEncode(digest);
+}
+
 interface PerformanceRow {
   keys: string[];
   clicks: number;
@@ -116,22 +136,99 @@ const Analytics = () => {
       setIsAuthenticated(true);
     }
     
-    // Check URL for OAuth callback
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get("access_token");
-      const expiresIn = params.get("expires_in");
-      
-      if (token) {
-        const expiry = Date.now() + (parseInt(expiresIn || "3600") * 1000);
-        sessionStorage.setItem("gsc_access_token", token);
-        sessionStorage.setItem("gsc_token_expiry", expiry.toString());
-        setAccessToken(token);
-        setIsAuthenticated(true);
-        
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+    // OAuth callback handling
+    const url = new URL(window.location.href);
+    const oauthError = url.searchParams.get("error");
+    const code = url.searchParams.get("code");
+
+    // New (recommended) OAuth flow: authorization code + PKCE
+    if (oauthError) {
+      toast({
+        title: "Google connection failed",
+        description: oauthError,
+        variant: "destructive",
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (code) {
+      const redirectUri = window.location.origin + "/analytics";
+      const verifier = sessionStorage.getItem("gsc_code_verifier") || "";
+
+      (async () => {
+        try {
+          const clientId = getGoogleClientId();
+          if (!clientId) {
+            setShowClientIdDialog(true);
+            return;
+          }
+
+          if (!verifier) {
+            toast({
+              title: "Google connection failed",
+              description: "Missing PKCE verifier. Please try connecting again.",
+              variant: "destructive",
+            });
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+          }
+
+          const body = new URLSearchParams({
+            client_id: clientId,
+            code,
+            code_verifier: verifier,
+            redirect_uri: redirectUri,
+            grant_type: "authorization_code",
+          });
+
+          const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body,
+          });
+
+          const tokenJson = await tokenRes.json();
+          if (!tokenRes.ok || !tokenJson?.access_token) {
+            const message = tokenJson?.error_description || tokenJson?.error || "Token exchange failed.";
+            throw new Error(message);
+          }
+
+          const expiresIn = Number(tokenJson.expires_in ?? 3600);
+          const expiry = Date.now() + expiresIn * 1000;
+          sessionStorage.setItem("gsc_access_token", tokenJson.access_token);
+          sessionStorage.setItem("gsc_token_expiry", expiry.toString());
+          sessionStorage.removeItem("gsc_code_verifier");
+          setAccessToken(tokenJson.access_token);
+          setIsAuthenticated(true);
+
+          // Clean URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e: any) {
+          console.error("OAuth token exchange error:", e);
+          toast({
+            title: "Google connection failed",
+            description: e?.message || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      })();
+    } else {
+      // Legacy fallback (implicit flow): access_token in URL hash
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const token = params.get("access_token");
+        const expiresIn = params.get("expires_in");
+
+        if (token) {
+          const expiry = Date.now() + (parseInt(expiresIn || "3600") * 1000);
+          sessionStorage.setItem("gsc_access_token", token);
+          sessionStorage.setItem("gsc_token_expiry", expiry.toString());
+          setAccessToken(token);
+          setIsAuthenticated(true);
+
+          // Clean URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
     }
     
@@ -152,7 +249,7 @@ const Analytics = () => {
     }
   }, [selectedSite, dateRange, accessToken]);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
     if (!clientId) {
       setShowClientIdDialog(true);
@@ -160,13 +257,21 @@ const Analytics = () => {
     }
 
     const redirectUri = window.location.origin + "/analytics";
+    const verifier = generateCodeVerifier();
+    sessionStorage.setItem("gsc_code_verifier", verifier);
+    const challenge = await generateCodeChallenge(verifier);
+
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("response_type", "token");
+    authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", GOOGLE_SCOPES);
+    authUrl.searchParams.set("code_challenge", challenge);
+    authUrl.searchParams.set("code_challenge_method", "S256");
     authUrl.searchParams.set("prompt", "consent");
-    
+    authUrl.searchParams.set("include_granted_scopes", "true");
+    authUrl.searchParams.set("access_type", "online");
+
     window.location.href = authUrl.toString();
   };
 
@@ -189,7 +294,7 @@ const Analytics = () => {
     
     // Trigger login after saving
     setTimeout(() => {
-      handleGoogleLogin();
+      void handleGoogleLogin();
     }, 500);
   };
 
