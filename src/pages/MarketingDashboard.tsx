@@ -8,10 +8,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
@@ -31,6 +39,9 @@ interface Lead {
   annual_revenue: string | null;
   qualification_step: number | null;
   funnel_stage: string | null;
+  status: string;
+  closed_at: string | null;
+  closed_amount: number | null;
 }
 
 interface VisitorSession {
@@ -65,7 +76,7 @@ interface FunnelStats {
   engaged: number;
   leads: number;
   qualified: number;
-  withPhone: number;
+  closedLeads: number;
   withName: number;
   withCompanyInfo: number;
 }
@@ -81,7 +92,7 @@ const MarketingDashboard = () => {
     engaged: 0,
     leads: 0,
     qualified: 0,
-    withPhone: 0,
+    closedLeads: 0,
     withName: 0,
     withCompanyInfo: 0,
   });
@@ -93,6 +104,71 @@ const MarketingDashboard = () => {
   const [activeVisitors, setActiveVisitors] = useState(0);
   const [newVisitorsToday, setNewVisitorsToday] = useState(0);
   const [pageFilter, setPageFilter] = useState<string | null>(null);
+  const [closeLeadDialog, setCloseLeadDialog] = useState<{ open: boolean; lead: Lead | null }>({ open: false, lead: null });
+  const [closeAmount, setCloseAmount] = useState<string>('');
+  const [closingLead, setClosingLead] = useState(false);
+
+  const handleCloseLead = async () => {
+    if (!closeLeadDialog.lead) return;
+    
+    setClosingLead(true);
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          status: 'closed',
+          closed_at: new Date().toISOString(),
+          closed_amount: closeAmount ? parseFloat(closeAmount) : null,
+        })
+        .eq('id', closeLeadDialog.lead.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLeads(prev => prev.map(l => 
+        l.id === closeLeadDialog.lead?.id 
+          ? { ...l, status: 'closed', closed_at: new Date().toISOString(), closed_amount: closeAmount ? parseFloat(closeAmount) : null }
+          : l
+      ));
+      
+      // Update funnel stats
+      setFunnelStats(prev => ({ ...prev, closedLeads: prev.closedLeads + 1 }));
+      
+      setCloseLeadDialog({ open: false, lead: null });
+      setCloseAmount('');
+    } catch (error) {
+      console.error('Error closing lead:', error);
+    } finally {
+      setClosingLead(false);
+    }
+  };
+
+  const handleReopenLead = async (lead: Lead) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          status: 'open',
+          closed_at: null,
+          closed_amount: null,
+        })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLeads(prev => prev.map(l => 
+        l.id === lead.id 
+          ? { ...l, status: 'open', closed_at: null, closed_amount: null }
+          : l
+      ));
+      
+      // Update funnel stats
+      setFunnelStats(prev => ({ ...prev, closedLeads: Math.max(0, prev.closedLeads - 1) }));
+    } catch (error) {
+      console.error('Error reopening lead:', error);
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -167,7 +243,7 @@ const MarketingDashboard = () => {
         engagedLeads,
         allLeads,
         qualifiedLeads,
-        leadsWithPhone,
+        closedLeads,
         leadsWithName,
         leadsWithCompany,
         // Active & Today counts
@@ -183,7 +259,7 @@ const MarketingDashboard = () => {
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('funnel_stage', 'engaged'),
         supabase.from('leads').select('id', { count: 'exact', head: true }),
         supabase.from('leads').select('id', { count: 'exact', head: true }).eq('funnel_stage', 'qualified'),
-        supabase.from('leads').select('id', { count: 'exact', head: true }).not('phone', 'is', null),
+        supabase.from('leads').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
         supabase.from('leads').select('id', { count: 'exact', head: true }).not('full_name', 'is', null),
         supabase.from('leads').select('id', { count: 'exact', head: true }).not('company_employees', 'is', null),
         // Active visitors (last 5 min)
@@ -202,7 +278,7 @@ const MarketingDashboard = () => {
         engaged: engagedLeads.count || 0,
         leads: allLeads.count || 0,
         qualified: qualifiedLeads.count || 0,
-        withPhone: leadsWithPhone.count || 0,
+        closedLeads: closedLeads.count || 0,
         withName: leadsWithName.count || 0,
         withCompanyInfo: leadsWithCompany.count || 0,
       });
@@ -293,9 +369,9 @@ const MarketingDashboard = () => {
     { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600' },
     { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600' },
     { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600' },
-    { label: 'With Phone', count: funnelStats.withPhone, icon: Phone, color: 'from-amber-400 to-amber-600' },
-    { label: 'With Name', count: funnelStats.withName, icon: UserCheck, color: 'from-orange-400 to-orange-600' },
-    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-green-400 to-green-600' },
+    { label: 'With Name', count: funnelStats.withName, icon: UserCheck, color: 'from-amber-400 to-amber-600' },
+    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600' },
+    { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600' },
   ];
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
@@ -386,14 +462,14 @@ const MarketingDashboard = () => {
               </div>
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 border-green-500/30 bg-green-500/5">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Phone className="w-5 h-5 text-amber-500" />
+              <div className="p-2 rounded-lg bg-green-500/20">
+                <DollarSign className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{funnelStats.withPhone}</p>
-                <p className="text-xs text-muted-foreground">With Phone</p>
+                <p className="text-2xl font-bold text-green-500">{funnelStats.closedLeads}</p>
+                <p className="text-xs text-muted-foreground">Closed Leads</p>
               </div>
             </div>
           </Card>
@@ -529,10 +605,10 @@ const MarketingDashboard = () => {
             </div>
             <div className="flex flex-1 justify-between gap-2">
               {[
-                { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
-                { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
-                { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
-                { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
+                { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500' },
+                { label: 'With Name', count: funnelStats.withName, color: 'bg-amber-500' },
+                { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500' },
+                { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500' },
               ].map((item) => (
                 <div key={item.label} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/30">
                   <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
@@ -570,13 +646,14 @@ const MarketingDashboard = () => {
                           <TableHead className="text-xs">Name</TableHead>
                           <TableHead className="text-xs">Phone</TableHead>
                           <TableHead className="text-xs">Company</TableHead>
-                          <TableHead className="text-xs">Stage</TableHead>
+                          <TableHead className="text-xs">Status</TableHead>
                           <TableHead className="text-xs">Date</TableHead>
+                          <TableHead className="text-xs text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {(pageFilter ? filteredData.leads : leads).map((lead) => (
-                          <TableRow key={lead.id}>
+                          <TableRow key={lead.id} className={lead.status === 'closed' ? 'bg-green-500/5' : ''}>
                             <TableCell className="font-medium text-sm py-2">{lead.email}</TableCell>
                             <TableCell className="text-sm py-2">{lead.full_name || '-'}</TableCell>
                             <TableCell className="text-sm py-2">
@@ -593,18 +670,50 @@ const MarketingDashboard = () => {
                               ) : '-'}
                             </TableCell>
                             <TableCell className="py-2">
-                              <Badge className={`text-[10px] ${getFunnelStageColor(lead.funnel_stage)}`}>
-                                {lead.funnel_stage || 'visitor'}
-                              </Badge>
+                              {lead.status === 'closed' ? (
+                                <Badge className="text-[10px] bg-green-500">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Closed
+                                  {lead.closed_amount && (
+                                    <span className="ml-1">${lead.closed_amount.toLocaleString()}</span>
+                                  )}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px]">
+                                  Open
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground py-2">
                               {format(new Date(lead.created_at), 'MMM d, HH:mm')}
+                            </TableCell>
+                            <TableCell className="py-2 text-right">
+                              {lead.status === 'closed' ? (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 text-xs"
+                                  onClick={() => handleReopenLead(lead)}
+                                >
+                                  Reopen
+                                </Button>
+                              ) : (
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  className="h-7 text-xs bg-green-600 hover:bg-green-700"
+                                  onClick={() => setCloseLeadDialog({ open: true, lead })}
+                                >
+                                  <DollarSign className="w-3 h-3 mr-1" />
+                                  Close
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
                         {(pageFilter ? filteredData.leads : leads).length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                               {pageFilter ? `No leads from ${pageFilter}` : 'No leads captured yet'}
                             </TableCell>
                           </TableRow>
@@ -740,6 +849,53 @@ const MarketingDashboard = () => {
           <VisitorEngagementPanel />
         </div>
       </main>
+
+      {/* Close Lead Dialog */}
+      <Dialog open={closeLeadDialog.open} onOpenChange={(open) => setCloseLeadDialog({ open, lead: open ? closeLeadDialog.lead : null })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Close Lead
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">Closing lead for:</p>
+              <p className="font-medium">{closeLeadDialog.lead?.email}</p>
+              {closeLeadDialog.lead?.full_name && (
+                <p className="text-sm text-muted-foreground">{closeLeadDialog.lead.full_name}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Deal Amount (optional)</label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={closeAmount}
+                  onChange={(e) => setCloseAmount(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Record the payment amount for this closed deal</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseLeadDialog({ open: false, lead: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCloseLead} 
+              disabled={closingLead}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {closingLead ? 'Closing...' : 'Mark as Closed'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

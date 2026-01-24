@@ -165,6 +165,8 @@ export type Database = {
       leads: {
         Row: {
           annual_revenue: string | null
+          closed_amount: number | null
+          closed_at: string | null
           company_employees: string | null
           created_at: string
           domain: string | null
@@ -176,9 +178,12 @@ export type Database = {
           phone: string | null
           qualification_step: number | null
           source_page: string | null
+          status: string
         }
         Insert: {
           annual_revenue?: string | null
+          closed_amount?: number | null
+          closed_at?: string | null
           company_employees?: string | null
           created_at?: string
           domain?: string | null
@@ -190,9 +195,12 @@ export type Database = {
           phone?: string | null
           qualification_step?: number | null
           source_page?: string | null
+          status?: string
         }
         Update: {
           annual_revenue?: string | null
+          closed_amount?: number | null
+          closed_at?: string | null
           company_employees?: string | null
           created_at?: string
           domain?: string | null
@@ -204,6 +212,7 @@ export type Database = {
           phone?: string | null
           qualification_step?: number | null
           source_page?: string | null
+          status?: string
         }
         Relationships: []
       }
