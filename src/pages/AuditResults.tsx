@@ -1298,6 +1298,27 @@ const AuditResults = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {/* Claimed Notification Bar - inline with buttons */}
+                  {isClaimed && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30"
+                    >
+                      <motion.div
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                        className="text-green-500"
+                      >
+                        <ArrowRight className="w-4 h-4 rotate-[225deg]" />
+                      </motion.div>
+                      <Link2 className="w-4 h-4 text-green-400 shrink-0" />
+                      <span className="text-sm font-medium text-green-400 whitespace-nowrap">
+                        {justClaimed ? "Link Active!" : "Owner Claimed"}
+                      </span>
+                    </motion.div>
+                  )}
+                  
                   {!isClaimed && (
                     <Button 
                       variant="outline" 
@@ -1316,34 +1337,6 @@ const AuditResults = () => {
                   </Button>
                 </div>
               </div>
-
-              {/* Claimed Notification Bar */}
-              <AnimatePresence>
-                {isClaimed && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30"
-                  >
-                    <motion.div
-                      animate={{ x: [0, 8, 0] }}
-                      transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                      className="text-green-500"
-                    >
-                      <ArrowRight className="w-5 h-5 rotate-[225deg]" />
-                    </motion.div>
-                    <Link2 className="w-5 h-5 text-green-400 shrink-0" />
-                    <p className="text-sm font-medium text-green-400">
-                      {justClaimed 
-                        ? "Your do-follow link is now active! Click the domain above to visit your site."
-                        : "This website owner claimed their free do-follow link!"
-                      }
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Social Links & Contact Row */}
               {websiteProfile && (
