@@ -378,7 +378,9 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background grid pattern */}
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none z-0" />
       <SEO 
         title="Marketing Dashboard | Webstack.ceo"
         description="Internal marketing analytics dashboard"

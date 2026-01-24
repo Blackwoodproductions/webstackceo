@@ -150,7 +150,9 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background grid pattern */}
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none z-0" />
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
