@@ -237,6 +237,27 @@ const MarketingDashboard = () => {
     return <Badge className="bg-green-500">Full Profile</Badge>;
   };
 
+  // Filtered data based on page filter - MUST be before any conditional returns
+  const filteredData = useMemo(() => {
+    if (!pageFilter) {
+      return { leads, pageViews, toolInteractions, sessions };
+    }
+    
+    // Get sessions that visited the filtered page
+    const matchingSessionIds = new Set(
+      pageViews
+        .filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/'))
+        .map(pv => pv.session_id)
+    );
+    
+    return {
+      leads: leads.filter(l => l.source_page === pageFilter || (l.source_page && l.source_page.startsWith(pageFilter + '/'))),
+      pageViews: pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')),
+      toolInteractions: toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))),
+      sessions: sessions.filter(s => matchingSessionIds.has(s.session_id)),
+    };
+  }, [pageFilter, leads, pageViews, toolInteractions, sessions]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -266,27 +287,6 @@ const MarketingDashboard = () => {
       </div>
     );
   }
-
-  // Filtered data based on page filter
-  const filteredData = useMemo(() => {
-    if (!pageFilter) {
-      return { leads, pageViews, toolInteractions, sessions };
-    }
-    
-    // Get sessions that visited the filtered page
-    const matchingSessionIds = new Set(
-      pageViews
-        .filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/'))
-        .map(pv => pv.session_id)
-    );
-    
-    return {
-      leads: leads.filter(l => l.source_page === pageFilter || (l.source_page && l.source_page.startsWith(pageFilter + '/'))),
-      pageViews: pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')),
-      toolInteractions: toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))),
-      sessions: sessions.filter(s => matchingSessionIds.has(s.session_id)),
-    };
-  }, [pageFilter, leads, pageViews, toolInteractions, sessions]);
 
   // Calculate funnel percentages
   const funnelSteps = [
