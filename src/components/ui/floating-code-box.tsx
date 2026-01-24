@@ -1,9 +1,15 @@
 import { memo, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const FloatingCodeBox = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [topPosition, setTopPosition] = useState('8rem');
   const [isGold, setIsGold] = useState(false);
+  const location = useLocation();
+
+  // Hide on admin/dashboard pages
+  const hiddenPaths = ['/marketing-dashboard', '/admin'];
+  const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   // Delay render to not block initial page paint
   useEffect(() => {
@@ -65,7 +71,7 @@ const FloatingCodeBox = memo(() => {
     };
   }, []);
 
-  if (!isVisible) return null;
+  if (!isVisible || shouldHide) return null;
 
   const codeLines = [
     'const ai =',
