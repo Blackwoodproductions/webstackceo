@@ -175,12 +175,27 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     const tokenExpiry = sessionStorage.getItem("gsc_token_expiry");
     
     // Check for valid stored token first
-    if (storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
-      console.log("[GSC] Found valid stored token, expiry:", new Date(parseInt(tokenExpiry)));
-      setAccessToken(storedToken);
-      setIsAuthenticated(true);
-      setIsLoading(false);
-      return;
+    if (storedToken && tokenExpiry) {
+      const expiryTime = parseInt(tokenExpiry);
+      const timeRemaining = expiryTime - Date.now();
+      
+      if (timeRemaining > 0) {
+        console.log("[GSC] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
+        setAccessToken(storedToken);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return;
+      } else {
+        // Token expired - clear it and prompt reconnection
+        console.log("[GSC] Stored token has expired, clearing...");
+        sessionStorage.removeItem("gsc_access_token");
+        sessionStorage.removeItem("gsc_token_expiry");
+        toast({
+          title: "Session Expired",
+          description: "Your Google Search Console session has expired. Please reconnect.",
+          variant: "default",
+        });
+      }
     }
     
     // OAuth callback handling
@@ -449,6 +464,23 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
       const response = await supabase.functions.invoke("search-console", {
         body: { action: "sites", accessToken },
       });
+      
+      // Check for authentication errors in response
+      if (response.data?.error?.status === "UNAUTHENTICATED" || 
+          response.data?.error?.code === 401) {
+        console.log("[GSC] Token invalid, triggering re-authentication");
+        sessionStorage.removeItem("gsc_access_token");
+        sessionStorage.removeItem("gsc_token_expiry");
+        setAccessToken(null);
+        setIsAuthenticated(false);
+        toast({
+          title: "Session Expired",
+          description: "Your Google Search Console session has expired. Please reconnect.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const siteEntries = response.data?.siteEntry || [];
       setSites(siteEntries);
       
@@ -493,8 +525,25 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
         searchType: type,
       },
     });
+    
+    // Check for authentication errors
+    if (response.data?.error?.status === "UNAUTHENTICATED" || 
+        response.data?.error?.code === 401) {
+      console.log("[GSC] Token invalid during performance fetch");
+      sessionStorage.removeItem("gsc_access_token");
+      sessionStorage.removeItem("gsc_token_expiry");
+      setAccessToken(null);
+      setIsAuthenticated(false);
+      toast({
+        title: "Session Expired",
+        description: "Your Google Search Console session has expired. Please reconnect.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
     return response.data;
-  }, [accessToken, selectedSite, dateRange]);
+  }, [accessToken, selectedSite, dateRange, toast]);
 
   const fetchSitemaps = async () => {
     const response = await supabase.functions.invoke("search-console", {
