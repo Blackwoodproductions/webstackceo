@@ -1240,7 +1240,19 @@ const AuditResults = () => {
                     )}
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
+                        {isSaved ? (
+                          <a 
+                            href={`https://${decodedDomain}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors flex items-center gap-2 group"
+                          >
+                            {decodedDomain}
+                            <ExternalLink className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                        ) : (
+                          <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
+                        )}
                         {dashboardMetrics?.isReal && (
                           <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
                             <ExternalLink className="w-3 h-3" />
@@ -1265,7 +1277,7 @@ const AuditResults = () => {
                 <div className="flex items-center gap-2 shrink-0">
                   <Button 
                     variant="outline" 
-                    className="gap-2" 
+                    className="gap-2 min-w-[180px] justify-center" 
                     onClick={handleSaveClick}
                     disabled={isSaved}
                   >
@@ -1281,7 +1293,7 @@ const AuditResults = () => {
                       </>
                     )}
                   </Button>
-                  <Button className="gap-2" asChild>
+                  <Button className="gap-2 min-w-[180px] justify-center" asChild>
                     <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
                       <Phone className="w-4 h-4" />
                       Book a Call
