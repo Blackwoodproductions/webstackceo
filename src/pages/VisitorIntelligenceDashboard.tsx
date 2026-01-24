@@ -295,6 +295,8 @@ const MarketingDashboard = () => {
     }
     
     if (newStatus === 'deleted') {
+      const isDemoLead = lead.metric_type === 'demo_respawn';
+      
       try {
         // Permanently delete the lead from database
         const { error } = await supabase
@@ -312,6 +314,38 @@ const MarketingDashboard = () => {
           withName: lead.full_name ? Math.max(0, prev.withName - 1) : prev.withName,
           withCompanyInfo: lead.company_employees ? Math.max(0, prev.withCompanyInfo - 1) : prev.withCompanyInfo,
         }));
+
+        // If it's the demo lead, respawn it after 5 seconds
+        if (isDemoLead) {
+          setTimeout(async () => {
+            const { data: respawnedLead, error: respawnError } = await supabase
+              .from('leads')
+              .insert({
+                email: 'demo@webstack.ceo',
+                full_name: 'Demo Lead (Respawns)',
+                phone: '+1 555-123-4567',
+                domain: 'webstack.ceo',
+                metric_type: 'demo_respawn',
+                source_page: '/',
+                company_employees: '50-200',
+                annual_revenue: '$1M-$5M',
+                funnel_stage: 'lead',
+                status: 'open',
+              })
+              .select()
+              .single();
+
+            if (!respawnError && respawnedLead) {
+              setLeads(prev => [respawnedLead as Lead, ...prev]);
+              setFunnelStats(prev => ({
+                ...prev,
+                leads: prev.leads + 1,
+                withName: prev.withName + 1,
+                withCompanyInfo: prev.withCompanyInfo + 1,
+              }));
+            }
+          }, 5000);
+        }
       } catch (error) {
         console.error('Error deleting lead:', error);
       }
