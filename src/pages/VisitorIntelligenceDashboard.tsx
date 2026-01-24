@@ -823,12 +823,12 @@ const MarketingDashboard = () => {
             <Card className="p-4 mb-6 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <Button 
-                  variant="ghost" 
-                  size="sm" 
+                  variant="default" 
+                  size="default" 
                   onClick={() => setSiteArchOpen(false)}
-                  className="gap-2"
+                  className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-5 h-5" />
                   Collapse
                 </Button>
                 <div className="flex items-center gap-2">
