@@ -619,16 +619,6 @@ const MarketingDashboard = () => {
               }
             </span>
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCreateTestLead}
-              className="text-xs gap-1.5 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
-              title="Create a test lead for demo purposes"
-            >
-              <FlaskConical className="w-3.5 h-3.5" />
-              Test Lead
-            </Button>
-            <Button
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -1044,7 +1034,7 @@ const MarketingDashboard = () => {
               </TabsList>
               
               {/* Lead Quality Stats - takes up right portion */}
-              <div className="flex-1 grid grid-cols-4 gap-2">
+              <div className="flex-1 grid grid-cols-5 gap-2">
                 {[
                   { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500', icon: Zap },
                   { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500', icon: UserCheck },
@@ -1057,6 +1047,16 @@ const MarketingDashboard = () => {
                     <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
                   </div>
                 ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCreateTestLead}
+                  className="h-full text-xs gap-1.5 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                  title="Create a test lead for demo purposes"
+                >
+                  <FlaskConical className="w-3.5 h-3.5" />
+                  Test Lead
+                </Button>
               </div>
             </div>
 
