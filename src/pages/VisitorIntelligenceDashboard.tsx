@@ -135,6 +135,7 @@ const MarketingDashboard = () => {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
+  const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
 
   // Persist chat online status
   useEffect(() => {
@@ -1043,16 +1044,25 @@ const MarketingDashboard = () => {
               {/* Lead Quality Stats - takes up right portion */}
               <div className="flex-1 grid grid-cols-5 gap-2">
                 {[
-                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500', icon: Zap },
-                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500', icon: UserCheck },
-                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500', icon: Target },
-                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500', icon: CheckCircle },
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500', icon: Zap, filter: (l: Lead) => l.status === 'open' },
+                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500', icon: UserCheck, filter: (l: Lead) => !!l.full_name },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500', icon: Target, filter: (l: Lead) => !!l.company_employees },
+                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500', icon: CheckCircle, filter: (l: Lead) => l.status === 'closed' },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-border/30">
+                  <button
+                    key={item.label}
+                    onClick={() => setExpandedStatFilter(expandedStatFilter === item.label ? null : item.label)}
+                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                      expandedStatFilter === item.label 
+                        ? `${item.color.replace('bg-', 'bg-')}/20 border-${item.color.replace('bg-', '')}/50` 
+                        : 'bg-background/60 border-border/30 hover:border-border/50'
+                    }`}
+                  >
                     <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
                     <span className="text-xs text-muted-foreground">{item.label}</span>
                     <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
-                  </div>
+                    <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
+                  </button>
                 ))}
                 <button
                   onClick={handleCreateTestLead}
@@ -1064,6 +1074,69 @@ const MarketingDashboard = () => {
                 </button>
               </div>
             </div>
+
+            {/* Expanded Stat Filter Panel */}
+            {expandedStatFilter && (
+              <div className="mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50 animate-accordion-down">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    {expandedStatFilter === 'Open' && <Zap className="w-4 h-4 text-blue-500" />}
+                    {expandedStatFilter === 'Named' && <UserCheck className="w-4 h-4 text-amber-500" />}
+                    {expandedStatFilter === 'Qualified' && <Target className="w-4 h-4 text-orange-500" />}
+                    {expandedStatFilter === 'Closed' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    {expandedStatFilter} Leads
+                  </h4>
+                  <Button variant="ghost" size="sm" onClick={() => setExpandedStatFilter(null)} className="h-7 w-7 p-0">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="max-h-[200px] overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Email</TableHead>
+                        <TableHead className="text-xs">Name</TableHead>
+                        <TableHead className="text-xs">Phone</TableHead>
+                        <TableHead className="text-xs">Company</TableHead>
+                        <TableHead className="text-xs">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.filter(l => {
+                        if (expandedStatFilter === 'Open') return l.status === 'open';
+                        if (expandedStatFilter === 'Named') return !!l.full_name;
+                        if (expandedStatFilter === 'Qualified') return !!l.company_employees;
+                        if (expandedStatFilter === 'Closed') return l.status === 'closed';
+                        return false;
+                      }).map((lead) => (
+                        <TableRow key={lead.id}>
+                          <TableCell className="text-sm py-2">{lead.email}</TableCell>
+                          <TableCell className="text-sm py-2">{lead.full_name || '-'}</TableCell>
+                          <TableCell className="text-sm py-2">{lead.phone || '-'}</TableCell>
+                          <TableCell className="text-sm py-2">{lead.company_employees || '-'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground py-2">
+                            {format(new Date(lead.created_at), 'MMM d, HH:mm')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {leads.filter(l => {
+                        if (expandedStatFilter === 'Open') return l.status === 'open';
+                        if (expandedStatFilter === 'Named') return !!l.full_name;
+                        if (expandedStatFilter === 'Qualified') return !!l.company_employees;
+                        if (expandedStatFilter === 'Closed') return l.status === 'closed';
+                        return false;
+                      }).length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-4 text-sm">
+                            No {expandedStatFilter.toLowerCase()} leads yet
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
 
               {/* Leads Tab */}
               <TabsContent value="leads" className="mt-0">
