@@ -17,7 +17,7 @@ const SEO = ({
   keywords,
   canonical,
   ogType = 'website',
-  ogImage = 'https://lovable.dev/opengraph-image-p98pqg.png',
+  ogImage = 'https://webstackceo.lovable.app/og-default.jpg',
   noIndex = false,
   schema,
 }: SEOProps) => {
