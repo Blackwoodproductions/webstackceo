@@ -344,57 +344,62 @@ const MarketingDashboard = () => {
           </Card>
         </div>
 
-        {/* Funnel Visualization */}
-        <Card className="p-6 mb-8">
-          <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            Conversion Funnel
-          </h2>
-          <div className="space-y-4">
-            {funnelSteps.map((step, index) => {
-              const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
-              const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
-                ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(1)
-                : null;
-              
-              return (
-                <div key={step.label} className="relative">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
-                      <step.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-foreground">{step.label}</span>
-                        <div className="flex items-center gap-3">
-                          {conversionFromPrev && (
-                            <span className="text-xs text-muted-foreground">
-                              {conversionFromPrev}% conversion
-                            </span>
-                          )}
-                          <span className="font-bold text-lg">{step.count.toLocaleString()}</span>
+        {/* Funnel & Active Visitors Row */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Funnel Visualization */}
+          <Card className="p-6">
+            <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Conversion Funnel
+            </h2>
+            <div className="space-y-4">
+              {funnelSteps.map((step, index) => {
+                const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
+                const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
+                  ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(1)
+                  : null;
+                
+                return (
+                  <div key={step.label} className="relative">
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
+                        <step.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-foreground">{step.label}</span>
+                          <div className="flex items-center gap-3">
+                            {conversionFromPrev && (
+                              <span className="text-xs text-muted-foreground">
+                                {conversionFromPrev}% conversion
+                              </span>
+                            )}
+                            <span className="font-bold text-lg">{step.count.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          />
                         </div>
                       </div>
-                      <div className="h-3 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
                     </div>
+                    {index < funnelSteps.length - 1 && (
+                      <div className="absolute left-5 top-12 h-4 w-px bg-border" />
+                    )}
                   </div>
-                  {index < funnelSteps.length - 1 && (
-                    <div className="absolute left-5 top-12 h-4 w-px bg-border" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+                );
+              })}
+            </div>
+          </Card>
 
-        {/* Active Visitors & Heatmap Row */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Active Visitors Widget */}
           <ActiveVisitorsWidget />
+        </div>
+
+        {/* Heatmap Row */}
+        <div className="mb-8">
           <PageEngagementHeatmap />
         </div>
 
