@@ -1161,7 +1161,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     opacity={node.isVisited ? 0.5 : 0.3}
                   />
                 )}
-                {/* Live visitor count badge */}
+                {/* Live visitor count badge - top right */}
                 {hasLiveVisitor && (
                   <>
                     <circle
@@ -1181,6 +1181,26 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     </text>
                   </>
                 )}
+                {/* Total visits badge - top left (for time range filter) */}
+                {node.visits > 0 && (
+                  <>
+                    <circle
+                      cx={pos.x - nodeSize + 2}
+                      cy={pos.y - nodeSize + 2}
+                      r={node.visits > 99 ? 10 : 8}
+                      fill={node.isTool ? "#f59e0b" : "#8b5cf6"}
+                    />
+                    <text
+                      x={pos.x - nodeSize + 2}
+                      y={pos.y - nodeSize + 6}
+                      textAnchor="middle"
+                      fill="white"
+                      style={{ fontSize: node.visits > 99 ? '7px' : '9px', fontWeight: 'bold' }}
+                    >
+                      {node.visits > 999 ? `${Math.round(node.visits / 100) / 10}k` : node.visits}
+                    </text>
+                  </>
+                )}
                 {/* Label - above icon for main pages (depth 0 and 1), below for others */}
                 {node.depth <= 1 ? (
                   <>
@@ -1196,18 +1216,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     >
                       {node.name}
                     </text>
-                    {/* Visit count below the node - show daily for tools */}
-                    {node.visits > 0 && (
-                      <text
-                        x={pos.x}
-                        y={pos.y + nodeSize + 14}
-                        textAnchor="middle"
-                        className={node.isTool ? "fill-amber-400" : "fill-muted-foreground"}
-                        style={{ fontSize: '7px', fontWeight: node.isTool ? 600 : 400 }}
-                      >
-                        {node.isTool ? `${node.visitsPerDay}/day` : node.visits}
-                      </text>
-                    )}
                   </>
                 ) : (
                   <>
@@ -1224,29 +1232,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     >
                       {node.name}
                     </text>
-                    {/* Daily usage badge for tools */}
-                    {node.isTool && node.visits > 0 && (
-                      <>
-                        <rect
-                          x={pos.x + nodeSize + 2}
-                          y={pos.y - 6}
-                          width={32}
-                          height={12}
-                          rx={6}
-                          fill="#f59e0b"
-                          opacity={0.9}
-                        />
-                        <text
-                          x={pos.x + nodeSize + 18}
-                          y={pos.y + 2}
-                          textAnchor="middle"
-                          fill="white"
-                          style={{ fontSize: '7px', fontWeight: 600 }}
-                        >
-                          {node.visitsPerDay}/d
-                        </text>
-                      </>
-                    )}
                   </>
                 )}
               </g>
