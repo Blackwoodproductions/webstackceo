@@ -1594,7 +1594,7 @@ const AuditResults = () => {
                     </div>
                   </div>
 
-                  <div className="h-[225px] w-full">
+                  <div className="h-[280px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={historyData}
