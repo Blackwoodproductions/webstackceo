@@ -1018,8 +1018,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const intensity = node.visits / maxVisits;
             const color = getHeatColor(intensity, node.isVisited);
             // Make /audits a mega node (aggregates all domain audits)
+            // Features, Learn, Tools get same size as Home (depth 0)
             const isMegaAggregateNode = node.path === '/audits';
-            const nodeSize = isMegaAggregateNode ? 24 : node.depth === 0 ? 18 : node.depth === 1 ? 12 : 8;
+            const isMegaParent = ['/features', '/learn', '/tools'].includes(node.path);
+            const nodeSize = isMegaAggregateNode ? 24 : (node.depth === 0 || isMegaParent) ? 18 : node.depth === 1 ? 12 : 8;
             const baseOpacity = node.isVisited ? 1 : 0.35;
             const isFiltered = activeFilter === node.path;
             const isDimmed = activeFilter && activeFilter !== node.path;
