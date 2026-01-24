@@ -861,103 +861,291 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
           {/* Dropdown Content Panels */}
           {activeDropdown === 'queries' && (
-            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Search className="w-4 h-4 text-primary" />
-                  Top Queries
+                  Top Keywords
                 </h4>
-                <Badge variant="secondary" className="text-[10px]">{queryData.length} total</Badge>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                    <Input placeholder="Filter..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs w-32" />
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">{queryData.length} total</Badge>
+                </div>
               </div>
-              <div className="relative mb-2">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                <Input placeholder="Filter queries..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs" />
+              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                {filteredQueryData.map((row, i) => {
+                  const isTopPosition = row.position <= 3;
+                  const isGoodPosition = row.position <= 10;
+                  const ctrPercent = row.ctr * 100;
+                  return (
+                    <div 
+                      key={i} 
+                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
+                        isTopPosition 
+                          ? 'bg-green-500/10 border-green-500/30 hover:border-green-500/50' 
+                          : isGoodPosition 
+                            ? 'bg-primary/5 border-primary/20 hover:border-primary/40' 
+                            : 'bg-secondary/30 border-border hover:border-primary/30'
+                      }`}
+                    >
+                      {/* Position badge */}
+                      <div className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isTopPosition ? 'bg-green-500 text-white' : isGoodPosition ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {row.position.toFixed(0)}
+                      </div>
+                      
+                      {/* Keyword icon */}
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                        isTopPosition ? 'bg-green-500/20' : isGoodPosition ? 'bg-primary/20' : 'bg-secondary'
+                      }`}>
+                        <Search className={`w-4 h-4 ${isTopPosition ? 'text-green-500' : isGoodPosition ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      
+                      {/* Keyword text */}
+                      <p className="text-xs font-medium truncate mb-2" title={row.keys[0]}>
+                        {row.keys[0].length > 18 ? row.keys[0].substring(0, 18) + '...' : row.keys[0]}
+                      </p>
+                      
+                      {/* Stats */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Clicks</span>
+                          <span className="text-xs font-bold text-primary">{row.clicks}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Impr</span>
+                          <span className="text-[10px]">{row.impressions}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">CTR</span>
+                          <span className={`text-[10px] font-medium ${ctrPercent > 5 ? 'text-green-500' : ctrPercent > 2 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                            {ctrPercent.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredQueryData.length === 0 && (
+                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                    {isFetching ? "Loading..." : "No keywords found"}
+                  </div>
+                )}
               </div>
-              <ScrollArea className="h-[280px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Query</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredQueryData.map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-xs py-1.5 max-w-[180px] truncate" title={row.keys[0]}>{row.keys[0]}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredQueryData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
             </div>
           )}
 
           {activeDropdown === 'pages' && (
-            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <FileText className="w-4 h-4 text-cyan-500" />
                   Top Pages
                 </h4>
                 <Badge variant="secondary" className="text-[10px]">{pageData.length} total</Badge>
               </div>
-              <ScrollArea className="h-[280px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Page</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pageData.slice(0, 25).map((row, i) => {
-                      let path = row.keys[0];
-                      try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
-                      return (
-                        <TableRow key={i}>
-                          <TableCell className="text-xs py-1.5 truncate max-w-[180px]" title={row.keys[0]}>{path}</TableCell>
-                          <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                          <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
-                          <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                          <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {pageData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                {pageData.slice(0, 25).map((row, i) => {
+                  let path = row.keys[0];
+                  try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
+                  
+                  const pageName = path === '/' ? 'Home' : path.split('/').filter(Boolean).pop() || path;
+                  const isTopPosition = row.position <= 3;
+                  const isGoodPosition = row.position <= 10;
+                  
+                  // Page type icons
+                  const getPageIcon = () => {
+                    if (path === '/') return '🏠';
+                    if (path.includes('pricing')) return '💰';
+                    if (path.includes('feature')) return '✨';
+                    if (path.includes('contact')) return '📧';
+                    if (path.includes('about')) return '👥';
+                    if (path.includes('blog') || path.includes('learn')) return '📚';
+                    if (path.includes('faq')) return '❓';
+                    if (path.includes('tool')) return '🔧';
+                    if (path.includes('audit')) return '📊';
+                    if (path.includes('guide')) return '📖';
+                    return '📄';
+                  };
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
+                        isTopPosition 
+                          ? 'bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-500/50' 
+                          : isGoodPosition 
+                            ? 'bg-cyan-500/5 border-cyan-500/20 hover:border-cyan-500/40' 
+                            : 'bg-secondary/30 border-border hover:border-cyan-500/30'
+                      }`}
+                    >
+                      {/* Position badge */}
+                      <div className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isTopPosition ? 'bg-cyan-500 text-white' : isGoodPosition ? 'bg-cyan-500/80 text-white' : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {row.position.toFixed(0)}
+                      </div>
+                      
+                      {/* Page icon */}
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 text-xl ${
+                        isTopPosition ? 'bg-cyan-500/20' : 'bg-secondary'
+                      }`}>
+                        {getPageIcon()}
+                      </div>
+                      
+                      {/* Page path */}
+                      <p className="text-xs font-medium truncate mb-1 capitalize" title={path}>
+                        {pageName.replace(/-/g, ' ')}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate mb-2" title={path}>
+                        {path}
+                      </p>
+                      
+                      {/* Stats grid */}
+                      <div className="grid grid-cols-2 gap-1">
+                        <div className="bg-secondary/50 rounded px-1.5 py-1 text-center">
+                          <p className="text-xs font-bold text-cyan-500">{row.clicks}</p>
+                          <p className="text-[8px] text-muted-foreground">clicks</p>
+                        </div>
+                        <div className="bg-secondary/50 rounded px-1.5 py-1 text-center">
+                          <p className="text-xs font-bold">{row.impressions}</p>
+                          <p className="text-[8px] text-muted-foreground">impr</p>
+                        </div>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground">CTR</span>
+                        <span className={`font-medium ${row.ctr > 0.05 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {(row.ctr * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {pageData.length === 0 && (
+                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                    {isFetching ? "Loading..." : "No pages found"}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {activeDropdown === 'countries' && (
-            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Globe className="w-4 h-4 text-violet-500" />
                   Top Countries
                 </h4>
                 <Badge variant="secondary" className="text-[10px]">{countryData.length} total</Badge>
               </div>
-              <ScrollArea className="h-[280px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Country</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {countryData.slice(0, 25).map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
-                      </TableRow>
-                    ))}
-                    {countryData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                {countryData.slice(0, 25).map((row, i) => {
+                  const countryCode = row.keys[0].toLowerCase();
+                  const totalClicks = countryData.reduce((sum, c) => sum + c.clicks, 0);
+                  const percentage = totalClicks > 0 ? (row.clicks / totalClicks) * 100 : 0;
+                  const isTopCountry = i < 3;
+                  
+                  // Country flag emojis
+                  const getCountryFlag = (code: string) => {
+                    const flags: Record<string, string> = {
+                      usa: '🇺🇸', gbr: '🇬🇧', can: '🇨🇦', aus: '🇦🇺', deu: '🇩🇪',
+                      fra: '🇫🇷', esp: '🇪🇸', ita: '🇮🇹', nld: '🇳🇱', bra: '🇧🇷',
+                      mex: '🇲🇽', ind: '🇮🇳', jpn: '🇯🇵', kor: '🇰🇷', chn: '🇨🇳',
+                      rus: '🇷🇺', pol: '🇵🇱', swe: '🇸🇪', nor: '🇳🇴', dnk: '🇩🇰',
+                      fin: '🇫🇮', che: '🇨🇭', aut: '🇦🇹', bel: '🇧🇪', prt: '🇵🇹',
+                      irl: '🇮🇪', nzl: '🇳🇿', sgp: '🇸🇬', hkg: '🇭🇰', phl: '🇵🇭',
+                      idn: '🇮🇩', tha: '🇹🇭', mys: '🇲🇾', vnm: '🇻🇳', are: '🇦🇪',
+                      sau: '🇸🇦', zaf: '🇿🇦', egy: '🇪🇬', arg: '🇦🇷', col: '🇨🇴',
+                      chl: '🇨🇱', per: '🇵🇪', ukr: '🇺🇦', tur: '🇹🇷', isr: '🇮🇱',
+                      pak: '🇵🇰', bgd: '🇧🇩', nga: '🇳🇬', ken: '🇰🇪', gha: '🇬🇭',
+                    };
+                    return flags[code] || '🌍';
+                  };
+                  
+                  const getCountryName = (code: string) => {
+                    const names: Record<string, string> = {
+                      usa: 'United States', gbr: 'United Kingdom', can: 'Canada', aus: 'Australia', deu: 'Germany',
+                      fra: 'France', esp: 'Spain', ita: 'Italy', nld: 'Netherlands', bra: 'Brazil',
+                      mex: 'Mexico', ind: 'India', jpn: 'Japan', kor: 'South Korea', chn: 'China',
+                      rus: 'Russia', pol: 'Poland', swe: 'Sweden', nor: 'Norway', dnk: 'Denmark',
+                      fin: 'Finland', che: 'Switzerland', aut: 'Austria', bel: 'Belgium', prt: 'Portugal',
+                      irl: 'Ireland', nzl: 'New Zealand', sgp: 'Singapore', hkg: 'Hong Kong', phl: 'Philippines',
+                    };
+                    return names[code] || code.toUpperCase();
+                  };
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
+                        isTopCountry 
+                          ? 'bg-violet-500/10 border-violet-500/30 hover:border-violet-500/50' 
+                          : 'bg-secondary/30 border-border hover:border-violet-500/30'
+                      }`}
+                    >
+                      {/* Rank badge */}
+                      <div className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        isTopCountry ? 'bg-violet-500 text-white' : 'bg-secondary text-muted-foreground'
+                      }`}>
+                        {i + 1}
+                      </div>
+                      
+                      {/* Percentage badge */}
+                      <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-secondary text-[9px] font-medium">
+                        {percentage.toFixed(0)}%
+                      </div>
+                      
+                      {/* Country flag */}
+                      <div className={`w-12 h-10 rounded-lg flex items-center justify-center mb-2 text-2xl ${
+                        isTopCountry ? 'bg-violet-500/20' : 'bg-secondary'
+                      }`}>
+                        {getCountryFlag(countryCode)}
+                      </div>
+                      
+                      {/* Country name */}
+                      <p className="text-xs font-medium truncate mb-2" title={getCountryName(countryCode)}>
+                        {getCountryName(countryCode)}
+                      </p>
+                      
+                      {/* Stats */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Clicks</span>
+                          <span className="text-xs font-bold text-violet-500">{row.clicks}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Impr</span>
+                          <span className="text-[10px]">{row.impressions}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">CTR</span>
+                          <span className={`text-[10px] font-medium ${row.ctr > 0.05 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                            {(row.ctr * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        {/* Position indicator */}
+                        <div className="flex items-center gap-1 pt-1 border-t border-border/50">
+                          <TrendingUp className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">Pos:</span>
+                          <Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[9px] px-1 py-0">
+                            {row.position.toFixed(1)}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {countryData.length === 0 && (
+                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                    {isFetching ? "Loading..." : "No country data found"}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
