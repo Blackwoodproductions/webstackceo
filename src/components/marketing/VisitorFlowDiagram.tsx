@@ -169,7 +169,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   useEffect(() => {
     const mainPages = SITE_STRUCTURE.filter(s => s.category === 'main' || s.path === '/').map(s => s.path);
     const allPages = SITE_STRUCTURE.map(s => s.path);
-    let isFirstVisit = true;
+    let currentSessionPath: string | null = null;
 
     const simulateVisit = () => {
       // Pick a random page, weighted towards main pages
@@ -177,16 +177,15 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       const targetPages = useMainPage ? mainPages : allPages;
       let randomPath = targetPages[Math.floor(Math.random() * targetPages.length)];
       
-      // For entry point simulation, sometimes start on non-home page
-      const isNewSession = isFirstVisit || Math.random() > 0.7;
-      const isNonHomeEntry = isNewSession && randomPath !== '/' && Math.random() > 0.5;
+      // Decide if this is a new session (external entry) or internal navigation
+      // 30% chance of new external visitor
+      const isNewExternalVisitor = currentSessionPath === null || Math.random() > 0.7;
       
       const visitId = `demo-${Date.now()}`;
+      const previousPath = isNewExternalVisitor ? null : currentSessionPath;
       
-      // Get previous demo visit for path animation
-      const currentDemoVisits = demoVisits.filter(d => d.opacity > 0.3);
-      const lastVisit = currentDemoVisits[currentDemoVisits.length - 1];
-      const previousPath = isNewSession ? null : lastVisit?.path || null;
+      // Entry point = new external visitor landing on non-home page
+      const isEntryPoint = isNewExternalVisitor && randomPath !== '/';
       
       // Add demo visit
       setDemoVisits(prev => [...prev, {
@@ -195,11 +194,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         previousPath: previousPath !== randomPath ? previousPath : null,
         timestamp: Date.now(),
         opacity: 1,
-        isEntryPoint: isNonHomeEntry || (isNewSession && randomPath !== '/')
+        isEntryPoint: isEntryPoint
       }]);
 
-      // Add demo path if moving between pages (not entry point)
-      if (previousPath && previousPath !== randomPath && !isNewSession) {
+      // Add demo path ONLY for internal navigation (not external entry)
+      if (!isNewExternalVisitor && previousPath && previousPath !== randomPath) {
         const pathId = `demo-path-${Date.now()}`;
         setDemoPaths(prev => [...prev, {
           from: previousPath,
@@ -225,7 +224,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         }, 100);
       }
 
-      isFirstVisit = false;
+      // Update current session path for next iteration
+      currentSessionPath = randomPath;
 
       // Remove demo visit after 5 seconds with fade
       let visitFadeStep = 0;
@@ -244,14 +244,14 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       }, 100);
     };
 
-    // Initial visit
+    // Initial visit - always an external entry
     simulateVisit();
 
     // Continue every 30 seconds
     const demoInterval = setInterval(simulateVisit, 30000);
 
     return () => clearInterval(demoInterval);
-  }, [demoVisits]);
+  }, []);
   useEffect(() => {
     const fetchData = async () => {
       try {
