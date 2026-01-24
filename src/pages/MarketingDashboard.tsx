@@ -483,7 +483,7 @@ const MarketingDashboard = () => {
         <div className="container mx-auto px-6 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CalendarIcon className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Time Range:</span>
+            <span className="text-sm font-medium text-foreground">Range:</span>
             <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
               <SelectTrigger className="w-[130px] h-8 text-sm bg-background border-border">
                 <SelectValue placeholder="Range" />
