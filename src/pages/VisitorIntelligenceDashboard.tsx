@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -99,6 +99,20 @@ interface FunnelStats {
   withCompanyInfo: number;
 }
 
+type GoogleUserProfile = {
+  name?: string;
+  email?: string;
+  picture?: string;
+};
+
+function normalizeDomain(v: string): string {
+  return v
+    .replace('sc-domain:', '')
+    .replace('https://', '')
+    .replace('http://', '')
+    .replace(/\/$/, '');
+}
+
 const MarketingDashboard = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -146,9 +160,12 @@ const MarketingDashboard = () => {
   // GSC domain tracking status
   const [selectedGscDomain, setSelectedGscDomain] = useState<string | null>(null);
   const [gscDomainHasTracking, setGscDomainHasTracking] = useState<boolean>(true); // Default to true until we check
+  const [gscTrackingByDomain, setGscTrackingByDomain] = useState<Record<string, boolean>>({});
   const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
   const [selectedGscSiteUrl, setSelectedGscSiteUrl] = useState<string>("");
+  const selectedGscDomainRef = useRef<string>("");
+  const [gscProfile, setGscProfile] = useState<GoogleUserProfile | null>(null);
   
   // Tracked domains from visitor intelligence (domains with tracking code installed)
   const [trackedDomains, setTrackedDomains] = useState<string[]>([]);
@@ -264,6 +281,49 @@ const MarketingDashboard = () => {
   // Fetch tracked domains on mount
   useEffect(() => {
     fetchTrackedDomains();
+  }, []);
+
+  const selectedDomainLabel = useMemo(() => {
+    return normalizeDomain(selectedGscSiteUrl || selectedTrackedDomain || selectedGscDomain || "");
+  }, [selectedGscSiteUrl, selectedTrackedDomain, selectedGscDomain]);
+
+  const isGscSiteSelected = !!selectedGscSiteUrl;
+  const shouldShowInstallPrompt = gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking;
+  const shouldShowViPanels = !isGscSiteSelected || gscDomainHasTracking;
+
+  useEffect(() => {
+    selectedGscDomainRef.current = normalizeDomain(selectedGscSiteUrl);
+  }, [selectedGscSiteUrl]);
+
+  // Pull Google profile (avatar) from the GSC OAuth session for header display
+  useEffect(() => {
+    const readProfile = () => {
+      try {
+        const raw = localStorage.getItem('gsc_google_profile') || sessionStorage.getItem('gsc_google_profile');
+        if (!raw) {
+          setGscProfile(null);
+          return;
+        }
+        const parsed = JSON.parse(raw) as GoogleUserProfile;
+        setGscProfile(parsed);
+      } catch {
+        setGscProfile(null);
+      }
+    };
+
+    readProfile();
+
+    const onProfileUpdated = () => readProfile();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'gsc_google_profile') readProfile();
+    };
+
+    window.addEventListener('gsc-profile-updated', onProfileUpdated as EventListener);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('gsc-profile-updated', onProfileUpdated as EventListener);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
   
   // CRITICAL: Always keep gscDomainHasTracking TRUE when a tracked domain is selected
@@ -747,14 +807,33 @@ const MarketingDashboard = () => {
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden md:block">
-              {
-                user.email?.toLowerCase().includes('rob') ? 'CTO' :
-                user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
-                user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
-                user.email
-              }
-            </span>
+            {gscAuthenticated && gscProfile?.picture ? (
+              <div className="hidden md:flex items-center gap-2">
+                <img
+                  src={gscProfile.picture}
+                  alt={gscProfile.name ? `${gscProfile.name} profile photo` : 'Google profile photo'}
+                  className="w-7 h-7 rounded-full object-cover border border-border"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {gscProfile.name ||
+                    (user.email?.toLowerCase().includes('rob') ? 'CTO' :
+                      user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
+                      user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
+                      'Google User')}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground hidden md:block">
+                {
+                  user.email?.toLowerCase().includes('rob') ? 'CTO' :
+                  user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
+                  user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
+                  user.email
+                }
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -832,7 +911,8 @@ const MarketingDashboard = () => {
                         const selected = allDomains.find(d => d.value === value);
                         if (selected) {
                           // Update tracking status based on domain selection
-                          setGscDomainHasTracking(selected.hasTracking);
+                          const cachedTracking = gscTrackingByDomain[selected.label];
+                          setGscDomainHasTracking(selected.hasTracking || cachedTracking === true);
                           
                           if (selected.source === 'gsc') {
                             // GSC-only domain
@@ -954,7 +1034,7 @@ const MarketingDashboard = () => {
           {/* Center: Stats Badges */}
           <div className="flex-1 flex items-center justify-center gap-2 flex-wrap">
             {/* Show stats only if no GSC domain selected OR the selected domain has tracking */}
-            {(!selectedGscDomain || gscDomainHasTracking) && flowSummary && (
+            {shouldShowViPanels && flowSummary && (
               <>
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                   <Eye className="w-3 h-3 mr-1" />{flowSummary.totalVisits} views
@@ -987,10 +1067,10 @@ const MarketingDashboard = () => {
               </>
             )}
             {/* Show install tracking prompt when domain selected but no tracking */}
-            {selectedGscDomain && !gscDomainHasTracking && (
+            {shouldShowInstallPrompt && (
               <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
                 <AlertTriangle className="w-3 h-3 mr-1" />
-                Install tracking code to see visitor data for {selectedGscDomain}
+                Install tracking code to see visitor data for {selectedDomainLabel}
               </Badge>
             )}
           </div>
@@ -1039,8 +1119,8 @@ const MarketingDashboard = () => {
 
       {/* Main Layout */}
       <div className="flex min-h-[calc(100vh-180px)] max-w-[1800px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
-        {/* Left Sidebar - Only show when tracking is installed or no GSC domain selected */}
-        {(!selectedGscDomain || gscDomainHasTracking) && (
+        {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
+        {shouldShowViPanels && (
           <>
             {/* Collapsed Sidebar (thin bar when diagram is closed) */}
             {!siteArchOpen && (
@@ -1139,7 +1219,7 @@ const MarketingDashboard = () => {
         {/* Main Content Area */}
         <main className="flex-1 p-6 overflow-auto">
           {/* No Tracking Installed Prompt - Show when GSC domain selected but no tracking */}
-          {selectedGscDomain && !gscDomainHasTracking && (
+          {shouldShowInstallPrompt && (
             <div className="mb-4 animate-fade-in">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
@@ -1147,7 +1227,7 @@ const MarketingDashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-foreground">Install tracking for {selectedGscDomain}</p>
+                    <p className="text-sm font-medium text-foreground">Install tracking for {selectedDomainLabel}</p>
                     <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400">Required</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">Add the tracking script to see visitor flow, engagement & leads</p>
@@ -1175,7 +1255,7 @@ const MarketingDashboard = () => {
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','wscLayer','${selectedGscDomain}');
+                            })(window,document,'script','wscLayer','${selectedDomainLabel}');
 </script>`;
                             navigator.clipboard.writeText(code);
                           }}
@@ -1194,7 +1274,7 @@ j=d.createElement(s);j.async=true;j.src=
 'https://webstack.ceo/track.js?id='+i;
 f.parentNode.insertBefore(j,f);
 })(window,document,'script','wscLayer',
-'${selectedGscDomain}');
+                              '${selectedDomainLabel}');
 </script>`}
                         </pre>
                       </div>
@@ -1206,8 +1286,8 @@ f.parentNode.insertBefore(j,f);
             </div>
           )}
 
-          {/* Full-Width Visitor Intelligence Panel (when open) - only show if tracking installed or no domain selected */}
-          {siteArchOpen && (!selectedGscDomain || gscDomainHasTracking) && (
+          {/* Full-Width Visitor Intelligence Panel (when open) - only show if tracking installed or no GSC site selected */}
+          {siteArchOpen && shouldShowViPanels && (
             <Card className="p-4 mb-6 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <Button 
@@ -1242,7 +1322,7 @@ f.parentNode.insertBefore(j,f);
             </Card>
           )}
           {/* Hidden diagram to keep data flowing when sidebar is collapsed */}
-          {!siteArchOpen && (!selectedGscDomain || gscDomainHasTracking) && (
+          {!siteArchOpen && shouldShowViPanels && (
             <div className="hidden">
               <VisitorFlowDiagram 
                 onPageFilter={setPageFilter}
@@ -1257,7 +1337,7 @@ f.parentNode.insertBefore(j,f);
           )}
 
           {/* Full Width Stats Layout - only show if tracking installed or no domain selected */}
-          {(!selectedGscDomain || gscDomainHasTracking) && (
+          {shouldShowViPanels && (
           <div className="space-y-4 mb-6">
           {/* Quick Stats Row - Full Width (expandable) */}
           <QuickStatsExpandableRow
@@ -1299,7 +1379,7 @@ f.parentNode.insertBefore(j,f);
 
 
         {/* Leads Section - Full Width - only show if tracking installed or no domain selected */}
-        {(!selectedGscDomain || gscDomainHasTracking) && (
+        {shouldShowViPanels && (
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
             {/* Combined Tab Header with Lead Quality Stats - Full Width */}
@@ -1617,9 +1697,14 @@ f.parentNode.insertBefore(j,f);
             externalSelectedSite={selectedGscSiteUrl}
             onSiteChange={(site) => {
               // When GSC domain changes, update state
-              const cleanDomain = site.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+              const cleanDomain = normalizeDomain(site);
               setSelectedGscDomain(cleanDomain);
               setSelectedGscSiteUrl(site);
+
+              // If we already know tracking status for this domain, apply it immediately.
+              const cached = gscTrackingByDomain[cleanDomain];
+              const isTracked = trackedDomains.includes(cleanDomain);
+              setGscDomainHasTracking(isTracked ? true : cached === true);
               console.log('GSC site changed:', cleanDomain);
             }}
             onDataLoaded={(data) => {
@@ -1627,21 +1712,21 @@ f.parentNode.insertBefore(j,f);
               console.log('GSC data loaded:', data);
             }}
             onTrackingStatus={(hasTracking, domain) => {
-              // Only update tracking status if this domain is NOT in our known tracked domains list
-              // (tracked domains always have tracking by definition)
-              const isKnownTrackedDomain = trackedDomains.some(td => 
-                td === domain || domain.includes(td) || td.includes(domain)
-              );
-              
-              if (isKnownTrackedDomain) {
-                // Always show VI dashboard for known tracked domains
-                setGscDomainHasTracking(true);
-                console.log(`Tracking status for ${domain}: forced TRUE (known tracked domain)`);
-              } else {
-                // For other domains, use the database check result
-                setGscDomainHasTracking(hasTracking);
-                console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
+              const cleanDomain = normalizeDomain(domain);
+
+              // Always store status by domain.
+              setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
+
+              // Ignore late/stale callbacks for domains that are no longer selected.
+              const currentlySelected = selectedGscDomainRef.current;
+              if (currentlySelected && cleanDomain !== currentlySelected) {
+                return;
               }
+
+              const isKnownTrackedDomain = trackedDomains.includes(cleanDomain);
+              const finalHasTracking = isKnownTrackedDomain ? true : hasTracking;
+              setGscDomainHasTracking(finalHasTracking);
+              console.log(`Tracking status for ${cleanDomain}: ${finalHasTracking ? 'installed' : 'not installed'}`);
             }}
              onSitesLoaded={(sites) => {
               // Store available GSC sites for header dropdown

@@ -47,9 +47,26 @@ import {
 // Google OAuth Config
 const getGoogleClientId = () => localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const GOOGLE_SCOPES = [
+  "openid",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
 ].join(" ");
+
+type GoogleUserProfile = {
+  name?: string;
+  email?: string;
+  picture?: string;
+};
+
+function normalizeGscDomain(v: string): string {
+  return v
+    .replace("sc-domain:", "")
+    .replace("https://", "")
+    .replace("http://", "")
+    .replace(/\/$/, "");
+}
 
 function getOAuthRedirectUri(): string {
   // In Lovable preview, the app may run inside an iframe on a different origin
@@ -190,6 +207,36 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   // Data dropdown states
   const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | null>(null);
 
+  const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
+    if (!profile) return;
+
+    try {
+      const minimal: GoogleUserProfile = {
+        name: profile.name,
+        email: profile.email,
+        picture: profile.picture,
+      };
+      localStorage.setItem("gsc_google_profile", JSON.stringify(minimal));
+      sessionStorage.setItem("gsc_google_profile", JSON.stringify(minimal));
+      window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: minimal } }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const fetchAndStoreGoogleProfile = useCallback(async (token: string) => {
+    try {
+      const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const profile = (await res.json()) as GoogleUserProfile;
+      storeGoogleProfile(profile);
+    } catch {
+      // ignore
+    }
+  }, [storeGoogleProfile]);
+
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
     const storedToken = sessionStorage.getItem("gsc_access_token");
@@ -305,6 +352,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
             
             setAccessToken(tokenJson.access_token);
             setIsAuthenticated(true);
+
+            // Non-blocking: store Google profile (avatar/email/name) for UI display.
+            void fetchAndStoreGoogleProfile(tokenJson.access_token);
             
             toast({
               title: "Connected to Google Search Console",
@@ -358,7 +408,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
 
   // Check if domain has tracking code installed (by checking for visitor sessions from that domain)
   const checkTrackingStatus = async (siteUrl: string) => {
-    const cleanDomain = siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+    const cleanDomain = normalizeGscDomain(siteUrl);
     
     // Check cache first
     if (domainTrackingStatus.has(cleanDomain)) {
@@ -505,6 +555,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const handleDisconnect = () => {
     sessionStorage.removeItem("gsc_access_token");
     sessionStorage.removeItem("gsc_token_expiry");
+    sessionStorage.removeItem("gsc_google_profile");
+    localStorage.removeItem("gsc_google_profile");
+    window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: null } }));
     setAccessToken(null);
     setIsAuthenticated(false);
     setSites([]);
@@ -547,7 +600,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
       
       if (siteEntries.length > 0 && !selectedSite) {
         // Use external selection if provided, otherwise default to first site
-        const siteToSelect = externalSelectedSite || siteEntries[0].siteUrl;
+        const siteToSelect = externalSelectedSite && externalSelectedSite !== "" ? externalSelectedSite : siteEntries[0].siteUrl;
         setSelectedSite(siteToSelect);
       }
     } catch (error) {
@@ -559,13 +612,37 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const isExternalUpdateRef = useRef(false);
   
   useEffect(() => {
+    // Parent can intentionally clear the selection (e.g. user selected a tracking-only domain).
+    if (externalSelectedSite === "") {
+      if (selectedSite !== "") {
+        isExternalUpdateRef.current = true;
+        setSelectedSite("");
+        // Clear cached UI so we don't show the last site's data.
+        setQueryData([]);
+        setPageData([]);
+        setCountryData([]);
+        setDeviceData([]);
+        setDateData([]);
+        setSitemaps([]);
+        setAllTypesData({
+          web: { clicks: 0, impressions: 0, position: 0 },
+          image: { clicks: 0, impressions: 0, position: 0 },
+          video: { clicks: 0, impressions: 0, position: 0 },
+          news: { clicks: 0, impressions: 0, position: 0 },
+          discover: { clicks: 0, impressions: 0, position: 0 },
+        });
+        dataCache.current.clear();
+      }
+      return;
+    }
+
     if (externalSelectedSite && sites.some(s => s.siteUrl === externalSelectedSite)) {
       if (externalSelectedSite !== selectedSite) {
         isExternalUpdateRef.current = true;
         setSelectedSite(externalSelectedSite);
       }
     }
-  }, [externalSelectedSite, sites]);
+  }, [externalSelectedSite, sites, selectedSite]);
 
   // Notify parent of auth status changes
   useEffect(() => {
