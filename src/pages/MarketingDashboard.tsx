@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon, MessageCircle, Calendar as CalendarIcon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, Sun, Moon, MessageCircle, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -478,216 +478,148 @@ const MarketingDashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        {/* WebStack.CEO Visitor Intelligence - Full Width Collapsible - FIRST SECTION */}
-        <Collapsible open={siteArchOpen} onOpenChange={setSiteArchOpen} className="mb-6">
-          <Card className="p-4">
-            <CollapsibleTrigger className="flex items-center justify-between w-full group">
+      {/* Date Range Selector Bar */}
+      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container mx-auto px-6 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CalendarIcon className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Time Range:</span>
+            <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+              <SelectTrigger className="w-[130px] h-8 text-sm bg-background border-border">
+                <SelectValue placeholder="Range" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                <SelectItem value="live">Last 24h</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
+                <SelectItem value="6months">6 Months</SelectItem>
+                <SelectItem value="1year">Year</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            {diagramTimeRange === 'custom' && (
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-foreground">WebStack.CEO Visitor Intelligence</h2>
-                {pageFilter && (
-                  <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
-                    Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 text-sm px-3", !diagramCustomDateRange.from && "text-muted-foreground")}>
+                      {diagramCustomDateRange.from ? format(diagramCustomDateRange.from, "MMM d, yyyy") : "Start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                    <Calendar mode="single" selected={diagramCustomDateRange.from} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, from: date }))} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-sm text-muted-foreground">to</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-8 text-sm px-3", !diagramCustomDateRange.to && "text-muted-foreground")}>
+                      {diagramCustomDateRange.to ? format(diagramCustomDateRange.to, "MMM d, yyyy") : "End date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                    <Calendar mode="single" selected={diagramCustomDateRange.to} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, to: date }))} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {pageFilter && (
+              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                <Filter className="w-3 h-3" />
+                Filtered: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
+                <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
+              </Badge>
+            )}
+            {flowSummary && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                  {flowSummary.totalVisits} visits
+                </Badge>
+                {flowSummary.activeVisitors > 0 && (
+                  <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
+                    <Activity className="w-3 h-3 mr-1" />{flowSummary.activeVisitors} live
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-3">
-                {/* Mini summary when collapsed - diagram-style icons */}
-                {!siteArchOpen && flowSummary && flowSummary.topPages.length > 0 && (
-                  <div className="flex items-center gap-3 mr-4">
-                    <div className="flex items-center gap-3">
-                      {flowSummary.topPages.slice(0, 6).map((page) => {
-                        const maxVisits = flowSummary.topPages[0]?.visits || 1;
-                        const intensity = page.visits / maxVisits;
-                        const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : intensity > 0.1 ? '#eab308' : '#eab308';
-                        const hasLiveVisitor = page.liveCount > 0;
-                        const hasExternalReferrer = page.hasExternalReferrer;
-                        const nodeSize = 16;
-                        const svgSize = nodeSize * 2 + 20;
-                        const cx = svgSize / 2;
-                        const cy = svgSize / 2;
-                        
-                        return (
-                          <div
-                            key={page.path}
-                            className="relative group"
-                            title={`${page.name}: ${page.visits} visits${page.liveCount > 0 ? `, ${page.liveCount} live` : ''}${page.externalCount > 0 ? `, ${page.externalCount} external` : ''}`}
-                          >
-                            <svg width={svgSize} height={svgSize} className="overflow-visible">
-                              {hasLiveVisitor && (
-                                <>
-                                  <circle cx={cx} cy={cy} r={nodeSize + 8} fill="none" stroke="#22c55e" strokeWidth={1.5} strokeOpacity={0.6} className="animate-ping" style={{ transformOrigin: `${cx}px ${cy}px` }} />
-                                  <circle cx={cx} cy={cy} r={nodeSize + 5} fill="#22c55e" opacity={0.15} />
-                                </>
-                              )}
-                              {hasExternalReferrer && (
-                                <>
-                                  <circle cx={cx} cy={cy} r={nodeSize + 10} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.7}>
-                                    <animate attributeName="r" values={`${nodeSize + 6};${nodeSize + 12};${nodeSize + 6}`} dur="2s" repeatCount="indefinite" />
-                                    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
-                                  </circle>
-                                  {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
-                                    const rad = (angle * Math.PI) / 180;
-                                    const x1 = cx + Math.cos(rad) * (nodeSize + 3);
-                                    const y1 = cy + Math.sin(rad) * (nodeSize + 3);
-                                    const x2 = cx + Math.cos(rad) * (nodeSize + 8);
-                                    const y2 = cy + Math.sin(rad) * (nodeSize + 8);
-                                    return (
-                                      <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f97316" strokeWidth={1.5} strokeLinecap="round" opacity={0.7}>
-                                        <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" begin={`${angle / 360}s`} repeatCount="indefinite" />
-                                      </line>
-                                    );
-                                  })}
-                                </>
-                              )}
-                              {!hasLiveVisitor && <circle cx={cx} cy={cy} r={nodeSize + 4} fill={heatColor} opacity={0.15} />}
-                              <circle cx={cx} cy={cy} r={nodeSize} fill="hsl(var(--background))" stroke={hasLiveVisitor ? "#22c55e" : heatColor} strokeWidth={hasLiveVisitor ? 2.5 : 2} />
-                              <text x={cx} y={cy + 4} textAnchor="middle" fill="#8b5cf6" style={{ fontSize: page.visits > 99 ? '9px' : '11px', fontWeight: 'bold' }}>
-                                {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
-                              </text>
-                              {page.liveCount > 0 && (
-                                <>
-                                  <circle cx={cx + nodeSize - 2} cy={cy - nodeSize + 2} r={7} fill="#22c55e" />
-                                  <text x={cx + nodeSize - 2} y={cy - nodeSize + 5} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.liveCount}</text>
-                                </>
-                              )}
-                              {page.externalCount > 0 && (
-                                <>
-                                  <circle cx={cx - nodeSize + 2} cy={cy + nodeSize - 2} r={7} fill="#f97316" />
-                                  <text x={cx - nodeSize + 2} y={cy + nodeSize + 1} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.externalCount > 99 ? '99+' : page.externalCount}</text>
-                                </>
-                              )}
-                            </svg>
-                            <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] text-muted-foreground whitespace-nowrap font-medium opacity-70 group-hover:opacity-100 transition-opacity">
-                              {page.name.length > 10 ? page.name.slice(0, 10) + '…' : page.name}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {flowSummary.topPages.length > 6 && <span className="text-[10px] text-muted-foreground">+{flowSummary.topPages.length - 6}</span>}
-                    <div className="h-6 w-px bg-border/50" />
-                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">{flowSummary.totalVisits} total</Badge>
-                    {flowSummary.activeVisitors > 0 && (
-                      <Badge className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
-                        <Activity className="w-3 h-3 mr-1" />{flowSummary.activeVisitors} live
-                      </Badge>
-                    )}
-                    <div className="h-6 w-px bg-border/50" />
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <CalendarIcon className="w-3 h-3 text-muted-foreground" />
-                      <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
-                        <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50"><SelectValue placeholder="Range" /></SelectTrigger>
-                        <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                          <SelectItem value="live">Last 24h</SelectItem>
-                          <SelectItem value="yesterday">Yesterday</SelectItem>
-                          <SelectItem value="week">Week</SelectItem>
-                          <SelectItem value="month">Month</SelectItem>
-                          <SelectItem value="6months">6 Months</SelectItem>
-                          <SelectItem value="1year">Year</SelectItem>
-                          <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {diagramTimeRange === 'custom' && (
-                        <div className="flex items-center gap-1">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className={cn("h-7 text-[10px] px-2", !diagramCustomDateRange.from && "text-muted-foreground")}>
-                                {diagramCustomDateRange.from ? format(diagramCustomDateRange.from, "MMM d") : "Start"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
-                              <Calendar mode="single" selected={diagramCustomDateRange.from} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, from: date }))} initialFocus className="p-3 pointer-events-auto" />
-                            </PopoverContent>
-                          </Popover>
-                          <span className="text-[10px] text-muted-foreground">-</span>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className={cn("h-7 text-[10px] px-2", !diagramCustomDateRange.to && "text-muted-foreground")}>
-                                {diagramCustomDateRange.to ? format(diagramCustomDateRange.to, "MMM d") : "End"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
-                              <Calendar mode="single" selected={diagramCustomDateRange.to} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, to: date }))} initialFocus className="p-3 pointer-events-auto" />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {!siteArchOpen && flowSummary && flowSummary.topPages.length === 0 && (
-                  <div className="flex items-center gap-3 mr-4">
-                    <span className="text-xs text-muted-foreground">No visits in selected range</span>
-                    <div className="h-6 w-px bg-border/50" />
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <CalendarIcon className="w-3 h-3 text-muted-foreground" />
-                      <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
-                        <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50"><SelectValue placeholder="Range" /></SelectTrigger>
-                        <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                          <SelectItem value="live">Last 24h</SelectItem>
-                          <SelectItem value="yesterday">Yesterday</SelectItem>
-                          <SelectItem value="week">Week</SelectItem>
-                          <SelectItem value="month">Month</SelectItem>
-                          <SelectItem value="6months">6 Months</SelectItem>
-                          <SelectItem value="1year">Year</SelectItem>
-                          <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-                {!siteArchOpen && !flowSummary && (
-                  <div className="flex items-center gap-2 mr-4" onClick={(e) => e.stopPropagation()}>
-                    <CalendarIcon className="w-3 h-3 text-muted-foreground" />
-                    <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
-                      <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50"><SelectValue placeholder="Range" /></SelectTrigger>
-                      <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                        <SelectItem value="live">Last 24h</SelectItem>
-                        <SelectItem value="yesterday">Yesterday</SelectItem>
-                        <SelectItem value="week">Week</SelectItem>
-                        <SelectItem value="month">Month</SelectItem>
-                        <SelectItem value="6months">6 Months</SelectItem>
-                        <SelectItem value="1year">Year</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-              </div>
-            </CollapsibleTrigger>
-            {/* Always render diagram for summary data, but hide visually when collapsed */}
-            <div className={siteArchOpen ? 'pt-4' : 'hidden'}>
-              {pageFilter && (
-                <div className="mb-4 flex items-center gap-2">
-                  <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    <Filter className="w-3 h-3" />
-                    Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
-                    <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
-                    {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
-                  </span>
-                </div>
-              )}
-              <VisitorFlowDiagram 
-                onPageFilter={setPageFilter}
-                activeFilter={pageFilter}
-                onSummaryUpdate={setFlowSummary}
-                timeRange={diagramTimeRange}
-                onTimeRangeChange={setDiagramTimeRange}
-                customDateRange={diagramCustomDateRange}
-                onCustomDateRangeChange={setDiagramCustomDateRange}
-              />
-            </div>
-          </Card>
-        </Collapsible>
+            )}
+          </div>
+        </div>
+      </div>
 
-        {/* Full Width Stats Layout */}
-        <div className="space-y-4 mb-6">
+      {/* Main Layout with Vertical Sidebar */}
+      <div className="flex min-h-[calc(100vh-140px)]">
+        {/* Left Sidebar - Visitor Intelligence */}
+        <div className={`${siteArchOpen ? 'w-80' : 'w-14'} flex-shrink-0 border-r border-border bg-card/50 transition-all duration-300 overflow-hidden`}>
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+            {/* Sidebar Header */}
+            <button 
+              onClick={() => setSiteArchOpen(!siteArchOpen)}
+              className="flex items-center gap-2 p-3 border-b border-border hover:bg-secondary/30 transition-colors w-full"
+            >
+              <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
+              {siteArchOpen && (
+                <span className="font-semibold text-sm text-foreground flex-1 text-left">Visitor Intelligence</span>
+              )}
+              <ChevronLeft className={`w-4 h-4 text-muted-foreground transition-transform ${!siteArchOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {/* Sidebar Content */}
+            {siteArchOpen ? (
+              <div className="flex-1 overflow-auto p-3">
+                <VisitorFlowDiagram 
+                  onPageFilter={setPageFilter}
+                  activeFilter={pageFilter}
+                  onSummaryUpdate={setFlowSummary}
+                  timeRange={diagramTimeRange}
+                  onTimeRangeChange={setDiagramTimeRange}
+                  customDateRange={diagramCustomDateRange}
+                  onCustomDateRangeChange={setDiagramCustomDateRange}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center gap-2 py-4">
+                {flowSummary && flowSummary.topPages.slice(0, 8).map((page) => {
+                  const maxVisits = flowSummary.topPages[0]?.visits || 1;
+                  const intensity = page.visits / maxVisits;
+                  const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : '#eab308';
+                  const hasLiveVisitor = page.liveCount > 0;
+                  
+                  return (
+                    <div
+                      key={page.path}
+                      className="relative group cursor-pointer"
+                      title={`${page.name}: ${page.visits} visits`}
+                      onClick={() => setPageFilter(page.path)}
+                    >
+                      <svg width={40} height={40} className="overflow-visible">
+                        {hasLiveVisitor && (
+                          <circle cx={20} cy={20} r={18} fill="#22c55e" opacity={0.15} className="animate-pulse" />
+                        )}
+                        <circle cx={20} cy={20} r={14} fill="hsl(var(--background))" stroke={hasLiveVisitor ? "#22c55e" : heatColor} strokeWidth={2} />
+                        <text x={20} y={24} textAnchor="middle" fill="#8b5cf6" style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                          {page.visits > 99 ? '99+' : page.visits}
+                        </text>
+                        {hasLiveVisitor && (
+                          <>
+                            <circle cx={30} cy={10} r={6} fill="#22c55e" />
+                            <text x={30} y={13} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.liveCount}</text>
+                          </>
+                        )}
+                      </svg>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-6 overflow-auto">
+          {/* Full Width Stats Layout */}
+          <div className="space-y-4 mb-6">
           {/* Quick Stats Row - Full Width */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <Card className="p-4 border-green-500/30 bg-green-500/5">
@@ -1054,7 +986,8 @@ const MarketingDashboard = () => {
           <ReferrerBreakdownChart sessions={sessions} horizontal />
         </div>
 
-      </main>
+        </main>
+      </div>
 
       {/* Floating Chat Bar */}
       <FloatingChatBar isOnline={chatOnline} />
