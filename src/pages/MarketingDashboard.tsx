@@ -419,52 +419,6 @@ const MarketingDashboard = () => {
           <div className="lg:col-span-1 space-y-6">
             {/* Traffic Sources at Top Left */}
             <ReferrerBreakdownChart sessions={sessions} />
-            
-            {/* Vertical Conversion Funnel */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                <h2 className="font-bold text-foreground text-sm">Funnel</h2>
-              </div>
-              <div className="space-y-2">
-                {funnelSteps.map((step, index) => {
-                  const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
-                  const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
-                    ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
-                    : null;
-                  
-                  return (
-                    <div key={step.label}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
-                          <step.icon className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs font-medium text-foreground truncate">{step.label}</span>
-                            <span className="text-sm font-bold">{step.count.toLocaleString()}</span>
-                          </div>
-                          <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      {index < funnelSteps.length - 1 && (
-                        <div className="flex items-center gap-1 ml-3 my-0.5">
-                          <div className="w-0.5 h-3 bg-muted-foreground/20" />
-                          {conversionFromPrev && (
-                            <span className="text-[9px] text-muted-foreground">{conversionFromPrev}%</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
 
             {/* Top Entry Pages */}
             <Card className="p-4">
@@ -636,6 +590,34 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
+            </div>
+
+            {/* Conversion Funnel - Horizontal Boxes */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {funnelSteps.map((step, index) => {
+                const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
+                  ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
+                  : null;
+                
+                return (
+                  <Card key={step.label} className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0`}>
+                        <step.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{step.label}</p>
+                      </div>
+                    </div>
+                    {conversionFromPrev && (
+                      <div className="mt-2 text-[10px] text-muted-foreground">
+                        <span className="text-foreground font-medium">{conversionFromPrev}%</span> from prev
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
 
             {/* Site Architecture / Visitor Flow Diagram */}
