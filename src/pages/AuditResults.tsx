@@ -1297,7 +1297,7 @@ const AuditResults = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
                   {/* Claimed Notification Bar - inline with buttons */}
                   {isClaimed && (
                     <motion.div
@@ -1308,13 +1308,16 @@ const AuditResults = () => {
                       <motion.div
                         animate={{ x: [0, 5, 0] }}
                         transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                        className="text-green-500"
+                        className="text-green-500 shrink-0"
                       >
                         <ArrowRight className="w-4 h-4 rotate-[225deg]" />
                       </motion.div>
                       <Link2 className="w-4 h-4 text-green-400 shrink-0" />
-                      <span className="text-sm font-medium text-green-400 whitespace-nowrap">
-                        {justClaimed ? "Link Active!" : "Owner Claimed"}
+                      <span className="text-xs md:text-sm font-medium text-green-400">
+                        {justClaimed 
+                          ? "Your do-follow link is now active! Click the domain to visit."
+                          : "This website owner claimed their free do-follow link!"
+                        }
                       </span>
                     </motion.div>
                   )}
@@ -1322,14 +1325,14 @@ const AuditResults = () => {
                   {!isClaimed && (
                     <Button 
                       variant="outline" 
-                      className="gap-2 min-w-[180px] justify-center" 
+                      className="gap-2 min-w-[160px] justify-center" 
                       onClick={handleSaveClick}
                     >
                       <Gift className="w-4 h-4 text-primary" />
                       Save & Get Free Backlink
                     </Button>
                   )}
-                  <Button className="gap-2 min-w-[180px] justify-center" asChild>
+                  <Button className="gap-2 min-w-[140px] justify-center" asChild>
                     <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
                       <Phone className="w-4 h-4" />
                       Book a Call
