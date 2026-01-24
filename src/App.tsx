@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SoundProvider } from "@/contexts/SoundContext";
 import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
@@ -131,6 +131,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
+              <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/security" element={<Security />} />
