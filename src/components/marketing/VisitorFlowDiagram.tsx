@@ -329,56 +329,82 @@ const VisitorFlowDiagram = () => {
     );
   }
 
-  // Group by depth - show all pages, split L2 into rows if needed
+  // Group by depth - show all pages, split into rows
   const depth0 = nodes.filter(n => n.depth === 0);
   const depth1 = nodes.filter(n => n.depth === 1);
   const depth2 = nodes.filter(n => n.depth === 2);
   const depth3 = nodes.filter(n => n.depth >= 3);
 
-  // Calculate how many L2 rows we need (max 20 per row)
-  const l2RowSize = 22;
-  const l2Rows = Math.ceil(depth2.length / l2RowSize);
+  // Max nodes per row for each level to prevent overlap
+  const l1RowSize = 8;
+  const l2RowSize = 12;
+  const l3RowSize = 10;
   
-  // Taller SVG to fit all pages
-  const svgWidth = 1400;
-  const levelHeight = 120;
-  const l2ExtraHeight = (l2Rows - 1) * 90;
-  const svgHeight = 180 + levelHeight * 3 + l2ExtraHeight + (depth3.length > 0 ? 100 : 0);
+  const l1Rows = Math.ceil(depth1.length / l1RowSize);
+  const l2Rows = Math.ceil(depth2.length / l2RowSize);
+  const l3Rows = Math.ceil(depth3.length / l3RowSize);
+  
+  // Wider and taller SVG with more spacing
+  const svgWidth = 1500;
+  const baseY = 60;
+  const l1YSpacing = 100; // Space between L1 rows
+  const l2YSpacing = 110; // Space between L2 rows  
+  const l3YSpacing = 100; // Space between L3 rows
+  const levelGap = 140; // Gap between depth levels
+  
+  const l1TotalHeight = l1Rows * l1YSpacing;
+  const l2StartY = baseY + levelGap + l1TotalHeight;
+  const l2TotalHeight = l2Rows * l2YSpacing;
+  const l3StartY = l2StartY + l2TotalHeight + 60;
+  const l3TotalHeight = l3Rows * l3YSpacing;
+  
+  const svgHeight = l3StartY + l3TotalHeight + 80;
   
   const getNodePositions = () => {
     const positions: Record<string, { x: number; y: number }> = {};
     
     // Root (L0)
-    depth0.forEach(() => {
-      positions['/'] = { x: svgWidth / 2, y: 50 };
-    });
+    positions['/'] = { x: svgWidth / 2, y: baseY };
     
-    // L1 - spread across width
-    const l1Width = svgWidth - 80;
+    // L1 - split into rows
+    const l1Width = svgWidth - 120;
     depth1.forEach((node, i) => {
-      const spacing = l1Width / (depth1.length + 1);
-      positions[node.path] = { x: 40 + spacing * (i + 1), y: 50 + levelHeight };
+      const row = Math.floor(i / l1RowSize);
+      const indexInRow = i % l1RowSize;
+      const nodesInThisRow = Math.min(l1RowSize, depth1.length - row * l1RowSize);
+      const spacing = l1Width / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: 60 + spacing * (indexInRow + 1), 
+        y: baseY + levelGap + row * l1YSpacing 
+      };
     });
     
-    // L2 - may need multiple rows
-    const l2Width = svgWidth - 40;
+    // L2 - split into rows with offset for visual separation
+    const l2Width = svgWidth - 80;
     depth2.forEach((node, i) => {
       const row = Math.floor(i / l2RowSize);
       const indexInRow = i % l2RowSize;
       const nodesInThisRow = Math.min(l2RowSize, depth2.length - row * l2RowSize);
       const spacing = l2Width / (nodesInThisRow + 1);
+      // Offset alternate rows for better visual separation
+      const rowOffset = row % 2 === 1 ? spacing / 2 : 0;
       positions[node.path] = { 
-        x: 20 + spacing * (indexInRow + 1), 
-        y: 50 + levelHeight * 2 + row * 90 
+        x: 40 + rowOffset + spacing * (indexInRow + 1), 
+        y: l2StartY + row * l2YSpacing 
       };
     });
     
     // L3+ - at the bottom
     const l3Width = svgWidth - 100;
-    const l3YBase = 50 + levelHeight * 2 + l2ExtraHeight + 100;
     depth3.forEach((node, i) => {
-      const spacing = l3Width / (depth3.length + 1);
-      positions[node.path] = { x: 50 + spacing * (i + 1), y: l3YBase };
+      const row = Math.floor(i / l3RowSize);
+      const indexInRow = i % l3RowSize;
+      const nodesInThisRow = Math.min(l3RowSize, depth3.length - row * l3RowSize);
+      const spacing = l3Width / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: 50 + spacing * (indexInRow + 1), 
+        y: l3StartY + row * l3YSpacing 
+      };
     });
     
     return positions;
@@ -585,7 +611,7 @@ const VisitorFlowDiagram = () => {
             
             const intensity = node.visits / maxVisits;
             const color = getHeatColor(intensity, node.isVisited);
-            const nodeSize = node.depth === 0 ? 26 : node.depth === 1 ? 18 : 14;
+            const nodeSize = node.depth === 0 ? 22 : node.depth === 1 ? 14 : 10;
             const opacity = node.isVisited ? 1 : 0.35;
             const hasLiveVisitor = visitorsByNode[node.path] > 0;
             
@@ -663,27 +689,28 @@ const VisitorFlowDiagram = () => {
                     </text>
                   </>
                 )}
-                {/* Label */}
+                {/* Label - angled for L2+ to prevent overlap */}
                 <text
                   x={pos.x}
-                  y={pos.y + nodeSize + 14}
-                  textAnchor="middle"
+                  y={pos.y + nodeSize + 12}
+                  textAnchor={node.depth >= 2 ? "start" : "middle"}
                   className="fill-foreground font-medium"
                   style={{ 
-                    fontSize: node.depth === 0 ? '12px' : node.depth === 1 ? '10px' : '9px',
+                    fontSize: node.depth === 0 ? '11px' : node.depth === 1 ? '9px' : '8px',
                     opacity: node.isVisited ? 1 : 0.6
                   }}
+                  transform={node.depth >= 2 ? `rotate(35, ${pos.x}, ${pos.y + nodeSize + 12})` : undefined}
                 >
                   {node.name}
                 </text>
-                {/* Visit count */}
-                {node.visits > 0 && (
+                {/* Visit count - show inline for smaller nodes */}
+                {node.visits > 0 && node.depth < 2 && (
                   <text
                     x={pos.x}
-                    y={pos.y + nodeSize + 26}
+                    y={pos.y + nodeSize + 24}
                     textAnchor="middle"
                     className="fill-muted-foreground"
-                    style={{ fontSize: '8px' }}
+                    style={{ fontSize: '7px' }}
                   >
                     {node.visits}
                   </text>
@@ -693,11 +720,11 @@ const VisitorFlowDiagram = () => {
           })}
           
           {/* Depth labels */}
-          <text x={12} y={55} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
-          <text x={12} y={55 + levelHeight} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
-          <text x={12} y={55 + levelHeight * 2} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L2</text>
+          <text x={12} y={baseY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
+          <text x={12} y={baseY + levelGap + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
+          <text x={12} y={l2StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L2</text>
           {depth3.length > 0 && (
-            <text x={12} y={55 + levelHeight * 2 + l2ExtraHeight + 100} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
+            <text x={12} y={l3StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
           )}
         </svg>
       </div>
