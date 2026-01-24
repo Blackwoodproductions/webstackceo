@@ -709,25 +709,25 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const toPos = positions[pathEdge.to];
             if (!fromPos || !toPos) return null;
             
-            // Heatmap colors based on intensity
+            // Heatmap colors based on intensity - REVERSED: green = hot, red = cool
             const intensity = pathEdge.intensity;
             let heatColor: string;
             let glowIntensity: number;
             
             if (intensity > 0.8) {
-              heatColor = '#ef4444'; // Bright red - hottest
+              heatColor = '#22c55e'; // Bright green - hottest
               glowIntensity = 1;
             } else if (intensity > 0.6) {
-              heatColor = '#f97316'; // Orange
+              heatColor = '#84cc16'; // Lime green
               glowIntensity = 0.8;
             } else if (intensity > 0.4) {
               heatColor = '#eab308'; // Yellow
               glowIntensity = 0.6;
             } else if (intensity > 0.2) {
-              heatColor = '#84cc16'; // Lime green
+              heatColor = '#f97316'; // Orange
               glowIntensity = 0.4;
             } else {
-              heatColor = '#22c55e'; // Green - coolest
+              heatColor = '#ef4444'; // Red - coolest
               glowIntensity = 0.3;
             }
             
