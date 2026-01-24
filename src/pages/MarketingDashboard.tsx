@@ -437,9 +437,10 @@ const MarketingDashboard = () => {
         </div>
 
         {/* Funnel & Active Visitors Row */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          {/* Funnel Visualization */}
-          <Card className="p-6">
+        {/* Funnel + Leads/Journey Row */}
+        <div className="grid lg:grid-cols-5 gap-6 mb-8">
+          {/* Funnel Visualization - 40% */}
+          <Card className="lg:col-span-2 p-6">
             <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-primary" />
               Conversion Funnel
@@ -463,7 +464,7 @@ const MarketingDashboard = () => {
                           <div className="flex items-center gap-3">
                             {conversionFromPrev && (
                               <span className="text-xs text-muted-foreground">
-                                {conversionFromPrev}% conversion
+                                {conversionFromPrev}%
                               </span>
                             )}
                             <span className="font-bold text-lg">{step.count.toLocaleString()}</span>
@@ -484,274 +485,226 @@ const MarketingDashboard = () => {
                 );
               })}
             </div>
-        </Card>
-        </div>
 
-        {/* Integrated Visitor Engagement Panel (Heatmap + Active Visitors) */}
-        <div className="mb-8">
-          <VisitorEngagementPanel />
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="leads" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="leads">
-              Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
-            </TabsTrigger>
-            <TabsTrigger value="journey">Customer Journey</TabsTrigger>
-            <TabsTrigger value="tools">
-              Tool Usage ({filteredData.toolInteractions.length})
-            </TabsTrigger>
-            <TabsTrigger value="sessions">
-              Sessions ({filteredData.sessions.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Leads Tab */}
-          <TabsContent value="leads">
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Stage</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(pageFilter ? filteredData.leads : leads).map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.email}</TableCell>
-                      <TableCell>{lead.full_name || '-'}</TableCell>
-                      <TableCell>
-                        {lead.phone ? (
-                          <span className="text-sm">{lead.phone}</span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {lead.company_employees ? (
-                          <div className="text-xs">
-                            <div>{lead.company_employees}</div>
-                            {lead.annual_revenue && (
-                              <div className="text-muted-foreground">{lead.annual_revenue}</div>
-                            )}
-                          </div>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getFunnelStageColor(lead.funnel_stage)}>
-                          {lead.funnel_stage || 'visitor'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {lead.metric_type}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(lead.created_at), 'MMM d, HH:mm')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(pageFilter ? filteredData.leads : leads).length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        {pageFilter ? `No leads from ${pageFilter}` : 'No leads captured yet'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
-          </TabsContent>
-
-          {/* Customer Journey Tab */}
-          <TabsContent value="journey">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Lead Quality Distribution */}
-              <Card className="p-6">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  Lead Quality Distribution
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
-                    { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
-                    { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
-                    { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                        <span className="text-sm">{item.label}</span>
-                      </div>
-                      <span className="font-bold">{Math.max(0, item.count)}</span>
+            {/* Customer Journey Mini Stats */}
+            <div className="mt-6 pt-6 border-t border-border">
+              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                <Zap className="w-4 h-4 text-amber-500" />
+                Lead Quality
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
+                  { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
+                  { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
+                  { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${item.color}`} />
+                      <span className="text-xs text-muted-foreground">{item.label}</span>
                     </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Top Traffic Sources */}
-              <Card className="p-6">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  Top Entry Pages
-                </h3>
-                <div className="space-y-2">
-                  {Object.entries(
-                    sessions.reduce((acc, s) => {
-                      const page = s.first_page || '/';
-                      acc[page] = (acc[page] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  )
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
-                    .map(([page, count]) => (
-                      <div key={page} className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground truncate max-w-[200px]">{page}</span>
-                        <span className="font-bold">{count}</span>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-
-              {/* Tool Usage Stats */}
-              <Card className="p-6">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <MousePointer className="w-4 h-4 text-violet-500" />
-                  Tool Usage by Type
-                </h3>
-                <div className="space-y-2">
-                  {Object.entries(
-                    toolInteractions.reduce((acc, t) => {
-                      const type = t.tool_type || 'unknown';
-                      acc[type] = (acc[type] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  )
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between">
-                        <Badge variant="outline">{type}</Badge>
-                        <span className="font-bold">{count}</span>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="p-6">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-pink-500" />
-                  Recent Lead Sources
-                </h3>
-                <div className="space-y-2">
-                  {Object.entries(
-                    leads.reduce((acc, l) => {
-                      const source = l.metric_type || 'unknown';
-                      acc[source] = (acc[source] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  )
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
-                    .map(([source, count]) => (
-                      <div key={source} className="flex items-center justify-between">
-                        <Badge>{source}</Badge>
-                        <span className="font-bold">{count}</span>
-                      </div>
-                    ))}
-                </div>
-              </Card>
+                    <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </TabsContent>
+          </Card>
 
-          {/* Tool Usage Tab */}
-          <TabsContent value="tools">
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tool Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Page</TableHead>
-                    <TableHead>Session ID</TableHead>
-                    <TableHead>Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.toolInteractions.map((tool) => (
-                    <TableRow key={tool.id}>
-                      <TableCell className="font-medium">{tool.tool_name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{tool.tool_type}</Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{tool.page_path}</TableCell>
-                      <TableCell className="font-mono text-xs">{tool.session_id.slice(0, 15)}...</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(tool.created_at), 'MMM d, HH:mm')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredData.toolInteractions.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        {pageFilter ? `No tool interactions on ${pageFilter}` : 'No tool interactions recorded yet'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
-          </TabsContent>
+          {/* Leads & Journey Section - 60% */}
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="leads" className="h-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="leads" className="text-xs sm:text-sm">
+                  <Mail className="w-3 h-3 mr-1.5" />
+                  Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
+                </TabsTrigger>
+                <TabsTrigger value="journey" className="text-xs sm:text-sm">
+                  <TrendingUp className="w-3 h-3 mr-1.5" />
+                  Journey
+                </TabsTrigger>
+                <TabsTrigger value="tools" className="text-xs sm:text-sm">
+                  <MousePointer className="w-3 h-3 mr-1.5" />
+                  Tools ({filteredData.toolInteractions.length})
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Sessions Tab */}
-          <TabsContent value="sessions">
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Session ID</TableHead>
-                    <TableHead>First Page</TableHead>
-                    <TableHead>Referrer</TableHead>
-                    <TableHead>Started</TableHead>
-                    <TableHead>Last Activity</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.sessions.map((session) => (
-                    <TableRow key={session.id}>
-                      <TableCell className="font-mono text-xs">{session.session_id.slice(0, 20)}...</TableCell>
-                      <TableCell>{session.first_page}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {session.referrer || 'Direct'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(session.started_at), 'MMM d, HH:mm')}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(session.last_activity_at), 'MMM d, HH:mm')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredData.sessions.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        {pageFilter ? `No sessions visited ${pageFilter}` : 'No sessions recorded yet'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              {/* Leads Tab */}
+              <TabsContent value="leads" className="mt-0">
+                <Card className="p-0 overflow-hidden">
+                  <div className="max-h-[420px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead className="text-xs">Email</TableHead>
+                          <TableHead className="text-xs">Name</TableHead>
+                          <TableHead className="text-xs">Phone</TableHead>
+                          <TableHead className="text-xs">Company</TableHead>
+                          <TableHead className="text-xs">Stage</TableHead>
+                          <TableHead className="text-xs">Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(pageFilter ? filteredData.leads : leads).map((lead) => (
+                          <TableRow key={lead.id}>
+                            <TableCell className="font-medium text-sm py-2">{lead.email}</TableCell>
+                            <TableCell className="text-sm py-2">{lead.full_name || '-'}</TableCell>
+                            <TableCell className="text-sm py-2">
+                              {lead.phone ? lead.phone : <span className="text-muted-foreground">-</span>}
+                            </TableCell>
+                            <TableCell className="py-2">
+                              {lead.company_employees ? (
+                                <div className="text-xs">
+                                  <div>{lead.company_employees}</div>
+                                  {lead.annual_revenue && (
+                                    <div className="text-muted-foreground">{lead.annual_revenue}</div>
+                                  )}
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <Badge className={`text-[10px] ${getFunnelStageColor(lead.funnel_stage)}`}>
+                                {lead.funnel_stage || 'visitor'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground py-2">
+                              {format(new Date(lead.created_at), 'MMM d, HH:mm')}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {(pageFilter ? filteredData.leads : leads).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                              {pageFilter ? `No leads from ${pageFilter}` : 'No leads captured yet'}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              {/* Customer Journey Tab */}
+              <TabsContent value="journey" className="mt-0">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Top Entry Pages */}
+                  <Card className="p-4">
+                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <Eye className="w-4 h-4 text-green-500" />
+                      Top Entry Pages
+                    </h3>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        sessions.reduce((acc, s) => {
+                          const page = s.first_page || '/';
+                          acc[page] = (acc[page] || 0) + 1;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      )
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([page, count]) => (
+                          <div key={page} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground truncate max-w-[140px]">{page}</span>
+                            <span className="font-bold text-sm">{count}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+
+                  {/* Tool Usage by Type */}
+                  <Card className="p-4">
+                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <MousePointer className="w-4 h-4 text-violet-500" />
+                      Tool Usage
+                    </h3>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        toolInteractions.reduce((acc, t) => {
+                          const type = t.tool_type || 'unknown';
+                          acc[type] = (acc[type] || 0) + 1;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      )
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 5)
+                        .map(([type, count]) => (
+                          <div key={type} className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-[10px]">{type}</Badge>
+                            <span className="font-bold text-sm">{count}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </Card>
+
+                  {/* Recent Lead Sources */}
+                  <Card className="p-4 col-span-2">
+                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-pink-500" />
+                      Lead Sources
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(
+                        leads.reduce((acc, l) => {
+                          const source = l.metric_type || 'unknown';
+                          acc[source] = (acc[source] || 0) + 1;
+                          return acc;
+                        }, {} as Record<string, number>)
+                      )
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 6)
+                        .map(([source, count]) => (
+                          <Badge key={source} variant="secondary" className="px-2 py-1">
+                            {source}: <span className="font-bold ml-1">{count}</span>
+                          </Badge>
+                        ))}
+                    </div>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* Tool Usage Tab */}
+              <TabsContent value="tools" className="mt-0">
+                <Card className="p-0 overflow-hidden">
+                  <div className="max-h-[420px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead className="text-xs">Tool</TableHead>
+                          <TableHead className="text-xs">Type</TableHead>
+                          <TableHead className="text-xs">Page</TableHead>
+                          <TableHead className="text-xs">Time</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredData.toolInteractions.map((tool) => (
+                          <TableRow key={tool.id}>
+                            <TableCell className="font-medium text-sm py-2">{tool.tool_name}</TableCell>
+                            <TableCell className="py-2">
+                              <Badge variant="outline" className="text-[10px]">{tool.tool_type}</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground py-2 max-w-[120px] truncate">{tool.page_path}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground py-2">
+                              {format(new Date(tool.created_at), 'MMM d, HH:mm')}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredData.toolInteractions.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              {pageFilter ? `No interactions on ${pageFilter}` : 'No tool interactions yet'}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
