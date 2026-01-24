@@ -8,7 +8,7 @@ const FloatingCodeBox = memo(() => {
   const location = useLocation();
 
   // Hide on admin/dashboard pages
-  const hiddenPaths = ['/marketing-dashboard', '/admin'];
+  const hiddenPaths = ['/visitor-intelligence-dashboard', '/admin'];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   // Delay render to not block initial page paint
