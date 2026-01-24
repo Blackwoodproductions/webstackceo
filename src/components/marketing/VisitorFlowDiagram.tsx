@@ -27,6 +27,14 @@ interface LiveVisitor {
   timestamp: number;
 }
 
+interface DemoVisit {
+  id: string;
+  path: string;
+  previousPath: string | null;
+  timestamp: number;
+  opacity: number;
+}
+
 type TimeRange = 'today' | 'week' | 'month' | 'all';
 
 // Complete site structure based on the project's actual routing
@@ -153,8 +161,87 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
+  const [demoVisits, setDemoVisits] = useState<DemoVisit[]>([]);
+  const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; opacity: number }[]>([]);
 
-  // Fetch initial data
+  // Demo mode - simulate visits every 5 seconds
+  useEffect(() => {
+    const mainPages = SITE_STRUCTURE.filter(s => s.category === 'main' || s.path === '/').map(s => s.path);
+    const allPages = SITE_STRUCTURE.map(s => s.path);
+    let lastDemoPath = '/';
+
+    const simulateVisit = () => {
+      // Pick a random page, weighted towards main pages
+      const useMainPage = Math.random() > 0.3;
+      const targetPages = useMainPage ? mainPages : allPages;
+      const randomPath = targetPages[Math.floor(Math.random() * targetPages.length)];
+      
+      const visitId = `demo-${Date.now()}`;
+      const previousPath = lastDemoPath;
+      
+      // Add demo visit
+      setDemoVisits(prev => [...prev, {
+        id: visitId,
+        path: randomPath,
+        previousPath: previousPath !== randomPath ? previousPath : null,
+        timestamp: Date.now(),
+        opacity: 1
+      }]);
+
+      // Add demo path if moving between pages
+      if (previousPath && previousPath !== randomPath) {
+        const pathId = `demo-path-${Date.now()}`;
+        setDemoPaths(prev => [...prev, {
+          from: previousPath,
+          to: randomPath,
+          id: pathId,
+          opacity: 1
+        }]);
+
+        // Fade out path over 5 seconds
+        let fadeStep = 0;
+        const fadeInterval = setInterval(() => {
+          fadeStep++;
+          const newOpacity = Math.max(0, 1 - (fadeStep / 50));
+          
+          setDemoPaths(prev => prev.map(p => 
+            p.id === pathId ? { ...p, opacity: newOpacity } : p
+          ));
+
+          if (fadeStep >= 50) {
+            clearInterval(fadeInterval);
+            setDemoPaths(prev => prev.filter(p => p.id !== pathId));
+          }
+        }, 100);
+      }
+
+      lastDemoPath = randomPath;
+
+      // Remove demo visit after 5 seconds with fade
+      let visitFadeStep = 0;
+      const visitFadeInterval = setInterval(() => {
+        visitFadeStep++;
+        const newOpacity = Math.max(0, 1 - (visitFadeStep / 30));
+        
+        setDemoVisits(prev => prev.map(v => 
+          v.id === visitId ? { ...v, opacity: newOpacity } : v
+        ));
+
+        if (visitFadeStep >= 30) {
+          clearInterval(visitFadeInterval);
+          setDemoVisits(prev => prev.filter(v => v.id !== visitId));
+        }
+      }, 100);
+    };
+
+    // Initial visit
+    simulateVisit();
+
+    // Continue every 5 seconds
+    const demoInterval = setInterval(simulateVisit, 5000);
+
+    return () => clearInterval(demoInterval);
+  }, []);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -573,6 +660,13 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               {liveVisitors.length} live
             </Badge>
           )}
+          {/* Demo mode indicator */}
+          {demoVisits.length > 0 && (
+            <Badge className="ml-2 bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse">
+              <Users className="w-3 h-3 mr-1" />
+              Demo Active
+            </Badge>
+          )}
         </div>
         
         <div className="flex items-center gap-4">
@@ -611,6 +705,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             <span className="flex items-center gap-1 ml-2">
               <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
               Live
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
+              Demo
             </span>
           </div>
         </div>
@@ -891,6 +989,100 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               </g>
             );
           })}
+
+          {/* Demo visitor paths - purple themed */}
+          {demoPaths.map((demoPath) => {
+            const fromPos = positions[demoPath.from];
+            const toPos = positions[demoPath.to];
+            if (!fromPos || !toPos) return null;
+            
+            const useLeftEdge = toPos.x < svgWidth / 2;
+            const edgeX = useLeftEdge ? 25 : svgWidth - 25;
+            const dx = Math.abs(toPos.x - fromPos.x);
+            
+            let pathD: string;
+            
+            if (dx < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
+            } else {
+              const startY = fromPos.y + 12;
+              const endY = toPos.y - 12;
+              
+              pathD = `M ${fromPos.x} ${startY}
+                       L ${fromPos.x} ${startY + 8}
+                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
+                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
+                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
+                       L ${edgeX} ${endY - 20}
+                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
+                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
+                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
+                       L ${toPos.x} ${endY}`;
+            }
+            
+            return (
+              <g key={demoPath.id} style={{ opacity: demoPath.opacity }}>
+                {/* Purple glow effect */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#a855f7"
+                  strokeWidth={10}
+                  strokeOpacity={0.4 * demoPath.opacity}
+                  strokeLinecap="round"
+                  filter="url(#glow)"
+                />
+                {/* Main purple path */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#a855f7"
+                  strokeWidth={4}
+                  strokeOpacity={0.9 * demoPath.opacity}
+                  strokeLinecap="round"
+                  strokeDasharray="8 4"
+                  className="animate-pulse"
+                />
+                {/* Animated traveling dot */}
+                <circle r="10" fill="#a855f7" filter="url(#glow)" style={{ opacity: demoPath.opacity }}>
+                  <animateMotion
+                    dur="3s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                  />
+                </circle>
+                <circle r="6" fill="#c084fc" style={{ opacity: demoPath.opacity }}>
+                  <animateMotion
+                    dur="3s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                  />
+                </circle>
+                <circle r="3" fill="#ffffff" style={{ opacity: demoPath.opacity }}>
+                  <animateMotion
+                    dur="3s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                  />
+                </circle>
+                {/* Trail particles */}
+                {[0.2, 0.4, 0.6].map((delay, i) => (
+                  <circle key={i} r={4 - i} fill="#a855f7" style={{ opacity: (0.6 - i * 0.15) * demoPath.opacity }}>
+                    <animateMotion
+                      dur="3s"
+                      repeatCount="1"
+                      path={pathD}
+                      fill="freeze"
+                      begin={`${delay}s`}
+                    />
+                  </circle>
+                ))}
+              </g>
+            );
+          })}
           
           {/* Draw nodes */}
           {allDisplayedNodes.map((node) => {
@@ -906,6 +1098,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const opacity = isDimmed ? 0.2 : baseOpacity;
             const liveCount = visitorsByNode[node.path] || 0;
             const hasLiveVisitor = liveCount > 0;
+            
+            // Check for demo visit on this node
+            const demoVisit = demoVisits.find(d => d.path === node.path);
+            const hasDemoVisit = !!demoVisit;
             
             const handleNodeClick = () => {
               if (onPageFilter) {
@@ -924,6 +1120,41 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 style={{ opacity }}
                 onClick={handleNodeClick}
               >
+                {/* Demo visitor ring - purple */}
+                {hasDemoVisit && (
+                  <>
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={nodeSize + 20}
+                      fill="none"
+                      stroke="#a855f7"
+                      strokeWidth={3}
+                      strokeOpacity={0.5 * (demoVisit?.opacity || 1)}
+                      className="animate-ping"
+                      style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
+                    />
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={nodeSize + 14}
+                      fill="#a855f7"
+                      opacity={0.25 * (demoVisit?.opacity || 1)}
+                      filter="url(#glow)"
+                    />
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={nodeSize + 8}
+                      fill="none"
+                      stroke="#c084fc"
+                      strokeWidth={2}
+                      strokeOpacity={0.8 * (demoVisit?.opacity || 1)}
+                      strokeDasharray="4 2"
+                      className="animate-pulse"
+                    />
+                  </>
+                )}
                 {/* Active filter highlight */}
                 {isFiltered && (
                   <circle
