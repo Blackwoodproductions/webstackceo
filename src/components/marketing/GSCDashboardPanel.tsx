@@ -132,6 +132,16 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const [dateData, setDateData] = useState<PerformanceRow[]>([]);
   const [sitemaps, setSitemaps] = useState<SitemapInfo[]>([]);
   
+  // Multi-type aggregated data
+  const [allTypesData, setAllTypesData] = useState<Record<SearchType, { clicks: number; impressions: number; position: number }>>({
+    web: { clicks: 0, impressions: 0, position: 0 },
+    image: { clicks: 0, impressions: 0, position: 0 },
+    video: { clicks: 0, impressions: 0, position: 0 },
+    news: { clicks: 0, impressions: 0, position: 0 },
+    discover: { clicks: 0, impressions: 0, position: 0 },
+  });
+  const [isLoadingAllTypes, setIsLoadingAllTypes] = useState(false);
+  
   const [isFetching, setIsFetching] = useState(false);
   
   // Tracking status per domain
@@ -370,6 +380,68 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     return response.data;
   };
 
+  // Fetch aggregated data for all search types
+  const fetchAllTypesData = async () => {
+    if (!selectedSite || !accessToken) return;
+    
+    setIsLoadingAllTypes(true);
+    const days = getDaysFromRange(dateRange);
+    const searchTypes: SearchType[] = ['web', 'image', 'video', 'news', 'discover'];
+    
+    try {
+      const results = await Promise.all(
+        searchTypes.map(async (type) => {
+          try {
+            const response = await supabase.functions.invoke("search-console", {
+              body: {
+                action: "performance",
+                accessToken,
+                siteUrl: selectedSite,
+                startDate: getDateNDaysAgo(days),
+                endDate: getDateNDaysAgo(0),
+                dimensions: ["date"],
+                rowLimit: days,
+                searchType: type,
+              },
+            });
+            
+            const rows = response.data?.rows || [];
+            const totals = rows.reduce(
+              (acc: { clicks: number; impressions: number; position: number; count: number }, row: PerformanceRow) => ({
+                clicks: acc.clicks + row.clicks,
+                impressions: acc.impressions + row.impressions,
+                position: acc.position + row.position,
+                count: acc.count + 1,
+              }),
+              { clicks: 0, impressions: 0, position: 0, count: 0 }
+            );
+            
+            return {
+              type,
+              clicks: totals.clicks,
+              impressions: totals.impressions,
+              position: totals.count > 0 ? totals.position / totals.count : 0,
+            };
+          } catch (err) {
+            console.log(`No data for ${type} search type`);
+            return { type, clicks: 0, impressions: 0, position: 0 };
+          }
+        })
+      );
+      
+      const newAllTypesData = results.reduce((acc, result) => ({
+        ...acc,
+        [result.type]: { clicks: result.clicks, impressions: result.impressions, position: result.position },
+      }), {} as Record<SearchType, { clicks: number; impressions: number; position: number }>);
+      
+      setAllTypesData(newAllTypesData);
+    } catch (error) {
+      console.error("Error fetching all types data:", error);
+    } finally {
+      setIsLoadingAllTypes(false);
+    }
+  };
+
   const fetchAllData = async (forceRefresh = false) => {
     if (!selectedSite || !accessToken) return;
     
@@ -391,6 +463,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     const days = getDaysFromRange(dateRange);
     
     try {
+      // Fetch current search type data and all types summary in parallel
       const [dates, devices] = await Promise.all([
         fetchPerformance(["date"], days, searchType),
         fetchPerformance(["device"], 5, searchType),
@@ -422,6 +495,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
         },
         timestamp: Date.now(),
       });
+      
+      // Also fetch all types data in background
+      fetchAllTypesData();
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -429,7 +505,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     }
   };
 
-  // Aggregate metrics
+  // Aggregate metrics for current search type
   const totalMetrics = useMemo(() => {
     const totals = dateData.reduce(
       (acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }),
@@ -439,6 +515,23 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     const avgPosition = dateData.length > 0 ? dateData.reduce((sum, row) => sum + row.position, 0) / dateData.length : 0;
     return { ...totals, ctr: avgCtr, position: avgPosition };
   }, [dateData]);
+
+  // Combined metrics across all search types
+  const combinedMetrics = useMemo(() => {
+    const types = Object.values(allTypesData);
+    const totalClicks = types.reduce((sum, t) => sum + t.clicks, 0);
+    const totalImpressions = types.reduce((sum, t) => sum + t.impressions, 0);
+    const avgPosition = types.filter(t => t.position > 0).reduce((sum, t, _, arr) => sum + t.position / arr.length, 0);
+    const avgCtr = totalImpressions > 0 ? totalClicks / totalImpressions : 0;
+    return { clicks: totalClicks, impressions: totalImpressions, ctr: avgCtr, position: avgPosition };
+  }, [allTypesData]);
+
+  // Search types with data for the breakdown display
+  const searchTypeBreakdown = useMemo(() => {
+    return (Object.entries(allTypesData) as [SearchType, { clicks: number; impressions: number; position: number }][])
+      .filter(([_, data]) => data.clicks > 0 || data.impressions > 0)
+      .sort((a, b) => b[1].clicks - a[1].clicks);
+  }, [allTypesData]);
 
   // Chart data
   const chartData = useMemo(() => {
@@ -610,48 +703,102 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   <SelectItem value="365">12 months</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Select value={searchType} onValueChange={(v) => setSearchType(v as SearchType)}>
-                <SelectTrigger className="w-[100px] h-8 text-xs">
-                  {SEARCH_TYPE_CONFIG[searchType].icon}
-                  <span className="ml-1">{SEARCH_TYPE_CONFIG[searchType].label}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SEARCH_TYPE_CONFIG).map(([key, config]) => (
-                    <SelectItem key={key} value={key} className="text-xs">
-                      <div className="flex items-center gap-1">{config.icon}{config.label}</div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => fetchAllData(true)} disabled={isFetching} className="h-8">
-              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching ? "animate-spin" : ""}`} />
+            <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
+              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
               Refresh
             </Button>
           </div>
 
-          {/* KPI Row */}
+          {/* Combined KPI Row - All Search Types */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: "Clicks", value: formatNumber(totalMetrics.clicks), icon: MousePointer, color: "text-primary" },
-              { label: "Impressions", value: formatNumber(totalMetrics.impressions), icon: Eye, color: "text-cyan-500" },
-              { label: "Avg CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%", icon: Target, color: "text-violet-500" },
-              { label: "Avg Position", value: totalMetrics.position.toFixed(1), icon: TrendingUp, color: "text-amber-500" },
+              { label: "Total Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "text-primary", subtitle: "All sources" },
+              { label: "Total Impressions", value: formatNumber(combinedMetrics.impressions), icon: Eye, color: "text-cyan-500", subtitle: "All sources" },
+              { label: "Avg CTR", value: (combinedMetrics.ctr * 100).toFixed(2) + "%", icon: Target, color: "text-violet-500", subtitle: "Combined" },
+              { label: "Avg Position", value: combinedMetrics.position > 0 ? combinedMetrics.position.toFixed(1) : "—", icon: TrendingUp, color: "text-amber-500", subtitle: "Web only" },
             ].map((metric, i) => (
               <div key={i} className="bg-secondary/30 rounded-lg p-3">
                 <div className="flex items-center gap-2">
                   <metric.icon className={`w-4 h-4 ${metric.color}`} />
                   <span className="text-xs text-muted-foreground">{metric.label}</span>
                 </div>
-                <p className="text-xl font-bold mt-1">{isFetching ? <Skeleton className="h-6 w-16" /> : metric.value}</p>
+                <p className="text-xl font-bold mt-1">{isLoadingAllTypes ? <Skeleton className="h-6 w-16" /> : metric.value}</p>
+                <p className="text-[10px] text-muted-foreground">{metric.subtitle}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Search Type Breakdown */}
+          {searchTypeBreakdown.length > 0 && (
+            <div className="bg-secondary/20 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Performance by Source</span>
+                {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
+                  const data = allTypesData[type];
+                  const config = SEARCH_TYPE_CONFIG[type];
+                  const hasData = data.clicks > 0 || data.impressions > 0;
+                  const isActive = searchType === type;
+                  
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSearchType(type)}
+                      className={`flex flex-col items-center p-2 rounded-lg transition-all ${
+                        isActive 
+                          ? 'bg-primary/20 border border-primary/50' 
+                          : hasData 
+                            ? 'bg-secondary/50 hover:bg-secondary/80 cursor-pointer' 
+                            : 'bg-secondary/20 opacity-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1 mb-1" style={{ color: config.color }}>
+                        {config.icon}
+                        <span className="text-[10px] font-medium">{config.label}</span>
+                      </div>
+                      {hasData ? (
+                        <>
+                          <span className="text-sm font-bold">{formatNumber(data.clicks)}</span>
+                          <span className="text-[9px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">No data</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Current Type KPI Row */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-1" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
+              {SEARCH_TYPE_CONFIG[searchType].icon}
+              <span className="text-xs font-medium">{SEARCH_TYPE_CONFIG[searchType].label} Search</span>
+            </div>
+            <Badge variant="secondary" className="text-[10px]">{dateRange} days</Badge>
+          </div>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[
+              { label: "Clicks", value: formatNumber(totalMetrics.clicks) },
+              { label: "Impressions", value: formatNumber(totalMetrics.impressions) },
+              { label: "CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%" },
+              { label: "Position", value: totalMetrics.position.toFixed(1) },
+            ].map((metric, i) => (
+              <div key={i} className="bg-secondary/20 rounded-md p-2 text-center">
+                <p className="text-sm font-bold">{isFetching ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
+                <p className="text-[10px] text-muted-foreground">{metric.label}</p>
               </div>
             ))}
           </div>
 
           {/* Performance Chart */}
-          <div className="h-[180px] w-full">
+          <div className="h-[150px] w-full">
             {isFetching && chartData.length === 0 ? (
               <Skeleton className="h-full w-full" />
             ) : (
@@ -659,15 +806,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="5%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
                   <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={35} />
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" fill="url(#gscClicksGradient)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
