@@ -1338,6 +1338,12 @@ const AuditResults = () => {
                       Book a Call
                     </a>
                   </Button>
+                  <Button variant="outline" className="gap-2 min-w-[140px] justify-center" asChild>
+                    <a href="/pricing">
+                      <Sparkles className="w-4 h-4" />
+                      Get Started
+                    </a>
+                  </Button>
                 </div>
               </div>
 
