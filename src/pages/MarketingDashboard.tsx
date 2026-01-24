@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon, MessageCircle
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon, MessageCircle, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -28,9 +28,19 @@ import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
-import VisitorFlowDiagram, { VisitorFlowSummary } from '@/components/marketing/VisitorFlowDiagram';
+import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 interface Lead {
   id: string;
   email: string;
@@ -119,6 +129,8 @@ const MarketingDashboard = () => {
   });
   const [siteArchOpen, setSiteArchOpen] = useState(true);
   const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
+  const [diagramTimeRange, setDiagramTimeRange] = useState<TimeRange>('live');
+  const [diagramCustomDateRange, setDiagramCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
 
   // Persist chat online status
   useEffect(() => {
@@ -867,10 +879,121 @@ const MarketingDashboard = () => {
                         {flowSummary.activeVisitors} live
                       </Badge>
                     )}
+                    <div className="h-6 w-px bg-border/50" />
+                    {/* Time Range Selector in collapsed header */}
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <CalendarIcon className="w-3 h-3 text-muted-foreground" />
+                      <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+                        <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50">
+                          <SelectValue placeholder="Range" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                          <SelectItem value="live">Last 24h</SelectItem>
+                          <SelectItem value="yesterday">Yesterday</SelectItem>
+                          <SelectItem value="week">Week</SelectItem>
+                          <SelectItem value="month">Month</SelectItem>
+                          <SelectItem value="6months">6 Months</SelectItem>
+                          <SelectItem value="1year">Year</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {diagramTimeRange === 'custom' && (
+                        <div className="flex items-center gap-1">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "h-7 text-[10px] px-2",
+                                  !diagramCustomDateRange.from && "text-muted-foreground"
+                                )}
+                              >
+                                {diagramCustomDateRange.from ? format(diagramCustomDateRange.from, "MMM d") : "Start"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={diagramCustomDateRange.from}
+                                onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, from: date }))}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <span className="text-[10px] text-muted-foreground">-</span>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "h-7 text-[10px] px-2",
+                                  !diagramCustomDateRange.to && "text-muted-foreground"
+                                )}
+                              >
+                                {diagramCustomDateRange.to ? format(diagramCustomDateRange.to, "MMM d") : "End"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={diagramCustomDateRange.to}
+                                onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, to: date }))}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 {!siteArchOpen && flowSummary && flowSummary.topPages.length === 0 && (
-                  <span className="text-xs text-muted-foreground mr-4">No visits in selected range</span>
+                  <div className="flex items-center gap-3 mr-4">
+                    <span className="text-xs text-muted-foreground">No visits in selected range</span>
+                    <div className="h-6 w-px bg-border/50" />
+                    {/* Time Range Selector even when no data */}
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <CalendarIcon className="w-3 h-3 text-muted-foreground" />
+                      <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+                        <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50">
+                          <SelectValue placeholder="Range" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                          <SelectItem value="live">Last 24h</SelectItem>
+                          <SelectItem value="yesterday">Yesterday</SelectItem>
+                          <SelectItem value="week">Week</SelectItem>
+                          <SelectItem value="month">Month</SelectItem>
+                          <SelectItem value="6months">6 Months</SelectItem>
+                          <SelectItem value="1year">Year</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                {/* Time range selector when collapsed with no data loaded yet */}
+                {!siteArchOpen && !flowSummary && (
+                  <div className="flex items-center gap-2 mr-4" onClick={(e) => e.stopPropagation()}>
+                    <CalendarIcon className="w-3 h-3 text-muted-foreground" />
+                    <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+                      <SelectTrigger className="w-[110px] h-7 text-[10px] bg-secondary/50 border-border/50">
+                        <SelectValue placeholder="Range" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                        <SelectItem value="live">Last 24h</SelectItem>
+                        <SelectItem value="yesterday">Yesterday</SelectItem>
+                        <SelectItem value="week">Week</SelectItem>
+                        <SelectItem value="month">Month</SelectItem>
+                        <SelectItem value="6months">6 Months</SelectItem>
+                        <SelectItem value="1year">Year</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
                 <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
               </div>
@@ -898,6 +1021,10 @@ const MarketingDashboard = () => {
                 onPageFilter={setPageFilter}
                 activeFilter={pageFilter}
                 onSummaryUpdate={setFlowSummary}
+                timeRange={diagramTimeRange}
+                onTimeRangeChange={setDiagramTimeRange}
+                customDateRange={diagramCustomDateRange}
+                onCustomDateRangeChange={setDiagramCustomDateRange}
               />
             </CollapsibleContent>
           </Card>

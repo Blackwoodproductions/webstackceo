@@ -183,6 +183,8 @@ const formatPageName = (path: string): string => {
     .slice(0, 14);
 };
 
+export type { TimeRange };
+
 export interface VisitorFlowSummary {
   topPages: { 
     path: string; 
@@ -201,13 +203,32 @@ interface VisitorFlowDiagramProps {
   onPageFilter?: (pagePath: string | null) => void;
   activeFilter?: string | null;
   onSummaryUpdate?: (summary: VisitorFlowSummary) => void;
+  timeRange?: TimeRange;
+  onTimeRangeChange?: (range: TimeRange) => void;
+  customDateRange?: { from: Date | undefined; to: Date | undefined };
+  onCustomDateRangeChange?: (range: { from: Date | undefined; to: Date | undefined }) => void;
 }
 
-const VisitorFlowDiagram = ({ onPageFilter, activeFilter, onSummaryUpdate }: VisitorFlowDiagramProps) => {
+const VisitorFlowDiagram = ({ 
+  onPageFilter, 
+  activeFilter, 
+  onSummaryUpdate,
+  timeRange: externalTimeRange,
+  onTimeRangeChange,
+  customDateRange: externalCustomDateRange,
+  onCustomDateRangeChange
+}: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('live');
-  const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
+  // Use external state if provided, otherwise use internal state
+  const [internalTimeRange, setInternalTimeRange] = useState<TimeRange>('live');
+  const [internalCustomDateRange, setInternalCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
+  
+  const timeRange = externalTimeRange ?? internalTimeRange;
+  const setTimeRange = onTimeRangeChange ?? setInternalTimeRange;
+  const customDateRange = externalCustomDateRange ?? internalCustomDateRange;
+  const setCustomDateRange = onCustomDateRangeChange ?? setInternalCustomDateRange;
+  
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
   const [demoMode, setDemoMode] = useState(false);
