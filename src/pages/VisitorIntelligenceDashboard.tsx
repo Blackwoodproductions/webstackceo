@@ -249,9 +249,12 @@ const MarketingDashboard = () => {
       setTrackedDomains(allowedDomains);
       
       // Auto-select first domain if none selected and no GSC sites
+      // IMPORTANT: Prioritize tracked domains - they should always be the default
       if (allowedDomains.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
         setSelectedTrackedDomain(allowedDomains[0]);
         setSelectedGscDomain(allowedDomains[0]);
+        // Ensure tracking status is TRUE for known tracked domains
+        setGscDomainHasTracking(true);
       }
     } catch (err) {
       console.error('Error fetching tracked domains:', err);
@@ -262,6 +265,14 @@ const MarketingDashboard = () => {
   useEffect(() => {
     fetchTrackedDomains();
   }, []);
+  
+  // CRITICAL: Always keep gscDomainHasTracking TRUE when a tracked domain is selected
+  // This prevents race conditions where GSC callbacks might incorrectly set it to false
+  useEffect(() => {
+    if (selectedGscDomain && trackedDomains.includes(selectedGscDomain)) {
+      setGscDomainHasTracking(true);
+    }
+  }, [selectedGscDomain, trackedDomains]);
 
   const handleCloseLead = async () => {
     if (!closeLeadDialog.lead) return;
@@ -1635,12 +1646,31 @@ f.parentNode.insertBefore(j,f);
              onSitesLoaded={(sites) => {
               // Store available GSC sites for header dropdown
               setGscSites(sites);
-              // Auto-select first site if none selected
-               // (but never override when a tracked domain is actively selected)
-               if (sites.length > 0 && !selectedGscSiteUrl && !selectedTrackedDomain) {
-                setSelectedGscSiteUrl(sites[0].siteUrl);
-                const cleanDomain = sites[0].siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
-                setSelectedGscDomain(cleanDomain);
+              // Auto-select first site ONLY if NO tracked domain is already selected
+              // Priority: trackedDomains > GSC sites
+              if (sites.length > 0 && !selectedGscSiteUrl && !selectedTrackedDomain) {
+                // Check if any GSC site matches a tracked domain - prefer that one
+                const matchingTrackedSite = sites.find(site => {
+                  const cleanDomain = site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  return trackedDomains.includes(cleanDomain);
+                });
+                
+                if (matchingTrackedSite) {
+                  // Use the tracked domain that has GSC
+                  const cleanDomain = matchingTrackedSite.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  setSelectedGscSiteUrl(matchingTrackedSite.siteUrl);
+                  setSelectedGscDomain(cleanDomain);
+                  setSelectedTrackedDomain(cleanDomain);
+                  setGscDomainHasTracking(true); // Known tracked domain
+                } else {
+                  // No matching tracked domain, use first GSC site
+                  setSelectedGscSiteUrl(sites[0].siteUrl);
+                  const cleanDomain = sites[0].siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                  setSelectedGscDomain(cleanDomain);
+                  // Check if this is a known tracked domain
+                  const isTracked = trackedDomains.includes(cleanDomain);
+                  setGscDomainHasTracking(isTracked);
+                }
               }
             }}
             onAuthStatusChange={(isAuth) => {
