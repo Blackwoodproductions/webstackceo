@@ -10,8 +10,8 @@ import { useTheme } from "next-themes";
 import dashboardDark from "@/assets/homepage-dashboard-dark.png";
 import dashboardLight from "@/assets/homepage-dashboard-light.png";
 const HeroSection = () => {
-  const { theme } = useTheme();
-  const dashboardImage = theme === 'light' ? dashboardLight : dashboardDark;
+  const { resolvedTheme } = useTheme();
+  const dashboardImage = resolvedTheme === 'light' ? dashboardLight : dashboardDark;
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
   const [domain, setDomain] = useState("");
   const [isLoading, setIsLoading] = useState(false);
