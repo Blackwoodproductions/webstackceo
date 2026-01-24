@@ -41,6 +41,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpandableRow';
 interface Lead {
   id: string;
   email: string;
@@ -917,78 +918,13 @@ const MarketingDashboard = () => {
 
           {/* Full Width Stats Layout */}
           <div className="space-y-4 mb-6">
-          {/* Quick Stats Row - Full Width */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <Card className="p-4 border-green-500/30 bg-green-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-green-500/20 relative flex-shrink-0">
-                  <Activity className="w-5 h-5 text-green-500" />
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-green-500 leading-tight">{activeVisitors}</p>
-                  <p className="text-xs text-muted-foreground">Active Now</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
-                  <UserCheck className="w-5 h-5 text-cyan-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
-                  <p className="text-xs text-muted-foreground">New Today</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4 border-blue-500/30 bg-blue-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue-500/20 flex-shrink-0">
-                  <Phone className="w-5 h-5 text-blue-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-blue-500 leading-tight">{leads.filter(l => l.status === 'called').length}</p>
-                  <p className="text-xs text-muted-foreground">📞 Called</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4 border-violet-500/30 bg-violet-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-violet-500/20 flex-shrink-0">
-                  <Mail className="w-5 h-5 text-violet-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-violet-500 leading-tight">{leads.filter(l => l.status === 'emailed').length}</p>
-                  <p className="text-xs text-muted-foreground">✉️ Emailed</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4 border-amber-500/30 bg-amber-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-amber-500/20 flex-shrink-0">
-                  <Target className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-amber-500 leading-tight">{leads.filter(l => l.status === 'considering').length}</p>
-                  <p className="text-xs text-muted-foreground">🤔 Considering</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-4 border-green-500/30 bg-green-500/5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
-                  <DollarSign className="w-5 h-5 text-green-500" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold text-green-500 leading-tight truncate">
-                    ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">💰 Revenue</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          {/* Quick Stats Row - Full Width (expandable) */}
+          <QuickStatsExpandableRow
+            activeVisitors={activeVisitors}
+            newVisitorsToday={newVisitorsToday}
+            leads={leads}
+            sessions={sessions}
+          />
 
           {/* Conversion Funnel Row - Full Width */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
