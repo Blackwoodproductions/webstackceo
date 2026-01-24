@@ -28,7 +28,7 @@ import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
-import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
+import VisitorFlowDiagram, { VisitorFlowSummary } from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 interface Lead {
@@ -117,6 +117,8 @@ const MarketingDashboard = () => {
     const stored = localStorage.getItem('chat_operator_online');
     return stored !== null ? stored === 'true' : true;
   });
+  const [siteArchOpen, setSiteArchOpen] = useState(true);
+  const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
 
   // Persist chat online status
   useEffect(() => {
@@ -658,7 +660,7 @@ const MarketingDashboard = () => {
         </div>
 
         {/* Site Architecture - Full Width Collapsible */}
-        <Collapsible defaultOpen className="mb-6">
+        <Collapsible open={siteArchOpen} onOpenChange={setSiteArchOpen} className="mb-6">
           <Card className="p-4">
             <CollapsibleTrigger className="flex items-center justify-between w-full group">
               <div className="flex items-center gap-2">
@@ -670,7 +672,46 @@ const MarketingDashboard = () => {
                   </Badge>
                 )}
               </div>
-              <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              <div className="flex items-center gap-3">
+                {/* Mini summary when collapsed */}
+                {!siteArchOpen && flowSummary && flowSummary.topPages.length > 0 && (
+                  <div className="flex items-center gap-2 mr-4">
+                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
+                      {flowSummary.totalVisits} views
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      {flowSummary.topPages.slice(0, 5).map((page, i) => (
+                        <div
+                          key={page.path}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-secondary/50 border border-border/50 text-[10px]"
+                          title={`${page.name}: ${page.visits} visits`}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${
+                            i === 0 ? 'bg-blue-500' : 
+                            i === 1 ? 'bg-green-500' : 
+                            i === 2 ? 'bg-amber-500' : 'bg-muted-foreground'
+                          }`} />
+                          <span className="text-foreground font-medium">{page.name}</span>
+                          <span className="text-muted-foreground">{page.visits}</span>
+                        </div>
+                      ))}
+                      {flowSummary.topPages.length > 5 && (
+                        <span className="text-[10px] text-muted-foreground">+{flowSummary.topPages.length - 5} more</span>
+                      )}
+                    </div>
+                    {flowSummary.activeVisitors > 0 && (
+                      <Badge className="text-[10px] bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
+                        <Activity className="w-3 h-3 mr-1" />
+                        {flowSummary.activeVisitors} live
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                {!siteArchOpen && flowSummary && flowSummary.topPages.length === 0 && (
+                  <span className="text-xs text-muted-foreground mr-4">No visits in selected range</span>
+                )}
+                <ChevronDown className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
               {pageFilter && (
@@ -694,6 +735,7 @@ const MarketingDashboard = () => {
               <VisitorFlowDiagram 
                 onPageFilter={setPageFilter}
                 activeFilter={pageFilter}
+                onSummaryUpdate={setFlowSummary}
               />
             </CollapsibleContent>
           </Card>
