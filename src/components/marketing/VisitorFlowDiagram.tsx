@@ -188,6 +188,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [demoMode, setDemoMode] = useState(false);
   const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; isExternal?: boolean }[]>([]);
   const [externalReferrerPages, setExternalReferrerPages] = useState<Set<string>>(new Set());
+  const [externalReferrerSessions, setExternalReferrerSessions] = useState<{ first_page: string; referrer: string; started_at: string }[]>([]);
 
   // Fetch initial data including active sessions and external referrers
   useEffect(() => {
@@ -208,15 +209,17 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             .gte('last_activity_at', fiveMinutesAgo),
           supabase
             .from('visitor_sessions')
-            .select('first_page, referrer')
+            .select('first_page, referrer, started_at')
             .not('referrer', 'is', null)
         ]);
         
         setPageViews(pageViewsRes.data || []);
         
-        // Track pages that have external referrers
+        // Store external referrer sessions for time-range filtering
         if (referrerSessionsRes.data) {
+          const validSessions: { first_page: string; referrer: string; started_at: string }[] = [];
           const externalPages = new Set<string>();
+          
           referrerSessionsRes.data.forEach(session => {
             if (session.referrer && session.first_page) {
               // Check if referrer is external (not our own domain)
@@ -230,6 +233,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     cleanPath = '/audits';
                   }
                   externalPages.add(cleanPath);
+                  validSessions.push({
+                    first_page: cleanPath,
+                    referrer: session.referrer,
+                    started_at: session.started_at
+                  });
                 }
               } catch (e) {
                 // Invalid URL, skip
@@ -237,6 +245,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             }
           });
           setExternalReferrerPages(externalPages);
+          setExternalReferrerSessions(validSessions);
         }
         
         // Get last page for each active session
@@ -500,7 +509,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     return () => clearInterval(interval);
   }, [demoMode]);
 
-  const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
+  const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits, externalCountsByPage } = useMemo(() => {
     const filterDate = getTimeRangeFilter(timeRange, customDateRange.from);
     const filterEndDate = timeRange === 'custom' && customDateRange.to ? customDateRange.to : null;
     
@@ -658,15 +667,32 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     const visited = nodeList.filter(n => n.isVisited).length;
     const maxPV = Math.max(...Object.values(pathTransitions), 1);
 
+    // Calculate external referrer counts per page based on time range
+    const extCounts: Record<string, number> = {};
+    let filteredExtSessions = filterDate
+      ? externalReferrerSessions.filter(s => new Date(s.started_at) >= filterDate)
+      : externalReferrerSessions;
+    
+    if (filterEndDate) {
+      const endOfDay = new Date(filterEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      filteredExtSessions = filteredExtSessions.filter(s => new Date(s.started_at) <= endOfDay);
+    }
+    
+    filteredExtSessions.forEach(s => {
+      extCounts[s.first_page] = (extCounts[s.first_page] || 0) + 1;
+    });
+
     return { 
       nodes: nodeList, 
       maxVisits: maxV, 
       visitedCount: visited, 
       totalCount: nodeList.length,
       pathHeatmap: pathTransitions,
-      maxPathVisits: maxPV
+      maxPathVisits: maxPV,
+      externalCountsByPage: extCounts
     };
-  }, [pageViews, timeRange, customDateRange]);
+  }, [pageViews, timeRange, customDateRange, externalReferrerSessions]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited
@@ -1033,7 +1059,9 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               Unvisited
             </span>
             <span className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full border-2 border-orange-500 border-dashed" />
+              <div className="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold">5</span>
+              </div>
               External
             </span>
             {demoMode && (
@@ -1333,6 +1361,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const liveCount = visitorsByNode[node.path] || 0;
             const hasLiveVisitor = liveCount > 0;
             const hasExternalReferrer = externalReferrerPages.has(node.path);
+            const externalCount = externalCountsByPage[node.path] || 0;
             
             const handleNodeClick = () => {
               if (onPageFilter) {
@@ -1496,6 +1525,26 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   >
                     {node.totalVisits > 999 ? `${Math.round(node.totalVisits / 100) / 10}k` : node.totalVisits}
                   </text>
+                )}
+                {/* External referrer count badge - BOTTOM LEFT (opposite of live badge) */}
+                {externalCount > 0 && (
+                  <>
+                    <circle
+                      cx={pos.x - nodeSize + 2}
+                      cy={pos.y + nodeSize - 2}
+                      r={externalCount > 99 ? 10 : 8}
+                      fill="#f97316"
+                    />
+                    <text
+                      x={pos.x - nodeSize + 2}
+                      y={pos.y + nodeSize + 2}
+                      textAnchor="middle"
+                      fill="white"
+                      style={{ fontSize: externalCount > 99 ? '7px' : '9px', fontWeight: 'bold' }}
+                    >
+                      {externalCount > 999 ? `${Math.round(externalCount / 100) / 10}k` : externalCount}
+                    </text>
+                  </>
                 )}
                 {/* Label - above icon for main pages (depth 0 and 1), below for others */}
                 {node.depth <= 1 ? (
