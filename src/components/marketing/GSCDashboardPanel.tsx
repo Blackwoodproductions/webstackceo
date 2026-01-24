@@ -388,6 +388,38 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     }
   };
 
+  // Track previous site to detect changes and clear stale data
+  const prevSelectedSiteRef = useRef<string>("");
+  
+  // Clear all data immediately when site changes to prevent showing stale data
+  useEffect(() => {
+    if (selectedSite && selectedSite !== prevSelectedSiteRef.current) {
+      console.log('[GSC] Site changed from', prevSelectedSiteRef.current, 'to', selectedSite, '- clearing cached data');
+      
+      // Clear all performance data immediately
+      setQueryData([]);
+      setPageData([]);
+      setCountryData([]);
+      setDeviceData([]);
+      setDateData([]);
+      setSitemaps([]);
+      
+      // Reset all-types aggregated data
+      setAllTypesData({
+        web: { clicks: 0, impressions: 0, position: 0 },
+        image: { clicks: 0, impressions: 0, position: 0 },
+        video: { clicks: 0, impressions: 0, position: 0 },
+        news: { clicks: 0, impressions: 0, position: 0 },
+        discover: { clicks: 0, impressions: 0, position: 0 },
+      });
+      
+      // Clear the data cache for the old site
+      dataCache.current.clear();
+      
+      prevSelectedSiteRef.current = selectedSite;
+    }
+  }, [selectedSite]);
+
   // Fetch data when site selected - with debouncing
   useEffect(() => {
     if (!selectedSite || !accessToken) return;
