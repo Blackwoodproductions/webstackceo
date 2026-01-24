@@ -17,7 +17,9 @@ import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
-import dashboardScreenshot from "@/assets/visitor-intelligence-dashboard.png";
+import { useTheme } from "next-themes";
+import dashboardScreenshotDark from "@/assets/visitor-intelligence-dashboard.png";
+import dashboardScreenshotLight from "@/assets/visitor-intelligence-dashboard-light.png";
 
 // Get terms linked to this guide from shared glossary
 const visitorIntelligenceTerms = getTermsByGuide("/learn/visitor-intelligence-guide").map(t => ({
@@ -27,6 +29,9 @@ const visitorIntelligenceTerms = getTermsByGuide("/learn/visitor-intelligence-gu
 }));
 
 const VisitorIntelligenceGuide = () => {
+  const { theme } = useTheme();
+  const dashboardScreenshot = theme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
+  
   return (
     <div className="min-h-screen bg-background">
       <SEO

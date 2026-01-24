@@ -8,7 +8,9 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
 import QuickMetricCheck from "@/components/QuickMetricCheck";
-import dashboardScreenshot from "@/assets/visitor-intelligence-dashboard.png";
+import { useTheme } from "next-themes";
+import dashboardScreenshotDark from "@/assets/visitor-intelligence-dashboard.png";
+import dashboardScreenshotLight from "@/assets/visitor-intelligence-dashboard-light.png";
 
 const benefits = [
   { icon: Building2, title: "Company Profiles", description: "See detailed company information for every identified visitor." },
@@ -20,6 +22,9 @@ const benefits = [
 ];
 
 const VisitorIntelligence = () => {
+  const { theme } = useTheme();
+  const dashboardScreenshot = theme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
+  
   return (
     <div className="min-h-screen bg-background">
       <SEO
