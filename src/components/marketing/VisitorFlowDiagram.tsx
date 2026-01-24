@@ -2,7 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GitBranch, Zap, Users, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { GitBranch, Zap, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -29,22 +34,29 @@ interface LiveVisitor {
   timestamp: number;
 }
 
-type TimeRange = '24hrs' | '30days' | 'lastMonth' | '6months' | '1year' | 'all';
+type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
 
-const getTimeRangeFilter = (range: TimeRange): Date | null => {
+const getTimeRangeFilter = (range: TimeRange, customStart?: Date): Date | null => {
   const now = new Date();
   switch (range) {
-    case '24hrs':
-      const oneDayAgo = new Date(now);
-      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-      return oneDayAgo;
-    case '30days':
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      return thirtyDaysAgo;
-    case 'lastMonth':
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return lastMonth;
+    case 'live':
+      // Last 15 minutes for "live" view
+      const fifteenMinAgo = new Date(now);
+      fifteenMinAgo.setMinutes(fifteenMinAgo.getMinutes() - 15);
+      return fifteenMinAgo;
+    case 'yesterday':
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      return yesterday;
+    case 'week':
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return weekAgo;
+    case 'month':
+      const monthAgo = new Date(now);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      return monthAgo;
     case '6months':
       const sixMonthsAgo = new Date(now);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -53,8 +65,8 @@ const getTimeRangeFilter = (range: TimeRange): Date | null => {
       const oneYearAgo = new Date(now);
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
       return oneYearAgo;
-    case 'all':
-      return null;
+    case 'custom':
+      return customStart || null;
   }
 };
 
@@ -165,7 +177,8 @@ interface VisitorFlowDiagramProps {
 const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('24hrs');
+  const [timeRange, setTimeRange] = useState<TimeRange>('live');
+  const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
 
@@ -267,10 +280,19 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   }, []);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
-    const filterDate = getTimeRangeFilter(timeRange);
-    const filteredViews = filterDate 
+    const filterDate = getTimeRangeFilter(timeRange, customDateRange.from);
+    const filterEndDate = timeRange === 'custom' && customDateRange.to ? customDateRange.to : null;
+    
+    let filteredViews = filterDate 
       ? pageViews.filter(pv => new Date(pv.created_at) >= filterDate)
       : pageViews;
+    
+    // Apply end date filter for custom range
+    if (filterEndDate) {
+      const endOfDay = new Date(filterEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      filteredViews = filteredViews.filter(pv => new Date(pv.created_at) <= endOfDay);
+    }
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
@@ -393,7 +415,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       pathHeatmap: pathTransitions,
       maxPathVisits: maxPV
     };
-  }, [pageViews, timeRange]);
+  }, [pageViews, timeRange, customDateRange]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited
@@ -657,21 +679,75 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         <div className="flex items-center gap-4">
           {/* Time Range Selector */}
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <CalendarIcon className="w-4 h-4 text-muted-foreground" />
             <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
               <SelectTrigger className="w-[130px] h-8 text-xs">
                 <SelectValue placeholder="Select range" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="24hrs">Last 24 Hours</SelectItem>
-                <SelectItem value="30days">Last 30 Days</SelectItem>
-                <SelectItem value="lastMonth">Last Month</SelectItem>
+              <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                <SelectItem value="live">Live Now</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="week">Last Week</SelectItem>
+                <SelectItem value="month">Last Month</SelectItem>
                 <SelectItem value="6months">Last 6 Months</SelectItem>
                 <SelectItem value="1year">Last Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="custom">Custom Range</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Custom Date Range Picker */}
+          {timeRange === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs justify-start text-left font-normal",
+                      !customDateRange.from && "text-muted-foreground"
+                    )}
+                  >
+                    {customDateRange.from ? format(customDateRange.from, "MMM d, yyyy") : "Start date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customDateRange.from}
+                    onSelect={(date) => setCustomDateRange(prev => ({ ...prev, from: date }))}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-muted-foreground">to</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs justify-start text-left font-normal",
+                      !customDateRange.to && "text-muted-foreground"
+                    )}
+                  >
+                    {customDateRange.to ? format(customDateRange.to, "MMM d, yyyy") : "End date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customDateRange.to}
+                    onSelect={(date) => setCustomDateRange(prev => ({ ...prev, to: date }))}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
 
           {/* Legend */}
           <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground pl-4 border-l border-border">
