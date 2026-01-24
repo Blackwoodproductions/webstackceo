@@ -30,7 +30,7 @@ import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
-import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
+import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import {
   Select,
@@ -1343,9 +1343,18 @@ const MarketingDashboard = () => {
           </Tabs>
         </div>
 
-        {/* Traffic Sources - Full Width */}
+        {/* Google Search Console Integration */}
         <div className="mb-8">
-          <ReferrerBreakdownChart sessions={sessions} horizontal />
+          <GSCDashboardPanel 
+            onSiteChange={(site) => {
+              // When GSC domain changes, we could filter visitor data by domain
+              console.log('GSC site changed:', site);
+            }}
+            onDataLoaded={(data) => {
+              // Receive GSC metrics when loaded
+              console.log('GSC data loaded:', data);
+            }}
+          />
         </div>
 
         </main>
