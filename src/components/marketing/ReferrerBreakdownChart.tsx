@@ -162,21 +162,21 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Users className="w-5 h-5 text-primary" />
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary" />
           Traffic Sources
         </h2>
-        <Badge variant="outline" className="text-xs">
-          {total.toLocaleString()} sessions
+        <Badge variant="outline" className="text-[10px]">
+          {total.toLocaleString()}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-4">
         {/* Donut Chart */}
         <div className="relative flex items-center justify-center">
-          <svg viewBox="0 0 100 100" className="w-32 h-32">
+          <svg viewBox="0 0 100 100" className="w-24 h-24">
             {donutSegments.map((segment, i) => {
               if (segment.percentage < 0.5) return null; // Skip tiny segments
               return (
@@ -196,22 +196,22 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
           </svg>
           {/* Center text overlay */}
           <div className="absolute inset-0 flex items-center justify-center flex-col">
-            <span className="text-lg font-bold leading-tight">{topSource?.percentage.toFixed(0)}%</span>
-            <span className="text-[8px] text-muted-foreground">{topSource?.label}</span>
+            <span className="text-sm font-bold leading-tight">{topSource?.percentage.toFixed(0)}%</span>
+            <span className="text-[7px] text-muted-foreground">{topSource?.label}</span>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-col justify-center space-y-2">
+        <div className="flex flex-col justify-center space-y-1">
           {referrerData.slice(0, 5).map((item) => (
-            <div key={item.key} className="flex items-center gap-2">
+            <div key={item.key} className="flex items-center gap-1.5">
               <div 
-                className="w-3 h-3 rounded-full flex-shrink-0" 
+                className="w-2 h-2 rounded-full flex-shrink-0" 
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-xs text-muted-foreground flex-1">{item.label}</span>
-              <span className="text-xs font-semibold">{item.count}</span>
-              <span className="text-[10px] text-muted-foreground w-8 text-right">
+              <span className="text-[10px] text-muted-foreground flex-1">{item.label}</span>
+              <span className="text-[10px] font-semibold">{item.count}</span>
+              <span className="text-[9px] text-muted-foreground w-6 text-right">
                 {item.percentage.toFixed(0)}%
               </span>
             </div>
@@ -219,23 +219,14 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
         </div>
       </div>
 
-      {/* Top source highlight */}
+      {/* Top source highlight - compact */}
       {topSource && topSource.count > 0 && (
-        <div className={`mt-4 p-3 rounded-lg ${topSource.bgColor} border border-border/30 flex items-center gap-3`}>
-          <div className={`p-2 rounded-lg ${topSource.bgColor}`}>
-            <topSource.icon className={`w-4 h-4 ${topSource.textColor}`} />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground">Top Traffic Source</p>
-            <p className={`font-semibold ${topSource.textColor}`}>{topSource.label}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-bold">{topSource.count}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              {topSource.percentage.toFixed(1)}%
-            </p>
-          </div>
+        <div className={`mt-3 p-2 rounded-md ${topSource.bgColor} border border-border/30 flex items-center gap-2`}>
+          <topSource.icon className={`w-3.5 h-3.5 ${topSource.textColor} flex-shrink-0`} />
+          <span className="text-xs text-muted-foreground">Top:</span>
+          <span className={`text-xs font-semibold ${topSource.textColor}`}>{topSource.label}</span>
+          <span className="text-xs font-bold ml-auto">{topSource.count}</span>
+          <span className="text-[10px] text-muted-foreground">({topSource.percentage.toFixed(0)}%)</span>
         </div>
       )}
     </Card>
