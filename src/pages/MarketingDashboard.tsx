@@ -133,6 +133,8 @@ const MarketingDashboard = () => {
   const [diagramCustomDateRange, setDiagramCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
   const [sidebarChats, setSidebarChats] = useState<{ id: string; session_id: string; status: string; visitor_name: string | null; last_message_at: string; current_page: string | null; }[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [prevChatCount, setPrevChatCount] = useState(0);
 
   // Persist chat online status
   useEffect(() => {
@@ -152,6 +154,32 @@ const MarketingDashboard = () => {
     }
   };
 
+  // Play notification sound for new chats
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const playTone = (frequency: number, startTime: number, duration: number) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+      const now = audioContext.currentTime;
+      playTone(880, now, 0.15);
+      playTone(1174.66, now + 0.15, 0.2);
+      setTimeout(() => audioContext.close(), 500);
+    } catch (e) {
+      console.warn('Could not play notification sound:', e);
+    }
+  };
+
   useEffect(() => {
     if (chatOnline) {
       fetchSidebarChats();
@@ -162,7 +190,17 @@ const MarketingDashboard = () => {
       .channel('sidebar-conversations')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_conversations' },
+        { event: 'INSERT', schema: 'public', table: 'chat_conversations' },
+        () => {
+          if (chatOnline) {
+            playNotificationSound();
+            fetchSidebarChats();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_conversations' },
         () => {
           if (chatOnline) fetchSidebarChats();
         }
@@ -173,6 +211,15 @@ const MarketingDashboard = () => {
       convChannel.unsubscribe();
     };
   }, [chatOnline]);
+
+  // Track new chats for notification badge
+  useEffect(() => {
+    if (sidebarChats.length > prevChatCount && prevChatCount > 0) {
+      // New chat arrived
+      playNotificationSound();
+    }
+    setPrevChatCount(sidebarChats.length);
+  }, [sidebarChats.length]);
 
   const handleCloseLead = async () => {
     if (!closeLeadDialog.lead) return;
@@ -684,48 +731,6 @@ const MarketingDashboard = () => {
                 )}
               </div>
 
-              {/* Chats Section - Stacked from bottom up */}
-              {chatOnline && sidebarChats.length > 0 && (
-                <div className="border-t border-border mt-auto">
-                  <div className="p-2">
-                    <div className="flex items-center gap-2 px-2 py-1 mb-1">
-                      <MessageCircle className="w-4 h-4 text-cyan-500" />
-                      <span className="text-xs font-medium text-muted-foreground">Chats</span>
-                      <Badge className="ml-auto text-[10px] bg-red-500/20 text-red-400 border-red-500/30 animate-pulse px-1.5 py-0">
-                        {sidebarChats.length}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-col-reverse gap-1 max-h-[180px] overflow-auto">
-                      {sidebarChats.map((chat) => (
-                        <div
-                          key={chat.id}
-                          onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
-                          className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                            selectedChatId === chat.id 
-                              ? 'bg-cyan-500/20 border border-cyan-500/30' 
-                              : 'hover:bg-secondary/50'
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
-                            <UserIcon className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">
-                              {chat.visitor_name || 'Visitor'}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                              {chat.current_page || 'Unknown page'}
-                            </p>
-                          </div>
-                          {chat.status === 'pending' && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1150,6 +1155,101 @@ const MarketingDashboard = () => {
         </div>
 
         </main>
+
+        {/* Right Sidebar - Chat Panel */}
+        {chatOnline && (
+          <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-all duration-300 ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
+            <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+              {/* Header - Click to toggle */}
+              <button 
+                onClick={() => setChatPanelOpen(!chatPanelOpen)}
+                className="flex items-center gap-2 p-3 border-b border-border hover:bg-secondary/30 transition-colors relative"
+              >
+                <div className="relative">
+                  <MessageCircle className="w-5 h-5 text-cyan-500" />
+                  {sidebarChats.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                      {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
+                    </span>
+                  )}
+                </div>
+                {chatPanelOpen && (
+                  <>
+                    <span className="text-sm font-medium text-foreground flex-1 text-left">Live Chats</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </>
+                )}
+              </button>
+              
+              {/* Chat List */}
+              {chatPanelOpen && (
+                <div className="flex-1 flex flex-col-reverse gap-1 p-2 overflow-auto">
+                  {sidebarChats.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center py-8">
+                        <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                        <p className="text-xs text-muted-foreground">No active chats</p>
+                      </div>
+                    </div>
+                  ) : (
+                    sidebarChats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                          selectedChatId === chat.id 
+                            ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                            : 'hover:bg-secondary/50'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
+                          <UserIcon className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">
+                            {chat.visitor_name || 'Visitor'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {chat.current_page || 'Unknown page'}
+                          </p>
+                        </div>
+                        {chat.status === 'pending' && (
+                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Collapsed state - just show icons */}
+              {!chatPanelOpen && sidebarChats.length > 0 && (
+                <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
+                  {sidebarChats.slice(0, 8).map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        setChatPanelOpen(true);
+                        setSelectedChatId(chat.id);
+                      }}
+                      className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                        chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                      }`}
+                      title={chat.visitor_name || 'Visitor'}
+                    >
+                      <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-white" />
+                      </div>
+                      {chat.status === 'pending' && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Floating Chat Bar */}
