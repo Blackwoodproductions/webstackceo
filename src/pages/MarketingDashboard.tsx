@@ -20,8 +20,10 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, Sun, Moon, MessageCircle
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
@@ -111,7 +113,15 @@ const MarketingDashboard = () => {
   const [closeLeadDialog, setCloseLeadDialog] = useState<{ open: boolean; lead: Lead | null }>({ open: false, lead: null });
   const [closeAmount, setCloseAmount] = useState<string>('');
   const [closingLead, setClosingLead] = useState(false);
+  const [chatOnline, setChatOnline] = useState(() => {
+    const stored = localStorage.getItem('chat_operator_online');
+    return stored !== null ? stored === 'true' : true;
+  });
 
+  // Persist chat online status
+  useEffect(() => {
+    localStorage.setItem('chat_operator_online', String(chatOnline));
+  }, [chatOnline]);
   const handleCloseLead = async () => {
     if (!closeLeadDialog.lead) return;
     
@@ -400,7 +410,23 @@ const MarketingDashboard = () => {
               </div>
             </a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Chat Online/Offline Toggle */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${chatOnline ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted border border-border'}`}>
+              <MessageCircle className={`w-4 h-4 ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`} />
+              <Label htmlFor="chat-toggle" className={`text-sm font-medium cursor-pointer ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`}>
+                {chatOnline ? 'Chat Online' : 'Chat Offline'}
+              </Label>
+              <Switch 
+                id="chat-toggle"
+                checked={chatOnline}
+                onCheckedChange={setChatOnline}
+                className="data-[state=checked]:bg-green-500"
+              />
+            </div>
+            
+            <div className="h-6 w-px bg-border" />
+            
             <Button
               variant="ghost"
               size="sm"
