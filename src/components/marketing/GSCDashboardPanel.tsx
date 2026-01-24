@@ -1,0 +1,775 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  Search, TrendingUp, MousePointer, Eye, Target,
+  BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
+  RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
+  ExternalLink, Key, Download, Smartphone, Monitor, Tablet,
+  Image, Video, Newspaper, Sparkles, Code, Copy, Check
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  CartesianGrid,
+  ComposedChart,
+} from "recharts";
+
+// Google OAuth Config
+const getGoogleClientId = () => localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/webmasters.readonly",
+  "https://www.googleapis.com/auth/webmasters",
+].join(" ");
+
+function base64UrlEncode(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let str = "";
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function generateCodeVerifier(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return base64UrlEncode(bytes.buffer);
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return base64UrlEncode(digest);
+}
+
+interface PerformanceRow {
+  keys: string[];
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+}
+
+interface SiteInfo {
+  siteUrl: string;
+  permissionLevel: string;
+}
+
+interface SitemapInfo {
+  path: string;
+  lastSubmitted: string;
+  isPending: boolean;
+  isSitemapsIndex: boolean;
+  warnings?: number;
+  errors?: number;
+}
+
+type SearchType = 'web' | 'image' | 'video' | 'news' | 'discover';
+type DateRangeType = "7" | "28" | "90" | "180" | "365";
+
+interface GSCDashboardPanelProps {
+  onSiteChange?: (site: string) => void;
+  onDataLoaded?: (data: { clicks: number; impressions: number; position: number }) => void;
+}
+
+const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
+  web: { label: "Web", icon: <Search className="w-4 h-4" />, color: "hsl(var(--primary))" },
+  image: { label: "Image", icon: <Image className="w-4 h-4" />, color: "#10b981" },
+  video: { label: "Video", icon: <Video className="w-4 h-4" />, color: "#ef4444" },
+  news: { label: "News", icon: <Newspaper className="w-4 h-4" />, color: "#f59e0b" },
+  discover: { label: "Discover", icon: <Sparkles className="w-4 h-4" />, color: "#8b5cf6" },
+};
+
+export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded }: GSCDashboardPanelProps) => {
+  const { toast } = useToast();
+  
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data state
+  const [sites, setSites] = useState<SiteInfo[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>("");
+  const [dateRange, setDateRange] = useState<DateRangeType>("28");
+  const [searchType, setSearchType] = useState<SearchType>("web");
+  const [searchFilter, setSearchFilter] = useState("");
+  
+  // Performance data
+  const [queryData, setQueryData] = useState<PerformanceRow[]>([]);
+  const [pageData, setPageData] = useState<PerformanceRow[]>([]);
+  const [countryData, setCountryData] = useState<PerformanceRow[]>([]);
+  const [deviceData, setDeviceData] = useState<PerformanceRow[]>([]);
+  const [dateData, setDateData] = useState<PerformanceRow[]>([]);
+  const [sitemaps, setSitemaps] = useState<SitemapInfo[]>([]);
+  
+  const [isFetching, setIsFetching] = useState(false);
+  
+  // Cache
+  const dataCache = useRef<Map<string, { data: any; timestamp: number }>>(new Map());
+  const fetchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Client ID configuration
+  const [showClientIdDialog, setShowClientIdDialog] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState("");
+  
+  // Tracking code generator
+  const [showCodeGenerator, setShowCodeGenerator] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  // Check for stored token on mount
+  useEffect(() => {
+    const storedToken = sessionStorage.getItem("gsc_access_token");
+    const tokenExpiry = sessionStorage.getItem("gsc_token_expiry");
+    
+    if (storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+      setAccessToken(storedToken);
+      setIsAuthenticated(true);
+    }
+    
+    // OAuth callback handling
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+
+    if (code && !sessionStorage.getItem("gsc_access_token")) {
+      const redirectUri = window.location.origin + window.location.pathname;
+      const verifier = sessionStorage.getItem("gsc_code_verifier") || "";
+
+      if (verifier) {
+        (async () => {
+          try {
+            const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+              body: { code, codeVerifier: verifier, redirectUri },
+            });
+
+            if (tokenRes.error) throw new Error(tokenRes.error.message);
+
+            const tokenJson = tokenRes.data;
+            if (tokenJson?.access_token) {
+              const expiresIn = Number(tokenJson.expires_in ?? 3600);
+              const expiry = Date.now() + expiresIn * 1000;
+              sessionStorage.setItem("gsc_access_token", tokenJson.access_token);
+              sessionStorage.setItem("gsc_token_expiry", expiry.toString());
+              sessionStorage.removeItem("gsc_code_verifier");
+              setAccessToken(tokenJson.access_token);
+              setIsAuthenticated(true);
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+          } catch (e) {
+            console.error("OAuth token exchange error:", e);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        })();
+      }
+    }
+    
+    setIsLoading(false);
+  }, []);
+
+  // Fetch sites when authenticated
+  useEffect(() => {
+    if (accessToken) {
+      fetchSites();
+    }
+  }, [accessToken]);
+
+  // Notify parent of site change
+  useEffect(() => {
+    if (selectedSite && onSiteChange) {
+      onSiteChange(selectedSite);
+    }
+  }, [selectedSite, onSiteChange]);
+
+  // Fetch data when site selected - with debouncing
+  useEffect(() => {
+    if (!selectedSite || !accessToken) return;
+    
+    if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+    
+    fetchDebounceRef.current = setTimeout(() => {
+      fetchAllData();
+    }, 150);
+    
+    return () => {
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+    };
+  }, [selectedSite, dateRange, searchType, accessToken]);
+
+  // Notify parent of data loaded
+  useEffect(() => {
+    if (dateData.length > 0 && onDataLoaded) {
+      const totals = dateData.reduce(
+        (acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }),
+        { clicks: 0, impressions: 0 }
+      );
+      const avgPosition = dateData.reduce((sum, row) => sum + row.position, 0) / dateData.length;
+      onDataLoaded({ ...totals, position: avgPosition });
+    }
+  }, [dateData, onDataLoaded]);
+
+  const handleGoogleLogin = async () => {
+    const clientId = getGoogleClientId();
+    if (!clientId) {
+      setShowClientIdDialog(true);
+      return;
+    }
+
+    const redirectUri = window.location.origin + window.location.pathname;
+    const verifier = generateCodeVerifier();
+    sessionStorage.setItem("gsc_code_verifier", verifier);
+    const challenge = await generateCodeChallenge(verifier);
+
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", GOOGLE_SCOPES);
+    authUrl.searchParams.set("code_challenge", challenge);
+    authUrl.searchParams.set("code_challenge_method", "S256");
+    authUrl.searchParams.set("prompt", "consent");
+    authUrl.searchParams.set("access_type", "online");
+
+    window.location.href = authUrl.toString();
+  };
+
+  const handleSaveClientId = () => {
+    if (!clientIdInput.trim()) {
+      toast({ title: "Client ID Required", variant: "destructive" });
+      return;
+    }
+    localStorage.setItem("gsc_client_id", clientIdInput.trim());
+    setShowClientIdDialog(false);
+    setTimeout(() => { void handleGoogleLogin(); }, 500);
+  };
+
+  const handleDisconnect = () => {
+    sessionStorage.removeItem("gsc_access_token");
+    sessionStorage.removeItem("gsc_token_expiry");
+    setAccessToken(null);
+    setIsAuthenticated(false);
+    setSites([]);
+    setSelectedSite("");
+    setQueryData([]);
+    setPageData([]);
+    setCountryData([]);
+    setDeviceData([]);
+    setDateData([]);
+    setSitemaps([]);
+  };
+
+  const fetchSites = async () => {
+    try {
+      const response = await supabase.functions.invoke("search-console", {
+        body: { action: "sites", accessToken },
+      });
+      const siteEntries = response.data?.siteEntry || [];
+      setSites(siteEntries);
+      if (siteEntries.length > 0 && !selectedSite) {
+        setSelectedSite(siteEntries[0].siteUrl);
+      }
+    } catch (error) {
+      console.error("Error fetching sites:", error);
+    }
+  };
+
+  const getDaysFromRange = (range: string): number => parseInt(range);
+
+  const fetchPerformance = useCallback(async (dimensions: string[], rowLimit: number, type: SearchType = 'web') => {
+    const days = getDaysFromRange(dateRange);
+    const response = await supabase.functions.invoke("search-console", {
+      body: {
+        action: "performance",
+        accessToken,
+        siteUrl: selectedSite,
+        startDate: getDateNDaysAgo(days),
+        endDate: getDateNDaysAgo(0),
+        dimensions,
+        rowLimit,
+        searchType: type,
+      },
+    });
+    return response.data;
+  }, [accessToken, selectedSite, dateRange]);
+
+  const fetchSitemaps = async () => {
+    const response = await supabase.functions.invoke("search-console", {
+      body: { action: "sitemaps", accessToken, siteUrl: selectedSite },
+    });
+    return response.data;
+  };
+
+  const fetchAllData = async (forceRefresh = false) => {
+    if (!selectedSite || !accessToken) return;
+    
+    const cacheKey = `${selectedSite}-${dateRange}-${searchType}`;
+    const cached = dataCache.current.get(cacheKey);
+    const CACHE_TTL = 5 * 60 * 1000;
+    
+    if (!forceRefresh && cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      setQueryData(cached.data.queryData);
+      setPageData(cached.data.pageData);
+      setCountryData(cached.data.countryData);
+      setDeviceData(cached.data.deviceData);
+      setDateData(cached.data.dateData);
+      setSitemaps(cached.data.sitemaps);
+      return;
+    }
+    
+    setIsFetching(true);
+    const days = getDaysFromRange(dateRange);
+    
+    try {
+      const [dates, devices] = await Promise.all([
+        fetchPerformance(["date"], days, searchType),
+        fetchPerformance(["device"], 5, searchType),
+      ]);
+      
+      setDateData(dates?.rows || []);
+      setDeviceData(devices?.rows || []);
+      
+      const [queries, pages, countries, sitemapsRes] = await Promise.all([
+        fetchPerformance(["query"], 50, searchType),
+        fetchPerformance(["page"], 50, searchType),
+        fetchPerformance(["country"], 25, searchType),
+        fetchSitemaps(),
+      ]);
+
+      setQueryData(queries?.rows || []);
+      setPageData(pages?.rows || []);
+      setCountryData(countries?.rows || []);
+      setSitemaps(sitemapsRes?.sitemap || []);
+      
+      dataCache.current.set(cacheKey, {
+        data: {
+          queryData: queries?.rows || [],
+          pageData: pages?.rows || [],
+          countryData: countries?.rows || [],
+          deviceData: devices?.rows || [],
+          dateData: dates?.rows || [],
+          sitemaps: sitemapsRes?.sitemap || [],
+        },
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  // Aggregate metrics
+  const totalMetrics = useMemo(() => {
+    const totals = dateData.reduce(
+      (acc, row) => ({ clicks: acc.clicks + row.clicks, impressions: acc.impressions + row.impressions }),
+      { clicks: 0, impressions: 0 }
+    );
+    const avgCtr = totals.impressions > 0 ? totals.clicks / totals.impressions : 0;
+    const avgPosition = dateData.length > 0 ? dateData.reduce((sum, row) => sum + row.position, 0) / dateData.length : 0;
+    return { ...totals, ctr: avgCtr, position: avgPosition };
+  }, [dateData]);
+
+  // Chart data
+  const chartData = useMemo(() => {
+    return dateData
+      .map((row) => ({ date: row.keys[0], clicks: row.clicks, impressions: row.impressions }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [dateData]);
+
+  const deviceChartData = useMemo(() => {
+    const colors: Record<string, string> = { DESKTOP: "hsl(var(--primary))", MOBILE: "#10b981", TABLET: "#f59e0b" };
+    return deviceData.map((row) => ({ name: row.keys[0], clicks: row.clicks, color: colors[row.keys[0]] || "hsl(var(--secondary))" }));
+  }, [deviceData]);
+
+  const filteredQueryData = useMemo(() => {
+    if (!searchFilter) return queryData.slice(0, 25);
+    return queryData.filter(row => row.keys[0].toLowerCase().includes(searchFilter.toLowerCase())).slice(0, 25);
+  }, [queryData, searchFilter]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toString();
+  };
+
+  // Tracking code
+  const trackingCode = useMemo(() => {
+    const cleanDomain = selectedSite?.replace('sc-domain:', '').replace('https://', '').replace('http://', '') || 'your-domain.com';
+    return `<!-- Webstack.ceo Visitor Intelligence -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','wscLayer','${cleanDomain}');
+</script>
+<!-- End Webstack.ceo Visitor Intelligence -->`;
+  }, [selectedSite]);
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(trackingCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Not connected - show connect prompt
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Card className="bg-gradient-to-br from-cyan-500/5 to-violet-500/5 border-cyan-500/20">
+          <CardContent className="py-8">
+            <div className="text-center max-w-md mx-auto">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Connect Google Search Console</h3>
+              <p className="text-muted-foreground text-sm mb-6">
+                Link your Search Console to see clicks, impressions, rankings, and sync with your visitor data.
+              </p>
+              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600">
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Connect Search Console
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={showClientIdDialog} onOpenChange={setShowClientIdDialog}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                Configure Google OAuth
+              </DialogTitle>
+              <DialogDescription>Enter your Google Cloud OAuth Client ID.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Google OAuth Client ID</Label>
+                <Input placeholder="123456789-abc.apps.googleusercontent.com" value={clientIdInput} onChange={(e) => setClientIdInput(e.target.value)} />
+              </div>
+              <div className="bg-muted/50 rounded-lg p-4 text-sm">
+                <p className="font-medium mb-2">Setup:</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+                  <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary hover:underline">Google Cloud Console</a></li>
+                  <li>Create OAuth 2.0 Client ID</li>
+                  <li>Add redirect URI: <code className="bg-background px-1 rounded">{window.location.origin}/visitor-intelligence-dashboard</code></li>
+                  <li>Enable Search Console API</li>
+                </ol>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowClientIdDialog(false)}>Cancel</Button>
+              <Button onClick={handleSaveClientId}>Save & Connect</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Connected - show dashboard
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Search Console Analytics</CardTitle>
+                <CardDescription className="text-xs">Performance data from Google</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowCodeGenerator(true)}>
+                <Code className="w-4 h-4 mr-1" />
+                Get Code
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleDisconnect}>Disconnect</Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Controls */}
+          <div className="flex flex-wrap gap-2 items-center justify-between bg-secondary/30 rounded-lg p-3">
+            <div className="flex flex-wrap gap-2 items-center">
+              <Select value={selectedSite} onValueChange={setSelectedSite}>
+                <SelectTrigger className="w-[220px] h-8 text-xs">
+                  <Globe className="w-3 h-3 mr-1" />
+                  <SelectValue placeholder="Select site" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sites.map((site) => (
+                    <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
+                      {site.siteUrl.replace('sc-domain:', '').replace('https://', '')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <Calendar className="w-3 h-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="28">28 days</SelectItem>
+                  <SelectItem value="90">3 months</SelectItem>
+                  <SelectItem value="180">6 months</SelectItem>
+                  <SelectItem value="365">12 months</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={searchType} onValueChange={(v) => setSearchType(v as SearchType)}>
+                <SelectTrigger className="w-[100px] h-8 text-xs">
+                  {SEARCH_TYPE_CONFIG[searchType].icon}
+                  <span className="ml-1">{SEARCH_TYPE_CONFIG[searchType].label}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(SEARCH_TYPE_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key} className="text-xs">
+                      <div className="flex items-center gap-1">{config.icon}{config.label}</div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button variant="ghost" size="sm" onClick={() => fetchAllData(true)} disabled={isFetching} className="h-8">
+              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+
+          {/* KPI Row */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Clicks", value: formatNumber(totalMetrics.clicks), icon: MousePointer, color: "text-primary" },
+              { label: "Impressions", value: formatNumber(totalMetrics.impressions), icon: Eye, color: "text-cyan-500" },
+              { label: "Avg CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%", icon: Target, color: "text-violet-500" },
+              { label: "Avg Position", value: totalMetrics.position.toFixed(1), icon: TrendingUp, color: "text-amber-500" },
+            ].map((metric, i) => (
+              <div key={i} className="bg-secondary/30 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <metric.icon className={`w-4 h-4 ${metric.color}`} />
+                  <span className="text-xs text-muted-foreground">{metric.label}</span>
+                </div>
+                <p className="text-xl font-bold mt-1">{isFetching ? <Skeleton className="h-6 w-16" /> : metric.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Performance Chart */}
+          <div className="h-[180px] w-full">
+            {isFetching && chartData.length === 0 ? (
+              <Skeleton className="h-full w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
+                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={35} />
+                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                  <Area type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" fill="url(#gscClicksGradient)" strokeWidth={2} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <Tabs defaultValue="queries" className="space-y-3">
+            <TabsList className="h-8">
+              <TabsTrigger value="queries" className="text-xs h-7 px-2"><Search className="w-3 h-3 mr-1" />Queries</TabsTrigger>
+              <TabsTrigger value="pages" className="text-xs h-7 px-2"><FileText className="w-3 h-3 mr-1" />Pages</TabsTrigger>
+              <TabsTrigger value="countries" className="text-xs h-7 px-2"><Globe className="w-3 h-3 mr-1" />Countries</TabsTrigger>
+              <TabsTrigger value="devices" className="text-xs h-7 px-2"><Monitor className="w-3 h-3 mr-1" />Devices</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="queries">
+              <div className="relative mb-2">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                <Input placeholder="Filter queries..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs" />
+              </div>
+              <ScrollArea className="h-[200px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Query</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredQueryData.map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredQueryData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="pages">
+              <ScrollArea className="h-[200px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Page</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pageData.slice(0, 25).map((row, i) => {
+                      let path = row.keys[0];
+                      try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
+                      return (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs py-1.5 truncate max-w-[200px]" title={row.keys[0]}>{path}</TableCell>
+                          <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                          <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {pageData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="countries">
+              <ScrollArea className="h-[200px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Country</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">CTR</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {countryData.slice(0, 15).map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                      </TableRow>
+                    ))}
+                    {countryData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="devices">
+              <div className="grid grid-cols-3 gap-3">
+                {deviceData.map((device, i) => {
+                  const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
+                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
+                  const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
+                  return (
+                    <div key={i} className="bg-secondary/30 rounded-lg p-3 text-center">
+                      <Icon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground capitalize">{device.keys[0].toLowerCase()}</p>
+                      <p className="text-lg font-bold">{pct.toFixed(0)}%</p>
+                      <p className="text-[10px] text-muted-foreground">{device.clicks} clicks</p>
+                    </div>
+                  );
+                })}
+                {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</div>}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Code Generator Dialog */}
+      <Dialog open={showCodeGenerator} onOpenChange={setShowCodeGenerator}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Code className="w-5 h-5 text-primary" />
+              Tracking Code Generator
+            </DialogTitle>
+            <DialogDescription>
+              Add this code to your website to enable visitor intelligence tracking for {selectedSite?.replace('sc-domain:', '').replace('https://', '') || 'your domain'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-zinc-900 rounded-lg p-4 relative">
+              <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap font-mono">{trackingCode}</pre>
+              <Button size="sm" variant="secondary" className="absolute top-2 right-2" onClick={handleCopyCode}>
+                {codeCopied ? <><Check className="w-3 h-3 mr-1" />Copied!</> : <><Copy className="w-3 h-3 mr-1" />Copy</>}
+              </Button>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+              <p className="font-medium">Installation Instructions:</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+                <li>Copy the code above</li>
+                <li>Paste it into the <code className="bg-background px-1 rounded">&lt;head&gt;</code> section of your website</li>
+                <li>The code will automatically track visitor behavior, page views, and engagement</li>
+                <li>Data will sync with this dashboard in real-time</li>
+              </ol>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCodeGenerator(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+function getDateNDaysAgo(n: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - n);
+  return date.toISOString().split("T")[0];
+}
+
+export default GSCDashboardPanel;
