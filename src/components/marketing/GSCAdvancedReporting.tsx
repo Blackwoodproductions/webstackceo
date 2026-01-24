@@ -63,6 +63,7 @@ interface SubmissionResult {
   error?: string;
   notifyTime?: string;
   timestamp: string;
+  source?: 'manual' | 'bulk' | 'auto';
 }
 
 interface SitemapInfo {
@@ -161,6 +162,12 @@ export const GSCAdvancedReporting = ({
   const [autoIndexQueue, setAutoIndexQueue] = useState<string[]>([]);
   const [isAutoIndexing, setIsAutoIndexing] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
+  
+  // Indexation timer state
+  const [indexationProgress, setIndexationProgress] = useState(0);
+  const [indexationTotal, setIndexationTotal] = useState(0);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [indexationStartTime, setIndexationStartTime] = useState<number | null>(null);
   
   // Auto-submission settings
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(() => {
@@ -305,9 +312,18 @@ export const GSCAdvancedReporting = ({
     setIsLoadingIndexation(true);
     const results: IndexationStatus[] = [];
     const pagesToCheck = pageData.slice(0, 20); // Limit to top 20 pages
+    
+    // Initialize timer tracking
+    setIndexationTotal(pagesToCheck.length);
+    setIndexationProgress(0);
+    setIndexationStartTime(Date.now());
+    setEstimatedTimeRemaining(pagesToCheck.length * 3); // Initial estimate: ~3 seconds per URL
 
     try {
-      for (const page of pagesToCheck) {
+      for (let i = 0; i < pagesToCheck.length; i++) {
+        const page = pagesToCheck[i];
+        const startTime = Date.now();
+        
         try {
           const response = await supabase.functions.invoke("search-console", {
             body: {
@@ -335,6 +351,13 @@ export const GSCAdvancedReporting = ({
         } catch (err) {
           console.log(`Failed to inspect ${page.keys[0]}:`, err);
         }
+        
+        // Update progress and time estimate
+        const elapsed = Date.now() - startTime;
+        const avgTimePerUrl = (Date.now() - (indexationStartTime || Date.now())) / (i + 1);
+        const remaining = pagesToCheck.length - (i + 1);
+        setIndexationProgress(i + 1);
+        setEstimatedTimeRemaining(Math.ceil((remaining * avgTimePerUrl) / 1000));
       }
 
       setIndexationData(results);
@@ -360,6 +383,8 @@ export const GSCAdvancedReporting = ({
       });
     } finally {
       setIsLoadingIndexation(false);
+      setEstimatedTimeRemaining(null);
+      setIndexationStartTime(null);
     }
   };
 
@@ -409,6 +434,7 @@ export const GSCAdvancedReporting = ({
           error: r.error,
           notifyTime: r.notifyTime,
           timestamp: new Date().toISOString(),
+          source: 'auto' as const,
         }));
         setSubmissionHistory(prev => [...newHistory, ...prev].slice(0, 100));
         
@@ -466,6 +492,7 @@ export const GSCAdvancedReporting = ({
         error: result?.error,
         notifyTime: result?.notifyTime,
         timestamp: new Date().toISOString(),
+        source: 'manual' as const,
       }, ...prev].slice(0, 100));
 
       if (result?.success) {
@@ -537,6 +564,7 @@ export const GSCAdvancedReporting = ({
           error: r.error,
           notifyTime: r.notifyTime,
           timestamp: new Date().toISOString(),
+          source: 'bulk' as const,
         }));
         setSubmissionHistory(prev => [...newHistory, ...prev].slice(0, 100));
         
@@ -1215,7 +1243,7 @@ export const GSCAdvancedReporting = ({
                   {isLoadingIndexation ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Checking...
+                      Checking ({indexationProgress}/{indexationTotal})
                     </>
                   ) : (
                     <>
@@ -1226,6 +1254,33 @@ export const GSCAdvancedReporting = ({
                 </Button>
               </div>
             </div>
+
+            {/* Indexation Progress Timer */}
+            {isLoadingIndexation && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-sm font-medium">Checking Indexation Status...</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">
+                      {indexationProgress} of {indexationTotal} URLs checked
+                    </span>
+                    {estimatedTimeRemaining !== null && (
+                      <Badge variant="outline" className="text-xs">
+                        <Clock className="w-3 h-3 mr-1" />
+                        ~{estimatedTimeRemaining}s remaining
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <Progress value={(indexationProgress / indexationTotal) * 100} className="h-2" />
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  Inspecting each URL with Google's URL Inspection API. This may take a few minutes for larger sites.
+                </p>
+              </div>
+            )}
 
             {/* Indexation Stats */}
             {indexationData.length > 0 && (
@@ -1265,6 +1320,117 @@ export const GSCAdvancedReporting = ({
                 <Progress value={(indexationStats.indexed / indexationData.length) * 100} className="h-2" />
               </div>
             )}
+
+            {/* Submission History - Moved above Bulk URL Submission */}
+            <Card className="bg-secondary/20 border-0">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <History className="w-4 h-4 text-cyan-500" />
+                    Submission History
+                    {autoSubmitEnabled && (
+                      <Badge variant="outline" className="text-[9px] bg-green-500/10 text-green-400 border-green-500/30">
+                        <Zap className="w-2.5 h-2.5 mr-1" />
+                        Auto-Submit Active
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px]">
+                      {submissionStats.successRate}% success rate
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {submissionStats.last24h} today
+                    </Badge>
+                    {submissionHistory.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-[10px]"
+                        onClick={() => setSubmissionHistory([])}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                {submissionHistory.length === 0 ? (
+                  <div className="text-center py-6">
+                    <History className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-xs text-muted-foreground">No submission history yet</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {autoSubmitEnabled ? "Auto-submissions will appear here when pages are updated" : "Enable auto-submit or manually submit URLs below"}
+                    </p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[150px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">URL</TableHead>
+                          <TableHead className="text-xs">Source</TableHead>
+                          <TableHead className="text-xs">Status</TableHead>
+                          <TableHead className="text-xs">Time</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {submissionHistory.slice(0, 25).map((item, i) => {
+                          let path = item.url;
+                          try {
+                            path = new URL(item.url).pathname || "/";
+                          } catch {}
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="text-xs py-2 max-w-[180px] truncate" title={item.url}>
+                                {path}
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Badge variant="outline" className="text-[9px]">
+                                  {(item as any).source === 'auto' ? (
+                                    <>
+                                      <Zap className="w-2 h-2 mr-0.5 text-amber-500" />
+                                      Auto
+                                    </>
+                                  ) : (item as any).source === 'bulk' ? (
+                                    <>
+                                      <ListPlus className="w-2 h-2 mr-0.5 text-violet-500" />
+                                      Bulk
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="w-2 h-2 mr-0.5 text-cyan-500" />
+                                      Manual
+                                    </>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-2">
+                                {item.success ? (
+                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
+                                    <CheckCircle className="w-2.5 h-2.5 mr-1" />
+                                    Submitted
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">
+                                    <FileX className="w-2.5 h-2.5 mr-1" />
+                                    Failed
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-xs py-2 text-muted-foreground">
+                                {new Date(item.timestamp).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Bulk URL Submission & Sitemap Management */}
             <div className="grid grid-cols-2 gap-4">
@@ -1360,84 +1526,6 @@ export const GSCAdvancedReporting = ({
                 </CardContent>
               </Card>
             </div>
-
-            {/* Submission History */}
-            <Card className="bg-secondary/20 border-0">
-              <CardHeader className="pb-2 pt-3 px-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <History className="w-4 h-4 text-cyan-500" />
-                    Submission History
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-[10px]">
-                      {submissionStats.successRate}% success rate
-                    </Badge>
-                    {submissionHistory.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 text-[10px]"
-                        onClick={() => setSubmissionHistory([])}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
-                {submissionHistory.length === 0 ? (
-                  <div className="text-center py-6">
-                    <History className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-xs text-muted-foreground">No submission history yet</p>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[150px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">URL</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs">Time</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {submissionHistory.slice(0, 25).map((item, i) => {
-                          let path = item.url;
-                          try {
-                            path = new URL(item.url).pathname || "/";
-                          } catch {}
-                          return (
-                            <TableRow key={i}>
-                              <TableCell className="text-xs py-2 max-w-[200px] truncate" title={item.url}>
-                                {path}
-                              </TableCell>
-                              <TableCell className="py-2">
-                                {item.success ? (
-                                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
-                                    <CheckCircle className="w-2.5 h-2.5 mr-1" />
-                                    Submitted
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">
-                                    <FileX className="w-2.5 h-2.5 mr-1" />
-                                    Failed
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-xs py-2 text-muted-foreground">
-                                {new Date(item.timestamp).toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
 
             {/* Indexation Table */}
             <Card className="bg-secondary/20 border-0">
