@@ -93,21 +93,11 @@ const HeroSection = () => {
             <span className="ml-4 md:ml-8 whitespace-nowrap">Operate like a B<span className="gradient-text">O</span>SS.!</span>
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto mb-10"
-          >
-            Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
-            basic uptime monitoring to advanced SEO and traffic intelligence.
-          </motion.p>
-
           {/* Domain Audit Form */}
           <motion.form
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
             onSubmit={handleSubmit}
             className="max-w-4xl mx-auto mb-6"
           >
@@ -145,6 +135,16 @@ const HeroSection = () => {
               </Button>
             </div>
           </motion.form>
+
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-4"
+          >
+            Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
+            basic uptime monitoring to advanced SEO and traffic intelligence.
+          </motion.p>
 
           {/* Trust indicator */}
           <motion.div
