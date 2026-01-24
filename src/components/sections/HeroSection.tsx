@@ -86,7 +86,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[clamp(2.5rem,6.25vw,5.6rem)] font-bold leading-tight mb-8 mt-12"
+            className="text-[clamp(2.25rem,5.625vw,5.04rem)] font-bold leading-tight mb-8 mt-12"
           >
             <span className="whitespace-nowrap"><span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &</span>
             <br />
