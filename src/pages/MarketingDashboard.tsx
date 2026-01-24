@@ -705,6 +705,11 @@ const MarketingDashboard = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Visitor Engagement Panel (Heatmap + Active Visitors) */}
+        <div className="mb-8">
+          <VisitorEngagementPanel />
+        </div>
       </main>
     </div>
   );
