@@ -1283,40 +1283,38 @@ const AuditResults = () => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm text-muted-foreground">
-                          Free Website Audit Tool
-                          {dashboardMetrics?.ahrefsRank > 0 && (
-                            <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted">
-                              Ahrefs Rank: #{dashboardMetrics.ahrefsRank.toLocaleString()}
-                            </span>
-                          )}
-                        </p>
-                        
-                        {/* Claimed Notification - on Ahrefs rank line */}
-                        {isClaimed && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 -ml-1"
-                          >
-                            <motion.div
-                              animate={{ x: [0, 5, 0] }}
-                              transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                              className="text-green-500 shrink-0"
-                            >
-                              <ArrowRight className="w-3 h-3 rotate-[225deg]" />
-                            </motion.div>
-                            <Link2 className="w-3 h-3 text-green-400 shrink-0" />
-                            <span className="text-xs font-medium text-green-400">
-                              {justClaimed 
-                                ? "Your do-follow link is now active! Click the domain to visit."
-                                : "This website owner claimed their free do-follow link!"
-                              }
-                            </span>
-                          </motion.div>
+                      <p className="text-sm text-muted-foreground">
+                        Free Website Audit Tool
+                        {dashboardMetrics?.ahrefsRank > 0 && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted">
+                            Ahrefs Rank: #{dashboardMetrics.ahrefsRank.toLocaleString()}
+                          </span>
                         )}
-                      </div>
+                      </p>
+                      
+                      {/* Claimed Notification - below subtitle, left-justified */}
+                      {isClaimed && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 mt-2 w-fit"
+                        >
+                          <motion.div
+                            animate={{ x: [0, 5, 0] }}
+                            transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                            className="text-green-500 shrink-0"
+                          >
+                            <ArrowRight className="w-3 h-3 rotate-[225deg]" />
+                          </motion.div>
+                          <Link2 className="w-3 h-3 text-green-400 shrink-0" />
+                          <span className="text-xs font-medium text-green-400">
+                            {justClaimed 
+                              ? "Your do-follow link is now active! Click the domain to visit."
+                              : "This website owner claimed their free do-follow link!"
+                            }
+                          </span>
+                        </motion.div>
+                      )}
                     </div>
                   </div>
 
