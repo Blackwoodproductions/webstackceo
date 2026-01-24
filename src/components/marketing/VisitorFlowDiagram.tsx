@@ -837,34 +837,55 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           })}
 
           {/* Draw heatmap visitor paths - brighter = more traffic */}
+          {/* Paths stay subtle until 100 visitors, then intensity scales per 100 */}
           {visitorPathEdges.map((pathEdge, i) => {
             const fromPos = positions[pathEdge.from];
             const toPos = positions[pathEdge.to];
             if (!fromPos || !toPos) return null;
             
-            // Heatmap colors based on intensity - REVERSED: green = hot, red = cool
-            const intensity = pathEdge.intensity;
+            const count = pathEdge.count;
+            
+            // Calculate intensity based on 100-visitor threshold
+            // Under 100: very subtle (0.1-0.2 intensity)
+            // Over 100: scale by hundreds (100=0.3, 200=0.4, 300=0.5, etc.)
+            let scaledIntensity: number;
+            if (count < 100) {
+              // Very subtle - proportional from 0.05 to 0.15
+              scaledIntensity = 0.05 + (count / 100) * 0.1;
+            } else {
+              // Scale per 100 visitors: 100=0.3, 200=0.4, 500=0.7, 1000+=1.0
+              const hundreds = Math.floor(count / 100);
+              scaledIntensity = Math.min(1, 0.2 + hundreds * 0.1);
+            }
+            
+            // Color based on scaled intensity - REVERSED: green = hot, red = cool
             let heatColor: string;
             let glowIntensity: number;
             
-            if (intensity > 0.8) {
+            if (scaledIntensity > 0.8) {
               heatColor = '#22c55e'; // Bright green - hottest
               glowIntensity = 1;
-            } else if (intensity > 0.6) {
+            } else if (scaledIntensity > 0.6) {
               heatColor = '#84cc16'; // Lime green
-              glowIntensity = 0.8;
-            } else if (intensity > 0.4) {
+              glowIntensity = 0.7;
+            } else if (scaledIntensity > 0.4) {
               heatColor = '#eab308'; // Yellow
-              glowIntensity = 0.6;
-            } else if (intensity > 0.2) {
+              glowIntensity = 0.5;
+            } else if (scaledIntensity > 0.25) {
               heatColor = '#f97316'; // Orange
-              glowIntensity = 0.4;
-            } else {
-              heatColor = '#ef4444'; // Red - coolest
               glowIntensity = 0.3;
+            } else {
+              heatColor = '#9ca3af'; // Gray - very low traffic
+              glowIntensity = 0.1;
             }
             
-            const strokeWidth = Math.max(2, Math.min(8, intensity * 10 + 2));
+            // Stroke width: thin until 100, then scale up
+            const strokeWidth = count < 100 
+              ? 1.5 
+              : Math.max(2, Math.min(8, 2 + Math.floor(count / 100) * 0.8));
+            
+            // Opacity: subtle until 100, then more visible
+            const pathOpacity = count < 100 ? 0.4 : 0.7 + scaledIntensity * 0.25;
             
             // Route along edges to avoid crossing nodes
             const useLeftEdge = toPos.x < svgWidth / 2;
@@ -896,27 +917,29 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             
             return (
               <g key={`heatmap-edge-${i}`}>
-                {/* Glow effect for high traffic paths */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={heatColor}
-                  strokeWidth={strokeWidth + 6}
-                  strokeOpacity={glowIntensity * 0.3}
-                  strokeLinecap="round"
-                  filter="url(#glow)"
-                />
+                {/* Glow effect only for paths with 100+ visitors */}
+                {count >= 100 && (
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={heatColor}
+                    strokeWidth={strokeWidth + 4}
+                    strokeOpacity={glowIntensity * 0.2}
+                    strokeLinecap="round"
+                    filter="url(#glow)"
+                  />
+                )}
                 {/* Main path */}
                 <path
                   d={pathD}
                   fill="none"
                   stroke={heatColor}
                   strokeWidth={strokeWidth}
-                  strokeOpacity={0.9}
+                  strokeOpacity={pathOpacity}
                   strokeLinecap="round"
                 />
-                {/* Path label showing count */}
-                {pathEdge.count > 1 && (
+                {/* Path label showing count - only show for 100+ */}
+                {count >= 100 && (
                   <text
                     x={edgeX + (useLeftEdge ? 10 : -10)}
                     y={labelY}
@@ -924,7 +947,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill={heatColor}
                     style={{ fontSize: '9px', fontWeight: 'bold' }}
                   >
-                    {pathEdge.count}
+                    {count}
                   </text>
                 )}
               </g>
