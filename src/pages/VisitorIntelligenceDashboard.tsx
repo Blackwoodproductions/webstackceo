@@ -902,7 +902,7 @@ const MarketingDashboard = () => {
 
       {/* Header */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
-        <div className="px-8 py-4 flex items-center justify-between">
+        <div className="px-8 py-4 flex items-center justify-between relative">
           {/* Left: Logo */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
