@@ -1126,19 +1126,18 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             
             return (
               <g key={activePath.id}>
-                {/* Glowing path */}
+                {/* Sleek path line */}
                 <path
                   d={pathD}
                   fill="none"
                   stroke="#06b6d4"
-                  strokeWidth={6}
-                  strokeOpacity={0.4}
+                  strokeWidth={2}
+                  strokeOpacity={0.6}
                   strokeLinecap="round"
-                  filter="url(#glow)"
                   className="animate-pulse"
                 />
-                {/* Animated dot traveling along path - 5 second journey */}
-                <circle r="8" fill="#06b6d4" filter="url(#glow)">
+                {/* Animated dot traveling along path */}
+                <circle r="4" fill="#06b6d4" filter="url(#glow)">
                   <animateMotion
                     dur="4s"
                     repeatCount="1"
@@ -1152,7 +1151,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill="freeze"
                   />
                 </circle>
-                <circle r="4" fill="#ffffff">
+                <circle r="2" fill="#ffffff">
                   <animateMotion
                     dur="4s"
                     repeatCount="1"
@@ -1295,13 +1294,12 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   d={pathD}
                   fill="none"
                   stroke="#a855f7"
-                  strokeWidth={5}
-                  strokeOpacity={0.5}
+                  strokeWidth={2}
+                  strokeOpacity={0.7}
                   strokeLinecap="round"
-                  filter="url(#glow)"
                   className="animate-pulse"
                 />
-                <circle r="7" fill="#a855f7" filter="url(#glow)">
+                <circle r="4" fill="#a855f7" filter="url(#glow)">
                   <animateMotion
                     dur="4s"
                     repeatCount="1"
@@ -1315,7 +1313,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill="freeze"
                   />
                 </circle>
-                <circle r="4" fill="#ffffff">
+                <circle r="2" fill="#ffffff">
                   <animateMotion
                     dur="4s"
                     repeatCount="1"
