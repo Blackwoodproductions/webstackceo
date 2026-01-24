@@ -27,7 +27,7 @@ import { Label } from '@/components/ui/label';
 import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
-import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
+
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
@@ -1265,11 +1265,6 @@ const MarketingDashboard = () => {
                 </Card>
               </TabsContent>
           </Tabs>
-        </div>
-
-        {/* Visitor Engagement Panel (Heatmap + Active Visitors) */}
-        <div className="mb-8">
-          <VisitorEngagementPanel />
         </div>
 
         {/* Traffic Sources - Full Width */}
