@@ -441,6 +441,7 @@ const MarketingDashboard = () => {
             
             <div className="h-6 w-px bg-border" />
             
+            <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button
               variant="ghost"
               size="sm"
@@ -449,16 +450,6 @@ const MarketingDashboard = () => {
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={fetchAllData}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
             </Button>
