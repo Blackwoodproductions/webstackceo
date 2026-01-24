@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
 import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
+import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
 interface Lead {
   id: string;
   email: string;
@@ -437,8 +438,12 @@ const MarketingDashboard = () => {
         </div>
 
         {/* Funnel & Active Visitors Row */}
-        {/* Funnel + Leads/Journey Row */}
-        <div className="grid lg:grid-cols-5 gap-6 mb-8">
+        {/* Funnel + Referrer + Leads/Journey Row */}
+        <div className="grid lg:grid-cols-6 gap-6 mb-8">
+          {/* Referrer Breakdown Chart */}
+          <div className="lg:col-span-2">
+            <ReferrerBreakdownChart sessions={sessions} />
+          </div>
           {/* Funnel Visualization - 40% */}
           <Card className="lg:col-span-2 p-6">
             <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
@@ -488,8 +493,8 @@ const MarketingDashboard = () => {
 
           </Card>
 
-          {/* Leads & Journey Section - 60% */}
-          <div className="lg:col-span-3">
+          {/* Leads & Journey Section */}
+          <div className="lg:col-span-2">
             {/* Lead Quality Bar - moved to top */}
             <div className="flex items-center gap-4 mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
               <div className="flex items-center gap-2 flex-shrink-0">
