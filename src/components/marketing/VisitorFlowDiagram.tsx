@@ -21,6 +21,7 @@ interface PageNode {
   name: string;
   visits: number;
   visitsPerDay: number;
+  todayVisits: number;
   depth: number;
   parent: string | null;
   isVisited: boolean;
@@ -447,6 +448,20 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       daysInRange = Math.max(1, Math.ceil((now.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24)));
     }
     
+    // Calculate today's visits separately
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayVisitCounts: Record<string, number> = {};
+    pageViews.forEach(pv => {
+      if (new Date(pv.created_at) >= todayStart) {
+        let path = pv.page_path.split('#')[0].split('?')[0];
+        if (path.startsWith('/audit/') || path === '/audit') {
+          path = '/audits';
+        }
+        todayVisitCounts[path] = (todayVisitCounts[path] || 0) + 1;
+      }
+    });
+    
     // Define tool paths for special display
     const toolPaths = ['/tools', '/audits', '/tools/domain-audit', '/tools/keyword-checker', '/tools/backlink-analyzer', '/tools/site-speed'];
     
@@ -459,6 +474,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         name: formatPageName(path),
         visits,
         visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
+        todayVisits: todayVisitCounts[path] || 0,
         depth,
         parent,
         isVisited: visits > 0,
@@ -484,6 +500,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           name: formatPageName(path),
           visits,
           visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
+          todayVisits: todayVisitCounts[path] || 0,
           depth,
           parent,
           isVisited: true,
@@ -1084,14 +1101,30 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   strokeWidth={hasLiveVisitor ? 3 : node.isVisited ? 2.5 : 1.5}
                   strokeDasharray={node.isVisited ? "none" : "3 2"}
                 />
-                {/* Inner dot */}
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={nodeSize * 0.35}
-                  fill={hasLiveVisitor ? "#06b6d4" : color}
-                  opacity={node.isVisited ? 1 : 0.5}
-                />
+                {/* Today's visit count in center */}
+                {node.todayVisits > 0 ? (
+                  <text
+                    x={pos.x}
+                    y={pos.y + (nodeSize > 10 ? 4 : 3)}
+                    textAnchor="middle"
+                    fill={hasLiveVisitor ? "#06b6d4" : color}
+                    style={{ 
+                      fontSize: nodeSize > 14 ? '10px' : nodeSize > 10 ? '8px' : '6px', 
+                      fontWeight: 'bold' 
+                    }}
+                  >
+                    {node.todayVisits}
+                  </text>
+                ) : (
+                  /* Inner dot for unvisited today */
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={nodeSize * 0.25}
+                    fill={hasLiveVisitor ? "#06b6d4" : color}
+                    opacity={node.isVisited ? 0.5 : 0.3}
+                  />
+                )}
                 {/* Live visitor count badge */}
                 {hasLiveVisitor && (
                   <>
