@@ -199,18 +199,18 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
         </div>
       </div>
 
-      {/* Legend - Below chart, larger items */}
-      <div className="flex-1 flex flex-col justify-start space-y-2">
+      {/* Legend - Below chart, compact */}
+      <div className="flex-1 flex flex-col justify-start space-y-1.5">
         {referrerData.map((item) => (
-          <div key={item.key} className="flex items-center gap-2 py-1 px-2 rounded-md hover:bg-secondary/30 transition-colors">
+          <div key={item.key} className="flex items-center gap-1.5 py-0.5 px-1.5 rounded-md hover:bg-secondary/30 transition-colors">
             <div 
-              className="w-3 h-3 rounded-full flex-shrink-0" 
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
               style={{ backgroundColor: item.color }}
             />
-            <item.icon className={`w-4 h-4 ${item.textColor} flex-shrink-0`} />
-            <span className="text-sm text-foreground font-medium flex-1">{item.label}</span>
-            <span className="text-sm font-bold">{item.count}</span>
-            <span className="text-xs text-muted-foreground w-8 text-right">
+            <item.icon className={`w-3.5 h-3.5 ${item.textColor} flex-shrink-0`} />
+            <span className="text-xs text-foreground font-medium flex-1">{item.label}</span>
+            <span className="text-xs font-bold">{item.count}</span>
+            <span className="text-[10px] text-muted-foreground w-7 text-right">
               {item.percentage.toFixed(0)}%
             </span>
           </div>
