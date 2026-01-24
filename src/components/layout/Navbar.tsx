@@ -87,7 +87,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
-    { name: "Website Audits", href: "/audits", isPage: true },
+    { name: "Tools", href: "/tools", isPage: true },
   ];
 
   const blogSubLinks = [
