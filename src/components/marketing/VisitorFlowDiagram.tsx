@@ -1493,25 +1493,17 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     </text>
                   </>
                 )}
-                {/* Total visits badge - top left (OVERALL all-time views) */}
+                {/* Total visits badge - CENTER of icon (OVERALL all-time views) */}
                 {node.totalVisits > 0 && (
-                  <>
-                    <circle
-                      cx={pos.x - nodeSize + 2}
-                      cy={pos.y - nodeSize + 2}
-                      r={node.totalVisits > 99 ? 10 : 8}
-                      fill={node.isTool ? "#f59e0b" : "#8b5cf6"}
-                    />
-                    <text
-                      x={pos.x - nodeSize + 2}
-                      y={pos.y - nodeSize + 6}
-                      textAnchor="middle"
-                      fill="white"
-                      style={{ fontSize: node.totalVisits > 99 ? '7px' : '9px', fontWeight: 'bold' }}
-                    >
-                      {node.totalVisits > 999 ? `${Math.round(node.totalVisits / 100) / 10}k` : node.totalVisits}
-                    </text>
-                  </>
+                  <text
+                    x={pos.x}
+                    y={pos.y + 4}
+                    textAnchor="middle"
+                    fill="#8b5cf6"
+                    style={{ fontSize: node.totalVisits > 99 ? '10px' : '12px', fontWeight: 'bold' }}
+                  >
+                    {node.totalVisits > 999 ? `${Math.round(node.totalVisits / 100) / 10}k` : node.totalVisits}
+                  </text>
                 )}
                 {/* Label - above icon for main pages (depth 0 and 1), below for others */}
                 {node.depth <= 1 ? (
