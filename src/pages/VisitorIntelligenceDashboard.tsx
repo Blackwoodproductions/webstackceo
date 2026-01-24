@@ -499,22 +499,18 @@ const MarketingDashboard = () => {
 
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4 flex items-center">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
           {/* Left: Logo & Title */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-3">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <BarChart3 className="w-7 h-7 text-primary" />
               <h1 className="text-xl font-bold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
             </a>
-          </div>
-          
-          {/* Center: Subtitle */}
-          <div className="flex-1 flex justify-center">
-            <span className="text-sm text-muted-foreground">Marketing Funnel Analytics and AI Sales Center</span>
+            <span className="text-sm text-muted-foreground hidden md:inline">— Marketing Funnel Analytics and AI Sales Center</span>
           </div>
           
           {/* Right: User Controls */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button
               variant="ghost"
