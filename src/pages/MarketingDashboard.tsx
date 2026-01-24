@@ -11,11 +11,11 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap
+  DollarSign, ArrowRight, Eye, Zap, Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
-
+import ActiveVisitorsWidget from '@/components/marketing/ActiveVisitorsWidget';
 interface Lead {
   id: string;
   email: string;
@@ -295,6 +295,11 @@ const MarketingDashboard = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8">
+        {/* Active Visitors Widget */}
+        <div className="mb-8">
+          <ActiveVisitorsWidget />
+        </div>
+
         {/* Funnel Visualization */}
         <Card className="p-6 mb-8">
           <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { 
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
   Search, Link2, PenTool, HelpCircle, UserCheck, Eye,
-  MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield
+  MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield,
+  FileText, Target, Zap
 } from "lucide-react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
@@ -28,6 +29,17 @@ const addOnFeatures = [
   { icon: Server, name: "Lovable Premium Hosting", href: "/features/web-hosting" },
 ];
 
+const seoTools = [
+  { icon: Link2, name: "Backlink Analyzer", href: "/tools#backlinks", description: "Analyze your link profile" },
+  { icon: FileText, name: "Technical SEO Audit", href: "/tools#technical_audit", description: "Check technical health" },
+  { icon: TrendingUp, name: "Traffic Estimator", href: "/tools#traffic", description: "Estimate organic traffic" },
+  { icon: Target, name: "Keyword Rankings", href: "/tools#keywords", description: "Discover ranking keywords" },
+  { icon: BarChart3, name: "Domain Authority", href: "/tools#domain_rating", description: "Check domain rating" },
+  { icon: Zap, name: "Page Speed Test", href: "/tools#page_speed", description: "Test Core Web Vitals" },
+  { icon: Search, name: "Schema Checker", href: "/tools#schema", description: "Verify structured data" },
+  { icon: Shield, name: "Security Scanner", href: "/tools#security", description: "Check SSL & headers" },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
@@ -35,6 +47,8 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isMobileContactOpen, setIsMobileContactOpen] = useState(false);
   const [isBlogOpen, setIsBlogOpen] = useState(false);
@@ -87,7 +101,6 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
-    { name: "Tools", href: "/tools", isPage: true },
   ];
 
   const blogSubLinks = [
@@ -287,7 +300,7 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
-          {navLinks.slice(0, 2).map((link) => (
+          {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
@@ -297,6 +310,109 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
+
+          {/* Tools Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setIsToolsOpen(true)}
+            onMouseLeave={() => setIsToolsOpen(false)}
+          >
+            <a
+              href="/tools"
+              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+            >
+              Tools
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToolsOpen ? 'rotate-180' : ''}`} />
+            </a>
+            
+            <AnimatePresence>
+              {isToolsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className="absolute top-full left-1/2 -translate-x-1/2 pt-4 z-50"
+                >
+                  <motion.div 
+                    className="bg-background border border-border/50 rounded-2xl p-5 w-[420px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.25),0_0_40px_-10px_hsl(var(--primary)/0.15)] backdrop-blur-sm"
+                    initial={{ boxShadow: "0 10px 30px -10px hsl(var(--primary)/0)" }}
+                    animate={{ boxShadow: "0 20px 60px -15px hsl(var(--primary)/0.25), 0 0 40px -10px hsl(var(--primary)/0.15)" }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    <motion.div 
+                      className="pb-3 mb-3 border-b border-border"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: 0.05 }}
+                    >
+                      <a 
+                        href="/tools"
+                        className="text-sm font-semibold text-primary hover:text-hover-accent hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300"
+                      >
+                        View All Tools →
+                      </a>
+                    </motion.div>
+                    
+                    {/* Tools Grid - 2 columns */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {seoTools.map((tool, index) => (
+                        <motion.a
+                          key={tool.name}
+                          href={tool.href}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ 
+                            duration: 0.2, 
+                            delay: 0.05 + (index * 0.03),
+                            ease: "easeOut"
+                          }}
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300 group"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)] group-hover:scale-110 transition-all duration-300 flex-shrink-0">
+                            <tool.icon className="w-4 h-4 text-primary group-hover:text-hover-accent transition-colors duration-300" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300 block">
+                              {tool.name}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground block truncate">
+                              {tool.description}
+                            </span>
+                          </div>
+                        </motion.a>
+                      ))}
+                    </div>
+                    
+                    {/* Full Audit CTA */}
+                    <motion.div 
+                      className="pt-3 mt-3 border-t border-border"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2, delay: 0.3 }}
+                    >
+                      <a 
+                        href="/audits"
+                        className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-primary/10 to-violet-500/10 hover:from-primary/20 hover:to-violet-500/20 transition-all duration-300 group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                            <Search className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-semibold text-foreground block">Full Website Audit</span>
+                            <span className="text-[11px] text-muted-foreground">Complete SEO analysis + free backlink</span>
+                          </div>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-primary -rotate-90 group-hover:translate-x-1 transition-transform" />
+                      </a>
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
 
           {/* Contact Dropdown */}
           <div 
@@ -605,7 +721,7 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {navLinks.slice(0, 2).map((link) => (
+            {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
@@ -615,6 +731,63 @@ const Navbar = () => {
                 {link.name}
               </a>
             ))}
+
+            {/* Mobile Tools Accordion */}
+            <div>
+              <button
+                onClick={() => setIsMobileToolsOpen(!isMobileToolsOpen)}
+                className="flex items-center justify-between w-full text-foreground hover:text-primary transition-colors font-medium py-2"
+              >
+                Tools
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMobileToolsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {isMobileToolsOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-4 pt-2 space-y-2">
+                      <a
+                        href="/tools"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-sm text-primary font-medium py-1"
+                      >
+                        View All Tools →
+                      </a>
+                      {seoTools.map((tool) => (
+                        <a
+                          key={tool.name}
+                          href={tool.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground py-1 transition-colors"
+                        >
+                          <tool.icon className="w-4 h-4 text-primary" />
+                          <div className="flex flex-col">
+                            <span>{tool.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{tool.description}</span>
+                          </div>
+                        </a>
+                      ))}
+                      
+                      {/* Full Audit CTA */}
+                      <a
+                        href="/audits"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-2 text-sm py-2 mt-2 pt-2 border-t border-border text-primary hover:text-hover-accent transition-colors"
+                      >
+                        <Search className="w-4 h-4" />
+                        Full Website Audit →
+                      </a>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
 
             {/* Mobile Contact Accordion */}
             <div>
