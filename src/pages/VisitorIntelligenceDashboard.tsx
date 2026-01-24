@@ -966,60 +966,70 @@ const MarketingDashboard = () => {
         <main className="flex-1 p-6 overflow-auto">
           {/* No Tracking Installed Prompt - Show when GSC domain selected but no tracking */}
           {selectedGscDomain && !gscDomainHasTracking && (
-            <Card className="p-8 mb-6 bg-gradient-to-br from-amber-500/5 to-orange-500/5 border-amber-500/20 animate-fade-in">
-              <div className="text-center max-w-2xl mx-auto">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
-                  <Code className="w-8 h-8 text-white" />
+            <div className="mb-4 animate-fade-in">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
+                  <Code className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">Install Tracking Code for {selectedGscDomain}</h3>
-                <p className="text-muted-foreground text-sm mb-6">
-                  To see visitor intelligence data, page flow diagrams, and engagement metrics for this domain, 
-                  install the tracking code on your website.
-                </p>
-                <div className="bg-zinc-900 rounded-lg p-4 text-left mb-6 relative">
-                  <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap font-mono">
-{`<!-- Webstack.ceo Visitor Intelligence -->
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">Install tracking for {selectedGscDomain}</p>
+                    <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400">Required</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Add the tracking script to see visitor flow, engagement & leads</p>
+                </div>
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button size="sm" variant="outline" className="border-amber-500/30 hover:bg-amber-500/10">
+                      <Code className="w-3 h-3 mr-1.5" />
+                      View Code
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="absolute right-6 mt-2 z-50 w-[500px]">
+                    <Card className="p-4 bg-background border shadow-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-muted-foreground">Tracking Code</span>
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            const code = `<!-- Webstack.ceo Visitor Intelligence -->
 <script>
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','wscLayer','${selectedGscDomain}');
-</script>
-<!-- End Webstack.ceo Visitor Intelligence -->`}
-                  </pre>
-                  <Button 
-                    size="sm" 
-                    variant="secondary" 
-                    className="absolute top-2 right-2"
-                    onClick={() => {
-                      const code = `<!-- Webstack.ceo Visitor Intelligence -->
-<script>
-(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','wscLayer','${selectedGscDomain}');
-</script>
-<!-- End Webstack.ceo Visitor Intelligence -->`;
-                      navigator.clipboard.writeText(code);
-                    }}
-                  >
-                    <Code className="w-3 h-3 mr-1" />
-                    Copy Code
-                  </Button>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-sm text-left">
-                  <p className="font-medium mb-2">Installation Instructions:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
-                    <li>Copy the tracking code above</li>
-                    <li>Paste it into the <code className="bg-background px-1 rounded">&lt;head&gt;</code> section of your website</li>
-                    <li>The code will automatically track visitor behavior, page views, and engagement</li>
-                    <li>Data will appear in this dashboard within minutes</li>
-                  </ol>
-                </div>
+</script>`;
+                            navigator.clipboard.writeText(code);
+                          }}
+                        >
+                          <Code className="w-3 h-3 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      <div className="bg-zinc-900 rounded-md p-3 overflow-x-auto">
+                        <pre className="text-[11px] text-green-400 whitespace-pre font-mono leading-relaxed">
+{`<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];
+w[l].push({'gtm.start':new Date().getTime(),
+event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s);j.async=true;j.src=
+'https://webstack.ceo/track.js?id='+i;
+f.parentNode.insertBefore(j,f);
+})(window,document,'script','wscLayer',
+'${selectedGscDomain}');
+</script>`}
+                        </pre>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-2">Paste in your website's &lt;head&gt; section</p>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Full-Width Visitor Intelligence Panel (when open) - only show if tracking installed or no domain selected */}
