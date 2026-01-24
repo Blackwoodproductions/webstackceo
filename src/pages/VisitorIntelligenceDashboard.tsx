@@ -755,15 +755,6 @@ const MarketingDashboard = () => {
           {siteArchOpen && (
             <Card className="p-4 mb-6 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  <h2 className="font-bold text-foreground">WebStack.CEO Visitor Intelligence</h2>
-                  {pageFilter && (
-                    <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
-                      Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
-                    </Badge>
-                  )}
-                </div>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -773,6 +764,16 @@ const MarketingDashboard = () => {
                   <ChevronLeft className="w-4 h-4" />
                   Collapse
                 </Button>
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                  <h2 className="font-bold text-foreground">WebStack.CEO Visitor Intelligence</h2>
+                  {pageFilter && (
+                    <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
+                      Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
+                    </Badge>
+                  )}
+                </div>
+                <div className="w-24" /> {/* Spacer to balance the layout */}
               </div>
               <VisitorFlowDiagram 
                 onPageFilter={setPageFilter}
