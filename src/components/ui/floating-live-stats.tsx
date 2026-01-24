@@ -89,7 +89,7 @@ const FloatingLiveStats = memo(() => {
 
   return (
     <div 
-      className="fixed left-6 hidden lg:flex flex-col gap-3 z-40 animate-fade-in"
+      className="fixed left-20 hidden lg:flex flex-col gap-3 z-40 animate-fade-in"
       style={{ top: topPosition }}
     >
       {/* Live Now */}
