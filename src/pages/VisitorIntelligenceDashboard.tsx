@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -314,16 +314,26 @@ const MarketingDashboard = () => {
   }, []);
 
   const selectedDomainLabel = useMemo(() => {
-    // UI should always be domain-first.
-    if (selectedDomainKey) return selectedDomainKey;
-    return normalizeDomain(selectedTrackedDomain || selectedGscSiteUrl || selectedGscDomain || "");
-  }, [selectedDomainKey, selectedTrackedDomain, selectedGscSiteUrl, selectedGscDomain]);
+    // VI domain selector is the source of truth for VI panels
+    return selectedTrackedDomain || "";
+  }, [selectedTrackedDomain]);
 
-  const isGscSiteSelected = !!selectedGscSiteUrl;
-  // Check if selected domain is a user-added domain (no tracking installed yet)
-  const isUserAddedDomainWithoutTracking = userAddedDomains.includes(selectedDomainLabel) && !trackedDomains.includes(selectedDomainLabel);
-  const shouldShowInstallPrompt = isUserAddedDomainWithoutTracking || (gscAuthenticated && isGscSiteSelected && !gscDomainHasTracking);
-  const shouldShowViPanels = !isUserAddedDomainWithoutTracking && (!isGscSiteSelected || gscDomainHasTracking);
+  // Check if the GSC-selected domain is also in VI tracking
+  const gscDomainIsInViTracking = useMemo(() => {
+    if (!selectedGscDomain) return false;
+    const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
+    return viDomains.includes(selectedGscDomain);
+  }, [selectedGscDomain, trackedDomains, userAddedDomains]);
+
+  // Check if VI-selected domain is a user-added domain without tracking installed
+  const isViDomainPendingTracking = userAddedDomains.includes(selectedTrackedDomain) && !trackedDomains.includes(selectedTrackedDomain);
+  
+  // Show VI panels when a VI domain is selected and has tracking (not user-added pending)
+  const shouldShowViPanels = !!selectedTrackedDomain && !isViDomainPendingTracking;
+  
+  // Show install prompt when VI domain is pending tracking installation
+  const shouldShowInstallPrompt = isViDomainPendingTracking || 
+    (gscAuthenticated && !!selectedGscDomain && !gscDomainIsInViTracking);
 
   // Enforce a single source of truth between the top domain selector and the GSC panel.
   // If a tracked domain is selected and it doesn't exist in GSC, the GSC site MUST be cleared.
@@ -385,7 +395,7 @@ const MarketingDashboard = () => {
     }
   }, [diagramTimeRange, diagramCustomDateRange.from, diagramCustomDateRange.to]);
 
-  const shouldIntegrateGscDate = isGscSiteSelected && gscDomainHasTracking;
+  const shouldIntegrateGscDate = !!selectedGscSiteUrl && gscDomainIsInViTracking;
 
   // Keep ref in sync with currently selected domain (GSC site or tracked domain)
   useEffect(() => {
@@ -953,156 +963,74 @@ const MarketingDashboard = () => {
       {/* Date Range Selector Bar */}
       <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1800px] mx-auto">
         <div className="px-6 py-2 flex items-center justify-between">
-          {/* Left: Domain Selector & Time Range Selector */}
+          {/* Left: VI Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
+            {/* VI Domain Selector - only shows VI tracked domains */}
             {(() => {
-              // Build unified list: VI-only first, then VI+GSC (allowing multiple GSC properties per domain), then GSC-only.
-              // IMPORTANT: the selector UI is domain-first (as requested). We select by *domain label*
-              // and internally map to a canonical GSC property (preferring sc-domain: when available).
-              type DomainEntry = {
-                value: string; // Select value (normalized domain label)
-                label: string; // normalized domain label used for matching
-                source: 'gsc' | 'tracking' | 'both';
-                hasTracking: boolean;
-              };
-
-              const viOnlyDomains: DomainEntry[] = [];
-              const bothDomains: DomainEntry[] = [];
-              const gscOnlyDomains: DomainEntry[] = [];
-
-              const gscSitesByLabel = new Map<string, { siteUrl: string; permissionLevel: string }[]>();
-              if (gscAuthenticated && gscSites.length > 0) {
-                for (const site of gscSites) {
-                  const cleanLabel = normalizeDomain(site.siteUrl);
-                  const arr = gscSitesByLabel.get(cleanLabel) || [];
-                  // De-dupe by exact siteUrl to avoid duplicate SelectItem values (Radix Select can misbehave with duplicates)
-                  if (!arr.some((s) => s.siteUrl === site.siteUrl)) {
-                    arr.push(site);
-                  }
-                  gscSitesByLabel.set(cleanLabel, arr);
-                }
-              }
-
-              const pickCanonicalGscSiteUrl = (domain: string): string => {
-                const sites = gscSitesByLabel.get(domain) || [];
-                if (!sites.length) return "";
-                const scDomain = sites.find((s) => s.siteUrl.startsWith("sc-domain:"));
-                return (scDomain || sites[0]).siteUrl;
-              };
-
-              // Categorize tracked domains (domain-first)
-              const allTrackedDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
-              for (const domain of allTrackedDomains) {
-                const hasGsc = gscAuthenticated && (gscSitesByLabel.get(domain)?.length || 0) > 0;
-                if (hasGsc) {
-                  bothDomains.push({ value: domain, label: domain, source: 'both', hasTracking: true });
-                } else {
-                  viOnlyDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: userAddedDomains.includes(domain) ? false : true });
-                }
-              }
-
-              // Add remaining GSC-only domains
-              if (gscAuthenticated) {
-                for (const label of gscSitesByLabel.keys()) {
-                  if (trackedDomains.includes(label)) continue;
-                  gscOnlyDomains.push({ value: label, label, source: 'gsc', hasTracking: false });
-                }
-              }
-
-              const allDomainsRaw: DomainEntry[] = gscAuthenticated
-                ? [...viOnlyDomains, ...bothDomains, ...gscOnlyDomains]
-                : [...viOnlyDomains, ...bothDomains.map(d => ({ ...d, source: 'tracking' as const }))];
-
-              // Unique by domain
-              const allDomains = Array.from(new Map(allDomainsRaw.map((d) => [d.value, d])).values());
-
-              // Selector is domain-first
-              const rawSelectValue = selectedDomainKey || selectedTrackedDomain || selectedGscDomain || '';
-              const selectValue = allDomains.some((d) => d.value === rawSelectValue) ? rawSelectValue : '';
-              const displayLabel = selectValue || '';
+              // Only show domains with VI tracking (or user-added domains pending tracking)
+              const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
               
-              if (allDomains.length > 0) {
+              const selectValue = selectedTrackedDomain || '';
+              
+              if (viDomains.length > 0) {
                 return (
                   <>
-                    <Select 
-                      value={selectValue} 
-                      onValueChange={(value) => {
-                        const selected = allDomains.find(d => d.value === value);
-                        if (selected) {
-                            // Keep selector stable even when other states are cleared (e.g., GSC-only selection).
-                            setSelectedDomainKey(selected.label);
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">VI:</span>
+                      <Select 
+                        value={selectValue} 
+                        onValueChange={(value) => {
+                          setSelectedTrackedDomain(value);
+                          setSelectedDomainKey(value);
+                          // Check if this domain has tracking installed
+                          const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
+                          setGscDomainHasTracking(hasTracking);
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border">
+                          <SelectValue placeholder="Select VI domain" />
+                        </SelectTrigger>
 
-                          const cachedTracking = gscTrackingByDomain[selected.label];
-                          setGscDomainHasTracking(selected.hasTracking || cachedTracking === true);
-                          
-                          // Update the ref immediately to prevent race conditions
-                          selectedGscDomainRef.current = selected.label;
-                          
-                          if (selected.source === 'gsc') {
-                              // GSC-only domain: set canonical GSC site URL, clear tracked domain
-                              const siteUrl = pickCanonicalGscSiteUrl(selected.label);
-                              setSelectedGscSiteUrl(siteUrl);
-                              setSelectedGscDomain(selected.label);
-                            setSelectedTrackedDomain('');
-                            console.log('[Domain Selector] Selected GSC-only domain:', selected.label, 'URL:', value);
-                          } else if (selected.source === 'both') {
-                              // Domain has both VI and GSC: set both (canonical GSC property)
-                              const siteUrl = pickCanonicalGscSiteUrl(selected.label);
-                              setSelectedGscSiteUrl(siteUrl);
-                              setSelectedGscDomain(selected.label);
-                            setSelectedTrackedDomain(selected.label);
-                            console.log('[Domain Selector] Selected VI+GSC domain:', selected.label, 'URL:', value);
-                          } else {
-                            // Tracking-only domain: clear GSC site URL to signal VI-only mode
-                              setSelectedDomainKey(value);
-                            setSelectedTrackedDomain(value);
-                            setSelectedGscDomain(value);
-                            setSelectedGscSiteUrl(''); // Clear GSC URL - this tells GSC panel to show empty state
-                            console.log('[Domain Selector] Selected VI-only domain:', selected.label);
-                          }
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-[220px] h-7 text-sm bg-background border-border">
-                        <SelectValue placeholder="Select domain" />
-                      </SelectTrigger>
-
-                      <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
-                        {allDomains.map((domain) => (
-                          <SelectItem
-                            key={domain.value}
-                            value={domain.value}
-                            textValue={domain.label}
-                            className="text-xs"
+                        <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
+                          {viDomains.map((domain) => (
+                            <SelectItem
+                              key={domain}
+                              value={domain}
+                              className="text-xs"
+                            >
+                              <span className="truncate max-w-[320px]" title={domain}>
+                                {domain}
+                              </span>
+                            </SelectItem>
+                          ))}
+                          <SelectSeparator />
+                          <div 
+                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAddDomainDialogOpen(true);
+                            }}
                           >
-                            <span className="truncate max-w-[320px]" title={domain.label}>
-                              {domain.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                        <SelectSeparator />
-                        <div 
-                          className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddDomainDialogOpen(true);
-                          }}
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add domain
-                        </div>
-                      </SelectContent>
-                    </Select>
+                            <Plus className="w-3 h-3" />
+                            Add domain
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 );
               } else {
                 return (
                   <>
-                    <Badge variant="outline" className="h-7 text-xs bg-muted/50 text-muted-foreground border-border px-3">
-                      <Globe className="w-3 h-3 mr-1.5" />
-                      No domains yet
-                    </Badge>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      onClick={() => setAddDomainDialogOpen(true)}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add VI Domain
+                    </Button>
                     <div className="w-px h-5 bg-border" />
                   </>
                 );
@@ -1825,96 +1753,67 @@ f.parentNode.insertBefore(j,f);
         </div>
         )}
 
-        {/* Google Search Console Integration */}
+        {/* Google Search Console Integration - uses its own domain selector */}
         <div className="mb-8">
           <GSCDashboardPanel 
-            externalSelectedSite={selectedGscSiteUrl}
             externalDateRange={shouldIntegrateGscDate ? integratedGscDateRange : undefined}
             hideDateSelector={shouldIntegrateGscDate}
             onSiteChange={(site) => {
-              // When GSC internal domain changes (from GSC panel's own dropdown if any),
-              // update parent state. This is only called when GSC panel internally changes.
-              // We need to sync parent state with what GSC panel reports.
+              // When GSC domain changes, update parent state for integration logic
               const cleanDomain = normalizeDomain(site);
-              
-              // Only update if this is a new selection, not an echo of our own change
-              if (cleanDomain !== selectedGscDomainRef.current) {
-                setSelectedGscDomain(cleanDomain);
-                setSelectedGscSiteUrl(site);
-                setSelectedDomainKey(cleanDomain);
-                selectedGscDomainRef.current = cleanDomain;
-
-                // If we already know tracking status for this domain, apply it immediately.
-                const cached = gscTrackingByDomain[cleanDomain];
-                const isTracked = trackedDomains.includes(cleanDomain);
-                setGscDomainHasTracking(isTracked ? true : cached === true);
-                console.log('[GSC Panel Callback] Site changed to:', cleanDomain);
-              }
+              setSelectedGscDomain(cleanDomain);
+              setSelectedGscSiteUrl(site);
+              selectedGscDomainRef.current = cleanDomain;
+              console.log('[GSC Panel] Site changed to:', cleanDomain);
             }}
             onDataLoaded={(data) => {
-              // Receive GSC metrics when loaded
               console.log('GSC data loaded:', data);
             }}
             onTrackingStatus={(hasTracking, domain) => {
               const cleanDomain = normalizeDomain(domain);
-
-              // Always store status by domain.
               setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
-
-              // Ignore late/stale callbacks for domains that are no longer selected.
-              const currentlySelected = selectedGscDomainRef.current;
-              if (currentlySelected && cleanDomain !== currentlySelected) {
-                return;
-              }
-
-              const isKnownTrackedDomain = trackedDomains.includes(cleanDomain);
-              const finalHasTracking = isKnownTrackedDomain ? true : hasTracking;
-              setGscDomainHasTracking(finalHasTracking);
-              console.log(`Tracking status for ${cleanDomain}: ${finalHasTracking ? 'installed' : 'not installed'}`);
+              console.log(`Tracking status for ${cleanDomain}: ${hasTracking ? 'installed' : 'not installed'}`);
             }}
-             onSitesLoaded={(sites) => {
-              // Store available GSC sites for header dropdown
+            onSitesLoaded={(sites) => {
               setGscSites(sites);
               console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
-              
-              // Only auto-select if nothing is currently selected
-              const hasExistingSelection = selectedGscSiteUrl || selectedTrackedDomain || selectedGscDomain;
-              if (sites.length > 0 && !hasExistingSelection) {
-                // Check if any GSC site matches a tracked domain - prefer that one
-                const matchingTrackedSite = sites.find(site => {
-                  const cleanDomain = normalizeDomain(site.siteUrl);
-                  return trackedDomains.includes(cleanDomain);
-                });
-                
-                if (matchingTrackedSite) {
-                  // Use the tracked domain that has GSC
-                  const cleanDomain = normalizeDomain(matchingTrackedSite.siteUrl);
-                  setSelectedGscSiteUrl(matchingTrackedSite.siteUrl);
-                  setSelectedGscDomain(cleanDomain);
-                  setSelectedTrackedDomain(cleanDomain);
-                  setSelectedDomainKey(cleanDomain);
-                  selectedGscDomainRef.current = cleanDomain;
-                  setGscDomainHasTracking(true); // Known tracked domain
-                  console.log('[GSC] Auto-selected matching tracked domain:', cleanDomain);
-                } else {
-                  // No matching tracked domain, use first GSC site
-                  const cleanDomain = normalizeDomain(sites[0].siteUrl);
-                  setSelectedGscSiteUrl(sites[0].siteUrl);
-                  setSelectedGscDomain(cleanDomain);
-                  setSelectedDomainKey(cleanDomain);
-                  selectedGscDomainRef.current = cleanDomain;
-                  // Check if this is a known tracked domain
-                  const isTracked = trackedDomains.includes(cleanDomain);
-                  setGscDomainHasTracking(isTracked);
-                  console.log('[GSC] Auto-selected first GSC site:', cleanDomain);
-                }
-              }
             }}
             onAuthStatusChange={(isAuth) => {
               setGscAuthenticated(isAuth);
               console.log('[GSC] Auth status changed:', isAuth);
             }}
           />
+          
+          {/* Show VI install prompt when GSC domain is not in VI tracking */}
+          {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (
+            <Card className="mt-4 border-primary/30 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Code className="w-4 h-4 text-primary" />
+                  Add {selectedGscDomain} to Visitor Intelligence
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Install the tracking code on <strong>{selectedGscDomain}</strong> to see visitor analytics alongside your GSC data.
+                </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    // Add this GSC domain to user-added domains
+                    if (!userAddedDomains.includes(selectedGscDomain)) {
+                      setUserAddedDomains([...userAddedDomains, selectedGscDomain]);
+                    }
+                    setSelectedTrackedDomain(selectedGscDomain);
+                    setSelectedDomainKey(selectedGscDomain);
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add to VI Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         </main>
