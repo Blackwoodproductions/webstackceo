@@ -414,7 +414,23 @@ export const GSCAdvancedReporting = ({
 
   // Fetch indexation status for pages
   const fetchIndexationStatus = async () => {
-    if (!accessToken || !selectedSite || pageData.length === 0) return;
+    if (!accessToken || !selectedSite) {
+      toast({
+        title: "Connection Required",
+        description: "Please connect to Google Search Console first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (pageData.length === 0) {
+      toast({
+        title: "No Pages Found",
+        description: "Please load performance data first by selecting a site and date range",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoadingIndexation(true);
     const results: IndexationStatus[] = [];
@@ -850,22 +866,37 @@ export const GSCAdvancedReporting = ({
     <Card className="mt-4">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
+          {/* Left side: Domain with favicon */}
           <div className="flex items-center gap-3">
+            {displayDomain ? (
+              <>
+                <img 
+                  src={`https://www.google.com/s2/favicons?domain=${displayDomain}&sz=32`}
+                  alt=""
+                  className="w-6 h-6 rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                <div>
+                  <CardTitle className="text-base text-primary font-semibold">{displayDomain}</CardTitle>
+                  <CardDescription className="text-xs">Deep dive into keywords, countries & indexation</CardDescription>
+                </div>
+              </>
+            ) : (
+              <div>
+                <CardTitle className="text-base text-muted-foreground">No site selected</CardTitle>
+                <CardDescription className="text-xs">Connect to Google Search Console above</CardDescription>
+              </div>
+            )}
+          </div>
+          
+          {/* Right side: Advanced Reporting label with icon */}
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <CardTitle className="text-base flex items-center gap-2">
-                {displayDomain && (
-                  <>
-                    <span className="text-primary font-semibold">{displayDomain}</span>
-                    <span className="text-muted-foreground">—</span>
-                  </>
-                )}
-                <span>Advanced Reporting</span>
-              </CardTitle>
-              <CardDescription className="text-xs">Deep dive into keywords, countries & indexation</CardDescription>
-            </div>
+            <span className="text-sm font-medium text-muted-foreground">Advanced Reporting</span>
           </div>
         </div>
       </CardHeader>
