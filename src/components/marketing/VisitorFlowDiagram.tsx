@@ -33,6 +33,7 @@ interface DemoVisit {
   previousPath: string | null;
   timestamp: number;
   opacity: number;
+  isEntryPoint: boolean; // True if this is the first page in a session (not home)
 }
 
 type TimeRange = 'today' | 'week' | 'month' | 'all';
@@ -168,16 +169,24 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   useEffect(() => {
     const mainPages = SITE_STRUCTURE.filter(s => s.category === 'main' || s.path === '/').map(s => s.path);
     const allPages = SITE_STRUCTURE.map(s => s.path);
-    let lastDemoPath = '/';
+    let isFirstVisit = true;
 
     const simulateVisit = () => {
       // Pick a random page, weighted towards main pages
       const useMainPage = Math.random() > 0.3;
       const targetPages = useMainPage ? mainPages : allPages;
-      const randomPath = targetPages[Math.floor(Math.random() * targetPages.length)];
+      let randomPath = targetPages[Math.floor(Math.random() * targetPages.length)];
+      
+      // For entry point simulation, sometimes start on non-home page
+      const isNewSession = isFirstVisit || Math.random() > 0.7;
+      const isNonHomeEntry = isNewSession && randomPath !== '/' && Math.random() > 0.5;
       
       const visitId = `demo-${Date.now()}`;
-      const previousPath = lastDemoPath;
+      
+      // Get previous demo visit for path animation
+      const currentDemoVisits = demoVisits.filter(d => d.opacity > 0.3);
+      const lastVisit = currentDemoVisits[currentDemoVisits.length - 1];
+      const previousPath = isNewSession ? null : lastVisit?.path || null;
       
       // Add demo visit
       setDemoVisits(prev => [...prev, {
@@ -185,11 +194,12 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         path: randomPath,
         previousPath: previousPath !== randomPath ? previousPath : null,
         timestamp: Date.now(),
-        opacity: 1
+        opacity: 1,
+        isEntryPoint: isNonHomeEntry || (isNewSession && randomPath !== '/')
       }]);
 
-      // Add demo path if moving between pages
-      if (previousPath && previousPath !== randomPath) {
+      // Add demo path if moving between pages (not entry point)
+      if (previousPath && previousPath !== randomPath && !isNewSession) {
         const pathId = `demo-path-${Date.now()}`;
         setDemoPaths(prev => [...prev, {
           from: previousPath,
@@ -215,7 +225,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         }, 100);
       }
 
-      lastDemoPath = randomPath;
+      isFirstVisit = false;
 
       // Remove demo visit after 5 seconds with fade
       let visitFadeStep = 0;
@@ -241,7 +251,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     const demoInterval = setInterval(simulateVisit, 30000);
 
     return () => clearInterval(demoInterval);
-  }, []);
+  }, [demoVisits]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -710,6 +720,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
               Demo
             </span>
+            <span className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
+              Entry
+            </span>
           </div>
         </div>
       </div>
@@ -996,6 +1010,12 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const toPos = positions[demoPath.to];
             if (!fromPos || !toPos) return null;
             
+            // Get node sizes for accurate endpoint calculation
+            const fromNode = allDisplayedNodes.find(n => n.path === demoPath.from);
+            const toNode = allDisplayedNodes.find(n => n.path === demoPath.to);
+            const fromNodeSize = fromNode ? (fromNode.depth === 0 ? 18 : fromNode.depth === 1 ? 12 : 8) : 12;
+            const toNodeSize = toNode ? (toNode.depth === 0 ? 18 : toNode.depth === 1 ? 12 : 8) : 12;
+            
             const useLeftEdge = toPos.x < svgWidth / 2;
             const edgeX = useLeftEdge ? 25 : svgWidth - 25;
             const dx = Math.abs(toPos.x - fromPos.x);
@@ -1003,10 +1023,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             let pathD: string;
             
             if (dx < 5) {
-              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
+              // Direct vertical path - end exactly at node edge
+              pathD = `M ${fromPos.x} ${fromPos.y + fromNodeSize} L ${toPos.x} ${toPos.y - toNodeSize}`;
             } else {
-              const startY = fromPos.y + 12;
-              const endY = toPos.y - 12;
+              const startY = fromPos.y + fromNodeSize;
+              const endY = toPos.y - toNodeSize;
               
               pathD = `M ${fromPos.x} ${startY}
                        L ${fromPos.x} ${startY + 8}
@@ -1017,7 +1038,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                        Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
                        L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
                        Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
-                       L ${toPos.x} ${endY}`;
+                       L ${toPos.x} ${toPos.y - toNodeSize}`;
             }
             
             return (
@@ -1119,38 +1140,107 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 style={{ opacity }}
                 onClick={handleNodeClick}
               >
-                {/* Demo visitor ring - purple, slimmer */}
+                {/* Demo visitor ring - purple for normal, orange starburst for non-home entry */}
                 {hasDemoVisit && (
                   <>
-                    <circle
-                      cx={pos.x}
-                      cy={pos.y}
-                      r={nodeSize + 10}
-                      fill="none"
-                      stroke="#a855f7"
-                      strokeWidth={1.5}
-                      strokeOpacity={0.6 * (demoVisit?.opacity || 1)}
-                      className="animate-ping"
-                      style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
-                    />
-                    <circle
-                      cx={pos.x}
-                      cy={pos.y}
-                      r={nodeSize + 6}
-                      fill="#a855f7"
-                      opacity={0.15 * (demoVisit?.opacity || 1)}
-                      filter="url(#glow)"
-                    />
-                    <circle
-                      cx={pos.x}
-                      cy={pos.y}
-                      r={nodeSize + 4}
-                      fill="none"
-                      stroke="#c084fc"
-                      strokeWidth={1}
-                      strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
-                      strokeDasharray="3 2"
-                    />
+                    {demoVisit?.isEntryPoint ? (
+                      /* Orange starburst animation for non-home entry points */
+                      <>
+                        {/* Outer expanding ring */}
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r={nodeSize + 14}
+                          fill="none"
+                          stroke="#f97316"
+                          strokeWidth={2}
+                          strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
+                          className="animate-ping"
+                          style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
+                        />
+                        {/* Inner glow */}
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r={nodeSize + 8}
+                          fill="#f97316"
+                          opacity={0.25 * (demoVisit?.opacity || 1)}
+                          filter="url(#glow)"
+                        />
+                        {/* Starburst rays */}
+                        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                          <line
+                            key={angle}
+                            x1={pos.x + Math.cos(angle * Math.PI / 180) * (nodeSize + 4)}
+                            y1={pos.y + Math.sin(angle * Math.PI / 180) * (nodeSize + 4)}
+                            x2={pos.x + Math.cos(angle * Math.PI / 180) * (nodeSize + 18)}
+                            y2={pos.y + Math.sin(angle * Math.PI / 180) * (nodeSize + 18)}
+                            stroke="#fb923c"
+                            strokeWidth={1.5}
+                            strokeOpacity={0.8 * (demoVisit?.opacity || 1)}
+                            strokeLinecap="round"
+                          >
+                            <animate
+                              attributeName="stroke-opacity"
+                              values={`${0.8 * (demoVisit?.opacity || 1)};${0.3 * (demoVisit?.opacity || 1)};${0.8 * (demoVisit?.opacity || 1)}`}
+                              dur="0.5s"
+                              repeatCount="indefinite"
+                            />
+                          </line>
+                        ))}
+                        {/* Entry badge */}
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y - nodeSize - 12}
+                          r={6}
+                          fill="#f97316"
+                          opacity={demoVisit?.opacity || 1}
+                        />
+                        <text
+                          x={pos.x}
+                          y={pos.y - nodeSize - 8}
+                          textAnchor="middle"
+                          fill="white"
+                          style={{ fontSize: '7px', fontWeight: 'bold' }}
+                          opacity={demoVisit?.opacity || 1}
+                        >
+                          ⚡
+                        </text>
+                      </>
+                    ) : (
+                      /* Normal purple demo ring */
+                      <>
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r={nodeSize + 10}
+                          fill="none"
+                          stroke="#a855f7"
+                          strokeWidth={1.5}
+                          strokeOpacity={0.6 * (demoVisit?.opacity || 1)}
+                          className="animate-ping"
+                          style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
+                        />
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r={nodeSize + 6}
+                          fill="#a855f7"
+                          opacity={0.15 * (demoVisit?.opacity || 1)}
+                          filter="url(#glow)"
+                        />
+                        <circle
+                          cx={pos.x}
+                          cy={pos.y}
+                          r={nodeSize + 4}
+                          fill="none"
+                          stroke="#c084fc"
+                          strokeWidth={1}
+                          strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
+                          strokeDasharray="3 2"
+                        />
+                      </>
+                    )}
                   </>
                 )}
                 {/* Active filter highlight */}
