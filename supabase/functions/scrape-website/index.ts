@@ -3,6 +3,57 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface TechnicalSEO {
+  // Meta tags
+  hasTitle: boolean;
+  titleLength: number;
+  hasMetaDescription: boolean;
+  descriptionLength: number;
+  hasCanonical: boolean;
+  canonicalUrl: string | null;
+  hasViewport: boolean;
+  hasRobotsMeta: boolean;
+  robotsContent: string | null;
+  
+  // Open Graph
+  hasOgTitle: boolean;
+  hasOgDescription: boolean;
+  hasOgImage: boolean;
+  hasOgUrl: boolean;
+  hasTwitterCard: boolean;
+  
+  // Headings
+  h1Count: number;
+  h1Text: string[];
+  h2Count: number;
+  h3Count: number;
+  hasProperHeadingHierarchy: boolean;
+  
+  // Images
+  totalImages: number;
+  imagesWithAlt: number;
+  imagesWithoutAlt: number;
+  altCoverage: number;
+  
+  // Schema/Structured Data
+  hasSchemaMarkup: boolean;
+  schemaTypes: string[];
+  
+  // Links
+  internalLinks: number;
+  externalLinks: number;
+  
+  // SSL
+  isHttps: boolean;
+  
+  // Technical files (detected from HTML references)
+  hasSitemapLink: boolean;
+  
+  // Language
+  hasLangAttribute: boolean;
+  langValue: string | null;
+}
+
 interface WebsiteProfile {
   title: string | null;
   description: string | null;
@@ -23,6 +74,7 @@ interface WebsiteProfile {
   };
   detectedCategory: string;
   summary: string | null;
+  technicalSEO: TechnicalSEO;
 }
 
 // Category detection keywords
@@ -84,7 +136,6 @@ function extractSocialLinks(html: string, baseUrl: string): WebsiteProfile['soci
   for (const [platform, pattern] of Object.entries(socialPatterns)) {
     const match = html.match(pattern);
     if (match && match[0]) {
-      // Extract just the URL from the match
       const urlMatch = match[0].match(/https?:\/\/[^"'\s>]+/);
       if (urlMatch) {
         socialLinks[platform as keyof typeof socialLinks] = urlMatch[0];
@@ -102,13 +153,11 @@ function extractContactInfo(html: string): WebsiteProfile['contactInfo'] {
     address: null,
   };
 
-  // Email extraction
   const emailMatch = html.match(/(?:mailto:|href=["']mailto:)([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
   if (emailMatch) {
     contactInfo.email = emailMatch[1];
   }
 
-  // Phone extraction (various formats)
   const phoneMatch = html.match(/(?:tel:|href=["']tel:)([\d\s\-+().]+)/i);
   if (phoneMatch) {
     contactInfo.phone = phoneMatch[1].trim();
@@ -118,26 +167,21 @@ function extractContactInfo(html: string): WebsiteProfile['contactInfo'] {
 }
 
 function extractMetaTags(html: string, baseUrl: string): { title: string | null; description: string | null; favicon: string | null; logo: string | null } {
-  // Title
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
                        html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
   
-  // Description
   const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
                     html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
   const ogDescMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) ||
                       html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
 
-  // Favicon
   const faviconMatch = html.match(/<link[^>]*rel=["'](?:shortcut )?icon["'][^>]*href=["']([^"']+)["']/i) ||
                        html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:shortcut )?icon["']/i);
 
-  // Logo (og:image or schema logo)
   const logoMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) ||
                     html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
 
-  // Resolve relative URLs
   const resolveUrl = (url: string | undefined | null): string | null => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
@@ -151,6 +195,153 @@ function extractMetaTags(html: string, baseUrl: string): { title: string | null;
     description: ogDescMatch?.[1] || descMatch?.[1] || null,
     favicon: resolveUrl(faviconMatch?.[1]) || `${baseUrl}/favicon.ico`,
     logo: resolveUrl(logoMatch?.[1]),
+  };
+}
+
+function extractTechnicalSEO(html: string, url: string, baseUrl: string): TechnicalSEO {
+  // Title
+  const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  const hasTitle = !!titleMatch && titleMatch[1].trim().length > 0;
+  const titleLength = titleMatch ? titleMatch[1].trim().length : 0;
+  
+  // Meta description
+  const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
+                    html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+  const hasMetaDescription = !!descMatch && descMatch[1].trim().length > 0;
+  const descriptionLength = descMatch ? descMatch[1].trim().length : 0;
+  
+  // Canonical
+  const canonicalMatch = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) ||
+                         html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["']/i);
+  const hasCanonical = !!canonicalMatch;
+  const canonicalUrl = canonicalMatch ? canonicalMatch[1] : null;
+  
+  // Viewport
+  const hasViewport = /<meta[^>]*name=["']viewport["']/i.test(html);
+  
+  // Robots meta
+  const robotsMatch = html.match(/<meta[^>]*name=["']robots["'][^>]*content=["']([^"']+)["']/i) ||
+                      html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']robots["']/i);
+  const hasRobotsMeta = !!robotsMatch;
+  const robotsContent = robotsMatch ? robotsMatch[1] : null;
+  
+  // Open Graph
+  const hasOgTitle = /<meta[^>]*property=["']og:title["']/i.test(html);
+  const hasOgDescription = /<meta[^>]*property=["']og:description["']/i.test(html);
+  const hasOgImage = /<meta[^>]*property=["']og:image["']/i.test(html);
+  const hasOgUrl = /<meta[^>]*property=["']og:url["']/i.test(html);
+  const hasTwitterCard = /<meta[^>]*name=["']twitter:card["']/i.test(html);
+  
+  // Headings
+  const h1Matches = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/gi) || [];
+  const h1Count = h1Matches.length;
+  const h1Text = h1Matches.map(h => h.replace(/<[^>]+>/g, '').trim()).filter(t => t.length > 0);
+  
+  const h2Matches = html.match(/<h2[^>]*>/gi) || [];
+  const h2Count = h2Matches.length;
+  
+  const h3Matches = html.match(/<h3[^>]*>/gi) || [];
+  const h3Count = h3Matches.length;
+  
+  // Check heading hierarchy (should have exactly 1 H1, and H2s should come after H1)
+  const hasProperHeadingHierarchy = h1Count === 1;
+  
+  // Images
+  const imgMatches = html.match(/<img[^>]*>/gi) || [];
+  const totalImages = imgMatches.length;
+  let imagesWithAlt = 0;
+  let imagesWithoutAlt = 0;
+  
+  for (const img of imgMatches) {
+    const hasAlt = /alt=["'][^"']+["']/i.test(img);
+    const hasEmptyAlt = /alt=["']\s*["']/i.test(img);
+    if (hasAlt && !hasEmptyAlt) {
+      imagesWithAlt++;
+    } else {
+      imagesWithoutAlt++;
+    }
+  }
+  
+  const altCoverage = totalImages > 0 ? Math.round((imagesWithAlt / totalImages) * 100) : 100;
+  
+  // Schema/Structured Data
+  const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+  const hasSchemaMarkup = jsonLdMatches.length > 0 || /itemtype=["']https?:\/\/schema\.org/i.test(html);
+  
+  const schemaTypes: string[] = [];
+  for (const match of jsonLdMatches) {
+    try {
+      const jsonContent = match.replace(/<script[^>]*>|<\/script>/gi, '');
+      const parsed = JSON.parse(jsonContent);
+      if (parsed['@type']) {
+        const types = Array.isArray(parsed['@type']) ? parsed['@type'] : [parsed['@type']];
+        schemaTypes.push(...types);
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+  
+  // Links
+  const linkMatches = html.match(/<a[^>]*href=["']([^"']+)["']/gi) || [];
+  let internalLinks = 0;
+  let externalLinks = 0;
+  
+  for (const link of linkMatches) {
+    const hrefMatch = link.match(/href=["']([^"']+)["']/i);
+    if (hrefMatch) {
+      const href = hrefMatch[1];
+      if (href.startsWith('http') && !href.includes(baseUrl.replace(/https?:\/\//, ''))) {
+        externalLinks++;
+      } else if (href.startsWith('/') || href.startsWith(baseUrl) || !href.includes('://')) {
+        internalLinks++;
+      }
+    }
+  }
+  
+  // SSL
+  const isHttps = url.startsWith('https://');
+  
+  // Sitemap link in HTML
+  const hasSitemapLink = /sitemap\.xml|sitemap_index\.xml/i.test(html);
+  
+  // Language
+  const langMatch = html.match(/<html[^>]*lang=["']([^"']+)["']/i);
+  const hasLangAttribute = !!langMatch;
+  const langValue = langMatch ? langMatch[1] : null;
+  
+  return {
+    hasTitle,
+    titleLength,
+    hasMetaDescription,
+    descriptionLength,
+    hasCanonical,
+    canonicalUrl,
+    hasViewport,
+    hasRobotsMeta,
+    robotsContent,
+    hasOgTitle,
+    hasOgDescription,
+    hasOgImage,
+    hasOgUrl,
+    hasTwitterCard,
+    h1Count,
+    h1Text,
+    h2Count,
+    h3Count,
+    hasProperHeadingHierarchy,
+    totalImages,
+    imagesWithAlt,
+    imagesWithoutAlt,
+    altCoverage,
+    hasSchemaMarkup,
+    schemaTypes,
+    internalLinks,
+    externalLinks,
+    isHttps,
+    hasSitemapLink,
+    hasLangAttribute,
+    langValue,
   };
 }
 
@@ -172,32 +363,25 @@ function generateSummary(title: string | null, description: string | null, categ
   };
 
   const categoryLabel = categoryNames[category] || 'business';
-  
-  // Build a comprehensive summary from available content
   const parts: string[] = [];
   
-  // Start with title context
   if (title) {
     parts.push(`${title} is a ${categoryLabel} website.`);
   } else {
     parts.push(`This is a ${categoryLabel} website.`);
   }
   
-  // Add the meta description
   if (description) {
     parts.push(description);
   }
   
-  // Extract key phrases from the page content for additional context
   const cleanText = textContent
     .replace(/\s+/g, ' ')
     .trim()
     .substring(0, 3000);
   
-  // Find sentences that might describe the business
   const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 30 && s.trim().length < 200);
   
-  // Look for descriptive sentences (containing keywords like "we", "our", "provide", "offer", "specialize")
   const descriptiveSentences = sentences.filter(s => {
     const lower = s.toLowerCase();
     return lower.includes(' we ') || lower.includes('our ') || lower.includes(' provide') || 
@@ -205,7 +389,6 @@ function generateSummary(title: string | null, description: string | null, categ
            lower.includes(' service') || lower.includes(' solution') || lower.includes(' deliver');
   });
   
-  // Add up to 3 descriptive sentences
   for (let i = 0; i < Math.min(3, descriptiveSentences.length); i++) {
     const sentence = descriptiveSentences[i].trim();
     if (sentence && !parts.some(p => p.includes(sentence.substring(0, 30)))) {
@@ -213,7 +396,6 @@ function generateSummary(title: string | null, description: string | null, categ
     }
   }
   
-  // Add category-specific context
   const categoryContext: Record<string, string> = {
     ecommerce: 'The website appears to offer products or services for online purchase, featuring e-commerce functionality for a seamless shopping experience.',
     saas: 'This platform provides software solutions designed to help businesses streamline their operations and improve productivity through digital tools.',
@@ -234,10 +416,8 @@ function generateSummary(title: string | null, description: string | null, categ
     parts.push(categoryContext[category]);
   }
   
-  // Join and ensure minimum length
   let summary = parts.join(' ').replace(/\s+/g, ' ').trim();
   
-  // If still too short, add generic padding based on category
   if (summary.length < 200) {
     summary += ` Visitors can explore the website to learn more about the offerings, get in touch with the team, and discover how this ${categoryLabel} organization can meet their needs.`;
   }
@@ -260,7 +440,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Format URL
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
       formattedUrl = `https://${formattedUrl}`;
@@ -268,7 +447,6 @@ Deno.serve(async (req) => {
 
     console.log('Scraping website:', formattedUrl);
 
-    // Fetch the website
     const response = await fetch(formattedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; WebStackCEO-Bot/1.0; +https://webstackceo.com)',
@@ -276,6 +454,40 @@ Deno.serve(async (req) => {
         'Accept-Language': 'en-US,en;q=0.5',
       },
     });
+
+    const emptyTechnicalSEO: TechnicalSEO = {
+      hasTitle: false,
+      titleLength: 0,
+      hasMetaDescription: false,
+      descriptionLength: 0,
+      hasCanonical: false,
+      canonicalUrl: null,
+      hasViewport: false,
+      hasRobotsMeta: false,
+      robotsContent: null,
+      hasOgTitle: false,
+      hasOgDescription: false,
+      hasOgImage: false,
+      hasOgUrl: false,
+      hasTwitterCard: false,
+      h1Count: 0,
+      h1Text: [],
+      h2Count: 0,
+      h3Count: 0,
+      hasProperHeadingHierarchy: false,
+      totalImages: 0,
+      imagesWithAlt: 0,
+      imagesWithoutAlt: 0,
+      altCoverage: 0,
+      hasSchemaMarkup: false,
+      schemaTypes: [],
+      internalLinks: 0,
+      externalLinks: 0,
+      isHttps: formattedUrl.startsWith('https://'),
+      hasSitemapLink: false,
+      hasLangAttribute: false,
+      langValue: null,
+    };
 
     if (!response.ok) {
       console.error('Failed to fetch website:', response.status);
@@ -292,6 +504,7 @@ Deno.serve(async (req) => {
             contactInfo: { email: null, phone: null, address: null },
             detectedCategory: 'other',
             summary: 'Unable to analyze this website.',
+            technicalSEO: emptyTechnicalSEO,
           }
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -301,12 +514,11 @@ Deno.serve(async (req) => {
     const html = await response.text();
     const baseUrl = new URL(formattedUrl).origin;
 
-    // Extract metadata
     const metaTags = extractMetaTags(html, baseUrl);
     const socialLinks = extractSocialLinks(html, baseUrl);
     const contactInfo = extractContactInfo(html);
+    const technicalSEO = extractTechnicalSEO(html, formattedUrl, baseUrl);
     
-    // Detect category from content
     const textContent = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -325,9 +537,10 @@ Deno.serve(async (req) => {
       contactInfo,
       detectedCategory,
       summary: generateSummary(metaTags.title, metaTags.description, detectedCategory, textContent),
+      technicalSEO,
     };
 
-    console.log('Successfully scraped website profile');
+    console.log('Successfully scraped website profile with technical SEO data');
 
     return new Response(
       JSON.stringify({ success: true, profile }),
@@ -336,6 +549,41 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error scraping website:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to scrape website';
+    
+    const emptyTechnicalSEO: TechnicalSEO = {
+      hasTitle: false,
+      titleLength: 0,
+      hasMetaDescription: false,
+      descriptionLength: 0,
+      hasCanonical: false,
+      canonicalUrl: null,
+      hasViewport: false,
+      hasRobotsMeta: false,
+      robotsContent: null,
+      hasOgTitle: false,
+      hasOgDescription: false,
+      hasOgImage: false,
+      hasOgUrl: false,
+      hasTwitterCard: false,
+      h1Count: 0,
+      h1Text: [],
+      h2Count: 0,
+      h3Count: 0,
+      hasProperHeadingHierarchy: false,
+      totalImages: 0,
+      imagesWithAlt: 0,
+      imagesWithoutAlt: 0,
+      altCoverage: 0,
+      hasSchemaMarkup: false,
+      schemaTypes: [],
+      internalLinks: 0,
+      externalLinks: 0,
+      isHttps: false,
+      hasSitemapLink: false,
+      hasLangAttribute: false,
+      langValue: null,
+    };
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -349,6 +597,7 @@ Deno.serve(async (req) => {
           contactInfo: { email: null, phone: null, address: null },
           detectedCategory: 'other',
           summary: 'Unable to analyze this website.',
+          technicalSEO: emptyTechnicalSEO,
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
