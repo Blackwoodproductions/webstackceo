@@ -105,11 +105,14 @@ const LiveChatWidget = () => {
   }, [messages]);
 
   const startConversation = async () => {
+    const currentPage = window.location.pathname;
+    
     const { data, error } = await supabase
       .from("chat_conversations")
       .insert({
         session_id: sessionId,
         status: "active",
+        current_page: currentPage,
       })
       .select("id")
       .single();

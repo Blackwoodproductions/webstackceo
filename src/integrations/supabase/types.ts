@@ -17,6 +17,7 @@ export type Database = {
       chat_conversations: {
         Row: {
           created_at: string
+          current_page: string | null
           id: string
           last_message_at: string
           operator_id: string | null
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_page?: string | null
           id?: string
           last_message_at?: string
           operator_id?: string | null
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_page?: string | null
           id?: string
           last_message_at?: string
           operator_id?: string | null
