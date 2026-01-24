@@ -14,11 +14,12 @@ interface VisitorSession {
 
 interface ReferrerBreakdownChartProps {
   sessions: VisitorSession[];
+  horizontal?: boolean;
 }
 
 type ReferrerCategory = 'google' | 'bing' | 'social' | 'email' | 'referral' | 'direct';
 
-const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
+const ReferrerBreakdownChart = ({ sessions, horizontal = false }: ReferrerBreakdownChartProps) => {
   const referrerData = useMemo(() => {
     const categorize = (referrer: string | null): ReferrerCategory => {
       if (!referrer || referrer === '' || referrer === 'null') return 'direct';
@@ -28,7 +29,7 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
       // Search engines
       if (ref.includes('google.com') || ref.includes('google.')) return 'google';
       if (ref.includes('bing.com')) return 'bing';
-      if (ref.includes('duckduckgo') || ref.includes('yahoo.com') || ref.includes('baidu.com')) return 'google'; // Group with search
+      if (ref.includes('duckduckgo') || ref.includes('yahoo.com') || ref.includes('baidu.com')) return 'google';
       
       // Social media
       if (ref.includes('facebook.com') || ref.includes('fb.com')) return 'social';
@@ -131,9 +132,67 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
   const total = sessions.length;
   const topSource = referrerData[0];
 
-  // Calculate donut chart segments
+  // Horizontal layout
+  if (horizontal) {
+    return (
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            Traffic Sources
+          </h2>
+          <div className="flex items-center gap-3">
+            {topSource && topSource.count > 0 && (
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${topSource.bgColor}`}>
+                <TrendingUp className={`w-3.5 h-3.5 ${topSource.textColor}`} />
+                <span className="text-xs text-muted-foreground">Top:</span>
+                <span className={`text-sm font-semibold ${topSource.textColor}`}>{topSource.label}</span>
+                <span className="text-xs text-muted-foreground">({topSource.percentage.toFixed(0)}%)</span>
+              </div>
+            )}
+            <Badge variant="outline" className="text-[10px]">
+              {total.toLocaleString()} total
+            </Badge>
+          </div>
+        </div>
+
+        {/* Horizontal source bars */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {referrerData.map((item) => (
+            <div 
+              key={item.key} 
+              className="flex flex-col p-3 rounded-lg bg-secondary/20 border border-border/30 hover:bg-secondary/40 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div 
+                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: item.color }}
+                />
+                <item.icon className={`w-4 h-4 ${item.textColor} flex-shrink-0`} />
+                <span className="text-sm font-medium text-foreground">{item.label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-secondary/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-300" 
+                    style={{ width: `${Math.max(item.percentage, 3)}%`, backgroundColor: item.color }}
+                  />
+                </div>
+                <span className="text-sm font-bold min-w-[28px] text-right">{item.count}</span>
+                <span className="text-xs text-muted-foreground min-w-[32px] text-right">
+                  {item.percentage.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  // Vertical layout (original)
   const donutSegments = useMemo(() => {
-    let currentAngle = -90; // Start from top
+    let currentAngle = -90;
     return referrerData.map(item => {
       const angle = (item.percentage / 100) * 360;
       const startAngle = currentAngle;
@@ -192,14 +251,13 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
           })}
           <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
         </svg>
-        {/* Center text overlay */}
         <div className="absolute inset-0 flex items-center justify-center flex-col">
           <span className="text-xl font-bold leading-tight">{topSource?.percentage.toFixed(0)}%</span>
           <span className="text-[10px] text-muted-foreground">{topSource?.label}</span>
         </div>
       </div>
 
-      {/* Legend - Full width with progress bars */}
+      {/* Legend */}
       <div className="flex-1 flex flex-col justify-start space-y-2">
         {referrerData.map((item) => (
           <div key={item.key} className="flex items-center gap-3 py-1.5 px-3 rounded-lg hover:bg-secondary/30 transition-colors w-full">
