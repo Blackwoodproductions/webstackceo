@@ -6,13 +6,25 @@ const corsHeaders = {
 };
 
 interface SearchConsoleRequest {
-  action: 'sites' | 'performance' | 'indexing' | 'sitemaps';
+  action: 'sites' | 'performance' | 'indexing' | 'sitemaps' | 'urlInspection';
   accessToken: string;
   siteUrl?: string;
   startDate?: string;
   endDate?: string;
   dimensions?: string[];
   rowLimit?: number;
+  startRow?: number;
+  searchType?: 'web' | 'image' | 'video' | 'news' | 'discover' | 'googleNews';
+  dataState?: 'all' | 'final';
+  inspectionUrl?: string;
+  dimensionFilterGroups?: Array<{
+    groupType?: string;
+    filters: Array<{
+      dimension: string;
+      operator: string;
+      expression: string;
+    }>;
+  }>;
 }
 
 serve(async (req) => {
@@ -21,7 +33,20 @@ serve(async (req) => {
   }
 
   try {
-    const { action, accessToken, siteUrl, startDate, endDate, dimensions, rowLimit } = await req.json() as SearchConsoleRequest;
+    const { 
+      action, 
+      accessToken, 
+      siteUrl, 
+      startDate, 
+      endDate, 
+      dimensions, 
+      rowLimit,
+      startRow,
+      searchType,
+      dataState,
+      inspectionUrl,
+      dimensionFilterGroups
+    } = await req.json() as SearchConsoleRequest;
 
     if (!accessToken) {
       return new Response(
@@ -58,19 +83,65 @@ serve(async (req) => {
           );
         }
 
+        // Build request body with all available options
+        const requestBody: Record<string, unknown> = {
+          startDate: startDate || getDateNDaysAgo(28),
+          endDate: endDate || getDateNDaysAgo(0),
+          dimensions: dimensions || ["query"],
+          rowLimit: rowLimit || 25,
+          startRow: startRow || 0,
+          aggregationType: "auto",
+        };
+
+        // Add search type if specified (web, image, video, news, discover, googleNews)
+        if (searchType) {
+          requestBody.type = searchType;
+        }
+
+        // Add data state if specified (all or final)
+        if (dataState) {
+          requestBody.dataState = dataState;
+        }
+
+        // Add dimension filters if specified
+        if (dimensionFilterGroups && dimensionFilterGroups.length > 0) {
+          requestBody.dimensionFilterGroups = dimensionFilterGroups;
+        }
+
         // Get performance data (clicks, impressions, CTR, position)
         const encodedSiteUrl = encodeURIComponent(siteUrl);
+        console.log(`Fetching performance data for ${siteUrl}, type: ${searchType || 'web'}, dimensions: ${dimensions?.join(',')}`);
+        
         const response = await fetch(
           `https://www.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/searchAnalytics/query`,
           {
             method: "POST",
             headers,
+            body: JSON.stringify(requestBody),
+          }
+        );
+        result = await response.json();
+        break;
+      }
+
+      case 'urlInspection': {
+        if (!siteUrl || !inspectionUrl) {
+          return new Response(
+            JSON.stringify({ error: "Site URL and inspection URL are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`Inspecting URL: ${inspectionUrl} for site: ${siteUrl}`);
+        
+        const response = await fetch(
+          "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect",
+          {
+            method: "POST",
+            headers,
             body: JSON.stringify({
-              startDate: startDate || getDateNDaysAgo(28),
-              endDate: endDate || getDateNDaysAgo(0),
-              dimensions: dimensions || ["query"],
-              rowLimit: rowLimit || 25,
-              aggregationType: "auto",
+              inspectionUrl: inspectionUrl,
+              siteUrl: siteUrl,
             }),
           }
         );
@@ -86,35 +157,18 @@ serve(async (req) => {
           );
         }
 
-        // Get URL inspection / indexing status
         const encodedSiteUrl = encodeURIComponent(siteUrl);
         
-        // Get crawl stats using Search Console API
-        const [inspectionResponse, coverageResponse] = await Promise.all([
-          // Index coverage summary
-          fetch(
-            `https://searchconsole.googleapis.com/v1/urlInspection/index:inspect`,
-            {
-              method: "POST",
-              headers,
-              body: JSON.stringify({
-                inspectionUrl: siteUrl.replace('sc-domain:', 'https://'),
-                siteUrl: siteUrl,
-              }),
-            }
-          ).catch(() => null),
-          // Get sitemaps for coverage info
-          fetch(
-            `https://www.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/sitemaps`,
-            { headers }
-          ),
-        ]);
+        // Get sitemaps for coverage info
+        const coverageResponse = await fetch(
+          `https://www.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/sitemaps`,
+          { headers }
+        );
 
         const sitemapsData = await coverageResponse.json();
         
         result = {
           sitemaps: sitemapsData,
-          // Note: Full index coverage requires Search Console API v1 with specific permissions
         };
         break;
       }
