@@ -167,7 +167,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const [showAdvancedReporting, setShowAdvancedReporting] = useState(true);
   
   // Data dropdown states
-  const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | 'devices' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | 'devices' | null>('devices');
 
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
