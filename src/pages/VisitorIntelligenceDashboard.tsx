@@ -737,7 +737,7 @@ const MarketingDashboard = () => {
           {/* Left: Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Domain Selector - controls both Visitor Intelligence and GSC sections */}
-            {gscAuthenticated && gscSites.length > 0 && (
+            {gscAuthenticated && gscSites.length > 0 ? (
               <>
                 <Select 
                   value={selectedGscSiteUrl} 
@@ -759,6 +759,14 @@ const MarketingDashboard = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="w-px h-5 bg-border" />
+              </>
+            ) : (
+              <>
+                <Badge variant="outline" className="h-7 text-xs bg-muted/50 text-muted-foreground border-border px-3">
+                  <Globe className="w-3 h-3 mr-1.5" />
+                  Connect GSC below
+                </Badge>
                 <div className="w-px h-5 bg-border" />
               </>
             )}
