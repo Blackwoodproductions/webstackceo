@@ -982,9 +982,8 @@ const MarketingDashboard = () => {
               if (viDomains.length > 0) {
                 return (
                   <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">VI:</span>
-                      <Select 
+                    <div className="flex items-center">
+                      <Select
                         value={selectValue} 
                         onValueChange={(value) => {
                           setSelectedTrackedDomain(value);
