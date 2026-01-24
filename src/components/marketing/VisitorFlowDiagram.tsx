@@ -184,6 +184,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
+  const [demoMode, setDemoMode] = useState(false);
+  const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; isExternal?: boolean }[]>([]);
 
   // Fetch initial data including active sessions
   useEffect(() => {
@@ -408,6 +410,64 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
 
     return () => clearInterval(cleanup);
   }, []);
+
+  // Demo mode - simulate visitor traces every 15 seconds
+  useEffect(() => {
+    if (!demoMode) {
+      setDemoPaths([]);
+      return;
+    }
+
+    const demoPages = ['/', '/about', '/features', '/pricing', '/contact', '/tools', '/learn', '/faq', '/directory'];
+    const externalSources = ['google.com', 'facebook.com', 'linkedin.com', 'twitter.com'];
+    
+    const runDemo = () => {
+      // Randomly decide: internal navigation or external entry
+      const isExternal = Math.random() > 0.6;
+      
+      if (isExternal) {
+        // External entry - visitor arrives from offsite
+        const targetPage = demoPages[Math.floor(Math.random() * demoPages.length)];
+        const source = externalSources[Math.floor(Math.random() * externalSources.length)];
+        const pathId = `demo-external-${Date.now()}`;
+        
+        setDemoPaths(paths => [...paths, { 
+          from: `external:${source}`, 
+          to: targetPage, 
+          id: pathId,
+          isExternal: true 
+        }]);
+        
+        setTimeout(() => {
+          setDemoPaths(paths => paths.filter(p => p.id !== pathId));
+        }, 5000);
+      } else {
+        // Internal navigation
+        const fromIndex = Math.floor(Math.random() * demoPages.length);
+        let toIndex = Math.floor(Math.random() * demoPages.length);
+        while (toIndex === fromIndex) {
+          toIndex = Math.floor(Math.random() * demoPages.length);
+        }
+        
+        const pathId = `demo-${Date.now()}`;
+        setDemoPaths(paths => [...paths, { 
+          from: demoPages[fromIndex], 
+          to: demoPages[toIndex], 
+          id: pathId 
+        }]);
+        
+        setTimeout(() => {
+          setDemoPaths(paths => paths.filter(p => p.id !== pathId));
+        }, 5000);
+      }
+    };
+
+    // Run immediately and then every 15 seconds
+    runDemo();
+    const interval = setInterval(runDemo, 15000);
+
+    return () => clearInterval(interval);
+  }, [demoMode]);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
     const filterDate = getTimeRangeFilter(timeRange, customDateRange.from);
@@ -895,28 +955,44 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             </div>
           )}
 
+          {/* Demo Mode Toggle */}
+          <Button
+            variant={demoMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDemoMode(!demoMode)}
+            className={cn(
+              "h-8 text-xs",
+              demoMode && "bg-purple-600 hover:bg-purple-700"
+            )}
+          >
+            <Zap className="w-3 h-3 mr-1" />
+            {demoMode ? "Demo On" : "Demo"}
+          </Button>
+
           {/* Legend */}
-          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground pl-4 border-l border-border">
+          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground pl-4 border-l border-border flex-wrap">
+            <span className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold">37</span>
+              </div>
+              Views
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold">2</span>
+              </div>
+              Live
+            </span>
             <span className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-gray-500 opacity-40" />
               Unvisited
             </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-yellow-500" />
-              Low
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-green-500" />
-              Medium
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-blue-500" />
-              High
-            </span>
-            <span className="flex items-center gap-1 ml-2">
-              <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
-              Live
-            </span>
+            {demoMode && (
+              <span className="flex items-center gap-1 text-purple-400">
+                <div className="w-3 h-3 rounded-full bg-purple-500 animate-pulse" />
+                Demo
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1042,7 +1118,152 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             );
           })}
 
-          {/* Demo paths removed - live only */}
+          {/* Demo mode paths */}
+          {demoMode && demoPaths.map((demoPath) => {
+            const toPos = positions[demoPath.to];
+            if (!toPos) return null;
+            
+            // For external entries, animate from top of SVG
+            if (demoPath.isExternal) {
+              const startY = 0;
+              const pathD = `M ${toPos.x} ${startY} L ${toPos.x} ${toPos.y - 12}`;
+              
+              return (
+                <g key={demoPath.id}>
+                  {/* Starburst effect at entry point */}
+                  <circle
+                    cx={toPos.x}
+                    cy={toPos.y}
+                    r={20}
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    opacity={0.8}
+                  >
+                    <animate
+                      attributeName="r"
+                      values="8;25;8"
+                      dur="1s"
+                      repeatCount="3"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.2;0.8"
+                      dur="1s"
+                      repeatCount="3"
+                    />
+                  </circle>
+                  {/* Entry path */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth={4}
+                    strokeOpacity={0.6}
+                    strokeLinecap="round"
+                    filter="url(#glow)"
+                    className="animate-pulse"
+                  />
+                  {/* Traveling dot */}
+                  <circle r="6" fill="#f97316" filter="url(#glow)">
+                    <animateMotion
+                      dur="2s"
+                      repeatCount="1"
+                      path={pathD}
+                      fill="freeze"
+                    />
+                  </circle>
+                  {/* External source badge */}
+                  <rect
+                    x={toPos.x - 35}
+                    y={-5}
+                    width={70}
+                    height={16}
+                    rx={8}
+                    fill="#f97316"
+                  />
+                  <text
+                    x={toPos.x}
+                    y={7}
+                    textAnchor="middle"
+                    fill="white"
+                    style={{ fontSize: '9px', fontWeight: 'bold' }}
+                  >
+                    {demoPath.from.replace('external:', '')}
+                  </text>
+                </g>
+              );
+            }
+            
+            // Internal navigation paths
+            const fromPos = positions[demoPath.from];
+            if (!fromPos) return null;
+            
+            const useLeftEdge = toPos.x < 550;
+            const edgeX = useLeftEdge ? 25 : 1075;
+            const dx = Math.abs(toPos.x - fromPos.x);
+            
+            let pathD: string;
+            if (dx < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
+            } else {
+              const startY = fromPos.y + 12;
+              const endY = toPos.y - 12;
+              pathD = `M ${fromPos.x} ${startY}
+                       L ${fromPos.x} ${startY + 8}
+                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
+                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
+                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
+                       L ${edgeX} ${endY - 20}
+                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
+                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
+                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
+                       L ${toPos.x} ${endY}`;
+            }
+            
+            return (
+              <g key={demoPath.id}>
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#a855f7"
+                  strokeWidth={5}
+                  strokeOpacity={0.5}
+                  strokeLinecap="round"
+                  filter="url(#glow)"
+                  className="animate-pulse"
+                />
+                <circle r="7" fill="#a855f7" filter="url(#glow)">
+                  <animateMotion
+                    dur="4s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="1;1;0"
+                    dur="5s"
+                    fill="freeze"
+                  />
+                </circle>
+                <circle r="4" fill="#ffffff">
+                  <animateMotion
+                    dur="4s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="1;1;0"
+                    dur="5s"
+                    fill="freeze"
+                  />
+                </circle>
+              </g>
+            );
+          })}
           
           {/* Draw nodes */}
           {allDisplayedNodes.map((node) => {
@@ -1101,7 +1322,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                       cy={pos.y}
                       r={nodeSize + 12}
                       fill="none"
-                      stroke="#06b6d4"
+                      stroke="#22c55e"
                       strokeWidth={2}
                       strokeOpacity={0.6}
                       className="animate-ping"
@@ -1111,7 +1332,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                       cx={pos.x}
                       cy={pos.y}
                       r={nodeSize + 8}
-                      fill="#06b6d4"
+                      fill="#22c55e"
                       opacity={0.2}
                       filter="url(#glow)"
                     />
@@ -1133,7 +1354,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   cy={pos.y}
                   r={nodeSize}
                   fill="hsl(var(--background))"
-                  stroke={hasLiveVisitor ? "#06b6d4" : color}
+                  stroke={hasLiveVisitor ? "#22c55e" : color}
                   strokeWidth={hasLiveVisitor ? 3 : node.isVisited ? 2.5 : 1.5}
                   strokeDasharray={node.isVisited ? "none" : "3 2"}
                 />
@@ -1143,7 +1364,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     x={pos.x}
                     y={pos.y + (nodeSize > 10 ? 4 : 3)}
                     textAnchor="middle"
-                    fill={hasLiveVisitor ? "#06b6d4" : color}
+                    fill={hasLiveVisitor ? "#22c55e" : color}
                     style={{ 
                       fontSize: nodeSize > 14 ? '10px' : nodeSize > 10 ? '8px' : '6px', 
                       fontWeight: 'bold' 
@@ -1157,18 +1378,18 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     cx={pos.x}
                     cy={pos.y}
                     r={nodeSize * 0.25}
-                    fill={hasLiveVisitor ? "#06b6d4" : color}
+                    fill={hasLiveVisitor ? "#22c55e" : color}
                     opacity={node.isVisited ? 0.5 : 0.3}
                   />
                 )}
-                {/* Live visitor count badge - top right */}
+                {/* Live visitor count badge - top right (GREEN) */}
                 {hasLiveVisitor && (
                   <>
                     <circle
                       cx={pos.x + nodeSize - 2}
                       cy={pos.y - nodeSize + 2}
                       r={8}
-                      fill="#06b6d4"
+                      fill="#22c55e"
                     />
                     <text
                       x={pos.x + nodeSize - 2}
