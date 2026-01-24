@@ -109,8 +109,13 @@ const HeroSection = () => {
                   placeholder="Enter your domain (e.g., example.com)"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  className="pl-12 h-14 text-lg bg-background/80 backdrop-blur border-border/50 focus:border-primary/50"
+                  className="pl-12 pr-52 h-14 text-lg bg-background/80 backdrop-blur border-border/50 focus:border-primary/50"
                 />
+                {/* Trust indicator inside input */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                  <span>Instant • No email • Free</span>
+                </div>
               </div>
               <Button
                 type="submit"
@@ -140,22 +145,11 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-4"
+            className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-10"
           >
             Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
             basic uptime monitoring to advanced SEO and traffic intelligence.
           </motion.p>
-
-          {/* Trust indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-10"
-          >
-            <Zap className="w-4 h-4 text-amber-500" />
-            <span>Instant results • No email required • 100% Free</span>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
