@@ -869,28 +869,73 @@ const MarketingDashboard = () => {
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
                   
-                  {/* Compact page indicators */}
-                  <div className="flex-1 flex flex-col items-center gap-1 py-3 overflow-auto">
-                    {flowSummary && flowSummary.topPages.slice(0, 8).map((page) => {
+                  {/* Compact page indicators with full visual data */}
+                  <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
+                    {flowSummary && flowSummary.topPages.slice(0, 10).map((page) => {
                       const maxVisits = flowSummary.topPages[0]?.visits || 1;
                       const intensity = page.visits / maxVisits;
                       const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : '#eab308';
                       const hasLiveVisitor = page.liveCount > 0;
+                      const hasExternalReferrer = page.hasExternalReferrer;
                       
                       return (
                         <button
                           key={page.path}
-                          className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${pageFilter === page.path ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-secondary/50'}`}
-                          style={{ borderColor: pageFilter === page.path ? undefined : heatColor }}
+                          className={`relative flex items-center justify-center transition-all ${pageFilter === page.path ? 'scale-110' : 'hover:scale-105'}`}
                           onClick={() => setPageFilter(page.path === pageFilter ? null : page.path)}
-                          title={`${page.name}: ${page.visits} visits`}
+                          title={`${page.name}: ${page.visits} visits${hasLiveVisitor ? ` (${page.liveCount} live)` : ''}${page.externalCount > 0 ? ` (${page.externalCount} external)` : ''}`}
                         >
-                          <span className="text-[9px] font-bold text-primary">
-                            {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
-                          </span>
-                          {hasLiveVisitor && (
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse border border-background" />
-                          )}
+                          <svg width={36} height={36} className="overflow-visible">
+                            {/* External referrer starburst */}
+                            {hasExternalReferrer && (
+                              <>
+                                <circle cx={18} cy={18} r={16} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.7}>
+                                  <animate attributeName="r" values="14;17;14" dur="2s" repeatCount="indefinite" />
+                                  <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
+                                </circle>
+                                {[0, 60, 120, 180, 240, 300].map((angle) => {
+                                  const rad = (angle * Math.PI) / 180;
+                                  const x1 = 18 + Math.cos(rad) * 11;
+                                  const y1 = 18 + Math.sin(rad) * 11;
+                                  const x2 = 18 + Math.cos(rad) * 15;
+                                  const y2 = 18 + Math.sin(rad) * 15;
+                                  return (
+                                    <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f97316" strokeWidth={1.5} strokeLinecap="round" opacity={0.7}>
+                                      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" begin={`${angle / 360}s`} repeatCount="indefinite" />
+                                    </line>
+                                  );
+                                })}
+                              </>
+                            )}
+                            {/* Live visitor glow */}
+                            {hasLiveVisitor && (
+                              <circle cx={18} cy={18} r={14} fill="#22c55e" opacity={0.25} className="animate-pulse" />
+                            )}
+                            {/* Main circle */}
+                            <circle 
+                              cx={18} cy={18} r={12} 
+                              fill="hsl(var(--background))" 
+                              stroke={pageFilter === page.path ? 'hsl(var(--primary))' : hasLiveVisitor ? "#22c55e" : heatColor} 
+                              strokeWidth={pageFilter === page.path ? 3 : 2} 
+                            />
+                            <text x={18} y={22} textAnchor="middle" fill="#8b5cf6" style={{ fontSize: '9px', fontWeight: 'bold' }}>
+                              {page.visits > 999 ? `${Math.round(page.visits / 100) / 10}k` : page.visits}
+                            </text>
+                            {/* Live count badge */}
+                            {hasLiveVisitor && (
+                              <>
+                                <circle cx={28} cy={8} r={6} fill="#22c55e" />
+                                <text x={28} y={11} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.liveCount}</text>
+                              </>
+                            )}
+                            {/* External count badge */}
+                            {page.externalCount > 0 && (
+                              <>
+                                <circle cx={8} cy={28} r={6} fill="#f97316" />
+                                <text x={8} y={31} textAnchor="middle" fill="white" style={{ fontSize: '8px', fontWeight: 'bold' }}>{page.externalCount > 99 ? '99+' : page.externalCount}</text>
+                              </>
+                            )}
+                          </svg>
                         </button>
                       );
                     })}
