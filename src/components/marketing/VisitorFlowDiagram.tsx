@@ -847,69 +847,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             </filter>
           </defs>
 
-          {/* Draw structural edges (dimmed) - route along outside edges */}
-          {structuralEdges.map((edge, i) => {
-            const fromPos = positions[edge.from];
-            const toPos = positions[edge.to];
-            if (!fromPos || !toPos) return null;
-            
-            // Check if this path has actual visitor traffic
-            const pathKey = `${edge.from}|${edge.to}`;
-            const pathTraffic = pathHeatmap[pathKey] || 0;
-            const hasTraffic = pathTraffic > 0;
-            
-            // Skip rendering if there's actual traffic (will be drawn by heatmap paths)
-            if (hasTraffic) return null;
-            
-            // Structural edges are very dim, just showing site structure
-            const baseOpacity = edge.isVisited ? 0.15 : 0.08;
-            const color = '#6b7280';
-            
-            // Route lines along the LEFT or RIGHT edge of the diagram to avoid crossing nodes
-            // Determine which edge to use based on child position
-            const useLeftEdge = toPos.x < svgWidth / 2;
-            const edgeX = useLeftEdge ? 20 : svgWidth - 20;
-            const cornerRadius = 6;
-            
-            // For direct parent-child (same vertical line), use straight line
-            const dx = Math.abs(toPos.x - fromPos.x);
-            
-            let pathD: string;
-            
-            if (dx < 5) {
-              // Straight vertical line
-              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
-            } else {
-              // Route along edge: down -> to edge -> along edge -> to child -> down
-              const startY = fromPos.y + 12;
-              const endY = toPos.y - 12;
-              
-              pathD = `M ${fromPos.x} ${startY}
-                       L ${fromPos.x} ${startY + 8}
-                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
-                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
-                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
-                       L ${edgeX} ${endY - 20}
-                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
-                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
-                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
-                       L ${toPos.x} ${endY}`;
-            }
-            
-            return (
-              <g key={`struct-edge-${i}`}>
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={1}
-                  strokeOpacity={baseOpacity}
-                  strokeLinecap="round"
-                  strokeDasharray="3 2"
-                />
-              </g>
-            );
-          })}
+          {/* Structural edges removed for cleaner appearance - only live/demo paths shown */}
 
           {/* Historical heatmap paths removed - only showing live/demo paths that fade after 5 seconds */}
 
