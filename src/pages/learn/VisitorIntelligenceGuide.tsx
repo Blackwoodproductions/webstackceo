@@ -17,6 +17,7 @@ import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { getTermsByGuide } from "@/data/glossaryData";
+import dashboardScreenshot from "@/assets/visitor-intelligence-dashboard.png";
 
 // Get terms linked to this guide from shared glossary
 const visitorIntelligenceTerms = getTermsByGuide("/learn/visitor-intelligence-guide").map(t => ({
@@ -140,6 +141,29 @@ const VisitorIntelligenceGuide = () => {
                   <p className="text-foreground font-medium">
                     📊 <strong>The Opportunity:</strong> Companies using visitor intelligence report 30-50% increases in sales pipeline by reaching out to prospects who were already researching them.
                   </p>
+                </div>
+              </motion.div>
+
+              {/* Dashboard Preview */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="mb-8"
+              >
+                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <TrendingUp className="w-6 h-6 text-primary" />
+                  The Visitor Intelligence Dashboard
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Our dashboard provides a comprehensive view of your website traffic with real-time visitor flow visualization, engagement metrics, and AI-powered sales tools.
+                </p>
+                <div className="rounded-xl overflow-hidden border border-border shadow-lg">
+                  <img 
+                    src={dashboardScreenshot} 
+                    alt="Visitor Intelligence Dashboard showing real-time analytics and visitor flow" 
+                    className="w-full h-auto"
+                  />
                 </div>
               </motion.div>
 
