@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
-import { Activity, ChevronDown, DollarSign, Mail, Phone, Target, UserCheck } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { Activity, ChevronDown, DollarSign, Mail, Phone, Target, UserCheck, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 
 type Lead = {
   id: string;
@@ -71,24 +72,63 @@ export function QuickStatsExpandableRow({
   };
 
   const [expanded, setExpanded] = useState<ExpandedKey | null>(null);
+  const [loadingPanel, setLoadingPanel] = useState(false);
+  const [activeSessions, setActiveSessions] = useState<VisitorSession[]>([]);
+  const [todaySessions, setTodaySessions] = useState<VisitorSession[]>([]);
 
-  const now = Date.now();
-  const fiveMinutesAgo = new Date(now - 5 * 60 * 1000).toISOString();
-  const todayStart = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
+  // Fetch active sessions directly from DB when expanded
+  const fetchActiveSessions = useCallback(async () => {
+    setLoadingPanel(true);
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("id, session_id, first_page, referrer, started_at, last_activity_at")
+        .gte("last_activity_at", fiveMinutesAgo)
+        .order("last_activity_at", { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      setActiveSessions((data as VisitorSession[]) || []);
+    } catch (err) {
+      console.error("Failed to fetch active sessions:", err);
+      setActiveSessions([]);
+    } finally {
+      setLoadingPanel(false);
+    }
   }, []);
 
-  const activeSessions = useMemo(
-    () => sessions.filter((s) => s.last_activity_at >= fiveMinutesAgo).slice(0, 25),
-    [sessions, fiveMinutesAgo],
-  );
+  // Fetch today's sessions from DB when expanded
+  const fetchTodaySessions = useCallback(async () => {
+    setLoadingPanel(true);
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data, error } = await supabase
+        .from("visitor_sessions")
+        .select("id, session_id, first_page, referrer, started_at, last_activity_at")
+        .gte("started_at", todayStart.toISOString())
+        .order("started_at", { ascending: false })
+        .limit(25);
 
-  const todaySessions = useMemo(
-    () => sessions.filter((s) => s.started_at >= todayStart).slice(0, 25),
-    [sessions, todayStart],
-  );
+      if (error) throw error;
+      setTodaySessions((data as VisitorSession[]) || []);
+    } catch (err) {
+      console.error("Failed to fetch today sessions:", err);
+      setTodaySessions([]);
+    } finally {
+      setLoadingPanel(false);
+    }
+  }, []);
+
+  // Trigger fetch when panel opens
+  useEffect(() => {
+    if (expanded === "active") {
+      fetchActiveSessions();
+    } else if (expanded === "today") {
+      fetchTodaySessions();
+    }
+  }, [expanded, fetchActiveSessions, fetchTodaySessions]);
 
   const calledLeads = useMemo(
     () => leads.filter((l) => l.status === "called").slice(0, 25),
@@ -244,6 +284,12 @@ export function QuickStatsExpandableRow({
           </div>
 
           {(expanded === "active" || expanded === "today") && (
+            loadingPanel ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading sessions…</span>
+              </div>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -274,6 +320,7 @@ export function QuickStatsExpandableRow({
                 )}
               </TableBody>
             </Table>
+            )
           )}
 
           {(expanded === "called" || expanded === "emailed" || expanded === "considering") && (
