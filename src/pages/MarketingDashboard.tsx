@@ -1188,9 +1188,12 @@ const MarketingDashboard = () => {
               <div className="flex-1 flex flex-col-reverse gap-1 p-2 overflow-auto">
                 {sidebarChats.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center py-8">
-                      <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                      <p className="text-xs text-muted-foreground">No active chats</p>
+                    <div className="text-center py-8 animate-fade-in">
+                      <div className="relative mx-auto w-12 h-12 mb-3">
+                        <MessageCircle className="w-12 h-12 text-cyan-500/20 absolute inset-0 animate-ping" />
+                        <MessageCircle className="w-12 h-12 text-cyan-500/40 relative" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Waiting for chats...</p>
                     </div>
                   </div>
                 ) : (
@@ -1253,8 +1256,13 @@ const MarketingDashboard = () => {
             {/* Offline message */}
             {!chatOnline && chatPanelOpen && (
               <div className="flex-1 flex items-center justify-center">
-                <div className="text-center py-8 px-4">
-                  <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                <div className="text-center py-8 px-4 animate-fade-in">
+                  <div className="relative mx-auto w-12 h-12 mb-3">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground/20 relative" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-0.5 bg-muted-foreground/40 rotate-45" />
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">Chat is offline</p>
                   <p className="text-[10px] text-muted-foreground/70 mt-1">Turn on to receive chats</p>
                 </div>
