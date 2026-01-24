@@ -1,21 +1,18 @@
-import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus, CreditCard } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus, CreditCard, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
   const now = new Date();
   const dayOfMonth = now.getDate();
   const monthSeed = now.getMonth() + now.getFullYear() * 12;
-  
-  // Start with 21 positions at beginning of month
-  // Decrease by roughly 0.5-1 position per day with some randomness
   const baseDecrease = Math.floor(dayOfMonth * 0.7);
-  const randomVariance = ((monthSeed * dayOfMonth * 7) % 5) - 2; // -2 to +2 variance
+  const randomVariance = ((monthSeed * dayOfMonth * 7) % 5) - 2;
   const positionsLeft = Math.max(3, 21 - baseDecrease + randomVariance);
-  
   return positionsLeft;
 };
 
@@ -112,16 +109,19 @@ const plans = [
 
 const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
 
+  const selectedPlan = plans.find(p => p.name === expandedPlan);
+
   return (
-    <section id="pricing" className="py-24 relative overflow-hidden">
+    <section id="pricing" className="py-12 relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
       
-      <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+      <div className="container mx-auto px-6 relative z-10 max-w-5xl">
         {/* Billing Toggle */}
-        <div className="flex items-center justify-center gap-4 mb-12">
+        <div className="flex items-center justify-center gap-4 mb-8">
           <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
             Monthly
           </span>
@@ -145,207 +145,262 @@ const PricingSection = () => {
           </span>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        {/* Condensed Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-4">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              whileHover={{ 
-                scale: 1.03, 
-                y: -8,
-                transition: { duration: 0.2 }
-              }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className={`relative rounded-2xl p-8 cursor-pointer transition-all duration-300 ${
+              onClick={() => setExpandedPlan(plan.name)}
+              className={`relative rounded-xl p-5 cursor-pointer transition-all duration-300 ${
                 plan.highlighted
-                  ? "bg-gradient-to-b from-primary/20 to-primary/5 border-2 border-primary shadow-[0_0_40px_hsl(var(--primary)/0.2)]"
-                  : "glass-card border border-white/10"
+                  ? "bg-gradient-to-b from-primary/20 to-primary/5 border-2 border-primary shadow-[0_0_30px_hsl(var(--primary)/0.15)]"
+                  : "glass-card border border-white/10 hover:border-primary/30"
               }`}
             >
               {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-sm font-semibold px-4 py-1 rounded-full flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-current" />
-                    Most Popular
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-3 py-0.5 rounded-full flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-current" />
+                    Popular
                   </span>
                 </div>
               )}
 
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-muted-foreground text-sm mb-4 min-h-[40px] flex items-center justify-center">
-                  {plan.description}
-                </p>
+              <div className="text-center">
+                <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
                 
-                {/* Price display with original price strikethrough for Business CEO */}
-                <div className="flex items-baseline justify-center gap-2">
+                {/* Price display */}
+                <div className="flex items-baseline justify-center gap-1.5 mb-2">
                   {plan.originalPrice && !isYearly && (
-                    <span className="text-xl text-muted-foreground line-through">
+                    <span className="text-sm text-muted-foreground line-through">
                       ${plan.originalPrice}
                     </span>
                   )}
-                  <motion.span 
-                    key={isYearly ? 'yearly' : 'monthly'}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-4xl font-bold"
-                  >
+                  <span className="text-3xl font-bold">
                     ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
-                  </motion.span>
-                  <span className="text-muted-foreground">/month</span>
+                  </span>
+                  <span className="text-muted-foreground text-sm">/mo</span>
                 </div>
                 
                 {/* Half off badge for Business CEO */}
                 {plan.originalPrice && !isYearly && (
-                  <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="inline-block mt-2"
-                  >
-                    <span className="bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      50% OFF
-                    </span>
-                  </motion.div>
-                )}
-                
-                {isYearly && plan.yearlyPrice && (
-                  <p className="text-xs text-primary mt-1">
-                    Billed annually (${plan.yearlyPrice * 12}/year)
-                  </p>
+                  <span className="inline-block bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full mb-2">
+                    50% OFF
+                  </span>
                 )}
                 
                 {/* Scarcity indicator */}
                 {plan.hasScarcity && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-4 flex items-center justify-center gap-2"
+                  <div className="flex items-center justify-center gap-1 text-xs text-orange-500 mb-2">
+                    <Flame className="w-3 h-3 animate-pulse" />
+                    <span>{positionsLeft} spots left</span>
+                  </div>
+                )}
+
+                <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
+                  {plan.description}
+                </p>
+
+                {/* Preview features (first 3) */}
+                <ul className="space-y-1.5 mb-3 text-left">
+                  {plan.features.slice(0, 3).map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Check className="w-3 h-3 text-primary shrink-0" />
+                      <span className="truncate">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Expand trigger */}
+                <button className="flex items-center justify-center gap-1 text-xs text-primary hover:text-primary/80 mx-auto mb-3">
+                  <span>View all {plan.features.length} features</span>
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+
+                {plan.buttonText === "Book a Call" ? (
+                  <Button
+                    variant="heroOutline"
+                    className="w-full"
+                    size="sm"
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <Flame className="w-4 h-4 text-orange-500 animate-pulse" />
-                    <span className="text-sm font-medium text-orange-500">
-                      Only {positionsLeft} spots left this month!
-                    </span>
-                  </motion.div>
+                    <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                      {plan.buttonText}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    variant={plan.highlighted ? "hero" : "heroOutline"}
+                    className="w-full"
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Get Started
+                  </Button>
                 )}
               </div>
-
-              <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, featureIndex) => {
-                  const premium = premiumFeatures[feature];
-                  const PremiumIcon = premium?.icon;
-                  
-                  return (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-                        {feature}
-                        {premium && (
-                          <motion.span
-                            initial={{ scale: 0, opacity: 0 }}
-                            whileInView={{ scale: 1, opacity: 1 }}
-                            transition={{ 
-                              delay: featureIndex * 0.05, 
-                              type: "spring", 
-                              stiffness: 400, 
-                              damping: 15 
-                            }}
-                            viewport={{ once: true }}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r ${premium.color} shadow-sm`}
-                          >
-                            <motion.span
-                              animate={{ rotate: [0, 10, -10, 0] }}
-                              transition={{ 
-                                duration: 2, 
-                                repeat: Infinity, 
-                                repeatDelay: 3 
-                              }}
-                            >
-                              <PremiumIcon className="w-3 h-3" />
-                            </motion.span>
-                            {premium.label}
-                          </motion.span>
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {/* Add-ons Section */}
-              <div className="mb-6 pt-4 border-t border-white/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <Plus className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-foreground">Available Add-ons</span>
-                </div>
-                <ul className="space-y-2">
-                  {addOns.map((addon) => {
-                    const AddonIcon = addon.icon;
-                    return (
-                      <li key={addon.name} className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <AddonIcon className="w-4 h-4 text-primary/60" />
-                          {addon.name}
-                        </span>
-                        <span className="text-xs text-primary font-medium">Contact</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              {plan.buttonText === "Book a Call" ? (
-                <Button
-                  variant="heroOutline"
-                  className="w-full"
-                  size="lg"
-                  asChild
-                >
-                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                    {plan.buttonText}
-                  </a>
-                </Button>
-              ) : (
-                <Button
-                  variant={plan.highlighted ? "hero" : "heroOutline"}
-                  className="w-full"
-                  size="lg"
-                >
-                  {plan.buttonText || "Get Started"}
-                </Button>
-              )}
             </motion.div>
           ))}
         </div>
 
+        {/* Expanded Plan Dialog */}
+        <Dialog open={!!expandedPlan} onOpenChange={(open) => !open && setExpandedPlan(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            {selectedPlan && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3">
+                    <span className="text-2xl font-bold">{selectedPlan.name}</span>
+                    {selectedPlan.highlighted && (
+                      <span className="bg-gradient-to-r from-cyan-400 to-violet-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                        Most Popular
+                      </span>
+                    )}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  {/* Price */}
+                  <div className="text-center py-4 rounded-lg bg-muted/30">
+                    <div className="flex items-baseline justify-center gap-2">
+                      {selectedPlan.originalPrice && !isYearly && (
+                        <span className="text-lg text-muted-foreground line-through">
+                          ${selectedPlan.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-4xl font-bold">
+                        ${isYearly ? selectedPlan.yearlyPrice : selectedPlan.monthlyPrice}
+                      </span>
+                      <span className="text-muted-foreground">/month</span>
+                    </div>
+                    {selectedPlan.originalPrice && !isYearly && (
+                      <span className="inline-block mt-2 bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                        50% OFF
+                      </span>
+                    )}
+                    {isYearly && selectedPlan.yearlyPrice && (
+                      <p className="text-xs text-primary mt-2">
+                        Billed annually (${selectedPlan.yearlyPrice * 12}/year)
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="text-muted-foreground text-center">
+                    {selectedPlan.description}
+                  </p>
+
+                  {/* Full Features List */}
+                  <div>
+                    <h4 className="font-semibold mb-3">All Features</h4>
+                    <ul className="space-y-3">
+                      {selectedPlan.features.map((feature, featureIndex) => {
+                        const premium = premiumFeatures[feature];
+                        const PremiumIcon = premium?.icon;
+                        
+                        return (
+                          <motion.li 
+                            key={feature} 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: featureIndex * 0.03 }}
+                            className="flex items-start gap-3"
+                          >
+                            <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <span className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+                              {feature}
+                              {premium && (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r ${premium.color}`}>
+                                  <PremiumIcon className="w-3 h-3" />
+                                  {premium.label}
+                                </span>
+                              )}
+                            </span>
+                          </motion.li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Add-ons */}
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Plus className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-semibold">Available Add-ons</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {addOns.map((addon) => {
+                        const AddonIcon = addon.icon;
+                        return (
+                          <li key={addon.name} className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <AddonIcon className="w-4 h-4 text-primary/60" />
+                              {addon.name}
+                            </span>
+                            <span className="text-xs text-primary font-medium">Contact</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* CTA */}
+                  {selectedPlan.buttonText === "Book a Call" ? (
+                    <Button
+                      variant="hero"
+                      className="w-full"
+                      size="lg"
+                      asChild
+                    >
+                      <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                        {selectedPlan.buttonText}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="hero"
+                      className="w-full"
+                      size="lg"
+                    >
+                      Get Started with {selectedPlan.name}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Stripe Payment Icons */}
-        <StripePaymentIcons className="mt-12" />
+        <StripePaymentIcons className="mt-10" />
 
         {/* Trust Indicators */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6"
+          className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4"
         >
           {[
-            { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund, no questions asked" },
-            { icon: CreditCard, title: "Secure Payments", desc: "Stripe payment processing" },
-            { icon: Clock, title: "Cancel Anytime", desc: "No long-term contracts" },
+            { icon: ShieldCheck, title: "30-Day Money Back", desc: "Full refund guaranteed" },
+            { icon: CreditCard, title: "Secure Payments", desc: "Stripe processing" },
+            { icon: Clock, title: "Cancel Anytime", desc: "No contracts" },
             { icon: HeadphonesIcon, title: "24/7 Support", desc: "We're here to help" },
           ].map((item) => (
             <div
               key={item.title}
-              className="flex flex-col items-center text-center p-4 rounded-xl glass-card border border-white/10"
+              className="flex flex-col items-center text-center p-3 rounded-lg glass-card border border-white/10"
             >
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                <item.icon className="w-6 h-6 text-primary" />
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <item.icon className="w-5 h-5 text-primary" />
               </div>
-              <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+              <h4 className="font-semibold text-xs mb-0.5">{item.title}</h4>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
           ))}
