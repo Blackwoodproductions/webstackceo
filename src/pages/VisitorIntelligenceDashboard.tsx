@@ -1044,21 +1044,21 @@ const MarketingDashboard = () => {
               {/* Lead Quality Stats - takes up right portion */}
               <div className="flex-1 grid grid-cols-5 gap-2">
                 {[
-                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500', icon: Zap, filter: (l: Lead) => l.status === 'open' },
-                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500', icon: UserCheck, filter: (l: Lead) => !!l.full_name },
-                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500', icon: Target, filter: (l: Lead) => !!l.company_employees },
-                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500', icon: CheckCircle, filter: (l: Lead) => l.status === 'closed' },
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, dotColor: 'bg-blue-500', activeClass: 'bg-blue-500/20 border-blue-500/50' },
+                  { label: 'Named', count: funnelStats.withName, dotColor: 'bg-amber-500', activeClass: 'bg-amber-500/20 border-amber-500/50' },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, dotColor: 'bg-orange-500', activeClass: 'bg-orange-500/20 border-orange-500/50' },
+                  { label: 'Closed', count: funnelStats.closedLeads, dotColor: 'bg-green-500', activeClass: 'bg-green-500/20 border-green-500/50' },
                 ].map((item) => (
                   <button
                     key={item.label}
                     onClick={() => setExpandedStatFilter(expandedStatFilter === item.label ? null : item.label)}
                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
                       expandedStatFilter === item.label 
-                        ? `${item.color.replace('bg-', 'bg-')}/20 border-${item.color.replace('bg-', '')}/50` 
+                        ? item.activeClass 
                         : 'bg-background/60 border-border/30 hover:border-border/50'
                     }`}
                   >
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor}`} />
                     <span className="text-xs text-muted-foreground">{item.label}</span>
                     <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
                     <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
