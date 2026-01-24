@@ -22,8 +22,8 @@ const benefits = [
 ];
 
 const VisitorIntelligence = () => {
-  const { theme } = useTheme();
-  const dashboardScreenshot = theme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
+  const { resolvedTheme } = useTheme();
+  const dashboardScreenshot = resolvedTheme === 'light' ? dashboardScreenshotLight : dashboardScreenshotDark;
   
   return (
     <div className="min-h-screen bg-background">
