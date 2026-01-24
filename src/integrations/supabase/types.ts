@@ -444,6 +444,45 @@ export type Database = {
         }
         Relationships: []
       }
+      indexation_reports: {
+        Row: {
+          blocked_count: number
+          crawled_count: number
+          created_at: string
+          domain: string
+          id: string
+          indexed_count: number
+          not_indexed_count: number
+          report_data: Json
+          source: string | null
+          total_pages: number
+        }
+        Insert: {
+          blocked_count?: number
+          crawled_count?: number
+          created_at?: string
+          domain: string
+          id?: string
+          indexed_count?: number
+          not_indexed_count?: number
+          report_data: Json
+          source?: string | null
+          total_pages?: number
+        }
+        Update: {
+          blocked_count?: number
+          crawled_count?: number
+          created_at?: string
+          domain?: string
+          id?: string
+          indexed_count?: number
+          not_indexed_count?: number
+          report_data?: Json
+          source?: string | null
+          total_pages?: number
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           annual_revenue: string | null

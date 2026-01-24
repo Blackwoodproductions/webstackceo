@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import {
   BarChart,
   Bar,
@@ -169,6 +170,10 @@ export const GSCAdvancedReporting = ({
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
   const [indexationStartTime, setIndexationStartTime] = useState<number | null>(null);
   
+  // Last report timestamp
+  const [lastReportTimestamp, setLastReportTimestamp] = useState<string | null>(null);
+  const [nextScheduledCheck, setNextScheduledCheck] = useState<string | null>(null);
+  
   // Auto-submission settings
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(() => {
     return localStorage.getItem('gsc_auto_submit_enabled') === 'true';
@@ -204,13 +209,93 @@ export const GSCAdvancedReporting = ({
   // Track previous site to detect changes
   const [prevSite, setPrevSite] = useState<string>(selectedSite);
   
+  // Helper to normalize domain for storage key
+  const getDomainKey = (site: string): string => {
+    try {
+      return new URL(site.replace('sc-domain:', 'https://')).hostname.replace('www.', '');
+    } catch {
+      return site;
+    }
+  };
+  
+  // Load persisted indexation report for a domain
+  const loadPersistedReport = async (domain: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('indexation_reports')
+        .select('*')
+        .eq('domain', getDomainKey(domain))
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data && !error) {
+        const reportData = data.report_data as unknown as IndexationStatus[];
+        setIndexationData(reportData);
+        setIndexedCount(data.indexed_count);
+        setLastReportTimestamp(data.created_at);
+        
+        // Calculate next scheduled check (7 days from last report)
+        const lastDate = new Date(data.created_at);
+        const nextDate = new Date(lastDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+        setNextScheduledCheck(nextDate.toISOString());
+        
+        // Find non-indexed pages for auto-index queue
+        const notIndexed = reportData
+          .filter((r) => r.verdict !== "PASS" && r.coverageState !== "Submitted and indexed")
+          .map((r) => r.url);
+        setAutoIndexQueue(notIndexed);
+        
+        console.log('[GSCAdvanced] Loaded persisted report from', data.created_at);
+      } else {
+        setIndexationData([]);
+        setLastReportTimestamp(null);
+        setNextScheduledCheck(null);
+        setAutoIndexQueue([]);
+      }
+    } catch (err) {
+      console.error('Failed to load persisted report:', err);
+    }
+  };
+  
+  // Save indexation report to database
+  const saveIndexationReport = async (data: IndexationStatus[], domain: string) => {
+    const indexed = data.filter((r) => r.verdict === "PASS" || r.coverageState === "Submitted and indexed").length;
+    const notIndexed = data.filter((r) => r.verdict !== "PASS" && r.coverageState !== "Submitted and indexed").length;
+    const crawled = data.filter((r) => r.lastCrawlTime).length;
+    const blocked = data.filter((r) => r.robotsTxtState === "DISALLOWED").length;
+    
+    try {
+      const { error } = await supabase
+        .from('indexation_reports')
+        .insert([{
+          domain: getDomainKey(domain),
+          report_data: data as unknown as Json,
+          indexed_count: indexed,
+          not_indexed_count: notIndexed,
+          crawled_count: crawled,
+          blocked_count: blocked,
+          total_pages: data.length,
+          source: 'manual'
+        }]);
+      
+      if (!error) {
+        setLastReportTimestamp(new Date().toISOString());
+        const nextDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        setNextScheduledCheck(nextDate.toISOString());
+        console.log('[GSCAdvanced] Saved indexation report for', domain);
+      }
+    } catch (err) {
+      console.error('Failed to save indexation report:', err);
+    }
+  };
+  
   // Reset all domain-specific data when selectedSite changes
   useEffect(() => {
     if (selectedSite && selectedSite !== prevSite) {
-      console.log('[GSCAdvanced] Site changed from', prevSite, 'to', selectedSite, '- resetting data');
+      console.log('[GSCAdvanced] Site changed from', prevSite, 'to', selectedSite, '- resetting and loading data');
       
-      // Clear all domain-specific state
-      setIndexationData([]);
+      // Clear all domain-specific state first
       setAutoIndexQueue([]);
       setIndexedCount(0);
       setIndexationProgress(0);
@@ -222,6 +307,9 @@ export const GSCAdvancedReporting = ({
       setKeywordFilter("");
       setKeywordPage(1);
       
+      // Load persisted indexation report for the new domain
+      loadPersistedReport(selectedSite);
+      
       // Clear domain-specific submission history from localStorage
       // Keep history but filter to show only for current domain
       try {
@@ -229,7 +317,7 @@ export const GSCAdvancedReporting = ({
         if (stored) {
           const allHistory: SubmissionResult[] = JSON.parse(stored);
           // Filter to show only submissions that match the new domain
-          const siteHost = new URL(selectedSite.replace('sc-domain:', 'https://')).hostname.replace('www.', '');
+          const siteHost = getDomainKey(selectedSite);
           const filteredHistory = allHistory.filter(item => {
             try {
               const itemHost = new URL(item.url).hostname.replace('www.', '');
@@ -249,6 +337,13 @@ export const GSCAdvancedReporting = ({
       setPrevSite(selectedSite);
     }
   }, [selectedSite, prevSite]);
+  
+  // Load persisted report on initial mount
+  useEffect(() => {
+    if (selectedSite) {
+      loadPersistedReport(selectedSite);
+    }
+  }, []);
   
   // Persist auto-submit settings
   useEffect(() => {
@@ -492,6 +587,9 @@ export const GSCAdvancedReporting = ({
         .filter((r) => r.verdict !== "PASS" && r.coverageState !== "Submitted and indexed")
         .map((r) => r.url);
       setAutoIndexQueue(notIndexed);
+
+      // Save the report to database for persistence
+      await saveIndexationReport(results, selectedSite);
 
       toast({
         title: "Indexation Check Complete",
@@ -1391,52 +1489,87 @@ export const GSCAdvancedReporting = ({
             </div>
 
             {/* Indexation Controls */}
-            <div className="flex items-center justify-between bg-secondary/30 rounded-lg p-3">
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="text-xs">
-                  {pageData.length} pages tracked
-                </Badge>
-                {indexationData.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-green-500 flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> {indexationStats.indexed} indexed
-                    </span>
-                    <span className="text-red-500 flex items-center gap-1">
-                      <FileX className="w-3 h-3" /> {indexationStats.notIndexed} not indexed
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {autoIndexQueue.length > 0 && (
-                  <Button size="sm" variant="secondary" onClick={handleAutoIndex} disabled={isAutoIndexing}>
-                    {isAutoIndexing ? (
+            <div className="flex flex-col gap-2 bg-secondary/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="text-xs">
+                    {pageData.length} pages tracked
+                  </Badge>
+                  {indexationData.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-green-500 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> {indexationStats.indexed} indexed
+                      </span>
+                      <span className="text-red-500 flex items-center gap-1">
+                        <FileX className="w-3 h-3" /> {indexationStats.notIndexed} not indexed
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {autoIndexQueue.length > 0 && (
+                    <Button size="sm" variant="secondary" onClick={handleAutoIndex} disabled={isAutoIndexing}>
+                      {isAutoIndexing ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Indexing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3 h-3 mr-1" />
+                          Auto-Index ({autoIndexQueue.length})
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={fetchIndexationStatus} disabled={isLoadingIndexation}>
+                    {isLoadingIndexation ? (
                       <>
                         <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        Indexing...
+                        Checking ({indexationProgress}/{indexationTotal})
                       </>
                     ) : (
                       <>
-                        <Zap className="w-3 h-3 mr-1" />
-                        Auto-Index ({autoIndexQueue.length})
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Check Indexation
                       </>
                     )}
                   </Button>
-                )}
-                <Button size="sm" onClick={fetchIndexationStatus} disabled={isLoadingIndexation}>
-                  {isLoadingIndexation ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Checking ({indexationProgress}/{indexationTotal})
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Check Indexation
-                    </>
-                  )}
-                </Button>
+                </div>
               </div>
+              
+              {/* Last Report & Next Scheduled Check */}
+              {(lastReportTimestamp || nextScheduledCheck) && (
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    {lastReportTimestamp && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>Last report: {new Date(lastReportTimestamp).toLocaleDateString(undefined, { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</span>
+                      </div>
+                    )}
+                    {nextScheduledCheck && (
+                      <div className="flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" />
+                        <span>Next scheduled: {new Date(nextScheduledCheck).toLocaleDateString(undefined, { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}</span>
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    Weekly auto-check enabled
+                  </Badge>
+                </div>
+              )}
             </div>
 
             {/* Indexation Progress Timer */}

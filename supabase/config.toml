@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.visitor-intelligence-api]
 verify_jwt = false
+
+[functions.scheduled-indexation-check]
+verify_jwt = false
