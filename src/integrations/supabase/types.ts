@@ -14,6 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_chat_sessions: {
+        Row: {
+          booking_scheduled_at: string | null
+          calendly_link: string | null
+          created_at: string
+          current_page: string | null
+          id: string
+          last_activity_at: string
+          session_id: string
+          status: string
+          transferred_to_conversation_id: string | null
+          visitor_email: string | null
+          visitor_name: string | null
+        }
+        Insert: {
+          booking_scheduled_at?: string | null
+          calendly_link?: string | null
+          created_at?: string
+          current_page?: string | null
+          id?: string
+          last_activity_at?: string
+          session_id: string
+          status?: string
+          transferred_to_conversation_id?: string | null
+          visitor_email?: string | null
+          visitor_name?: string | null
+        }
+        Update: {
+          booking_scheduled_at?: string | null
+          calendly_link?: string | null
+          created_at?: string
+          current_page?: string | null
+          id?: string
+          last_activity_at?: string
+          session_id?: string
+          status?: string
+          transferred_to_conversation_id?: string | null
+          visitor_email?: string | null
+          visitor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_chat_sessions_transferred_to_conversation_id_fkey"
+            columns: ["transferred_to_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_handoff_requests: {
+        Row: {
+          ai_session_id: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          operator_id: string | null
+          reason: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          ai_session_id: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          operator_id?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          ai_session_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          operator_id?: string | null
+          reason?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_handoff_requests_ai_session_id_fkey"
+            columns: ["ai_session_id"]
+            isOneToOne: false
+            referencedRelation: "ai_chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_handoff_requests_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_knowledge_base: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          keywords: string[] | null
+          priority: number
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          priority?: number
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[] | null
+          priority?: number
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
