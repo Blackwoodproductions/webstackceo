@@ -701,12 +701,6 @@ const MarketingDashboard = () => {
                 user.email
               }
             </span>
-            <Link to="/analytics">
-              <Button variant="outline" size="sm" className="gap-2">
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Search Console</span>
-              </Button>
-            </Link>
             <Button
               variant="ghost"
               size="sm"
