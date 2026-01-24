@@ -626,17 +626,25 @@ const MarketingDashboard = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <Mail className="w-4 h-4 text-violet-500" />
                   <h2 className="font-bold text-foreground text-sm">Recent Leads</h2>
+                  <Badge variant="outline" className="ml-auto text-[10px]">{leads.length}</Badge>
                 </div>
                 <div className="space-y-2">
                   {leads.slice(0, 5).map(lead => (
                     <div key={lead.id} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground truncate flex-1 mr-2">{lead.email.split('@')[0]}</span>
+                      <div className="flex flex-col min-w-0 flex-1 mr-2">
+                        <span className="text-foreground font-medium truncate">
+                          {lead.full_name || lead.email}
+                        </span>
+                        {lead.full_name && (
+                          <span className="text-muted-foreground text-[10px] truncate">{lead.email}</span>
+                        )}
+                      </div>
                       {lead.status === 'closed' ? (
-                        <Badge className="text-[8px] h-4 bg-green-500">Closed</Badge>
+                        <Badge className="text-[8px] h-4 bg-green-500 flex-shrink-0">Closed</Badge>
                       ) : lead.full_name ? (
-                        <Badge className="text-[8px] h-4 bg-amber-500">Named</Badge>
+                        <Badge className="text-[8px] h-4 bg-amber-500 flex-shrink-0">Named</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[8px] h-4">New</Badge>
+                        <Badge variant="outline" className="text-[8px] h-4 flex-shrink-0">New</Badge>
                       )}
                     </div>
                   ))}
