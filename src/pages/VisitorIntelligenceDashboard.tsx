@@ -511,7 +511,14 @@ const MarketingDashboard = () => {
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user.email}</span>
+            <span className="text-sm text-muted-foreground">
+              Welcome - {
+                user.email?.toLowerCase().includes('rob') ? 'CTO' :
+                user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
+                user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
+                user.email
+              }
+            </span>
             <Button
               variant="ghost"
               size="sm"
