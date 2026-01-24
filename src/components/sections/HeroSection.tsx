@@ -1,12 +1,17 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Search, Zap } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 const HeroSection = () => {
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
+  const [domain, setDomain] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   const { soundEnabled } = useSoundContext();
   const { playSound } = useSoundEffects();
   const sectionRef = useRef<HTMLElement>(null);
@@ -46,6 +51,23 @@ const HeroSection = () => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [mouseX, mouseY]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!domain.trim()) return;
+
+    // Clean the domain input
+    let cleanDomain = domain.trim().toLowerCase();
+    cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
+    cleanDomain = cleanDomain.split("/")[0];
+
+    setIsLoading(true);
+    
+    // Navigate to results page with domain as URL param
+    setTimeout(() => {
+      navigate(`/audit/${encodeURIComponent(cleanDomain)}`);
+    }, 500);
+  };
+
   return (
     <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
       {/* Background Effects with Mouse + Scroll Parallax */}
@@ -75,37 +97,68 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
           >
-            One unified dashboard that simplifies every task—from basic uptime monitoring 
-            to advanced SEO and traffic intelligence. Everything you need to run a modern, 
-            high-converting website, all in one place.
+            Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
+            basic uptime monitoring to advanced SEO and traffic intelligence.
           </motion.p>
 
-
-          <motion.div
+          {/* Domain Audit Form */}
+          <motion.form
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            onSubmit={handleSubmit}
+            className="max-w-2xl mx-auto mb-6"
           >
-            <Button variant="hero" size="xl" className="group" asChild>
-              <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                Book a Call
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
-            </Button>
-            <Button variant="glass" size="xl" className="group">
-              <Play className="w-5 h-5" />
-              Watch Demo
-            </Button>
+            <div className="relative flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Enter your domain (e.g., example.com)"
+                  value={domain}
+                  onChange={(e) => setDomain(e.target.value)}
+                  className="pl-12 h-14 text-lg bg-background/80 backdrop-blur border-border/50 focus:border-primary/50"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isLoading || !domain.trim()}
+                className="h-14 px-8 bg-gradient-to-r from-cyan-500 via-violet-500 to-amber-500 hover:from-cyan-600 hover:via-violet-600 hover:to-amber-600 text-white font-semibold group"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Analyzing...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Free Audit
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </Button>
+            </div>
+          </motion.form>
+
+          {/* Trust indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-10"
+          >
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span>Instant results • No email required • 100% Free</span>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-16"
+            className="mt-8"
           >
             {/* Dashboard Preview */}
             <div 
