@@ -1408,14 +1408,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                   strokeWidth={hasLiveVisitor ? 3 : node.isVisited ? 2.5 : 1.5}
                   strokeDasharray={node.isVisited ? "none" : "3 2"}
                 />
-                {/* Inner dot */}
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={nodeSize * 0.3}
-                  fill={hasLiveVisitor ? "#22c55e" : color}
-                  opacity={node.isVisited ? 0.6 : 0.3}
-                />
                 {/* External referrer starburst effect */}
                 {hasExternalReferrer && (
                   <>
