@@ -507,26 +507,27 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     );
   }
 
-  // Group by depth and separate features/learn which have many children
+  // Group by depth and separate features/learn/tools which have many children
   const depth0 = nodes.filter(n => n.depth === 0);
   
-  // Separate L1 into regular pages and "mega" parents (features, learn)
-  const megaParents = ['/features', '/learn'];
+  // Separate L1 into regular pages and "mega" parents (features, learn, tools)
+  const megaParents = ['/features', '/learn', '/tools'];
   const depth1Regular = nodes.filter(n => n.depth === 1 && !megaParents.includes(n.path));
   const depth1Mega = nodes.filter(n => n.depth === 1 && megaParents.includes(n.path));
   
   // Separate L2 children by parent
   const featuresChildren = nodes.filter(n => n.parent === '/features');
   const learnChildren = nodes.filter(n => n.parent === '/learn');
-  const otherL2 = nodes.filter(n => n.depth === 2 && n.parent !== '/features' && n.parent !== '/learn');
+  const toolsChildren = nodes.filter(n => n.parent === '/tools');
+  const otherL2 = nodes.filter(n => n.depth === 2 && n.parent !== '/features' && n.parent !== '/learn' && n.parent !== '/tools');
   
   const depth3 = nodes.filter(n => n.depth >= 3);
 
   // Layout configuration - compact spacing
   const svgWidth = 1100;
   const baseY = 35;
-  const rowHeight = 55; // Reduced from 80
-  const sectionGap = 35; // Reduced from 55
+  const rowHeight = 55;
+  const sectionGap = 35;
   
   // Row sizes - adjusted for narrower width
   const l1RegularRowSize = 10;
@@ -538,32 +539,38 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const l1RegularRows = Math.ceil(depth1Regular.length / l1RegularRowSize);
   const featuresRows = Math.ceil(featuresChildren.length / megaChildRowSize);
   const learnRows = Math.ceil(learnChildren.length / megaChildRowSize);
+  const toolsRows = Math.ceil(toolsChildren.length / megaChildRowSize);
   const otherL2Rows = Math.ceil(otherL2.length / otherL2RowSize);
   const l3Rows = Math.ceil(depth3.length / l3RowSize);
   
   // Calculate Y positions for each section - stacked vertically
-  const l1RegularStartY = baseY + 60; // Reduced from 90
+  const l1RegularStartY = baseY + 60;
   const l1RegularEndY = l1RegularStartY + l1RegularRows * rowHeight;
   
   // Features section - full width
   const featuresParentY = l1RegularEndY + sectionGap;
-  const featuresChildrenStartY = featuresParentY + 50; // Reduced from 70
+  const featuresChildrenStartY = featuresParentY + 50;
   const featuresEndY = featuresChildrenStartY + featuresRows * rowHeight;
   
   // Learn section - below Features, full width
   const learnParentY = featuresEndY + sectionGap;
-  const learnChildrenStartY = learnParentY + 50; // Reduced from 70
+  const learnChildrenStartY = learnParentY + 50;
   const learnEndY = learnChildrenStartY + learnRows * rowHeight;
   
+  // Tools section - below Learn, full width
+  const toolsParentY = learnEndY + sectionGap;
+  const toolsChildrenStartY = toolsParentY + 50;
+  const toolsEndY = toolsChildrenStartY + (toolsRows > 0 ? toolsRows * rowHeight : 0);
+  
   // Other L2 pages
-  const otherL2StartY = learnEndY + sectionGap;
+  const otherL2StartY = toolsEndY + sectionGap;
   const otherL2EndY = otherL2StartY + (otherL2Rows > 0 ? otherL2Rows * rowHeight : 0);
   
   // L3+ pages
   const l3StartY = otherL2EndY + (otherL2.length > 0 ? sectionGap : 0);
   const l3EndY = l3StartY + (l3Rows > 0 ? l3Rows * rowHeight : 0);
   
-  const svgHeight = l3EndY + 40; // Reduced from 60
+  const svgHeight = l3EndY + 40;
   
   const getNodePositions = () => {
     const positions: Record<string, { x: number; y: number }> = {};
@@ -615,6 +622,21 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       };
     });
     
+    // Tools parent - centered
+    positions['/tools'] = { x: svgWidth / 2, y: toolsParentY };
+    
+    // Tools children - full width
+    toolsChildren.forEach((node, i) => {
+      const row = Math.floor(i / megaChildRowSize);
+      const indexInRow = i % megaChildRowSize;
+      const nodesInThisRow = Math.min(megaChildRowSize, toolsChildren.length - row * megaChildRowSize);
+      const spacing = fullWidth / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: 40 + spacing * (indexInRow + 1), 
+        y: toolsChildrenStartY + row * rowHeight 
+      };
+    });
+    
     // Other L2 pages - full width
     if (otherL2.length > 0) {
       const otherWidth = svgWidth - 100;
@@ -649,7 +671,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   };
 
   const positions = getNodePositions();
-  const allDisplayedNodes = [...depth0, ...depth1Regular, ...depth1Mega, ...featuresChildren, ...learnChildren, ...otherL2, ...depth3];
+  const allDisplayedNodes = [...depth0, ...depth1Regular, ...depth1Mega, ...featuresChildren, ...learnChildren, ...toolsChildren, ...otherL2, ...depth3];
 
   // Generate static edges (structural parent-child relationships)
   const structuralEdges: { from: string; to: string; visits: number; isVisited: boolean }[] = [];
