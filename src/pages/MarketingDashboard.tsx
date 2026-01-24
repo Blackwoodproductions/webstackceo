@@ -127,7 +127,7 @@ const MarketingDashboard = () => {
     const stored = localStorage.getItem('chat_operator_online');
     return stored !== null ? stored === 'true' : true;
   });
-  const [siteArchOpen, setSiteArchOpen] = useState(true);
+  const [siteArchOpen, setSiteArchOpen] = useState(false);
   const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
   const [diagramTimeRange, setDiagramTimeRange] = useState<TimeRange>('live');
   const [diagramCustomDateRange, setDiagramCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
