@@ -283,6 +283,66 @@ const MarketingDashboard = () => {
     }
   };
 
+  const handleUpdateLeadStatus = async (lead: Lead, newStatus: string) => {
+    if (newStatus === 'closed') {
+      setCloseLeadDialog({ open: true, lead });
+      return;
+    }
+    
+    if (newStatus === 'deleted') {
+      try {
+        const { error } = await supabase
+          .from('leads')
+          .update({ status: 'deleted' })
+          .eq('id', lead.id);
+
+        if (error) throw error;
+        
+        // Remove from local state (or filter out deleted)
+        setLeads(prev => prev.filter(l => l.id !== lead.id));
+      } catch (error) {
+        console.error('Error deleting lead:', error);
+      }
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ status: newStatus })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      setLeads(prev => prev.map(l => 
+        l.id === lead.id ? { ...l, status: newStatus } : l
+      ));
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string, closedAmount?: number | null) => {
+    switch (status) {
+      case 'closed':
+        return (
+          <Badge className="text-[10px] bg-green-500">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Closed
+            {closedAmount && <span className="ml-1">${closedAmount.toLocaleString()}</span>}
+          </Badge>
+        );
+      case 'called':
+        return <Badge className="text-[10px] bg-blue-500">📞 Called</Badge>;
+      case 'emailed':
+        return <Badge className="text-[10px] bg-violet-500">✉️ Emailed</Badge>;
+      case 'considering':
+        return <Badge className="text-[10px] bg-amber-500">🤔 Considering</Badge>;
+      default:
+        return <Badge variant="outline" className="text-[10px]">Open</Badge>;
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -992,44 +1052,28 @@ const MarketingDashboard = () => {
                               ) : '-'}
                             </TableCell>
                             <TableCell className="py-2">
-                              {lead.status === 'closed' ? (
-                                <Badge className="text-[10px] bg-green-500">
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Closed
-                                  {lead.closed_amount && (
-                                    <span className="ml-1">${lead.closed_amount.toLocaleString()}</span>
-                                  )}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px]">
-                                  Open
-                                </Badge>
-                              )}
+                              {getStatusBadge(lead.status, lead.closed_amount)}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground py-2">
                               {format(new Date(lead.created_at), 'MMM d, HH:mm')}
                             </TableCell>
                             <TableCell className="py-2 text-right">
-                              {lead.status === 'closed' ? (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-7 text-xs"
-                                  onClick={() => handleReopenLead(lead)}
-                                >
-                                  Reopen
-                                </Button>
-                              ) : (
-                                <Button 
-                                  variant="default" 
-                                  size="sm" 
-                                  className="h-7 text-xs bg-green-600 hover:bg-green-700"
-                                  onClick={() => setCloseLeadDialog({ open: true, lead })}
-                                >
-                                  <DollarSign className="w-3 h-3 mr-1" />
-                                  Close
-                                </Button>
-                              )}
+                              <Select 
+                                value={lead.status} 
+                                onValueChange={(value) => handleUpdateLeadStatus(lead, value)}
+                              >
+                                <SelectTrigger className="h-7 w-[110px] text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-popover border border-border">
+                                  <SelectItem value="open">Open</SelectItem>
+                                  <SelectItem value="called">📞 Called</SelectItem>
+                                  <SelectItem value="emailed">✉️ Emailed</SelectItem>
+                                  <SelectItem value="considering">🤔 Considering</SelectItem>
+                                  <SelectItem value="closed">💰 Closed</SelectItem>
+                                  <SelectItem value="deleted" className="text-red-400">🗑️ Delete</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                           </TableRow>
                         ))}
