@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
@@ -92,6 +92,7 @@ const MarketingDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [activeVisitors, setActiveVisitors] = useState(0);
   const [newVisitorsToday, setNewVisitorsToday] = useState(0);
+  const [pageFilter, setPageFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -266,11 +267,32 @@ const MarketingDashboard = () => {
     );
   }
 
+  // Filtered data based on page filter
+  const filteredData = useMemo(() => {
+    if (!pageFilter) {
+      return { leads, pageViews, toolInteractions, sessions };
+    }
+    
+    // Get sessions that visited the filtered page
+    const matchingSessionIds = new Set(
+      pageViews
+        .filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/'))
+        .map(pv => pv.session_id)
+    );
+    
+    return {
+      leads: leads.filter(l => l.source_page === pageFilter || (l.source_page && l.source_page.startsWith(pageFilter + '/'))),
+      pageViews: pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')),
+      toolInteractions: toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))),
+      sessions: sessions.filter(s => matchingSessionIds.has(s.session_id)),
+    };
+  }, [pageFilter, leads, pageViews, toolInteractions, sessions]);
+
   // Calculate funnel percentages
   const funnelSteps = [
     { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600' },
-    { label: 'Tool Users', count: toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600' },
-    { label: 'Leads', count: funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600' },
+    { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600' },
+    { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600' },
     { label: 'With Phone', count: funnelStats.withPhone, icon: Phone, color: 'from-amber-400 to-amber-600' },
     { label: 'With Name', count: funnelStats.withName, icon: UserCheck, color: 'from-orange-400 to-orange-600' },
     { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-green-400 to-green-600' },
@@ -444,7 +466,29 @@ const MarketingDashboard = () => {
 
         {/* Visitor Flow Diagram */}
         <div className="mb-8">
-          <VisitorFlowDiagram />
+          {/* Filter indicator */}
+          {pageFilter && (
+            <div className="mb-4 flex items-center gap-2">
+              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                <Filter className="w-3 h-3" />
+                Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
+                <button 
+                  onClick={() => setPageFilter(null)}
+                  className="ml-1 hover:bg-purple-500/30 rounded p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
+                {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
+              </span>
+            </div>
+          )}
+          <VisitorFlowDiagram 
+            onPageFilter={setPageFilter}
+            activeFilter={pageFilter}
+          />
         </div>
 
         {/* Heatmap Row */}
@@ -455,10 +499,16 @@ const MarketingDashboard = () => {
         {/* Tabs */}
         <Tabs defaultValue="leads" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="leads">Leads ({funnelStats.leads})</TabsTrigger>
+            <TabsTrigger value="leads">
+              Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
+            </TabsTrigger>
             <TabsTrigger value="journey">Customer Journey</TabsTrigger>
-            <TabsTrigger value="tools">Tool Usage</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
+            <TabsTrigger value="tools">
+              Tool Usage ({filteredData.toolInteractions.length})
+            </TabsTrigger>
+            <TabsTrigger value="sessions">
+              Sessions ({filteredData.sessions.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* Leads Tab */}
@@ -477,7 +527,7 @@ const MarketingDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.map((lead) => (
+                  {(pageFilter ? filteredData.leads : leads).map((lead) => (
                     <TableRow key={lead.id}>
                       <TableCell className="font-medium">{lead.email}</TableCell>
                       <TableCell>{lead.full_name || '-'}</TableCell>
@@ -511,10 +561,10 @@ const MarketingDashboard = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {leads.length === 0 && (
+                  {(pageFilter ? filteredData.leads : leads).length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                        No leads captured yet
+                        {pageFilter ? `No leads from ${pageFilter}` : 'No leads captured yet'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -640,7 +690,7 @@ const MarketingDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {toolInteractions.map((tool) => (
+                  {filteredData.toolInteractions.map((tool) => (
                     <TableRow key={tool.id}>
                       <TableCell className="font-medium">{tool.tool_name}</TableCell>
                       <TableCell>
@@ -653,10 +703,10 @@ const MarketingDashboard = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {toolInteractions.length === 0 && (
+                  {filteredData.toolInteractions.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No tool interactions recorded yet
+                        {pageFilter ? `No tool interactions on ${pageFilter}` : 'No tool interactions recorded yet'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -679,7 +729,7 @@ const MarketingDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sessions.map((session) => (
+                  {filteredData.sessions.map((session) => (
                     <TableRow key={session.id}>
                       <TableCell className="font-mono text-xs">{session.session_id.slice(0, 20)}...</TableCell>
                       <TableCell>{session.first_page}</TableCell>
@@ -694,10 +744,10 @@ const MarketingDashboard = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {sessions.length === 0 && (
+                  {filteredData.sessions.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No sessions recorded yet
+                        {pageFilter ? `No sessions visited ${pageFilter}` : 'No sessions recorded yet'}
                       </TableCell>
                     </TableRow>
                   )}
