@@ -794,8 +794,6 @@ const MarketingDashboard = () => {
             })}
           </div>
 
-          {/* Traffic Sources - Horizontal Full Width */}
-          <ReferrerBreakdownChart sessions={sessions} horizontal />
         </div>
 
 
@@ -1049,6 +1047,11 @@ const MarketingDashboard = () => {
         {/* Visitor Engagement Panel (Heatmap + Active Visitors) */}
         <div className="mb-8">
           <VisitorEngagementPanel />
+        </div>
+
+        {/* Traffic Sources - Full Width */}
+        <div className="mb-8">
+          <ReferrerBreakdownChart sessions={sessions} horizontal />
         </div>
 
       </main>
