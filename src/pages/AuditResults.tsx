@@ -139,6 +139,7 @@ const ScoreDial = ({
   showPercentage = true,
   prefix = "",
   suffix = "",
+  showFullNumber = false,
 }: {
   value: number;
   max?: number;
@@ -148,6 +149,7 @@ const ScoreDial = ({
   showPercentage?: boolean;
   prefix?: string;
   suffix?: string;
+  showFullNumber?: boolean;
 }) => {
   const percentage = Math.min((value / max) * 100, 100);
   const circumference = 2 * Math.PI * 40; // radius = 40
@@ -182,6 +184,7 @@ const ScoreDial = ({
   const gradientId = `dial-${label.replace(/\s/g, '-')}-${color}`;
   
   const formatValue = (val: number) => {
+    if (showFullNumber) return val.toLocaleString();
     if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
     if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
     return val.toLocaleString();
@@ -1473,6 +1476,7 @@ const AuditResults = () => {
                       color="cyan"
                       showPercentage={false}
                       prefix="$"
+                      showFullNumber={true}
                     />
                     <ScoreDial
                       value={dashboardMetrics.organicKeywords}
