@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,41 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Create a pleasant two-tone notification
+    const playTone = (frequency: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, startTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration);
+    };
+    
+    const now = audioContext.currentTime;
+    playTone(880, now, 0.15); // A5
+    playTone(1174.66, now + 0.15, 0.2); // D6
+    
+    // Clean up after sounds finish
+    setTimeout(() => audioContext.close(), 500);
+  } catch (e) {
+    console.warn('Could not play notification sound:', e);
+  }
+};
 
 interface ChatConversation {
   id: string;
@@ -154,7 +189,17 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
       .channel('floating-conversations')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'chat_conversations' },
+        { event: 'INSERT', schema: 'public', table: 'chat_conversations' },
+        () => {
+          if (isOnline) {
+            playNotificationSound(); // Play sound for new conversations
+            fetchConversations();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_conversations' },
         () => {
           if (isOnline) fetchConversations();
         }
@@ -187,6 +232,12 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
               if (oc.conversation.id === chat.conversation.id) {
                 const alreadyExists = oc.messages.some(m => m.id === newMsg.id);
                 if (alreadyExists) return oc;
+                
+                // Play notification sound for new visitor messages
+                if (newMsg.sender_type === 'visitor') {
+                  playNotificationSound();
+                }
+                
                 return {
                   ...oc,
                   messages: [...oc.messages, newMsg],
