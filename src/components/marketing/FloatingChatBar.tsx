@@ -53,6 +53,7 @@ interface ChatConversation {
   last_message_at: string;
   visitor_name: string | null;
   visitor_email: string | null;
+  current_page: string | null;
 }
 
 interface ChatMessage {
@@ -397,14 +398,14 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
                 <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {expandedChat.conversation.visitor_name || 'Visitor'}
-                  </p>
-                  <p className="text-xs text-white/70 truncate">
-                    {formatDistanceToNow(new Date(expandedChat.conversation.started_at), { addSuffix: true })}
-                  </p>
-                </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {expandedChat.conversation.visitor_name || 'Visitor'}
+                    </p>
+                    <p className="text-xs text-white/70 truncate">
+                      {expandedChat.conversation.current_page || 'Unknown page'} · {formatDistanceToNow(new Date(expandedChat.conversation.started_at), { addSuffix: true })}
+                    </p>
+                  </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
