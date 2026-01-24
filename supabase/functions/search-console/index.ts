@@ -40,11 +40,13 @@ serve(async (req) => {
     switch (action) {
       case 'sites': {
         // Get list of sites the user has access to
+        console.log("Fetching sites from Google Search Console API...");
         const response = await fetch(
           "https://www.googleapis.com/webmasters/v3/sites",
           { headers }
         );
         result = await response.json();
+        console.log("Sites API response:", JSON.stringify(result));
         break;
       }
 
