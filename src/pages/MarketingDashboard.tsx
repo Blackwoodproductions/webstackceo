@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
-import ActiveVisitorsWidget from '@/components/marketing/ActiveVisitorsWidget';
-import PageEngagementHeatmap from '@/components/marketing/PageEngagementHeatmap';
+import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
 import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
 interface Lead {
   id: string;
@@ -485,15 +484,12 @@ const MarketingDashboard = () => {
                 );
               })}
             </div>
-          </Card>
-
-          {/* Active Visitors Widget */}
-          <ActiveVisitorsWidget />
+        </Card>
         </div>
 
-        {/* Heatmap Row */}
+        {/* Integrated Visitor Engagement Panel (Heatmap + Active Visitors) */}
         <div className="mb-8">
-          <PageEngagementHeatmap />
+          <VisitorEngagementPanel />
         </div>
 
         {/* Tabs */}
