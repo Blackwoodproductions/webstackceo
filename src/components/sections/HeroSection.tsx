@@ -86,11 +86,11 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-8 mt-12 whitespace-nowrap"
+            className="text-[clamp(2rem,5vw,4.5rem)] font-bold leading-tight mb-8 mt-12"
           >
-            <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &
+            <span className="whitespace-nowrap"><span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &</span>
             <br />
-            <span className="ml-4 md:ml-8">Operate like a B<span className="gradient-text">O</span>SS.!</span>
+            <span className="ml-4 md:ml-8 whitespace-nowrap">Operate like a B<span className="gradient-text">O</span>SS.!</span>
           </motion.h1>
 
           <motion.p
