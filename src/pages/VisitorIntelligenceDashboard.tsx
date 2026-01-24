@@ -999,17 +999,27 @@ const MarketingDashboard = () => {
                         </SelectTrigger>
 
                         <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
-                          {viDomains.map((domain) => (
-                            <SelectItem
-                              key={domain}
-                              value={domain}
-                              className="text-xs"
-                            >
-                              <span className="truncate max-w-[320px]" title={domain}>
-                                {domain}
-                              </span>
-                            </SelectItem>
-                          ))}
+                          {viDomains.map((domain) => {
+                            const hasViTracking = trackedDomains.includes(domain);
+                            return (
+                              <SelectItem
+                                key={domain}
+                                value={domain}
+                                className="text-xs"
+                              >
+                                <span className="flex items-center justify-between w-full gap-2">
+                                  <span className="truncate max-w-[280px]" title={domain}>
+                                    {domain}
+                                  </span>
+                                  {hasViTracking && (
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20 flex-shrink-0">
+                                      VI
+                                    </Badge>
+                                  )}
+                                </span>
+                              </SelectItem>
+                            );
+                          })}
                           <SelectSeparator />
                           <div 
                             className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
