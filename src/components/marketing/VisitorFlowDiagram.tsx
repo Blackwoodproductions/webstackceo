@@ -857,31 +857,52 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     </text>
                   </>
                 )}
-                {/* Label - angled for L2+ to prevent overlap */}
-                <text
-                  x={pos.x}
-                  y={pos.y + nodeSize + 12}
-                  textAnchor={node.depth >= 2 ? "start" : "middle"}
-                  className="fill-foreground font-medium"
-                  style={{ 
-                    fontSize: node.depth === 0 ? '11px' : node.depth === 1 ? '9px' : '8px',
-                    opacity: node.isVisited ? 1 : 0.6
-                  }}
-                  transform={node.depth >= 2 ? `rotate(35, ${pos.x}, ${pos.y + nodeSize + 12})` : undefined}
-                >
-                  {node.name}
-                </text>
-                {/* Visit count - show inline for smaller nodes */}
-                {node.visits > 0 && node.depth < 2 && (
-                  <text
-                    x={pos.x}
-                    y={pos.y + nodeSize + 24}
-                    textAnchor="middle"
-                    className="fill-muted-foreground"
-                    style={{ fontSize: '7px' }}
-                  >
-                    {node.visits}
-                  </text>
+                {/* Label - above icon for main pages (depth 0 and 1), below for others */}
+                {node.depth <= 1 ? (
+                  <>
+                    {/* Label above for main pages */}
+                    <text
+                      x={pos.x}
+                      y={pos.y - nodeSize - 8}
+                      textAnchor="middle"
+                      className="fill-foreground font-medium"
+                      style={{ 
+                        fontSize: node.depth === 0 ? '11px' : '9px',
+                        opacity: node.isVisited ? 1 : 0.6
+                      }}
+                    >
+                      {node.name}
+                    </text>
+                    {/* Visit count below the node */}
+                    {node.visits > 0 && (
+                      <text
+                        x={pos.x}
+                        y={pos.y + nodeSize + 14}
+                        textAnchor="middle"
+                        className="fill-muted-foreground"
+                        style={{ fontSize: '7px' }}
+                      >
+                        {node.visits}
+                      </text>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Label below and angled for L2+ */}
+                    <text
+                      x={pos.x}
+                      y={pos.y + nodeSize + 12}
+                      textAnchor="start"
+                      className="fill-foreground font-medium"
+                      style={{ 
+                        fontSize: '8px',
+                        opacity: node.isVisited ? 1 : 0.6
+                      }}
+                      transform={`rotate(35, ${pos.x}, ${pos.y + nodeSize + 12})`}
+                    >
+                      {node.name}
+                    </text>
+                  </>
                 )}
               </g>
             );
