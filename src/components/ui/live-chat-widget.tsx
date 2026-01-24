@@ -1,41 +1,163 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ChatMessage {
+  id: string;
+  message: string;
+  sender_type: 'visitor' | 'operator' | 'system';
+  created_at: string;
+}
 
 const LiveChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<{ text: string; isUser: boolean; time: string }[]>([
-    {
-      text: "Hi there! 👋 How can we help you today?",
-      isUser: false,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  // Get or create session ID
+  useEffect(() => {
+    const storedSessionId = sessionStorage.getItem("chat_session_id");
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+    } else {
+      const newSessionId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem("chat_session_id", newSessionId);
+      setSessionId(newSessionId);
+    }
+  }, []);
 
-    const userMessage = {
-      text: message,
-      isUser: true,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  // Load existing conversation
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const loadConversation = async () => {
+      const { data: conversation } = await supabase
+        .from("chat_conversations")
+        .select("id")
+        .eq("session_id", sessionId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (conversation) {
+        setConversationId(conversation.id);
+        
+        // Load messages
+        const { data: msgs } = await supabase
+          .from("chat_messages")
+          .select("*")
+          .eq("conversation_id", conversation.id)
+          .order("created_at", { ascending: true });
+
+        if (msgs) {
+          setMessages(msgs as ChatMessage[]);
+        }
+      }
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setMessage("");
+    loadConversation();
+  }, [sessionId]);
 
-    // Simulate auto-response
-    setTimeout(() => {
-      const autoReply = {
-        text: "Thanks for reaching out! Our team typically responds within a few minutes. In the meantime, feel free to explore our FAQ section or schedule a demo.",
-        isUser: false,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, autoReply]);
-    }, 1500);
+  // Subscribe to new messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`chat-${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage;
+          setMessages((prev) => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          
+          // Show notification if message is from operator and chat is closed
+          if (newMsg.sender_type === 'operator' && !isOpen) {
+            setHasNewMessage(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [conversationId, isOpen]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const startConversation = async () => {
+    const { data, error } = await supabase
+      .from("chat_conversations")
+      .insert({
+        session_id: sessionId,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (data && !error) {
+      setConversationId(data.id);
+      
+      // Add system welcome message
+      await supabase.from("chat_messages").insert({
+        conversation_id: data.id,
+        sender_type: "system",
+        message: "Hi there! 👋 How can we help you today?",
+      });
+
+      return data.id;
+    }
+    return null;
+  };
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+
+    let convId = conversationId;
+    if (!convId) {
+      convId = await startConversation();
+      if (!convId) return;
+    }
+
+    // Insert message
+    await supabase.from("chat_messages").insert({
+      conversation_id: convId,
+      sender_type: "visitor",
+      message: message.trim(),
+    });
+
+    setMessage("");
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    setHasNewMessage(false);
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: "2-digit", 
+      minute: "2-digit" 
+    });
   };
 
   return (
@@ -48,13 +170,13 @@ const LiveChatWidget = () => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpen}
             className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
             aria-label="Open chat"
           >
             <MessageCircle className="w-6 h-6" />
             {/* Notification dot */}
-            <span className="absolute top-0 right-0 w-4 h-4 bg-green-400 rounded-full border-2 border-background animate-pulse" />
+            <span className={`absolute top-0 right-0 w-4 h-4 rounded-full border-2 border-background ${hasNewMessage ? 'bg-red-500 animate-bounce' : 'bg-green-400 animate-pulse'}`} />
           </motion.button>
         )}
       </AnimatePresence>
@@ -103,32 +225,43 @@ const LiveChatWidget = () => {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
-              {messages.map((msg, index) => (
+              {messages.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Start a conversation!</p>
+                </div>
+              )}
+              {messages.map((msg) => (
                 <motion.div
-                  key={index}
+                  key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
+                  className={`flex ${msg.sender_type === 'visitor' ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                      msg.isUser
+                      msg.sender_type === 'visitor'
                         ? "bg-gradient-to-r from-cyan-400 to-violet-500 text-white rounded-br-md"
+                        : msg.sender_type === 'operator'
+                        ? "bg-primary/20 text-foreground rounded-bl-md border border-primary/30"
                         : "bg-secondary text-foreground rounded-bl-md"
                     }`}
                   >
-                    <p className="text-sm">{msg.text}</p>
+                    {msg.sender_type === 'operator' && (
+                      <p className="text-xs text-primary font-medium mb-1">Operator</p>
+                    )}
+                    <p className="text-sm">{msg.message}</p>
                     <p
                       className={`text-xs mt-1 ${
-                        msg.isUser ? "text-white/70" : "text-muted-foreground"
+                        msg.sender_type === 'visitor' ? "text-white/70" : "text-muted-foreground"
                       }`}
                     >
-                      {msg.time}
+                      {formatTime(msg.created_at)}
                     </p>
                   </div>
                 </motion.div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
