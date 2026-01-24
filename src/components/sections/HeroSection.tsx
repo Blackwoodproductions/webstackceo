@@ -126,7 +126,7 @@ const HeroSection = () => {
                 type="submit"
                 size="lg"
                 disabled={isLoading || !domain.trim()}
-                className="relative h-14 px-8 bg-gradient-to-r from-primary via-cyan-500 to-violet-500 hover:from-primary/90 hover:via-cyan-400 hover:to-violet-400 text-white font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 group overflow-hidden"
+                className="relative h-14 px-8 bg-gradient-to-r from-primary via-cyan-500 to-violet-500 hover:from-amber-500 hover:via-amber-400 hover:to-amber-500 text-white font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all duration-300 group overflow-hidden"
               >
                 {/* Animated shimmer effect */}
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
