@@ -51,6 +51,27 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters",
 ].join(" ");
 
+function getOAuthRedirectUri(): string {
+  // In Lovable preview, the app may run inside an iframe on a different origin
+  // (e.g. *.lovableproject.com). Google OAuth must redirect back to the actual
+  // preview/published origin (usually *.lovable.app), otherwise the callback can 404.
+  const path = window.location.pathname;
+
+  try {
+    if (document.referrer) {
+      const ref = new URL(document.referrer);
+      // Prefer the outer preview/published host when present.
+      if (ref.hostname.endsWith("lovable.app")) {
+        return `${ref.origin}${path}`;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return `${window.location.origin}${path}`;
+}
+
 function base64UrlEncode(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let str = "";
@@ -227,7 +248,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     // Process OAuth code if present
     if (code) {
       const verifier = sessionStorage.getItem("gsc_code_verifier");
-      const redirectUri = window.location.origin + window.location.pathname;
+      const redirectUri = getOAuthRedirectUri();
       
       console.log("[GSC] Processing OAuth code:", { 
         redirectUri, 
@@ -405,7 +426,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     }
 
     try {
-      const redirectUri = window.location.origin + window.location.pathname;
+      const redirectUri = getOAuthRedirectUri();
       console.log("[GSC] Redirect URI:", redirectUri);
       
       const verifier = generateCodeVerifier();
