@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.google-oauth-token]
 verify_jwt = false
+
+[functions.visitor-intelligence-api]
+verify_jwt = false
