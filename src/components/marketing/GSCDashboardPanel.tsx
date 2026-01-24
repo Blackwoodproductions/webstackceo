@@ -634,6 +634,7 @@ export const GSCDashboardPanel = ({
     // Parent can intentionally clear the selection (e.g. user selected a tracking-only domain).
     if (externalSelectedSite === "") {
       if (selectedSite !== "") {
+        console.log("[GSC Panel] Clearing selection - parent set empty");
         isExternalUpdateRef.current = true;
         setSelectedSite("");
         // Clear cached UI so we don't show the last site's data.
@@ -655,13 +656,30 @@ export const GSCDashboardPanel = ({
       return;
     }
 
-    if (externalSelectedSite && sites.some(s => s.siteUrl === externalSelectedSite)) {
-      if (externalSelectedSite !== selectedSite) {
-        isExternalUpdateRef.current = true;
-        setSelectedSite(externalSelectedSite);
-      }
+    // If parent provides an external site, ALWAYS use it (don't wait for sites to load)
+    // This ensures immediate sync when user selects from header dropdown
+    if (externalSelectedSite && externalSelectedSite !== selectedSite) {
+      console.log("[GSC Panel] Syncing to external site:", externalSelectedSite, "from:", selectedSite);
+      isExternalUpdateRef.current = true;
+      setSelectedSite(externalSelectedSite);
+      
+      // Clear old data immediately to prevent showing stale data
+      setQueryData([]);
+      setPageData([]);
+      setCountryData([]);
+      setDeviceData([]);
+      setDateData([]);
+      setSitemaps([]);
+      setAllTypesData({
+        web: { clicks: 0, impressions: 0, position: 0 },
+        image: { clicks: 0, impressions: 0, position: 0 },
+        video: { clicks: 0, impressions: 0, position: 0 },
+        news: { clicks: 0, impressions: 0, position: 0 },
+        discover: { clicks: 0, impressions: 0, position: 0 },
+      });
+      dataCache.current.clear();
     }
-  }, [externalSelectedSite, sites, selectedSite]);
+  }, [externalSelectedSite, selectedSite]);
 
   // Notify parent of auth status changes
   useEffect(() => {
