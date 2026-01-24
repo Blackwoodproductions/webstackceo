@@ -162,6 +162,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   
   // Advanced reporting toggle
   const [showAdvancedReporting, setShowAdvancedReporting] = useState(false);
+  
+  // Data dropdown states
+  const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | 'devices' | null>(null);
 
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
@@ -780,7 +783,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   <Globe className="w-3 h-3 mr-1" />
                   <SelectValue placeholder="Select site" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border border-border z-50">
                   {sites.map((site) => (
                     <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
                       {site.siteUrl.replace('sc-domain:', '').replace('https://', '')}
@@ -794,7 +797,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   <Calendar className="w-3 h-3 mr-1" />
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border border-border z-50">
                   <SelectItem value="7">7 days</SelectItem>
                   <SelectItem value="28">28 days</SelectItem>
                   <SelectItem value="90">3 months</SelectItem>
@@ -804,11 +807,187 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </Select>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
-              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Data Dropdown Buttons */}
+              <Button 
+                variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveDropdown(activeDropdown === 'queries' ? null : 'queries')}
+                className="h-8 text-xs"
+              >
+                <Search className="w-3 h-3 mr-1" />
+                Queries
+                {activeDropdown === 'queries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              </Button>
+              <Button 
+                variant={activeDropdown === 'pages' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveDropdown(activeDropdown === 'pages' ? null : 'pages')}
+                className="h-8 text-xs"
+              >
+                <FileText className="w-3 h-3 mr-1" />
+                Pages
+                {activeDropdown === 'pages' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              </Button>
+              <Button 
+                variant={activeDropdown === 'countries' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveDropdown(activeDropdown === 'countries' ? null : 'countries')}
+                className="h-8 text-xs"
+              >
+                <Globe className="w-3 h-3 mr-1" />
+                Countries
+                {activeDropdown === 'countries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              </Button>
+              <Button 
+                variant={activeDropdown === 'devices' ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveDropdown(activeDropdown === 'devices' ? null : 'devices')}
+                className="h-8 text-xs"
+              >
+                <Monitor className="w-3 h-3 mr-1" />
+                Devices
+                {activeDropdown === 'devices' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              </Button>
+
+              <div className="w-px h-6 bg-border mx-1" />
+
+              <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
+                <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
+
+          {/* Dropdown Content Panels */}
+          {activeDropdown === 'queries' && (
+            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Search className="w-4 h-4 text-primary" />
+                  Top Queries
+                </h4>
+                <Badge variant="secondary" className="text-[10px]">{queryData.length} total</Badge>
+              </div>
+              <div className="relative mb-2">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                <Input placeholder="Filter queries..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs" />
+              </div>
+              <ScrollArea className="h-[280px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Query</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredQueryData.map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs py-1.5 max-w-[180px] truncate" title={row.keys[0]}>{row.keys[0]}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredQueryData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          )}
+
+          {activeDropdown === 'pages' && (
+            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-cyan-500" />
+                  Top Pages
+                </h4>
+                <Badge variant="secondary" className="text-[10px]">{pageData.length} total</Badge>
+              </div>
+              <ScrollArea className="h-[280px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Page</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pageData.slice(0, 25).map((row, i) => {
+                      let path = row.keys[0];
+                      try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
+                      return (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs py-1.5 truncate max-w-[180px]" title={row.keys[0]}>{path}</TableCell>
+                          <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                          <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
+                          <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                          <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {pageData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          )}
+
+          {activeDropdown === 'countries' && (
+            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-violet-500" />
+                  Top Countries
+                </h4>
+                <Badge variant="secondary" className="text-[10px]">{countryData.length} total</Badge>
+              </div>
+              <ScrollArea className="h-[280px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow><TableHead className="text-xs">Country</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Impressions</TableHead><TableHead className="text-right text-xs">CTR</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {countryData.slice(0, 25).map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5 text-muted-foreground">{row.impressions}</TableCell>
+                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                    {countryData.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+          )}
+
+          {activeDropdown === 'devices' && (
+            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Monitor className="w-4 h-4 text-amber-500" />
+                  Device Breakdown
+                </h4>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {deviceData.map((device, i) => {
+                  const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
+                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
+                  const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
+                  return (
+                    <div key={i} className="bg-secondary/30 rounded-lg p-4 text-center">
+                      <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground capitalize mb-1">{device.keys[0].toLowerCase()}</p>
+                      <p className="text-2xl font-bold">{pct.toFixed(0)}%</p>
+                      <p className="text-xs text-muted-foreground">{device.clicks} clicks</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{device.impressions} impressions</p>
+                    </div>
+                  );
+                })}
+                {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-8">{isFetching ? "Loading..." : "No data"}</div>}
+              </div>
+            </div>
+          )}
 
           {/* Combined KPI Row - All Search Types */}
           <div className="grid grid-cols-4 gap-3">
@@ -918,103 +1097,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </ResponsiveContainer>
             )}
           </div>
-
-          {/* Tabs */}
-          <Tabs defaultValue="queries" className="space-y-3">
-            <TabsList className="h-8">
-              <TabsTrigger value="queries" className="text-xs h-7 px-2"><Search className="w-3 h-3 mr-1" />Queries</TabsTrigger>
-              <TabsTrigger value="pages" className="text-xs h-7 px-2"><FileText className="w-3 h-3 mr-1" />Pages</TabsTrigger>
-              <TabsTrigger value="countries" className="text-xs h-7 px-2"><Globe className="w-3 h-3 mr-1" />Countries</TabsTrigger>
-              <TabsTrigger value="devices" className="text-xs h-7 px-2"><Monitor className="w-3 h-3 mr-1" />Devices</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="queries">
-              <div className="relative mb-2">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                <Input placeholder="Filter queries..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs" />
-              </div>
-              <ScrollArea className="h-[200px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Query</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredQueryData.map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                        <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredQueryData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="pages">
-              <ScrollArea className="h-[200px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Page</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">Position</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pageData.slice(0, 25).map((row, i) => {
-                      let path = row.keys[0];
-                      try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
-                      return (
-                        <TableRow key={i}>
-                          <TableCell className="text-xs py-1.5 truncate max-w-[200px]" title={row.keys[0]}>{path}</TableCell>
-                          <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                          <TableCell className="text-right py-1.5"><Badge variant={row.position <= 10 ? "default" : "secondary"} className="text-[10px]">{row.position.toFixed(1)}</Badge></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {pageData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="countries">
-              <ScrollArea className="h-[200px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow><TableHead className="text-xs">Country</TableHead><TableHead className="text-right text-xs">Clicks</TableHead><TableHead className="text-right text-xs">CTR</TableHead></TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {countryData.slice(0, 15).map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="text-xs py-1.5">{row.keys[0]}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5 font-medium">{row.clicks}</TableCell>
-                        <TableCell className="text-right text-xs py-1.5">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                      </TableRow>
-                    ))}
-                    {countryData.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</TableCell></TableRow>}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="devices">
-              <div className="grid grid-cols-3 gap-3">
-                {deviceData.map((device, i) => {
-                  const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
-                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
-                  const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
-                  return (
-                    <div key={i} className="bg-secondary/30 rounded-lg p-3 text-center">
-                      <Icon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground capitalize">{device.keys[0].toLowerCase()}</p>
-                      <p className="text-lg font-bold">{pct.toFixed(0)}%</p>
-                      <p className="text-[10px] text-muted-foreground">{device.clicks} clicks</p>
-                    </div>
-                  );
-                })}
-                {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-4">{isFetching ? "Loading..." : "No data"}</div>}
-              </div>
-            </TabsContent>
-          </Tabs>
 
           {/* Advanced Reporting Toggle */}
           <div className="mt-4 pt-4 border-t border-border/50">
