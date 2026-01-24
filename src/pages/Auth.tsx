@@ -132,7 +132,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative animate-fade-in">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative animate-fade-in dark">
       {/* Full-page interactive grid background */}
       <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       <motion.div
