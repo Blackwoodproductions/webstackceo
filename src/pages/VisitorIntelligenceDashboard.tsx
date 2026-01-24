@@ -1047,16 +1047,14 @@ const MarketingDashboard = () => {
                     <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
                   </div>
                 ))}
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={handleCreateTestLead}
-                  className="h-full text-xs gap-1.5 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-amber-500/50 text-amber-500 hover:bg-amber-500/10 transition-colors"
                   title="Create a test lead for demo purposes"
                 >
                   <FlaskConical className="w-3.5 h-3.5" />
-                  Test Lead
-                </Button>
+                  <span className="text-xs">Test Lead</span>
+                </button>
               </div>
             </div>
 
