@@ -656,43 +656,41 @@ const MarketingDashboard = () => {
 
         {/* Leads Section - Full Width */}
         <div className="mb-8">
-          {/* Lead Quality Bar */}
-          <div className="flex items-center gap-4 mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-semibold text-foreground">Lead Quality</span>
-            </div>
-            <div className="flex flex-1 justify-between gap-2">
-              {[
-                { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500' },
-                { label: 'With Name', count: funnelStats.withName, color: 'bg-amber-500' },
-                { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500' },
-                { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500' },
-              ].map((item) => (
-                <div key={item.label} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/30">
-                  <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                  <span className="text-xs text-muted-foreground">{item.label}</span>
-                  <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <Tabs defaultValue="leads" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
-              <TabsTrigger value="leads" className="text-xs sm:text-sm">
-                <Mail className="w-3 h-3 mr-1.5" />
-                Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
-              </TabsTrigger>
-              <TabsTrigger value="journey" className="text-xs sm:text-sm">
-                <TrendingUp className="w-3 h-3 mr-1.5" />
-                Journey
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="text-xs sm:text-sm">
-                <MousePointer className="w-3 h-3 mr-1.5" />
-                Tools ({filteredData.toolInteractions.length})
-              </TabsTrigger>
-            </TabsList>
+            {/* Combined Tab Header with Lead Quality Stats */}
+            <div className="flex items-center justify-between gap-4 mb-4 p-3 rounded-xl bg-secondary/30 border border-border/50 flex-wrap">
+              <TabsList className="grid grid-cols-3 bg-transparent p-0 h-auto gap-1">
+                <TabsTrigger value="leads" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
+                  <Mail className="w-3 h-3 mr-1.5" />
+                  Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
+                </TabsTrigger>
+                <TabsTrigger value="journey" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
+                  <TrendingUp className="w-3 h-3 mr-1.5" />
+                  Journey
+                </TabsTrigger>
+                <TabsTrigger value="tools" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
+                  <MousePointer className="w-3 h-3 mr-1.5" />
+                  Tools ({filteredData.toolInteractions.length})
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Lead Quality Badges - inline */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                {[
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500' },
+                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500' },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500' },
+                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/50 border border-border/30">
+                    <div className={`w-2 h-2 rounded-full ${item.color}`} />
+                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                    <span className="font-bold text-xs">{Math.max(0, item.count)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
               {/* Leads Tab */}
               <TabsContent value="leads" className="mt-0">
