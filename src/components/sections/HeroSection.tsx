@@ -6,8 +6,12 @@ import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
-
+import { useTheme } from "next-themes";
+import dashboardDark from "@/assets/homepage-dashboard-dark.png";
+import dashboardLight from "@/assets/homepage-dashboard-light.png";
 const HeroSection = () => {
+  const { theme } = useTheme();
+  const dashboardImage = theme === 'light' ? dashboardLight : dashboardDark;
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
   const [domain, setDomain] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -172,7 +176,7 @@ const HeroSection = () => {
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="relative rounded-2xl glass-card p-2 glow-primary transition-all duration-500"
               >
-                <div className="rounded-xl bg-card overflow-hidden">
+                <div className="rounded-xl overflow-hidden">
                   <div className="bg-secondary/50 px-4 py-3 flex items-center gap-2">
                     <div className="flex gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -185,68 +189,11 @@ const HeroSection = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="p-6 bg-gradient-to-br from-background to-secondary/20">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      {[
-                        { label: "Uptime", value: "99.99%", change: "This month" },
-                        { label: "Visitors Identified", value: "847", change: "+23 today" },
-                        { label: "Domain Authority", value: "58", change: "+4 this month" },
-                        { label: "Backlinks Built", value: "142", change: "+12 this week" },
-                      ].map((stat) => (
-                        <div key={stat.label} className="glass-card rounded-xl p-4">
-                          <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                          <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                          <p className="text-xs text-green-400">{stat.change}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2 glass-card rounded-xl p-4 h-32">
-                        <div className="flex items-end justify-between h-full">
-                          {[40, 65, 55, 80, 70, 90, 85, 95, 88, 92, 87, 94].map((height, i) => (
-                            <div
-                              key={i}
-                              className="w-full mx-0.5 rounded-t bg-gradient-to-t from-cyan-400 to-violet-500 opacity-80"
-                              style={{ height: `${height}%` }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="glass-card rounded-xl p-4 h-32 flex items-center justify-center">
-                        <div className="relative w-20 h-20">
-                          <svg className="w-20 h-20 transform -rotate-90">
-                            <circle
-                              cx="40"
-                              cy="40"
-                              r="35"
-                              stroke="currentColor"
-                              strokeWidth="6"
-                              fill="none"
-                              className="text-secondary"
-                            />
-                            <circle
-                              cx="40"
-                              cy="40"
-                              r="35"
-                              stroke="url(#gradient)"
-                              strokeWidth="6"
-                              fill="none"
-                              strokeDasharray="220"
-                              strokeDashoffset="22"
-                              strokeLinecap="round"
-                            />
-                            <defs>
-                              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="hsl(199 89% 48%)" />
-                                <stop offset="100%" stopColor="hsl(262 83% 58%)" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-                          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">90%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <img 
+                    src={dashboardImage} 
+                    alt="Visitor Intelligence Dashboard showing real-time analytics, KPI metrics, conversion funnel, and leads table"
+                    className="w-full h-auto"
+                  />
                 </div>
               </motion.div>
             </div>
