@@ -23,61 +23,46 @@ const FloatingLiveStats = memo(() => {
     return () => clearTimeout(timer);
   }, [shouldShow]);
 
-  // Handle scroll to stop above AI shield
+  // Position relative to AI shield - always stay above it
   useEffect(() => {
     if (!shouldShow || !isVisible) return;
 
-    const handleScroll = () => {
+    const handlePosition = () => {
       const container = containerRef.current;
       const aiShield = document.querySelector('[data-floating-ai-shield]');
       
       if (!container) return;
 
       const containerHeight = container.offsetHeight || 90;
-      const defaultTopPercent = 0.22;
-      const defaultTop = window.innerHeight * defaultTopPercent;
-      const buffer = 24; // Gap between stats and AI shield
+      const gap = 24; // Gap between stats and AI shield
+      const minTop = 70; // Minimum distance from top of viewport
       
-      // Get AI shield's current top position
-      let aiShieldTop: number;
       if (aiShield) {
-        const rect = aiShield.getBoundingClientRect();
-        aiShieldTop = rect.top;
+        const shieldRect = aiShield.getBoundingClientRect();
+        // Stats should end (bottom edge) above where AI shield starts (top edge)
+        const statsBottomLimit = shieldRect.top - gap;
+        const requiredStatsTop = statsBottomLimit - containerHeight;
+        
+        // Clamp to minimum
+        const finalTop = Math.max(minTop, requiredStatsTop);
+        setTopPosition(`${finalTop}px`);
       } else {
-        // Fallback: AI shield is at 72% when no scroll constraint
-        aiShieldTop = window.innerHeight * 0.72;
-      }
-
-      // Calculate max position (must stay above AI shield)
-      const maxTop = aiShieldTop - containerHeight - buffer;
-      
-      // Clamp between minimum (50px from top) and maxTop
-      const minTop = 80;
-      
-      if (maxTop < minTop) {
-        // Not enough space - hide or keep at min
-        setTopPosition(`${minTop}px`);
-      } else if (defaultTop > maxTop) {
-        // Would overlap AI shield, cap it
-        setTopPosition(`${maxTop}px`);
-      } else {
-        // Normal position
+        // No AI shield found, use default
         setTopPosition('22%');
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
+    window.addEventListener('scroll', handlePosition, { passive: true });
+    window.addEventListener('resize', handlePosition, { passive: true });
     
-    // Run after a small delay to ensure AI shield is rendered
-    const timer = setTimeout(handleScroll, 300);
-    const timer2 = setInterval(handleScroll, 500); // Keep checking
+    // Run frequently to stay synchronized
+    const interval = setInterval(handlePosition, 100);
+    setTimeout(handlePosition, 300);
     
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      clearTimeout(timer);
-      clearInterval(timer2);
+      window.removeEventListener('scroll', handlePosition);
+      window.removeEventListener('resize', handlePosition);
+      clearInterval(interval);
     };
   }, [shouldShow, isVisible]);
 
