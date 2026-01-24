@@ -16,7 +16,6 @@ import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import FloatingAIShield from "@/components/ui/floating-ai-shield";
-import FloatingLiveStats from "@/components/ui/floating-live-stats";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import SEO from "@/components/SEO";
 import ogImages from "@/assets/og";
@@ -35,9 +34,8 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       {/* Full-page interactive grid */}
       <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
-      {/* Floating Live Stats - above AI Shield */}
-      <FloatingLiveStats />
       {/* Floating AI Shield */}
+      <FloatingAIShield />
       <FloatingAIShield />
       <SEO
         title="Webstack.ceo | Niche Linking on Autopilot for SEO Agencies"
