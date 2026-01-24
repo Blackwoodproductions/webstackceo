@@ -80,6 +80,7 @@ const GlossaryIndex = lazy(() => import("./pages/learn/glossary/GlossaryIndex"))
 
 // Lazy load non-critical UI components
 const FloatingCodeBox = lazy(() => import("@/components/ui/floating-code-box"));
+const FloatingLiveStats = lazy(() => import("@/components/ui/floating-live-stats"));
 
 // Minimal loading fallback - no heavy animations
 const PageLoader = () => (
@@ -112,6 +113,7 @@ const App = () => (
             <ScrollToTop />
             <Suspense fallback={null}>
               <FloatingCodeBox />
+              <FloatingLiveStats />
             </Suspense>
             <Suspense fallback={<PageLoader />}>
               <Routes>

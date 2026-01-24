@@ -1,20 +1,30 @@
 import { memo, useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Users, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+const EXCLUDED_ROUTES = ['/admin', '/auth', '/marketing-dashboard'];
+
 const FloatingLiveStats = memo(() => {
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
   const [newToday, setNewToday] = useState(0);
 
+  // Check if current route should show stats
+  const shouldShow = !EXCLUDED_ROUTES.some(route => location.pathname.startsWith(route));
+
   // Delay render to not block initial page paint
   useEffect(() => {
+    if (!shouldShow) return;
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [shouldShow]);
 
   // Fetch live stats - same logic as marketing dashboard
   useEffect(() => {
+    if (!shouldShow) return;
+
     const fetchStats = async () => {
       const now = new Date();
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000);
@@ -56,9 +66,9 @@ const FloatingLiveStats = memo(() => {
       clearInterval(interval);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [shouldShow]);
 
-  if (!isVisible) return null;
+  if (!shouldShow || !isVisible) return null;
 
   return (
     <div className="fixed left-6 top-[22%] hidden lg:flex flex-col gap-2 z-40 animate-fade-in">
