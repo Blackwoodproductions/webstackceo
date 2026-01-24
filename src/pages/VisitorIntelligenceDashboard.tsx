@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -322,6 +322,45 @@ const MarketingDashboard = () => {
     }
   };
 
+  // Create test lead for demo purposes
+  const handleCreateTestLead = async () => {
+    try {
+      const testLead = {
+        email: `test-${Date.now()}@example.com`,
+        full_name: 'Test Lead (Demo)',
+        phone: '+1 555-000-0000',
+        domain: 'example.com',
+        metric_type: 'test_demo',
+        source_page: '/',
+        company_employees: '10-50',
+        annual_revenue: '$100k-$500k',
+        funnel_stage: 'lead',
+        status: 'open',
+      };
+
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(testLead)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local state immediately
+      if (data) {
+        setLeads(prev => [data as Lead, ...prev]);
+        setFunnelStats(prev => ({
+          ...prev,
+          leads: prev.leads + 1,
+          withName: prev.withName + 1,
+          withCompanyInfo: prev.withCompanyInfo + 1,
+        }));
+      }
+    } catch (error) {
+      console.error('Error creating test lead:', error);
+    }
+  };
+
   const getStatusBadge = (status: string, closedAmount?: number | null) => {
     switch (status) {
       case 'closed':
@@ -579,6 +618,16 @@ const MarketingDashboard = () => {
                 user.email
               }
             </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateTestLead}
+              className="text-xs gap-1.5 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+              title="Create a test lead for demo purposes"
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              Test Lead
+            </Button>
             <Button
               variant="ghost"
               size="sm"
