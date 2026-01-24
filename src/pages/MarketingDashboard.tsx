@@ -417,8 +417,10 @@ const MarketingDashboard = () => {
         {/* Main Layout - Traffic Sources on Left, Stats & Info on Right */}
         <div className="grid lg:grid-cols-5 gap-6 mb-6">
           {/* Left Column - Traffic Sources (stretches to match right column height) */}
-          <div className="lg:col-span-1">
-            <ReferrerBreakdownChart sessions={sessions} />
+          <div className="lg:col-span-1 flex">
+            <div className="w-full">
+              <ReferrerBreakdownChart sessions={sessions} />
+            </div>
           </div>
 
           {/* Right Column - Stats + Funnel + Info Boxes */}
