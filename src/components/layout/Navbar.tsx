@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "next-themes";
 import { 
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
   Search, Link2, PenTool, HelpCircle, UserCheck, Eye,
@@ -45,6 +46,7 @@ const MotionLink = motion(Link);
 
 const Navbar = () => {
   const location = useLocation();
+  const { resolvedTheme, setTheme } = useTheme();
   const isHomePage = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,11 +60,18 @@ const Navbar = () => {
   const [isMobileBlogOpen, setIsMobileBlogOpen] = useState(false);
   const [isSubmitSiteOpen, setIsSubmitSiteOpen] = useState(false);
   const [isMobileSubmitSiteOpen, setIsMobileSubmitSiteOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isThemeMounted, setIsThemeMounted] = useState(false);
   const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const { soundEnabled, toggleSound } = useSoundContext();
   const { playSound } = useSoundEffects();
+
+  // next-themes can be undefined on first client render; avoid flicker.
+  useEffect(() => {
+    setIsThemeMounted(true);
+  }, []);
+
+  const isDark = isThemeMounted ? (resolvedTheme ?? "dark") !== "light" : true;
 
   // Auto-animate logo to gold every 15 seconds
   useEffect(() => {
@@ -80,14 +89,6 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    // Check for saved preference, default to dark if no preference saved
-    const savedTheme = localStorage.getItem("theme");
-    const shouldBeDark = savedTheme ? savedTheme === "dark" : true; // Default to dark
-    setIsDark(shouldBeDark);
-    document.documentElement.classList.toggle("dark", shouldBeDark);
-  }, []);
-
-  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -96,10 +97,9 @@ const Navbar = () => {
   }, []);
 
   const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    document.documentElement.classList.toggle("dark", newIsDark);
-    localStorage.setItem("theme", newIsDark ? "dark" : "light");
+    const current = resolvedTheme ?? "dark";
+    const next = current === "light" ? "dark" : "light";
+    setTheme(next);
   };
 
   const navLinks = [
