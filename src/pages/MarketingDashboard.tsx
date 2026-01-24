@@ -510,7 +510,7 @@ const MarketingDashboard = () => {
           
           {/* Center: Subtitle */}
           <div className="flex-1 flex justify-center">
-            <span className="text-sm text-muted-foreground">Marketing Funnel Analytics</span>
+            <span className="text-sm text-muted-foreground">Marketing Funnel Analytics and AI Sales Center</span>
           </div>
           
           {/* Right: User Controls */}
