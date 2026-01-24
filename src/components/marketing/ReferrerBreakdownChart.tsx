@@ -162,7 +162,7 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
@@ -173,7 +173,7 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 flex-1">
         {/* Donut Chart */}
         <div className="relative flex items-center justify-center">
           <svg viewBox="0 0 100 100" className="w-24 h-24">
