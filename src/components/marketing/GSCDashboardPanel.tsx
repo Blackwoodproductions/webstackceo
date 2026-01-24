@@ -1468,21 +1468,29 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </h4>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              {deviceData.map((device, i) => {
-                const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
+              {(() => {
+                // Always show all 3 device types, with data or zeros
+                const deviceTypes = ['DESKTOP', 'MOBILE', 'TABLET'] as const;
                 const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
-                const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
-                return (
-                  <div key={i} className="bg-secondary/30 rounded-lg p-4 text-center">
-                    <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground capitalize mb-1">{device.keys[0].toLowerCase()}</p>
-                    <p className="text-2xl font-bold">{pct.toFixed(0)}%</p>
-                    <p className="text-xs text-muted-foreground">{device.clicks} clicks</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{device.impressions} impressions</p>
-                  </div>
-                );
-              })}
-              {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-8">{isFetching ? "Loading..." : "No data"}</div>}
+                
+                return deviceTypes.map((deviceType) => {
+                  const device = deviceData.find(d => d.keys[0] === deviceType);
+                  const clicks = device?.clicks || 0;
+                  const impressions = device?.impressions || 0;
+                  const pct = totalClicks > 0 ? (clicks / totalClicks) * 100 : 0;
+                  const Icon = deviceType === 'DESKTOP' ? Monitor : deviceType === 'MOBILE' ? Smartphone : Tablet;
+                  
+                  return (
+                    <div key={deviceType} className="bg-secondary/30 rounded-lg p-4 text-center">
+                      <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground capitalize mb-1">{deviceType.toLowerCase()}</p>
+                      <p className="text-2xl font-bold">{isFetching ? "—" : `${pct.toFixed(0)}%`}</p>
+                      <p className="text-xs text-muted-foreground">{isFetching ? "..." : `${clicks} clicks`}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{isFetching ? "..." : `${impressions} impressions`}</p>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
