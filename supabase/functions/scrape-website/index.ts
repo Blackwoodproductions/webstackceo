@@ -154,12 +154,12 @@ function extractMetaTags(html: string, baseUrl: string): { title: string | null;
   };
 }
 
-function generateSummary(title: string | null, description: string | null, category: string): string {
+function generateSummary(title: string | null, description: string | null, category: string, textContent: string): string {
   const categoryNames: Record<string, string> = {
     ecommerce: 'e-commerce',
-    saas: 'SaaS/software',
+    saas: 'SaaS and software',
     local_business: 'local business',
-    blog_media: 'blog/media',
+    blog_media: 'blog and media',
     professional_services: 'professional services',
     healthcare: 'healthcare',
     finance: 'finance',
@@ -173,15 +173,76 @@ function generateSummary(title: string | null, description: string | null, categ
 
   const categoryLabel = categoryNames[category] || 'business';
   
-  if (description) {
-    return `${description.substring(0, 200)}${description.length > 200 ? '...' : ''}`;
-  }
+  // Build a comprehensive summary from available content
+  const parts: string[] = [];
   
+  // Start with title context
   if (title) {
-    return `A ${categoryLabel} website focused on ${title.toLowerCase()}.`;
+    parts.push(`${title} is a ${categoryLabel} website.`);
+  } else {
+    parts.push(`This is a ${categoryLabel} website.`);
   }
   
-  return `A ${categoryLabel} website.`;
+  // Add the meta description
+  if (description) {
+    parts.push(description);
+  }
+  
+  // Extract key phrases from the page content for additional context
+  const cleanText = textContent
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 3000);
+  
+  // Find sentences that might describe the business
+  const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 30 && s.trim().length < 200);
+  
+  // Look for descriptive sentences (containing keywords like "we", "our", "provide", "offer", "specialize")
+  const descriptiveSentences = sentences.filter(s => {
+    const lower = s.toLowerCase();
+    return lower.includes(' we ') || lower.includes('our ') || lower.includes(' provide') || 
+           lower.includes(' offer') || lower.includes(' specialize') || lower.includes(' help') ||
+           lower.includes(' service') || lower.includes(' solution') || lower.includes(' deliver');
+  });
+  
+  // Add up to 3 descriptive sentences
+  for (let i = 0; i < Math.min(3, descriptiveSentences.length); i++) {
+    const sentence = descriptiveSentences[i].trim();
+    if (sentence && !parts.some(p => p.includes(sentence.substring(0, 30)))) {
+      parts.push(sentence + '.');
+    }
+  }
+  
+  // Add category-specific context
+  const categoryContext: Record<string, string> = {
+    ecommerce: 'The website appears to offer products or services for online purchase, featuring e-commerce functionality for a seamless shopping experience.',
+    saas: 'This platform provides software solutions designed to help businesses streamline their operations and improve productivity through digital tools.',
+    local_business: 'Serving the local community, this business offers in-person services and maintains a physical presence for customer convenience.',
+    blog_media: 'The site publishes content and articles to inform, educate, or entertain its audience with regularly updated material.',
+    professional_services: 'This organization offers specialized expertise and consulting services to help clients achieve their goals.',
+    healthcare: 'Focused on health and wellness, this provider offers medical services, treatments, or health-related information.',
+    finance: 'Operating in the financial sector, this entity provides services related to money management, investments, or financial planning.',
+    education: 'Dedicated to learning and development, this platform offers educational resources, courses, or training programs.',
+    real_estate: 'Specializing in property, this business helps clients buy, sell, rent, or manage real estate assets.',
+    hospitality: 'In the hospitality industry, this business provides accommodation, dining, or travel-related services for guests.',
+    nonprofit: 'As a mission-driven organization, this nonprofit works to create positive impact in its community or cause area.',
+    technology: 'At the forefront of innovation, this technology company develops digital solutions and technical products.',
+    other: 'This website serves its audience with information, products, or services tailored to their needs.',
+  };
+  
+  if (categoryContext[category]) {
+    parts.push(categoryContext[category]);
+  }
+  
+  // Join and ensure minimum length
+  let summary = parts.join(' ').replace(/\s+/g, ' ').trim();
+  
+  // If still too short, add generic padding based on category
+  if (summary.length < 200) {
+    summary += ` Visitors can explore the website to learn more about the offerings, get in touch with the team, and discover how this ${categoryLabel} organization can meet their needs.`;
+  }
+  
+  return summary;
 }
 
 Deno.serve(async (req) => {
@@ -263,7 +324,7 @@ Deno.serve(async (req) => {
       socialLinks,
       contactInfo,
       detectedCategory,
-      summary: generateSummary(metaTags.title, metaTags.description, detectedCategory),
+      summary: generateSummary(metaTags.title, metaTags.description, detectedCategory, textContent),
     };
 
     console.log('Successfully scraped website profile');
