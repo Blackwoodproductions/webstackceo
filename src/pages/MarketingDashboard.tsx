@@ -296,10 +296,52 @@ const MarketingDashboard = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8">
-        {/* Active Visitors & Heatmap Row */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <ActiveVisitorsWidget />
-          <PageEngagementHeatmap />
+        {/* Quick Stats Row - Top */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Mail className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{funnelStats.leads}</p>
+                <p className="text-xs text-muted-foreground">Total Leads</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Target className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{funnelStats.qualified}</p>
+                <p className="text-xs text-muted-foreground">Qualified</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10">
+                <Phone className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{funnelStats.withPhone}</p>
+                <p className="text-xs text-muted-foreground">With Phone</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Users className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{funnelStats.visitors}</p>
+                <p className="text-xs text-muted-foreground">Sessions</p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Funnel Visualization */}
@@ -350,52 +392,10 @@ const MarketingDashboard = () => {
           </div>
         </Card>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Mail className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{funnelStats.leads}</p>
-                <p className="text-xs text-muted-foreground">Total Leads</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Target className="w-5 h-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{funnelStats.qualified}</p>
-                <p className="text-xs text-muted-foreground">Qualified</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Phone className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{funnelStats.withPhone}</p>
-                <p className="text-xs text-muted-foreground">With Phone</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Users className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{funnelStats.visitors}</p>
-                <p className="text-xs text-muted-foreground">Sessions</p>
-              </div>
-            </div>
-          </Card>
+        {/* Active Visitors & Heatmap Row */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <ActiveVisitorsWidget />
+          <PageEngagementHeatmap />
         </div>
 
         {/* Tabs */}
