@@ -172,21 +172,48 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     // OAuth callback handling
     const url = new URL(window.location.href);
     const code = url.searchParams.get("code");
+    const error = url.searchParams.get("error");
+    const errorDescription = url.searchParams.get("error_description");
+
+    // Handle OAuth error response
+    if (error) {
+      console.error("OAuth error:", error, errorDescription);
+      toast({
+        title: "Google Authentication Error",
+        description: errorDescription || error || "Failed to authenticate with Google",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setIsLoading(false);
+      return;
+    }
 
     if (code && !sessionStorage.getItem("gsc_access_token")) {
       const redirectUri = window.location.origin + window.location.pathname;
       const verifier = sessionStorage.getItem("gsc_code_verifier") || "";
 
       if (verifier) {
+        setIsLoading(true);
         (async () => {
           try {
+            console.log("Exchanging OAuth code for token...", { redirectUri, hasVerifier: !!verifier });
+            
             const tokenRes = await supabase.functions.invoke("google-oauth-token", {
               body: { code, codeVerifier: verifier, redirectUri },
             });
 
-            if (tokenRes.error) throw new Error(tokenRes.error.message);
+            console.log("Token exchange response:", tokenRes);
+
+            if (tokenRes.error) {
+              throw new Error(tokenRes.error.message || "Token exchange failed");
+            }
 
             const tokenJson = tokenRes.data;
+            
+            if (tokenJson?.error) {
+              throw new Error(tokenJson.error_description || tokenJson.error || "Token exchange failed");
+            }
+            
             if (tokenJson?.access_token) {
               const expiresIn = Number(tokenJson.expires_in ?? 3600);
               const expiry = Date.now() + expiresIn * 1000;
@@ -195,18 +222,41 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
               sessionStorage.removeItem("gsc_code_verifier");
               setAccessToken(tokenJson.access_token);
               setIsAuthenticated(true);
+              toast({
+                title: "Connected to Google Search Console",
+                description: "Successfully authenticated with Google",
+              });
               window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+              throw new Error("No access token received from Google");
             }
           } catch (e) {
             console.error("OAuth token exchange error:", e);
+            toast({
+              title: "Authentication Failed",
+              description: e instanceof Error ? e.message : "Failed to complete Google authentication",
+              variant: "destructive",
+            });
+            sessionStorage.removeItem("gsc_code_verifier");
             window.history.replaceState({}, document.title, window.location.pathname);
+          } finally {
+            setIsLoading(false);
           }
         })();
+      } else {
+        console.error("OAuth code received but no verifier found in session storage");
+        toast({
+          title: "Authentication Error",
+          description: "Session expired. Please try connecting again.",
+          variant: "destructive",
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
-  }, []);
+  }, [toast]);
 
   // Fetch sites when authenticated
   useEffect(() => {
@@ -291,27 +341,42 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
 
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
+    console.log("[GSC] Attempting login, client ID present:", !!clientId, "ID prefix:", clientId?.substring(0, 20));
+    
     if (!clientId) {
+      console.log("[GSC] No client ID found, showing dialog");
       setShowClientIdDialog(true);
       return;
     }
 
-    const redirectUri = window.location.origin + window.location.pathname;
-    const verifier = generateCodeVerifier();
-    sessionStorage.setItem("gsc_code_verifier", verifier);
-    const challenge = await generateCodeChallenge(verifier);
+    try {
+      const redirectUri = window.location.origin + window.location.pathname;
+      console.log("[GSC] Redirect URI:", redirectUri);
+      
+      const verifier = generateCodeVerifier();
+      sessionStorage.setItem("gsc_code_verifier", verifier);
+      const challenge = await generateCodeChallenge(verifier);
 
-    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", clientId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("scope", GOOGLE_SCOPES);
-    authUrl.searchParams.set("code_challenge", challenge);
-    authUrl.searchParams.set("code_challenge_method", "S256");
-    authUrl.searchParams.set("prompt", "consent");
-    authUrl.searchParams.set("access_type", "online");
+      const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      authUrl.searchParams.set("client_id", clientId);
+      authUrl.searchParams.set("redirect_uri", redirectUri);
+      authUrl.searchParams.set("response_type", "code");
+      authUrl.searchParams.set("scope", GOOGLE_SCOPES);
+      authUrl.searchParams.set("code_challenge", challenge);
+      authUrl.searchParams.set("code_challenge_method", "S256");
+      authUrl.searchParams.set("prompt", "consent");
+      authUrl.searchParams.set("access_type", "online");
 
-    window.location.href = authUrl.toString();
+      console.log("[GSC] Redirecting to Google OAuth...");
+      window.location.href = authUrl.toString();
+    } catch (error) {
+      console.error("[GSC] Error initiating OAuth:", error);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to start Google authentication. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveClientId = () => {
