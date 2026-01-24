@@ -155,12 +155,6 @@ const Analytics = () => {
 
       (async () => {
         try {
-          const clientId = getGoogleClientId();
-          if (!clientId) {
-            setShowClientIdDialog(true);
-            return;
-          }
-
           if (!verifier) {
             toast({
               title: "Google connection failed",
@@ -171,24 +165,22 @@ const Analytics = () => {
             return;
           }
 
-          const body = new URLSearchParams({
-            client_id: clientId,
-            code,
-            code_verifier: verifier,
-            redirect_uri: redirectUri,
-            grant_type: "authorization_code",
+          // Use Edge Function to exchange code for tokens (keeps client_secret secure)
+          const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+            body: {
+              code,
+              codeVerifier: verifier,
+              redirectUri,
+            },
           });
 
-          const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body,
-          });
+          if (tokenRes.error) {
+            throw new Error(tokenRes.error.message || "Token exchange failed");
+          }
 
-          const tokenJson = await tokenRes.json();
-          if (!tokenRes.ok || !tokenJson?.access_token) {
-            const message = tokenJson?.error_description || tokenJson?.error || "Token exchange failed.";
-            throw new Error(message);
+          const tokenJson = tokenRes.data;
+          if (!tokenJson?.access_token) {
+            throw new Error(tokenJson?.error || "Token exchange failed.");
           }
 
           const expiresIn = Number(tokenJson.expires_in ?? 3600);
@@ -201,11 +193,12 @@ const Analytics = () => {
 
           // Clean URL
           window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (e: any) {
+        } catch (e: unknown) {
           console.error("OAuth token exchange error:", e);
+          const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
           toast({
             title: "Google connection failed",
-            description: e?.message || "An unexpected error occurred.",
+            description: errorMessage,
             variant: "destructive",
           });
           window.history.replaceState({}, document.title, window.location.pathname);

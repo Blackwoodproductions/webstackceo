@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.test-form]
 verify_jwt = false
+
+[functions.search-console]
+verify_jwt = false
+
+[functions.google-oauth-token]
+verify_jwt = false
