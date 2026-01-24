@@ -30,6 +30,7 @@ const addOnFeatures = [
 ];
 
 const seoTools = [
+  { icon: BarChart3, name: "Search Console", href: "/analytics", description: "Google Search Console data", highlight: true },
   { icon: Link2, name: "Backlink Analyzer", href: "/tools#backlinks", description: "Analyze your link profile" },
   { icon: FileText, name: "Technical SEO Audit", href: "/tools#technical_audit", description: "Check technical health" },
   { icon: TrendingUp, name: "Traffic Estimator", href: "/tools#traffic", description: "Estimate organic traffic" },
@@ -367,14 +368,27 @@ const Navbar = () => {
                             delay: 0.05 + (index * 0.03),
                             ease: "easeOut"
                           }}
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-secondary transition-all duration-300 group"
+                          className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-300 group ${
+                            'highlight' in tool && tool.highlight 
+                              ? 'bg-gradient-to-r from-primary/10 to-violet-500/10 hover:from-primary/20 hover:to-violet-500/20 ring-1 ring-primary/20' 
+                              : 'hover:bg-secondary'
+                          }`}
                         >
-                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)] group-hover:scale-110 transition-all duration-300 flex-shrink-0">
-                            <tool.icon className="w-4 h-4 text-primary group-hover:text-hover-accent transition-colors duration-300" />
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-300 flex-shrink-0 ${
+                            'highlight' in tool && tool.highlight
+                              ? 'bg-gradient-to-br from-primary to-violet-500 group-hover:shadow-[var(--hover-accent-glow)]'
+                              : 'bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)]'
+                          }`}>
+                            <tool.icon className={`w-4 h-4 transition-colors duration-300 ${
+                              'highlight' in tool && tool.highlight ? 'text-white' : 'text-primary group-hover:text-hover-accent'
+                            }`} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium text-foreground group-hover:text-hover-accent group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300 block">
+                            <span className={`text-sm font-medium group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300 block ${
+                              'highlight' in tool && tool.highlight ? 'text-primary group-hover:text-hover-accent' : 'text-foreground group-hover:text-hover-accent'
+                            }`}>
                               {tool.name}
+                              {'highlight' in tool && tool.highlight && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">NEW</span>}
                             </span>
                             <span className="text-[11px] text-muted-foreground block truncate">
                               {tool.description}

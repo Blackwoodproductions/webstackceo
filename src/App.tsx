@@ -36,6 +36,7 @@ const Sitemap = lazy(() => import("./pages/Sitemap"));
 const AuditResults = lazy(() => import("./pages/AuditResults"));
 const WebsiteAudits = lazy(() => import("./pages/WebsiteAudits"));
 const Tools = lazy(() => import("./pages/Tools"));
+const Analytics = lazy(() => import("./pages/Analytics"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Feature pages - lazy loaded
@@ -180,6 +181,7 @@ const App = () => (
               <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/tools" element={<Tools />} />
+              <Route path="/analytics" element={<Analytics />} />
               <Route path="/audits" element={<WebsiteAudits />} />
               <Route path="/audit/:domain" element={<AuditResults />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
