@@ -673,17 +673,15 @@ const MarketingDashboard = () => {
           </Card>
         </Collapsible>
 
-        {/* Main Layout - Traffic Sources on Left, Stats & Info on Right */}
-        <div className="grid lg:grid-cols-5 gap-6 mb-6">
-          {/* Left Column - Traffic Sources (stretches to match right column height) */}
+        {/* Main Layout - Traffic Sources on Left, Stats on Right */}
+        <div className="grid lg:grid-cols-4 gap-6 mb-6">
+          {/* Left Column - Traffic Sources (expanded) */}
           <div className="lg:col-span-1 flex">
-            <div className="w-full">
-              <ReferrerBreakdownChart sessions={sessions} />
-            </div>
+            <ReferrerBreakdownChart sessions={sessions} />
           </div>
 
-          {/* Right Column - Stats + Funnel + Info Boxes */}
-          <div className="lg:col-span-4 space-y-4">
+          {/* Right Column - Stats + Funnel */}
+          <div className="lg:col-span-3 space-y-4">
             {/* Quick Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Card className="p-4 border-green-500/30 bg-green-500/5">
@@ -790,90 +788,6 @@ const MarketingDashboard = () => {
               })}
             </div>
 
-            {/* Entry Pages, Top Tools, Recent Leads Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-primary" />
-                  <h2 className="font-bold text-foreground text-sm">Entry Pages</h2>
-                </div>
-                <div className="space-y-2">
-                  {(() => {
-                    const pageCounts: Record<string, number> = {};
-                    sessions.forEach(s => {
-                      const page = s.first_page || '/';
-                      pageCounts[page] = (pageCounts[page] || 0) + 1;
-                    });
-                    return Object.entries(pageCounts)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 5)
-                      .map(([page, count]) => (
-                        <div key={page} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground truncate flex-1 mr-2">
-                            {page === '/' ? 'Homepage' : page}
-                          </span>
-                          <span className="font-semibold">{count}</span>
-                        </div>
-                      ));
-                  })()}
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <MousePointer className="w-4 h-4 text-pink-500" />
-                  <h2 className="font-bold text-foreground text-sm">Top Tools</h2>
-                </div>
-                <div className="space-y-2">
-                  {(() => {
-                    const toolCounts: Record<string, number> = {};
-                    toolInteractions.forEach(t => {
-                      toolCounts[t.tool_name] = (toolCounts[t.tool_name] || 0) + 1;
-                    });
-                    const entries = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                    if (entries.length === 0) {
-                      return <p className="text-xs text-muted-foreground">No tool usage yet</p>;
-                    }
-                    return entries.map(([tool, count]) => (
-                      <div key={tool} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground truncate flex-1 mr-2">{tool}</span>
-                        <span className="font-semibold">{count}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Mail className="w-4 h-4 text-violet-500" />
-                  <h2 className="font-bold text-foreground text-sm">Recent Leads</h2>
-                  <Badge variant="outline" className="ml-auto text-[10px]">{leads.length}</Badge>
-                </div>
-                <div className="space-y-2">
-                  {leads.slice(0, 5).map(lead => (
-                    <div key={lead.id} className="flex items-center justify-between text-xs">
-                      <div className="flex flex-col min-w-0 flex-1 mr-2">
-                        <span className="text-foreground font-medium truncate">
-                          {lead.full_name || lead.email}
-                        </span>
-                        {lead.full_name && (
-                          <span className="text-muted-foreground text-[10px] truncate">{lead.email}</span>
-                        )}
-                      </div>
-                      {lead.status === 'closed' ? (
-                        <Badge className="text-[8px] h-4 bg-green-500 flex-shrink-0">Closed</Badge>
-                      ) : lead.full_name ? (
-                        <Badge className="text-[8px] h-4 bg-amber-500 flex-shrink-0">Named</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[8px] h-4 flex-shrink-0">New</Badge>
-                      )}
-                    </div>
-                  ))}
-                  {leads.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No leads yet</p>
-                  )}
-                </div>
-              </Card>
-            </div>
           </div>
         </div>
 
