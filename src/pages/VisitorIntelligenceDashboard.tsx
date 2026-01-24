@@ -1056,135 +1056,69 @@ const MarketingDashboard = () => {
                       }}
                     >
                       <SelectTrigger className="w-[260px] h-7 text-sm bg-background border-border">
-                        {/* Keep the Radix Value mounted to avoid edge-case selection issues */}
+                        {/* Keep the Radix Value mounted */}
                         <SelectValue className="sr-only" />
-                        <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-cyan-500" />
-                        <span className="truncate max-w-[200px]">
+                        <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-primary" />
+
+                        <span className="truncate max-w-[170px]">
                           {displayLabel
                             ? (displayLabel.length > 25 ? `${displayLabel.slice(0, 25)}...` : displayLabel)
                             : 'Select domain'}
                         </span>
+
+                        {(() => {
+                          const entry = allDomains.find((d) => d.value === selectValue);
+                          if (!entry) return null;
+
+                          const showVI = entry.source === 'tracking' || entry.source === 'both';
+                          const showGSC = entry.source === 'gsc' || entry.source === 'both';
+
+                          return (
+                            <span className="ml-2 flex items-center gap-1">
+                              {showVI && (
+                                <Badge variant="secondary" className="h-5 px-2 text-[10px]">
+                                  VI
+                                </Badge>
+                              )}
+                              {showGSC && (
+                                <Badge variant="secondary" className="h-5 px-2 text-[10px]">
+                                  GSC
+                                </Badge>
+                              )}
+                            </span>
+                          );
+                        })()}
                       </SelectTrigger>
+
                       <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
-                        {/* VI-only */}
-                        {viOnlyDomains.length > 0 && (
-                          <SelectGroup>
-                            {gscAuthenticated && (
-                              <SelectLabel className="px-2 py-1 text-[10px] font-semibold text-green-500 bg-green-500/5 border-b border-border">
-                                VI Tracking Only
-                              </SelectLabel>
-                            )}
-                            {viOnlyDomains.map((domain) => (
-                              <SelectItem
-                                key={domain.value}
-                                value={domain.value}
-                                textValue={domain.label}
-                                className="text-xs"
-                              >
-                                <div className="flex items-center justify-between gap-2 w-full">
-                                  <div className="flex items-center gap-2">
-                                    <span className="truncate max-w-[140px]" title={domain.label}>
-                                      {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
-                                    </span>
-                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
-                                  </div>
-                                  {gscAuthenticated && (
-                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-500 border-amber-500/30 cursor-pointer hover:bg-amber-500/20">
-                                      + GSC
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
-
-                        {viOnlyDomains.length > 0 && bothDomains.length > 0 && <SelectSeparator />}
-
-                        {/* VI + GSC */}
-                        {bothDomains.length > 0 && (
-                          <SelectGroup>
-                            {gscAuthenticated && (
-                              <SelectLabel className="px-2 py-1 text-[10px] font-semibold text-violet-400 bg-violet-500/5 border-b border-border">
-                                VI + GSC Connected
-                              </SelectLabel>
-                            )}
-                            {bothDomains.map((domain) => (
-                              <SelectItem
-                                key={domain.value}
-                                value={domain.value}
-                                textValue={domain.label}
-                                className="text-xs"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="truncate max-w-[140px]" title={domain.label}>
-                                    {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
-                                  </span>
-                                  <div className="flex gap-1 flex-shrink-0">
-                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-green-500/10 text-green-500 border-green-500/30">VI</Badge>
-                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
-                                    {domain.gscKind && (
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-secondary/40 text-muted-foreground border-border">
-                                        {domain.gscKind === 'domain' ? 'Domain' : 'URL'}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
-
-                        {(bothDomains.length > 0 && gscOnlyDomains.length > 0) && <SelectSeparator />}
-
-                        {/* GSC-only */}
-                        {gscOnlyDomains.length > 0 && (
-                          <SelectGroup>
-                            <SelectLabel className="px-2 py-1 text-[10px] font-semibold text-cyan-400 bg-cyan-500/5 border-b border-border">
-                              GSC Only (No VI Tracking)
-                            </SelectLabel>
-                            {gscOnlyDomains.map((domain) => (
-                              <SelectItem
-                                key={domain.value}
-                                value={domain.value}
-                                textValue={domain.label}
-                                className="text-xs"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="truncate max-w-[140px]" title={domain.label}>
-                                    {domain.label.length > 20 ? domain.label.slice(0, 20) + '...' : domain.label}
-                                  </span>
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-cyan-500/10 text-cyan-500 border-cyan-500/30">GSC</Badge>
-                                  {domain.gscKind && (
-                                    <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-secondary/40 text-muted-foreground border-border">
-                                      {domain.gscKind === 'domain' ? 'Domain' : 'URL'}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
+                        {allDomains.map((domain) => (
+                          <SelectItem
+                            key={domain.value}
+                            value={domain.value}
+                            textValue={domain.label}
+                            className="text-xs"
+                          >
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <span className="truncate max-w-[220px]" title={domain.label}>
+                                {domain.label}
+                              </span>
+                              <span className="flex items-center gap-1 flex-shrink-0">
+                                {(domain.source === 'tracking' || domain.source === 'both') && (
+                                  <Badge variant="secondary" className="h-5 px-2 text-[10px]">
+                                    VI
+                                  </Badge>
+                                )}
+                                {(domain.source === 'gsc' || domain.source === 'both') && (
+                                  <Badge variant="secondary" className="h-5 px-2 text-[10px]">
+                                    GSC
+                                  </Badge>
+                                )}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    
-                    {/* Show Connect to GSC button when VI-only domain is selected and GSC is connected */}
-                    {gscAuthenticated && !!selectedTrackedDomain && viOnlyDomains.some(d => d.label === selectedTrackedDomain) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1.5 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
-                        onClick={() => {
-                          // Open Google Search Console in new tab to add the property
-                          const domainToAdd = normalizeDomain(selectedTrackedDomain);
-                          window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain%3A${encodeURIComponent(domainToAdd)}`, '_blank');
-                        }}
-                      >
-                        <Search className="w-3 h-3" />
-                        Add to GSC
-                      </Button>
-                    )}
-                    <div className="w-px h-5 bg-border" />
                   </>
                 );
               } else {
