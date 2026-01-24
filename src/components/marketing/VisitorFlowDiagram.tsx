@@ -532,6 +532,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         return true;
       });
     }
+    
+    console.log(`[VisitorFlowDiagram] Time range: ${timeRange}, Filter: ${timeFilter ? `${timeFilter.start.toISOString()} - ${timeFilter.end?.toISOString() || 'now'}` : 'none'}, Total views: ${pageViews.length}, Filtered views: ${filteredViews.length}`);
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
@@ -632,7 +634,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         todayVisits: todayVisitCounts[path] || 0,
         depth,
         parent,
-        isVisited: totalVisits > 0,
+        isVisited: visits > 0, // Use filtered visits, not all-time
         isTool,
       };
     });
