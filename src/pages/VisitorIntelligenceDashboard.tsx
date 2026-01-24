@@ -291,15 +291,22 @@ const MarketingDashboard = () => {
     
     if (newStatus === 'deleted') {
       try {
+        // Permanently delete the lead from database
         const { error } = await supabase
           .from('leads')
-          .update({ status: 'deleted' })
+          .delete()
           .eq('id', lead.id);
 
         if (error) throw error;
         
-        // Remove from local state (or filter out deleted)
+        // Remove from local state
         setLeads(prev => prev.filter(l => l.id !== lead.id));
+        setFunnelStats(prev => ({
+          ...prev,
+          leads: Math.max(0, prev.leads - 1),
+          withName: lead.full_name ? Math.max(0, prev.withName - 1) : prev.withName,
+          withCompanyInfo: lead.company_employees ? Math.max(0, prev.withCompanyInfo - 1) : prev.withCompanyInfo,
+        }));
       } catch (error) {
         console.error('Error deleting lead:', error);
       }
