@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface SearchConsoleRequest {
-  action: 'sites' | 'performance' | 'indexing' | 'sitemaps' | 'urlInspection';
+  action: 'sites' | 'performance' | 'indexing' | 'sitemaps' | 'urlInspection' | 'submitUrl' | 'submitSitemap' | 'bulkSubmit';
   accessToken: string;
   siteUrl?: string;
   startDate?: string;
@@ -25,6 +25,12 @@ interface SearchConsoleRequest {
       expression: string;
     }>;
   }>;
+  // For URL submission
+  urlToSubmit?: string;
+  urlsToSubmit?: string[];
+  notificationType?: 'URL_UPDATED' | 'URL_DELETED';
+  // For sitemap submission
+  sitemapUrl?: string;
 }
 
 serve(async (req) => {
@@ -45,7 +51,11 @@ serve(async (req) => {
       searchType,
       dataState,
       inspectionUrl,
-      dimensionFilterGroups
+      dimensionFilterGroups,
+      urlToSubmit,
+      urlsToSubmit,
+      notificationType,
+      sitemapUrl
     } = await req.json() as SearchConsoleRequest;
 
     if (!accessToken) {
@@ -146,6 +156,156 @@ serve(async (req) => {
           }
         );
         result = await response.json();
+        break;
+      }
+
+      case 'submitUrl': {
+        // Submit a single URL for indexing via Indexing API
+        if (!urlToSubmit) {
+          return new Response(
+            JSON.stringify({ error: "URL to submit is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`Submitting URL for indexing: ${urlToSubmit}`);
+        
+        const response = await fetch(
+          "https://indexing.googleapis.com/v3/urlNotifications:publish",
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              url: urlToSubmit,
+              type: notificationType || "URL_UPDATED",
+            }),
+          }
+        );
+        
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          console.error("Indexing API error:", responseData);
+          result = {
+            success: false,
+            error: responseData.error?.message || "Failed to submit URL",
+            status: response.status,
+            url: urlToSubmit,
+          };
+        } else {
+          result = {
+            success: true,
+            url: urlToSubmit,
+            notifyTime: responseData.urlNotificationMetadata?.latestUpdate?.notifyTime,
+            urlNotificationMetadata: responseData.urlNotificationMetadata,
+          };
+        }
+        break;
+      }
+
+      case 'bulkSubmit': {
+        // Submit multiple URLs for indexing
+        if (!urlsToSubmit || urlsToSubmit.length === 0) {
+          return new Response(
+            JSON.stringify({ error: "URLs to submit are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log(`Bulk submitting ${urlsToSubmit.length} URLs for indexing`);
+        
+        const results: Array<{url: string; success: boolean; error?: string; notifyTime?: string}> = [];
+        
+        // Process URLs with rate limiting (max 200/day, so we pace requests)
+        for (const url of urlsToSubmit.slice(0, 100)) { // Limit to 100 per request
+          try {
+            const response = await fetch(
+              "https://indexing.googleapis.com/v3/urlNotifications:publish",
+              {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  url: url,
+                  type: notificationType || "URL_UPDATED",
+                }),
+              }
+            );
+            
+            const responseData = await response.json();
+            
+            if (!response.ok) {
+              results.push({
+                url,
+                success: false,
+                error: responseData.error?.message || `HTTP ${response.status}`,
+              });
+            } else {
+              results.push({
+                url,
+                success: true,
+                notifyTime: responseData.urlNotificationMetadata?.latestUpdate?.notifyTime,
+              });
+            }
+            
+            // Rate limiting: wait 100ms between requests
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } catch (err) {
+            results.push({
+              url,
+              success: false,
+              error: err instanceof Error ? err.message : 'Unknown error',
+            });
+          }
+        }
+        
+        const successCount = results.filter(r => r.success).length;
+        const failCount = results.filter(r => !r.success).length;
+        
+        result = {
+          success: true,
+          submitted: successCount,
+          failed: failCount,
+          total: urlsToSubmit.length,
+          results,
+        };
+        break;
+      }
+
+      case 'submitSitemap': {
+        // Submit a sitemap to Google Search Console
+        if (!siteUrl || !sitemapUrl) {
+          return new Response(
+            JSON.stringify({ error: "Site URL and sitemap URL are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const encodedSiteUrl = encodeURIComponent(siteUrl);
+        const encodedSitemapUrl = encodeURIComponent(sitemapUrl);
+        
+        console.log(`Submitting sitemap ${sitemapUrl} for site ${siteUrl}`);
+        
+        const response = await fetch(
+          `https://www.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/sitemaps/${encodedSitemapUrl}`,
+          {
+            method: "PUT",
+            headers,
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          result = {
+            success: false,
+            error: errorData.error?.message || `HTTP ${response.status}`,
+          };
+        } else {
+          result = {
+            success: true,
+            sitemapUrl,
+            message: "Sitemap submitted successfully",
+          };
+        }
         break;
       }
 
