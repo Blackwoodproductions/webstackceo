@@ -164,7 +164,7 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   const [codeCopied, setCodeCopied] = useState(false);
   
   // Advanced reporting toggle
-  const [showAdvancedReporting, setShowAdvancedReporting] = useState(false);
+  const [showAdvancedReporting, setShowAdvancedReporting] = useState(true);
   
   // Data dropdown states
   const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | 'devices' | null>(null);
