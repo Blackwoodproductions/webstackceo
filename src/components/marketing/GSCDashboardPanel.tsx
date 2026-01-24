@@ -344,9 +344,14 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   // Notify parent of site change and check tracking status
   useEffect(() => {
     if (selectedSite) {
-      onSiteChange?.(selectedSite);
+      // Only notify parent if this wasn't an external update (prevents loop)
+      if (isExternalUpdateRef.current) {
+        isExternalUpdateRef.current = false;
+      } else {
+        onSiteChange?.(selectedSite);
+      }
       
-      // Check if this domain has tracking code installed
+      // Always check tracking status
       checkTrackingStatus(selectedSite);
     }
   }, [selectedSite, onSiteChange]);
@@ -550,10 +555,15 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
     }
   };
 
-  // Sync with external selected site
+  // Sync with external selected site - only update internal state, don't trigger onSiteChange
+  const isExternalUpdateRef = useRef(false);
+  
   useEffect(() => {
     if (externalSelectedSite && sites.some(s => s.siteUrl === externalSelectedSite)) {
-      setSelectedSite(externalSelectedSite);
+      if (externalSelectedSite !== selectedSite) {
+        isExternalUpdateRef.current = true;
+        setSelectedSite(externalSelectedSite);
+      }
     }
   }, [externalSelectedSite, sites]);
 
