@@ -137,6 +137,9 @@ const MarketingDashboard = () => {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
+  const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
+  const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
+  const [testingForm, setTestingForm] = useState<string | null>(null);
 
   // Persist chat online status
   useEffect(() => {
@@ -331,43 +334,57 @@ const MarketingDashboard = () => {
     }
   };
 
-  // Create test lead for demo purposes
-  const handleCreateTestLead = async () => {
+  // Fetch form test history
+  const fetchFormTests = async () => {
+    const { data } = await supabase
+      .from('form_tests')
+      .select('id, form_name, status, tested_at, response_time_ms, error_message')
+      .order('tested_at', { ascending: false })
+      .limit(20);
+    
+    if (data) setFormTests(data);
+  };
+
+  // Available forms to test
+  const availableForms = [
+    { name: 'Contact Form', endpoint: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/domain-audit`, testData: { domain: 'test-form-check.com' } },
+    { name: 'Lead Capture (Quick Metric)', endpoint: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/domain-audit`, testData: { domain: 'form-test.example.com' } },
+  ];
+
+  // Run form test
+  const handleRunFormTest = async (formName: string, formEndpoint: string, testData: Record<string, unknown>) => {
+    setTestingForm(formName);
     try {
-      const testLead = {
-        email: `test-${Date.now()}@example.com`,
-        full_name: 'Test Lead (Demo)',
-        phone: '+1 555-000-0000',
-        domain: 'example.com',
-        metric_type: 'test_demo',
-        source_page: '/',
-        company_employees: '10-50',
-        annual_revenue: '$100k-$500k',
-        funnel_stage: 'lead',
-        status: 'open',
-      };
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/test-form`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ formName, formEndpoint, testData }),
+      });
 
-      const { data, error } = await supabase
-        .from('leads')
-        .insert(testLead)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Add to local state immediately
-      if (data) {
-        setLeads(prev => [data as Lead, ...prev]);
-        setFunnelStats(prev => ({
-          ...prev,
-          leads: prev.leads + 1,
-          withName: prev.withName + 1,
-          withCompanyInfo: prev.withCompanyInfo + 1,
-        }));
+      const result = await response.json();
+      
+      // Refresh test history
+      await fetchFormTests();
+      
+      if (result.success) {
+        console.log(`Form test passed: ${formName}`);
+      } else {
+        console.log(`Form test failed: ${formName} - ${result.errorMessage}`);
       }
     } catch (error) {
-      console.error('Error creating test lead:', error);
+      console.error('Form test error:', error);
+    } finally {
+      setTestingForm(null);
     }
+  };
+
+  // Create test lead for demo purposes (old functionality kept for backwards compatibility)
+  const handleCreateTestLead = async () => {
+    setFormTestDialogOpen(true);
+    await fetchFormTests();
   };
 
   const getStatusBadge = (status: string, closedAmount?: number | null) => {
@@ -1438,6 +1455,124 @@ const MarketingDashboard = () => {
               className="bg-green-600 hover:bg-green-700"
             >
               {closingLead ? 'Closing...' : 'Mark as Closed'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Form Test Dialog */}
+      <Dialog open={formTestDialogOpen} onOpenChange={setFormTestDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-amber-500" />
+              Form Testing Center
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Available Forms */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-foreground">Run Form Tests</h4>
+              <p className="text-xs text-muted-foreground">
+                Test your forms by submitting real data to the endpoints. Results are recorded with timestamps.
+              </p>
+              <div className="grid gap-3">
+                {availableForms.map((form) => (
+                  <div key={form.name} className="flex items-center justify-between p-3 rounded-lg border bg-secondary/20">
+                    <div>
+                      <p className="text-sm font-medium">{form.name}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[300px]">{form.endpoint}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRunFormTest(form.name, form.endpoint, form.testData)}
+                      disabled={testingForm === form.name}
+                      className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                    >
+                      {testingForm === form.name ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <FlaskConical className="w-3 h-3 mr-1" />
+                          Run Test
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Test History */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-foreground">Test History</h4>
+                <Button variant="ghost" size="sm" onClick={fetchFormTests} className="h-7 text-xs">
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh
+                </Button>
+              </div>
+              <div className="max-h-[200px] overflow-auto rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Form</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs">Response</TableHead>
+                      <TableHead className="text-xs">Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {formTests.map((test) => (
+                      <TableRow key={test.id}>
+                        <TableCell className="text-sm py-2">{test.form_name}</TableCell>
+                        <TableCell className="py-2">
+                          {test.status === 'success' ? (
+                            <Badge className="text-[10px] bg-green-500">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Passed
+                            </Badge>
+                          ) : test.status === 'failed' ? (
+                            <Badge className="text-[10px] bg-red-500">
+                              <X className="w-3 h-3 mr-1" />
+                              Failed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm py-2">
+                          {test.response_time_ms ? `${test.response_time_ms}ms` : '-'}
+                          {test.error_message && (
+                            <span className="block text-xs text-red-400 truncate max-w-[150px]" title={test.error_message}>
+                              {test.error_message}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm py-2 text-muted-foreground">
+                          {format(new Date(test.tested_at), 'MMM d, HH:mm')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {formTests.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6 text-sm">
+                          No tests run yet. Click "Run Test" above to start.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFormTestDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

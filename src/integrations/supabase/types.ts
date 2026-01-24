@@ -408,6 +408,42 @@ export type Database = {
           },
         ]
       }
+      form_tests: {
+        Row: {
+          error_message: string | null
+          form_endpoint: string | null
+          form_name: string
+          id: string
+          response_time_ms: number | null
+          status: string
+          test_data: Json
+          tested_at: string
+          tested_by: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          form_endpoint?: string | null
+          form_name: string
+          id?: string
+          response_time_ms?: number | null
+          status?: string
+          test_data?: Json
+          tested_at?: string
+          tested_by?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          form_endpoint?: string | null
+          form_name?: string
+          id?: string
+          response_time_ms?: number | null
+          status?: string
+          test_data?: Json
+          tested_at?: string
+          tested_by?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           annual_revenue: string | null
