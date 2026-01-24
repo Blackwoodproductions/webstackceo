@@ -225,6 +225,64 @@ export const GSCAdvancedReporting = ({
     return COUNTRY_NAMES[code.toLowerCase()] || code.toUpperCase();
   };
 
+  // Keyword intent icon helper - categorizes keywords by search intent
+  const getKeywordIcon = (keyword: string): { icon: string; color: string; intent: string } => {
+    const kw = keyword.toLowerCase();
+    
+    // Transactional intent (ready to buy/convert)
+    if (kw.includes('buy') || kw.includes('price') || kw.includes('cost') || kw.includes('pricing') || 
+        kw.includes('cheap') || kw.includes('discount') || kw.includes('deal') || kw.includes('order') ||
+        kw.includes('purchase') || kw.includes('subscribe') || kw.includes('hire') || kw.includes('get quote')) {
+      return { icon: '💰', color: 'text-green-500', intent: 'Transactional' };
+    }
+    
+    // Commercial investigation (comparing options)
+    if (kw.includes('best') || kw.includes('top') || kw.includes('review') || kw.includes('vs') || 
+        kw.includes('comparison') || kw.includes('compare') || kw.includes('alternative') ||
+        kw.includes('versus') || kw.includes('rated')) {
+      return { icon: '⚖️', color: 'text-amber-500', intent: 'Commercial' };
+    }
+    
+    // Local intent
+    if (kw.includes('near me') || kw.includes('local') || kw.includes('in ') || 
+        kw.includes('nearby') || kw.includes('location')) {
+      return { icon: '📍', color: 'text-red-500', intent: 'Local' };
+    }
+    
+    // How-to / Tutorial intent
+    if (kw.includes('how to') || kw.includes('how do') || kw.includes('tutorial') || 
+        kw.includes('guide') || kw.includes('step by step') || kw.includes('tips')) {
+      return { icon: '📖', color: 'text-blue-500', intent: 'How-to' };
+    }
+    
+    // Question intent
+    if (kw.includes('what is') || kw.includes('what are') || kw.includes('why') || 
+        kw.includes('when') || kw.includes('who') || kw.includes('?')) {
+      return { icon: '❓', color: 'text-violet-500', intent: 'Question' };
+    }
+    
+    // Brand/navigational intent
+    if (kw.includes('login') || kw.includes('sign in') || kw.includes('dashboard') ||
+        kw.includes('account') || kw.includes('support')) {
+      return { icon: '🔑', color: 'text-cyan-500', intent: 'Navigational' };
+    }
+    
+    // Service/product related
+    if (kw.includes('service') || kw.includes('agency') || kw.includes('company') ||
+        kw.includes('software') || kw.includes('tool') || kw.includes('platform')) {
+      return { icon: '🛠️', color: 'text-orange-500', intent: 'Service' };
+    }
+    
+    // SEO specific keywords
+    if (kw.includes('seo') || kw.includes('search engine') || kw.includes('ranking') ||
+        kw.includes('keyword') || kw.includes('backlink')) {
+      return { icon: '🔍', color: 'text-primary', intent: 'SEO' };
+    }
+    
+    // Default informational
+    return { icon: '📄', color: 'text-muted-foreground', intent: 'Informational' };
+  };
+
   // Keyword analytics data
   const keywordAnalytics = useMemo(() => {
     const filtered = keywordFilter
@@ -890,28 +948,43 @@ export const GSCAdvancedReporting = ({
                   <TableBody>
                     {keywordAnalytics.topPerforming
                       .slice((keywordPage - 1) * KEYWORDS_PER_PAGE, keywordPage * KEYWORDS_PER_PAGE)
-                      .map((row, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="text-xs py-2 text-muted-foreground">
-                            {(keywordPage - 1) * KEYWORDS_PER_PAGE + i + 1}
-                          </TableCell>
-                          <TableCell className="text-xs py-2 max-w-[200px] truncate" title={row.keys[0]}>
-                            {row.keys[0]}
-                          </TableCell>
-                          <TableCell className="text-right text-xs py-2 font-medium">{formatNumber(row.clicks)}</TableCell>
-                          <TableCell className="text-right text-xs py-2 text-muted-foreground">{formatNumber(row.impressions)}</TableCell>
-                          <TableCell className="text-right text-xs py-2">
-                            <span className={row.ctr > 0.05 ? "text-green-500" : row.ctr > 0.02 ? "text-yellow-500" : "text-muted-foreground"}>
-                              {(row.ctr * 100).toFixed(2)}%
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right py-2">
-                            <Badge variant={row.position <= 10 ? "default" : row.position <= 20 ? "secondary" : "outline"} className="text-[10px]">
-                              {row.position.toFixed(1)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      .map((row, i) => {
+                        const keywordInfo = getKeywordIcon(row.keys[0]);
+                        return (
+                          <TableRow key={i}>
+                            <TableCell className="text-xs py-2 text-muted-foreground">
+                              {(keywordPage - 1) * KEYWORDS_PER_PAGE + i + 1}
+                            </TableCell>
+                            <TableCell className="text-xs py-2 max-w-[250px]">
+                              <div className="flex items-center gap-2">
+                                {/* Keyword Intent Icon */}
+                                <div 
+                                  className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center bg-secondary/50 border border-border"
+                                  title={keywordInfo.intent}
+                                >
+                                  <span className="text-sm">{keywordInfo.icon}</span>
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate" title={row.keys[0]}>{row.keys[0]}</span>
+                                  <span className={`text-[9px] ${keywordInfo.color}`}>{keywordInfo.intent}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right text-xs py-2 font-medium">{formatNumber(row.clicks)}</TableCell>
+                            <TableCell className="text-right text-xs py-2 text-muted-foreground">{formatNumber(row.impressions)}</TableCell>
+                            <TableCell className="text-right text-xs py-2">
+                              <span className={row.ctr > 0.05 ? "text-green-500" : row.ctr > 0.02 ? "text-yellow-500" : "text-muted-foreground"}>
+                                {(row.ctr * 100).toFixed(2)}%
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right py-2">
+                              <Badge variant={row.position <= 10 ? "default" : row.position <= 20 ? "secondary" : "outline"} className="text-[10px]">
+                                {row.position.toFixed(1)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
                 
@@ -989,16 +1062,29 @@ export const GSCAdvancedReporting = ({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {keywordAnalytics.opportunities.map((row, i) => (
-                          <TableRow key={i}>
-                            <TableCell className="text-xs py-2 max-w-[200px] truncate">{row.keys[0]}</TableCell>
-                            <TableCell className="text-right text-xs py-2 font-medium text-amber-500">{formatNumber(row.impressions)}</TableCell>
-                            <TableCell className="text-right text-xs py-2 text-red-400">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                            <TableCell className="text-right py-2">
-                              <Badge variant="secondary" className="text-[10px]">{row.position.toFixed(1)}</Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {keywordAnalytics.opportunities.map((row, i) => {
+                          const keywordInfo = getKeywordIcon(row.keys[0]);
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="text-xs py-2 max-w-[220px]">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-amber-500/10 border border-amber-500/30"
+                                    title={keywordInfo.intent}
+                                  >
+                                    <span className="text-xs">{keywordInfo.icon}</span>
+                                  </div>
+                                  <span className="truncate" title={row.keys[0]}>{row.keys[0]}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right text-xs py-2 font-medium text-amber-500">{formatNumber(row.impressions)}</TableCell>
+                              <TableCell className="text-right text-xs py-2 text-red-400">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                              <TableCell className="text-right py-2">
+                                <Badge variant="secondary" className="text-[10px]">{row.position.toFixed(1)}</Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </ScrollArea>
