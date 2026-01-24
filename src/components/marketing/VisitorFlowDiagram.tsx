@@ -164,7 +164,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [demoVisits, setDemoVisits] = useState<DemoVisit[]>([]);
   const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; opacity: number }[]>([]);
 
-  // Demo mode - simulate visits every 5 seconds
+  // Demo mode - simulate visits every 30 seconds
   useEffect(() => {
     const mainPages = SITE_STRUCTURE.filter(s => s.category === 'main' || s.path === '/').map(s => s.path);
     const allPages = SITE_STRUCTURE.map(s => s.path);
@@ -237,8 +237,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     // Initial visit
     simulateVisit();
 
-    // Continue every 5 seconds
-    const demoInterval = setInterval(simulateVisit, 5000);
+    // Continue every 30 seconds
+    const demoInterval = setInterval(simulateVisit, 30000);
 
     return () => clearInterval(demoInterval);
   }, []);
@@ -1022,29 +1022,28 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             
             return (
               <g key={demoPath.id} style={{ opacity: demoPath.opacity }}>
-                {/* Purple glow effect */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="#a855f7"
-                  strokeWidth={10}
-                  strokeOpacity={0.4 * demoPath.opacity}
-                  strokeLinecap="round"
-                  filter="url(#glow)"
-                />
-                {/* Main purple path */}
+                {/* Purple glow effect - slimmer */}
                 <path
                   d={pathD}
                   fill="none"
                   stroke="#a855f7"
                   strokeWidth={4}
-                  strokeOpacity={0.9 * demoPath.opacity}
+                  strokeOpacity={0.3 * demoPath.opacity}
                   strokeLinecap="round"
-                  strokeDasharray="8 4"
-                  className="animate-pulse"
+                  filter="url(#glow)"
                 />
-                {/* Animated traveling dot */}
-                <circle r="10" fill="#a855f7" filter="url(#glow)" style={{ opacity: demoPath.opacity }}>
+                {/* Main purple path - thinner */}
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  strokeOpacity={0.8 * demoPath.opacity}
+                  strokeLinecap="round"
+                  strokeDasharray="6 3"
+                />
+                {/* Animated traveling dot - smaller */}
+                <circle r="5" fill="#a855f7" filter="url(#glow)" style={{ opacity: demoPath.opacity }}>
                   <animateMotion
                     dur="3s"
                     repeatCount="1"
@@ -1052,7 +1051,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill="freeze"
                   />
                 </circle>
-                <circle r="6" fill="#c084fc" style={{ opacity: demoPath.opacity }}>
+                <circle r="3" fill="#c084fc" style={{ opacity: demoPath.opacity }}>
                   <animateMotion
                     dur="3s"
                     repeatCount="1"
@@ -1060,7 +1059,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill="freeze"
                   />
                 </circle>
-                <circle r="3" fill="#ffffff" style={{ opacity: demoPath.opacity }}>
+                <circle r="1.5" fill="#ffffff" style={{ opacity: demoPath.opacity }}>
                   <animateMotion
                     dur="3s"
                     repeatCount="1"
@@ -1068,9 +1067,9 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     fill="freeze"
                   />
                 </circle>
-                {/* Trail particles */}
-                {[0.2, 0.4, 0.6].map((delay, i) => (
-                  <circle key={i} r={4 - i} fill="#a855f7" style={{ opacity: (0.6 - i * 0.15) * demoPath.opacity }}>
+                {/* Trail particles - smaller */}
+                {[0.2, 0.4].map((delay, i) => (
+                  <circle key={i} r={2 - i * 0.5} fill="#a855f7" style={{ opacity: (0.4 - i * 0.1) * demoPath.opacity }}>
                     <animateMotion
                       dur="3s"
                       repeatCount="1"
@@ -1120,38 +1119,37 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 style={{ opacity }}
                 onClick={handleNodeClick}
               >
-                {/* Demo visitor ring - purple */}
+                {/* Demo visitor ring - purple, slimmer */}
                 {hasDemoVisit && (
                   <>
                     <circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={nodeSize + 20}
+                      r={nodeSize + 10}
                       fill="none"
                       stroke="#a855f7"
-                      strokeWidth={3}
-                      strokeOpacity={0.5 * (demoVisit?.opacity || 1)}
+                      strokeWidth={1.5}
+                      strokeOpacity={0.6 * (demoVisit?.opacity || 1)}
                       className="animate-ping"
                       style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
                     />
                     <circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={nodeSize + 14}
+                      r={nodeSize + 6}
                       fill="#a855f7"
-                      opacity={0.25 * (demoVisit?.opacity || 1)}
+                      opacity={0.15 * (demoVisit?.opacity || 1)}
                       filter="url(#glow)"
                     />
                     <circle
                       cx={pos.x}
                       cy={pos.y}
-                      r={nodeSize + 8}
+                      r={nodeSize + 4}
                       fill="none"
                       stroke="#c084fc"
-                      strokeWidth={2}
-                      strokeOpacity={0.8 * (demoVisit?.opacity || 1)}
-                      strokeDasharray="4 2"
-                      className="animate-pulse"
+                      strokeWidth={1}
+                      strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
+                      strokeDasharray="3 2"
                     />
                   </>
                 )}
