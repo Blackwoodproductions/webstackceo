@@ -201,6 +201,10 @@ export interface VisitorFlowSummary {
   avgPagesPerSession: number;
   externalReferrals: number;
   topEntryPage: string | null;
+  bounceRate: number;
+  topSource: string;
+  newVisitorsToday: number;
+  toolInteractions: number;
 }
 
 interface VisitorFlowDiagramProps {
@@ -239,15 +243,21 @@ const VisitorFlowDiagram = ({
   const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; isExternal?: boolean }[]>([]);
   const [externalReferrerPages, setExternalReferrerPages] = useState<Set<string>>(new Set());
   const [externalReferrerSessions, setExternalReferrerSessions] = useState<{ first_page: string; referrer: string; started_at: string }[]>([]);
+  const [allSessions, setAllSessions] = useState<{ session_id: string; referrer: string | null; started_at: string }[]>([]);
+  const [toolInteractionsCount, setToolInteractionsCount] = useState(0);
+  const [newVisitorsTodayCount, setNewVisitorsTodayCount] = useState(0);
 
   // Fetch initial data including active sessions and external referrers
   useEffect(() => {
     const fetchData = async () => {
       try {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayStartISO = todayStart.toISOString();
         
-        // Fetch page views, active sessions, and sessions with external referrers in parallel
-        const [pageViewsRes, activeSessionsRes, referrerSessionsRes] = await Promise.all([
+        // Fetch page views, active sessions, sessions with referrers, tool interactions, and new visitors in parallel
+        const [pageViewsRes, activeSessionsRes, allSessionsRes, toolsRes, newVisitorsRes] = await Promise.all([
           supabase
             .from('page_views')
             .select('page_path, created_at, session_id')
@@ -259,18 +269,27 @@ const VisitorFlowDiagram = ({
             .gte('last_activity_at', fiveMinutesAgo),
           supabase
             .from('visitor_sessions')
-            .select('first_page, referrer, started_at')
-            .not('referrer', 'is', null)
+            .select('session_id, referrer, started_at, first_page'),
+          supabase
+            .from('tool_interactions')
+            .select('id', { count: 'exact', head: true }),
+          supabase
+            .from('visitor_sessions')
+            .select('id', { count: 'exact', head: true })
+            .gte('started_at', todayStartISO)
         ]);
         
         setPageViews(pageViewsRes.data || []);
+        setAllSessions(allSessionsRes.data || []);
+        setToolInteractionsCount(toolsRes.count || 0);
+        setNewVisitorsTodayCount(newVisitorsRes.count || 0);
         
         // Store external referrer sessions for time-range filtering
-        if (referrerSessionsRes.data) {
+        if (allSessionsRes.data) {
           const validSessions: { first_page: string; referrer: string; started_at: string }[] = [];
           const externalPages = new Set<string>();
           
-          referrerSessionsRes.data.forEach(session => {
+          allSessionsRes.data.forEach(session => {
             if (session.referrer && session.first_page) {
               // Check if referrer is external (not our own domain)
               try {
@@ -775,6 +794,32 @@ const VisitorFlowDiagram = ({
       // Find top entry page
       const topEntryPage = topPages.length > 0 ? topPages[0].path : null;
       
+      // Calculate bounce rate (sessions with only 1 page view)
+      const sessionPageCounts: Record<string, number> = {};
+      pageViews.forEach(pv => {
+        sessionPageCounts[pv.session_id] = (sessionPageCounts[pv.session_id] || 0) + 1;
+      });
+      const singlePageSessions = Object.values(sessionPageCounts).filter(count => count === 1).length;
+      const bounceRate = uniqueSessions > 0 ? Math.round((singlePageSessions / uniqueSessions) * 100) : 0;
+      
+      // Calculate top traffic source
+      const sourceCounts: Record<string, number> = { Direct: 0, Google: 0, Social: 0, Referral: 0 };
+      allSessions.forEach(session => {
+        if (!session.referrer) {
+          sourceCounts.Direct++;
+        } else {
+          try {
+            const host = new URL(session.referrer).hostname.toLowerCase();
+            if (host.includes('google')) sourceCounts.Google++;
+            else if (host.includes('facebook') || host.includes('twitter') || host.includes('linkedin') || host.includes('instagram')) sourceCounts.Social++;
+            else sourceCounts.Referral++;
+          } catch {
+            sourceCounts.Direct++;
+          }
+        }
+      });
+      const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Direct';
+      
       onSummaryUpdate({
         topPages,
         totalVisits,
@@ -784,9 +829,13 @@ const VisitorFlowDiagram = ({
         avgPagesPerSession,
         externalReferrals,
         topEntryPage,
+        bounceRate,
+        topSource,
+        newVisitorsToday: newVisitorsTodayCount,
+        toolInteractions: toolInteractionsCount,
       });
     }
-  }, [nodes, liveVisitors, visitorsByNodeForSummary, externalCountsByPage, externalReferrerPages, externalReferrerSessions, pageViews, timeRange, onSummaryUpdate]);
+  }, [nodes, liveVisitors, visitorsByNodeForSummary, externalCountsByPage, externalReferrerPages, externalReferrerSessions, allSessions, pageViews, timeRange, newVisitorsTodayCount, toolInteractionsCount, onSummaryUpdate]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited
