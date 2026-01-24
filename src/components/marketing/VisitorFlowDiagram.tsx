@@ -542,7 +542,20 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   // Separate L2 children by parent (includes /audits which has parent /tools)
   const featuresChildren = nodes.filter(n => n.parent === '/features');
   const learnChildren = nodes.filter(n => n.parent === '/learn');
-  const toolsChildren = nodes.filter(n => n.parent === '/tools');
+  
+  // Sort tools children by SITE_STRUCTURE order to keep /audits centered
+  const toolsOrder = ['/tools/domain-audit', '/tools/keyword-checker', '/audits', '/tools/backlink-analyzer', '/tools/site-speed'];
+  const toolsChildren = nodes
+    .filter(n => n.parent === '/tools')
+    .sort((a, b) => {
+      const aIndex = toolsOrder.indexOf(a.path);
+      const bIndex = toolsOrder.indexOf(b.path);
+      // If not in order array, put at end
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
   const otherL2 = nodes.filter(n => n.depth === 2 && n.parent !== '/features' && n.parent !== '/learn' && n.parent !== '/tools');
   
   const depth3 = nodes.filter(n => n.depth >= 3);
