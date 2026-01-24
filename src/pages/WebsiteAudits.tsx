@@ -29,6 +29,8 @@ import {
   Users,
   Cpu,
   HelpCircle,
+  CheckCircle2,
+  Link2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -44,6 +46,7 @@ interface SavedAudit {
   domain_rating: number | null;
   organic_traffic: number | null;
   organic_keywords: number | null;
+  submitter_email: string | null;
   created_at: string;
 }
 
@@ -364,6 +367,12 @@ const AuditCard = ({ audit, viewMode, index }: { audit: SavedAudit; viewMode: 'g
                 {audit.organic_traffic.toLocaleString()} traffic
               </span>
             )}
+            {audit.submitter_email && (
+              <div className="flex items-center gap-1 text-green-500">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="font-medium">Claimed</span>
+              </div>
+            )}
           </div>
           
           <Badge variant="outline" className={`bg-gradient-to-r ${config.color} text-white border-0 text-xs`}>
@@ -426,6 +435,12 @@ const AuditCard = ({ audit, viewMode, index }: { audit: SavedAudit; viewMode: 'g
               <span className="text-muted-foreground">
                 {audit.organic_traffic.toLocaleString()} traffic
               </span>
+            )}
+            {audit.submitter_email && (
+              <div className="flex items-center gap-1 text-green-500">
+                <CheckCircle2 className="w-3 h-3" />
+                <span className="font-medium">Claimed</span>
+              </div>
             )}
           </div>
           <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full bg-gradient-to-r ${config.color} text-white text-[10px] font-medium`}>

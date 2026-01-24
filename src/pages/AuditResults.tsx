@@ -800,10 +800,23 @@ const AuditResults = () => {
   const saveAudit = async () => {
     if (!decodedDomain || !dashboardMetrics) return;
     
+    // Extract the root domain (handle subdomains like www.example.com -> example.com)
+    const domainParts = decodedDomain.replace(/^www\./, '').split('.');
+    const rootDomain = domainParts.length >= 2 
+      ? domainParts.slice(-2).join('.') 
+      : decodedDomain;
+    
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!submitterEmail.trim() || !emailRegex.test(submitterEmail.trim())) {
       toast.error('Please enter a valid email address');
+      return;
+    }
+    
+    // Validate email matches domain
+    const emailDomain = submitterEmail.trim().split('@')[1]?.toLowerCase();
+    if (!emailDomain || !emailDomain.endsWith(rootDomain.toLowerCase())) {
+      toast.error(`Email must be from @${rootDomain} to verify ownership`);
       return;
     }
     
@@ -2346,21 +2359,21 @@ const AuditResults = () => {
             
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Your Email Address
+                Your Business Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={`you@${decodedDomain?.replace(/^www\./, '').split('.').slice(-2).join('.') || 'yourdomain.com'}`}
                   value={submitterEmail}
                   onChange={(e) => setSubmitterEmail(e.target.value)}
                   className="pl-10"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                We'll send you a confirmation with your backlink details.
+                <span className="text-amber-500 font-medium">Required:</span> Use an email from <span className="font-semibold">@{decodedDomain?.replace(/^www\./, '').split('.').slice(-2).join('.')}</span> to verify you own this domain.
               </p>
             </div>
             
