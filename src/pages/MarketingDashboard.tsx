@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -131,11 +131,49 @@ const MarketingDashboard = () => {
   const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
   const [diagramTimeRange, setDiagramTimeRange] = useState<TimeRange>('live');
   const [diagramCustomDateRange, setDiagramCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
+  const [sidebarChats, setSidebarChats] = useState<{ id: string; session_id: string; status: string; visitor_name: string | null; last_message_at: string; current_page: string | null; }[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
   // Persist chat online status
   useEffect(() => {
     localStorage.setItem('chat_operator_online', String(chatOnline));
   }, [chatOnline]);
+
+  // Fetch sidebar chats
+  const fetchSidebarChats = async () => {
+    const { data } = await supabase
+      .from('chat_conversations')
+      .select('id, session_id, status, visitor_name, last_message_at, current_page')
+      .in('status', ['active', 'pending'])
+      .order('last_message_at', { ascending: false });
+    
+    if (data) {
+      setSidebarChats(data);
+    }
+  };
+
+  useEffect(() => {
+    if (chatOnline) {
+      fetchSidebarChats();
+    }
+
+    // Subscribe to new conversations
+    const convChannel = supabase
+      .channel('sidebar-conversations')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_conversations' },
+        () => {
+          if (chatOnline) fetchSidebarChats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      convChannel.unsubscribe();
+    };
+  }, [chatOnline]);
+
   const handleCloseLead = async () => {
     if (!closeLeadDialog.lead) return;
     
@@ -645,6 +683,49 @@ const MarketingDashboard = () => {
                   <p className="text-xs text-muted-foreground text-center py-4">No page data</p>
                 )}
               </div>
+
+              {/* Chats Section - Stacked from bottom up */}
+              {chatOnline && sidebarChats.length > 0 && (
+                <div className="border-t border-border mt-auto">
+                  <div className="p-2">
+                    <div className="flex items-center gap-2 px-2 py-1 mb-1">
+                      <MessageCircle className="w-4 h-4 text-cyan-500" />
+                      <span className="text-xs font-medium text-muted-foreground">Chats</span>
+                      <Badge className="ml-auto text-[10px] bg-red-500/20 text-red-400 border-red-500/30 animate-pulse px-1.5 py-0">
+                        {sidebarChats.length}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col-reverse gap-1 max-h-[180px] overflow-auto">
+                      {sidebarChats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                          className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedChatId === chat.id 
+                              ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                              : 'hover:bg-secondary/50'
+                          }`}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
+                            <UserIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {chat.visitor_name || 'Visitor'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {chat.current_page || 'Unknown page'}
+                            </p>
+                          </div>
+                          {chat.status === 'pending' && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1058,7 +1139,7 @@ const MarketingDashboard = () => {
       </div>
 
       {/* Floating Chat Bar */}
-      <FloatingChatBar isOnline={chatOnline} />
+      <FloatingChatBar isOnline={chatOnline} selectedChatId={selectedChatId} onChatClose={() => setSelectedChatId(null)} />
 
       {/* Close Lead Dialog */}
       <Dialog open={closeLeadDialog.open} onOpenChange={(open) => setCloseLeadDialog({ open, lead: open ? closeLeadDialog.lead : null })}>

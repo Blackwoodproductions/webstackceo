@@ -73,9 +73,11 @@ interface OpenChat {
 
 interface FloatingChatBarProps {
   isOnline: boolean;
+  selectedChatId?: string | null;
+  onChatClose?: () => void;
 }
 
-const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
+const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChatBarProps) => {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [openChats, setOpenChats] = useState<OpenChat[]>([]);
   const [newMessages, setNewMessages] = useState<Record<string, string>>({});
@@ -143,6 +145,7 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
 
   const closeChat = (conversationId: string) => {
     setOpenChats(prev => prev.filter(oc => oc.conversation.id !== conversationId));
+    if (onChatClose) onChatClose();
   };
 
   const toggleMinimize = (conversationId: string) => {
@@ -179,6 +182,28 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
     
     closeChat(conversationId);
   };
+
+  // Open chat from sidebar selection
+  useEffect(() => {
+    if (selectedChatId && isOnline) {
+      const conv = conversations.find(c => c.id === selectedChatId);
+      if (conv) {
+        openChat(conv);
+      } else {
+        // Fetch the conversation if not in current list
+        supabase
+          .from('chat_conversations')
+          .select('*')
+          .eq('id', selectedChatId)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              openChat(data as ChatConversation);
+            }
+          });
+      }
+    }
+  }, [selectedChatId, conversations, isOnline]);
 
   useEffect(() => {
     if (isOnline) {
