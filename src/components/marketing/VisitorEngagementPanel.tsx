@@ -356,7 +356,7 @@ const VisitorEngagementPanel = () => {
               return (
                 <div
                   key={session.session_id}
-                  className={`relative p-4 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group
+                  className={`relative p-4 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group h-[220px] flex flex-col
                     ${isHot 
                       ? 'bg-gradient-to-br from-red-500/10 via-orange-500/5 to-amber-500/10 border-2 border-red-500/30 shadow-lg shadow-red-500/10' 
                       : isWarm 
@@ -408,9 +408,9 @@ const VisitorEngagementPanel = () => {
                         {index + 1}
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Badge className={`text-[10px] px-2 py-0.5 font-bold ${
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Badge className={`text-[10px] px-2 py-0.5 font-bold flex-shrink-0 ${
                           isHot ? 'bg-red-500/20 text-red-400 border-red-500/40' 
                           : isWarm ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
                           : 'bg-primary/20 text-primary border-primary/40'
@@ -418,28 +418,28 @@ const VisitorEngagementPanel = () => {
                           <Zap className="w-3 h-3 mr-1" />
                           {engagement.label}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-background/50">
-                          <ReferrerIcon className={`w-3 h-3 mr-1 ${referrer.color}`} />
-                          {referrer.label}
+                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-background/50 flex-shrink-0 max-w-[80px] truncate">
+                          <ReferrerIcon className={`w-3 h-3 mr-1 flex-shrink-0 ${referrer.color}`} />
+                          <span className="truncate">{referrer.label.slice(0, 8)}</span>
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
-                        Entry: <span className="text-foreground font-medium">{session.first_page || '/'}</span>
+                        Entry: <span className="text-foreground font-medium truncate">{formatPageName(session.first_page || '/')}</span>
                       </p>
                     </div>
                   </div>
 
                   {/* Stats grid */}
-                  <div className="grid grid-cols-4 gap-2 mb-3 relative z-10">
+                  <div className="grid grid-cols-4 gap-2 mb-3 relative z-10 flex-shrink-0">
                     {[
                       { icon: Clock, value: getTimeOnSite(session.started_at), color: 'text-cyan-400', bg: 'from-cyan-500/20 to-cyan-500/5' },
                       { icon: Eye, value: session.pageViewCount, color: 'text-violet-400', bg: 'from-violet-500/20 to-violet-500/5' },
                       { icon: MousePointer, value: session.toolsUsedCount, color: 'text-amber-400', bg: 'from-amber-500/20 to-amber-500/5' },
-                      { icon: Activity, value: formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: false }).replace(' minutes', 'm').replace(' seconds', 's'), color: 'text-green-400', bg: 'from-green-500/20 to-green-500/5' },
+                      { icon: Activity, value: formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: false }).replace(' minutes', 'm').replace(' seconds', 's').replace('less than a minute', '<1m').replace(' minute', 'm').replace(' second', 's').slice(0, 4), color: 'text-green-400', bg: 'from-green-500/20 to-green-500/5' },
                     ].map((stat, i) => (
                       <div key={i} className={`text-center p-2 rounded-xl bg-gradient-to-b ${stat.bg} border border-white/5 backdrop-blur-sm transition-transform hover:scale-105`}>
                         <stat.icon className={`w-4 h-4 mx-auto mb-1 ${stat.color}`} />
-                        <span className="text-xs font-bold text-foreground">{stat.value}</span>
+                        <span className="text-xs font-bold text-foreground truncate block">{stat.value}</span>
                       </div>
                     ))}
                   </div>
@@ -461,31 +461,27 @@ const VisitorEngagementPanel = () => {
 
                   {/* Data indicators - only show if we have actual data */}
                   {(session.email || session.phone || session.fullName || session.companyEmployees) && (
-                    <div className="flex items-center gap-2 pt-3 border-t border-border/30 relative z-10">
-                      <span className="text-[10px] text-muted-foreground font-medium">Captured:</span>
-                      <div className="flex gap-1.5 ml-auto flex-wrap">
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/30 relative z-10 mt-auto flex-shrink-0 overflow-hidden">
+                      <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">Captured:</span>
+                      <div className="flex gap-1 ml-auto overflow-hidden">
                         {session.email && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/20 border border-blue-500/30">
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/20 border border-blue-500/30 flex-shrink-0" title={session.email}>
                             <Mail className="w-3 h-3 text-blue-400" />
-                            <span className="text-[10px] text-blue-400 font-medium truncate max-w-[100px]">{session.email}</span>
                           </div>
                         )}
                         {session.phone && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30">
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 flex-shrink-0" title={session.phone}>
                             <Phone className="w-3 h-3 text-amber-400" />
-                            <span className="text-[10px] text-amber-400 font-medium">{session.phone}</span>
                           </div>
                         )}
                         {session.fullName && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/20 border border-orange-500/30">
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/20 border border-orange-500/30 flex-shrink-0" title={session.fullName}>
                             <User className="w-3 h-3 text-orange-400" />
-                            <span className="text-[10px] text-orange-400 font-medium">{session.fullName}</span>
                           </div>
                         )}
                         {session.companyEmployees && (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
+                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 border border-green-500/30 flex-shrink-0" title={session.companyEmployees}>
                             <Building className="w-3 h-3 text-green-400" />
-                            <span className="text-[10px] text-green-400 font-medium">{session.companyEmployees}</span>
                           </div>
                         )}
                       </div>
