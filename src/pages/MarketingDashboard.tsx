@@ -486,33 +486,32 @@ const MarketingDashboard = () => {
               })}
             </div>
 
-            {/* Customer Journey Mini Stats */}
-            <div className="mt-6 pt-6 border-t border-border">
-              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
+          </Card>
+
+          {/* Leads & Journey Section - 60% */}
+          <div className="lg:col-span-3">
+            {/* Lead Quality Bar - moved to top */}
+            <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-secondary/30 border border-border/50">
+              <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-amber-500" />
-                Lead Quality
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
+                <span className="text-xs font-semibold text-foreground">Lead Quality:</span>
+              </div>
+              <div className="flex flex-wrap gap-2 flex-1">
                 {[
                   { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
                   { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
                   { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
                   { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                      <span className="text-xs text-muted-foreground">{item.label}</span>
-                    </div>
-                    <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
+                  <div key={item.label} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-background/50">
+                    <div className={`w-2 h-2 rounded-full ${item.color}`} />
+                    <span className="text-[11px] text-muted-foreground">{item.label}</span>
+                    <span className="font-bold text-xs">{Math.max(0, item.count)}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </Card>
 
-          {/* Leads & Journey Section - 60% */}
-          <div className="lg:col-span-3">
             <Tabs defaultValue="leads" className="h-full">
               <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="leads" className="text-xs sm:text-sm">
