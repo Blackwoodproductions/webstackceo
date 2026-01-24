@@ -338,7 +338,7 @@ const MarketingDashboard = () => {
 
       <main className="container mx-auto px-6 py-8">
         {/* Quick Stats Row - Top */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           {/* Active Visitors - Live */}
           <Card className="p-4 border-green-500/30 bg-green-500/5">
             <div className="flex items-center gap-3">
@@ -408,130 +408,156 @@ const MarketingDashboard = () => {
               </div>
             </div>
           </Card>
-        </div>
-
-        {/* Visitor Flow Diagram - Right under stats */}
-        <div className="mb-6">
-          {/* Filter indicator */}
-          {pageFilter && (
-            <div className="mb-4 flex items-center gap-2">
-              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                <Filter className="w-3 h-3" />
-                Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
-                <button 
-                  onClick={() => setPageFilter(null)}
-                  className="ml-1 hover:bg-purple-500/30 rounded p-0.5"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
-                {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
-              </span>
+          {/* Traffic Sources - compact version in stats row */}
+          <Card className="p-4 lg:col-span-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-violet-500/10">
+                <TrendingUp className="w-5 h-5 text-violet-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground mb-1">Top Sources</p>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const categorize = (referrer: string | null) => {
+                      if (!referrer || referrer === '') return 'direct';
+                      const ref = referrer.toLowerCase();
+                      if (ref.includes('google')) return 'google';
+                      if (ref.includes('facebook') || ref.includes('twitter') || ref.includes('linkedin') || ref.includes('instagram')) return 'social';
+                      return 'referral';
+                    };
+                    const counts: Record<string, number> = { google: 0, direct: 0, social: 0, referral: 0 };
+                    sessions.forEach(s => { counts[categorize(s.referrer)]++; });
+                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+                    const colors: Record<string, string> = { google: 'bg-blue-500', direct: 'bg-gray-500', social: 'bg-pink-500', referral: 'bg-green-500' };
+                    return sorted.map(([key, count]) => (
+                      <div key={key} className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${colors[key]}`} />
+                        <span className="text-xs font-medium">{count}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
             </div>
-          )}
-          <VisitorFlowDiagram 
-            onPageFilter={setPageFilter}
-            activeFilter={pageFilter}
-          />
+          </Card>
         </div>
 
-        {/* Funnel & Active Visitors Row */}
-        {/* Funnel + Referrer + Leads/Journey Row */}
-        <div className="grid lg:grid-cols-6 gap-6 mb-8">
-          {/* Referrer Breakdown Chart */}
-          <div className="lg:col-span-2">
+        {/* Horizontal Conversion Funnel */}
+        <Card className="p-4 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-foreground">Conversion Funnel</h2>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {funnelSteps.map((step, index) => {
+              const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
+              const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
+                ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
+                : null;
+              
+              return (
+                <div key={step.label} className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex flex-col items-center min-w-[100px]">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-2`}>
+                      <step.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xl font-bold">{step.count.toLocaleString()}</span>
+                    <span className="text-xs text-muted-foreground">{step.label}</span>
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                  {index < funnelSteps.length - 1 && (
+                    <div className="flex flex-col items-center px-2">
+                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      {conversionFromPrev && (
+                        <span className="text-[10px] text-muted-foreground">{conversionFromPrev}%</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Traffic Sources + Flow Diagram Row */}
+        <div className="grid lg:grid-cols-4 gap-6 mb-6">
+          {/* Traffic Sources Breakdown */}
+          <div className="lg:col-span-1">
             <ReferrerBreakdownChart sessions={sessions} />
           </div>
-          {/* Funnel Visualization - 40% */}
-          <Card className="lg:col-span-2 p-6">
-            <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              Conversion Funnel
-            </h2>
-            <div className="space-y-4">
-              {funnelSteps.map((step, index) => {
-                const percentage = maxFunnel > 0 ? (step.count / maxFunnel) * 100 : 0;
-                const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
-                  ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(1)
-                  : null;
-                
-                return (
-                  <div key={step.label} className="relative">
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
-                        <step.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-foreground">{step.label}</span>
-                          <div className="flex items-center gap-3">
-                            {conversionFromPrev && (
-                              <span className="text-xs text-muted-foreground">
-                                {conversionFromPrev}%
-                              </span>
-                            )}
-                            <span className="font-bold text-lg">{step.count.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="h-3 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full bg-gradient-to-r ${step.color} transition-all duration-500`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {index < funnelSteps.length - 1 && (
-                      <div className="absolute left-5 top-12 h-4 w-px bg-border" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-          </Card>
-
-          {/* Leads & Journey Section */}
-          <div className="lg:col-span-2">
-            {/* Lead Quality Bar - moved to top */}
-            <div className="flex items-center gap-4 mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-semibold text-foreground">Lead Quality</span>
+          
+          {/* Visitor Flow Diagram */}
+          <div className="lg:col-span-3">
+            {/* Filter indicator */}
+            {pageFilter && (
+              <div className="mb-4 flex items-center gap-2">
+                <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                  <Filter className="w-3 h-3" />
+                  Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
+                  <button 
+                    onClick={() => setPageFilter(null)}
+                    className="ml-1 hover:bg-purple-500/30 rounded p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
+                  {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
+                </span>
               </div>
-              <div className="flex flex-1 justify-between gap-2">
-                {[
-                  { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
-                  { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
-                  { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
-                  { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
-                ].map((item) => (
-                  <div key={item.label} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/30">
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
-                    <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
+            <VisitorFlowDiagram 
+              onPageFilter={setPageFilter}
+              activeFilter={pageFilter}
+            />
+          </div>
+        </div>
 
-            <Tabs defaultValue="leads" className="h-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="leads" className="text-xs sm:text-sm">
-                  <Mail className="w-3 h-3 mr-1.5" />
-                  Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
-                </TabsTrigger>
-                <TabsTrigger value="journey" className="text-xs sm:text-sm">
-                  <TrendingUp className="w-3 h-3 mr-1.5" />
-                  Journey
-                </TabsTrigger>
-                <TabsTrigger value="tools" className="text-xs sm:text-sm">
-                  <MousePointer className="w-3 h-3 mr-1.5" />
-                  Tools ({filteredData.toolInteractions.length})
-                </TabsTrigger>
-              </TabsList>
+        {/* Leads Section - Full Width */}
+        <div className="mb-8">
+          {/* Lead Quality Bar */}
+          <div className="flex items-center gap-4 mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Zap className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-foreground">Lead Quality</span>
+            </div>
+            <div className="flex flex-1 justify-between gap-2">
+              {[
+                { label: 'Email Only', count: funnelStats.leads - funnelStats.withPhone, color: 'bg-blue-500' },
+                { label: '+ Phone', count: funnelStats.withPhone - funnelStats.withName, color: 'bg-amber-500' },
+                { label: '+ Name', count: funnelStats.withName - funnelStats.withCompanyInfo, color: 'bg-orange-500' },
+                { label: 'Full Profile', count: funnelStats.withCompanyInfo, color: 'bg-green-500' },
+              ].map((item) => (
+                <div key={item.label} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-background/50 border border-border/30">
+                  <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                  <span className="text-xs text-muted-foreground">{item.label}</span>
+                  <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Tabs defaultValue="leads" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
+              <TabsTrigger value="leads" className="text-xs sm:text-sm">
+                <Mail className="w-3 h-3 mr-1.5" />
+                Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
+              </TabsTrigger>
+              <TabsTrigger value="journey" className="text-xs sm:text-sm">
+                <TrendingUp className="w-3 h-3 mr-1.5" />
+                Journey
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="text-xs sm:text-sm">
+                <MousePointer className="w-3 h-3 mr-1.5" />
+                Tools ({filteredData.toolInteractions.length})
+              </TabsTrigger>
+            </TabsList>
 
               {/* Leads Tab */}
               <TabsContent value="leads" className="mt-0">
@@ -706,8 +732,7 @@ const MarketingDashboard = () => {
                   </div>
                 </Card>
               </TabsContent>
-            </Tabs>
-          </div>
+          </Tabs>
         </div>
 
         {/* Visitor Engagement Panel (Heatmap + Active Visitors) */}
