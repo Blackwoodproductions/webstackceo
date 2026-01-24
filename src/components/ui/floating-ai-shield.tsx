@@ -73,6 +73,7 @@ const FloatingAIShield = memo(() => {
 
   return (
     <div 
+      data-floating-ai-shield
       className={`fixed left-6 w-14 h-14 rounded-xl glass-card hidden lg:flex items-center justify-center cursor-pointer z-40 animate-fade-in ${
         isShieldGold 
           ? "bg-gradient-to-br from-amber-400/20 to-yellow-500/20 shadow-[0_0_25px_rgba(251,191,36,0.5)] transition-[background,box-shadow] duration-700" 
