@@ -29,11 +29,15 @@ interface LiveVisitor {
   timestamp: number;
 }
 
-type TimeRange = '30days' | 'lastMonth' | '6months' | '1year' | 'all';
+type TimeRange = '24hrs' | '30days' | 'lastMonth' | '6months' | '1year' | 'all';
 
 const getTimeRangeFilter = (range: TimeRange): Date | null => {
   const now = new Date();
   switch (range) {
+    case '24hrs':
+      const oneDayAgo = new Date(now);
+      oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+      return oneDayAgo;
     case '30days':
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -161,7 +165,7 @@ interface VisitorFlowDiagramProps {
 const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('30days');
+  const [timeRange, setTimeRange] = useState<TimeRange>('24hrs');
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
 
@@ -659,6 +663,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 <SelectValue placeholder="Select range" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="24hrs">Last 24 Hours</SelectItem>
                 <SelectItem value="30days">Last 30 Days</SelectItem>
                 <SelectItem value="lastMonth">Last Month</SelectItem>
                 <SelectItem value="6months">Last 6 Months</SelectItem>
