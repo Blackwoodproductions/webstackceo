@@ -1238,23 +1238,6 @@ const AuditResults = () => {
                     </div>
                   </div>
 
-                  {/* Website Title & Summary */}
-                  {isProfileLoading ? (
-                    <div className="mt-4 space-y-2">
-                      <div className="h-5 w-2/3 bg-muted animate-pulse rounded" />
-                      <div className="h-4 w-full bg-muted animate-pulse rounded" />
-                      <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
-                    </div>
-                  ) : websiteProfile && (
-                    <div className="mt-4">
-                      {websiteProfile.title && (
-                        <h2 className="text-lg font-semibold text-foreground mb-2">{websiteProfile.title}</h2>
-                      )}
-                      {websiteProfile.summary && (
-                        <p className="text-sm text-muted-foreground leading-relaxed">{websiteProfile.summary}</p>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -1588,6 +1571,40 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
+
+          {/* Website Description Box */}
+          {(isProfileLoading || (websiteProfile && (websiteProfile.title || websiteProfile.summary))) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mb-8"
+            >
+              <div className="p-6 rounded-2xl bg-card border border-border/50">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  About This Website
+                </h2>
+                {isProfileLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-5 w-2/3 bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
+                  </div>
+                ) : websiteProfile && (
+                  <div className="space-y-3">
+                    {websiteProfile.title && (
+                      <h3 className="text-lg font-semibold text-foreground">{websiteProfile.title}</h3>
+                    )}
+                    {websiteProfile.summary && (
+                      <p className="text-muted-foreground leading-relaxed">{websiteProfile.summary}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Category Scores Overview - Dial Style */}
           <motion.div
