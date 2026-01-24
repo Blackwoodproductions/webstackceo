@@ -861,8 +861,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
           {/* Dropdown Content Panels */}
           {activeDropdown === 'queries' && (
-            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <Search className="w-4 h-4 text-primary" />
                   Top Keywords
@@ -875,63 +875,87 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   <Badge variant="secondary" className="text-[10px]">{queryData.length} total</Badge>
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
                 {filteredQueryData.map((row, i) => {
                   const isTopPosition = row.position <= 3;
                   const isGoodPosition = row.position <= 10;
                   const ctrPercent = row.ctr * 100;
+                  const nodeSize = isTopPosition ? 28 : isGoodPosition ? 24 : 20;
+                  const nodeColor = isTopPosition ? '#22c55e' : isGoodPosition ? 'hsl(var(--primary))' : '#6b7280';
+                  
                   return (
                     <div 
                       key={i} 
-                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
-                        isTopPosition 
-                          ? 'bg-green-500/10 border-green-500/30 hover:border-green-500/50' 
-                          : isGoodPosition 
-                            ? 'bg-primary/5 border-primary/20 hover:border-primary/40' 
-                            : 'bg-secondary/30 border-border hover:border-primary/30'
-                      }`}
+                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
+                      style={{ width: '85px' }}
                     >
-                      {/* Position badge */}
-                      <div className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        isTopPosition ? 'bg-green-500 text-white' : isGoodPosition ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-                      }`}>
-                        {row.position.toFixed(0)}
-                      </div>
-                      
-                      {/* Keyword icon */}
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
-                        isTopPosition ? 'bg-green-500/20' : isGoodPosition ? 'bg-primary/20' : 'bg-secondary'
-                      }`}>
-                        <Search className={`w-4 h-4 ${isTopPosition ? 'text-green-500' : isGoodPosition ? 'text-primary' : 'text-muted-foreground'}`} />
+                      {/* Circular node like diagram */}
+                      <div className="relative mb-2">
+                        {/* Glow ring for top positions */}
+                        {isTopPosition && (
+                          <div 
+                            className="absolute inset-0 rounded-full animate-pulse"
+                            style={{
+                              width: nodeSize * 2 + 12,
+                              height: nodeSize * 2 + 12,
+                              left: '50%',
+                              top: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              background: `radial-gradient(circle, ${nodeColor}20 0%, transparent 70%)`,
+                            }}
+                          />
+                        )}
+                        
+                        {/* Main circle */}
+                        <div 
+                          className="rounded-full flex items-center justify-center relative"
+                          style={{
+                            width: nodeSize * 2,
+                            height: nodeSize * 2,
+                            background: 'hsl(var(--background))',
+                            border: `${isTopPosition ? 3 : 2}px solid ${nodeColor}`,
+                            boxShadow: isTopPosition ? `0 0 12px ${nodeColor}40` : 'none',
+                          }}
+                        >
+                          {/* Click count inside */}
+                          <span 
+                            className="font-bold"
+                            style={{ 
+                              fontSize: row.clicks > 999 ? '11px' : '13px',
+                              color: nodeColor 
+                            }}
+                          >
+                            {row.clicks > 999 ? `${(row.clicks / 1000).toFixed(1)}k` : row.clicks}
+                          </span>
+                          
+                          {/* Position badge - top right */}
+                          <div 
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                            style={{ background: nodeColor }}
+                          >
+                            {row.position.toFixed(0)}
+                          </div>
+                        </div>
                       </div>
                       
                       {/* Keyword text */}
-                      <p className="text-xs font-medium truncate mb-2" title={row.keys[0]}>
-                        {row.keys[0].length > 18 ? row.keys[0].substring(0, 18) + '...' : row.keys[0]}
+                      <p className="text-[10px] font-medium text-center truncate w-full" title={row.keys[0]}>
+                        {row.keys[0].length > 12 ? row.keys[0].substring(0, 12) + '...' : row.keys[0]}
                       </p>
                       
-                      {/* Stats */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Clicks</span>
-                          <span className="text-xs font-bold text-primary">{row.clicks}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">Impr</span>
-                          <span className="text-[10px]">{row.impressions}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">CTR</span>
-                          <span className={`text-[10px] font-medium ${ctrPercent > 5 ? 'text-green-500' : ctrPercent > 2 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                            {ctrPercent.toFixed(1)}%
-                          </span>
-                        </div>
+                      {/* Mini stats row */}
+                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
+                        <span>{row.impressions} imp</span>
+                        <span className="text-[6px]">•</span>
+                        <span className={ctrPercent > 5 ? 'text-green-500 font-medium' : ''}>
+                          {ctrPercent.toFixed(1)}%
+                        </span>
                       </div>
                     </div>
                   );
                 })}
                 {filteredQueryData.length === 0 && (
-                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                  <div className="w-full text-center text-muted-foreground text-xs py-8">
                     {isFetching ? "Loading..." : "No keywords found"}
                   </div>
                 )}
@@ -940,15 +964,15 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           )}
 
           {activeDropdown === 'pages' && (
-            <div className="bg-background border border-border rounded-lg p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <FileText className="w-4 h-4 text-cyan-500" />
                   Top Pages
                 </h4>
                 <Badge variant="secondary" className="text-[10px]">{pageData.length} total</Badge>
               </div>
-              <div className="grid grid-cols-5 gap-2 max-h-[320px] overflow-y-auto pr-1">
+              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
                 {pageData.slice(0, 25).map((row, i) => {
                   let path = row.keys[0];
                   try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
@@ -956,8 +980,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   const pageName = path === '/' ? 'Home' : path.split('/').filter(Boolean).pop() || path;
                   const isTopPosition = row.position <= 3;
                   const isGoodPosition = row.position <= 10;
+                  const nodeSize = isTopPosition ? 28 : isGoodPosition ? 24 : 20;
+                  const nodeColor = isTopPosition ? '#06b6d4' : isGoodPosition ? '#0891b2' : '#6b7280';
                   
-                  // Page type icons
+                  // Page type icons - using Lucide-style approach
                   const getPageIcon = () => {
                     if (path === '/') return '🏠';
                     if (path.includes('pricing')) return '💰';
@@ -969,56 +995,79 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     if (path.includes('tool')) return '🔧';
                     if (path.includes('audit')) return '📊';
                     if (path.includes('guide')) return '📖';
+                    if (path.includes('glossary')) return '📝';
+                    if (path.includes('directory')) return '📁';
+                    if (path.includes('marketplace')) return '🏪';
                     return '📄';
                   };
                   
                   return (
                     <div 
                       key={i} 
-                      className={`relative group rounded-lg p-3 border transition-all hover:scale-[1.02] cursor-pointer ${
-                        isTopPosition 
-                          ? 'bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-500/50' 
-                          : isGoodPosition 
-                            ? 'bg-cyan-500/5 border-cyan-500/20 hover:border-cyan-500/40' 
-                            : 'bg-secondary/30 border-border hover:border-cyan-500/30'
-                      }`}
+                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
+                      style={{ width: '85px' }}
                     >
-                      {/* Position badge */}
-                      <div className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        isTopPosition ? 'bg-cyan-500 text-white' : isGoodPosition ? 'bg-cyan-500/80 text-white' : 'bg-secondary text-muted-foreground'
-                      }`}>
-                        {row.position.toFixed(0)}
-                      </div>
-                      
-                      {/* Page icon */}
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 text-xl ${
-                        isTopPosition ? 'bg-cyan-500/20' : 'bg-secondary'
-                      }`}>
-                        {getPageIcon()}
-                      </div>
-                      
-                      {/* Page path */}
-                      <p className="text-xs font-medium truncate mb-1 capitalize" title={path}>
-                        {pageName.replace(/-/g, ' ')}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate mb-2" title={path}>
-                        {path}
-                      </p>
-                      
-                      {/* Stats grid */}
-                      <div className="grid grid-cols-2 gap-1">
-                        <div className="bg-secondary/50 rounded px-1.5 py-1 text-center">
-                          <p className="text-xs font-bold text-cyan-500">{row.clicks}</p>
-                          <p className="text-[8px] text-muted-foreground">clicks</p>
+                      {/* Circular node like diagram */}
+                      <div className="relative mb-2">
+                        {/* Glow ring for top positions */}
+                        {isTopPosition && (
+                          <div 
+                            className="absolute inset-0 rounded-full animate-pulse"
+                            style={{
+                              width: nodeSize * 2 + 12,
+                              height: nodeSize * 2 + 12,
+                              left: '50%',
+                              top: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              background: `radial-gradient(circle, ${nodeColor}20 0%, transparent 70%)`,
+                            }}
+                          />
+                        )}
+                        
+                        {/* Main circle */}
+                        <div 
+                          className="rounded-full flex items-center justify-center relative"
+                          style={{
+                            width: nodeSize * 2,
+                            height: nodeSize * 2,
+                            background: 'hsl(var(--background))',
+                            border: `${isTopPosition ? 3 : 2}px solid ${nodeColor}`,
+                            boxShadow: isTopPosition ? `0 0 12px ${nodeColor}40` : 'none',
+                          }}
+                        >
+                          {/* Page emoji inside */}
+                          <span style={{ fontSize: isTopPosition ? '20px' : '16px' }}>
+                            {getPageIcon()}
+                          </span>
+                          
+                          {/* Position badge - top right */}
+                          <div 
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                            style={{ background: nodeColor }}
+                          >
+                            {row.position.toFixed(0)}
+                          </div>
+                          
+                          {/* Clicks badge - bottom left */}
+                          <div 
+                            className="absolute -bottom-1 -left-1 px-1.5 py-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                            style={{ background: '#8b5cf6' }}
+                          >
+                            {row.clicks > 999 ? `${(row.clicks / 1000).toFixed(1)}k` : row.clicks}
+                          </div>
                         </div>
-                        <div className="bg-secondary/50 rounded px-1.5 py-1 text-center">
-                          <p className="text-xs font-bold">{row.impressions}</p>
-                          <p className="text-[8px] text-muted-foreground">impr</p>
-                        </div>
                       </div>
-                      <div className="mt-1 flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground">CTR</span>
-                        <span className={`font-medium ${row.ctr > 0.05 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      
+                      {/* Page name */}
+                      <p className="text-[10px] font-medium text-center truncate w-full capitalize" title={path}>
+                        {pageName.replace(/-/g, ' ').slice(0, 10)}
+                      </p>
+                      
+                      {/* Mini stats row */}
+                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
+                        <span>{row.impressions > 999 ? `${(row.impressions / 1000).toFixed(1)}k` : row.impressions}</span>
+                        <span className="text-[6px]">•</span>
+                        <span className={row.ctr > 0.05 ? 'text-cyan-500 font-medium' : ''}>
                           {(row.ctr * 100).toFixed(1)}%
                         </span>
                       </div>
@@ -1026,7 +1075,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   );
                 })}
                 {pageData.length === 0 && (
-                  <div className="col-span-5 text-center text-muted-foreground text-xs py-8">
+                  <div className="w-full text-center text-muted-foreground text-xs py-8">
                     {isFetching ? "Loading..." : "No pages found"}
                   </div>
                 )}
