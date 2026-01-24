@@ -481,27 +481,41 @@ const MarketingDashboard = () => {
       {/* Date Range Selector Bar */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CalendarIcon className="w-4 h-4 text-primary" />
-            <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
-              <SelectTrigger className="w-[130px] h-8 text-sm bg-background border-border">
-                <SelectValue placeholder="Range" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                <SelectItem value="live">Last 24h</SelectItem>
-                <SelectItem value="yesterday">Yesterday</SelectItem>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="6months">6 Months</SelectItem>
-                <SelectItem value="1year">Year</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            {/* Range & Pages stacked */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-primary" />
+                <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+                  <SelectTrigger className="w-[130px] h-7 text-sm bg-background border-border">
+                    <SelectValue placeholder="Range" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                    <SelectItem value="live">Last 24h</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="6months">6 Months</SelectItem>
+                    <SelectItem value="1year">Year</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {pageFilter && (
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-purple-400" />
+                  <Badge variant="secondary" className="flex items-center gap-2 px-2 py-0.5 h-7 bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                    {pageFilter === '/' ? 'Homepage' : pageFilter}
+                    <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
+                  </Badge>
+                </div>
+              )}
+            </div>
             {diagramTimeRange === 'custom' && (
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-8 text-sm px-3", !diagramCustomDateRange.from && "text-muted-foreground")}>
+                    <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !diagramCustomDateRange.from && "text-muted-foreground")}>
                       {diagramCustomDateRange.from ? format(diagramCustomDateRange.from, "MMM d, yyyy") : "Start date"}
                     </Button>
                   </PopoverTrigger>
@@ -512,7 +526,7 @@ const MarketingDashboard = () => {
                 <span className="text-sm text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-8 text-sm px-3", !diagramCustomDateRange.to && "text-muted-foreground")}>
+                    <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !diagramCustomDateRange.to && "text-muted-foreground")}>
                       {diagramCustomDateRange.to ? format(diagramCustomDateRange.to, "MMM d, yyyy") : "End date"}
                     </Button>
                   </PopoverTrigger>
@@ -524,13 +538,6 @@ const MarketingDashboard = () => {
             )}
           </div>
           <div className="flex items-center gap-3">
-            {pageFilter && (
-              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                <Filter className="w-3 h-3" />
-                Filtered: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
-                <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
-              </Badge>
-            )}
             {flowSummary && (
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
