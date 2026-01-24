@@ -20,6 +20,7 @@ interface PageNode {
   path: string;
   name: string;
   visits: number;
+  totalVisits: number; // All-time total views for the purple badge
   visitsPerDay: number;
   todayVisits: number;
   depth: number;
@@ -563,6 +564,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
 
     const nodeMap: Record<string, PageNode> = {};
     
+    // Calculate TOTAL visits (all-time, unfiltered) for the purple badge
+    const totalVisitCounts: Record<string, number> = {};
+    pageViews.forEach(pv => {
+      let path = pv.page_path.split('#')[0].split('?')[0];
+      if (path.startsWith('/audit/') || path === '/audit') {
+        path = '/audits';
+      }
+      totalVisitCounts[path] = (totalVisitCounts[path] || 0) + 1;
+    });
+    
     // Calculate days in range for per-day averages
     const now = new Date();
     let daysInRange = 1;
@@ -592,16 +603,18 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     SITE_STRUCTURE.forEach(({ path, parent, category }) => {
       const depth = path === '/' ? 0 : path.split('/').filter(Boolean).length;
       const visits = visitCounts[path] || 0;
+      const totalVisits = totalVisitCounts[path] || 0;
       const isTool = toolPaths.includes(path) || category === 'tools';
       nodeMap[path] = {
         path,
         name: formatPageName(path),
         visits,
+        totalVisits,
         visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
         todayVisits: todayVisitCounts[path] || 0,
         depth,
         parent,
-        isVisited: visits > 0,
+        isVisited: totalVisits > 0,
         isTool,
       };
     });
@@ -618,11 +631,13 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           parent = null;
         }
         const isTool = toolPaths.includes(path) || path.startsWith('/tools');
+        const totalVisits = totalVisitCounts[path] || 0;
         
         nodeMap[path] = {
           path,
           name: formatPageName(path),
           visits,
+          totalVisits,
           visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
           todayVisits: todayVisitCounts[path] || 0,
           depth,
@@ -1478,13 +1493,13 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     </text>
                   </>
                 )}
-                {/* Total visits badge - top left (for time range filter) */}
-                {node.visits > 0 && (
+                {/* Total visits badge - top left (OVERALL all-time views) */}
+                {node.totalVisits > 0 && (
                   <>
                     <circle
                       cx={pos.x - nodeSize + 2}
                       cy={pos.y - nodeSize + 2}
-                      r={node.visits > 99 ? 10 : 8}
+                      r={node.totalVisits > 99 ? 10 : 8}
                       fill={node.isTool ? "#f59e0b" : "#8b5cf6"}
                     />
                     <text
@@ -1492,9 +1507,9 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                       y={pos.y - nodeSize + 6}
                       textAnchor="middle"
                       fill="white"
-                      style={{ fontSize: node.visits > 99 ? '7px' : '9px', fontWeight: 'bold' }}
+                      style={{ fontSize: node.totalVisits > 99 ? '7px' : '9px', fontWeight: 'bold' }}
                     >
-                      {node.visits > 999 ? `${Math.round(node.visits / 100) / 10}k` : node.visits}
+                      {node.totalVisits > 999 ? `${Math.round(node.totalVisits / 100) / 10}k` : node.totalVisits}
                     </text>
                   </>
                 )}
