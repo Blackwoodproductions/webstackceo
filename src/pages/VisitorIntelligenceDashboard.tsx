@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -141,6 +141,10 @@ const MarketingDashboard = () => {
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
+  
+  // GSC domain tracking status
+  const [selectedGscDomain, setSelectedGscDomain] = useState<string | null>(null);
+  const [gscDomainHasTracking, setGscDomainHasTracking] = useState<boolean>(true); // Default to true until we check
 
   // Persist chat online status
   useEffect(() => {
@@ -780,7 +784,8 @@ const MarketingDashboard = () => {
           
           {/* Center: Stats Badges */}
           <div className="flex-1 flex items-center justify-center gap-2 flex-wrap">
-            {flowSummary && (
+            {/* Show stats only if no GSC domain selected OR the selected domain has tracking */}
+            {(!selectedGscDomain || gscDomainHasTracking) && flowSummary && (
               <>
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                   <Eye className="w-3 h-3 mr-1" />{flowSummary.totalVisits} views
@@ -811,6 +816,13 @@ const MarketingDashboard = () => {
                   </Badge>
                 )}
               </>
+            )}
+            {/* Show install tracking prompt when domain selected but no tracking */}
+            {selectedGscDomain && !gscDomainHasTracking && (
+              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Install tracking code to see visitor data for {selectedGscDomain}
+              </Badge>
             )}
           </div>
           
@@ -942,8 +954,66 @@ const MarketingDashboard = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-6 overflow-auto">
-          {/* Full-Width Visitor Intelligence Panel (when open) */}
-          {siteArchOpen && (
+          {/* No Tracking Installed Prompt - Show when GSC domain selected but no tracking */}
+          {selectedGscDomain && !gscDomainHasTracking && (
+            <Card className="p-8 mb-6 bg-gradient-to-br from-amber-500/5 to-orange-500/5 border-amber-500/20 animate-fade-in">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
+                  <Code className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-2">Install Tracking Code for {selectedGscDomain}</h3>
+                <p className="text-muted-foreground text-sm mb-6">
+                  To see visitor intelligence data, page flow diagrams, and engagement metrics for this domain, 
+                  install the tracking code on your website.
+                </p>
+                <div className="bg-zinc-900 rounded-lg p-4 text-left mb-6 relative">
+                  <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap font-mono">
+{`<!-- Webstack.ceo Visitor Intelligence -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','wscLayer','${selectedGscDomain}');
+</script>
+<!-- End Webstack.ceo Visitor Intelligence -->`}
+                  </pre>
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    className="absolute top-2 right-2"
+                    onClick={() => {
+                      const code = `<!-- Webstack.ceo Visitor Intelligence -->
+<script>
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','wscLayer','${selectedGscDomain}');
+</script>
+<!-- End Webstack.ceo Visitor Intelligence -->`;
+                      navigator.clipboard.writeText(code);
+                    }}
+                  >
+                    <Code className="w-3 h-3 mr-1" />
+                    Copy Code
+                  </Button>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4 text-sm text-left">
+                  <p className="font-medium mb-2">Installation Instructions:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+                    <li>Copy the tracking code above</li>
+                    <li>Paste it into the <code className="bg-background px-1 rounded">&lt;head&gt;</code> section of your website</li>
+                    <li>The code will automatically track visitor behavior, page views, and engagement</li>
+                    <li>Data will appear in this dashboard within minutes</li>
+                  </ol>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Full-Width Visitor Intelligence Panel (when open) - only show if tracking installed or no domain selected */}
+          {siteArchOpen && (!selectedGscDomain || gscDomainHasTracking) && (
             <Card className="p-4 mb-6 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <Button 
@@ -978,7 +1048,7 @@ const MarketingDashboard = () => {
             </Card>
           )}
           {/* Hidden diagram to keep data flowing when sidebar is collapsed */}
-          {!siteArchOpen && (
+          {!siteArchOpen && (!selectedGscDomain || gscDomainHasTracking) && (
             <div className="hidden">
               <VisitorFlowDiagram 
                 onPageFilter={setPageFilter}
@@ -992,7 +1062,8 @@ const MarketingDashboard = () => {
             </div>
           )}
 
-          {/* Full Width Stats Layout */}
+          {/* Full Width Stats Layout - only show if tracking installed or no domain selected */}
+          {(!selectedGscDomain || gscDomainHasTracking) && (
           <div className="space-y-4 mb-6">
           {/* Quick Stats Row - Full Width (expandable) */}
           <QuickStatsExpandableRow
@@ -1030,9 +1101,11 @@ const MarketingDashboard = () => {
           </div>
 
         </div>
+          )}
 
 
-        {/* Leads Section - Full Width */}
+        {/* Leads Section - Full Width - only show if tracking installed or no domain selected */}
+        {(!selectedGscDomain || gscDomainHasTracking) && (
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
             {/* Combined Tab Header with Lead Quality Stats - Full Width */}
@@ -1342,17 +1415,25 @@ const MarketingDashboard = () => {
               </TabsContent>
           </Tabs>
         </div>
+        )}
 
         {/* Google Search Console Integration */}
         <div className="mb-8">
           <GSCDashboardPanel 
             onSiteChange={(site) => {
-              // When GSC domain changes, we could filter visitor data by domain
-              console.log('GSC site changed:', site);
+              // When GSC domain changes, update state
+              const cleanDomain = site.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+              setSelectedGscDomain(cleanDomain);
+              console.log('GSC site changed:', cleanDomain);
             }}
             onDataLoaded={(data) => {
               // Receive GSC metrics when loaded
               console.log('GSC data loaded:', data);
+            }}
+            onTrackingStatus={(hasTracking, domain) => {
+              // Update tracking status for the domain
+              setGscDomainHasTracking(hasTracking);
+              console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
             }}
           />
         </div>
