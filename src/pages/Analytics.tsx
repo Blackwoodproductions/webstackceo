@@ -110,7 +110,7 @@ const Analytics = () => {
   // Data state
   const [sites, setSites] = useState<SiteInfo[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
-  const [dateRange, setDateRange] = useState<"7" | "28" | "90">("28");
+  const [dateRange, setDateRange] = useState<"7" | "28" | "90" | "180" | "365" | "all">("28");
   
   // Performance data
   const [queryData, setQueryData] = useState<PerformanceRow[]>([]);
@@ -340,12 +340,17 @@ const Analytics = () => {
     }
   };
 
+  // Get days for date range - handle "all" as 16 months (max GSC data)
+  const getDaysFromRange = (range: string): number => {
+    if (range === "all") return 480; // ~16 months - max available GSC data
+    return parseInt(range);
+  };
+
   const fetchAllData = async () => {
     if (!selectedSite || !accessToken) return;
     
     setIsFetching(true);
-    const startDate = getDateNDaysAgo(parseInt(dateRange));
-    const endDate = getDateNDaysAgo(0);
+    const days = getDaysFromRange(dateRange);
     
     try {
       const [queries, pages, countries, devices, dates, sitemapsRes] = await Promise.all([
@@ -353,7 +358,7 @@ const Analytics = () => {
         fetchPerformance(["page"], 25),
         fetchPerformance(["country"], 10),
         fetchPerformance(["device"], 5),
-        fetchPerformance(["date"], 90),
+        fetchPerformance(["date"], days), // Fetch all dates for the range
         fetchSitemaps(),
       ]);
 
@@ -372,12 +377,13 @@ const Analytics = () => {
   };
 
   const fetchPerformance = async (dimensions: string[], rowLimit: number) => {
+    const days = getDaysFromRange(dateRange);
     const response = await supabase.functions.invoke("search-console", {
       body: {
         action: "performance",
         accessToken,
         siteUrl: selectedSite,
-        startDate: getDateNDaysAgo(parseInt(dateRange)),
+        startDate: getDateNDaysAgo(days),
         endDate: getDateNDaysAgo(0),
         dimensions,
         rowLimit,
@@ -665,15 +671,18 @@ const Analytics = () => {
               </SelectContent>
             </Select>
 
-            <Select value={dateRange} onValueChange={(v) => setDateRange(v as "7" | "28" | "90")}>
-              <SelectTrigger className="w-[150px]">
+            <Select value={dateRange} onValueChange={(v) => setDateRange(v as "7" | "28" | "90" | "180" | "365" | "all")}>
+              <SelectTrigger className="w-[180px]">
                 <Calendar className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="7">Last 7 days</SelectItem>
                 <SelectItem value="28">Last 28 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
+                <SelectItem value="90">Last 3 months</SelectItem>
+                <SelectItem value="180">Last 6 months</SelectItem>
+                <SelectItem value="365">Last 12 months</SelectItem>
+                <SelectItem value="all">All available data</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -744,21 +753,22 @@ const Analytics = () => {
         </div>
 
         {/* Performance Chart */}
-        <Card className="mb-8">
+        <Card className="mb-8 overflow-hidden">
           <CardHeader>
             <CardTitle>Performance Over Time</CardTitle>
             <CardDescription>Clicks and impressions trend</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
+          <CardContent className="overflow-hidden">
+            <div className="h-[300px] w-full overflow-hidden">
               <ChartContainer
                 config={{
                   clicks: { label: "Clicks", color: "hsl(var(--primary))" },
                   impressions: { label: "Impressions", color: "hsl(var(--muted-foreground))" },
                 }}
+                className="h-full w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -771,11 +781,14 @@ const Analytics = () => {
                       axisLine={false}
                       tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      interval="preserveStartEnd"
+                      minTickGap={50}
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      width={60}
                     />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Area
