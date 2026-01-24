@@ -1616,9 +1616,21 @@ f.parentNode.insertBefore(j,f);
               console.log('GSC data loaded:', data);
             }}
             onTrackingStatus={(hasTracking, domain) => {
-              // Update tracking status for the domain
-              setGscDomainHasTracking(hasTracking);
-              console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
+              // Only update tracking status if this domain is NOT in our known tracked domains list
+              // (tracked domains always have tracking by definition)
+              const isKnownTrackedDomain = trackedDomains.some(td => 
+                td === domain || domain.includes(td) || td.includes(domain)
+              );
+              
+              if (isKnownTrackedDomain) {
+                // Always show VI dashboard for known tracked domains
+                setGscDomainHasTracking(true);
+                console.log(`Tracking status for ${domain}: forced TRUE (known tracked domain)`);
+              } else {
+                // For other domains, use the database check result
+                setGscDomainHasTracking(hasTracking);
+                console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
+              }
             }}
              onSitesLoaded={(sites) => {
               // Store available GSC sites for header dropdown
