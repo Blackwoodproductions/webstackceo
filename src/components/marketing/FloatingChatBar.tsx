@@ -44,6 +44,7 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
   const [openChats, setOpenChats] = useState<OpenChat[]>([]);
   const [newMessages, setNewMessages] = useState<Record<string, string>>({});
   const messagesEndRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const openingChatsRef = useRef<Set<string>>(new Set());
 
   // Fetch active conversations
   const fetchConversations = async () => {
@@ -55,28 +56,30 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
     
     if (data) {
       setConversations(data as ChatConversation[]);
-      
-      // Auto-open new conversations that aren't already open
-      data.forEach((conv: ChatConversation) => {
-        const isOpen = openChats.some(oc => oc.conversation.id === conv.id);
-        if (!isOpen && isOnline) {
-          openChat(conv);
-        }
-      });
     }
   };
 
   const openChat = async (conversation: ChatConversation) => {
-    // Check if already open
-    if (openChats.some(oc => oc.conversation.id === conversation.id)) {
-      // Just maximize it
-      setOpenChats(prev => prev.map(oc => 
-        oc.conversation.id === conversation.id 
-          ? { ...oc, isMinimized: false, hasUnread: false }
-          : oc
-      ));
+    // Prevent duplicate opens using ref
+    if (openingChatsRef.current.has(conversation.id)) {
       return;
     }
+    
+    // Check if already open in state
+    setOpenChats(prev => {
+      if (prev.some(oc => oc.conversation.id === conversation.id)) {
+        // Already open, just maximize it
+        return prev.map(oc => 
+          oc.conversation.id === conversation.id 
+            ? { ...oc, isMinimized: false, hasUnread: false }
+            : oc
+        );
+      }
+      return prev;
+    });
+
+    // Mark as opening
+    openingChatsRef.current.add(conversation.id);
 
     // Fetch messages
     const { data: msgs } = await supabase
@@ -85,12 +88,21 @@ const FloatingChatBar = ({ isOnline }: FloatingChatBarProps) => {
       .eq('conversation_id', conversation.id)
       .order('created_at', { ascending: true });
 
-    setOpenChats(prev => [...prev, {
-      conversation,
-      messages: (msgs || []) as ChatMessage[],
-      isMinimized: false,
-      hasUnread: false,
-    }]);
+    setOpenChats(prev => {
+      // Double-check it's not already open
+      if (prev.some(oc => oc.conversation.id === conversation.id)) {
+        openingChatsRef.current.delete(conversation.id);
+        return prev;
+      }
+      
+      openingChatsRef.current.delete(conversation.id);
+      return [...prev, {
+        conversation,
+        messages: (msgs || []) as ChatMessage[],
+        isMinimized: false,
+        hasUnread: false,
+      }];
+    });
   };
 
   const closeChat = (conversationId: string) => {
