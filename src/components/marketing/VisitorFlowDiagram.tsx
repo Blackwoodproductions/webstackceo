@@ -662,15 +662,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     // Tools parent - centered
     positions['/tools'] = { x: svgWidth / 2, y: toolsParentY };
     
-    // Tools children - full width
+    // Tools children - full width, with /audits offset down for its larger icon
     toolsChildren.forEach((node, i) => {
       const row = Math.floor(i / megaChildRowSize);
       const indexInRow = i % megaChildRowSize;
       const nodesInThisRow = Math.min(megaChildRowSize, toolsChildren.length - row * megaChildRowSize);
       const spacing = fullWidth / (nodesInThisRow + 1);
+      const yOffset = node.path === '/audits' ? 30 : 0; // Extra space for larger audits icon
       positions[node.path] = { 
         x: 40 + spacing * (indexInRow + 1), 
-        y: toolsChildrenStartY + row * rowHeight 
+        y: toolsChildrenStartY + row * rowHeight + yOffset
       };
     });
     
