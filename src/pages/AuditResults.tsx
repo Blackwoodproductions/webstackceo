@@ -76,6 +76,40 @@ import { generateAuditPDF } from "@/lib/generateAuditPDF";
 import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
 import cadeContentAutomation from "@/assets/cade-content-automation.png";
 
+interface TechnicalSEO {
+  hasTitle: boolean;
+  titleLength: number;
+  hasMetaDescription: boolean;
+  descriptionLength: number;
+  hasCanonical: boolean;
+  canonicalUrl: string | null;
+  hasViewport: boolean;
+  hasRobotsMeta: boolean;
+  robotsContent: string | null;
+  hasOgTitle: boolean;
+  hasOgDescription: boolean;
+  hasOgImage: boolean;
+  hasOgUrl: boolean;
+  hasTwitterCard: boolean;
+  h1Count: number;
+  h1Text: string[];
+  h2Count: number;
+  h3Count: number;
+  hasProperHeadingHierarchy: boolean;
+  totalImages: number;
+  imagesWithAlt: number;
+  imagesWithoutAlt: number;
+  altCoverage: number;
+  hasSchemaMarkup: boolean;
+  schemaTypes: string[];
+  internalLinks: number;
+  externalLinks: number;
+  isHttps: boolean;
+  hasSitemapLink: boolean;
+  hasLangAttribute: boolean;
+  langValue: string | null;
+}
+
 interface WebsiteProfile {
   title: string | null;
   description: string | null;
@@ -96,6 +130,7 @@ interface WebsiteProfile {
     address: string | null;
   };
   detectedCategory: string;
+  technicalSEO?: TechnicalSEO;
 }
 
 interface AuditCheck {
@@ -336,8 +371,12 @@ const plans = [
   },
 ];
 
-// Generate audit results - now accepts optional real Ahrefs data
-const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null): AuditCategory[] => {
+// Generate audit results - now accepts optional real Ahrefs data and technical SEO data
+const generateAuditResults = (
+  domain: string, 
+  ahrefsData?: AhrefsMetrics | null,
+  technicalSEO?: TechnicalSEO | null
+): AuditCategory[] => {
   const hash = domain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   
   const randomScore = (base: number, variance: number) => {
@@ -349,18 +388,67 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
     return Math.round(min + ((hash % 100) / 100) * (max - min));
   };
 
+  // Page Speed still uses estimated values (would need PageSpeed Insights API for real data)
   const speedScore = randomScore(72, 20);
-  const schemaScore = randomScore(45, 30);
-  const metaScore = randomScore(68, 25);
-  const securityScore = randomScore(85, 15);
-  const technicalScore = randomScore(65, 25);
+  
+  // Calculate scores from real technical SEO data when available
+  const hasRealTechnicalData = !!technicalSEO;
+  
+  // Schema score from real data
+  let schemaScore: number;
+  if (technicalSEO) {
+    schemaScore = technicalSEO.hasSchemaMarkup ? 
+      (technicalSEO.schemaTypes.length >= 3 ? 85 : technicalSEO.schemaTypes.length >= 1 ? 60 : 40) : 20;
+  } else {
+    schemaScore = randomScore(45, 30);
+  }
+  
+  // Meta tags score from real data
+  let metaScore: number;
+  if (technicalSEO) {
+    let metaPoints = 0;
+    if (technicalSEO.hasTitle && technicalSEO.titleLength >= 30 && technicalSEO.titleLength <= 60) metaPoints += 25;
+    else if (technicalSEO.hasTitle) metaPoints += 15;
+    if (technicalSEO.hasMetaDescription && technicalSEO.descriptionLength >= 120 && technicalSEO.descriptionLength <= 160) metaPoints += 25;
+    else if (technicalSEO.hasMetaDescription) metaPoints += 15;
+    if (technicalSEO.hasOgTitle && technicalSEO.hasOgDescription && technicalSEO.hasOgImage) metaPoints += 25;
+    else if (technicalSEO.hasOgTitle || technicalSEO.hasOgDescription) metaPoints += 10;
+    if (technicalSEO.hasTwitterCard) metaPoints += 15;
+    if (technicalSEO.hasViewport) metaPoints += 10;
+    metaScore = Math.min(100, metaPoints);
+  } else {
+    metaScore = randomScore(68, 25);
+  }
+  
+  // Security score from real data
+  let securityScore: number;
+  if (technicalSEO) {
+    securityScore = technicalSEO.isHttps ? 85 : 30;
+  } else {
+    securityScore = randomScore(85, 15);
+  }
+  
+  // Technical SEO score from real data
+  let technicalScore: number;
+  if (technicalSEO) {
+    let techPoints = 0;
+    if (technicalSEO.hasViewport) techPoints += 20; // Mobile friendliness
+    if (technicalSEO.hasProperHeadingHierarchy) techPoints += 20;
+    if (technicalSEO.altCoverage >= 80) techPoints += 20;
+    else if (technicalSEO.altCoverage >= 50) techPoints += 10;
+    if (technicalSEO.hasCanonical) techPoints += 20;
+    if (technicalSEO.hasLangAttribute) techPoints += 10;
+    if (technicalSEO.hasSitemapLink) techPoints += 10;
+    technicalScore = Math.min(100, techPoints);
+  } else {
+    technicalScore = randomScore(65, 25);
+  }
 
   // Calculate backlink score from real Ahrefs data or use simulated
   let backlinkScore: number;
   let hasRealBacklinkData = false;
   
   if (ahrefsData) {
-    // Convert Domain Rating to score (DR is already 0-100)
     backlinkScore = ahrefsData.domainRating;
     hasRealBacklinkData = true;
   } else {
@@ -476,7 +564,45 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
       title: "Technical SEO",
       icon: FileText,
       score: technicalScore,
-      checks: [
+      isRealData: hasRealTechnicalData,
+      checks: technicalSEO ? [
+        {
+          name: "Mobile Friendliness (Viewport)",
+          status: technicalSEO.hasViewport ? "pass" : "fail",
+          value: technicalSEO.hasViewport ? "Viewport configured" : "Missing viewport meta",
+          description: "Site must have viewport meta for mobile-first indexing (real data)",
+        },
+        {
+          name: "Heading Structure (H1-H6)",
+          status: technicalSEO.hasProperHeadingHierarchy ? "pass" : technicalSEO.h1Count > 0 ? "warning" : "fail",
+          value: technicalSEO.h1Count === 1 ? "Valid hierarchy (1 H1)" : `${technicalSEO.h1Count} H1 tags found`,
+          description: "Proper heading hierarchy helps search engines understand content (real data)",
+        },
+        {
+          name: "Image Alt Attributes",
+          status: technicalSEO.altCoverage >= 80 ? "pass" : technicalSEO.altCoverage >= 50 ? "warning" : "fail",
+          value: `${technicalSEO.altCoverage}% coverage (${technicalSEO.imagesWithAlt}/${technicalSEO.totalImages} images)`,
+          description: "Alt text improves accessibility and image SEO (real data)",
+        },
+        {
+          name: "Sitemap Reference",
+          status: technicalSEO.hasSitemapLink ? "pass" : "warning",
+          value: technicalSEO.hasSitemapLink ? "Sitemap linked" : "No sitemap link found in HTML",
+          description: "XML sitemap helps search engines discover and index pages (real data)",
+        },
+        {
+          name: "Canonical Tags",
+          status: technicalSEO.hasCanonical ? "pass" : "fail",
+          value: technicalSEO.hasCanonical ? (technicalSEO.canonicalUrl || "Set").substring(0, 50) : "Missing",
+          description: "Canonicals prevent duplicate content issues (real data)",
+        },
+        {
+          name: "Language Attribute",
+          status: technicalSEO.hasLangAttribute ? "pass" : "warning",
+          value: technicalSEO.hasLangAttribute ? `lang="${technicalSEO.langValue}"` : "Missing lang attribute",
+          description: "Language attribute helps search engines serve correct language (real data)",
+        },
+      ] : [
         {
           name: "Mobile Friendliness",
           status: technicalScore > 60 ? "pass" : technicalScore > 40 ? "warning" : "fail",
@@ -500,11 +626,6 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
           description: "XML sitemap helps search engines discover and index pages",
         },
         {
-          name: "Robots.txt Configured",
-          status: technicalScore > 50 ? "pass" : "warning",
-          description: "Proper robots.txt controls crawler access to your site",
-        },
-        {
           name: "Canonical Tags",
           status: technicalScore > 60 ? "pass" : hash % 2 === 0 ? "warning" : "fail",
           description: "Canonicals prevent duplicate content issues",
@@ -515,7 +636,26 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
       title: "Schema Markup",
       icon: FileCode,
       score: schemaScore,
-      checks: [
+      isRealData: hasRealTechnicalData,
+      checks: technicalSEO ? [
+        {
+          name: "JSON-LD Present",
+          status: technicalSEO.hasSchemaMarkup ? "pass" : "fail",
+          value: technicalSEO.hasSchemaMarkup ? `${technicalSEO.schemaTypes.length} schema type(s) found` : "Not detected",
+          description: "JSON-LD structured data helps search engines understand your content (real data)",
+        },
+        {
+          name: "Schema Types Detected",
+          status: technicalSEO.schemaTypes.length >= 2 ? "pass" : technicalSEO.schemaTypes.length >= 1 ? "warning" : "fail",
+          value: technicalSEO.schemaTypes.length > 0 ? technicalSEO.schemaTypes.slice(0, 3).join(", ") : "None",
+          description: "Multiple schema types provide richer search results (real data)",
+        },
+        {
+          name: "Local Business Schema",
+          status: technicalSEO.schemaTypes.some(t => t.toLowerCase().includes('localbusiness') || t.toLowerCase().includes('organization')) ? "pass" : "fail",
+          description: "Local business/organization schema is essential for local SEO visibility (real data)",
+        },
+      ] : [
         {
           name: "JSON-LD Present",
           status: schemaScore > 50 ? "pass" : "fail",
@@ -525,16 +665,6 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
           name: "Organization Schema",
           status: schemaScore > 60 ? "pass" : schemaScore > 40 ? "warning" : "fail",
           description: "Organization schema provides business information to search engines",
-        },
-        {
-          name: "Breadcrumb Schema",
-          status: hash % 2 === 0 ? "pass" : "fail",
-          description: "Breadcrumb schema improves navigation display in search results",
-        },
-        {
-          name: "FAQ Schema",
-          status: schemaScore > 70 ? "pass" : "fail",
-          description: "FAQ schema can enable rich snippets in search results",
         },
         {
           name: "Local Business Schema",
@@ -547,7 +677,47 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
       title: "Meta Tags",
       icon: Search,
       score: metaScore,
-      checks: [
+      isRealData: hasRealTechnicalData,
+      checks: technicalSEO ? [
+        {
+          name: "Title Tag",
+          status: technicalSEO.hasTitle ? 
+            (technicalSEO.titleLength >= 30 && technicalSEO.titleLength <= 60 ? "pass" : "warning") : "fail",
+          value: technicalSEO.hasTitle ? `${technicalSEO.titleLength} characters` : "Missing",
+          description: "Title should be 30-60 characters for optimal display (real data)",
+        },
+        {
+          name: "Meta Description",
+          status: technicalSEO.hasMetaDescription ? 
+            (technicalSEO.descriptionLength >= 120 && technicalSEO.descriptionLength <= 160 ? "pass" : "warning") : "fail",
+          value: technicalSEO.hasMetaDescription ? `${technicalSEO.descriptionLength} characters` : "Missing",
+          description: "Meta description should be 120-160 characters (real data)",
+        },
+        {
+          name: "Open Graph Tags",
+          status: (technicalSEO.hasOgTitle && technicalSEO.hasOgDescription && technicalSEO.hasOgImage) ? "pass" : 
+                  (technicalSEO.hasOgTitle || technicalSEO.hasOgDescription) ? "warning" : "fail",
+          value: [
+            technicalSEO.hasOgTitle ? "title" : null,
+            technicalSEO.hasOgDescription ? "desc" : null,
+            technicalSEO.hasOgImage ? "image" : null,
+            technicalSEO.hasOgUrl ? "url" : null,
+          ].filter(Boolean).join(", ") || "None",
+          description: "OG tags control how content appears when shared on social media (real data)",
+        },
+        {
+          name: "Twitter Card Tags",
+          status: technicalSEO.hasTwitterCard ? "pass" : "fail",
+          value: technicalSEO.hasTwitterCard ? "Configured" : "Missing",
+          description: "Twitter cards enhance link previews on Twitter/X (real data)",
+        },
+        {
+          name: "Viewport Meta Tag",
+          status: technicalSEO.hasViewport ? "pass" : "fail",
+          value: technicalSEO.hasViewport ? "Configured" : "Missing",
+          description: "Viewport meta enables proper mobile rendering (real data)",
+        },
+      ] : [
         {
           name: "Title Tag",
           status: metaScore > 60 ? "pass" : "warning",
@@ -581,7 +751,21 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
       title: "SSL & Security",
       icon: Shield,
       score: securityScore,
-      checks: [
+      isRealData: hasRealTechnicalData,
+      checks: technicalSEO ? [
+        {
+          name: "HTTPS Enabled",
+          status: technicalSEO.isHttps ? "pass" : "fail",
+          value: technicalSEO.isHttps ? "Secure connection" : "HTTP only",
+          description: "HTTPS is required for secure data transmission and SEO (real data)",
+        },
+        {
+          name: "SSL Certificate",
+          status: technicalSEO.isHttps ? "pass" : "fail",
+          value: technicalSEO.isHttps ? "Valid SSL" : "No SSL detected",
+          description: "SSL certificate enables HTTPS connections (real data)",
+        },
+      ] : [
         {
           name: "HTTPS Enabled",
           status: securityScore > 50 ? "pass" : "fail",
@@ -597,16 +781,6 @@ const generateAuditResults = (domain: string, ahrefsData?: AhrefsMetrics | null)
           name: "HSTS Header",
           status: securityScore > 80 ? "pass" : "fail",
           description: "HSTS forces secure connections and prevents downgrade attacks",
-        },
-        {
-          name: "X-Content-Type-Options",
-          status: hash % 2 === 0 ? "pass" : "warning",
-          description: "Prevents MIME type sniffing attacks",
-        },
-        {
-          name: "X-Frame-Options",
-          status: securityScore > 70 ? "pass" : "fail",
-          description: "Prevents clickjacking attacks by controlling iframe embedding",
         },
       ],
     },
@@ -803,7 +977,22 @@ const AuditResults = () => {
     fetchWebsiteProfile();
   }, [decodedDomain]);
 
-  // Open email dialog for save
+  // Update audit results when technicalSEO data becomes available
+  useEffect(() => {
+    if (!websiteProfile?.technicalSEO || !decodedDomain || isLoading) return;
+    
+    // Re-generate audit results with real technical SEO data
+    const ahrefsData = dashboardMetrics?.isReal ? {
+      domainRating: dashboardMetrics.domainRating,
+      backlinks: dashboardMetrics.backlinks,
+      referringDomains: dashboardMetrics.referringDomains,
+      organicTraffic: dashboardMetrics.organicTraffic,
+      organicKeywords: dashboardMetrics.organicKeywords,
+    } : null;
+    
+    setAuditResults(generateAuditResults(decodedDomain, ahrefsData, websiteProfile.technicalSEO));
+    console.log('Updated audit results with real technical SEO data');
+  }, [websiteProfile?.technicalSEO, decodedDomain, dashboardMetrics, isLoading]);
   const handleSaveClick = () => {
     if (isSaved) return;
     setShowEmailDialog(true);
@@ -928,7 +1117,7 @@ const AuditResults = () => {
 
         if (error) {
           console.error('Edge function error:', error);
-          setAuditResults(generateAuditResults(decodedDomain, null));
+          setAuditResults(generateAuditResults(decodedDomain, null, null));
           setDashboardMetrics({
             domainRating: 0,
             ahrefsRank: 0,
@@ -989,11 +1178,11 @@ const AuditResults = () => {
             });
           }
           
-          setAuditResults(generateAuditResults(decodedDomain, ahrefsData));
+          setAuditResults(generateAuditResults(decodedDomain, ahrefsData, null));
         }
       } catch (err) {
         console.error('Audit fetch error:', err);
-        setAuditResults(generateAuditResults(decodedDomain, null));
+        setAuditResults(generateAuditResults(decodedDomain, null, null));
         toast.error('Error fetching audit data');
       } finally {
         setIsLoading(false);
