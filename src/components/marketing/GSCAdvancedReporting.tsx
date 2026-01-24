@@ -139,6 +139,10 @@ export const GSCAdvancedReporting = ({
   const [autoIndexQueue, setAutoIndexQueue] = useState<string[]>([]);
   const [isAutoIndexing, setIsAutoIndexing] = useState(false);
   const [indexedCount, setIndexedCount] = useState(0);
+  
+  // Pagination for top keywords
+  const [keywordPage, setKeywordPage] = useState(1);
+  const KEYWORDS_PER_PAGE = 25;
 
   // Format helpers
   const formatNumber = (num: number): string => {
@@ -157,10 +161,9 @@ export const GSCAdvancedReporting = ({
       ? queryData.filter((q) => q.keys[0].toLowerCase().includes(keywordFilter.toLowerCase()))
       : queryData;
 
-    // Top performing (high clicks, good position)
+    // Top performing (high clicks, good position) - return all for pagination
     const topPerforming = [...filtered]
-      .sort((a, b) => b.clicks - a.clicks)
-      .slice(0, 20);
+      .sort((a, b) => b.clicks - a.clicks);
 
     // Rising opportunities (high impressions, low clicks = room to grow)
     const opportunities = [...filtered]
@@ -502,23 +505,33 @@ export const GSCAdvancedReporting = ({
             {/* Top Keywords Table */}
             <Card className="bg-secondary/20 border-0">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="text-sm">Top Performing Keywords</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm">Top Performing Keywords</CardTitle>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {keywordAnalytics.topPerforming.length} total
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="px-3 pb-3">
-                <ScrollArea className="h-[250px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">Keyword</TableHead>
-                        <TableHead className="text-right text-xs">Clicks</TableHead>
-                        <TableHead className="text-right text-xs">Impressions</TableHead>
-                        <TableHead className="text-right text-xs">CTR</TableHead>
-                        <TableHead className="text-right text-xs">Position</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {keywordAnalytics.topPerforming.map((row, i) => (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs w-8">#</TableHead>
+                      <TableHead className="text-xs">Keyword</TableHead>
+                      <TableHead className="text-right text-xs">Clicks</TableHead>
+                      <TableHead className="text-right text-xs">Impressions</TableHead>
+                      <TableHead className="text-right text-xs">CTR</TableHead>
+                      <TableHead className="text-right text-xs">Position</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {keywordAnalytics.topPerforming
+                      .slice((keywordPage - 1) * KEYWORDS_PER_PAGE, keywordPage * KEYWORDS_PER_PAGE)
+                      .map((row, i) => (
                         <TableRow key={i}>
+                          <TableCell className="text-xs py-2 text-muted-foreground">
+                            {(keywordPage - 1) * KEYWORDS_PER_PAGE + i + 1}
+                          </TableCell>
                           <TableCell className="text-xs py-2 max-w-[200px] truncate" title={row.keys[0]}>
                             {row.keys[0]}
                           </TableCell>
@@ -536,9 +549,58 @@ export const GSCAdvancedReporting = ({
                           </TableCell>
                         </TableRow>
                       ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                  </TableBody>
+                </Table>
+                
+                {/* Pagination Controls */}
+                {keywordAnalytics.topPerforming.length > KEYWORDS_PER_PAGE && (
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                    <p className="text-[10px] text-muted-foreground">
+                      Showing {(keywordPage - 1) * KEYWORDS_PER_PAGE + 1}-{Math.min(keywordPage * KEYWORDS_PER_PAGE, keywordAnalytics.topPerforming.length)} of {keywordAnalytics.topPerforming.length}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setKeywordPage(1)}
+                        disabled={keywordPage === 1}
+                      >
+                        First
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setKeywordPage(p => Math.max(1, p - 1))}
+                        disabled={keywordPage === 1}
+                      >
+                        Prev
+                      </Button>
+                      <span className="text-xs px-2 text-muted-foreground">
+                        Page {keywordPage} of {Math.ceil(keywordAnalytics.topPerforming.length / KEYWORDS_PER_PAGE)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setKeywordPage(p => Math.min(Math.ceil(keywordAnalytics.topPerforming.length / KEYWORDS_PER_PAGE), p + 1))}
+                        disabled={keywordPage >= Math.ceil(keywordAnalytics.topPerforming.length / KEYWORDS_PER_PAGE)}
+                      >
+                        Next
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setKeywordPage(Math.ceil(keywordAnalytics.topPerforming.length / KEYWORDS_PER_PAGE))}
+                        disabled={keywordPage >= Math.ceil(keywordAnalytics.topPerforming.length / KEYWORDS_PER_PAGE)}
+                      >
+                        Last
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
