@@ -78,9 +78,6 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/features/visitor-intelligence', parent: '/features', category: 'features' },
   { path: '/features/web-hosting', parent: '/features', category: 'features' },
   
-  // Domain Audits sub-pages (L2)
-  { path: '/audit', parent: '/audits', category: 'audits' },
-  
   // Tools sub-pages (L2)
   { path: '/tools/domain-audit', parent: '/tools', category: 'tools' },
   { path: '/tools/keyword-checker', parent: '/tools', category: 'tools' },
@@ -319,7 +316,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           // Track live visitor movement
           setLiveVisitors(prev => {
             const existing = prev.find(v => v.id === newView.session_id);
-            const cleanPath = newView.page_path.split('#')[0].split('?')[0];
+            let cleanPath = newView.page_path.split('#')[0].split('?')[0];
+            // Aggregate all /audit/* paths into /audits
+            if (cleanPath.startsWith('/audit/') || cleanPath === '/audit') {
+              cleanPath = '/audits';
+            }
             
             if (existing) {
               // Visitor moved to new page - create animated path
@@ -380,7 +381,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
-      const path = pv.page_path.split('#')[0].split('?')[0];
+      let path = pv.page_path.split('#')[0].split('?')[0];
+      // Aggregate all /audit/* paths into /audits
+      if (path.startsWith('/audit/') || path === '/audit') {
+        path = '/audits';
+      }
       visitCounts[path] = (visitCounts[path] || 0) + 1;
     });
 
@@ -390,7 +395,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     // Group page views by session and sort by time
     const sessionViews: Record<string, { path: string; time: Date }[]> = {};
     filteredViews.forEach(pv => {
-      const path = pv.page_path.split('#')[0].split('?')[0];
+      let path = pv.page_path.split('#')[0].split('?')[0];
+      // Aggregate all /audit/* paths into /audits
+      if (path.startsWith('/audit/') || path === '/audit') {
+        path = '/audits';
+      }
       if (!sessionViews[pv.session_id]) {
         sessionViews[pv.session_id] = [];
       }
@@ -1044,7 +1053,9 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             
             const intensity = node.visits / maxVisits;
             const color = getHeatColor(intensity, node.isVisited);
-            const nodeSize = node.depth === 0 ? 18 : node.depth === 1 ? 12 : 8;
+            // Make /audits a mega node (aggregates all domain audits)
+            const isMegaAggregateNode = node.path === '/audits';
+            const nodeSize = isMegaAggregateNode ? 24 : node.depth === 0 ? 18 : node.depth === 1 ? 12 : 8;
             const baseOpacity = node.isVisited ? 1 : 0.35;
             const isFiltered = activeFilter === node.path;
             const isDimmed = activeFilter && activeFilter !== node.path;
