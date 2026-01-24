@@ -98,6 +98,7 @@ type DateRangeType = "7" | "28" | "90" | "180" | "365";
 interface GSCDashboardPanelProps {
   onSiteChange?: (site: string) => void;
   onDataLoaded?: (data: { clicks: number; impressions: number; position: number }) => void;
+  onTrackingStatus?: (hasTracking: boolean, domain: string) => void;
 }
 
 const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
@@ -108,7 +109,7 @@ const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactN
   discover: { label: "Discover", icon: <Sparkles className="w-4 h-4" />, color: "#8b5cf6" },
 };
 
-export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded }: GSCDashboardPanelProps) => {
+export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus }: GSCDashboardPanelProps) => {
   const { toast } = useToast();
   
   // Auth state
@@ -132,6 +133,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded }: GSCDashboardPa
   const [sitemaps, setSitemaps] = useState<SitemapInfo[]>([]);
   
   const [isFetching, setIsFetching] = useState(false);
+  
+  // Tracking status per domain
+  const [domainTrackingStatus, setDomainTrackingStatus] = useState<Map<string, boolean>>(new Map());
   
   // Cache
   const dataCache = useRef<Map<string, { data: any; timestamp: number }>>(new Map());
@@ -201,12 +205,52 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded }: GSCDashboardPa
     }
   }, [accessToken]);
 
-  // Notify parent of site change
+  // Notify parent of site change and check tracking status
   useEffect(() => {
-    if (selectedSite && onSiteChange) {
-      onSiteChange(selectedSite);
+    if (selectedSite) {
+      onSiteChange?.(selectedSite);
+      
+      // Check if this domain has tracking code installed
+      checkTrackingStatus(selectedSite);
     }
   }, [selectedSite, onSiteChange]);
+
+  // Check if domain has tracking code installed (by checking for visitor sessions from that domain)
+  const checkTrackingStatus = async (siteUrl: string) => {
+    const cleanDomain = siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
+    
+    // Check cache first
+    if (domainTrackingStatus.has(cleanDomain)) {
+      const hasTracking = domainTrackingStatus.get(cleanDomain) || false;
+      onTrackingStatus?.(hasTracking, cleanDomain);
+      return;
+    }
+    
+    try {
+      // Check if we have any visitor sessions with referrer or first_page containing this domain
+      const { count, error } = await supabase
+        .from('visitor_sessions')
+        .select('id', { count: 'exact', head: true })
+        .or(`referrer.ilike.%${cleanDomain}%,first_page.ilike.%${cleanDomain}%`)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error checking tracking status:', error);
+        // Default to false if we can't check
+        setDomainTrackingStatus(prev => new Map(prev).set(cleanDomain, false));
+        onTrackingStatus?.(false, cleanDomain);
+        return;
+      }
+      
+      const hasTracking = (count || 0) > 0;
+      setDomainTrackingStatus(prev => new Map(prev).set(cleanDomain, hasTracking));
+      onTrackingStatus?.(hasTracking, cleanDomain);
+    } catch (err) {
+      console.error('Error checking tracking status:', err);
+      setDomainTrackingStatus(prev => new Map(prev).set(cleanDomain, false));
+      onTrackingStatus?.(false, cleanDomain);
+    }
+  };
 
   // Fetch data when site selected - with debouncing
   useEffect(() => {
