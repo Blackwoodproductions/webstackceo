@@ -147,9 +147,9 @@ const HeroSection = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-center"
           >
-            <span className="block">Get a free instant SEO audit. One unified dashboard that simplifies every task—</span>
-            <span className="block">from uptime monitoring to advanced SEO</span>
-            <span className="block">and traffic intelligence.</span>
+            <span className="block">Get a free instant SEO audit. One dashboard for everything—</span>
+            <span className="block">uptime monitoring to traffic intelligence.</span>
+            <span className="block">Fully automated.</span>
           </motion.p>
 
           <motion.div
