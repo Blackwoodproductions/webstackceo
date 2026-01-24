@@ -10,6 +10,7 @@ const FloatingLiveStats = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
   const [newToday, setNewToday] = useState(0);
+  const [topPosition, setTopPosition] = useState('22%');
 
   // Check if current route should show stats
   const shouldShow = !EXCLUDED_ROUTES.some(route => location.pathname.startsWith(route));
@@ -19,6 +20,42 @@ const FloatingLiveStats = memo(() => {
     if (!shouldShow) return;
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
+  }, [shouldShow]);
+
+  // Handle scroll to stop above AI shield and footer
+  useEffect(() => {
+    if (!shouldShow) return;
+
+    const handleScroll = () => {
+      const footer = document.querySelector('footer');
+      if (!footer) return;
+
+      const footerRect = footer.getBoundingClientRect();
+      const elementHeight = 90; // Approximate height of both stat boxes
+      const aiShieldBuffer = 180; // Space to stay above AI shield (which is at ~72%)
+      const footerBuffer = 40;
+      
+      const defaultTop = window.innerHeight * 0.22;
+      // Max position is the lesser of: above footer OR above AI shield area
+      const maxTopFromFooter = footerRect.top - elementHeight - footerBuffer - aiShieldBuffer;
+      const maxTopFromShield = window.innerHeight * 0.47 - elementHeight; // Stop before section indicator
+      
+      const maxTop = Math.min(maxTopFromFooter, maxTopFromShield);
+      
+      if (defaultTop > maxTop && maxTop > 0) {
+        setTopPosition(`${Math.max(maxTop, 50)}px`);
+      } else {
+        setTopPosition('22%');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, [shouldShow]);
 
   // Fetch live stats - same logic as marketing dashboard
@@ -71,7 +108,10 @@ const FloatingLiveStats = memo(() => {
   if (!shouldShow || !isVisible) return null;
 
   return (
-    <div className="fixed left-6 top-[22%] hidden lg:flex flex-col gap-2 z-40 animate-fade-in">
+    <div 
+      className="fixed left-6 hidden lg:flex flex-col gap-2 z-40 animate-fade-in transition-[top] duration-200"
+      style={{ top: topPosition }}
+    >
       {/* Live Now */}
       <div className="glass-card rounded-lg px-3 py-2 flex items-center gap-2.5 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
         <div className="relative">
