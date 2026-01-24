@@ -19,10 +19,10 @@ interface ActiveSession {
   user_agent: string | null;
   pageViewCount: number;
   toolsUsedCount: number;
-  hasEmail: boolean;
-  hasPhone: boolean;
-  hasName: boolean;
-  hasCompanyInfo: boolean;
+  email: string | null;
+  phone: string | null;
+  fullName: string | null;
+  companyEmployees: string | null;
   recentPages: string[];
 }
 
@@ -53,7 +53,7 @@ const VisitorEngagementPanel = () => {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
       // Fetch all data in parallel
-      const [sessionsRes, pageViewsRes, toolsRes, leadsRes] = await Promise.all([
+      const [sessionsRes, pageViewsRes, toolsRes, leadsRes, formSubmissionsRes] = await Promise.all([
         supabase
           .from('visitor_sessions')
           .select('session_id, started_at, last_activity_at, first_page, referrer, user_agent')
@@ -61,13 +61,15 @@ const VisitorEngagementPanel = () => {
           .order('last_activity_at', { ascending: false }),
         supabase.from('page_views').select('page_path, session_id, created_at'),
         supabase.from('tool_interactions').select('page_path, session_id'),
-        supabase.from('leads').select('email, phone, full_name, company_employees')
+        supabase.from('leads').select('email, phone, full_name, company_employees'),
+        supabase.from('form_submissions').select('session_id, form_data')
       ]);
 
       const sessions = sessionsRes.data || [];
       const pageViews = pageViewsRes.data || [];
       const toolInteractions = toolsRes.data || [];
       const leads = leadsRes.data || [];
+      const formSubmissions = formSubmissionsRes.data || [];
 
       // Process page engagement heatmap
       const pageMap = new Map<string, { views: number; tools: number; sessions: Set<string>; }>();
@@ -133,26 +135,42 @@ const VisitorEngagementPanel = () => {
           }
         });
 
-        const hasAnyEmail = leads.length > 0;
-        const hasAnyPhone = leads.some(l => l.phone);
-        const hasAnyName = leads.some(l => l.full_name);
-        const hasAnyCompanyInfo = leads.some(l => l.company_employees);
+        // Build a map of session_id to lead data from form submissions
+        const sessionLeadData: Record<string, { email: string | null; phone: string | null; fullName: string | null; companyEmployees: string | null }> = {};
+        
+        formSubmissions.forEach(fs => {
+          if (fs.session_id && fs.form_data) {
+            const data = fs.form_data as any;
+            if (!sessionLeadData[fs.session_id]) {
+              sessionLeadData[fs.session_id] = { email: null, phone: null, fullName: null, companyEmployees: null };
+            }
+            // Merge data from form submissions
+            if (data.email) sessionLeadData[fs.session_id].email = data.email;
+            if (data.phone) sessionLeadData[fs.session_id].phone = data.phone;
+            if (data.full_name || data.name) sessionLeadData[fs.session_id].fullName = data.full_name || data.name;
+            if (data.company_employees) sessionLeadData[fs.session_id].companyEmployees = data.company_employees;
+          }
+        });
 
-        const enrichedSessions: ActiveSession[] = sessions.map(session => ({
-          session_id: session.session_id,
-          started_at: session.started_at,
-          last_activity_at: session.last_activity_at,
-          first_page: session.first_page,
-          referrer: session.referrer,
-          user_agent: session.user_agent,
-          pageViewCount: pageViewCounts[session.session_id] || 0,
-          toolsUsedCount: toolCounts[session.session_id] || 0,
-          hasEmail: hasAnyEmail,
-          hasPhone: hasAnyPhone,
-          hasName: hasAnyName,
-          hasCompanyInfo: hasAnyCompanyInfo,
-          recentPages: (recentPagesMap[session.session_id] || []).slice(-3),
-        }));
+        const enrichedSessions: ActiveSession[] = sessions.map(session => {
+          const leadData = sessionLeadData[session.session_id] || { email: null, phone: null, fullName: null, companyEmployees: null };
+          
+          return {
+            session_id: session.session_id,
+            started_at: session.started_at,
+            last_activity_at: session.last_activity_at,
+            first_page: session.first_page,
+            referrer: session.referrer,
+            user_agent: session.user_agent,
+            pageViewCount: pageViewCounts[session.session_id] || 0,
+            toolsUsedCount: toolCounts[session.session_id] || 0,
+            email: leadData.email,
+            phone: leadData.phone,
+            fullName: leadData.fullName,
+            companyEmployees: leadData.companyEmployees,
+            recentPages: (recentPagesMap[session.session_id] || []).slice(-3),
+          };
+        });
 
         setActiveSessions(enrichedSessions);
       } else {
@@ -441,24 +459,38 @@ const VisitorEngagementPanel = () => {
                     </div>
                   )}
 
-                  {/* Data indicators */}
-                  <div className="flex items-center gap-2 pt-3 border-t border-border/30 relative z-10">
-                    <span className="text-[10px] text-muted-foreground font-medium">Data collected:</span>
-                    <div className="flex gap-1.5 ml-auto">
-                      <div className={`p-1.5 rounded-lg transition-all ${session.hasEmail ? 'bg-blue-500/20 border border-blue-500/30 shadow-sm shadow-blue-500/20' : 'bg-muted/20 border border-transparent'}`}>
-                        <Mail className={`w-3.5 h-3.5 ${session.hasEmail ? 'text-blue-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1.5 rounded-lg transition-all ${session.hasPhone ? 'bg-amber-500/20 border border-amber-500/30 shadow-sm shadow-amber-500/20' : 'bg-muted/20 border border-transparent'}`}>
-                        <Phone className={`w-3.5 h-3.5 ${session.hasPhone ? 'text-amber-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1.5 rounded-lg transition-all ${session.hasName ? 'bg-orange-500/20 border border-orange-500/30 shadow-sm shadow-orange-500/20' : 'bg-muted/20 border border-transparent'}`}>
-                        <User className={`w-3.5 h-3.5 ${session.hasName ? 'text-orange-400' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div className={`p-1.5 rounded-lg transition-all ${session.hasCompanyInfo ? 'bg-green-500/20 border border-green-500/30 shadow-sm shadow-green-500/20' : 'bg-muted/20 border border-transparent'}`}>
-                        <Building className={`w-3.5 h-3.5 ${session.hasCompanyInfo ? 'text-green-400' : 'text-muted-foreground/30'}`} />
+                  {/* Data indicators - only show if we have actual data */}
+                  {(session.email || session.phone || session.fullName || session.companyEmployees) && (
+                    <div className="flex items-center gap-2 pt-3 border-t border-border/30 relative z-10">
+                      <span className="text-[10px] text-muted-foreground font-medium">Captured:</span>
+                      <div className="flex gap-1.5 ml-auto flex-wrap">
+                        {session.email && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/20 border border-blue-500/30">
+                            <Mail className="w-3 h-3 text-blue-400" />
+                            <span className="text-[10px] text-blue-400 font-medium truncate max-w-[100px]">{session.email}</span>
+                          </div>
+                        )}
+                        {session.phone && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/20 border border-amber-500/30">
+                            <Phone className="w-3 h-3 text-amber-400" />
+                            <span className="text-[10px] text-amber-400 font-medium">{session.phone}</span>
+                          </div>
+                        )}
+                        {session.fullName && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/20 border border-orange-500/30">
+                            <User className="w-3 h-3 text-orange-400" />
+                            <span className="text-[10px] text-orange-400 font-medium">{session.fullName}</span>
+                          </div>
+                        )}
+                        {session.companyEmployees && (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
+                            <Building className="w-3 h-3 text-green-400" />
+                            <span className="text-[10px] text-green-400 font-medium">{session.companyEmployees}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
           })}
