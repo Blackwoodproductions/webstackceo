@@ -20,8 +20,9 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useTheme } from 'next-themes';
@@ -696,6 +697,12 @@ const MarketingDashboard = () => {
                 user.email
               }
             </span>
+            <Link to="/analytics">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline">Search Console</span>
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="sm"
