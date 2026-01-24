@@ -510,29 +510,6 @@ const MarketingDashboard = () => {
             </a>
           </div>
           <div className="flex items-center gap-4">
-            {/* Welcome message for leadership */}
-            {user.email && (
-              <>
-                {user.email.toLowerCase().includes('que') && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30">
-                    <span className="text-sm font-medium text-amber-400">👋 Welcome, CEO Que</span>
-                  </div>
-                )}
-                {user.email.toLowerCase().includes('rob') && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30">
-                    <span className="text-sm font-medium text-blue-400">👋 Welcome, CTO Rob</span>
-                  </div>
-                )}
-                {user.email.toLowerCase().includes('eric') && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/20 border border-green-500/30">
-                    <span className="text-sm font-medium text-green-400">👋 Welcome, COO Eric</span>
-                  </div>
-                )}
-              </>
-            )}
-            
-            <div className="h-6 w-px bg-border" />
-            
             <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button
               variant="ghost"
@@ -551,16 +528,14 @@ const MarketingDashboard = () => {
 
       {/* Date Range Selector Bar */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Range & Pages stacked with aligned icons */}
+        <div className="container mx-auto px-6 py-2 flex items-center gap-4">
+          {/* Left: Time Range Selector */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <div className="flex gap-1">
-              {/* Icons column */}
               <div className="flex flex-col gap-1 items-center w-5">
                 <CalendarIcon className="w-4 h-4 text-primary mt-1.5" />
                 {pageFilter && <Filter className="w-4 h-4 text-purple-400 mt-1.5" />}
               </div>
-              {/* Selectors column */}
               <div className="flex flex-col gap-1">
                 <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
                   <SelectTrigger className="w-[130px] h-7 text-sm bg-background border-border">
@@ -610,7 +585,9 @@ const MarketingDashboard = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          
+          {/* Center: Stats Badges */}
+          <div className="flex-1 flex items-center justify-center gap-2 flex-wrap">
             {flowSummary && (
               <>
                 <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
@@ -646,6 +623,34 @@ const MarketingDashboard = () => {
                 )}
               </>
             )}
+          </div>
+          
+          {/* Right: Chat Controls */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="chat-online"
+                checked={chatOnline}
+                onCheckedChange={setChatOnline}
+                className="data-[state=checked]:bg-green-500"
+              />
+              <Label htmlFor="chat-online" className="text-xs text-muted-foreground">
+                {chatOnline ? 'Online' : 'Offline'}
+              </Label>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChatPanelOpen(!chatPanelOpen)}
+              className="relative"
+            >
+              <MessageCircle className="w-5 h-5" />
+              {sidebarChats.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                  {sidebarChats.length}
+                </span>
+              )}
+            </Button>
           </div>
         </div>
       </div>
@@ -1193,21 +1198,6 @@ const MarketingDashboard = () => {
                 </div>
                 {chatPanelOpen && (
                   <span className="text-sm font-medium text-foreground">Live Chats</span>
-                )}
-              </div>
-              
-              {/* Online/Offline Toggle */}
-              <div className={`flex items-center gap-2 px-3 py-2 ${chatPanelOpen ? '' : 'justify-center'}`}>
-                <Switch 
-                  id="chat-toggle"
-                  checked={chatOnline}
-                  onCheckedChange={setChatOnline}
-                  className="data-[state=checked]:bg-green-500"
-                />
-                {chatPanelOpen && (
-                  <Label htmlFor="chat-toggle" className={`text-xs font-medium cursor-pointer ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`}>
-                    {chatOnline ? 'Online' : 'Offline'}
-                  </Label>
                 )}
               </div>
             </div>
