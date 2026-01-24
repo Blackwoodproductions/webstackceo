@@ -124,9 +124,20 @@ interface MetricResult {
   overallScore: number;
 }
 
+// Generate a simple math captcha
+const generateCaptcha = () => {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { question: `${a} + ${b}`, answer: a + b };
+};
+
 const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps) => {
   const [domain, setDomain] = useState("");
   const [email, setEmail] = useState("");
+  const [honeypot, setHoneypot] = useState(""); // Hidden field for bots
+  const [captcha, setCaptcha] = useState(generateCaptcha);
+  const [captchaInput, setCaptchaInput] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -251,6 +262,13 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEmailError("");
+    setCaptchaError("");
+    
+    // Honeypot check - if filled, it's a bot
+    if (honeypot) {
+      console.log("Bot detected via honeypot");
+      return;
+    }
     
     if (!email.trim()) {
       setEmailError("Please enter your email");
@@ -259,6 +277,19 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     
     if (!validateEmail(email.trim())) {
       setEmailError("Please enter a valid email address");
+      return;
+    }
+    
+    // Captcha validation
+    if (!captchaInput.trim()) {
+      setCaptchaError("Please solve the math problem");
+      return;
+    }
+    
+    if (parseInt(captchaInput.trim(), 10) !== captcha.answer) {
+      setCaptchaError("Incorrect answer, please try again");
+      setCaptcha(generateCaptcha()); // Generate new captcha
+      setCaptchaInput("");
       return;
     }
 
@@ -309,6 +340,10 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
     setShowEmailCapture(false);
     setEmail("");
     setEmailError("");
+    setCaptcha(generateCaptcha()); // Reset captcha
+    setCaptchaInput("");
+    setCaptchaError("");
+    setHoneypot("");
   };
 
   const getStatusIcon = (status: "pass" | "warning" | "fail") => {
@@ -388,6 +423,18 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
             </p>
 
             <form onSubmit={handleEmailSubmit} className="space-y-3">
+              {/* Honeypot - hidden from humans, visible to bots */}
+              <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">
+                <Input
+                  type="text"
+                  name="website_url"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
+              
               <div>
                 <Input
                   type="email"
@@ -401,6 +448,27 @@ const QuickMetricCheck = ({ metricType, className = "" }: QuickMetricCheckProps)
                 />
                 {emailError && (
                   <p className="text-xs text-red-500 mt-1">{emailError}</p>
+                )}
+              </div>
+              
+              {/* Math CAPTCHA */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1.5 block">
+                  Quick verification: What is <span className="font-semibold text-foreground">{captcha.question}</span>?
+                </label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Your answer"
+                  value={captchaInput}
+                  onChange={(e) => {
+                    setCaptchaInput(e.target.value);
+                    setCaptchaError("");
+                  }}
+                  className={captchaError ? "border-red-500" : ""}
+                />
+                {captchaError && (
+                  <p className="text-xs text-red-500 mt-1">{captchaError}</p>
                 )}
               </div>
               
