@@ -959,7 +959,10 @@ const MarketingDashboard = () => {
                 for (const site of gscSites) {
                   const cleanLabel = normalizeDomain(site.siteUrl);
                   const arr = gscSitesByLabel.get(cleanLabel) || [];
-                  arr.push(site);
+                  // De-dupe by exact siteUrl to avoid duplicate SelectItem values (Radix Select can misbehave with duplicates)
+                  if (!arr.some((s) => s.siteUrl === site.siteUrl)) {
+                    arr.push(site);
+                  }
                   gscSitesByLabel.set(cleanLabel, arr);
                 }
               }
@@ -1001,12 +1004,18 @@ const MarketingDashboard = () => {
                 }
               }
 
-              const allDomains: DomainEntry[] = gscAuthenticated
+              const allDomainsRaw: DomainEntry[] = gscAuthenticated
                 ? [...viOnlyDomains, ...bothDomains, ...gscOnlyDomains]
                 : [...viOnlyDomains, ...bothDomains.map(d => ({ ...d, source: 'tracking' as const }))];
 
+              // Guarantee unique SelectItem values.
+              const allDomains = Array.from(
+                new Map(allDomainsRaw.map((d) => [d.value, d])).values()
+              );
+
               // For the header selector, prefer the exact GSC property URL when set.
-              const selectValue = selectedGscSiteUrl || selectedTrackedDomain || '';
+              const rawSelectValue = selectedGscSiteUrl || selectedTrackedDomain || '';
+              const selectValue = allDomains.some((d) => d.value === rawSelectValue) ? rawSelectValue : '';
 
               const displayLabel = selectValue ? normalizeDomain(selectValue) : '';
               
@@ -1047,6 +1056,8 @@ const MarketingDashboard = () => {
                       }}
                     >
                       <SelectTrigger className="w-[260px] h-7 text-sm bg-background border-border">
+                        {/* Keep the Radix Value mounted to avoid edge-case selection issues */}
+                        <SelectValue className="sr-only" />
                         <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-cyan-500" />
                         <span className="truncate max-w-[200px]">
                           {displayLabel
