@@ -4,6 +4,7 @@ import {
   Users, CheckCircle2, ArrowRight, ArrowLeft, 
   Eye, Target, Building2, TrendingUp, AlertTriangle, Zap
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const VisitorIntelligenceGuide = () => {
                 Transform anonymous website traffic into actionable insights. Learn how to identify, understand, and convert your website visitors.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 

@@ -4,6 +4,7 @@ import {
   Activity, CheckCircle2, ArrowRight, ArrowLeft, 
   Bell, Clock, Server, TrendingUp, AlertTriangle, Zap, Shield
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const UptimeMonitoringGuide = () => {
                 When your website goes down, you lose customers, revenue, and search rankings. Learn how to monitor uptime and respond to incidents fast.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="security" />
           </div>
         </section>
 

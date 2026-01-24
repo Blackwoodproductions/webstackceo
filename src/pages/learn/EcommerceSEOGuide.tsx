@@ -3,6 +3,7 @@ import {
   ShoppingCart, CheckCircle2, ArrowRight, ArrowLeft, 
   Target, TrendingUp, Tag, Search, Package, CreditCard, Star
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const EcommerceSEOGuide = () => {
                 E-commerce SEO requires unique strategies for product pages, categories, and technical optimization. Learn how to outrank competitors and drive organic sales.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="technical_audit" />
           </div>
         </section>
 

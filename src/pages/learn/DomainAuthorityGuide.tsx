@@ -3,6 +3,7 @@ import {
   TrendingUp, CheckCircle2, ArrowRight, ArrowLeft, 
   Award, Link2, Shield, AlertTriangle, BarChart3, Target
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const DomainAuthorityGuide = () => {
                 Domain Authority is one of the most important metrics in SEO. Learn what it is, how it works, and exactly how to improve it.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="domain_rating" />
           </div>
         </section>
 

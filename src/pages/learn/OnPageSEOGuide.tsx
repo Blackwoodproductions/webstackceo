@@ -3,6 +3,7 @@ import {
   Search, CheckCircle2, ArrowRight, ArrowLeft, BookOpen,
   FileText, Code, Image, Link2, Gauge, AlertTriangle
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -72,6 +73,13 @@ const OnPageSEOGuide = () => {
                 On-page SEO is the foundation of your search visibility. Learn how to optimize every element of your pages to rank higher and drive more organic traffic.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="technical_audit" />
           </div>
         </section>
 

@@ -4,6 +4,7 @@ import {
   UserCheck, CheckCircle2, ArrowRight, ArrowLeft, 
   Eye, Target, Building2, AlertTriangle, Zap, Shield
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const TrafficDeanonymizationGuide = () => {
                 Turn anonymous website traffic into actionable sales intelligence. Learn how to identify the companies visiting your site.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 

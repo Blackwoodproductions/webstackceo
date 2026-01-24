@@ -4,6 +4,7 @@ import {
   Code, CheckCircle2, ArrowRight, ArrowLeft, 
   Server, Zap, Shield, Search, AlertTriangle, Settings
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -73,6 +74,13 @@ const TechnicalSEOGuide = () => {
                 Technical SEO ensures search engines can crawl, index, and render your website properly. Without it, even the best content won't rank.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="technical_audit" />
           </div>
         </section>
 

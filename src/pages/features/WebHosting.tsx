@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 
 const benefits = [
   { icon: Zap, title: "Lightning Performance", description: "NVMe SSD storage and optimized servers for sub-second load times." },
@@ -78,6 +79,12 @@ const WebHosting = () => {
           </div>
         </section>
 
+        {/* Quick Metric Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="page_speed" />
+          </div>
+        </section>
 
         {/* What's Included */}
         <section className="py-24">

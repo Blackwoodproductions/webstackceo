@@ -3,6 +3,7 @@ import {
   Smartphone, CheckCircle2, ArrowRight, ArrowLeft, 
   Zap, Target, TrendingUp, Search, AlertTriangle, Eye, Hand
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -69,6 +70,13 @@ const MobileSEOGuide = () => {
                 With mobile-first indexing, Google primarily uses your mobile site for ranking. Learn how to optimize for the 60%+ of searches that happen on mobile devices.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="page_speed" />
           </div>
         </section>
 

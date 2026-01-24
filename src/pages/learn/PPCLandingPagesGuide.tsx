@@ -3,6 +3,7 @@ import {
   MousePointerClick, CheckCircle2, ArrowRight, ArrowLeft,
   Target, Zap, DollarSign
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -72,6 +73,13 @@ const PPCLandingPagesGuide = () => {
                 Your landing page determines whether paid traffic becomes paying customers. Master the art of high-converting landing pages.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="page_speed" />
           </div>
         </section>
 

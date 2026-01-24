@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 
 const benefits = [
   { icon: Building2, title: "Company Profiles", description: "See detailed company information for every identified visitor." },
@@ -67,6 +68,13 @@ const VisitorIntelligence = () => {
                 </Button>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 

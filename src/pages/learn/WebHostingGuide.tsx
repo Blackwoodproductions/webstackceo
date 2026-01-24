@@ -4,6 +4,7 @@ import {
   Server, CheckCircle2, ArrowRight, ArrowLeft,
   Zap, Shield, Globe, AlertTriangle, Clock
 } from "lucide-react";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -76,6 +77,13 @@ const WebHostingGuide = () => {
                 Your hosting provider directly impacts page speed, uptime, and security—all critical SEO factors.
               </p>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Metric Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="page_speed" />
           </div>
         </section>
 
