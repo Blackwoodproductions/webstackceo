@@ -200,6 +200,13 @@ const MarketingDashboard = () => {
     });
   }, [gscAuthenticated, gscSites, selectedGscDomain, selectedTrackedDomain]);
 
+  // Find the matching GSC site URL for the currently selected VI domain
+  const matchingGscSiteUrl = useMemo(() => {
+    if (!gscSites.length || !selectedTrackedDomain) return undefined;
+    const match = gscSites.find(s => normalizeDomain(s.siteUrl) === selectedTrackedDomain);
+    return match?.siteUrl;
+  }, [gscSites, selectedTrackedDomain]);
+
   // Persist chat online status
   useEffect(() => {
     localStorage.setItem('chat_operator_online', String(chatOnline));
@@ -1756,6 +1763,7 @@ f.parentNode.insertBefore(j,f);
         {/* Google Search Console Integration - uses its own domain selector */}
         <div className="mb-8">
           <GSCDashboardPanel 
+            externalSelectedSite={matchingGscSiteUrl}
             externalDateRange={shouldIntegrateGscDate ? integratedGscDateRange : undefined}
             hideDateSelector={shouldIntegrateGscDate}
             onSiteChange={(site) => {
