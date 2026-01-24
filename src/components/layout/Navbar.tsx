@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { 
@@ -40,6 +40,8 @@ const seoTools = [
   { icon: Search, name: "Schema Checker", href: "/tools#schema", description: "Verify structured data" },
   { icon: Shield, name: "Security Scanner", href: "/tools#security", description: "Check SSL & headers" },
 ];
+
+const MotionLink = motion(Link);
 
 const Navbar = () => {
   const location = useLocation();
@@ -357,45 +359,71 @@ const Navbar = () => {
                     
                     {/* Tools Grid - 2 columns */}
                     <div className="grid grid-cols-2 gap-2">
-                      {seoTools.map((tool, index) => (
-                        <motion.a
-                          key={tool.name}
-                          href={tool.href}
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ 
-                            duration: 0.2, 
-                            delay: 0.05 + (index * 0.03),
-                            ease: "easeOut"
-                          }}
-                          className={`flex items-start gap-3 p-3 rounded-xl transition-all duration-300 group ${
-                            'highlight' in tool && tool.highlight 
-                              ? 'bg-gradient-to-r from-primary/10 to-violet-500/10 hover:from-primary/20 hover:to-violet-500/20 ring-1 ring-primary/20' 
-                              : 'hover:bg-secondary'
-                          }`}
-                        >
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-300 flex-shrink-0 ${
-                            'highlight' in tool && tool.highlight
-                              ? 'bg-gradient-to-br from-primary to-violet-500 group-hover:shadow-[var(--hover-accent-glow)]'
-                              : 'bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)]'
-                          }`}>
-                            <tool.icon className={`w-4 h-4 transition-colors duration-300 ${
-                              'highlight' in tool && tool.highlight ? 'text-white' : 'text-primary group-hover:text-hover-accent'
-                            }`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className={`text-sm font-medium group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300 block ${
-                              'highlight' in tool && tool.highlight ? 'text-primary group-hover:text-hover-accent' : 'text-foreground group-hover:text-hover-accent'
+                      {seoTools.map((tool, index) => {
+                        const transition = {
+                          duration: 0.2,
+                          delay: 0.05 + index * 0.03,
+                        };
+
+                        const className = `flex items-start gap-3 p-3 rounded-xl transition-all duration-300 group ${
+                          'highlight' in tool && tool.highlight
+                            ? 'bg-gradient-to-r from-primary/10 to-violet-500/10 hover:from-primary/20 hover:to-violet-500/20 ring-1 ring-primary/20'
+                            : 'hover:bg-secondary'
+                        }`;
+
+                        const content = (
+                          <>
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center group-hover:scale-110 transition-all duration-300 flex-shrink-0 ${
+                              'highlight' in tool && tool.highlight
+                                ? 'bg-gradient-to-br from-primary to-violet-500 group-hover:shadow-[var(--hover-accent-glow)]'
+                                : 'bg-gradient-to-br from-cyan-400/20 to-violet-500/20 group-hover:from-hover-accent/20 group-hover:to-hover-accent/30 group-hover:shadow-[var(--hover-accent-glow)]'
                             }`}>
-                              {tool.name}
-                              {'highlight' in tool && tool.highlight && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">NEW</span>}
-                            </span>
-                            <span className="text-[11px] text-muted-foreground block truncate">
-                              {tool.description}
-                            </span>
-                          </div>
-                        </motion.a>
-                      ))}
+                              <tool.icon className={`w-4 h-4 transition-colors duration-300 ${
+                                'highlight' in tool && tool.highlight ? 'text-white' : 'text-primary group-hover:text-hover-accent'
+                              }`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-sm font-medium group-hover:drop-shadow-[var(--hover-accent-glow)] transition-all duration-300 block ${
+                                'highlight' in tool && tool.highlight ? 'text-primary group-hover:text-hover-accent' : 'text-foreground group-hover:text-hover-accent'
+                              }`}>
+                                {tool.name}
+                                {'highlight' in tool && tool.highlight && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">NEW</span>}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground block truncate">
+                                {tool.description}
+                              </span>
+                            </div>
+                          </>
+                        );
+
+                        if (tool.href === "/analytics") {
+                          return (
+                            <MotionLink
+                              key={tool.name}
+                              to={tool.href}
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={transition}
+                              className={className}
+                            >
+                              {content}
+                            </MotionLink>
+                          );
+                        }
+
+                        return (
+                          <motion.a
+                            key={tool.name}
+                            href={tool.href}
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={transition}
+                            className={className}
+                          >
+                            {content}
+                          </motion.a>
+                        );
+                      })}
                     </div>
                     
                     {/* Full Audit CTA */}
