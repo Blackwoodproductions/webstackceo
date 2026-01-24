@@ -298,7 +298,7 @@ const VisitorEngagementPanel = () => {
         </div>
       </div>
 
-      {/* Page Heatmap Strip */}
+      {/* Page Heatmap Strip - Full Width */}
       <div className="mb-5 p-3 rounded-xl bg-secondary/30 border border-border/50">
         <div className="flex items-center gap-2 mb-3">
           <Flame className="w-4 h-4 text-orange-500" />
@@ -308,31 +308,31 @@ const VisitorEngagementPanel = () => {
             <span className="w-2 h-2 rounded bg-gradient-to-r from-red-500 to-orange-500 ml-1" />Hot
           </div>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pageData.length || 1, 10)}, minmax(0, 1fr))` }}>
           {pageData.map((page, i) => (
             <div
               key={page.page_path}
-              className="flex-shrink-0 relative group"
+              className="relative group"
             >
-              <div className={`px-3 py-2 rounded-lg bg-gradient-to-br ${getHeatColor(page.engagementScore)} bg-opacity-20 border border-white/10 hover:scale-105 transition-transform cursor-pointer`}>
-                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-background border border-border flex items-center justify-center text-[9px] font-bold">
+              <div className={`px-3 py-3 rounded-lg bg-gradient-to-br ${getHeatColor(page.engagementScore)} bg-opacity-20 border border-white/10 hover:scale-[1.02] transition-transform cursor-pointer h-full`}>
+                <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold">
                   {i + 1}
                 </div>
-                <p className="text-xs font-medium text-foreground whitespace-nowrap">{formatPageName(page.page_path)}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                    <Eye className="w-2.5 h-2.5" />{page.views}
+                <p className="text-sm font-medium text-foreground truncate">{formatPageName(page.page_path)}</p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Eye className="w-3 h-3" />{page.views}
                   </span>
-                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                    <MousePointer className="w-2.5 h-2.5" />{page.toolInteractions}
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MousePointer className="w-3 h-3" />{page.toolInteractions}
                   </span>
                 </div>
               </div>
-              <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-gradient-to-r ${getHeatColor(page.engagementScore)}`} />
+              <div className={`absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r ${getHeatColor(page.engagementScore)}`} />
             </div>
           ))}
           {pageData.length === 0 && (
-            <span className="text-xs text-muted-foreground py-2">No page data yet</span>
+            <span className="text-xs text-muted-foreground py-2 col-span-full">No page data yet</span>
           )}
         </div>
       </div>

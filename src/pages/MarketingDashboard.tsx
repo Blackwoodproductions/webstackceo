@@ -425,6 +425,27 @@ const MarketingDashboard = () => {
             </a>
           </div>
           <div className="flex items-center gap-4">
+            {/* Welcome message for leadership */}
+            {user.email && (
+              <>
+                {user.email.toLowerCase().includes('que') && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30">
+                    <span className="text-sm font-medium text-amber-400">👋 Welcome, CEO Que</span>
+                  </div>
+                )}
+                {user.email.toLowerCase().includes('rob') && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30">
+                    <span className="text-sm font-medium text-blue-400">👋 Welcome, CTO Rob</span>
+                  </div>
+                )}
+                {user.email.toLowerCase().includes('eric') && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/20 border border-green-500/30">
+                    <span className="text-sm font-medium text-green-400">👋 Welcome, COO Eric</span>
+                  </div>
+                )}
+              </>
+            )}
+            
             {/* Chat Online/Offline Toggle */}
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${chatOnline ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted border border-border'}`}>
               <MessageCircle className={`w-4 h-4 ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`} />
