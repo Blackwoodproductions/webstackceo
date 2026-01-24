@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Search, TrendingUp, TrendingDown, MousePointer, Eye, Target,
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
   RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
-  LogOut, Settings, ChevronDown, ExternalLink, Key
+  LogOut, Settings, ExternalLink, Key, Download, Filter,
+  Smartphone, Monitor, Tablet, Image, Video, Newspaper, Sparkles,
+  ChevronDown, ChevronUp, ArrowRight, Zap, TrendingUpIcon
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -18,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -42,9 +45,14 @@ import {
   Pie,
   Cell,
   Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  CartesianGrid,
+  ComposedChart,
 } from "recharts";
 
-// Google OAuth Config - check localStorage first, then env var
+// Google OAuth Config
 const getGoogleClientId = () => localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
@@ -94,6 +102,17 @@ interface SitemapInfo {
   errors?: number;
 }
 
+type SearchType = 'web' | 'image' | 'video' | 'news' | 'discover';
+type DateRangeType = "7" | "28" | "90" | "180" | "365" | "all";
+
+const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
+  web: { label: "Web Search", icon: <Search className="w-4 h-4" />, color: "hsl(var(--primary))" },
+  image: { label: "Image Search", icon: <Image className="w-4 h-4" />, color: "#10b981" },
+  video: { label: "Video Search", icon: <Video className="w-4 h-4" />, color: "#ef4444" },
+  news: { label: "News", icon: <Newspaper className="w-4 h-4" />, color: "#f59e0b" },
+  discover: { label: "Discover", icon: <Sparkles className="w-4 h-4" />, color: "#8b5cf6" },
+};
+
 const Analytics = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -106,17 +125,27 @@ const Analytics = () => {
   // Data state
   const [sites, setSites] = useState<SiteInfo[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
-  const [dateRange, setDateRange] = useState<"7" | "28" | "90" | "180" | "365" | "all">("28");
+  const [dateRange, setDateRange] = useState<DateRangeType>("28");
+  const [searchType, setSearchType] = useState<SearchType>("web");
+  const [searchFilter, setSearchFilter] = useState("");
   
-  // Performance data
+  // Performance data - all dimensions
   const [queryData, setQueryData] = useState<PerformanceRow[]>([]);
   const [pageData, setPageData] = useState<PerformanceRow[]>([]);
   const [countryData, setCountryData] = useState<PerformanceRow[]>([]);
   const [deviceData, setDeviceData] = useState<PerformanceRow[]>([]);
   const [dateData, setDateData] = useState<PerformanceRow[]>([]);
+  const [searchAppearanceData, setSearchAppearanceData] = useState<PerformanceRow[]>([]);
   const [sitemaps, setSitemaps] = useState<SitemapInfo[]>([]);
   
+  // Multi-type data for comparison
+  const [webData, setWebData] = useState<PerformanceRow[]>([]);
+  const [imageData, setImageData] = useState<PerformanceRow[]>([]);
+  const [videoData, setVideoData] = useState<PerformanceRow[]>([]);
+  const [discoverData, setDiscoverData] = useState<PerformanceRow[]>([]);
+  
   const [isFetching, setIsFetching] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   
   // Client ID configuration
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
@@ -137,7 +166,6 @@ const Analytics = () => {
     const oauthError = url.searchParams.get("error");
     const code = url.searchParams.get("code");
 
-    // New (recommended) OAuth flow: authorization code + PKCE
     if (oauthError) {
       toast({
         title: "Google connection failed",
@@ -161,18 +189,11 @@ const Analytics = () => {
             return;
           }
 
-          // Use Edge Function to exchange code for tokens (keeps client_secret secure)
           const tokenRes = await supabase.functions.invoke("google-oauth-token", {
-            body: {
-              code,
-              codeVerifier: verifier,
-              redirectUri,
-            },
+            body: { code, codeVerifier: verifier, redirectUri },
           });
 
-          if (tokenRes.error) {
-            throw new Error(tokenRes.error.message || "Token exchange failed");
-          }
+          if (tokenRes.error) throw new Error(tokenRes.error.message || "Token exchange failed");
 
           const tokenJson = tokenRes.data;
           if (!tokenJson?.access_token) {
@@ -186,22 +207,16 @@ const Analytics = () => {
           sessionStorage.removeItem("gsc_code_verifier");
           setAccessToken(tokenJson.access_token);
           setIsAuthenticated(true);
-
-          // Clean URL
           window.history.replaceState({}, document.title, window.location.pathname);
         } catch (e: unknown) {
           console.error("OAuth token exchange error:", e);
           const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
-          toast({
-            title: "Google connection failed",
-            description: errorMessage,
-            variant: "destructive",
-          });
+          toast({ title: "Google connection failed", description: errorMessage, variant: "destructive" });
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       })();
     } else {
-      // Legacy fallback (implicit flow): access_token in URL hash
+      // Legacy fallback (implicit flow)
       const hash = window.location.hash;
       if (hash) {
         const params = new URLSearchParams(hash.substring(1));
@@ -214,8 +229,6 @@ const Analytics = () => {
           sessionStorage.setItem("gsc_token_expiry", expiry.toString());
           setAccessToken(token);
           setIsAuthenticated(true);
-
-          // Clean URL
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
@@ -236,7 +249,7 @@ const Analytics = () => {
     if (selectedSite && accessToken) {
       fetchAllData();
     }
-  }, [selectedSite, dateRange, accessToken]);
+  }, [selectedSite, dateRange, searchType, accessToken]);
 
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
@@ -266,25 +279,14 @@ const Analytics = () => {
 
   const handleSaveClientId = () => {
     if (!clientIdInput.trim()) {
-      toast({
-        title: "Client ID Required",
-        description: "Please enter your Google OAuth Client ID.",
-        variant: "destructive",
-      });
+      toast({ title: "Client ID Required", description: "Please enter your Google OAuth Client ID.", variant: "destructive" });
       return;
     }
     
     localStorage.setItem("gsc_client_id", clientIdInput.trim());
     setShowClientIdDialog(false);
-    toast({
-      title: "Client ID Saved",
-      description: "Now connecting to Google Search Console...",
-    });
-    
-    // Trigger login after saving
-    setTimeout(() => {
-      void handleGoogleLogin();
-    }, 500);
+    toast({ title: "Client ID Saved", description: "Now connecting to Google Search Console..." });
+    setTimeout(() => { void handleGoogleLogin(); }, 500);
   };
 
   const handleLogout = () => {
@@ -294,21 +296,27 @@ const Analytics = () => {
     setIsAuthenticated(false);
     setSites([]);
     setSelectedSite("");
+    resetData();
+  };
+
+  const resetData = () => {
     setQueryData([]);
     setPageData([]);
     setCountryData([]);
     setDeviceData([]);
     setDateData([]);
+    setSearchAppearanceData([]);
     setSitemaps([]);
+    setWebData([]);
+    setImageData([]);
+    setVideoData([]);
+    setDiscoverData([]);
   };
 
   const handleClearClientId = () => {
     localStorage.removeItem("gsc_client_id");
     setClientIdInput("");
-    toast({
-      title: "Credentials Cleared",
-      description: "You can now enter a new Google OAuth Client ID.",
-    });
+    toast({ title: "Credentials Cleared", description: "You can now enter a new Google OAuth Client ID." });
     setShowClientIdDialog(true);
   };
 
@@ -328,51 +336,21 @@ const Analytics = () => {
       }
     } catch (error: any) {
       console.error("Error fetching sites:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch your sites. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to fetch your sites. Please try again.", variant: "destructive" });
     }
   };
 
-  // Get days for date range - handle "all" as 16 months (max GSC data)
   const getDaysFromRange = (range: string): number => {
-    if (range === "all") return 480; // ~16 months - max available GSC data
+    if (range === "all") return 480;
     return parseInt(range);
   };
 
-  const fetchAllData = async () => {
-    if (!selectedSite || !accessToken) return;
-    
-    setIsFetching(true);
-    const days = getDaysFromRange(dateRange);
-    
-    try {
-      const [queries, pages, countries, devices, dates, sitemapsRes] = await Promise.all([
-        fetchPerformance(["query"], 25),
-        fetchPerformance(["page"], 25),
-        fetchPerformance(["country"], 10),
-        fetchPerformance(["device"], 5),
-        fetchPerformance(["date"], days), // Fetch all dates for the range
-        fetchSitemaps(),
-      ]);
-
-      setQueryData(queries?.rows || []);
-      setPageData(pages?.rows || []);
-      setCountryData(countries?.rows || []);
-      setDeviceData(devices?.rows || []);
-      setDateData(dates?.rows || []);
-      setSitemaps(sitemapsRes?.sitemap || []);
-      
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const fetchPerformance = async (dimensions: string[], rowLimit: number) => {
+  const fetchPerformance = useCallback(async (
+    dimensions: string[], 
+    rowLimit: number, 
+    type: SearchType = 'web',
+    startRow: number = 0
+  ) => {
     const days = getDaysFromRange(dateRange);
     const response = await supabase.functions.invoke("search-console", {
       body: {
@@ -383,20 +361,64 @@ const Analytics = () => {
         endDate: getDateNDaysAgo(0),
         dimensions,
         rowLimit,
+        startRow,
+        searchType: type,
       },
+    });
+    return response.data;
+  }, [accessToken, selectedSite, dateRange]);
+
+  const fetchSitemaps = async () => {
+    const response = await supabase.functions.invoke("search-console", {
+      body: { action: "sitemaps", accessToken, siteUrl: selectedSite },
     });
     return response.data;
   };
 
-  const fetchSitemaps = async () => {
-    const response = await supabase.functions.invoke("search-console", {
-      body: {
-        action: "sitemaps",
-        accessToken,
-        siteUrl: selectedSite,
-      },
-    });
-    return response.data;
+  const fetchAllData = async () => {
+    if (!selectedSite || !accessToken) return;
+    
+    setIsFetching(true);
+    const days = getDaysFromRange(dateRange);
+    
+    try {
+      // Fetch all data for current search type with increased limits
+      const [queries, pages, countries, devices, dates, searchAppearance, sitemapsRes] = await Promise.all([
+        fetchPerformance(["query"], 100, searchType),
+        fetchPerformance(["page"], 100, searchType),
+        fetchPerformance(["country"], 50, searchType),
+        fetchPerformance(["device"], 5, searchType),
+        fetchPerformance(["date"], days, searchType),
+        fetchPerformance(["searchAppearance"], 25, searchType),
+        fetchSitemaps(),
+      ]);
+
+      setQueryData(queries?.rows || []);
+      setPageData(pages?.rows || []);
+      setCountryData(countries?.rows || []);
+      setDeviceData(devices?.rows || []);
+      setDateData(dates?.rows || []);
+      setSearchAppearanceData(searchAppearance?.rows || []);
+      setSitemaps(sitemapsRes?.sitemap || []);
+
+      // Fetch comparison data for overview (web, image, discover)
+      if (searchType === 'web') {
+        const [webDates, imageDates, discoverDates] = await Promise.all([
+          fetchPerformance(["date"], Math.min(days, 28), 'web'),
+          fetchPerformance(["date"], Math.min(days, 28), 'image').catch(() => ({ rows: [] })),
+          fetchPerformance(["date"], Math.min(days, 28), 'discover').catch(() => ({ rows: [] })),
+        ]);
+        setWebData(webDates?.rows || []);
+        setImageData(imageDates?.rows || []);
+        setDiscoverData(discoverDates?.rows || []);
+      }
+      
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({ title: "Error", description: "Some data failed to load. Please try again.", variant: "destructive" });
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   // Aggregate metrics
@@ -414,10 +436,25 @@ const Analytics = () => {
       ? dateData.reduce((sum, row) => sum + row.position, 0) / dateData.length
       : 0;
     
+    return { ...totals, ctr: avgCtr, position: avgPosition };
+  }, [dateData]);
+
+  // Calculate week-over-week changes
+  const weeklyChange = useMemo(() => {
+    if (dateData.length < 14) return { clicks: 0, impressions: 0 };
+    
+    const sortedData = [...dateData].sort((a, b) => a.keys[0].localeCompare(b.keys[0]));
+    const lastWeek = sortedData.slice(-7);
+    const prevWeek = sortedData.slice(-14, -7);
+    
+    const lastWeekClicks = lastWeek.reduce((sum, row) => sum + row.clicks, 0);
+    const prevWeekClicks = prevWeek.reduce((sum, row) => sum + row.clicks, 0);
+    const lastWeekImpressions = lastWeek.reduce((sum, row) => sum + row.impressions, 0);
+    const prevWeekImpressions = prevWeek.reduce((sum, row) => sum + row.impressions, 0);
+    
     return {
-      ...totals,
-      ctr: avgCtr,
-      position: avgPosition,
+      clicks: prevWeekClicks > 0 ? ((lastWeekClicks - prevWeekClicks) / prevWeekClicks) * 100 : 0,
+      impressions: prevWeekImpressions > 0 ? ((lastWeekImpressions - prevWeekImpressions) / prevWeekImpressions) * 100 : 0,
     };
   }, [dateData]);
 
@@ -428,20 +465,79 @@ const Analytics = () => {
         date: row.keys[0],
         clicks: row.clicks,
         impressions: row.impressions,
-        ctr: (row.ctr * 100).toFixed(2),
-        position: row.position.toFixed(1),
+        ctr: (row.ctr * 100),
+        position: row.position,
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [dateData]);
 
   const deviceChartData = useMemo(() => {
-    const colors = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
-    return deviceData.map((row, i) => ({
+    const colors: Record<string, string> = {
+      DESKTOP: "hsl(var(--primary))",
+      MOBILE: "#10b981",
+      TABLET: "#f59e0b",
+    };
+    return deviceData.map((row) => ({
       name: row.keys[0],
-      value: row.clicks,
-      color: colors[i % colors.length],
+      clicks: row.clicks,
+      impressions: row.impressions,
+      color: colors[row.keys[0]] || "hsl(var(--secondary))",
     }));
   }, [deviceData]);
+
+  // Comparison chart for multi-type overview
+  const comparisonChartData = useMemo(() => {
+    const webMap = new Map(webData.map(r => [r.keys[0], r.clicks]));
+    const imageMap = new Map(imageData.map(r => [r.keys[0], r.clicks]));
+    const discoverMap = new Map(discoverData.map(r => [r.keys[0], r.clicks]));
+    
+    const allDates = [...new Set([...webData, ...imageData, ...discoverData].map(r => r.keys[0]))].sort();
+    
+    return allDates.map(date => ({
+      date,
+      web: webMap.get(date) || 0,
+      image: imageMap.get(date) || 0,
+      discover: discoverMap.get(date) || 0,
+    }));
+  }, [webData, imageData, discoverData]);
+
+  // Filter data based on search
+  const filteredQueryData = useMemo(() => {
+    if (!searchFilter) return queryData;
+    return queryData.filter(row => row.keys[0].toLowerCase().includes(searchFilter.toLowerCase()));
+  }, [queryData, searchFilter]);
+
+  const filteredPageData = useMemo(() => {
+    if (!searchFilter) return pageData;
+    return pageData.filter(row => row.keys[0].toLowerCase().includes(searchFilter.toLowerCase()));
+  }, [pageData, searchFilter]);
+
+  // Export to CSV
+  const exportToCSV = (data: PerformanceRow[], filename: string, dimension: string) => {
+    const headers = [dimension, "Clicks", "Impressions", "CTR", "Position"];
+    const rows = data.map(row => [
+      row.keys[0],
+      row.clicks.toString(),
+      row.impressions.toString(),
+      (row.ctr * 100).toFixed(2) + "%",
+      row.position.toFixed(1),
+    ]);
+    
+    const csv = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}-${selectedSite.replace(/[^a-z0-9]/gi, "-")}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toString();
+  };
 
   if (isLoading) {
     return (
@@ -480,68 +576,36 @@ const Analytics = () => {
               <Card className="max-w-md mx-auto">
                 <CardContent className="pt-6">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <MousePointer className="w-5 h-5 text-primary" />
+                    {[
+                      { icon: MousePointer, title: "Performance Metrics", desc: "Clicks, impressions, CTR, position" },
+                      { icon: Search, title: "Query Analysis", desc: "Top search queries driving traffic" },
+                      { icon: Image, title: "Multi-Source Data", desc: "Web, Image, Video, Discover & News" },
+                      { icon: FileText, title: "Indexing Status", desc: "Sitemaps and crawl status" },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 text-left">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <item.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">Performance Metrics</p>
-                        <p className="text-sm text-muted-foreground">Clicks, impressions, CTR, position</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Search className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Query Analysis</p>
-                        <p className="text-sm text-muted-foreground">Top search queries driving traffic</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Indexing Status</p>
-                        <p className="text-sm text-muted-foreground">Sitemaps and crawl status</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
-                  <Button
-                    size="lg"
-                    className="w-full mt-6"
-                    onClick={handleGoogleLogin}
-                  >
+                  <Button size="lg" className="w-full mt-6" onClick={handleGoogleLogin}>
                     <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
                     Connect Google Search Console
                   </Button>
                   
                   {localStorage.getItem("gsc_client_id") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full mt-2 text-muted-foreground"
-                      onClick={handleClearClientId}
-                    >
+                    <Button variant="ghost" size="sm" className="w-full mt-2 text-muted-foreground" onClick={handleClearClientId}>
                       <Settings className="w-4 h-4 mr-2" />
                       Reconfigure OAuth Client ID
                     </Button>
@@ -557,7 +621,6 @@ const Analytics = () => {
           </div>
         </main>
 
-        {/* Client ID Configuration Dialog */}
         <Dialog open={showClientIdDialog} onOpenChange={setShowClientIdDialog}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
@@ -595,12 +658,8 @@ const Analytics = () => {
             </div>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowClientIdDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveClientId}>
-                Save & Connect
-              </Button>
+              <Button variant="outline" onClick={() => setShowClientIdDialog(false)}>Cancel</Button>
+              <Button onClick={handleSaveClientId}>Save & Connect</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -621,54 +680,54 @@ const Analytics = () => {
       
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a href="/" className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
                 <span className="text-white font-bold text-xl">W</span>
               </div>
             </a>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-xl font-bold">Search Console Analytics</h1>
               <p className="text-sm text-muted-foreground">Performance & Indexing</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="hidden sm:flex">
               <ExternalLink className="w-4 h-4 mr-2" />
               Back to Site
             </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Disconnect
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Disconnect</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 max-w-7xl relative z-10">
-        {/* Controls */}
-        <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
-          <div className="flex gap-3 items-center">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl relative z-10">
+        {/* Controls Bar */}
+        <div className="flex flex-wrap gap-3 mb-6 items-center justify-between bg-card/50 backdrop-blur rounded-xl p-4 border border-border">
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Site Selector */}
             <Select value={selectedSite} onValueChange={setSelectedSite}>
-              <SelectTrigger className="w-[300px]">
+              <SelectTrigger className="w-[200px] sm:w-[280px]">
+                <Globe className="w-4 h-4 mr-2 shrink-0" />
                 <SelectValue placeholder="Select a site" />
               </SelectTrigger>
               <SelectContent>
                 {sites.map((site) => (
                   <SelectItem key={site.siteUrl} value={site.siteUrl}>
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4" />
-                      {site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '')}
-                    </div>
+                    {site.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '')}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={dateRange} onValueChange={(v) => setDateRange(v as "7" | "28" | "90" | "180" | "365" | "all")}>
-              <SelectTrigger className="w-[180px]">
+            {/* Date Range */}
+            <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
+              <SelectTrigger className="w-[150px] sm:w-[180px]">
                 <Calendar className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -678,7 +737,25 @@ const Analytics = () => {
                 <SelectItem value="90">Last 3 months</SelectItem>
                 <SelectItem value="180">Last 6 months</SelectItem>
                 <SelectItem value="365">Last 12 months</SelectItem>
-                <SelectItem value="all">All available data</SelectItem>
+                <SelectItem value="all">All available</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Search Type */}
+            <Select value={searchType} onValueChange={(v) => setSearchType(v as SearchType)}>
+              <SelectTrigger className="w-[150px] sm:w-[160px]">
+                {SEARCH_TYPE_CONFIG[searchType].icon}
+                <span className="ml-2">{SEARCH_TYPE_CONFIG[searchType].label}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(SEARCH_TYPE_CONFIG).map(([key, config]) => (
+                  <SelectItem key={key} value={key}>
+                    <div className="flex items-center gap-2">
+                      {config.icon}
+                      {config.label}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -690,80 +767,90 @@ const Analytics = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Clicks</p>
-                  <p className="text-3xl font-bold">{totalMetrics.clicks.toLocaleString()}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[
+            { 
+              label: "Total Clicks", 
+              value: formatNumber(totalMetrics.clicks),
+              change: weeklyChange.clicks,
+              icon: MousePointer,
+              color: "primary"
+            },
+            { 
+              label: "Impressions", 
+              value: formatNumber(totalMetrics.impressions),
+              change: weeklyChange.impressions,
+              icon: Eye,
+              color: "cyan-500"
+            },
+            { 
+              label: "Avg. CTR", 
+              value: (totalMetrics.ctr * 100).toFixed(2) + "%",
+              icon: Target,
+              color: "violet-500"
+            },
+            { 
+              label: "Avg. Position", 
+              value: totalMetrics.position.toFixed(1),
+              icon: TrendingUp,
+              color: "amber-500"
+            },
+          ].map((metric, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">{metric.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold">{metric.value}</p>
+                    {metric.change !== undefined && metric.change !== 0 && (
+                      <div className={`flex items-center gap-1 mt-1 text-sm ${metric.change > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {metric.change > 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        {Math.abs(metric.change).toFixed(1)}% vs last week
+                      </div>
+                    )}
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl bg-${metric.color}/10 flex items-center justify-center`}>
+                    <metric.icon className={`w-6 h-6 text-${metric.color}`} />
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <MousePointer className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Impressions</p>
-                  <p className="text-3xl font-bold">{totalMetrics.impressions.toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-cyan-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg. CTR</p>
-                  <p className="text-3xl font-bold">{(totalMetrics.ctr * 100).toFixed(2)}%</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                  <Target className="w-6 h-6 text-violet-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg. Position</p>
-                  <p className="text-3xl font-bold">{totalMetrics.position.toFixed(1)}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-amber-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* Performance Chart */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Performance Over Time</CardTitle>
-            <CardDescription>Clicks and impressions trend</CardDescription>
+        <Card className="mb-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Performance Over Time</CardTitle>
+              <CardDescription>Clicks and impressions trend for {SEARCH_TYPE_CONFIG[searchType].label}</CardDescription>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                <span>Clicks</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-500" />
+                <span>Impressions</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                     </linearGradient>
+                    <linearGradient id="impressionsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                    </linearGradient>
                   </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
                   <XAxis
                     dataKey="date"
                     tickLine={false}
@@ -774,6 +861,15 @@ const Analytics = () => {
                     minTickGap={50}
                   />
                   <YAxis
+                    yAxisId="left"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    width={50}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
                     tickLine={false}
                     axisLine={false}
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
@@ -787,213 +883,433 @@ const Analytics = () => {
                       boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                     }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    labelFormatter={(value) => new Date(value).toLocaleDateString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   />
                   <Area
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="impressions"
+                    stroke="#06b6d4"
+                    fill="url(#impressionsGradient)"
+                    strokeWidth={2}
+                  />
+                  <Area
+                    yAxisId="left"
                     type="monotone"
                     dataKey="clicks"
                     stroke="hsl(var(--primary))"
                     fill="url(#clicksGradient)"
                     strokeWidth={2}
                   />
-                </AreaChart>
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tabs */}
-        <Tabs defaultValue="queries" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="queries">
-              <Search className="w-4 h-4 mr-2" />
-              Queries
-            </TabsTrigger>
-            <TabsTrigger value="pages">
-              <FileText className="w-4 h-4 mr-2" />
-              Pages
-            </TabsTrigger>
-            <TabsTrigger value="countries">
-              <Globe className="w-4 h-4 mr-2" />
-              Countries
-            </TabsTrigger>
-            <TabsTrigger value="indexing">
-              <Link2 className="w-4 h-4 mr-2" />
-              Indexing
-            </TabsTrigger>
-          </TabsList>
+        {/* Search Type Comparison (only for web) */}
+        {searchType === 'web' && comparisonChartData.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Traffic Sources Comparison</CardTitle>
+              <CardDescription>Compare clicks across Web, Image, and Discover</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={comparisonChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} width={40} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                    />
+                    <Area type="monotone" dataKey="web" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="image" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="discover" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-6 mt-4">
+                {[
+                  { label: "Web", color: "hsl(var(--primary))" },
+                  { label: "Image", color: "#10b981" },
+                  { label: "Discover", color: "#8b5cf6" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-sm text-muted-foreground">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
+        {/* Main Tabs */}
+        <Tabs defaultValue="queries" className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <TabsList className="flex-wrap h-auto">
+              <TabsTrigger value="queries" className="gap-2">
+                <Search className="w-4 h-4" />
+                <span className="hidden sm:inline">Queries</span>
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="gap-2">
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Pages</span>
+              </TabsTrigger>
+              <TabsTrigger value="countries" className="gap-2">
+                <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">Countries</span>
+              </TabsTrigger>
+              <TabsTrigger value="devices" className="gap-2">
+                <Monitor className="w-4 h-4" />
+                <span className="hidden sm:inline">Devices</span>
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">Appearance</span>
+              </TabsTrigger>
+              <TabsTrigger value="indexing" className="gap-2">
+                <Link2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Indexing</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Search Filter */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter results..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="pl-9 w-[200px]"
+              />
+            </div>
+          </div>
+
+          {/* Queries Tab */}
           <TabsContent value="queries">
             <Card>
-              <CardHeader>
-                <CardTitle>Top Search Queries</CardTitle>
-                <CardDescription>Keywords driving traffic to your site</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Top Search Queries</CardTitle>
+                  <CardDescription>Keywords driving traffic to your site ({filteredQueryData.length} queries)</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportToCSV(filteredQueryData, "queries", "Query")}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Query</TableHead>
-                      <TableHead className="text-right">Clicks</TableHead>
-                      <TableHead className="text-right">Impressions</TableHead>
-                      <TableHead className="text-right">CTR</TableHead>
-                      <TableHead className="text-right">Position</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {queryData.map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">{row.keys[0]}</TableCell>
-                        <TableCell className="text-right">{row.clicks.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{row.impressions.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={row.position <= 10 ? "default" : "secondary"}>
-                            {row.position.toFixed(1)}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {queryData.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No query data available
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pages">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Pages</CardTitle>
-                <CardDescription>Best performing pages on your site</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Page</TableHead>
-                      <TableHead className="text-right">Clicks</TableHead>
-                      <TableHead className="text-right">Impressions</TableHead>
-                      <TableHead className="text-right">CTR</TableHead>
-                      <TableHead className="text-right">Position</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pageData.map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium max-w-xs truncate">
-                          <a
-                            href={row.keys[0]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-primary flex items-center gap-1"
-                          >
-                            {new URL(row.keys[0]).pathname || "/"}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </TableCell>
-                        <TableCell className="text-right">{row.clicks.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{row.impressions.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{(row.ctr * 100).toFixed(2)}%</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={row.position <= 10 ? "default" : "secondary"}>
-                            {row.position.toFixed(1)}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {pageData.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No page data available
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="countries">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Countries</CardTitle>
-                  <CardDescription>Geographic distribution of traffic</CardDescription>
-                </CardHeader>
-                <CardContent>
+                <ScrollArea className="h-[500px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Country</TableHead>
+                        <TableHead className="w-[50%]">Query</TableHead>
                         <TableHead className="text-right">Clicks</TableHead>
-                        <TableHead className="text-right">Impressions</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Impressions</TableHead>
+                        <TableHead className="text-right">CTR</TableHead>
+                        <TableHead className="text-right">Position</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {countryData.map((row, i) => (
+                      {filteredQueryData.map((row, i) => (
                         <TableRow key={i}>
                           <TableCell className="font-medium">{row.keys[0]}</TableCell>
-                          <TableCell className="text-right">{row.clicks.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">{row.impressions.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-semibold">{row.clicks.toLocaleString()}</TableCell>
+                          <TableCell className="text-right hidden sm:table-cell">{row.impressions.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant={row.position <= 3 ? "default" : row.position <= 10 ? "secondary" : "outline"}>
+                              {row.position.toFixed(1)}
+                            </Badge>
+                          </TableCell>
                         </TableRow>
                       ))}
-                      {countryData.length === 0 && (
+                      {filteredQueryData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                            No country data available
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            {isFetching ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "No query data available"}
                           </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
+          {/* Pages Tab */}
+          <TabsContent value="pages">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Top Pages</CardTitle>
+                  <CardDescription>Best performing pages on your site ({filteredPageData.length} pages)</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportToCSV(filteredPageData, "pages", "Page")}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50%]">Page</TableHead>
+                        <TableHead className="text-right">Clicks</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Impressions</TableHead>
+                        <TableHead className="text-right">CTR</TableHead>
+                        <TableHead className="text-right">Position</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPageData.map((row, i) => {
+                        let pagePath = row.keys[0];
+                        try {
+                          pagePath = new URL(row.keys[0]).pathname || "/";
+                        } catch {
+                          pagePath = row.keys[0];
+                        }
+                        return (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">
+                              <a
+                                href={row.keys[0]}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-primary flex items-center gap-1 truncate max-w-[300px]"
+                                title={row.keys[0]}
+                              >
+                                {pagePath}
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                              </a>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">{row.clicks.toLocaleString()}</TableCell>
+                            <TableCell className="text-right hidden sm:table-cell">{row.impressions.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant={row.position <= 3 ? "default" : row.position <= 10 ? "secondary" : "outline"}>
+                                {row.position.toFixed(1)}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {filteredPageData.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            {isFetching ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : "No page data available"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Countries Tab */}
+          <TabsContent value="countries">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Top Countries</CardTitle>
+                  <CardDescription>Geographic distribution of traffic</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => exportToCSV(countryData, "countries", "Country")}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <ScrollArea className="h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Country</TableHead>
+                          <TableHead className="text-right">Clicks</TableHead>
+                          <TableHead className="text-right">Impressions</TableHead>
+                          <TableHead className="text-right">CTR</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {countryData.map((row, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{row.keys[0]}</TableCell>
+                            <TableCell className="text-right font-semibold">{row.clicks.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{row.impressions.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{(row.ctr * 100).toFixed(2)}%</TableCell>
+                          </TableRow>
+                        ))}
+                        {countryData.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              No country data available
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                  
+                  {/* Country Distribution Chart */}
+                  <div className="h-[400px] flex flex-col">
+                    <h3 className="font-medium mb-4">Click Distribution</h3>
+                    <div className="flex-1">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={countryData.slice(0, 10)} layout="vertical" margin={{ top: 0, right: 20, left: 60, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={true} vertical={false} />
+                          <XAxis type="number" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                          <YAxis dataKey="keys[0]" type="category" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} width={55} />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                          />
+                          <Bar dataKey="clicks" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Devices Tab */}
+          <TabsContent value="devices">
+            <div className="grid lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Device Breakdown</CardTitle>
                   <CardDescription>Traffic by device type</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[200px]">
+                  <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={deviceChartData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={3}
+                          dataKey="clicks"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
                         >
                           {deviceChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="flex justify-center gap-4 mt-4">
-                    {deviceChartData.map((device) => (
-                      <div key={device.name} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: device.color }} />
-                        <span className="text-sm capitalize">{device.name}: {device.value}</span>
-                      </div>
-                    ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Device Metrics</CardTitle>
+                  <CardDescription>Detailed performance by device</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {deviceData.map((device, i) => {
+                      const icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
+                      const Icon = icon;
+                      const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
+                      const percentage = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
+                      
+                      return (
+                        <div key={i} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-5 h-5 text-muted-foreground" />
+                              <span className="font-medium capitalize">{device.keys[0].toLowerCase()}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">{device.clicks.toLocaleString()} clicks</span>
+                          </div>
+                          <Progress value={percentage} className="h-2" />
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>{device.impressions.toLocaleString()} impressions</span>
+                            <span>CTR: {(device.ctr * 100).toFixed(2)}%</span>
+                            <span>Pos: {device.position.toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {deviceData.length === 0 && (
+                      <p className="text-center text-muted-foreground py-8">No device data available</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
+          {/* Search Appearance Tab */}
+          <TabsContent value="appearance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Search Appearance</CardTitle>
+                <CardDescription>How your content appears in search results (rich results, AMP, etc.)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {searchAppearanceData.length > 0 ? (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {searchAppearanceData.map((item, i) => (
+                      <Card key={i} className="bg-muted/30">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span className="font-medium text-sm">{item.keys[0].replace(/_/g, ' ')}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 mt-3">
+                            <div>
+                              <p className="text-2xl font-bold">{item.clicks.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">Clicks</p>
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold">{item.impressions.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">Impressions</p>
+                            </div>
+                          </div>
+                          <div className="flex justify-between mt-3 text-sm text-muted-foreground">
+                            <span>CTR: {(item.ctr * 100).toFixed(2)}%</span>
+                            <span>Pos: {item.position.toFixed(1)}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No search appearance data available</p>
+                    <p className="text-sm mt-1">This shows special search result types like rich results, AMP, etc.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Indexing Tab */}
           <TabsContent value="indexing">
             <Card>
               <CardHeader>
@@ -1006,6 +1322,7 @@ const Analytics = () => {
                     <TableRow>
                       <TableHead>Sitemap URL</TableHead>
                       <TableHead>Last Submitted</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Issues</TableHead>
                     </TableRow>
@@ -1020,20 +1337,23 @@ const Analytics = () => {
                             rel="noopener noreferrer"
                             className="hover:text-primary flex items-center gap-1"
                           >
-                            {sitemap.path}
+                            {sitemap.path.length > 50 ? sitemap.path.substring(0, 50) + '...' : sitemap.path}
                             <ExternalLink className="w-3 h-3" />
                           </a>
                         </TableCell>
                         <TableCell>
-                          {sitemap.lastSubmitted
-                            ? new Date(sitemap.lastSubmitted).toLocaleDateString()
-                            : "N/A"}
+                          {sitemap.lastSubmitted ? new Date(sitemap.lastSubmitted).toLocaleDateString() : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {sitemap.isSitemapsIndex ? "Index" : "Sitemap"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {sitemap.isPending ? (
                             <Badge variant="secondary">Pending</Badge>
                           ) : (
-                            <Badge variant="default" className="bg-green-500">
+                            <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Processed
                             </Badge>
@@ -1053,7 +1373,7 @@ const Analytics = () => {
                     ))}
                     {sitemaps.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                           No sitemaps found. Submit a sitemap in Google Search Console.
                         </TableCell>
                       </TableRow>
