@@ -1198,6 +1198,34 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             </div>
           )}
 
+          {activeDropdown === 'devices' && (
+            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Monitor className="w-4 h-4 text-amber-500" />
+                  Device Breakdown
+                </h4>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {deviceData.map((device, i) => {
+                  const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
+                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
+                  const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
+                  return (
+                    <div key={i} className="bg-secondary/30 rounded-lg p-4 text-center">
+                      <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground capitalize mb-1">{device.keys[0].toLowerCase()}</p>
+                      <p className="text-2xl font-bold">{pct.toFixed(0)}%</p>
+                      <p className="text-xs text-muted-foreground">{device.clicks} clicks</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{device.impressions} impressions</p>
+                    </div>
+                  );
+                })}
+                {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-8">{isFetching ? "Loading..." : "No data"}</div>}
+              </div>
+            </div>
+          )}
+
           {/* Combined KPI Row - All Search Types */}
           <div className="grid grid-cols-4 gap-3">
             {[
@@ -1258,34 +1286,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     </button>
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {activeDropdown === 'devices' && (
-            <div className="bg-background border border-border rounded-lg p-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Monitor className="w-4 h-4 text-amber-500" />
-                  Device Breakdown
-                </h4>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {deviceData.map((device, i) => {
-                  const Icon = device.keys[0] === 'DESKTOP' ? Monitor : device.keys[0] === 'MOBILE' ? Smartphone : Tablet;
-                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
-                  const pct = totalClicks > 0 ? (device.clicks / totalClicks) * 100 : 0;
-                  return (
-                    <div key={i} className="bg-secondary/30 rounded-lg p-4 text-center">
-                      <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground capitalize mb-1">{device.keys[0].toLowerCase()}</p>
-                      <p className="text-2xl font-bold">{pct.toFixed(0)}%</p>
-                      <p className="text-xs text-muted-foreground">{device.clicks} clicks</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{device.impressions} impressions</p>
-                    </div>
-                  );
-                })}
-                {deviceData.length === 0 && <div className="col-span-3 text-center text-muted-foreground text-xs py-8">{isFetching ? "Loading..." : "No data"}</div>}
               </div>
             </div>
           )}
