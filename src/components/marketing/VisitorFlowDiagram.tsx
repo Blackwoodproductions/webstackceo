@@ -1318,8 +1318,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                       textAnchor="middle"
                       className="fill-foreground font-medium"
                       style={{ 
-                        fontSize: node.depth === 0 ? '11px' : '9px',
-                        opacity: node.isVisited ? 1 : 0.6
+                        fontSize: node.depth === 0 ? '11px' : '9px'
                       }}
                     >
                       {node.name}
@@ -1346,8 +1345,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                       textAnchor="start"
                       className="fill-foreground font-medium"
                       style={{ 
-                        fontSize: '8px',
-                        opacity: node.isVisited ? 1 : 0.6
+                        fontSize: '8px'
                       }}
                       transform={`rotate(35, ${pos.x}, ${pos.y + nodeSize + 12})`}
                     >
@@ -1359,17 +1357,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             );
           })}
           
-          {/* Depth labels */}
-          <text x={12} y={baseY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
-          <text x={12} y={l1RegularStartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
-          <text x={12} y={featuresParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Features</text>
-          <text x={12} y={learnParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Learn</text>
-          {otherL2.length > 0 && (
-            <text x={12} y={otherL2StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Other L2</text>
-          )}
-          {depth3.length > 0 && (
-            <text x={12} y={l3StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
-          )}
+          {/* Depth labels removed for cleaner look */}
         </svg>
       </div>
 
