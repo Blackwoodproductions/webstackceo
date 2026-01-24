@@ -142,7 +142,12 @@ const getTimeRangeFilter = (range: TimeRange): Date | null => {
   }
 };
 
-const VisitorFlowDiagram = () => {
+interface VisitorFlowDiagramProps {
+  onPageFilter?: (pagePath: string | null) => void;
+  activeFilter?: string | null;
+}
+
+const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
@@ -703,12 +708,43 @@ const VisitorFlowDiagram = () => {
             const intensity = node.visits / maxVisits;
             const color = getHeatColor(intensity, node.isVisited);
             const nodeSize = node.depth === 0 ? 18 : node.depth === 1 ? 12 : 8;
-            const opacity = node.isVisited ? 1 : 0.35;
+            const baseOpacity = node.isVisited ? 1 : 0.35;
+            const isFiltered = activeFilter === node.path;
+            const isDimmed = activeFilter && activeFilter !== node.path;
+            const opacity = isDimmed ? 0.2 : baseOpacity;
             const liveCount = visitorsByNode[node.path] || 0;
             const hasLiveVisitor = liveCount > 0;
             
+            const handleNodeClick = () => {
+              if (onPageFilter) {
+                if (activeFilter === node.path) {
+                  onPageFilter(null); // Clear filter
+                } else {
+                  onPageFilter(node.path); // Set filter
+                }
+              }
+            };
+            
             return (
-              <g key={node.path} className="cursor-pointer" style={{ opacity }}>
+              <g 
+                key={node.path} 
+                className="cursor-pointer" 
+                style={{ opacity }}
+                onClick={handleNodeClick}
+              >
+                {/* Active filter highlight */}
+                {isFiltered && (
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={nodeSize + 14}
+                    fill="none"
+                    stroke="#a855f7"
+                    strokeWidth={3}
+                    strokeDasharray="6 3"
+                    className="animate-pulse"
+                  />
+                )}
                 {/* Live visitor ring */}
                 {hasLiveVisitor && (
                   <>
