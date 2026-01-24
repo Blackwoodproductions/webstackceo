@@ -87,6 +87,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: "Pricing", href: "/pricing", isPage: true },
+    { name: "Website Audits", href: "/audits", isPage: true },
   ];
 
   const blogSubLinks = [
@@ -102,7 +103,6 @@ const Navbar = () => {
 
   const submitSiteSubLinks = [
     { name: "SIGN UP", href: "/pricing", highlight: true },
-    { name: "Website Audits", href: "/audits" },
     { name: "Directory", href: "/directory" },
     { name: "Marketplace", href: "/marketplace" },
   ];
