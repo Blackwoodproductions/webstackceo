@@ -15,9 +15,11 @@ interface PageNode {
   path: string;
   name: string;
   visits: number;
+  visitsPerDay: number;
   depth: number;
   parent: string | null;
   isVisited: boolean;
+  isTool: boolean;
 }
 
 interface LiveVisitor {
@@ -57,7 +59,7 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/marketplace', parent: '/', category: 'main' },
   { path: '/careers', parent: '/', category: 'main' },
   { path: '/integrations', parent: '/', category: 'main' },
-  { path: '/audits', parent: '/', category: 'main' },
+  
   { path: '/changelog', parent: '/', category: 'main' },
   { path: '/auth', parent: '/', category: 'main' },
   { path: '/admin', parent: '/', category: 'main' },
@@ -78,8 +80,9 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/features/visitor-intelligence', parent: '/features', category: 'features' },
   { path: '/features/web-hosting', parent: '/features', category: 'features' },
   
-  // Tools sub-pages (L2)
+  // Tools sub-pages (L2) - includes Domain Audits as central tool
   { path: '/tools/domain-audit', parent: '/tools', category: 'tools' },
+  { path: '/audits', parent: '/tools', category: 'tools' },
   { path: '/tools/keyword-checker', parent: '/tools', category: 'tools' },
   { path: '/tools/backlink-analyzer', parent: '/tools', category: 'tools' },
   { path: '/tools/site-speed', parent: '/tools', category: 'tools' },
@@ -428,16 +431,33 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
 
     const nodeMap: Record<string, PageNode> = {};
     
-    SITE_STRUCTURE.forEach(({ path, parent }) => {
+    // Calculate days in range for per-day averages
+    const now = new Date();
+    let daysInRange = 1;
+    if (filterDate) {
+      daysInRange = Math.max(1, Math.ceil((now.getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24)));
+    } else if (filteredViews.length > 0) {
+      // For "all time", calculate from earliest view
+      const earliest = new Date(Math.min(...filteredViews.map(v => new Date(v.created_at).getTime())));
+      daysInRange = Math.max(1, Math.ceil((now.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+    
+    // Define tool paths for special display
+    const toolPaths = ['/tools', '/audits', '/tools/domain-audit', '/tools/keyword-checker', '/tools/backlink-analyzer', '/tools/site-speed'];
+    
+    SITE_STRUCTURE.forEach(({ path, parent, category }) => {
       const depth = path === '/' ? 0 : path.split('/').filter(Boolean).length;
       const visits = visitCounts[path] || 0;
+      const isTool = toolPaths.includes(path) || category === 'tools';
       nodeMap[path] = {
         path,
         name: formatPageName(path),
         visits,
+        visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
         depth,
         parent,
         isVisited: visits > 0,
+        isTool,
       };
     });
 
@@ -452,14 +472,17 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
         } else if (segments.length === 0) {
           parent = null;
         }
+        const isTool = toolPaths.includes(path) || path.startsWith('/tools');
         
         nodeMap[path] = {
           path,
           name: formatPageName(path),
           visits,
+          visitsPerDay: Math.round((visits / daysInRange) * 10) / 10,
           depth,
           parent,
           isVisited: true,
+          isTool,
         };
       }
     });
@@ -1345,16 +1368,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     >
                       {node.name}
                     </text>
-                    {/* Visit count below the node */}
+                    {/* Visit count below the node - show daily for tools */}
                     {node.visits > 0 && (
                       <text
                         x={pos.x}
                         y={pos.y + nodeSize + 14}
                         textAnchor="middle"
-                        className="fill-muted-foreground"
-                        style={{ fontSize: '7px' }}
+                        className={node.isTool ? "fill-amber-400" : "fill-muted-foreground"}
+                        style={{ fontSize: '7px', fontWeight: node.isTool ? 600 : 400 }}
                       >
-                        {node.visits}
+                        {node.isTool ? `${node.visitsPerDay}/day` : node.visits}
                       </text>
                     )}
                   </>
@@ -1373,6 +1396,29 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                     >
                       {node.name}
                     </text>
+                    {/* Daily usage badge for tools */}
+                    {node.isTool && node.visits > 0 && (
+                      <>
+                        <rect
+                          x={pos.x + nodeSize + 2}
+                          y={pos.y - 6}
+                          width={32}
+                          height={12}
+                          rx={6}
+                          fill="#f59e0b"
+                          opacity={0.9}
+                        />
+                        <text
+                          x={pos.x + nodeSize + 18}
+                          y={pos.y + 2}
+                          textAnchor="middle"
+                          fill="white"
+                          style={{ fontSize: '7px', fontWeight: 600 }}
+                        >
+                          {node.visitsPerDay}/d
+                        </text>
+                      </>
+                    )}
                   </>
                 )}
               </g>
