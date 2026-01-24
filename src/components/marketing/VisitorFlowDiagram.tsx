@@ -293,10 +293,16 @@ const VisitorFlowDiagram = ({
             if (session.referrer && session.first_page) {
               // Check if referrer is external (not our own domain)
               try {
-                const referrerHost = new URL(session.referrer).hostname;
-                if (!referrerHost.includes('localhost') && 
-                    !referrerHost.includes('lovable.app') &&
-                    !referrerHost.includes('webstackceo')) {
+                const referrerHost = new URL(session.referrer).hostname.toLowerCase();
+                // Exclude our own domains - lovable preview, production, and webstack variations
+                const isOwnDomain = referrerHost.includes('localhost') || 
+                    referrerHost.includes('lovable.app') ||
+                    referrerHost.includes('lovableproject.com') ||
+                    referrerHost.includes('webstackceo') ||
+                    referrerHost.includes('webstack.ceo') ||
+                    referrerHost.includes('dashdev.imagehosting.space');
+                    
+                if (!isOwnDomain) {
                   let cleanPath = session.first_page.split('#')[0].split('?')[0];
                   if (cleanPath.startsWith('/audit/') || cleanPath === '/audit') {
                     cleanPath = '/audits';
@@ -313,6 +319,10 @@ const VisitorFlowDiagram = ({
               }
             }
           });
+          
+          console.log('[VisitorFlowDiagram] External referrer pages:', Array.from(externalPages));
+          console.log('[VisitorFlowDiagram] External referrer sessions count:', validSessions.length);
+          
           setExternalReferrerPages(externalPages);
           setExternalReferrerSessions(validSessions);
         }
@@ -1073,6 +1083,11 @@ const VisitorFlowDiagram = ({
     const path = v.displayPath; // Use displayPath instead of currentPath
     visitorsByNode[path] = (visitorsByNode[path] || 0) + 1;
   });
+  
+  // Debug logging for live visitors
+  if (liveVisitors.length > 0) {
+    console.log('[VisitorFlowDiagram] Live visitors:', liveVisitors.length, 'by node:', visitorsByNode);
+  }
 
   return (
     <Card className="p-6 overflow-hidden">
