@@ -4,8 +4,9 @@ import {
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
   RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
   ExternalLink, Key, Download, Smartphone, Monitor, Tablet,
-  Image, Video, Newspaper, Sparkles, Code, Copy, Check
+  Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp
 } from "lucide-react";
+import { GSCAdvancedReporting } from "./GSCAdvancedReporting";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -158,6 +159,9 @@ export const GSCDashboardPanel = ({ onSiteChange, onDataLoaded, onTrackingStatus
   // Tracking code generator
   const [showCodeGenerator, setShowCodeGenerator] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  
+  // Advanced reporting toggle
+  const [showAdvancedReporting, setShowAdvancedReporting] = useState(false);
 
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
@@ -1011,8 +1015,44 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Advanced Reporting Toggle */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedReporting(!showAdvancedReporting)}
+              className="w-full justify-between h-10 text-sm font-medium"
+            >
+              <span className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-violet-500" />
+                Advanced Reporting
+                <Badge variant="secondary" className="text-[10px]">
+                  Keywords • Countries • Indexation
+                </Badge>
+              </span>
+              {showAdvancedReporting ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Advanced Reporting Panel */}
+      {showAdvancedReporting && (
+        <GSCAdvancedReporting
+          accessToken={accessToken}
+          selectedSite={selectedSite}
+          dateRange={dateRange}
+          queryData={queryData}
+          countryData={countryData}
+          pageData={pageData}
+          isFetching={isFetching}
+        />
+      )}
 
       {/* Code Generator Dialog */}
       <Dialog open={showCodeGenerator} onOpenChange={setShowCodeGenerator}>
