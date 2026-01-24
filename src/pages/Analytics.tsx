@@ -31,11 +31,6 @@ import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
   AreaChart,
   Area,
   XAxis,
@@ -46,6 +41,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Tooltip,
 } from "recharts";
 
 // Google OAuth Config - check localStorage first, then env var
@@ -783,7 +779,15 @@ const Analytics = () => {
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                     width={60}
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--background))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="clicks"
