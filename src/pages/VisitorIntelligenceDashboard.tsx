@@ -903,8 +903,8 @@ const MarketingDashboard = () => {
       {/* Header */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1800px] mx-auto">
         <div className="px-6 py-4 flex items-center justify-between">
-          {/* Left: Logo & Title */}
-          <div className="flex items-center gap-4">
+          {/* Left: Logo */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-foreground leading-tight">
@@ -915,11 +915,12 @@ const MarketingDashboard = () => {
                 </span>
               </div>
             </a>
-            <div className="w-px h-8 bg-border" />
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              <h1 className="text-lg font-semibold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
-            </div>
+          </div>
+          
+          {/* Center: Title */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            <h1 className="text-lg font-semibold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
             <span className="text-sm text-muted-foreground hidden lg:inline">— Marketing Funnel Analytics</span>
           </div>
           
