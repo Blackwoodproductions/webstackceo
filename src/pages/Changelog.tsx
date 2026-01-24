@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { 
   Sparkles, Shield, BarChart3, Calendar, Tag, 
   ArrowRight, Rocket, Brain, Target, TrendingUp,
-  CheckCircle2, Zap, Globe
+  CheckCircle2, Zap, Globe, Eye, MessageCircle, Image
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -33,6 +33,25 @@ const changeTypeConfig: Record<ChangeType, { label: string; color: string; bg: s
 };
 
 const changelog: ChangelogEntry[] = [
+  {
+    date: "January 24, 2026",
+    version: "2.5.0",
+    title: "Visitor Intelligence Dashboard & AI Sales Center",
+    description: "Major dashboard overhaul with a new name, streamlined layout, and integrated AI chat assistant for real-time visitor engagement and lead conversion.",
+    type: "feature",
+    icon: Eye,
+    highlight: true,
+    changes: [
+      "Renamed Marketing Dashboard to Visitor Intelligence Dashboard",
+      "New AI Sales Center with embedded Calendly booking",
+      "AI chat assistant with full website knowledge base",
+      "Live chat transfer to human operators",
+      "Redesigned header with centered 'Marketing Funnel Analytics and AI Sales Center' tagline",
+      "Streamlined stats bar with views, sessions, bounce rate, and engagement metrics",
+      "Chat controls moved to sticky header bar",
+      "Dashboard screenshots added to feature and guide pages"
+    ]
+  },
   {
     date: "January 22, 2026",
     version: "2.4.0",
