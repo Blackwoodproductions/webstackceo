@@ -792,7 +792,9 @@ const MarketingDashboard = () => {
                 });
               }
               
-              const currentValue = selectedGscSiteUrl || selectedTrackedDomain;
+              // Prefer the tracked-domain selection for the header UI so GSC auto-selection
+              // can't visually (or functionally) override the user's domain choice.
+              const currentValue = selectedTrackedDomain || selectedGscSiteUrl;
               
               if (allDomains.length > 0) {
                 return (
@@ -1600,11 +1602,12 @@ f.parentNode.insertBefore(j,f);
               setGscDomainHasTracking(hasTracking);
               console.log(`Tracking status for ${domain}: ${hasTracking ? 'installed' : 'not installed'}`);
             }}
-            onSitesLoaded={(sites) => {
+             onSitesLoaded={(sites) => {
               // Store available GSC sites for header dropdown
               setGscSites(sites);
               // Auto-select first site if none selected
-              if (sites.length > 0 && !selectedGscSiteUrl) {
+               // (but never override when a tracked domain is actively selected)
+               if (sites.length > 0 && !selectedGscSiteUrl && !selectedTrackedDomain) {
                 setSelectedGscSiteUrl(sites[0].siteUrl);
                 const cleanDomain = sites[0].siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '').replace(/\/$/, '');
                 setSelectedGscDomain(cleanDomain);
