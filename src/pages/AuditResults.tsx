@@ -2209,7 +2209,7 @@ const AuditResults = () => {
               ))}
             </div>
 
-            <StripePaymentIcons className="mt-8" />
+            
 
             {/* Trust Indicators */}
             <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -2238,10 +2238,6 @@ const AuditResults = () => {
             className="mt-16 mb-8"
           >
             <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-                <BookOpen className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">SEO Resources</span>
-              </div>
               <h2 className="text-3xl font-bold mb-3">
                 Learn More About{" "}
                 <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-amber-400 bg-clip-text text-transparent">
