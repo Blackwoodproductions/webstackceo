@@ -499,17 +499,22 @@ const MarketingDashboard = () => {
 
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <BarChart3 className="w-8 h-8 text-primary" />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Visitor Intelligence</h1>
-                <p className="text-sm text-muted-foreground">Marketing Funnel Analytics</p>
-              </div>
+        <div className="container mx-auto px-6 py-4 flex items-center">
+          {/* Left: Logo & Title */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <BarChart3 className="w-7 h-7 text-primary" />
+              <h1 className="text-xl font-bold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
             </a>
           </div>
-          <div className="flex items-center gap-4">
+          
+          {/* Center: Subtitle */}
+          <div className="flex-1 flex justify-center">
+            <span className="text-sm text-muted-foreground">Marketing Funnel Analytics</span>
+          </div>
+          
+          {/* Right: User Controls */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <span className="text-sm text-muted-foreground">{user.email}</span>
             <Button
               variant="ghost"
