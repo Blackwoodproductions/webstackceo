@@ -11,7 +11,14 @@ import dashboardDark from "@/assets/homepage-dashboard-dark.png";
 import dashboardLight from "@/assets/homepage-dashboard-light.png";
 const HeroSection = () => {
   const { resolvedTheme } = useTheme();
-  const dashboardImage = resolvedTheme === 'light' ? dashboardLight : dashboardDark;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Use dark as default during SSR/hydration, then switch to correct theme
+  const dashboardImage = mounted && resolvedTheme === 'light' ? dashboardLight : dashboardDark;
   const [isDashboardHovered, setIsDashboardHovered] = useState(false);
   const [domain, setDomain] = useState("");
   const [isLoading, setIsLoading] = useState(false);
