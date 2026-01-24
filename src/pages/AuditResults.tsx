@@ -65,7 +65,11 @@ import {
   BookOpen,
   Tag,
   ArrowRight,
+  Mail,
+  Gift,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
 import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
@@ -645,6 +649,8 @@ const AuditResults = () => {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [submitterEmail, setSubmitterEmail] = useState("");
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -782,9 +788,22 @@ const AuditResults = () => {
     fetchWebsiteProfile();
   }, [decodedDomain]);
 
-  // Save audit to database
+  // Open email dialog for save
+  const handleSaveClick = () => {
+    if (isSaved) return;
+    setShowEmailDialog(true);
+  };
+
+  // Save audit to database with email
   const saveAudit = async () => {
     if (!decodedDomain || !dashboardMetrics) return;
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!submitterEmail.trim() || !emailRegex.test(submitterEmail.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
     
     setIsSaving(true);
     try {
@@ -816,6 +835,7 @@ const AuditResults = () => {
         organic_keywords: dashboardMetrics.organicKeywords,
         traffic_value: dashboardMetrics.trafficValue,
         glossary_terms: matchedGlossaryTerms.map(t => t.slug),
+        submitter_email: submitterEmail.trim(),
       };
       
       // Upsert - update if exists, insert if not
@@ -827,8 +847,9 @@ const AuditResults = () => {
         console.error('Save audit error:', error);
         toast.error('Failed to save audit');
       } else {
-        toast.success('Audit saved to Website Audits!');
+        toast.success('Audit saved! We\'ll send your do-follow link details to your email.');
         setIsSaved(true);
+        setShowEmailDialog(false);
       }
     } catch (err) {
       console.error('Save audit error:', err);
@@ -1245,23 +1266,18 @@ const AuditResults = () => {
                   <Button 
                     variant="outline" 
                     className="gap-2" 
-                    onClick={saveAudit}
-                    disabled={isSaving || isSaved}
+                    onClick={handleSaveClick}
+                    disabled={isSaved}
                   >
-                    {isSaving ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        Saving...
-                      </>
-                    ) : isSaved ? (
+                    {isSaved ? (
                       <>
                         <CheckCircle2 className="w-4 h-4 text-green-500" />
                         Saved
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4" />
-                        Save Audit
+                        <Gift className="w-4 h-4 text-primary" />
+                        Save & Get Free Backlink
                       </>
                     )}
                   </Button>
@@ -2250,6 +2266,85 @@ const AuditResults = () => {
           </motion.div>
         </div>
       </main>
+
+      {/* Email Capture Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-primary" />
+              Get a Free Do-Follow Backlink
+            </DialogTitle>
+            <DialogDescription>
+              Save your audit to our website and we'll give you a <span className="font-semibold text-primary">free do-follow backlink</span> to your site! Just enter your email below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <Link2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">What you get:</p>
+                  <ul className="text-sm text-muted-foreground mt-1 space-y-1">
+                    <li>• Your audit saved permanently on our site</li>
+                    <li>• A do-follow backlink from our domain</li>
+                    <li>• Featured in our Website Audits directory</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Your Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={submitterEmail}
+                  onChange={(e) => setSubmitterEmail(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We'll send you a confirmation with your backlink details.
+              </p>
+            </div>
+            
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEmailDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveAudit}
+                disabled={isSaving || !submitterEmail.trim()}
+                className="flex-1 gap-2"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Save & Claim Backlink
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
       <BackToTop />
     </div>

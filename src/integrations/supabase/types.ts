@@ -306,6 +306,7 @@ export type Database = {
           social_tiktok: string | null
           social_twitter: string | null
           social_youtube: string | null
+          submitter_email: string | null
           traffic_value: number | null
           updated_at: string
         }
@@ -336,6 +337,7 @@ export type Database = {
           social_tiktok?: string | null
           social_twitter?: string | null
           social_youtube?: string | null
+          submitter_email?: string | null
           traffic_value?: number | null
           updated_at?: string
         }
@@ -366,6 +368,7 @@ export type Database = {
           social_tiktok?: string | null
           social_twitter?: string | null
           social_youtube?: string | null
+          submitter_email?: string | null
           traffic_value?: number | null
           updated_at?: string
         }
