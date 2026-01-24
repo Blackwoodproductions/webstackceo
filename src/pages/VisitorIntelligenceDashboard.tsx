@@ -684,21 +684,32 @@ const MarketingDashboard = () => {
       />
 
       {/* Header */}
-      <header className="border-b border-border bg-card rounded-t-xl">
-        <div className="max-w-[1800px] mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border border-border bg-card rounded-t-xl max-w-[1800px] mx-auto">
+        <div className="px-6 py-4 flex items-center justify-between">
           {/* Left: Logo & Title */}
-          <div className="flex items-center gap-3">
-            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <BarChart3 className="w-7 h-7 text-primary" />
-              <h1 className="text-xl font-bold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
+          <div className="flex items-center gap-4">
+            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-foreground leading-tight">
+                  webstack<span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all duration-500">.ceo</span>
+                </span>
+                <span className="text-[9px] text-muted-foreground tracking-wide">
+                  by Blackwood Productions
+                </span>
+              </div>
             </a>
-            <span className="text-sm text-muted-foreground hidden md:inline">— Marketing Funnel Analytics and AI Sales Center</span>
+            <div className="w-px h-8 bg-border" />
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h1 className="text-lg font-semibold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
+            </div>
+            <span className="text-sm text-muted-foreground hidden lg:inline">— Marketing Funnel Analytics</span>
           </div>
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome - {
+            <span className="text-sm text-muted-foreground hidden md:block">
+              {
                 user.email?.toLowerCase().includes('rob') ? 'CTO' :
                 user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
                 user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
@@ -721,8 +732,8 @@ const MarketingDashboard = () => {
       </header>
 
       {/* Date Range Selector Bar */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 rounded-lg mx-0">
-        <div className="max-w-[1800px] mx-auto px-6 py-2 flex items-center justify-between">
+      <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1800px] mx-auto">
+        <div className="px-6 py-2 flex items-center justify-between">
           {/* Left: Domain Selector & Time Range Selector */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Domain Selector - only show in header when GSC is authenticated AND tracking is installed */}
