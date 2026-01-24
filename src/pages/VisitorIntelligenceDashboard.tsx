@@ -242,67 +242,16 @@ const MarketingDashboard = () => {
   // Fetch tracked domains from visitor_sessions (domains with tracking code installed)
   const fetchTrackedDomains = async () => {
     try {
-      // Get unique domains from referrer field in visitor_sessions
-      const { data, error } = await supabase
-        .from('visitor_sessions')
-        .select('referrer')
-        .not('referrer', 'is', null)
-        .limit(1000);
+      // Only include production domains with Visitor Intelligence installed
+      // Filter out Lovable preview URLs, lovable.app, and lovableproject.com domains
+      const allowedDomains = ['webstack.ceo'];
       
-      if (error) throw error;
-      
-      // Extract unique domains from referrers
-      const domains = new Set<string>();
-      data?.forEach(session => {
-        if (session.referrer) {
-          try {
-            const url = new URL(session.referrer);
-            const domain = url.hostname.replace('www.', '');
-            if (domain && !domain.includes('google') && !domain.includes('facebook') && !domain.includes('linkedin')) {
-              domains.add(domain);
-            }
-          } catch {
-            // Not a valid URL, try to extract domain directly
-            const match = session.referrer.match(/(?:https?:\/\/)?(?:www\.)?([^\/]+)/);
-            if (match && match[1]) {
-              const domain = match[1].replace('www.', '');
-              if (!domain.includes('google') && !domain.includes('facebook') && !domain.includes('linkedin')) {
-                domains.add(domain);
-              }
-            }
-          }
-        }
-      });
-      
-      // Also check first_page for self-referential domains
-      const { data: pageData } = await supabase
-        .from('visitor_sessions')
-        .select('first_page')
-        .not('first_page', 'is', null)
-        .limit(1000);
-      
-      pageData?.forEach(session => {
-        if (session.first_page) {
-          try {
-            // first_page is usually just a path, but check if it has a domain
-            if (session.first_page.includes('://')) {
-              const url = new URL(session.first_page);
-              const domain = url.hostname.replace('www.', '');
-              if (domain) domains.add(domain);
-            }
-          } catch {
-            // Ignore invalid URLs
-          }
-        }
-      });
-      
-      const domainArray = Array.from(domains);
-      setTrackedDomains(domainArray);
+      setTrackedDomains(allowedDomains);
       
       // Auto-select first domain if none selected and no GSC sites
-      if (domainArray.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
-        setSelectedTrackedDomain(domainArray[0]);
-        setSelectedGscDomain(domainArray[0]);
+      if (allowedDomains.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
+        setSelectedTrackedDomain(allowedDomains[0]);
+        setSelectedGscDomain(allowedDomains[0]);
       }
     } catch (err) {
       console.error('Error fetching tracked domains:', err);
