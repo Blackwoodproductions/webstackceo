@@ -766,6 +766,20 @@ const MarketingDashboard = () => {
               />
             </Card>
           )}
+          {/* Hidden diagram to keep data flowing when sidebar is collapsed */}
+          {!siteArchOpen && (
+            <div className="hidden">
+              <VisitorFlowDiagram 
+                onPageFilter={setPageFilter}
+                activeFilter={pageFilter}
+                onSummaryUpdate={setFlowSummary}
+                timeRange={diagramTimeRange}
+                onTimeRangeChange={setDiagramTimeRange}
+                customDateRange={diagramCustomDateRange}
+                onCustomDateRangeChange={setDiagramCustomDateRange}
+              />
+            </div>
+          )}
 
           {/* Full Width Stats Layout */}
           <div className="space-y-4 mb-6">
