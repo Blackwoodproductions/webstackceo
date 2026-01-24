@@ -29,71 +29,87 @@ interface LiveVisitor {
 
 type TimeRange = 'today' | 'week' | 'month' | 'all';
 
-// Complete site structure based on the project's pages
-const SITE_STRUCTURE: { path: string; parent: string | null }[] = [
-  { path: '/', parent: null },
-  // Main pages
-  { path: '/about', parent: '/' },
-  { path: '/features', parent: '/' },
-  { path: '/pricing', parent: '/' },
-  { path: '/contact', parent: '/' },
-  { path: '/faq', parent: '/' },
-  { path: '/learn', parent: '/' },
-  { path: '/tools', parent: '/' },
-  { path: '/directory', parent: '/' },
-  { path: '/marketplace', parent: '/' },
-  { path: '/careers', parent: '/' },
-  { path: '/integrations', parent: '/' },
-  // Feature pages
-  { path: '/features/on-page-seo', parent: '/features' },
-  { path: '/features/off-page-seo', parent: '/features' },
-  { path: '/features/domain-authority', parent: '/features' },
-  { path: '/features/advanced-analytics', parent: '/features' },
-  { path: '/features/automated-blog', parent: '/features' },
-  { path: '/features/faq-generation', parent: '/features' },
-  { path: '/features/gmb-optimization', parent: '/features' },
-  { path: '/features/ppc-landing-pages', parent: '/features' },
-  { path: '/features/social-signals', parent: '/features' },
-  { path: '/features/traffic-de-anonymization', parent: '/features' },
-  { path: '/features/uptime-monitoring', parent: '/features' },
-  { path: '/features/visitor-intelligence', parent: '/features' },
-  { path: '/features/web-hosting', parent: '/features' },
-  // Learn pages
-  { path: '/learn/analytics-guide', parent: '/learn' },
-  { path: '/learn/automated-blogging-guide', parent: '/learn' },
-  { path: '/learn/cro-guide', parent: '/learn' },
-  { path: '/learn/content-marketing-guide', parent: '/learn' },
-  { path: '/learn/core-web-vitals-guide', parent: '/learn' },
-  { path: '/learn/domain-authority-guide', parent: '/learn' },
-  { path: '/learn/ecommerce-seo-guide', parent: '/learn' },
-  { path: '/learn/faq-generation-guide', parent: '/learn' },
-  { path: '/learn/gmb-optimization-guide', parent: '/learn' },
-  { path: '/learn/keyword-research-guide', parent: '/learn' },
-  { path: '/learn/link-building-guide', parent: '/learn' },
-  { path: '/learn/local-seo-guide', parent: '/learn' },
-  { path: '/learn/mobile-seo-guide', parent: '/learn' },
-  { path: '/learn/off-page-seo-guide', parent: '/learn' },
-  { path: '/learn/on-page-seo-guide', parent: '/learn' },
-  { path: '/learn/ppc-landing-pages-guide', parent: '/learn' },
-  { path: '/learn/social-signals-guide', parent: '/learn' },
-  { path: '/learn/technical-seo-guide', parent: '/learn' },
-  { path: '/learn/traffic-deanonymization-guide', parent: '/learn' },
-  { path: '/learn/uptime-monitoring-guide', parent: '/learn' },
-  { path: '/learn/visitor-intelligence-guide', parent: '/learn' },
-  { path: '/learn/web-hosting-guide', parent: '/learn' },
-  { path: '/learn/glossary', parent: '/learn' },
-  // Legal pages
-  { path: '/privacy-policy', parent: '/' },
-  { path: '/terms', parent: '/' },
-  { path: '/cookies', parent: '/' },
-  { path: '/security', parent: '/' },
-  { path: '/sitemap', parent: '/' },
-  // Auth/Admin
-  { path: '/auth', parent: '/' },
-  { path: '/admin', parent: '/' },
-  { path: '/website-audits', parent: '/' },
-  { path: '/audit-results', parent: '/website-audits' },
-  { path: '/changelog', parent: '/' },
+// Complete site structure based on the project's actual routing
+const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }[] = [
+  { path: '/', parent: null, category: 'root' },
+  
+  // Main L1 pages
+  { path: '/about', parent: '/', category: 'main' },
+  { path: '/features', parent: '/', category: 'main' },
+  { path: '/pricing', parent: '/', category: 'main' },
+  { path: '/contact', parent: '/', category: 'main' },
+  { path: '/faq', parent: '/', category: 'main' },
+  { path: '/learn', parent: '/', category: 'main' },
+  { path: '/tools', parent: '/', category: 'main' },
+  { path: '/directory', parent: '/', category: 'main' },
+  { path: '/marketplace', parent: '/', category: 'main' },
+  { path: '/careers', parent: '/', category: 'main' },
+  { path: '/integrations', parent: '/', category: 'main' },
+  { path: '/website-audits', parent: '/', category: 'main' },
+  { path: '/changelog', parent: '/', category: 'main' },
+  { path: '/auth', parent: '/', category: 'main' },
+  { path: '/admin', parent: '/', category: 'main' },
+  
+  // Feature sub-pages (L2)
+  { path: '/features/on-page-seo', parent: '/features', category: 'features' },
+  { path: '/features/off-page-seo', parent: '/features', category: 'features' },
+  { path: '/features/domain-authority', parent: '/features', category: 'features' },
+  { path: '/features/advanced-analytics', parent: '/features', category: 'features' },
+  { path: '/features/automated-blog', parent: '/features', category: 'features' },
+  { path: '/features/faq-generation', parent: '/features', category: 'features' },
+  { path: '/features/gmb-optimization', parent: '/features', category: 'features' },
+  { path: '/features/ppc-landing-pages', parent: '/features', category: 'features' },
+  { path: '/features/social-signals', parent: '/features', category: 'features' },
+  { path: '/features/traffic-de-anonymization', parent: '/features', category: 'features' },
+  { path: '/features/uptime-monitoring', parent: '/features', category: 'features' },
+  { path: '/features/visitor-intelligence', parent: '/features', category: 'features' },
+  { path: '/features/web-hosting', parent: '/features', category: 'features' },
+  
+  // Tools sub-pages (L2)
+  { path: '/tools/domain-audit', parent: '/tools', category: 'tools' },
+  { path: '/tools/keyword-checker', parent: '/tools', category: 'tools' },
+  { path: '/tools/backlink-analyzer', parent: '/tools', category: 'tools' },
+  { path: '/tools/site-speed', parent: '/tools', category: 'tools' },
+  { path: '/audit-results', parent: '/website-audits', category: 'tools' },
+  
+  // Learn sub-pages (L2)
+  { path: '/learn/glossary', parent: '/learn', category: 'learn' },
+  { path: '/learn/analytics-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/automated-blogging-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/cro-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/content-marketing-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/core-web-vitals-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/domain-authority-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/ecommerce-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/faq-generation-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/gmb-optimization-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/keyword-research-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/link-building-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/local-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/mobile-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/off-page-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/on-page-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/ppc-landing-pages-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/social-signals-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/technical-seo-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/traffic-deanonymization-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/uptime-monitoring-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/visitor-intelligence-guide', parent: '/learn', category: 'learn' },
+  { path: '/learn/web-hosting-guide', parent: '/learn', category: 'learn' },
+  
+  // Glossary term pages (L3)
+  { path: '/learn/glossary/index', parent: '/learn/glossary', category: 'glossary' },
+  
+  // Directory sub-pages (L2)
+  { path: '/directory/listing', parent: '/directory', category: 'directory' },
+  
+  // Legal pages - nested under a virtual /legal parent for visual grouping
+  { path: '/legal', parent: '/', category: 'legal' },
+  { path: '/privacy-policy', parent: '/legal', category: 'legal' },
+  { path: '/terms', parent: '/legal', category: 'legal' },
+  { path: '/cookies', parent: '/legal', category: 'legal' },
+  { path: '/security', parent: '/legal', category: 'legal' },
+  { path: '/sitemap', parent: '/legal', category: 'legal' },
 ];
 
 const formatPageName = (path: string): string => {
@@ -313,40 +329,56 @@ const VisitorFlowDiagram = () => {
     );
   }
 
-  // Group by depth with limits - increased for larger diagram
+  // Group by depth - show all pages, split L2 into rows if needed
   const depth0 = nodes.filter(n => n.depth === 0);
-  const depth1 = nodes.filter(n => n.depth === 1).slice(0, 14);
-  const depth2 = nodes.filter(n => n.depth === 2).slice(0, 18);
-  const depth3 = nodes.filter(n => n.depth >= 3).slice(0, 12);
+  const depth1 = nodes.filter(n => n.depth === 1);
+  const depth2 = nodes.filter(n => n.depth === 2);
+  const depth3 = nodes.filter(n => n.depth >= 3);
 
-  // Larger SVG dimensions
-  const svgWidth = 1200;
-  const svgHeight = 650;
-  const levelHeight = 140;
+  // Calculate how many L2 rows we need (max 20 per row)
+  const l2RowSize = 22;
+  const l2Rows = Math.ceil(depth2.length / l2RowSize);
+  
+  // Taller SVG to fit all pages
+  const svgWidth = 1400;
+  const levelHeight = 120;
+  const l2ExtraHeight = (l2Rows - 1) * 90;
+  const svgHeight = 180 + levelHeight * 3 + l2ExtraHeight + (depth3.length > 0 ? 100 : 0);
   
   const getNodePositions = () => {
     const positions: Record<string, { x: number; y: number }> = {};
     
+    // Root (L0)
     depth0.forEach(() => {
-      positions['/'] = { x: svgWidth / 2, y: 55 };
+      positions['/'] = { x: svgWidth / 2, y: 50 };
     });
     
-    const l1Width = svgWidth - 100;
+    // L1 - spread across width
+    const l1Width = svgWidth - 80;
     depth1.forEach((node, i) => {
       const spacing = l1Width / (depth1.length + 1);
-      positions[node.path] = { x: 50 + spacing * (i + 1), y: 55 + levelHeight };
+      positions[node.path] = { x: 40 + spacing * (i + 1), y: 50 + levelHeight };
     });
     
-    const l2Width = svgWidth - 60;
+    // L2 - may need multiple rows
+    const l2Width = svgWidth - 40;
     depth2.forEach((node, i) => {
-      const spacing = l2Width / (depth2.length + 1);
-      positions[node.path] = { x: 30 + spacing * (i + 1), y: 55 + levelHeight * 2 };
+      const row = Math.floor(i / l2RowSize);
+      const indexInRow = i % l2RowSize;
+      const nodesInThisRow = Math.min(l2RowSize, depth2.length - row * l2RowSize);
+      const spacing = l2Width / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: 20 + spacing * (indexInRow + 1), 
+        y: 50 + levelHeight * 2 + row * 90 
+      };
     });
     
-    const l3Width = svgWidth - 120;
+    // L3+ - at the bottom
+    const l3Width = svgWidth - 100;
+    const l3YBase = 50 + levelHeight * 2 + l2ExtraHeight + 100;
     depth3.forEach((node, i) => {
       const spacing = l3Width / (depth3.length + 1);
-      positions[node.path] = { x: 60 + spacing * (i + 1), y: 55 + levelHeight * 3 };
+      positions[node.path] = { x: 50 + spacing * (i + 1), y: l3YBase };
     });
     
     return positions;
@@ -661,10 +693,12 @@ const VisitorFlowDiagram = () => {
           })}
           
           {/* Depth labels */}
-          <text x={12} y={60} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
-          <text x={12} y={60 + levelHeight} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
-          <text x={12} y={60 + levelHeight * 2} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L2</text>
-          <text x={12} y={60 + levelHeight * 3} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
+          <text x={12} y={55} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
+          <text x={12} y={55 + levelHeight} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
+          <text x={12} y={55 + levelHeight * 2} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L2</text>
+          {depth3.length > 0 && (
+            <text x={12} y={55 + levelHeight * 2 + l2ExtraHeight + 100} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
+          )}
         </svg>
       </div>
 
