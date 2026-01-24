@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -159,6 +159,19 @@ const MarketingDashboard = () => {
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
+  
+  // User-added domains
+  const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
+    const stored = localStorage.getItem('vi_user_added_domains');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
+  const [newDomainInput, setNewDomainInput] = useState('');
+  
+  // Persist user-added domains to localStorage
+  useEffect(() => {
+    localStorage.setItem('vi_user_added_domains', JSON.stringify(userAddedDomains));
+  }, [userAddedDomains]);
   
   // GSC domain tracking status
   // Single source-of-truth for the header domain selector (domain-first)
@@ -977,12 +990,13 @@ const MarketingDashboard = () => {
               };
 
               // Categorize tracked domains (domain-first)
-              for (const domain of trackedDomains) {
+              const allTrackedDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
+              for (const domain of allTrackedDomains) {
                 const hasGsc = gscAuthenticated && (gscSitesByLabel.get(domain)?.length || 0) > 0;
                 if (hasGsc) {
                   bothDomains.push({ value: domain, label: domain, source: 'both', hasTracking: true });
                 } else {
-                  viOnlyDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: true });
+                  viOnlyDomains.push({ value: domain, label: domain, source: 'tracking', hasTracking: userAddedDomains.includes(domain) ? false : true });
                 }
               }
 
@@ -1065,6 +1079,17 @@ const MarketingDashboard = () => {
                             </span>
                           </SelectItem>
                         ))}
+                        <SelectSeparator />
+                        <div 
+                          className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddDomainDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add domain
+                        </div>
                       </SelectContent>
                     </Select>
                   </>
@@ -2174,6 +2199,66 @@ f.parentNode.insertBefore(j,f);
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormTestDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Domain Dialog */}
+      <Dialog open={addDomainDialogOpen} onOpenChange={setAddDomainDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Domain</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-domain">Domain</Label>
+              <Input
+                id="new-domain"
+                placeholder="example.com"
+                value={newDomainInput}
+                onChange={(e) => setNewDomainInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const domain = normalizeDomain(newDomainInput.trim());
+                    if (domain && !userAddedDomains.includes(domain) && !trackedDomains.includes(domain)) {
+                      setUserAddedDomains([...userAddedDomains, domain]);
+                      setSelectedDomainKey(domain);
+                      setSelectedTrackedDomain(domain);
+                      setSelectedGscDomain(domain);
+                      setGscDomainHasTracking(false);
+                      setNewDomainInput('');
+                      setAddDomainDialogOpen(false);
+                    }
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the root domain without http:// or https://
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setNewDomainInput('');
+              setAddDomainDialogOpen(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              const domain = normalizeDomain(newDomainInput.trim());
+              if (domain && !userAddedDomains.includes(domain) && !trackedDomains.includes(domain)) {
+                setUserAddedDomains([...userAddedDomains, domain]);
+                setSelectedDomainKey(domain);
+                setSelectedTrackedDomain(domain);
+                setSelectedGscDomain(domain);
+                setGscDomainHasTracking(false);
+                setNewDomainInput('');
+                setAddDomainDialogOpen(false);
+              }
+            }}>
+              Add Domain
             </Button>
           </DialogFooter>
         </DialogContent>
