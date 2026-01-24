@@ -1145,14 +1145,21 @@ const MarketingDashboard = () => {
         {/* Right Sidebar - Chat Panel */}
         <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-all duration-300 ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
           <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
-            {/* Header with toggle */}
+            {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
-              <button 
+              <div 
                 onClick={() => setChatPanelOpen(!chatPanelOpen)}
-                className="flex items-center gap-2 p-3 hover:bg-secondary/30 transition-colors relative"
+                className="flex items-center justify-center gap-2 p-3 cursor-pointer"
               >
                 <div className="relative">
-                  <MessageCircle className={`w-5 h-5 ${chatOnline ? 'text-cyan-500' : 'text-muted-foreground'}`} />
+                  {chatOnline ? (
+                    <>
+                      <MessageCircle className="w-5 h-5 text-cyan-500/30 absolute inset-0 animate-ping" />
+                      <MessageCircle className="w-5 h-5 text-cyan-500 relative" />
+                    </>
+                  ) : (
+                    <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                  )}
                   {chatOnline && sidebarChats.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                       {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
@@ -1160,12 +1167,9 @@ const MarketingDashboard = () => {
                   )}
                 </div>
                 {chatPanelOpen && (
-                  <>
-                    <span className="text-sm font-medium text-foreground flex-1 text-left">Live Chats</span>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </>
+                  <span className="text-sm font-medium text-foreground">Live Chats</span>
                 )}
-              </button>
+              </div>
               
               {/* Online/Offline Toggle */}
               <div className={`flex items-center gap-2 px-3 py-2 ${chatPanelOpen ? '' : 'justify-center'}`}>
