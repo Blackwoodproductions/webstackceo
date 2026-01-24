@@ -20,7 +20,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, Sun, Moon, MessageCircle, Calendar as CalendarIcon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -548,39 +548,25 @@ const MarketingDashboard = () => {
         </div>
       </div>
 
-      {/* Main Layout with Vertical Sidebar */}
+      {/* Main Layout */}
       <div className="flex min-h-[calc(100vh-140px)]">
-        {/* Left Sidebar - Visitor Intelligence */}
-        <div className={`${siteArchOpen ? 'w-80' : 'w-14'} flex-shrink-0 border-r border-border bg-card/50 transition-all duration-300 overflow-hidden`}>
-          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
-            {/* Sidebar Header */}
-            <button 
-              onClick={() => setSiteArchOpen(!siteArchOpen)}
-              className="flex items-center gap-2 p-3 border-b border-border hover:bg-secondary/30 transition-colors w-full"
-            >
-              <BarChart3 className="w-5 h-5 text-primary flex-shrink-0" />
-              {siteArchOpen && (
-                <span className="font-semibold text-sm text-foreground flex-1 text-left">Visitor Intelligence</span>
-              )}
-              <ChevronLeft className={`w-4 h-4 text-muted-foreground transition-transform ${!siteArchOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {/* Sidebar Content */}
-            {siteArchOpen ? (
-              <div className="flex-1 overflow-auto p-3">
-                <VisitorFlowDiagram 
-                  onPageFilter={setPageFilter}
-                  activeFilter={pageFilter}
-                  onSummaryUpdate={setFlowSummary}
-                  timeRange={diagramTimeRange}
-                  onTimeRangeChange={setDiagramTimeRange}
-                  customDateRange={diagramCustomDateRange}
-                  onCustomDateRangeChange={setDiagramCustomDateRange}
-                />
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center gap-2 py-4">
-                {flowSummary && flowSummary.topPages.slice(0, 8).map((page) => {
+        {/* Left Sidebar - Collapsed Icons (only visible when diagram is closed) */}
+        {!siteArchOpen && (
+          <div className="w-16 flex-shrink-0 border-r border-border bg-card/50">
+            <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+              {/* Sidebar Header - Click to expand */}
+              <button 
+                onClick={() => setSiteArchOpen(true)}
+                className="flex flex-col items-center gap-1 p-3 border-b border-border hover:bg-secondary/30 transition-colors"
+                title="Open Visitor Intelligence"
+              >
+                <BarChart3 className="w-5 h-5 text-primary" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
+              
+              {/* Page Icons */}
+              <div className="flex-1 flex flex-col items-center gap-2 py-4 overflow-auto">
+                {flowSummary && flowSummary.topPages.slice(0, 10).map((page) => {
                   const maxVisits = flowSummary.topPages[0]?.visits || 1;
                   const intensity = page.visits / maxVisits;
                   const heatColor = intensity > 0.7 ? '#3b82f6' : intensity > 0.4 ? '#22c55e' : '#eab308';
@@ -589,7 +575,7 @@ const MarketingDashboard = () => {
                   return (
                     <div
                       key={page.path}
-                      className="relative group cursor-pointer"
+                      className="relative group cursor-pointer hover:scale-110 transition-transform"
                       title={`${page.name}: ${page.visits} visits`}
                       onClick={() => setPageFilter(page.path)}
                     >
@@ -612,12 +598,47 @@ const MarketingDashboard = () => {
                   );
                 })}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content Area */}
         <main className="flex-1 p-6 overflow-auto">
+          {/* Full-Width Visitor Intelligence Panel (when open) */}
+          {siteArchOpen && (
+            <Card className="p-4 mb-6 animate-fade-in">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-primary" />
+                  <h2 className="font-bold text-foreground">WebStack.CEO Visitor Intelligence</h2>
+                  {pageFilter && (
+                    <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
+                      Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
+                    </Badge>
+                  )}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSiteArchOpen(false)}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Collapse
+                </Button>
+              </div>
+              <VisitorFlowDiagram 
+                onPageFilter={setPageFilter}
+                activeFilter={pageFilter}
+                onSummaryUpdate={setFlowSummary}
+                timeRange={diagramTimeRange}
+                onTimeRangeChange={setDiagramTimeRange}
+                customDateRange={diagramCustomDateRange}
+                onCustomDateRangeChange={setDiagramCustomDateRange}
+              />
+            </Card>
+          )}
+
           {/* Full Width Stats Layout */}
           <div className="space-y-4 mb-6">
           {/* Quick Stats Row - Full Width */}
