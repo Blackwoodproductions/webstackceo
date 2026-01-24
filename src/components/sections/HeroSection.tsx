@@ -160,7 +160,7 @@ const HeroSection = () => {
           >
             {/* Dashboard Preview */}
             <div 
-              className="relative"
+              className="relative max-w-[90%] mx-auto"
               onMouseEnter={() => setIsDashboardHovered(true)}
               onMouseLeave={() => setIsDashboardHovered(false)}
             >
