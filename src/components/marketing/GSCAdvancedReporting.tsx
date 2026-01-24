@@ -836,6 +836,16 @@ export const GSCAdvancedReporting = ({
     return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><FileX className="w-3 h-3 mr-1" />Not Indexed</Badge>;
   };
 
+  // Format domain name for display
+  const displayDomain = useMemo(() => {
+    if (!selectedSite) return '';
+    return selectedSite
+      .replace('sc-domain:', '')
+      .replace('https://', '')
+      .replace('http://', '')
+      .replace(/\/$/, '');
+  }, [selectedSite]);
+
   return (
     <Card className="mt-4">
       <CardHeader className="pb-3">
@@ -845,7 +855,15 @@ export const GSCAdvancedReporting = ({
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <div>
-              <CardTitle className="text-base">Advanced Reporting</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                {displayDomain && (
+                  <>
+                    <span className="text-primary font-semibold">{displayDomain}</span>
+                    <span className="text-muted-foreground">—</span>
+                  </>
+                )}
+                <span>Advanced Reporting</span>
+              </CardTitle>
               <CardDescription className="text-xs">Deep dive into keywords, countries & indexation</CardDescription>
             </div>
           </div>
