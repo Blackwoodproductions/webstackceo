@@ -775,12 +775,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </CardHeader>
         
         <CardContent className="space-y-4">
-          {/* Controls */}
-          <div className="flex flex-wrap gap-2 items-center justify-between bg-secondary/30 rounded-lg p-3">
-            <div className="flex flex-wrap gap-2 items-center">
+          {/* Controls - Domain and Date selectors left, dropdowns right */}
+          <div className="flex flex-wrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3">
+            {/* Left side - Domain & Date selectors */}
+            <div className="flex items-center gap-2">
               <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger className="w-[220px] h-8 text-xs">
-                  <Globe className="w-3 h-3 mr-1" />
+                <SelectTrigger className="w-[200px] h-8 text-xs font-medium">
+                  <Globe className="w-3 h-3 mr-1.5 text-primary" />
                   <SelectValue placeholder="Select site" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50">
@@ -792,8 +793,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 </SelectContent>
               </Select>
 
+              <div className="w-px h-6 bg-border" />
+
               <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectTrigger className="w-[110px] h-8 text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
                   <SelectValue />
                 </SelectTrigger>
@@ -807,8 +810,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </Select>
             </div>
 
+            {/* Right side - Data dropdowns & Refresh */}
             <div className="flex items-center gap-1">
-              {/* Data Dropdown Buttons */}
               <Button 
                 variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
                 size="sm" 
