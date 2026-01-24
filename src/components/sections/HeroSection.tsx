@@ -86,7 +86,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 mt-12"
+            className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight mb-8 mt-12"
           >
             <span className="gradient-text">C</span>ommand your W<span className="gradient-text">e</span>bsite &
             <br />
@@ -97,7 +97,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8"
+            className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto mb-10"
           >
             Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
             basic uptime monitoring to advanced SEO and traffic intelligence.
@@ -109,7 +109,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             onSubmit={handleSubmit}
-            className="max-w-3xl mx-auto mb-6"
+            className="max-w-4xl mx-auto mb-6"
           >
             <div className="relative flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
