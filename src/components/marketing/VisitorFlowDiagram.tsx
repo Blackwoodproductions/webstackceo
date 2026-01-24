@@ -535,10 +535,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   
   // Separate L1 into regular pages and "mega" parents (features, learn, tools)
   const megaParents = ['/features', '/learn', '/tools'];
-  const depth1Regular = nodes.filter(n => n.depth === 1 && !megaParents.includes(n.path));
+  // Exclude /audits from regular L1 since it's a child of /tools despite being depth 1
+  const depth1Regular = nodes.filter(n => n.depth === 1 && !megaParents.includes(n.path) && n.parent !== '/tools');
   const depth1Mega = nodes.filter(n => n.depth === 1 && megaParents.includes(n.path));
   
-  // Separate L2 children by parent
+  // Separate L2 children by parent (includes /audits which has parent /tools)
   const featuresChildren = nodes.filter(n => n.parent === '/features');
   const learnChildren = nodes.filter(n => n.parent === '/learn');
   const toolsChildren = nodes.filter(n => n.parent === '/tools');
