@@ -184,7 +184,14 @@ const formatPageName = (path: string): string => {
 };
 
 export interface VisitorFlowSummary {
-  topPages: { path: string; name: string; visits: number }[];
+  topPages: { 
+    path: string; 
+    name: string; 
+    visits: number;
+    liveCount: number;
+    externalCount: number;
+    hasExternalReferrer: boolean;
+  }[];
   totalVisits: number;
   activeVisitors: number;
   timeRange: TimeRange;
@@ -704,6 +711,16 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter, onSummaryUpdate }: Vis
     };
   }, [pageViews, timeRange, customDateRange, externalReferrerSessions]);
 
+  // Calculate visitors by node for summary
+  const visitorsByNodeForSummary = useMemo(() => {
+    const counts: Record<string, number> = {};
+    liveVisitors.forEach(v => {
+      const path = v.displayPath;
+      counts[path] = (counts[path] || 0) + 1;
+    });
+    return counts;
+  }, [liveVisitors]);
+
   // Update parent with summary data whenever it changes
   useEffect(() => {
     if (onSummaryUpdate) {
@@ -711,7 +728,14 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter, onSummaryUpdate }: Vis
         .filter(n => n.visits > 0)
         .sort((a, b) => b.visits - a.visits)
         .slice(0, 6)
-        .map(n => ({ path: n.path, name: n.name, visits: n.visits }));
+        .map(n => ({ 
+          path: n.path, 
+          name: n.name, 
+          visits: n.visits,
+          liveCount: visitorsByNodeForSummary[n.path] || 0,
+          externalCount: externalCountsByPage[n.path] || 0,
+          hasExternalReferrer: externalReferrerPages.has(n.path)
+        }));
       
       const totalVisits = nodes.reduce((sum, n) => sum + n.visits, 0);
       
@@ -722,7 +746,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter, onSummaryUpdate }: Vis
         timeRange,
       });
     }
-  }, [nodes, liveVisitors.length, timeRange, onSummaryUpdate]);
+  }, [nodes, liveVisitors, visitorsByNodeForSummary, externalCountsByPage, externalReferrerPages, timeRange, onSummaryUpdate]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited
