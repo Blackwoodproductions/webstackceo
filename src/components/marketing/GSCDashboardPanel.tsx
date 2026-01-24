@@ -226,8 +226,8 @@ export const GSCDashboardPanel = ({
   // Data dropdown states
   const [activeDropdown, setActiveDropdown] = useState<'queries' | 'pages' | 'countries' | null>(null);
   
-  // Performance by Source expanded state
-  const [showSourceDetails, setShowSourceDetails] = useState(false);
+  // Performance by Source expanded state - open by default with WEB selected
+  const [showSourceDetails, setShowSourceDetails] = useState(true);
 
   const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
     if (!profile) return;
@@ -1497,7 +1497,152 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             </div>
           </div>
 
-          {/* Combined KPI Row - All Search Types */}
+          {/* Search Type Breakdown - Performance by Source (Large boxes at top) */}
+          <div className="bg-secondary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-500" />
+                Performance by Source
+              </span>
+              {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+            </div>
+            
+            <div className="grid grid-cols-5 gap-3">
+              {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
+                const data = allTypesData[type];
+                const config = SEARCH_TYPE_CONFIG[type];
+                const hasData = data.clicks > 0 || data.impressions > 0;
+                const isActive = searchType === type;
+                const totalClicks = Object.values(allTypesData).reduce((sum, d) => sum + d.clicks, 0);
+                const clickPct = totalClicks > 0 ? (data.clicks / totalClicks) * 100 : 0;
+                
+                return (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setSearchType(type);
+                      setShowSourceDetails(true);
+                    }}
+                    className={`relative flex flex-col items-center p-3 rounded-xl transition-all border ${
+                      isActive 
+                        ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50 shadow-lg shadow-primary/10' 
+                        : hasData 
+                          ? 'bg-secondary/50 hover:bg-secondary/80 border-border/50 cursor-pointer hover:border-primary/30' 
+                          : 'bg-secondary/20 border-transparent opacity-60'
+                    }`}
+                  >
+                    {/* Active indicator */}
+                    {isActive && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
+                    )}
+                    
+                    {/* Icon with colored background */}
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-2"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${config.color}20, ${config.color}10)`,
+                        border: `1px solid ${config.color}30`
+                      }}
+                    >
+                      <div style={{ color: config.color }}>{config.icon}</div>
+                    </div>
+                    
+                    <span className="text-[11px] font-semibold mb-1" style={{ color: isActive ? config.color : undefined }}>
+                      {config.label}
+                    </span>
+                    
+                    {hasData ? (
+                      <>
+                        <span className="text-lg font-bold">{formatNumber(data.clicks)}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
+                        {clickPct > 0 && (
+                          <div className="mt-1.5 w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${Math.min(clickPct, 100)}%`,
+                                background: config.color 
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-bold text-muted-foreground">—</span>
+                        <span className="text-[10px] text-muted-foreground">No data</span>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Display Window - Chart and Current Type KPIs (middle section) */}
+          {showSourceDetails && (
+            <div className="bg-secondary/10 rounded-lg p-4 animate-in fade-in duration-200">
+              {/* Current Type Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
+                    {SEARCH_TYPE_CONFIG[searchType].icon}
+                    <span className="text-sm font-medium">{SEARCH_TYPE_CONFIG[searchType].label} Search</span>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px]">{dateRange} days</Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSourceDetails(false)}
+                  className="h-6 px-2 text-xs"
+                >
+                  <ChevronUp className="w-3 h-3 mr-1" />
+                  Collapse
+                </Button>
+              </div>
+
+              {/* Current Type KPI Row */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[
+                  { label: "Clicks", value: formatNumber(totalMetrics.clicks) },
+                  { label: "Impressions", value: formatNumber(totalMetrics.impressions) },
+                  { label: "CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%" },
+                  { label: "Position", value: totalMetrics.position.toFixed(1) },
+                ].map((metric, i) => (
+                  <div key={i} className="bg-secondary/30 rounded-md p-2 text-center">
+                    <p className="text-sm font-bold">{isFetching ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{metric.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Performance Chart */}
+              <div className="h-[150px] w-full">
+                {isFetching && chartData.length === 0 ? (
+                  <Skeleton className="h-full w-full" />
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={35} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                      <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Combined KPI Row - All Search Types (Small boxes at bottom) */}
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: "Total Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "text-primary", subtitle: "All sources" },
@@ -1514,138 +1659,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <p className="text-[10px] text-muted-foreground">{metric.subtitle}</p>
               </div>
             ))}
-          </div>
-
-          {/* Current Type KPI Row - Web Search (moved above Performance by Source) */}
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center gap-1" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
-              {SEARCH_TYPE_CONFIG[searchType].icon}
-              <span className="text-xs font-medium">{SEARCH_TYPE_CONFIG[searchType].label} Search</span>
-            </div>
-            <Badge variant="secondary" className="text-[10px]">{dateRange} days</Badge>
-          </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {[
-              { label: "Clicks", value: formatNumber(totalMetrics.clicks) },
-              { label: "Impressions", value: formatNumber(totalMetrics.impressions) },
-              { label: "CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%" },
-              { label: "Position", value: totalMetrics.position.toFixed(1) },
-            ].map((metric, i) => (
-              <div key={i} className="bg-secondary/20 rounded-md p-2 text-center">
-                <p className="text-sm font-bold">{isFetching ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
-                <p className="text-[10px] text-muted-foreground">{metric.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Performance Chart - Now directly after Web Search KPIs */}
-          <div className="h-[150px] w-full mb-4">
-            {isFetching && chartData.length === 0 ? (
-              <Skeleton className="h-full w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={35} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          {/* Search Type Breakdown - Performance by Source */}
-          <div className="bg-secondary/20 rounded-lg p-4">
-            <button
-              onClick={() => setShowSourceDetails(!showSourceDetails)}
-              className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
-            >
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-500" />
-                Performance by Source
-              </span>
-              <div className="flex items-center gap-2">
-                {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
-                {showSourceDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-            </button>
-            
-            {showSourceDetails && (
-              <div className="grid grid-cols-5 gap-3 animate-in fade-in duration-200">
-                {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
-                  const data = allTypesData[type];
-                  const config = SEARCH_TYPE_CONFIG[type];
-                  const hasData = data.clicks > 0 || data.impressions > 0;
-                  const isActive = searchType === type;
-                  const totalClicks = Object.values(allTypesData).reduce((sum, d) => sum + d.clicks, 0);
-                  const clickPct = totalClicks > 0 ? (data.clicks / totalClicks) * 100 : 0;
-                  
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => setSearchType(type)}
-                      className={`relative flex flex-col items-center p-3 rounded-xl transition-all border ${
-                        isActive 
-                          ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50 shadow-lg shadow-primary/10' 
-                          : hasData 
-                            ? 'bg-secondary/50 hover:bg-secondary/80 border-border/50 cursor-pointer hover:border-primary/30' 
-                            : 'bg-secondary/20 border-transparent opacity-60'
-                      }`}
-                    >
-                      {/* Active indicator */}
-                      {isActive && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
-                      )}
-                      
-                      {/* Icon with colored background */}
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center mb-2"
-                        style={{ 
-                          background: `linear-gradient(135deg, ${config.color}20, ${config.color}10)`,
-                          border: `1px solid ${config.color}30`
-                        }}
-                      >
-                        <div style={{ color: config.color }}>{config.icon}</div>
-                      </div>
-                      
-                      <span className="text-[11px] font-semibold mb-1" style={{ color: isActive ? config.color : undefined }}>
-                        {config.label}
-                      </span>
-                      
-                      {hasData ? (
-                        <>
-                          <span className="text-lg font-bold">{formatNumber(data.clicks)}</span>
-                          <span className="text-[10px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
-                          {clickPct > 0 && (
-                            <div className="mt-1.5 w-full bg-secondary rounded-full h-1.5 overflow-hidden">
-                              <div 
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{ 
-                                  width: `${Math.min(clickPct, 100)}%`,
-                                  background: config.color 
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg font-bold text-muted-foreground">—</span>
-                          <span className="text-[10px] text-muted-foreground">No data</span>
-                        </>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
           {/* Advanced Reporting Toggle */}
