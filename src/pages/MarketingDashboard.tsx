@@ -410,6 +410,33 @@ const MarketingDashboard = () => {
           </Card>
         </div>
 
+        {/* Visitor Flow Diagram - Right under stats */}
+        <div className="mb-6">
+          {/* Filter indicator */}
+          {pageFilter && (
+            <div className="mb-4 flex items-center gap-2">
+              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                <Filter className="w-3 h-3" />
+                Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
+                <button 
+                  onClick={() => setPageFilter(null)}
+                  className="ml-1 hover:bg-purple-500/30 rounded p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
+                {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
+              </span>
+            </div>
+          )}
+          <VisitorFlowDiagram 
+            onPageFilter={setPageFilter}
+            activeFilter={pageFilter}
+          />
+        </div>
+
         {/* Funnel & Active Visitors Row */}
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Funnel Visualization */}
@@ -462,33 +489,6 @@ const MarketingDashboard = () => {
 
           {/* Active Visitors Widget */}
           <ActiveVisitorsWidget />
-        </div>
-
-        {/* Visitor Flow Diagram */}
-        <div className="mb-8">
-          {/* Filter indicator */}
-          {pageFilter && (
-            <div className="mb-4 flex items-center gap-2">
-              <Badge variant="secondary" className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                <Filter className="w-3 h-3" />
-                Filtering by: <span className="font-bold">{pageFilter === '/' ? 'Homepage' : pageFilter}</span>
-                <button 
-                  onClick={() => setPageFilter(null)}
-                  className="ml-1 hover:bg-purple-500/30 rounded p-0.5"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Showing {pageViews.filter(pv => pv.page_path === pageFilter || pv.page_path.startsWith(pageFilter + '/')).length} page views, {' '}
-                {toolInteractions.filter(ti => ti.page_path === pageFilter || (ti.page_path && ti.page_path.startsWith(pageFilter + '/'))).length} interactions
-              </span>
-            </div>
-          )}
-          <VisitorFlowDiagram 
-            onPageFilter={setPageFilter}
-            activeFilter={pageFilter}
-          />
         </div>
 
         {/* Heatmap Row */}
