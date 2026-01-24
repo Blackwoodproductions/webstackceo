@@ -28,7 +28,7 @@ import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
 import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
-import InteractiveGrid from '@/components/ui/interactive-grid';
+import ChatOperatorPanel from '@/components/marketing/ChatOperatorPanel';
 interface Lead {
   id: string;
   email: string;
@@ -915,6 +915,11 @@ const MarketingDashboard = () => {
         {/* Visitor Engagement Panel (Heatmap + Active Visitors) */}
         <div className="mb-8">
           <VisitorEngagementPanel />
+        </div>
+
+        {/* Live Chat Operator Panel */}
+        <div className="mb-8">
+          <ChatOperatorPanel />
         </div>
       </main>
 

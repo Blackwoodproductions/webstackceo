@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { 
   Users, Clock, Eye, MousePointer, Mail, Phone, User, 
   Building, Activity, Wifi, WifiOff, Flame, TrendingUp,
-  Globe, MapPin, Monitor, Smartphone, ArrowRight, Zap
+  Globe, MapPin, Monitor, Smartphone, ArrowRight, Zap, MessageCircle, Bell
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 
@@ -24,6 +24,13 @@ interface ActiveSession {
   hasName: boolean;
   hasCompanyInfo: boolean;
   recentPages: string[];
+}
+
+interface ChatConversation {
+  id: string;
+  session_id: string;
+  status: string;
+  last_message_at: string;
 }
 
 interface PageEngagement {
@@ -319,9 +326,8 @@ const VisitorEngagementPanel = () => {
           <p className="text-sm">No active visitors in the last 5 minutes</p>
         </div>
       ) : (
-        <ScrollArea className="h-[320px]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {activeSessions.map((session, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {activeSessions.slice(0, 9).map((session, index) => {
               const engagement = getEngagementLevel(session);
               const device = getDeviceType(session.user_agent);
               const referrer = getReferrerBadge(session.referrer);
@@ -455,9 +461,8 @@ const VisitorEngagementPanel = () => {
                   </div>
                 </div>
               );
-            })}
-          </div>
-        </ScrollArea>
+          })}
+        </div>
       )}
     </Card>
   );
