@@ -329,36 +329,65 @@ const VisitorFlowDiagram = () => {
     );
   }
 
-  // Group by depth - show all pages, split into rows
+  // Group by depth and separate features/learn which have many children
   const depth0 = nodes.filter(n => n.depth === 0);
-  const depth1 = nodes.filter(n => n.depth === 1);
-  const depth2 = nodes.filter(n => n.depth === 2);
+  
+  // Separate L1 into regular pages and "mega" parents (features, learn)
+  const megaParents = ['/features', '/learn'];
+  const depth1Regular = nodes.filter(n => n.depth === 1 && !megaParents.includes(n.path));
+  const depth1Mega = nodes.filter(n => n.depth === 1 && megaParents.includes(n.path));
+  
+  // Separate L2 children by parent
+  const featuresChildren = nodes.filter(n => n.parent === '/features');
+  const learnChildren = nodes.filter(n => n.parent === '/learn');
+  const otherL2 = nodes.filter(n => n.depth === 2 && n.parent !== '/features' && n.parent !== '/learn');
+  
   const depth3 = nodes.filter(n => n.depth >= 3);
 
-  // Max nodes per row for each level to prevent overlap
-  const l1RowSize = 8;
-  const l2RowSize = 12;
+  // Layout configuration
+  const svgWidth = 1500;
+  const baseY = 50;
+  const rowHeight = 90;
+  const sectionGap = 50;
+  
+  // Row sizes
+  const l1RegularRowSize = 12;
+  const megaChildRowSize = 13;
+  const otherL2RowSize = 10;
   const l3RowSize = 10;
   
-  const l1Rows = Math.ceil(depth1.length / l1RowSize);
-  const l2Rows = Math.ceil(depth2.length / l2RowSize);
+  // Calculate rows needed for each section
+  const l1RegularRows = Math.ceil(depth1Regular.length / l1RegularRowSize);
+  const featuresRows = Math.ceil(featuresChildren.length / megaChildRowSize);
+  const learnRows = Math.ceil(learnChildren.length / megaChildRowSize);
+  const otherL2Rows = Math.ceil(otherL2.length / otherL2RowSize);
   const l3Rows = Math.ceil(depth3.length / l3RowSize);
   
-  // Wider and taller SVG with more spacing
-  const svgWidth = 1500;
-  const baseY = 60;
-  const l1YSpacing = 100; // Space between L1 rows
-  const l2YSpacing = 110; // Space between L2 rows  
-  const l3YSpacing = 100; // Space between L3 rows
-  const levelGap = 140; // Gap between depth levels
+  // Calculate Y positions for each section
+  const l1RegularStartY = baseY + 100;
+  const l1RegularEndY = l1RegularStartY + l1RegularRows * rowHeight;
   
-  const l1TotalHeight = l1Rows * l1YSpacing;
-  const l2StartY = baseY + levelGap + l1TotalHeight;
-  const l2TotalHeight = l2Rows * l2YSpacing;
-  const l3StartY = l2StartY + l2TotalHeight + 60;
-  const l3TotalHeight = l3Rows * l3YSpacing;
+  const megaParentY = l1RegularEndY + sectionGap;
   
-  const svgHeight = l3StartY + l3TotalHeight + 80;
+  // Features section (left half)
+  const featuresChildrenStartY = megaParentY + rowHeight;
+  const featuresEndY = featuresChildrenStartY + featuresRows * rowHeight;
+  
+  // Learn section (right half) - starts at same Y as features
+  const learnChildrenStartY = megaParentY + rowHeight;
+  const learnEndY = learnChildrenStartY + learnRows * rowHeight;
+  
+  const megaSectionEndY = Math.max(featuresEndY, learnEndY);
+  
+  // Other L2 pages
+  const otherL2StartY = megaSectionEndY + sectionGap;
+  const otherL2EndY = otherL2StartY + (otherL2Rows > 0 ? otherL2Rows * rowHeight : 0);
+  
+  // L3+ pages
+  const l3StartY = otherL2EndY + (otherL2.length > 0 ? sectionGap : 0);
+  const l3EndY = l3StartY + (l3Rows > 0 ? l3Rows * rowHeight : 0);
+  
+  const svgHeight = l3EndY + 60;
   
   const getNodePositions = () => {
     const positions: Record<string, { x: number; y: number }> = {};
@@ -366,52 +395,85 @@ const VisitorFlowDiagram = () => {
     // Root (L0)
     positions['/'] = { x: svgWidth / 2, y: baseY };
     
-    // L1 - split into rows
-    const l1Width = svgWidth - 120;
-    depth1.forEach((node, i) => {
-      const row = Math.floor(i / l1RowSize);
-      const indexInRow = i % l1RowSize;
-      const nodesInThisRow = Math.min(l1RowSize, depth1.length - row * l1RowSize);
+    // L1 Regular pages - spread across full width
+    const l1Width = svgWidth - 100;
+    depth1Regular.forEach((node, i) => {
+      const row = Math.floor(i / l1RegularRowSize);
+      const indexInRow = i % l1RegularRowSize;
+      const nodesInThisRow = Math.min(l1RegularRowSize, depth1Regular.length - row * l1RegularRowSize);
       const spacing = l1Width / (nodesInThisRow + 1);
       positions[node.path] = { 
-        x: 60 + spacing * (indexInRow + 1), 
-        y: baseY + levelGap + row * l1YSpacing 
-      };
-    });
-    
-    // L2 - split into rows with offset for visual separation
-    const l2Width = svgWidth - 80;
-    depth2.forEach((node, i) => {
-      const row = Math.floor(i / l2RowSize);
-      const indexInRow = i % l2RowSize;
-      const nodesInThisRow = Math.min(l2RowSize, depth2.length - row * l2RowSize);
-      const spacing = l2Width / (nodesInThisRow + 1);
-      // Offset alternate rows for better visual separation
-      const rowOffset = row % 2 === 1 ? spacing / 2 : 0;
-      positions[node.path] = { 
-        x: 40 + rowOffset + spacing * (indexInRow + 1), 
-        y: l2StartY + row * l2YSpacing 
-      };
-    });
-    
-    // L3+ - at the bottom
-    const l3Width = svgWidth - 100;
-    depth3.forEach((node, i) => {
-      const row = Math.floor(i / l3RowSize);
-      const indexInRow = i % l3RowSize;
-      const nodesInThisRow = Math.min(l3RowSize, depth3.length - row * l3RowSize);
-      const spacing = l3Width / (nodesInThisRow + 1);
-      positions[node.path] = { 
         x: 50 + spacing * (indexInRow + 1), 
-        y: l3StartY + row * l3YSpacing 
+        y: l1RegularStartY + row * rowHeight 
       };
     });
+    
+    // Mega parent row - Features on left, Learn on right
+    positions['/features'] = { x: svgWidth * 0.25, y: megaParentY };
+    positions['/learn'] = { x: svgWidth * 0.75, y: megaParentY };
+    
+    // Features children - left half of screen
+    const featuresWidth = svgWidth * 0.48;
+    featuresChildren.forEach((node, i) => {
+      const row = Math.floor(i / megaChildRowSize);
+      const indexInRow = i % megaChildRowSize;
+      const nodesInThisRow = Math.min(megaChildRowSize, featuresChildren.length - row * megaChildRowSize);
+      const spacing = featuresWidth / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: 20 + spacing * (indexInRow + 1), 
+        y: featuresChildrenStartY + row * rowHeight 
+      };
+    });
+    
+    // Learn children - right half of screen
+    const learnWidth = svgWidth * 0.48;
+    const learnStartX = svgWidth * 0.52;
+    learnChildren.forEach((node, i) => {
+      const row = Math.floor(i / megaChildRowSize);
+      const indexInRow = i % megaChildRowSize;
+      const nodesInThisRow = Math.min(megaChildRowSize, learnChildren.length - row * megaChildRowSize);
+      const spacing = learnWidth / (nodesInThisRow + 1);
+      positions[node.path] = { 
+        x: learnStartX + spacing * (indexInRow + 1), 
+        y: learnChildrenStartY + row * rowHeight 
+      };
+    });
+    
+    // Other L2 pages - full width
+    if (otherL2.length > 0) {
+      const otherWidth = svgWidth - 100;
+      otherL2.forEach((node, i) => {
+        const row = Math.floor(i / otherL2RowSize);
+        const indexInRow = i % otherL2RowSize;
+        const nodesInThisRow = Math.min(otherL2RowSize, otherL2.length - row * otherL2RowSize);
+        const spacing = otherWidth / (nodesInThisRow + 1);
+        positions[node.path] = { 
+          x: 50 + spacing * (indexInRow + 1), 
+          y: otherL2StartY + row * rowHeight 
+        };
+      });
+    }
+    
+    // L3+ pages - full width at bottom
+    if (depth3.length > 0) {
+      const l3Width = svgWidth - 100;
+      depth3.forEach((node, i) => {
+        const row = Math.floor(i / l3RowSize);
+        const indexInRow = i % l3RowSize;
+        const nodesInThisRow = Math.min(l3RowSize, depth3.length - row * l3RowSize);
+        const spacing = l3Width / (nodesInThisRow + 1);
+        positions[node.path] = { 
+          x: 50 + spacing * (indexInRow + 1), 
+          y: l3StartY + row * rowHeight 
+        };
+      });
+    }
     
     return positions;
   };
 
   const positions = getNodePositions();
-  const allDisplayedNodes = [...depth0, ...depth1, ...depth2, ...depth3];
+  const allDisplayedNodes = [...depth0, ...depth1Regular, ...depth1Mega, ...featuresChildren, ...learnChildren, ...otherL2, ...depth3];
 
   // Generate static edges
   const edges: { from: string; to: string; visits: number; isVisited: boolean }[] = [];
@@ -721,8 +783,11 @@ const VisitorFlowDiagram = () => {
           
           {/* Depth labels */}
           <text x={12} y={baseY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Root</text>
-          <text x={12} y={baseY + levelGap + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
-          <text x={12} y={l2StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L2</text>
+          <text x={12} y={l1RegularStartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L1</text>
+          <text x={12} y={megaParentY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Features / Learn</text>
+          {otherL2.length > 0 && (
+            <text x={12} y={otherL2StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>Other L2</text>
+          )}
           {depth3.length > 0 && (
             <text x={12} y={l3StartY + 5} className="fill-muted-foreground" style={{ fontSize: '10px' }}>L3+</text>
           )}
