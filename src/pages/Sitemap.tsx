@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { 
   Map, Home, FileText, Users, DollarSign, HelpCircle, 
   Mail, Building2, Briefcase, Shield, BookOpen, Settings,
-  Globe, BarChart3, Zap, Target, ArrowRight
+  Globe, BarChart3, Zap, Target, ArrowRight, Wrench
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -30,6 +30,14 @@ const sitemapData: SitemapSection[] = [
       { name: "Contact", href: "/contact", description: "Get in touch with our team" },
       { name: "FAQ", href: "/faq", description: "Frequently asked questions" },
       { name: "Careers", href: "/careers", description: "Join our team" },
+    ]
+  },
+  {
+    title: "Tools & Audits",
+    icon: Wrench,
+    links: [
+      { name: "SEO Tools", href: "/tools", description: "Free SEO analysis tools" },
+      { name: "Website Audits", href: "/audits", description: "Browse completed SEO audits" },
     ]
   },
   {
@@ -97,6 +105,15 @@ const sitemapData: SitemapSection[] = [
       { name: "SERP", href: "/learn/glossary/serp", description: "Search results page" },
       { name: "Bounce Rate", href: "/learn/glossary/bounce-rate", description: "Single-page visits" },
       { name: "Conversion Rate", href: "/learn/glossary/conversion-rate", description: "Goal completion rate" },
+      { name: "Long-tail Keywords", href: "/learn/glossary/long-tail-keywords", description: "Specific search phrases" },
+      { name: "Search Intent", href: "/learn/glossary/search-intent", description: "User query purpose" },
+      { name: "Keyword Difficulty", href: "/learn/glossary/keyword-difficulty", description: "Ranking competition" },
+      { name: "Content Cluster", href: "/learn/glossary/content-cluster", description: "Topic hub strategy" },
+      { name: "Content Calendar", href: "/learn/glossary/content-calendar", description: "Publishing schedule" },
+      { name: "Mobile-First Indexing", href: "/learn/glossary/mobile-first-indexing", description: "Google's mobile priority" },
+      { name: "Responsive Design", href: "/learn/glossary/responsive-design", description: "Adaptive layouts" },
+      { name: "Product Schema", href: "/learn/glossary/product-schema", description: "E-commerce markup" },
+      { name: "Faceted Navigation", href: "/learn/glossary/faceted-navigation", description: "Filter-based browsing" },
     ]
   },
   {
@@ -250,7 +267,7 @@ const Sitemap = () => {
                 {[
                   { label: "Total Pages", value: sitemapData.reduce((acc, s) => acc + s.links.length, 0).toString() },
                   { label: "Learning Guides", value: "22" },
-                  { label: "Glossary Terms", value: "20+" },
+                  { label: "Glossary Terms", value: "22" },
                   { label: "Features", value: "13" },
                 ].map((stat) => (
                   <div key={stat.label}>
