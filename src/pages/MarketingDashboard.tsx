@@ -657,36 +657,36 @@ const MarketingDashboard = () => {
         {/* Leads Section - Full Width */}
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
-            {/* Combined Tab Header with Lead Quality Stats */}
-            <div className="flex items-center justify-between gap-4 mb-4 p-3 rounded-xl bg-secondary/30 border border-border/50 flex-wrap">
-              <TabsList className="grid grid-cols-3 bg-transparent p-0 h-auto gap-1">
-                <TabsTrigger value="leads" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
-                  <Mail className="w-3 h-3 mr-1.5" />
+            {/* Combined Tab Header with Lead Quality Stats - Full Width */}
+            <div className="flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border/50">
+              {/* Tabs - takes up left portion */}
+              <TabsList className="flex-1 grid grid-cols-3 bg-background/40 p-1 h-auto gap-1 rounded-lg">
+                <TabsTrigger value="leads" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
+                  <Mail className="w-4 h-4 mr-2" />
                   Leads ({pageFilter ? filteredData.leads.length : funnelStats.leads})
                 </TabsTrigger>
-                <TabsTrigger value="journey" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
-                  <TrendingUp className="w-3 h-3 mr-1.5" />
+                <TabsTrigger value="journey" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
+                  <TrendingUp className="w-4 h-4 mr-2" />
                   Journey
                 </TabsTrigger>
-                <TabsTrigger value="tools" className="text-xs data-[state=active]:bg-background/80 px-3 py-1.5">
-                  <MousePointer className="w-3 h-3 mr-1.5" />
+                <TabsTrigger value="tools" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
+                  <MousePointer className="w-4 h-4 mr-2" />
                   Tools ({filteredData.toolInteractions.length})
                 </TabsTrigger>
               </TabsList>
               
-              {/* Lead Quality Badges - inline */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
+              {/* Lead Quality Stats - takes up right portion */}
+              <div className="flex-1 grid grid-cols-4 gap-2">
                 {[
-                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500' },
-                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500' },
-                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500' },
-                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500' },
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, color: 'bg-blue-500', icon: Zap },
+                  { label: 'Named', count: funnelStats.withName, color: 'bg-amber-500', icon: UserCheck },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, color: 'bg-orange-500', icon: Target },
+                  { label: 'Closed', count: funnelStats.closedLeads, color: 'bg-green-500', icon: CheckCircle },
                 ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/50 border border-border/30">
-                    <div className={`w-2 h-2 rounded-full ${item.color}`} />
-                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
-                    <span className="font-bold text-xs">{Math.max(0, item.count)}</span>
+                  <div key={item.label} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-border/30">
+                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                    <span className="text-xs text-muted-foreground">{item.label}</span>
+                    <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
                   </div>
                 ))}
               </div>
