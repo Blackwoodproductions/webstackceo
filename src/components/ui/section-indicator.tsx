@@ -80,7 +80,7 @@ const SectionIndicator = () => {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -20 }}
       transition={{ duration: 0.3 }}
-      className="fixed left-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-3"
+      className="fixed left-6 top-[47%] -translate-y-1/2 z-40 hidden lg:flex flex-col gap-3"
     >
       {sections.map((section) => (
         <button
