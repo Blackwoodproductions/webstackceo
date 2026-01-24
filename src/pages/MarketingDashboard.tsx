@@ -30,7 +30,7 @@ import SEO from '@/components/SEO';
 import VisitorEngagementPanel from '@/components/marketing/VisitorEngagementPanel';
 import VisitorFlowDiagram from '@/components/marketing/VisitorFlowDiagram';
 import ReferrerBreakdownChart from '@/components/marketing/ReferrerBreakdownChart';
-import ChatOperatorPanel from '@/components/marketing/ChatOperatorPanel';
+import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 interface Lead {
   id: string;
   email: string;
@@ -943,11 +943,10 @@ const MarketingDashboard = () => {
           <VisitorEngagementPanel />
         </div>
 
-        {/* Live Chat Operator Panel */}
-        <div className="mb-8">
-          <ChatOperatorPanel />
-        </div>
       </main>
+
+      {/* Floating Chat Bar */}
+      <FloatingChatBar isOnline={chatOnline} />
 
       {/* Close Lead Dialog */}
       <Dialog open={closeLeadDialog.open} onOpenChange={(open) => setCloseLeadDialog({ open, lead: open ? closeLeadDialog.lead : null })}>
