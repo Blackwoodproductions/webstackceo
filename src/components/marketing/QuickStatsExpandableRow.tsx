@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import VisitorEngagementPanel from "./VisitorEngagementPanel";
 
 type Lead = {
   id: string;
@@ -283,7 +284,11 @@ export function QuickStatsExpandableRow({
             </button>
           </div>
 
-          {(expanded === "active" || expanded === "today") && (
+          {expanded === "active" && (
+            <VisitorEngagementPanel />
+          )}
+
+          {expanded === "today" && (
             loadingPanel ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -296,22 +301,20 @@ export function QuickStatsExpandableRow({
                   <TableHead>Session</TableHead>
                   <TableHead>First page</TableHead>
                   <TableHead>Referrer</TableHead>
-                  <TableHead>{expanded === "active" ? "Last active" : "Started"}</TableHead>
+                  <TableHead>Started</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(expanded === "active" ? activeSessions : todaySessions).map((s) => (
+                {todaySessions.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-mono text-xs">{s.session_id.slice(0, 8)}…</TableCell>
                     <TableCell className="text-sm">{s.first_page || "—"}</TableCell>
                     <TableCell className="text-sm truncate max-w-[240px]">{s.referrer || "Direct"}</TableCell>
-                    <TableCell className="text-sm">
-                      {expanded === "active" ? formatShort(s.last_activity_at) : formatShort(s.started_at)}
-                    </TableCell>
+                    <TableCell className="text-sm">{formatShort(s.started_at)}</TableCell>
                   </TableRow>
                 ))}
 
-                {((expanded === "active" ? activeSessions : todaySessions).length === 0) && (
+                {todaySessions.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-sm">
                       No records to show
