@@ -182,18 +182,67 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
 
+  // Fetch initial data including active sessions
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await supabase
-          .from('page_views')
-          .select('page_path, created_at, session_id')
-          .order('created_at', { ascending: false })
-          .limit(5000);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         
-        setPageViews(data || []);
+        // Fetch page views and active sessions in parallel
+        const [pageViewsRes, activeSessionsRes] = await Promise.all([
+          supabase
+            .from('page_views')
+            .select('page_path, created_at, session_id')
+            .order('created_at', { ascending: false })
+            .limit(5000),
+          supabase
+            .from('visitor_sessions')
+            .select('session_id, last_activity_at')
+            .gte('last_activity_at', fiveMinutesAgo)
+        ]);
+        
+        setPageViews(pageViewsRes.data || []);
+        
+        // Get last page for each active session
+        if (activeSessionsRes.data && activeSessionsRes.data.length > 0) {
+          const sessionIds = activeSessionsRes.data.map(s => s.session_id);
+          
+          // Get most recent page view for each active session
+          const { data: recentPages } = await supabase
+            .from('page_views')
+            .select('page_path, session_id, created_at')
+            .in('session_id', sessionIds)
+            .order('created_at', { ascending: false });
+          
+          if (recentPages) {
+            // Group by session and take most recent page
+            const sessionPages: Record<string, { path: string; time: number }> = {};
+            recentPages.forEach(pv => {
+              let cleanPath = pv.page_path.split('#')[0].split('?')[0];
+              if (cleanPath.startsWith('/audit/') || cleanPath === '/audit') {
+                cleanPath = '/audits';
+              }
+              if (!sessionPages[pv.session_id]) {
+                sessionPages[pv.session_id] = { 
+                  path: cleanPath, 
+                  time: new Date(pv.created_at).getTime() 
+                };
+              }
+            });
+            
+            // Initialize live visitors from active sessions
+            const initialVisitors: LiveVisitor[] = Object.entries(sessionPages).map(([sessionId, data]) => ({
+              id: sessionId,
+              currentPath: data.path,
+              previousPath: null,
+              timestamp: data.time
+            }));
+            
+            setLiveVisitors(initialVisitors);
+          }
+        }
       } catch (error) {
-        console.error('Error fetching page views:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -202,10 +251,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     fetchData();
   }, []);
 
-  // Subscribe to realtime page views
+  // Subscribe to realtime page views and session updates
   useEffect(() => {
     const channel = supabase
-      .channel('live-page-views')
+      .channel('live-visitor-tracking')
       .on(
         'postgres_changes',
         {
@@ -214,7 +263,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           table: 'page_views',
         },
         (payload) => {
-          console.log('New page view:', payload);
           const newView = payload.new as { page_path: string; created_at: string; session_id: string };
           
           // Add to page views
@@ -260,6 +308,53 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               }];
             }
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'visitor_sessions',
+        },
+        (payload) => {
+          // Update visitor timestamp when their session is updated (they're still active)
+          const session = payload.new as { session_id: string; last_activity_at: string };
+          setLiveVisitors(prev => 
+            prev.map(v => 
+              v.id === session.session_id 
+                ? { ...v, timestamp: new Date(session.last_activity_at).getTime() }
+                : v
+            )
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'visitor_sessions',
+        },
+        async (payload) => {
+          // New session started - fetch their first page
+          const session = payload.new as { session_id: string; first_page: string | null };
+          if (session.first_page) {
+            let cleanPath = session.first_page.split('#')[0].split('?')[0];
+            if (cleanPath.startsWith('/audit/') || cleanPath === '/audit') {
+              cleanPath = '/audits';
+            }
+            setLiveVisitors(prev => {
+              // Only add if not already tracked
+              if (prev.find(v => v.id === session.session_id)) return prev;
+              return [...prev, {
+                id: session.session_id,
+                currentPath: cleanPath,
+                previousPath: null,
+                timestamp: Date.now()
+              }];
+            });
+          }
         }
       )
       .subscribe();
