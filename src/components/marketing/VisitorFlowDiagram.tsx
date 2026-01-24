@@ -40,37 +40,47 @@ interface LiveVisitor {
 
 type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
 
-const getTimeRangeFilter = (range: TimeRange, customStart?: Date): Date | null => {
+interface TimeRangeFilter {
+  start: Date;
+  end: Date | null;
+}
+
+const getTimeRangeFilter = (range: TimeRange, customStart?: Date, customEnd?: Date): TimeRangeFilter | null => {
   const now = new Date();
   switch (range) {
     case 'live':
       // Last 24 hours
       const twentyFourHoursAgo = new Date(now);
       twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-      return twentyFourHoursAgo;
+      return { start: twentyFourHoursAgo, end: null };
     case 'yesterday':
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      return yesterday;
+      // Yesterday only (start of yesterday to end of yesterday)
+      const yesterdayStart = new Date(now);
+      yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+      yesterdayStart.setHours(0, 0, 0, 0);
+      const yesterdayEnd = new Date(now);
+      yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+      yesterdayEnd.setHours(23, 59, 59, 999);
+      return { start: yesterdayStart, end: yesterdayEnd };
     case 'week':
       const weekAgo = new Date(now);
       weekAgo.setDate(weekAgo.getDate() - 7);
-      return weekAgo;
+      return { start: weekAgo, end: null };
     case 'month':
       const monthAgo = new Date(now);
       monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return monthAgo;
+      return { start: monthAgo, end: null };
     case '6months':
       const sixMonthsAgo = new Date(now);
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      return sixMonthsAgo;
+      return { start: sixMonthsAgo, end: null };
     case '1year':
       const oneYearAgo = new Date(now);
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-      return oneYearAgo;
+      return { start: oneYearAgo, end: null };
     case 'custom':
-      return customStart || null;
+      if (!customStart) return null;
+      return { start: customStart, end: customEnd || null };
   }
 };
 
@@ -510,18 +520,17 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   }, [demoMode]);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits, externalCountsByPage } = useMemo(() => {
-    const filterDate = getTimeRangeFilter(timeRange, customDateRange.from);
-    const filterEndDate = timeRange === 'custom' && customDateRange.to ? customDateRange.to : null;
+    const timeFilter = getTimeRangeFilter(timeRange, customDateRange.from, customDateRange.to);
     
-    let filteredViews = filterDate 
-      ? pageViews.filter(pv => new Date(pv.created_at) >= filterDate)
-      : pageViews;
+    let filteredViews = pageViews;
     
-    // Apply end date filter for custom range
-    if (filterEndDate) {
-      const endOfDay = new Date(filterEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      filteredViews = filteredViews.filter(pv => new Date(pv.created_at) <= endOfDay);
+    if (timeFilter) {
+      filteredViews = pageViews.filter(pv => {
+        const viewDate = new Date(pv.created_at);
+        if (viewDate < timeFilter.start) return false;
+        if (timeFilter.end && viewDate > timeFilter.end) return false;
+        return true;
+      });
     }
 
     const visitCounts: Record<string, number> = {};
