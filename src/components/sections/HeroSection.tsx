@@ -145,10 +145,11 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-10"
+            className="text-lg md:text-xl text-muted-foreground max-w-4xl mx-auto mb-10 text-center"
           >
-            Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
-            basic uptime monitoring to advanced SEO and traffic intelligence.
+            <span className="block">Get a free instant SEO audit. One unified dashboard that simplifies every task—</span>
+            <span className="block">from uptime monitoring to advanced SEO</span>
+            <span className="block">and traffic intelligence.</span>
           </motion.p>
 
           <motion.div
