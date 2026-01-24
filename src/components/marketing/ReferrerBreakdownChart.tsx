@@ -196,8 +196,8 @@ const ReferrerBreakdownChart = ({ sessions }: ReferrerBreakdownChartProps) => {
           </svg>
           {/* Center text overlay */}
           <div className="absolute inset-0 flex items-center justify-center flex-col">
-            <span className="text-2xl font-bold">{topSource?.percentage.toFixed(0)}%</span>
-            <span className="text-[10px] text-muted-foreground">{topSource?.label}</span>
+            <span className="text-lg font-bold leading-tight">{topSource?.percentage.toFixed(0)}%</span>
+            <span className="text-[8px] text-muted-foreground">{topSource?.label}</span>
           </div>
         </div>
 
