@@ -2,14 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GitBranch, Calendar, Users, Zap } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { GitBranch, Zap, Users } from 'lucide-react';
 
 interface PageNode {
   path: string;
@@ -28,20 +21,6 @@ interface LiveVisitor {
   previousPath: string | null;
   timestamp: number;
 }
-
-type ReferrerType = 'google' | 'direct' | 'social' | 'bing' | 'email' | 'referral';
-
-interface DemoVisit {
-  id: string;
-  path: string;
-  previousPath: string | null;
-  timestamp: number;
-  opacity: number;
-  isEntryPoint: boolean;
-  referrer?: ReferrerType;
-}
-
-type TimeRange = 'today' | 'week' | 'month' | 'all';
 
 // Complete site structure based on the project's actual routing
 const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }[] = [
@@ -142,24 +121,6 @@ const formatPageName = (path: string): string => {
     .slice(0, 14);
 };
 
-const getTimeRangeFilter = (range: TimeRange): Date | null => {
-  const now = new Date();
-  switch (range) {
-    case 'today':
-      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    case 'week':
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      return weekAgo;
-    case 'month':
-      const monthAgo = new Date(now);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      return monthAgo;
-    case 'all':
-      return null;
-  }
-};
-
 interface VisitorFlowDiagramProps {
   onPageFilter?: (pagePath: string | null) => void;
   activeFilter?: string | null;
@@ -168,116 +129,29 @@ interface VisitorFlowDiagramProps {
 const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<TimeRange>('all');
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [activePaths, setActivePaths] = useState<{ from: string; to: string; id: string }[]>([]);
-  const [demoVisits, setDemoVisits] = useState<DemoVisit[]>([]);
-  const [demoPaths, setDemoPaths] = useState<{ from: string; to: string; id: string; opacity: number }[]>([]);
 
-  // Demo mode - simulate visits every 30 seconds
-  useEffect(() => {
-    const mainPages = SITE_STRUCTURE.filter(s => s.category === 'main' || s.path === '/').map(s => s.path);
-    const allPages = SITE_STRUCTURE.map(s => s.path);
-    let currentSessionPath: string | null = null;
-
-    const simulateVisit = () => {
-      // Pick a random page, weighted towards main pages
-      const useMainPage = Math.random() > 0.3;
-      const targetPages = useMainPage ? mainPages : allPages;
-      let randomPath = targetPages[Math.floor(Math.random() * targetPages.length)];
-      
-      // Decide if this is a new session (external entry) or internal navigation
-      // 30% chance of new external visitor
-      const isNewExternalVisitor = currentSessionPath === null || Math.random() > 0.7;
-      
-      const visitId = `demo-${Date.now()}`;
-      const previousPath = isNewExternalVisitor ? null : currentSessionPath;
-      
-      // Entry point = new external visitor landing on non-home page
-      const isEntryPoint = isNewExternalVisitor && randomPath !== '/';
-      
-      // Random referrer for external visitors
-      const referrerTypes: ReferrerType[] = ['google', 'direct', 'social', 'bing', 'email', 'referral'];
-      const referrerWeights = [0.4, 0.25, 0.15, 0.08, 0.07, 0.05]; // Google most common
-      let referrer: ReferrerType | undefined;
-      if (isNewExternalVisitor) {
-        const rand = Math.random();
-        let cumulative = 0;
-        for (let i = 0; i < referrerTypes.length; i++) {
-          cumulative += referrerWeights[i];
-          if (rand < cumulative) {
-            referrer = referrerTypes[i];
-            break;
-          }
-        }
-      }
-      
-      // Add demo visit
-      setDemoVisits(prev => [...prev, {
-        id: visitId,
-        path: randomPath,
-        previousPath: previousPath !== randomPath ? previousPath : null,
-        timestamp: Date.now(),
-        opacity: 1,
-        isEntryPoint: isEntryPoint,
-        referrer: referrer
-      }]);
-
-      // Add demo path ONLY for internal navigation (not external entry)
-      if (!isNewExternalVisitor && previousPath && previousPath !== randomPath) {
-        const pathId = `demo-path-${Date.now()}`;
-        setDemoPaths(prev => [...prev, {
-          from: previousPath,
-          to: randomPath,
-          id: pathId,
-          opacity: 1
-        }]);
-
-        // Fade out path over 5 seconds
-        let fadeStep = 0;
-        const fadeInterval = setInterval(() => {
-          fadeStep++;
-          const newOpacity = Math.max(0, 1 - (fadeStep / 50));
-          
-          setDemoPaths(prev => prev.map(p => 
-            p.id === pathId ? { ...p, opacity: newOpacity } : p
-          ));
-
-          if (fadeStep >= 50) {
-            clearInterval(fadeInterval);
-            setDemoPaths(prev => prev.filter(p => p.id !== pathId));
-          }
-        }, 100);
-      }
-
-      // Update current session path for next iteration
-      currentSessionPath = randomPath;
-
-      // Remove demo visit after 5 seconds with fade
-      let visitFadeStep = 0;
-      const visitFadeInterval = setInterval(() => {
-        visitFadeStep++;
-        const newOpacity = Math.max(0, 1 - (visitFadeStep / 30));
-        
-        setDemoVisits(prev => prev.map(v => 
-          v.id === visitId ? { ...v, opacity: newOpacity } : v
-        ));
-
-        if (visitFadeStep >= 30) {
-          clearInterval(visitFadeInterval);
-          setDemoVisits(prev => prev.filter(v => v.id !== visitId));
-        }
-      }, 100);
+  // Calculate stats for today, month, and all time
+  const stats = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const todayViews = pageViews.filter(pv => new Date(pv.created_at) >= startOfToday);
+    const monthViews = pageViews.filter(pv => new Date(pv.created_at) >= startOfMonth);
+    
+    // Count unique sessions
+    const todaySessions = new Set(todayViews.map(pv => pv.session_id)).size;
+    const monthSessions = new Set(monthViews.map(pv => pv.session_id)).size;
+    const allSessions = new Set(pageViews.map(pv => pv.session_id)).size;
+    
+    return {
+      today: { views: todayViews.length, sessions: todaySessions },
+      month: { views: monthViews.length, sessions: monthSessions },
+      all: { views: pageViews.length, sessions: allSessions }
     };
-
-    // Initial visit - always an external entry
-    simulateVisit();
-
-    // Continue every 30 seconds
-    const demoInterval = setInterval(simulateVisit, 30000);
-
-    return () => clearInterval(demoInterval);
-  }, []);
+  }, [pageViews]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -376,11 +250,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   }, []);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits } = useMemo(() => {
-    const filterDate = getTimeRangeFilter(timeRange);
-    
-    const filteredViews = filterDate 
-      ? pageViews.filter(pv => new Date(pv.created_at) >= filterDate)
-      : pageViews;
+    // Always use all data for node positioning - stats shown separately
+    const filteredViews = pageViews;
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
@@ -434,10 +305,8 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     // Calculate days in range for per-day averages
     const now = new Date();
     let daysInRange = 1;
-    if (filterDate) {
-      daysInRange = Math.max(1, Math.ceil((now.getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24)));
-    } else if (filteredViews.length > 0) {
-      // For "all time", calculate from earliest view
+    if (filteredViews.length > 0) {
+      // Calculate from earliest view
       const earliest = new Date(Math.min(...filteredViews.map(v => new Date(v.created_at).getTime())));
       daysInRange = Math.max(1, Math.ceil((now.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24)));
     }
@@ -505,7 +374,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       pathHeatmap: pathTransitions,
       maxPathVisits: maxPV
     };
-  }, [pageViews, timeRange]);
+  }, [pageViews]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280';
@@ -753,7 +622,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             <GitBranch className="w-5 h-5 text-violet-500" />
           </div>
           <div>
-            <h3 className="font-bold text-foreground">Site Architecture Flow</h3>
+            <h3 className="font-bold text-foreground">Live Site Traffic</h3>
             <p className="text-xs text-muted-foreground">
               {visitedCount} of {totalCount} pages visited
             </p>
@@ -762,62 +631,33 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
           {liveVisitors.length > 0 && (
             <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
               <Zap className="w-3 h-3 mr-1" />
-              {liveVisitors.length} live
-            </Badge>
-          )}
-          {/* Demo mode indicator */}
-          {demoVisits.length > 0 && (
-            <Badge className="ml-2 bg-purple-500/20 text-purple-400 border-purple-500/30 animate-pulse">
-              <Users className="w-3 h-3 mr-1" />
-              Demo Active
+              {liveVisitors.length} live now
             </Badge>
           )}
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-            <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Select range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Stats: Today | Month | All Time */}
+        <div className="flex items-center gap-6">
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{stats.today.sessions}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Today</div>
           </div>
-
-          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="w-px h-8 bg-border" />
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{stats.month.sessions}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">This Month</div>
+          </div>
+          <div className="w-px h-8 bg-border" />
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{stats.all.sessions}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">All Time</div>
+          </div>
+          
+          {/* Simplified legend */}
+          <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground ml-4 pl-4 border-l border-border">
             <span className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-gray-500 opacity-40" />
-              Unvisited
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-green-500" />
-              Low
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-amber-500" />
-              Med
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-5 h-1 rounded bg-red-500" />
-              High
-            </span>
-            <span className="flex items-center gap-1 ml-2">
               <div className="w-3 h-3 rounded-full bg-cyan-400 animate-pulse" />
               Live
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-purple-400 animate-pulse" />
-              Demo
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
-              Entry
             </span>
           </div>
         </div>
@@ -944,105 +784,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             );
           })}
 
-          {/* Demo visitor paths - purple themed */}
-          {demoPaths.map((demoPath) => {
-            const fromPos = positions[demoPath.from];
-            const toPos = positions[demoPath.to];
-            if (!fromPos || !toPos) return null;
-            
-            // Get node sizes for accurate endpoint calculation
-            const fromNode = allDisplayedNodes.find(n => n.path === demoPath.from);
-            const toNode = allDisplayedNodes.find(n => n.path === demoPath.to);
-            const fromNodeSize = fromNode ? (fromNode.depth === 0 ? 18 : fromNode.depth === 1 ? 12 : 8) : 12;
-            const toNodeSize = toNode ? (toNode.depth === 0 ? 18 : toNode.depth === 1 ? 12 : 8) : 12;
-            
-            const useLeftEdge = toPos.x < svgWidth / 2;
-            const edgeX = useLeftEdge ? 25 : svgWidth - 25;
-            const dx = Math.abs(toPos.x - fromPos.x);
-            
-            let pathD: string;
-            
-            if (dx < 5) {
-              // Direct vertical path - end exactly at node edge
-              pathD = `M ${fromPos.x} ${fromPos.y + fromNodeSize} L ${toPos.x} ${toPos.y - toNodeSize}`;
-            } else {
-              const startY = fromPos.y + fromNodeSize;
-              const endY = toPos.y - toNodeSize;
-              
-              pathD = `M ${fromPos.x} ${startY}
-                       L ${fromPos.x} ${startY + 8}
-                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
-                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
-                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
-                       L ${edgeX} ${endY - 20}
-                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
-                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
-                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
-                       L ${toPos.x} ${toPos.y - toNodeSize}`;
-            }
-            
-            return (
-              <g key={demoPath.id} style={{ opacity: demoPath.opacity }}>
-                {/* Purple glow effect - slimmer */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="#a855f7"
-                  strokeWidth={4}
-                  strokeOpacity={0.3 * demoPath.opacity}
-                  strokeLinecap="round"
-                  filter="url(#glow)"
-                />
-                {/* Main purple path - thinner */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="#a855f7"
-                  strokeWidth={2}
-                  strokeOpacity={0.8 * demoPath.opacity}
-                  strokeLinecap="round"
-                  strokeDasharray="6 3"
-                />
-                {/* Animated traveling dot - smaller */}
-                <circle r="5" fill="#a855f7" filter="url(#glow)" style={{ opacity: demoPath.opacity }}>
-                  <animateMotion
-                    dur="3s"
-                    repeatCount="1"
-                    path={pathD}
-                    fill="freeze"
-                  />
-                </circle>
-                <circle r="3" fill="#c084fc" style={{ opacity: demoPath.opacity }}>
-                  <animateMotion
-                    dur="3s"
-                    repeatCount="1"
-                    path={pathD}
-                    fill="freeze"
-                  />
-                </circle>
-                <circle r="1.5" fill="#ffffff" style={{ opacity: demoPath.opacity }}>
-                  <animateMotion
-                    dur="3s"
-                    repeatCount="1"
-                    path={pathD}
-                    fill="freeze"
-                  />
-                </circle>
-                {/* Trail particles - smaller */}
-                {[0.2, 0.4].map((delay, i) => (
-                  <circle key={i} r={2 - i * 0.5} fill="#a855f7" style={{ opacity: (0.4 - i * 0.1) * demoPath.opacity }}>
-                    <animateMotion
-                      dur="3s"
-                      repeatCount="1"
-                      path={pathD}
-                      fill="freeze"
-                      begin={`${delay}s`}
-                    />
-                  </circle>
-                ))}
-              </g>
-            );
-          })}
+          {/* Demo paths removed - live only */}
           
           {/* Draw nodes */}
           {allDisplayedNodes.map((node) => {
@@ -1061,10 +803,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const liveCount = visitorsByNode[node.path] || 0;
             const hasLiveVisitor = liveCount > 0;
             
-            // Check for demo visit on this node
-            const demoVisit = demoVisits.find(d => d.path === node.path);
-            const hasDemoVisit = !!demoVisit;
-            
             const handleNodeClick = () => {
               if (onPageFilter) {
                 if (activeFilter === node.path) {
@@ -1082,145 +820,6 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 style={{ opacity }}
                 onClick={handleNodeClick}
               >
-                {/* Demo visitor ring - purple for normal, orange starburst for non-home entry */}
-                {hasDemoVisit && (
-                  <>
-                    {demoVisit?.isEntryPoint ? (
-                      /* Orange starburst animation for non-home entry points */
-                      <>
-                        {/* Outer expanding ring */}
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={nodeSize + 14}
-                          fill="none"
-                          stroke="#f97316"
-                          strokeWidth={2}
-                          strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
-                          className="animate-ping"
-                          style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
-                        />
-                        {/* Inner glow */}
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={nodeSize + 8}
-                          fill="#f97316"
-                          opacity={0.25 * (demoVisit?.opacity || 1)}
-                          filter="url(#glow)"
-                        />
-                        {/* Starburst rays */}
-                        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                          <line
-                            key={angle}
-                            x1={pos.x + Math.cos(angle * Math.PI / 180) * (nodeSize + 4)}
-                            y1={pos.y + Math.sin(angle * Math.PI / 180) * (nodeSize + 4)}
-                            x2={pos.x + Math.cos(angle * Math.PI / 180) * (nodeSize + 18)}
-                            y2={pos.y + Math.sin(angle * Math.PI / 180) * (nodeSize + 18)}
-                            stroke="#fb923c"
-                            strokeWidth={1.5}
-                            strokeOpacity={0.8 * (demoVisit?.opacity || 1)}
-                            strokeLinecap="round"
-                          >
-                            <animate
-                              attributeName="stroke-opacity"
-                              values={`${0.8 * (demoVisit?.opacity || 1)};${0.3 * (demoVisit?.opacity || 1)};${0.8 * (demoVisit?.opacity || 1)}`}
-                              dur="0.5s"
-                              repeatCount="indefinite"
-                            />
-                          </line>
-                        ))}
-                        {/* Referrer badge */}
-                        {(() => {
-                          const referrer = demoVisit?.referrer;
-                          const getReferrerConfig = (ref: ReferrerType | undefined) => {
-                            switch (ref) {
-                              case 'google': return { label: 'Google', color: '#4285f4', icon: 'G' };
-                              case 'bing': return { label: 'Bing', color: '#00809d', icon: 'B' };
-                              case 'social': return { label: 'Social', color: '#e1306c', icon: '◎' };
-                              case 'email': return { label: 'Email', color: '#ea4335', icon: '✉' };
-                              case 'referral': return { label: 'Referral', color: '#34a853', icon: '↗' };
-                              case 'direct': 
-                              default: return { label: 'Direct', color: '#6b7280', icon: '⚡' };
-                            }
-                          };
-                          const config = getReferrerConfig(referrer);
-                          const badgeWidth = config.label.length * 5 + 16;
-                          
-                          return (
-                            <>
-                              {/* Badge background */}
-                              <rect
-                                x={pos.x - badgeWidth / 2}
-                                y={pos.y - nodeSize - 24}
-                                width={badgeWidth}
-                                height={14}
-                                rx={7}
-                                fill={config.color}
-                                opacity={demoVisit?.opacity || 1}
-                              />
-                              {/* Badge icon */}
-                              <text
-                                x={pos.x - badgeWidth / 2 + 8}
-                                y={pos.y - nodeSize - 14}
-                                textAnchor="middle"
-                                fill="white"
-                                style={{ fontSize: '8px', fontWeight: 'bold' }}
-                                opacity={demoVisit?.opacity || 1}
-                              >
-                                {config.icon}
-                              </text>
-                              {/* Badge text */}
-                              <text
-                                x={pos.x + 4}
-                                y={pos.y - nodeSize - 14}
-                                textAnchor="middle"
-                                fill="white"
-                                style={{ fontSize: '8px', fontWeight: '600' }}
-                                opacity={demoVisit?.opacity || 1}
-                              >
-                                {config.label}
-                              </text>
-                            </>
-                          );
-                        })()}
-                      </>
-                    ) : (
-                      /* Normal purple demo ring */
-                      <>
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={nodeSize + 10}
-                          fill="none"
-                          stroke="#a855f7"
-                          strokeWidth={1.5}
-                          strokeOpacity={0.6 * (demoVisit?.opacity || 1)}
-                          className="animate-ping"
-                          style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
-                        />
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={nodeSize + 6}
-                          fill="#a855f7"
-                          opacity={0.15 * (demoVisit?.opacity || 1)}
-                          filter="url(#glow)"
-                        />
-                        <circle
-                          cx={pos.x}
-                          cy={pos.y}
-                          r={nodeSize + 4}
-                          fill="none"
-                          stroke="#c084fc"
-                          strokeWidth={1}
-                          strokeOpacity={0.7 * (demoVisit?.opacity || 1)}
-                          strokeDasharray="3 2"
-                        />
-                      </>
-                    )}
-                  </>
-                )}
                 {/* Active filter highlight */}
                 {isFiltered && (
                   <circle
