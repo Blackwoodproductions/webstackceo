@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 
 const benefits = [
   { icon: FileText, title: "Meta Tag Optimization", description: "Perfectly crafted title tags and meta descriptions that drive clicks and rankings." },
@@ -67,6 +68,13 @@ const OnPageSEO = () => {
                 </Button>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Technical Audit Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-2xl">
+            <QuickMetricCheck metricType="technical_audit" />
           </div>
         </section>
 

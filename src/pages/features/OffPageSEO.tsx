@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 const benefits = [
   { icon: Globe, title: "Niche Categorization", description: "Every client site is categorized by niche, enabling highly relevant link placements across your portfolio." },
@@ -67,6 +68,13 @@ const OffPageSEO = () => {
                 </Button>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Backlink Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-2xl">
+            <QuickMetricCheck metricType="backlinks" />
           </div>
         </section>
 

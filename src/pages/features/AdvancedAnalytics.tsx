@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 
 const benefits = [
   { icon: TrendingUp, title: "Rank Tracking", description: "Monitor your keyword positions daily across all search engines and locations." },
@@ -67,6 +68,13 @@ const AdvancedAnalytics = () => {
                 </Button>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Traffic Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-2xl">
+            <QuickMetricCheck metricType="traffic" />
           </div>
         </section>
 

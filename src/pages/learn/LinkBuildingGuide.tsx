@@ -15,6 +15,7 @@ import GlossaryLegend from "@/components/ui/glossary-legend";
 import GuideFeatureLink from "@/components/ui/guide-feature-link";
 import FadeIn from "@/components/ui/fade-in";
 import GlossaryTooltip from "@/components/ui/glossary-tooltip";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 import { getTermsByGuide } from "@/data/glossaryData";
 
@@ -70,6 +71,13 @@ const LinkBuildingGuide = () => {
                 Backlinks remain one of Google's top ranking factors. Learn how to build links ethically and effectively.
               </p>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Quick Backlink Check */}
+        <section className="py-8">
+          <div className="container mx-auto px-6 max-w-4xl">
+            <QuickMetricCheck metricType="backlinks" />
           </div>
         </section>
 

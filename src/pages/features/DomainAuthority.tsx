@@ -7,6 +7,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import FeatureBreadcrumb from "@/components/ui/feature-breadcrumb";
 import SEO from "@/components/SEO";
+import QuickMetricCheck from "@/components/QuickMetricCheck";
 
 const benefits = [
   { icon: Award, title: "DR/DA Growth", description: "Systematic strategies to increase your Domain Rating and Domain Authority scores." },
@@ -67,6 +68,13 @@ const DomainAuthority = () => {
                 </Button>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Quick Domain Rating Check */}
+        <section className="py-12">
+          <div className="container mx-auto px-6 max-w-2xl">
+            <QuickMetricCheck metricType="domain_rating" />
           </div>
         </section>
 
