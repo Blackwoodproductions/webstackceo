@@ -467,13 +467,13 @@ const MarketingDashboard = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8">
-        {/* Site Architecture - Full Width Collapsible - FIRST SECTION */}
+        {/* WebStack.CEO Visitor Intelligence - Full Width Collapsible - FIRST SECTION */}
         <Collapsible open={siteArchOpen} onOpenChange={setSiteArchOpen} className="mb-6">
           <Card className="p-4">
             <CollapsibleTrigger className="flex items-center justify-between w-full group">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-primary" />
-                <h2 className="font-bold text-foreground">Site Architecture</h2>
+                <h2 className="font-bold text-foreground">WebStack.CEO Visitor Intelligence</h2>
                 {pageFilter && (
                   <Badge variant="secondary" className="ml-2 text-[10px] bg-purple-500/20 text-purple-400">
                     Filtered: {pageFilter === '/' ? 'Homepage' : pageFilter}
