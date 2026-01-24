@@ -1048,39 +1048,8 @@ const MarketingDashboard = () => {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-[260px] h-7 text-sm bg-background border-border">
-                        {/* Keep the Radix Value mounted */}
-                        <SelectValue className="sr-only" />
-                        <Globe className="w-3 h-3 mr-1.5 flex-shrink-0 text-primary" />
-
-                        <span className="truncate max-w-[170px]">
-                          {displayLabel
-                            ? (displayLabel.length > 25 ? `${displayLabel.slice(0, 25)}...` : displayLabel)
-                            : 'Select domain'}
-                        </span>
-
-                        {(() => {
-                          const entry = allDomains.find((d) => d.value === selectValue);
-                          if (!entry) return null;
-
-                          const showVI = entry.source === 'tracking' || entry.source === 'both';
-                          const showGSC = entry.source === 'gsc' || entry.source === 'both';
-
-                          return (
-                            <span className="ml-2 flex items-center gap-1">
-                              {showVI && (
-                                <Badge variant="secondary" className="h-5 px-2 text-[10px]">
-                                  VI
-                                </Badge>
-                              )}
-                              {showGSC && (
-                                <Badge variant="secondary" className="h-5 px-2 text-[10px]">
-                                  GSC
-                                </Badge>
-                              )}
-                            </span>
-                          );
-                        })()}
+                      <SelectTrigger className="w-[220px] h-7 text-sm bg-background border-border">
+                        <SelectValue placeholder="Select domain" />
                       </SelectTrigger>
 
                       <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
