@@ -81,7 +81,7 @@ const HeroSection = () => {
       />
 
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -97,7 +97,7 @@ const HeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
+            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8"
           >
             Get a free instant SEO audit. One unified dashboard that simplifies every task—from 
             basic uptime monitoring to advanced SEO and traffic intelligence.
@@ -109,7 +109,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             onSubmit={handleSubmit}
-            className="max-w-2xl mx-auto mb-6"
+            className="max-w-3xl mx-auto mb-6"
           >
             <div className="relative flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
