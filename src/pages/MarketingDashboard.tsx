@@ -673,122 +673,116 @@ const MarketingDashboard = () => {
           </Card>
         </Collapsible>
 
-        {/* Main Layout - Traffic Sources on Left, Stats on Right */}
-        <div className="grid lg:grid-cols-4 gap-6 mb-6">
-          {/* Left Column - Traffic Sources (expanded) */}
-          <div className="lg:col-span-1 flex">
-            <ReferrerBreakdownChart sessions={sessions} />
+        {/* Full Width Stats Layout */}
+        <div className="space-y-4 mb-6">
+          {/* Quick Stats Row - Full Width */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <Card className="p-4 border-green-500/30 bg-green-500/5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/20 relative flex-shrink-0">
+                  <Activity className="w-5 h-5 text-green-500" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-green-500 leading-tight">{activeVisitors}</p>
+                  <p className="text-xs text-muted-foreground">Active Now</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
+                  <UserCheck className="w-5 h-5 text-cyan-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
+                  <p className="text-xs text-muted-foreground">New Today</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-violet-500/10 flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-violet-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-foreground leading-tight">
+                    {funnelStats.visitors > 0 ? ((funnelStats.leads / funnelStats.visitors) * 100).toFixed(1) : '0'}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Lead Rate</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
+                  <Target className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-foreground leading-tight">
+                    {funnelStats.leads > 0 ? ((funnelStats.closedLeads / funnelStats.leads) * 100).toFixed(1) : '0'}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Close Rate</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 border-green-500/30 bg-green-500/5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
+                  <DollarSign className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-green-500 leading-tight truncate">
+                    ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Revenue</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
+                  <MousePointer className="w-5 h-5 text-pink-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-foreground leading-tight">
+                    {funnelStats.visitors > 0 ? ((filteredData.toolInteractions.length / funnelStats.visitors) * 100).toFixed(1) : '0'}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Engagement</p>
+                </div>
+              </div>
+            </Card>
           </div>
 
-          {/* Right Column - Stats + Funnel */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Card className="p-4 border-green-500/30 bg-green-500/5">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-green-500/20 relative flex-shrink-0">
-                    <Activity className="w-5 h-5 text-green-500" />
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-green-500 leading-tight">{activeVisitors}</p>
-                    <p className="text-xs text-muted-foreground">Active Now</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
-                    <UserCheck className="w-5 h-5 text-cyan-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
-                    <p className="text-xs text-muted-foreground">New Today</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-violet-500/10 flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-violet-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-foreground leading-tight">
-                      {funnelStats.visitors > 0 ? ((funnelStats.leads / funnelStats.visitors) * 100).toFixed(1) : '0'}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Lead Rate</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
-                    <Target className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-foreground leading-tight">
-                      {funnelStats.leads > 0 ? ((funnelStats.closedLeads / funnelStats.leads) * 100).toFixed(1) : '0'}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Close Rate</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4 border-green-500/30 bg-green-500/5">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-green-500/20 flex-shrink-0">
-                    <DollarSign className="w-5 h-5 text-green-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-green-500 leading-tight truncate">
-                      ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Revenue</p>
-                  </div>
-                </div>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
-                    <MousePointer className="w-5 h-5 text-pink-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-2xl font-bold text-foreground leading-tight">
-                      {funnelStats.visitors > 0 ? ((filteredData.toolInteractions.length / funnelStats.visitors) * 100).toFixed(1) : '0'}%
-                    </p>
-                    <p className="text-xs text-muted-foreground">Engagement</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Conversion Funnel Row */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {funnelSteps.map((step, index) => {
-                const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
-                  ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
-                  : null;
-                return (
-                  <Card key={step.label} className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0`}>
-                        <step.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{step.label}</p>
-                      </div>
+          {/* Conversion Funnel Row - Full Width */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {funnelSteps.map((step, index) => {
+              const conversionFromPrev = index > 0 && funnelSteps[index - 1].count > 0
+                ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
+                : null;
+              return (
+                <Card key={step.label} className="p-4">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0`}>
+                      <step.icon className="w-5 h-5 text-white" />
                     </div>
-                    {conversionFromPrev && (
-                      <div className="mt-2 text-[10px] text-muted-foreground">
-                        <span className="text-foreground font-medium">{conversionFromPrev}%</span> from prev
-                      </div>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-
+                    <div className="min-w-0">
+                      <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">{step.label}</p>
+                    </div>
+                  </div>
+                  {conversionFromPrev && (
+                    <div className="mt-2 text-[10px] text-muted-foreground">
+                      <span className="text-foreground font-medium">{conversionFromPrev}%</span> from prev
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
+
+          {/* Traffic Sources - Horizontal Full Width */}
+          <ReferrerBreakdownChart sessions={sessions} horizontal />
         </div>
 
 
