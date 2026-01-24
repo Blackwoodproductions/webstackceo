@@ -208,6 +208,16 @@ const Analytics = () => {
     setSitemaps([]);
   };
 
+  const handleClearClientId = () => {
+    localStorage.removeItem("gsc_client_id");
+    setClientIdInput("");
+    toast({
+      title: "Credentials Cleared",
+      description: "You can now enter a new Google OAuth Client ID.",
+    });
+    setShowClientIdDialog(true);
+  };
+
   const fetchSites = async () => {
     try {
       const response = await supabase.functions.invoke("search-console", {
@@ -424,6 +434,18 @@ const Analytics = () => {
                     </svg>
                     Connect Google Search Console
                   </Button>
+                  
+                  {localStorage.getItem("gsc_client_id") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-2 text-muted-foreground"
+                      onClick={handleClearClientId}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Reconfigure OAuth Client ID
+                    </Button>
+                  )}
                   
                   <p className="text-xs text-muted-foreground mt-4">
                     We only request read-only access to your Search Console data. 
