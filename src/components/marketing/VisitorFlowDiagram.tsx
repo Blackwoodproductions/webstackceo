@@ -390,11 +390,11 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   
   const depth3 = nodes.filter(n => n.depth >= 3);
 
-  // Layout configuration - responsive width
+  // Layout configuration - compact spacing
   const svgWidth = 1100;
-  const baseY = 50;
-  const rowHeight = 80;
-  const sectionGap = 55;
+  const baseY = 35;
+  const rowHeight = 55; // Reduced from 80
+  const sectionGap = 35; // Reduced from 55
   
   // Row sizes - adjusted for narrower width
   const l1RegularRowSize = 10;
@@ -410,17 +410,17 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const l3Rows = Math.ceil(depth3.length / l3RowSize);
   
   // Calculate Y positions for each section - stacked vertically
-  const l1RegularStartY = baseY + 90;
+  const l1RegularStartY = baseY + 60; // Reduced from 90
   const l1RegularEndY = l1RegularStartY + l1RegularRows * rowHeight;
   
   // Features section - full width
   const featuresParentY = l1RegularEndY + sectionGap;
-  const featuresChildrenStartY = featuresParentY + 70;
+  const featuresChildrenStartY = featuresParentY + 50; // Reduced from 70
   const featuresEndY = featuresChildrenStartY + featuresRows * rowHeight;
   
   // Learn section - below Features, full width
   const learnParentY = featuresEndY + sectionGap;
-  const learnChildrenStartY = learnParentY + 70;
+  const learnChildrenStartY = learnParentY + 50; // Reduced from 70
   const learnEndY = learnChildrenStartY + learnRows * rowHeight;
   
   // Other L2 pages
@@ -431,7 +431,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
   const l3StartY = otherL2EndY + (otherL2.length > 0 ? sectionGap : 0);
   const l3EndY = l3StartY + (l3Rows > 0 ? l3Rows * rowHeight : 0);
   
-  const svgHeight = l3EndY + 60;
+  const svgHeight = l3EndY + 40; // Reduced from 60
   
   const getNodePositions = () => {
     const positions: Record<string, { x: number; y: number }> = {};
@@ -640,7 +640,7 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             </filter>
           </defs>
 
-          {/* Draw structural edges (dimmed) */}
+          {/* Draw structural edges (dimmed) - route along outside edges */}
           {structuralEdges.map((edge, i) => {
             const fromPos = positions[edge.from];
             const toPos = positions[edge.to];
@@ -651,42 +651,43 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const pathTraffic = pathHeatmap[pathKey] || 0;
             const hasTraffic = pathTraffic > 0;
             
+            // Skip rendering if there's actual traffic (will be drawn by heatmap paths)
+            if (hasTraffic) return null;
+            
             // Structural edges are very dim, just showing site structure
-            const baseOpacity = hasTraffic ? 0 : (edge.isVisited ? 0.15 : 0.08);
+            const baseOpacity = edge.isVisited ? 0.15 : 0.08;
             const color = '#6b7280';
             
-            // Use elbow routing: go down from parent, horizontal, then down to child
-            // This prevents lines from crossing sibling nodes
-            const verticalDropFromParent = 30; // How far down to go before horizontal
-            const verticalRiseToChild = 16; // How far above child to start dropping
+            // Route lines along the LEFT or RIGHT edge of the diagram to avoid crossing nodes
+            // Determine which edge to use based on child position
+            const useLeftEdge = toPos.x < svgWidth / 2;
+            const edgeX = useLeftEdge ? 20 : svgWidth - 20;
+            const cornerRadius = 6;
             
-            // Calculate intermediate Y position - midway between parent bottom and child top
-            const parentBottomY = fromPos.y + 16;
-            const childTopY = toPos.y - verticalRiseToChild;
-            const elbowY = parentBottomY + verticalDropFromParent;
-            
-            // Create elbow path: down -> horizontal -> down
-            const cornerRadius = 8;
-            const dx = toPos.x - fromPos.x;
-            const signX = dx >= 0 ? 1 : -1;
+            // For direct parent-child (same vertical line), use straight line
+            const dx = Math.abs(toPos.x - fromPos.x);
             
             let pathD: string;
             
-            if (Math.abs(dx) < 5) {
+            if (dx < 5) {
               // Straight vertical line
-              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
             } else {
-              // Elbow path with rounded corners
-              pathD = `M ${fromPos.x} ${fromPos.y + 16}
-                       L ${fromPos.x} ${elbowY - cornerRadius}
-                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
-                       L ${toPos.x - signX * cornerRadius} ${elbowY}
-                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
-                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+              // Route along edge: down -> to edge -> along edge -> to child -> down
+              const startY = fromPos.y + 12;
+              const endY = toPos.y - 12;
+              
+              pathD = `M ${fromPos.x} ${startY}
+                       L ${fromPos.x} ${startY + 8}
+                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
+                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
+                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
+                       L ${edgeX} ${endY - 20}
+                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
+                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
+                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
+                       L ${toPos.x} ${endY}`;
             }
-            
-            // Skip rendering if there's actual traffic (will be drawn by heatmap paths)
-            if (hasTraffic) return null;
             
             return (
               <g key={`struct-edge-${i}`}>
@@ -733,25 +734,32 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             
             const strokeWidth = Math.max(2, Math.min(8, intensity * 10 + 2));
             
-            // Use elbow routing
-            const verticalDropFromParent = 30;
-            const verticalRiseToChild = 16;
-            const elbowY = fromPos.y + 16 + verticalDropFromParent;
-            const cornerRadius = 8;
-            const dx = toPos.x - fromPos.x;
-            const signX = dx >= 0 ? 1 : -1;
+            // Route along edges to avoid crossing nodes
+            const useLeftEdge = toPos.x < svgWidth / 2;
+            const edgeX = useLeftEdge ? 25 : svgWidth - 25;
+            const dx = Math.abs(toPos.x - fromPos.x);
             
             let pathD: string;
+            let labelY: number;
             
-            if (Math.abs(dx) < 5) {
-              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+            if (dx < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
+              labelY = (fromPos.y + toPos.y) / 2;
             } else {
-              pathD = `M ${fromPos.x} ${fromPos.y + 16}
-                       L ${fromPos.x} ${elbowY - cornerRadius}
-                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
-                       L ${toPos.x - signX * cornerRadius} ${elbowY}
-                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
-                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+              const startY = fromPos.y + 12;
+              const endY = toPos.y - 12;
+              labelY = (startY + endY) / 2;
+              
+              pathD = `M ${fromPos.x} ${startY}
+                       L ${fromPos.x} ${startY + 8}
+                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
+                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
+                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
+                       L ${edgeX} ${endY - 20}
+                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
+                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
+                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
+                       L ${toPos.x} ${endY}`;
             }
             
             return (
@@ -778,9 +786,9 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
                 {/* Path label showing count */}
                 {pathEdge.count > 1 && (
                   <text
-                    x={(fromPos.x + toPos.x) / 2}
-                    y={elbowY - 8}
-                    textAnchor="middle"
+                    x={edgeX + (useLeftEdge ? 10 : -10)}
+                    y={labelY}
+                    textAnchor={useLeftEdge ? "start" : "end"}
                     fill={heatColor}
                     style={{ fontSize: '9px', fontWeight: 'bold' }}
                   >
@@ -797,25 +805,29 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const toPos = positions[activePath.to];
             if (!fromPos || !toPos) return null;
             
-            // Use same elbow routing as static edges
-            const verticalDropFromParent = 30;
-            const verticalRiseToChild = 16;
-            const elbowY = fromPos.y + 16 + verticalDropFromParent;
-            const cornerRadius = 8;
-            const dx = toPos.x - fromPos.x;
-            const signX = dx >= 0 ? 1 : -1;
+            // Use same edge routing as heatmap paths
+            const useLeftEdge = toPos.x < svgWidth / 2;
+            const edgeX = useLeftEdge ? 25 : svgWidth - 25;
+            const dx = Math.abs(toPos.x - fromPos.x);
             
             let pathD: string;
             
-            if (Math.abs(dx) < 5) {
-              pathD = `M ${fromPos.x} ${fromPos.y + 16} L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+            if (dx < 5) {
+              pathD = `M ${fromPos.x} ${fromPos.y + 12} L ${toPos.x} ${toPos.y - 12}`;
             } else {
-              pathD = `M ${fromPos.x} ${fromPos.y + 16}
-                       L ${fromPos.x} ${elbowY - cornerRadius}
-                       Q ${fromPos.x} ${elbowY}, ${fromPos.x + signX * cornerRadius} ${elbowY}
-                       L ${toPos.x - signX * cornerRadius} ${elbowY}
-                       Q ${toPos.x} ${elbowY}, ${toPos.x} ${elbowY + cornerRadius}
-                       L ${toPos.x} ${toPos.y - verticalRiseToChild}`;
+              const startY = fromPos.y + 12;
+              const endY = toPos.y - 12;
+              
+              pathD = `M ${fromPos.x} ${startY}
+                       L ${fromPos.x} ${startY + 8}
+                       Q ${fromPos.x} ${startY + 14}, ${fromPos.x + (useLeftEdge ? -6 : 6)} ${startY + 14}
+                       L ${edgeX + (useLeftEdge ? 6 : -6)} ${startY + 14}
+                       Q ${edgeX} ${startY + 14}, ${edgeX} ${startY + 20}
+                       L ${edgeX} ${endY - 20}
+                       Q ${edgeX} ${endY - 14}, ${edgeX + (useLeftEdge ? 6 : -6)} ${endY - 14}
+                       L ${toPos.x + (useLeftEdge ? -6 : 6)} ${endY - 14}
+                       Q ${toPos.x} ${endY - 14}, ${toPos.x} ${endY - 8}
+                       L ${toPos.x} ${endY}`;
             }
             
             return (
