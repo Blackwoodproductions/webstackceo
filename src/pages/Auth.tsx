@@ -132,25 +132,33 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative animate-fade-in">
+    <div className="min-h-screen bg-background flex flex-col relative animate-fade-in">
       {/* Full-page interactive grid background */}
       <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <a href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">W</span>
-            </div>
-          </a>
-          <h1 className="text-3xl font-bold mb-2">Admin Portal</h1>
-          <p className="text-muted-foreground">
-            Sign in to manage your marketplace
-          </p>
-        </div>
+      
+      {/* Header with logo */}
+      <header className="p-6 relative z-10">
+        <a href="/" className="inline-flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+            <span className="text-white font-bold text-xl">W</span>
+          </div>
+          <span className="text-xl font-bold text-foreground">webstack.ceo</span>
+        </a>
+      </header>
+
+      {/* Centered login form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">Admin Portal</h1>
+            <p className="text-muted-foreground">
+              Sign in to manage your marketplace
+            </p>
+          </div>
 
         <div className="glass-card rounded-2xl p-8 border border-border">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
@@ -254,6 +262,7 @@ const Auth = () => {
           </a>
         </p>
       </motion.div>
+      </div>
     </div>
   );
 };
