@@ -1542,37 +1542,49 @@ const AuditResults = () => {
                       <button
                         onClick={() => setChartLines(prev => ({ ...prev, traffic: !prev.traffic }))}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
-                          chartLines.traffic ? 'bg-green-500/10' : 'opacity-40'
+                          chartLines.traffic ? 'bg-muted/40' : 'opacity-40'
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${chartLines.traffic ? 'bg-green-500' : 'bg-muted'}`} />
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: chartLines.traffic ? 'hsl(var(--chart-traffic))' : 'hsl(var(--muted))' }}
+                        />
                         <span className="text-xs text-muted-foreground">Traffic</span>
                       </button>
                       <button
                         onClick={() => setChartLines(prev => ({ ...prev, keywords: !prev.keywords }))}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
-                          chartLines.keywords ? 'bg-amber-500/10' : 'opacity-40'
+                          chartLines.keywords ? 'bg-muted/40' : 'opacity-40'
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${chartLines.keywords ? 'bg-amber-500' : 'bg-muted'}`} />
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: chartLines.keywords ? 'hsl(var(--chart-keywords))' : 'hsl(var(--muted))' }}
+                        />
                         <span className="text-xs text-muted-foreground">Keywords</span>
                       </button>
                       <button
                         onClick={() => setChartLines(prev => ({ ...prev, dr: !prev.dr }))}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
-                          chartLines.dr ? 'bg-primary/10' : 'opacity-40'
+                          chartLines.dr ? 'bg-muted/40' : 'opacity-40'
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${chartLines.dr ? 'bg-primary' : 'bg-muted'}`} />
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: chartLines.dr ? 'hsl(var(--chart-dr))' : 'hsl(var(--muted))' }}
+                        />
                         <span className="text-xs text-muted-foreground">DR</span>
                       </button>
                       <button
                         onClick={() => setChartLines(prev => ({ ...prev, value: !prev.value }))}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
-                          chartLines.value ? 'bg-violet-500/10' : 'opacity-40'
+                          chartLines.value ? 'bg-muted/40' : 'opacity-40'
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${chartLines.value ? 'bg-violet-500' : 'bg-muted'}`} />
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: chartLines.value ? 'hsl(var(--chart-value))' : 'hsl(var(--muted))' }}
+                        />
                         <span className="text-xs text-muted-foreground">Value</span>
                       </button>
                     </div>
@@ -1595,19 +1607,32 @@ const AuditResults = () => {
                           }}
                         />
                         <YAxis
-                          yAxisId="left"
+                          yAxisId="traffic"
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
                           tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
                           width={45}
                         />
                         <YAxis
-                          yAxisId="right"
+                          yAxisId="dr"
                           orientation="right"
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
                           domain={[0, 100]}
-                          width={35}
+                          hide
+                        />
+                        <YAxis
+                          yAxisId="value"
+                          orientation="right"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={10}
+                          tickFormatter={(value) => {
+                            if (typeof value !== 'number') return value;
+                            if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                            if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
+                            return `$${value}`;
+                          }}
+                          width={60}
                         />
                         <Tooltip
                           contentStyle={{
@@ -1629,50 +1654,50 @@ const AuditResults = () => {
                         />
                         {chartLines.traffic && (
                           <Line
-                            yAxisId="left"
+                            yAxisId="traffic"
                             type="monotone"
                             dataKey="organicTraffic"
                             name="Organic Traffic"
-                            stroke="hsl(142, 76%, 36%)"
+                            stroke="hsl(var(--chart-traffic))"
                             strokeWidth={2}
                             dot={false}
-                            activeDot={{ r: 4, fill: "hsl(142, 76%, 36%)" }}
+                            activeDot={{ r: 4, fill: "hsl(var(--chart-traffic))" }}
                           />
                         )}
                         {chartLines.keywords && (
                           <Line
-                            yAxisId="left"
+                            yAxisId="traffic"
                             type="monotone"
                             dataKey="organicKeywords"
-                            name="Keywords"
-                            stroke="hsl(38, 92%, 50%)"
+                            name="Organic Keywords"
+                            stroke="hsl(var(--chart-keywords))"
                             strokeWidth={2}
                             dot={false}
-                            activeDot={{ r: 4, fill: "hsl(38, 92%, 50%)" }}
+                            activeDot={{ r: 4, fill: "hsl(var(--chart-keywords))" }}
                           />
                         )}
                         {chartLines.dr && (
                           <Line
-                            yAxisId="right"
+                            yAxisId="dr"
                             type="monotone"
                             dataKey="domainRating"
                             name="Domain Rating"
-                            stroke="hsl(var(--primary))"
+                            stroke="hsl(var(--chart-dr))"
                             strokeWidth={2}
                             dot={false}
-                            activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                            activeDot={{ r: 4, fill: "hsl(var(--chart-dr))" }}
                           />
                         )}
                         {chartLines.value && (
                           <Line
-                            yAxisId="left"
+                            yAxisId="value"
                             type="monotone"
                             dataKey="trafficValue"
                             name="Traffic Value"
-                            stroke="hsl(280, 80%, 60%)"
+                            stroke="hsl(var(--chart-value))"
                             strokeWidth={2}
                             dot={false}
-                            activeDot={{ r: 4, fill: "hsl(280, 80%, 60%)" }}
+                            activeDot={{ r: 4, fill: "hsl(var(--chart-value))" }}
                           />
                         )}
                       </LineChart>

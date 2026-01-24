@@ -59,6 +59,12 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 199 89% 48%;
+
+    /* Chart tokens (use as: hsl(var(--chart-traffic))) */
+    --chart-traffic: var(--primary);
+    --chart-keywords: var(--hover-accent);
+    --chart-dr: var(--primary);
+    --chart-value: 262 83% 58%;
   }
 
   .dark {
@@ -112,6 +118,12 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 199 89% 48%;
+
+    /* Chart tokens */
+    --chart-traffic: var(--primary);
+    --chart-keywords: var(--hover-accent);
+    --chart-dr: var(--primary);
+    --chart-value: 262 83% 58%;
   }
 }
 
