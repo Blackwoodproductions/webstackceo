@@ -82,8 +82,8 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   
   // Tools sub-pages (L2) - includes Domain Audits as central tool
   { path: '/tools/domain-audit', parent: '/tools', category: 'tools' },
-  { path: '/audits', parent: '/tools', category: 'tools' },
   { path: '/tools/keyword-checker', parent: '/tools', category: 'tools' },
+  { path: '/audits', parent: '/tools', category: 'tools' },
   { path: '/tools/backlink-analyzer', parent: '/tools', category: 'tools' },
   { path: '/tools/site-speed', parent: '/tools', category: 'tools' },
   
