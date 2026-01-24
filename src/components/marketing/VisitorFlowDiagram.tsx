@@ -57,10 +57,11 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/marketplace', parent: '/', category: 'main' },
   { path: '/careers', parent: '/', category: 'main' },
   { path: '/integrations', parent: '/', category: 'main' },
-  { path: '/website-audits', parent: '/', category: 'main' },
+  { path: '/audits', parent: '/', category: 'main' },
   { path: '/changelog', parent: '/', category: 'main' },
   { path: '/auth', parent: '/', category: 'main' },
   { path: '/admin', parent: '/', category: 'main' },
+  { path: '/marketing-dashboard', parent: '/', category: 'main' },
   
   // Feature sub-pages (L2)
   { path: '/features/on-page-seo', parent: '/features', category: 'features' },
@@ -77,12 +78,14 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/features/visitor-intelligence', parent: '/features', category: 'features' },
   { path: '/features/web-hosting', parent: '/features', category: 'features' },
   
+  // Domain Audits sub-pages (L2)
+  { path: '/audit', parent: '/audits', category: 'audits' },
+  
   // Tools sub-pages (L2)
   { path: '/tools/domain-audit', parent: '/tools', category: 'tools' },
   { path: '/tools/keyword-checker', parent: '/tools', category: 'tools' },
   { path: '/tools/backlink-analyzer', parent: '/tools', category: 'tools' },
   { path: '/tools/site-speed', parent: '/tools', category: 'tools' },
-  { path: '/audit-results', parent: '/website-audits', category: 'tools' },
   
   // Learn sub-pages (L2)
   { path: '/learn/glossary', parent: '/learn', category: 'learn' },
@@ -114,6 +117,9 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   
   // Directory sub-pages (L2)
   { path: '/directory/listing', parent: '/directory', category: 'directory' },
+  
+  // Marketplace sub-pages (L2)
+  { path: '/marketplace/partner', parent: '/marketplace', category: 'marketplace' },
   
   // Legal pages - nested under a virtual /legal parent for visual grouping
   { path: '/legal', parent: '/', category: 'legal' },
