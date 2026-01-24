@@ -469,7 +469,7 @@ const MarketingDashboard = () => {
 
           {/* Right Column - Stats + Flow Diagram */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Quick Stats Row */}
+            {/* Quick Stats Row - Key Conversion Metrics (no duplicates with funnel) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {/* Active Visitors - Live */}
               <Card className="p-5 border-green-500/30 bg-green-500/5">
@@ -496,47 +496,59 @@ const MarketingDashboard = () => {
                   </div>
                 </div>
               </Card>
+              {/* Visitor to Lead Conversion Rate */}
               <Card className="p-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-primary/10">
-                    <Mail className="w-6 h-6 text-primary" />
+                  <div className="p-2.5 rounded-lg bg-violet-500/10">
+                    <TrendingUp className="w-6 h-6 text-violet-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-foreground">{funnelStats.leads}</p>
-                    <p className="text-sm text-muted-foreground">Total Leads</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {funnelStats.visitors > 0 ? ((funnelStats.leads / funnelStats.visitors) * 100).toFixed(1) : '0'}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">Lead Rate</p>
                   </div>
                 </div>
               </Card>
+              {/* Close Rate */}
               <Card className="p-5">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-amber-500/10">
                     <Target className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-foreground">{funnelStats.qualified}</p>
-                    <p className="text-sm text-muted-foreground">Qualified</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {funnelStats.leads > 0 ? ((funnelStats.closedLeads / funnelStats.leads) * 100).toFixed(1) : '0'}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">Close Rate</p>
                   </div>
                 </div>
               </Card>
+              {/* Total Revenue from Closed Leads */}
               <Card className="p-5 border-green-500/30 bg-green-500/5">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-green-500/20">
                     <DollarSign className="w-6 h-6 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-green-500">{funnelStats.closedLeads}</p>
-                    <p className="text-sm text-muted-foreground">Closed</p>
+                    <p className="text-3xl font-bold text-green-500">
+                      ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Revenue</p>
                   </div>
                 </div>
               </Card>
+              {/* Tool Engagement Rate */}
               <Card className="p-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-blue-500/10">
-                    <Users className="w-6 h-6 text-blue-500" />
+                  <div className="p-2.5 rounded-lg bg-pink-500/10">
+                    <MousePointer className="w-6 h-6 text-pink-500" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold text-foreground">{funnelStats.visitors}</p>
-                    <p className="text-sm text-muted-foreground">Sessions</p>
+                    <p className="text-3xl font-bold text-foreground">
+                      {funnelStats.visitors > 0 ? ((filteredData.toolInteractions.length / funnelStats.visitors) * 100).toFixed(1) : '0'}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">Engagement</p>
                   </div>
                 </div>
               </Card>
