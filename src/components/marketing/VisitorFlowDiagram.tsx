@@ -31,8 +31,10 @@ interface PageNode {
 interface LiveVisitor {
   id: string;
   currentPath: string;
+  displayPath: string; // Path to show in UI (stays on old page during transit)
   previousPath: string | null;
   timestamp: number;
+  inTransit: boolean; // True while animation is playing
 }
 
 type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
@@ -235,8 +237,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
             const initialVisitors: LiveVisitor[] = Object.entries(sessionPages).map(([sessionId, data]) => ({
               id: sessionId,
               currentPath: data.path,
+              displayPath: data.path,
               previousPath: null,
-              timestamp: data.time
+              timestamp: data.time,
+              inTransit: false
             }));
             
             setLiveVisitors(initialVisitors);
@@ -282,30 +286,58 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               // Visitor moved to new page - create animated path
               if (existing.currentPath !== cleanPath) {
                 const pathId = `${existing.currentPath}-${cleanPath}-${Date.now()}`;
+                const sessionId = newView.session_id;
+                const targetPath = cleanPath;
+                
                 setActivePaths(paths => [...paths, { 
                   from: existing.currentPath, 
                   to: cleanPath, 
                   id: pathId 
                 }]);
                 
-                // Remove path after animation (5 seconds)
+                // After 5 seconds: remove trail and update displayPath to new location
                 setTimeout(() => {
                   setActivePaths(paths => paths.filter(p => p.id !== pathId));
+                  // Now transfer the visitor badge to the new page
+                  setLiveVisitors(visitors => 
+                    visitors.map(v => 
+                      v.id === sessionId 
+                        ? { ...v, displayPath: targetPath, inTransit: false }
+                        : v
+                    )
+                  );
                 }, 5000);
+                
+                // Immediately update currentPath but keep displayPath on old page (in transit)
+                return prev.map(v => 
+                  v.id === newView.session_id 
+                    ? { 
+                        ...v, 
+                        previousPath: v.currentPath, 
+                        currentPath: cleanPath, 
+                        // displayPath stays on old page during transit
+                        inTransit: true,
+                        timestamp: Date.now() 
+                      }
+                    : v
+                );
               }
               
+              // Same page, just update timestamp
               return prev.map(v => 
                 v.id === newView.session_id 
-                  ? { ...v, previousPath: v.currentPath, currentPath: cleanPath, timestamp: Date.now() }
+                  ? { ...v, timestamp: Date.now() }
                   : v
               );
             } else {
-              // New visitor
+              // New visitor - show immediately on their page
               return [...prev, { 
                 id: newView.session_id, 
                 currentPath: cleanPath, 
+                displayPath: cleanPath,
                 previousPath: null, 
-                timestamp: Date.now() 
+                timestamp: Date.now(),
+                inTransit: false
               }];
             }
           });
@@ -351,8 +383,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
               return [...prev, {
                 id: session.session_id,
                 currentPath: cleanPath,
+                displayPath: cleanPath,
                 previousPath: null,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                inTransit: false
               }];
             });
           }
@@ -759,10 +793,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     }
   });
 
-  // Get visitors on each node
+  // Get visitors on each node - use displayPath to keep count on old page during transit
   const visitorsByNode: Record<string, number> = {};
   liveVisitors.forEach(v => {
-    const path = v.currentPath;
+    const path = v.displayPath; // Use displayPath instead of currentPath
     visitorsByNode[path] = (visitorsByNode[path] || 0) + 1;
   });
 
