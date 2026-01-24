@@ -201,6 +201,55 @@ export const GSCAdvancedReporting = ({
   const [keywordPage, setKeywordPage] = useState(1);
   const KEYWORDS_PER_PAGE = 25;
 
+  // Track previous site to detect changes
+  const [prevSite, setPrevSite] = useState<string>(selectedSite);
+  
+  // Reset all domain-specific data when selectedSite changes
+  useEffect(() => {
+    if (selectedSite && selectedSite !== prevSite) {
+      console.log('[GSCAdvanced] Site changed from', prevSite, 'to', selectedSite, '- resetting data');
+      
+      // Clear all domain-specific state
+      setIndexationData([]);
+      setAutoIndexQueue([]);
+      setIndexedCount(0);
+      setIndexationProgress(0);
+      setIndexationTotal(0);
+      setEstimatedTimeRemaining(null);
+      setIndexationStartTime(null);
+      setSitemaps([]);
+      setBulkUrls("");
+      setKeywordFilter("");
+      setKeywordPage(1);
+      
+      // Clear domain-specific submission history from localStorage
+      // Keep history but filter to show only for current domain
+      try {
+        const stored = localStorage.getItem('gsc_submission_history');
+        if (stored) {
+          const allHistory: SubmissionResult[] = JSON.parse(stored);
+          // Filter to show only submissions that match the new domain
+          const siteHost = new URL(selectedSite.replace('sc-domain:', 'https://')).hostname.replace('www.', '');
+          const filteredHistory = allHistory.filter(item => {
+            try {
+              const itemHost = new URL(item.url).hostname.replace('www.', '');
+              return itemHost.includes(siteHost) || siteHost.includes(itemHost);
+            } catch {
+              return false;
+            }
+          });
+          setSubmissionHistory(filteredHistory);
+        } else {
+          setSubmissionHistory([]);
+        }
+      } catch {
+        setSubmissionHistory([]);
+      }
+      
+      setPrevSite(selectedSite);
+    }
+  }, [selectedSite, prevSite]);
+  
   // Persist auto-submit settings
   useEffect(() => {
     localStorage.setItem('gsc_auto_submit_enabled', autoSubmitEnabled.toString());
