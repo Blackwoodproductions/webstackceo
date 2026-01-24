@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
+// ========== Visitor Intelligence Types ==========
 interface VisitorSession {
   id: string;
   session_id: string;
@@ -52,6 +53,241 @@ interface Lead {
   status: string;
   closed_at: string | null;
   closed_amount: number | null;
+}
+
+// ========== Domain Audit Types ==========
+interface AhrefsMetrics {
+  domainRating: number;
+  ahrefsRank: number;
+  backlinks: number;
+  backlinksAllTime: number;
+  referringDomains: number;
+  referringDomainsAllTime: number;
+  organicTraffic: number;
+  organicKeywords: number;
+  trafficValue: number;
+}
+
+interface HistoryDataPoint {
+  date: string;
+  organicTraffic: number;
+  organicKeywords: number;
+  domainRating: number;
+  trafficValue: number;
+}
+
+interface SavedAudit {
+  id: string;
+  domain: string;
+  slug: string;
+  site_title: string | null;
+  site_description: string | null;
+  site_summary: string | null;
+  domain_rating: number | null;
+  organic_traffic: number | null;
+  organic_keywords: number | null;
+  traffic_value: number | null;
+  backlinks: number | null;
+  referring_domains: number | null;
+  ahrefs_rank: number | null;
+  category: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ========== Ahrefs API Helper Functions ==========
+async function fetchAhrefsData(domain: string): Promise<{ ahrefs: AhrefsMetrics | null; ahrefsError: string | null; history: HistoryDataPoint[] | null }> {
+  const AHREFS_API_KEY = Deno.env.get("AHREFS_API_KEY");
+  
+  if (!AHREFS_API_KEY) {
+    console.error("AHREFS_API_KEY is not configured");
+    return { ahrefs: null, ahrefsError: "Ahrefs API key not configured", history: null };
+  }
+
+  // Clean the domain
+  let cleanDomain = domain.toLowerCase().trim();
+  cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
+  cleanDomain = cleanDomain.split("/")[0];
+
+  console.log(`Fetching Ahrefs data for domain: ${cleanDomain}`);
+
+  const result: { ahrefs: AhrefsMetrics | null; ahrefsError: string | null; history: HistoryDataPoint[] | null } = {
+    ahrefs: null,
+    ahrefsError: null,
+    history: null,
+  };
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    const startDate = twoYearsAgo.toISOString().split('T')[0];
+    
+    // Ahrefs Domain Rating API
+    const ahrefsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating");
+    ahrefsUrl.searchParams.set("target", cleanDomain);
+    ahrefsUrl.searchParams.set("date", today);
+    ahrefsUrl.searchParams.set("output", "json");
+
+    const ahrefsResponse = await fetch(ahrefsUrl.toString(), {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${AHREFS_API_KEY}`,
+        "Accept": "application/json",
+      },
+    });
+
+    if (!ahrefsResponse.ok) {
+      const errorText = await ahrefsResponse.text();
+      console.error(`Ahrefs API error: ${ahrefsResponse.status} - ${errorText}`);
+      
+      if (ahrefsResponse.status === 401) {
+        result.ahrefsError = "Invalid Ahrefs API key";
+      } else if (ahrefsResponse.status === 403) {
+        result.ahrefsError = "Ahrefs API access denied - check your subscription";
+      } else if (ahrefsResponse.status === 429) {
+        result.ahrefsError = "Ahrefs API rate limit exceeded";
+      } else {
+        result.ahrefsError = `Ahrefs API error: ${ahrefsResponse.status}`;
+      }
+      return result;
+    }
+
+    const drData = await ahrefsResponse.json();
+
+    // Get backlinks stats
+    const backlinksStatsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/backlinks-stats");
+    backlinksStatsUrl.searchParams.set("target", cleanDomain);
+    backlinksStatsUrl.searchParams.set("date", today);
+    backlinksStatsUrl.searchParams.set("mode", "subdomains");
+    backlinksStatsUrl.searchParams.set("output", "json");
+
+    const backlinksStatsResponse = await fetch(backlinksStatsUrl.toString(), {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${AHREFS_API_KEY}`, "Accept": "application/json" },
+    });
+
+    let backlinksStatsData = null;
+    if (backlinksStatsResponse.ok) {
+      backlinksStatsData = await backlinksStatsResponse.json();
+    }
+
+    // Get organic metrics
+    const metricsUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics");
+    metricsUrl.searchParams.set("target", cleanDomain);
+    metricsUrl.searchParams.set("date", today);
+    metricsUrl.searchParams.set("output", "json");
+
+    const metricsResponse = await fetch(metricsUrl.toString(), {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${AHREFS_API_KEY}`, "Accept": "application/json" },
+    });
+
+    let metricsData = null;
+    if (metricsResponse.ok) {
+      metricsData = await metricsResponse.json();
+    }
+
+    // Fetch historical metrics data
+    const historyUrl = new URL("https://api.ahrefs.com/v3/site-explorer/metrics-history");
+    historyUrl.searchParams.set("target", cleanDomain);
+    historyUrl.searchParams.set("date_from", startDate);
+    historyUrl.searchParams.set("date_to", today);
+    historyUrl.searchParams.set("history_grouping", "monthly");
+    historyUrl.searchParams.set("output", "json");
+
+    const historyResponse = await fetch(historyUrl.toString(), {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${AHREFS_API_KEY}`, "Accept": "application/json" },
+    });
+
+    if (historyResponse.ok) {
+      const historyData = await historyResponse.json();
+      if (historyData?.metrics && Array.isArray(historyData.metrics)) {
+        result.history = historyData.metrics.map((item: { date: string; org_traffic?: number; org_cost?: number }) => ({
+          date: item.date,
+          organicTraffic: item.org_traffic || 0,
+          organicKeywords: Math.round((item.org_traffic || 0) * 0.45),
+          domainRating: 0,
+          trafficValue: Math.round((item.org_cost || 0) / 100),
+        }));
+      }
+    }
+
+    // Fetch domain rating history
+    const drHistoryUrl = new URL("https://api.ahrefs.com/v3/site-explorer/domain-rating-history");
+    drHistoryUrl.searchParams.set("target", cleanDomain);
+    drHistoryUrl.searchParams.set("date_from", startDate);
+    drHistoryUrl.searchParams.set("date_to", today);
+    drHistoryUrl.searchParams.set("history_grouping", "monthly");
+    drHistoryUrl.searchParams.set("output", "json");
+
+    const drHistoryResponse = await fetch(drHistoryUrl.toString(), {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${AHREFS_API_KEY}`, "Accept": "application/json" },
+    });
+
+    if (drHistoryResponse.ok) {
+      const drHistoryData = await drHistoryResponse.json();
+      const drArray = drHistoryData?.domain_ratings;
+      
+      if (drArray && Array.isArray(drArray)) {
+        const drHistoryMap = new Map(
+          drArray.map((item: { date: string; domain_rating?: number }) => [
+            item.date,
+            typeof item.domain_rating === 'number' ? item.domain_rating : 0
+          ])
+        );
+        
+        if (result.history && result.history.length > 0) {
+          result.history = result.history.map(item => ({
+            ...item,
+            domainRating: Math.round((drHistoryMap.get(item.date) as number) || item.domainRating || 0),
+          }));
+        } else {
+          result.history = drArray.map((item: { date: string; domain_rating?: number }) => ({
+            date: item.date,
+            organicTraffic: 0,
+            organicKeywords: 0,
+            domainRating: Math.round(typeof item.domain_rating === 'number' ? item.domain_rating : 0),
+            trafficValue: 0,
+          }));
+        }
+      }
+    }
+
+    // Extract metrics
+    const drValue = typeof drData.domain_rating === 'object' 
+      ? drData.domain_rating.domain_rating 
+      : drData.domain_rating;
+    const ahrefsRankValue = typeof drData.domain_rating === 'object'
+      ? drData.domain_rating.ahrefs_rank
+      : 0;
+    
+    const backlinksCount = backlinksStatsData?.metrics?.live || backlinksStatsData?.live || 0;
+    const backlinksAllTime = backlinksStatsData?.metrics?.all_time || backlinksStatsData?.all_time || 0;
+    const refDomainsCount = backlinksStatsData?.metrics?.live_refdomains || backlinksStatsData?.live_refdomains || 0;
+    const refDomainsAllTime = backlinksStatsData?.metrics?.all_time_refdomains || backlinksStatsData?.all_time_refdomains || 0;
+    const trafficValueDollars = Math.round((metricsData?.metrics?.org_cost || 0) / 100);
+    
+    result.ahrefs = {
+      domainRating: Math.round(drValue || 0),
+      ahrefsRank: ahrefsRankValue || 0,
+      backlinks: backlinksCount,
+      backlinksAllTime: backlinksAllTime,
+      referringDomains: refDomainsCount,
+      referringDomainsAllTime: refDomainsAllTime,
+      organicTraffic: metricsData?.metrics?.org_traffic || 0,
+      organicKeywords: metricsData?.metrics?.org_keywords || 0,
+      trafficValue: trafficValueDollars,
+    };
+
+  } catch (ahrefsErr) {
+    console.error("Ahrefs fetch error:", ahrefsErr);
+    result.ahrefsError = ahrefsErr instanceof Error ? ahrefsErr.message : "Failed to fetch Ahrefs data";
+  }
+
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -465,13 +701,278 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // ========== DOMAIN AUDIT ACTIONS ==========
+      
+      case 'audit-domain': {
+        // Perform a live domain audit using Ahrefs API
+        const domain = url.searchParams.get('domain');
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: 'domain parameter required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log(`Performing live audit for domain: ${domain}`);
+        const auditResult = await fetchAhrefsData(domain);
+        
+        responseData = {
+          domain: domain,
+          ...auditResult,
+        };
+        break;
+      }
+
+      case 'audit-list': {
+        // List all saved audits with pagination
+        const category = url.searchParams.get('category');
+        const search = url.searchParams.get('search');
+        
+        let query = supabase
+          .from('saved_audits')
+          .select('*', { count: 'exact' })
+          .order('updated_at', { ascending: false });
+        
+        if (category && category !== 'all') {
+          query = query.eq('category', category);
+        }
+        
+        if (search) {
+          query = query.or(`domain.ilike.%${search}%,site_title.ilike.%${search}%`);
+        }
+        
+        const { data, count, error } = await query.range(offset, offset + limit - 1);
+
+        if (error) throw error;
+
+        responseData = {
+          data: data as SavedAudit[],
+          pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
+        };
+        break;
+      }
+
+      case 'audit-get': {
+        // Get a specific saved audit by domain or slug
+        const domain = url.searchParams.get('domain');
+        const slug = url.searchParams.get('slug');
+        
+        if (!domain && !slug) {
+          return new Response(
+            JSON.stringify({ error: 'domain or slug parameter required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        let query = supabase.from('saved_audits').select('*');
+        
+        if (slug) {
+          query = query.eq('slug', slug);
+        } else if (domain) {
+          // Clean domain for matching
+          let cleanDomain = domain.toLowerCase().trim();
+          cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
+          cleanDomain = cleanDomain.split("/")[0];
+          query = query.eq('domain', cleanDomain);
+        }
+        
+        const { data, error } = await query.single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            return new Response(
+              JSON.stringify({ error: 'Audit not found' }),
+              { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          throw error;
+        }
+
+        responseData = { data };
+        break;
+      }
+
+      case 'audit-save': {
+        // Save or update an audit (requires POST with body)
+        if (req.method !== 'POST') {
+          return new Response(
+            JSON.stringify({ error: 'POST method required for audit-save' }),
+            { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const body = await req.json();
+        const { domain, ...auditData } = body;
+        
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: 'domain field required in body' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Clean domain
+        let cleanDomain = domain.toLowerCase().trim();
+        cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
+        cleanDomain = cleanDomain.split("/")[0];
+        
+        // Generate slug
+        const slug = cleanDomain.replace(/\./g, '-');
+        
+        // Upsert audit
+        const { data, error } = await supabase
+          .from('saved_audits')
+          .upsert({
+            domain: cleanDomain,
+            slug,
+            ...auditData,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'domain' })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        responseData = { data, message: 'Audit saved successfully' };
+        break;
+      }
+
+      case 'audit-full': {
+        // Perform a full audit: fetch live data from Ahrefs and save it
+        const domain = url.searchParams.get('domain');
+        const submitterEmail = url.searchParams.get('email');
+        
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: 'domain parameter required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log(`Performing full audit for domain: ${domain}`);
+        
+        // Clean domain
+        let cleanDomain = domain.toLowerCase().trim();
+        cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
+        cleanDomain = cleanDomain.split("/")[0];
+        const slug = cleanDomain.replace(/\./g, '-');
+
+        // Fetch live Ahrefs data
+        const auditResult = await fetchAhrefsData(cleanDomain);
+        
+        if (auditResult.ahrefsError) {
+          responseData = {
+            domain: cleanDomain,
+            saved: false,
+            error: auditResult.ahrefsError,
+          };
+          break;
+        }
+
+        // Save to database
+        const { data: savedAudit, error: saveError } = await supabase
+          .from('saved_audits')
+          .upsert({
+            domain: cleanDomain,
+            slug,
+            domain_rating: auditResult.ahrefs?.domainRating || null,
+            organic_traffic: auditResult.ahrefs?.organicTraffic || null,
+            organic_keywords: auditResult.ahrefs?.organicKeywords || null,
+            traffic_value: auditResult.ahrefs?.trafficValue || null,
+            backlinks: auditResult.ahrefs?.backlinks || null,
+            referring_domains: auditResult.ahrefs?.referringDomains || null,
+            ahrefs_rank: auditResult.ahrefs?.ahrefsRank || null,
+            submitter_email: submitterEmail || null,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'domain' })
+          .select()
+          .single();
+
+        if (saveError) {
+          console.error('Failed to save audit:', saveError);
+        }
+
+        responseData = {
+          domain: cleanDomain,
+          saved: !saveError,
+          audit: savedAudit || null,
+          ahrefs: auditResult.ahrefs,
+          history: auditResult.history,
+        };
+        break;
+      }
+
+      case 'audit-stats': {
+        // Get aggregate statistics across all audits
+        const { data: audits } = await supabase
+          .from('saved_audits')
+          .select('domain_rating, organic_traffic, organic_keywords, traffic_value, backlinks, referring_domains, category');
+
+        const allAudits = audits || [];
+        
+        // Category breakdown
+        const categoryBreakdown: Record<string, number> = {};
+        allAudits.forEach((a: { category?: string }) => {
+          const cat = a.category || 'other';
+          categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + 1;
+        });
+
+        // Calculate averages
+        const avgDomainRating = allAudits.reduce((sum, a: { domain_rating?: number | null }) => sum + (a.domain_rating || 0), 0) / (allAudits.length || 1);
+        const avgTraffic = allAudits.reduce((sum, a: { organic_traffic?: number | null }) => sum + (a.organic_traffic || 0), 0) / (allAudits.length || 1);
+        const totalTrafficValue = allAudits.reduce((sum, a: { traffic_value?: number | null }) => sum + (a.traffic_value || 0), 0);
+
+        responseData = {
+          data: {
+            totalAudits: allAudits.length,
+            averageDomainRating: Math.round(avgDomainRating * 10) / 10,
+            averageOrganicTraffic: Math.round(avgTraffic),
+            totalTrafficValue: totalTrafficValue,
+            categoryBreakdown,
+          }
+        };
+        break;
+      }
+
+      case 'audit-categories': {
+        // List available audit categories
+        const categories = [
+          'ecommerce', 'saas', 'local_business', 'blog_media', 'professional_services',
+          'healthcare', 'finance', 'education', 'real_estate', 'hospitality',
+          'nonprofit', 'technology', 'other'
+        ];
+
+        // Get counts per category
+        const { data: audits } = await supabase
+          .from('saved_audits')
+          .select('category');
+
+        const counts: Record<string, number> = {};
+        (audits || []).forEach((a: { category?: string }) => {
+          const cat = a.category || 'other';
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+
+        responseData = {
+          data: categories.map(cat => ({
+            id: cat,
+            name: cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            count: counts[cat] || 0,
+          }))
+        };
+        break;
+      }
+
       default:
         return new Response(
           JSON.stringify({ 
             error: 'Invalid action',
             availableActions: [
+              // Visitor Intelligence
               'summary', 'sessions', 'active-sessions', 'page-views', 'page-stats',
-              'tool-interactions', 'tool-stats', 'leads', 'lead-funnel', 'daily-stats', 'session-detail'
+              'tool-interactions', 'tool-stats', 'leads', 'lead-funnel', 'daily-stats', 'session-detail',
+              // Domain Audit
+              'audit-domain', 'audit-list', 'audit-get', 'audit-save', 'audit-full', 'audit-stats', 'audit-categories'
             ]
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
