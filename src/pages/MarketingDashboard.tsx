@@ -531,20 +531,6 @@ const MarketingDashboard = () => {
               </>
             )}
             
-            {/* Chat Online/Offline Toggle */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${chatOnline ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted border border-border'}`}>
-              <MessageCircle className={`w-4 h-4 ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`} />
-              <Label htmlFor="chat-toggle" className={`text-sm font-medium cursor-pointer ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`}>
-                {chatOnline ? 'Chat Online' : 'Chat Offline'}
-              </Label>
-              <Switch 
-                id="chat-toggle"
-                checked={chatOnline}
-                onCheckedChange={setChatOnline}
-                className="data-[state=checked]:bg-green-500"
-              />
-            </div>
-            
             <div className="h-6 w-px bg-border" />
             
             <span className="text-sm text-muted-foreground">{user.email}</span>
@@ -1157,17 +1143,17 @@ const MarketingDashboard = () => {
         </main>
 
         {/* Right Sidebar - Chat Panel */}
-        {chatOnline && (
-          <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-all duration-300 ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
-            <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
-              {/* Header - Click to toggle */}
+        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-all duration-300 ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+            {/* Header with toggle */}
+            <div className="flex flex-col border-b border-border">
               <button 
                 onClick={() => setChatPanelOpen(!chatPanelOpen)}
-                className="flex items-center gap-2 p-3 border-b border-border hover:bg-secondary/30 transition-colors relative"
+                className="flex items-center gap-2 p-3 hover:bg-secondary/30 transition-colors relative"
               >
                 <div className="relative">
-                  <MessageCircle className="w-5 h-5 text-cyan-500" />
-                  {sidebarChats.length > 0 && (
+                  <MessageCircle className={`w-5 h-5 ${chatOnline ? 'text-cyan-500' : 'text-muted-foreground'}`} />
+                  {chatOnline && sidebarChats.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                       {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
                     </span>
@@ -1181,75 +1167,101 @@ const MarketingDashboard = () => {
                 )}
               </button>
               
-              {/* Chat List */}
-              {chatPanelOpen && (
-                <div className="flex-1 flex flex-col-reverse gap-1 p-2 overflow-auto">
-                  {sidebarChats.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center py-8">
-                        <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                        <p className="text-xs text-muted-foreground">No active chats</p>
-                      </div>
+              {/* Online/Offline Toggle */}
+              <div className={`flex items-center gap-2 px-3 py-2 ${chatPanelOpen ? '' : 'justify-center'}`}>
+                <Switch 
+                  id="chat-toggle"
+                  checked={chatOnline}
+                  onCheckedChange={setChatOnline}
+                  className="data-[state=checked]:bg-green-500"
+                />
+                {chatPanelOpen && (
+                  <Label htmlFor="chat-toggle" className={`text-xs font-medium cursor-pointer ${chatOnline ? 'text-green-400' : 'text-muted-foreground'}`}>
+                    {chatOnline ? 'Online' : 'Offline'}
+                  </Label>
+                )}
+              </div>
+            </div>
+              
+            {/* Chat List - only show when online */}
+            {chatOnline && chatPanelOpen && (
+              <div className="flex-1 flex flex-col-reverse gap-1 p-2 overflow-auto">
+                {sidebarChats.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center py-8">
+                      <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                      <p className="text-xs text-muted-foreground">No active chats</p>
                     </div>
-                  ) : (
-                    sidebarChats.map((chat) => (
-                      <div
-                        key={chat.id}
-                        onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
-                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                          selectedChatId === chat.id 
-                            ? 'bg-cyan-500/20 border border-cyan-500/30' 
-                            : 'hover:bg-secondary/50'
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
-                          <UserIcon className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">
-                            {chat.visitor_name || 'Visitor'}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {chat.current_page || 'Unknown page'}
-                          </p>
-                        </div>
-                        {chat.status === 'pending' && (
-                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* Collapsed state - just show icons */}
-              {!chatPanelOpen && sidebarChats.length > 0 && (
-                <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
-                  {sidebarChats.slice(0, 8).map((chat) => (
+                  </div>
+                ) : (
+                  sidebarChats.map((chat) => (
                     <div
                       key={chat.id}
-                      onClick={() => {
-                        setChatPanelOpen(true);
-                        setSelectedChatId(chat.id);
-                      }}
-                      className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
-                        chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                      onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                      className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedChatId === chat.id 
+                          ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                          : 'hover:bg-secondary/50'
                       }`}
-                      title={chat.visitor_name || 'Visitor'}
                     >
-                      <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
                         <UserIcon className="w-4 h-4 text-white" />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {chat.visitor_name || 'Visitor'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {chat.current_page || 'Unknown page'}
+                        </p>
+                      </div>
                       {chat.status === 'pending' && (
-                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
                       )}
                     </div>
-                  ))}
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Collapsed state - just show icons when online */}
+            {chatOnline && !chatPanelOpen && sidebarChats.length > 0 && (
+              <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
+                {sidebarChats.slice(0, 8).map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => {
+                      setChatPanelOpen(true);
+                      setSelectedChatId(chat.id);
+                    }}
+                    className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                      chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                    }`}
+                    title={chat.visitor_name || 'Visitor'}
+                  >
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                      <UserIcon className="w-4 h-4 text-white" />
+                    </div>
+                    {chat.status === 'pending' && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Offline message */}
+            {!chatOnline && chatPanelOpen && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center py-8 px-4">
+                  <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">Chat is offline</p>
+                  <p className="text-[10px] text-muted-foreground/70 mt-1">Turn on to receive chats</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Floating Chat Bar */}
