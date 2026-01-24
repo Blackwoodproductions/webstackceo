@@ -127,6 +127,71 @@ export type Database = {
           },
         ]
       }
+      form_submissions: {
+        Row: {
+          created_at: string
+          form_data: Json | null
+          form_name: string
+          id: string
+          page_path: string | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          form_data?: Json | null
+          form_name: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          form_data?: Json | null
+          form_name?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          domain: string | null
+          email: string
+          id: string
+          metric_type: string
+          phone: string | null
+          source_page: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          email: string
+          id?: string
+          metric_type: string
+          phone?: string | null
+          source_page?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          email?: string
+          id?: string
+          metric_type?: string
+          phone?: string | null
+          source_page?: string | null
+        }
+        Relationships: []
+      }
       marketplace_applications: {
         Row: {
           admin_notes: string | null
@@ -278,6 +343,44 @@ export type Database = {
           },
         ]
       }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          page_path: string
+          page_title: string | null
+          scroll_depth: number | null
+          session_id: string
+          time_on_page: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_path: string
+          page_title?: string | null
+          scroll_depth?: number | null
+          session_id: string
+          time_on_page?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          page_title?: string | null
+          scroll_depth?: number | null
+          session_id?: string
+          time_on_page?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       saved_audits: {
         Row: {
           ahrefs_rank: number | null
@@ -374,6 +477,44 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          page_path: string | null
+          session_id: string
+          tool_name: string
+          tool_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          session_id: string
+          tool_name: string
+          tool_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          session_id?: string
+          tool_name?: string
+          tool_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_interactions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -392,6 +533,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      visitor_sessions: {
+        Row: {
+          first_page: string | null
+          id: string
+          ip_hash: string | null
+          last_activity_at: string
+          referrer: string | null
+          session_id: string
+          started_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          first_page?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_activity_at?: string
+          referrer?: string | null
+          session_id: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          first_page?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_activity_at?: string
+          referrer?: string | null
+          session_id?: string
+          started_at?: string
+          user_agent?: string | null
         }
         Relationships: []
       }

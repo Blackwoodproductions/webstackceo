@@ -204,9 +204,17 @@ const Footer = memo(() => {
         </div>
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            © {currentYear} Webstack.ceo by Blackwood Productions. All rights reserved.
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              © {currentYear} Webstack.ceo by Blackwood Productions. All rights reserved.
+            </p>
+            <a 
+              href="/marketing-dashboard" 
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            >
+              Admin
+            </a>
+          </div>
           
           {/* Payment Methods */}
           <div className="flex items-center gap-3">

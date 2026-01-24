@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,10 +33,23 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/admin';
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+
+  // Check if already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(redirectTo);
+      }
+    };
+    checkAuth();
+  }, [navigate, redirectTo]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -68,18 +81,18 @@ const Auth = () => {
       title: "Welcome back!",
       description: "You have successfully logged in.",
     });
-    navigate("/admin");
+    navigate(redirectTo);
   };
 
   const handleSignup = async (data: AuthFormValues) => {
     setIsLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
+    const signupRedirectUrl = `${window.location.origin}${redirectTo}`;
     
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: signupRedirectUrl,
       },
     });
 
