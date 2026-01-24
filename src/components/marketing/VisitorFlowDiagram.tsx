@@ -183,12 +183,20 @@ const formatPageName = (path: string): string => {
     .slice(0, 14);
 };
 
+export interface VisitorFlowSummary {
+  topPages: { path: string; name: string; visits: number }[];
+  totalVisits: number;
+  activeVisitors: number;
+  timeRange: TimeRange;
+}
+
 interface VisitorFlowDiagramProps {
   onPageFilter?: (pagePath: string | null) => void;
   activeFilter?: string | null;
+  onSummaryUpdate?: (summary: VisitorFlowSummary) => void;
 }
 
-const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramProps) => {
+const VisitorFlowDiagram = ({ onPageFilter, activeFilter, onSummaryUpdate }: VisitorFlowDiagramProps) => {
   const [pageViews, setPageViews] = useState<{ page_path: string; created_at: string; session_id: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<TimeRange>('live');
@@ -695,6 +703,26 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
       externalCountsByPage: extCounts
     };
   }, [pageViews, timeRange, customDateRange, externalReferrerSessions]);
+
+  // Update parent with summary data whenever it changes
+  useEffect(() => {
+    if (onSummaryUpdate) {
+      const topPages = nodes
+        .filter(n => n.visits > 0)
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 6)
+        .map(n => ({ path: n.path, name: n.name, visits: n.visits }));
+      
+      const totalVisits = nodes.reduce((sum, n) => sum + n.visits, 0);
+      
+      onSummaryUpdate({
+        topPages,
+        totalVisits,
+        activeVisitors: liveVisitors.length,
+        timeRange,
+      });
+    }
+  }, [nodes, liveVisitors.length, timeRange, onSummaryUpdate]);
 
   const getHeatColor = useCallback((intensity: number, isVisited: boolean) => {
     if (!isVisited) return '#6b7280'; // gray for unvisited
