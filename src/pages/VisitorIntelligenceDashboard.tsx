@@ -884,40 +884,36 @@ const MarketingDashboard = () => {
                 </div>
               </div>
             </Card>
-            <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
+            <Card className="p-4 border-blue-500/30 bg-blue-500/5">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
-                  <UserCheck className="w-5 h-5 text-cyan-500" />
+                <div className="p-2 rounded-lg bg-blue-500/20 flex-shrink-0">
+                  <Phone className="w-5 h-5 text-blue-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
-                  <p className="text-xs text-muted-foreground">New Today</p>
+                  <p className="text-2xl font-bold text-blue-500 leading-tight">{leads.filter(l => l.status === 'called').length}</p>
+                  <p className="text-xs text-muted-foreground">📞 Called</p>
                 </div>
               </div>
             </Card>
-            <Card className="p-4">
+            <Card className="p-4 border-violet-500/30 bg-violet-500/5">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-violet-500/10 flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 text-violet-500" />
+                <div className="p-2 rounded-lg bg-violet-500/20 flex-shrink-0">
+                  <Mail className="w-5 h-5 text-violet-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold text-foreground leading-tight">
-                    {funnelStats.visitors > 0 ? ((funnelStats.leads / funnelStats.visitors) * 100).toFixed(1) : '0'}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">Lead Rate</p>
+                  <p className="text-2xl font-bold text-violet-500 leading-tight">{leads.filter(l => l.status === 'emailed').length}</p>
+                  <p className="text-xs text-muted-foreground">✉️ Emailed</p>
                 </div>
               </div>
             </Card>
-            <Card className="p-4">
+            <Card className="p-4 border-amber-500/30 bg-amber-500/5">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
+                <div className="p-2 rounded-lg bg-amber-500/20 flex-shrink-0">
                   <Target className="w-5 h-5 text-amber-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold text-foreground leading-tight">
-                    {funnelStats.leads > 0 ? ((funnelStats.closedLeads / funnelStats.leads) * 100).toFixed(1) : '0'}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">Close Rate</p>
+                  <p className="text-2xl font-bold text-amber-500 leading-tight">{leads.filter(l => l.status === 'considering').length}</p>
+                  <p className="text-xs text-muted-foreground">🤔 Considering</p>
                 </div>
               </div>
             </Card>
@@ -930,20 +926,18 @@ const MarketingDashboard = () => {
                   <p className="text-2xl font-bold text-green-500 leading-tight truncate">
                     ${leads.reduce((sum, l) => sum + (l.closed_amount || 0), 0).toLocaleString()}
                   </p>
-                  <p className="text-xs text-muted-foreground">Revenue</p>
+                  <p className="text-xs text-muted-foreground">💰 Revenue</p>
                 </div>
               </div>
             </Card>
             <Card className="p-4">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
-                  <MousePointer className="w-5 h-5 text-pink-500" />
+                <div className="p-2 rounded-lg bg-cyan-500/10 flex-shrink-0">
+                  <FileText className="w-5 h-5 text-cyan-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-2xl font-bold text-foreground leading-tight">
-                    {funnelStats.visitors > 0 ? ((filteredData.toolInteractions.length / funnelStats.visitors) * 100).toFixed(1) : '0'}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">Engagement</p>
+                  <p className="text-2xl font-bold text-foreground leading-tight">{leads.filter(l => l.status === 'open').length}</p>
+                  <p className="text-xs text-muted-foreground">📋 Open</p>
                 </div>
               </div>
             </Card>
