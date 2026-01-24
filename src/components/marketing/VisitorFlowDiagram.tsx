@@ -203,10 +203,10 @@ const VisitorFlowDiagram = () => {
                   id: pathId 
                 }]);
                 
-                // Remove path after animation
+                // Remove path after animation (5 seconds)
                 setTimeout(() => {
                   setActivePaths(paths => paths.filter(p => p.id !== pathId));
-                }, 2000);
+                }, 5000);
               }
               
               return prev.map(v => 
@@ -344,17 +344,17 @@ const VisitorFlowDiagram = () => {
   
   const depth3 = nodes.filter(n => n.depth >= 3);
 
-  // Layout configuration
-  const svgWidth = 1500;
+  // Layout configuration - responsive width
+  const svgWidth = 1100;
   const baseY = 50;
-  const rowHeight = 85;
-  const sectionGap = 60;
+  const rowHeight = 80;
+  const sectionGap = 55;
   
-  // Row sizes - more per row since we have full width now
-  const l1RegularRowSize = 12;
-  const megaChildRowSize = 14;
-  const otherL2RowSize = 12;
-  const l3RowSize = 10;
+  // Row sizes - adjusted for narrower width
+  const l1RegularRowSize = 10;
+  const megaChildRowSize = 11;
+  const otherL2RowSize = 10;
+  const l3RowSize = 8;
   
   // Calculate rows needed for each section
   const l1RegularRows = Math.ceil(depth1Regular.length / l1RegularRowSize);
@@ -556,12 +556,13 @@ const VisitorFlowDiagram = () => {
         </div>
       </div>
 
-      <div className="relative bg-secondary/30 rounded-2xl p-4 overflow-x-auto">
+      <div className="relative bg-secondary/30 rounded-2xl p-4 overflow-hidden">
         <svg 
-          width={svgWidth} 
+          width="100%" 
           height={svgHeight} 
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          preserveAspectRatio="xMidYMin meet"
           className="mx-auto"
-          style={{ minWidth: svgWidth }}
         >
           {/* Gradient definitions for animated paths */}
           <defs>
@@ -596,26 +597,26 @@ const VisitorFlowDiagram = () => {
               <g key={`edge-${i}`}>
                 {edge.isVisited && (
                   <path
-                    d={`M ${fromPos.x} ${fromPos.y + 22} 
+                    d={`M ${fromPos.x} ${fromPos.y + 16} 
                         Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                        Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 22}`}
+                        Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`}
                     fill="none"
                     stroke={color}
-                    strokeWidth={strokeWidth + 3}
+                    strokeWidth={strokeWidth + 2}
                     strokeOpacity={0.12}
                     strokeLinecap="round"
                   />
                 )}
                 <path
-                  d={`M ${fromPos.x} ${fromPos.y + 22} 
+                  d={`M ${fromPos.x} ${fromPos.y + 16} 
                       Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                      Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 22}`}
+                      Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`}
                   fill="none"
                   stroke={color}
                   strokeWidth={strokeWidth}
                   strokeOpacity={opacity}
                   strokeLinecap="round"
-                  strokeDasharray={edge.isVisited ? "none" : "4 3"}
+                  strokeDasharray={edge.isVisited ? "none" : "3 2"}
                 />
               </g>
             );
@@ -628,9 +629,9 @@ const VisitorFlowDiagram = () => {
             if (!fromPos || !toPos) return null;
             
             const midY = (fromPos.y + toPos.y) / 2;
-            const pathD = `M ${fromPos.x} ${fromPos.y + 22} 
+            const pathD = `M ${fromPos.x} ${fromPos.y + 16} 
                           Q ${fromPos.x} ${midY}, ${(fromPos.x + toPos.x) / 2} ${midY}
-                          Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 22}`;
+                          Q ${toPos.x} ${midY}, ${toPos.x} ${toPos.y - 16}`;
             
             return (
               <g key={path.id}>
@@ -645,19 +646,49 @@ const VisitorFlowDiagram = () => {
                   filter="url(#glow)"
                   className="animate-pulse"
                 />
-                {/* Animated dot traveling along path */}
-                <circle r="6" fill="#06b6d4" filter="url(#glow)">
+                {/* Animated dot traveling along path - 5 second journey */}
+                <circle r="8" fill="#06b6d4" filter="url(#glow)">
                   <animateMotion
-                    dur="1.5s"
+                    dur="4s"
                     repeatCount="1"
                     path={pathD}
+                    fill="freeze"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="1;1;0"
+                    dur="5s"
+                    fill="freeze"
                   />
                 </circle>
-                <circle r="3" fill="#ffffff">
+                <circle r="4" fill="#ffffff">
                   <animateMotion
-                    dur="1.5s"
+                    dur="4s"
                     repeatCount="1"
                     path={pathD}
+                    fill="freeze"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="1;1;0"
+                    dur="5s"
+                    fill="freeze"
+                  />
+                </circle>
+                {/* Trail effect */}
+                <circle r="5" fill="#06b6d4" opacity="0.5">
+                  <animateMotion
+                    dur="4s"
+                    repeatCount="1"
+                    path={pathD}
+                    fill="freeze"
+                    begin="0.3s"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0.5;0.5;0"
+                    dur="5s"
+                    fill="freeze"
                   />
                 </circle>
               </g>
@@ -671,9 +702,10 @@ const VisitorFlowDiagram = () => {
             
             const intensity = node.visits / maxVisits;
             const color = getHeatColor(intensity, node.isVisited);
-            const nodeSize = node.depth === 0 ? 22 : node.depth === 1 ? 14 : 10;
+            const nodeSize = node.depth === 0 ? 18 : node.depth === 1 ? 12 : 8;
             const opacity = node.isVisited ? 1 : 0.35;
-            const hasLiveVisitor = visitorsByNode[node.path] > 0;
+            const liveCount = visitorsByNode[node.path] || 0;
+            const hasLiveVisitor = liveCount > 0;
             
             return (
               <g key={node.path} className="cursor-pointer" style={{ opacity }}>
