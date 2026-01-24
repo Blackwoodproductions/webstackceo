@@ -415,97 +415,13 @@ const MarketingDashboard = () => {
       <main className="container mx-auto px-6 py-8">
         {/* Main Layout - Traffic Sources & Funnel on Left, Stats & Flow on Right */}
         <div className="grid lg:grid-cols-5 gap-6 mb-6">
-          {/* Left Column - Traffic Sources + Vertical Conversion Funnel (narrower) */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Left Column - Traffic Sources only (narrower) */}
+          <div className="lg:col-span-1">
             {/* Traffic Sources at Top Left */}
             <ReferrerBreakdownChart sessions={sessions} />
-
-            {/* Top Entry Pages */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <FileText className="w-4 h-4 text-primary" />
-                <h2 className="font-bold text-foreground text-sm">Entry Pages</h2>
-              </div>
-              <div className="space-y-2">
-                {(() => {
-                  const pageCounts: Record<string, number> = {};
-                  sessions.forEach(s => {
-                    const page = s.first_page || '/';
-                    pageCounts[page] = (pageCounts[page] || 0) + 1;
-                  });
-                  return Object.entries(pageCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
-                    .map(([page, count]) => (
-                      <div key={page} className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground truncate flex-1 mr-2">
-                          {page === '/' ? 'Homepage' : page.slice(0, 15)}
-                        </span>
-                        <span className="font-semibold">{count}</span>
-                      </div>
-                    ));
-                })()}
-              </div>
-            </Card>
-
-            {/* Top Tools Used */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <MousePointer className="w-4 h-4 text-pink-500" />
-                <h2 className="font-bold text-foreground text-sm">Top Tools</h2>
-              </div>
-              <div className="space-y-2">
-                {(() => {
-                  const toolCounts: Record<string, number> = {};
-                  toolInteractions.forEach(t => {
-                    toolCounts[t.tool_name] = (toolCounts[t.tool_name] || 0) + 1;
-                  });
-                  const entries = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                  if (entries.length === 0) {
-                    return <p className="text-xs text-muted-foreground">No tool usage yet</p>;
-                  }
-                  return entries.map(([tool, count]) => (
-                    <div key={tool} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground truncate flex-1 mr-2">{tool}</span>
-                      <span className="font-semibold">{count}</span>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </Card>
-
-            {/* Recent Leads */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Mail className="w-4 h-4 text-violet-500" />
-                <h2 className="font-bold text-foreground text-sm">Recent Leads</h2>
-              </div>
-              <div className="space-y-2">
-                {leads.slice(0, 4).map(lead => (
-                  <div key={lead.id} className="text-xs border-b border-border/30 pb-1.5 last:border-0 last:pb-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium truncate flex-1 mr-2">{lead.email.split('@')[0]}</span>
-                      {lead.status === 'closed' ? (
-                        <Badge className="text-[8px] h-4 bg-green-500">Closed</Badge>
-                      ) : lead.full_name ? (
-                        <Badge className="text-[8px] h-4 bg-amber-500">Named</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[8px] h-4">New</Badge>
-                      )}
-                    </div>
-                    <span className="text-muted-foreground text-[10px]">
-                      {format(new Date(lead.created_at), 'MMM d, HH:mm')}
-                    </span>
-                  </div>
-                ))}
-                {leads.length === 0 && (
-                  <p className="text-xs text-muted-foreground">No leads yet</p>
-                )}
-              </div>
-            </Card>
           </div>
 
-          {/* Right Column - Stats + Flow Diagram (wider) */}
+          {/* Right Column - Stats + Funnel + Flow Diagram (wider) */}
           <div className="lg:col-span-4 space-y-6">
             {/* Quick Stats Row - Key Conversion Metrics (no duplicates with funnel) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -618,6 +534,88 @@ const MarketingDashboard = () => {
                   </Card>
                 );
               })}
+            </div>
+
+            {/* Entry Pages, Top Tools, Recent Leads - Wide Boxes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Top Entry Pages */}
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-4 h-4 text-primary" />
+                  <h2 className="font-bold text-foreground text-sm">Entry Pages</h2>
+                </div>
+                <div className="space-y-2">
+                  {(() => {
+                    const pageCounts: Record<string, number> = {};
+                    sessions.forEach(s => {
+                      const page = s.first_page || '/';
+                      pageCounts[page] = (pageCounts[page] || 0) + 1;
+                    });
+                    return Object.entries(pageCounts)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 5)
+                      .map(([page, count]) => (
+                        <div key={page} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate flex-1 mr-2">
+                            {page === '/' ? 'Homepage' : page}
+                          </span>
+                          <span className="font-semibold">{count}</span>
+                        </div>
+                      ));
+                  })()}
+                </div>
+              </Card>
+
+              {/* Top Tools Used */}
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <MousePointer className="w-4 h-4 text-pink-500" />
+                  <h2 className="font-bold text-foreground text-sm">Top Tools</h2>
+                </div>
+                <div className="space-y-2">
+                  {(() => {
+                    const toolCounts: Record<string, number> = {};
+                    toolInteractions.forEach(t => {
+                      toolCounts[t.tool_name] = (toolCounts[t.tool_name] || 0) + 1;
+                    });
+                    const entries = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                    if (entries.length === 0) {
+                      return <p className="text-xs text-muted-foreground">No tool usage yet</p>;
+                    }
+                    return entries.map(([tool, count]) => (
+                      <div key={tool} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground truncate flex-1 mr-2">{tool}</span>
+                        <span className="font-semibold">{count}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card>
+
+              {/* Recent Leads */}
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Mail className="w-4 h-4 text-violet-500" />
+                  <h2 className="font-bold text-foreground text-sm">Recent Leads</h2>
+                </div>
+                <div className="space-y-2">
+                  {leads.slice(0, 5).map(lead => (
+                    <div key={lead.id} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground truncate flex-1 mr-2">{lead.email.split('@')[0]}</span>
+                      {lead.status === 'closed' ? (
+                        <Badge className="text-[8px] h-4 bg-green-500">Closed</Badge>
+                      ) : lead.full_name ? (
+                        <Badge className="text-[8px] h-4 bg-amber-500">Named</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[8px] h-4">New</Badge>
+                      )}
+                    </div>
+                  ))}
+                  {leads.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No leads yet</p>
+                  )}
+                </div>
+              </Card>
             </div>
 
             {/* Site Architecture / Visitor Flow Diagram */}
