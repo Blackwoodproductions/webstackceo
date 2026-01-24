@@ -8,14 +8,9 @@ import {
   Youtube, 
   Mail, 
   Phone, 
-  MapPin,
   ExternalLink,
-  Sparkles,
-  Tag
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 
 interface WebsiteProfileProps {
   domain: string;
@@ -40,7 +35,6 @@ interface WebsiteProfileProps {
     };
     detectedCategory: string;
   } | null;
-  matchedGlossaryTerms: Array<{ term: string; slug: string; shortDescription: string }>;
   isLoading?: boolean;
 }
 
@@ -84,7 +78,7 @@ const SocialIcon = ({ platform, url }: { platform: string; url: string }) => {
   );
 };
 
-export const WebsiteProfileSection = ({ domain, profile, matchedGlossaryTerms, isLoading }: WebsiteProfileProps) => {
+export const WebsiteProfileSection = ({ domain, profile, isLoading }: WebsiteProfileProps) => {
   if (isLoading) {
     return (
       <motion.div
@@ -180,70 +174,41 @@ export const WebsiteProfileSection = ({ domain, profile, matchedGlossaryTerms, i
         </div>
 
         {/* Social Links & Contact */}
-        <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-border/50">
-          {socialLinks.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Social:</span>
-              <div className="flex items-center gap-1">
-                {socialLinks.map(([platform, url]) => (
-                  <SocialIcon key={platform} platform={platform} url={url!} />
-                ))}
+        {(socialLinks.length > 0 || hasContact) && (
+          <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-border/50">
+            {socialLinks.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Social:</span>
+                <div className="flex items-center gap-1">
+                  {socialLinks.map(([platform, url]) => (
+                    <SocialIcon key={platform} platform={platform} url={url!} />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          
-          {hasContact && (
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {profile.contactInfo?.email && (
-                <a
-                  href={`mailto:${profile.contactInfo.email}`}
-                  className="inline-flex items-center gap-1 hover:text-primary transition-colors"
-                >
-                  <Mail className="w-3 h-3" />
-                  {profile.contactInfo.email}
-                </a>
-              )}
-              {profile.contactInfo?.phone && (
-                <a
-                  href={`tel:${profile.contactInfo.phone}`}
-                  className="inline-flex items-center gap-1 hover:text-primary transition-colors"
-                >
-                  <Phone className="w-3 h-3" />
-                  {profile.contactInfo.phone}
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Matched Glossary Terms */}
-        {matchedGlossaryTerms.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Relevant SEO Concepts</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {matchedGlossaryTerms.slice(0, 8).map((term) => (
-                <GlossaryTooltip key={term.slug} term={term.term}>
-                  <Link
-                    to={`/learn/glossary/${term.slug}`}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gradient-to-r from-primary/10 to-violet-500/10 text-primary hover:from-primary/20 hover:to-violet-500/20 transition-colors border border-primary/20"
+            )}
+            
+            {hasContact && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {profile.contactInfo?.email && (
+                  <a
+                    href={`mailto:${profile.contactInfo.email}`}
+                    className="inline-flex items-center gap-1 hover:text-primary transition-colors"
                   >
-                    <Tag className="w-3 h-3" />
-                    {term.term}
-                  </Link>
-                </GlossaryTooltip>
-              ))}
-              {matchedGlossaryTerms.length > 8 && (
-                <Link
-                  to="/learn/glossary"
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-muted text-muted-foreground hover:text-primary transition-colors"
-                >
-                  +{matchedGlossaryTerms.length - 8} more
-                </Link>
-              )}
-            </div>
+                    <Mail className="w-3 h-3" />
+                    {profile.contactInfo.email}
+                  </a>
+                )}
+                {profile.contactInfo?.phone && (
+                  <a
+                    href={`tel:${profile.contactInfo.phone}`}
+                    className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                  >
+                    <Phone className="w-3 h-3" />
+                    {profile.contactInfo.phone}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

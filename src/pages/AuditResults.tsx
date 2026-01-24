@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { glossaryTerms } from "@/data/glossaryData";
 import { WebsiteProfileSection } from "@/components/audit/WebsiteProfileSection";
+import GlossaryTooltip from "@/components/ui/glossary-tooltip";
+import { Link } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -60,6 +62,9 @@ import {
   Calendar,
   Phone,
   Save,
+  BookOpen,
+  Tag,
+  ArrowRight,
 } from "lucide-react";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
@@ -664,7 +669,7 @@ const AuditResults = () => {
     
     // Filter glossary terms by relevant categories
     glossaryTerms.forEach(term => {
-      if (categories.has(term.category) && relevantTerms.length < 12) {
+      if (categories.has(term.category) && relevantTerms.length < 16) {
         relevantTerms.push({
           term: term.term,
           slug: term.slug,
@@ -675,6 +680,69 @@ const AuditResults = () => {
     
     return relevantTerms;
   }, [auditResults]);
+
+  // Match relevant learning guides based on audit results
+  const matchedLearningGuides = useMemo(() => {
+    const guides: Array<{ title: string; href: string; description: string }> = [];
+    
+    // Always include core guides
+    guides.push({
+      title: 'On-Page SEO Guide',
+      href: '/learn/on-page-seo-guide',
+      description: 'Master title tags, meta descriptions, header structure, and content optimization.'
+    });
+    guides.push({
+      title: 'Off-Page SEO Guide',
+      href: '/learn/off-page-seo-guide',
+      description: 'Learn link building strategies and how to boost domain authority.'
+    });
+    
+    // Add guides based on audit findings
+    const pageSpeed = auditResults.find(c => c.title === 'Page Speed');
+    if (pageSpeed && pageSpeed.score < 80) {
+      guides.push({
+        title: 'Core Web Vitals Guide',
+        href: '/learn/core-web-vitals-guide',
+        description: 'Optimize LCP, FID, and CLS for better performance and rankings.'
+      });
+    }
+    
+    const technical = auditResults.find(c => c.title === 'Technical SEO');
+    if (technical) {
+      guides.push({
+        title: 'Technical SEO Guide',
+        href: '/learn/technical-seo-guide',
+        description: 'Fix crawlability, indexation, and site architecture issues.'
+      });
+    }
+    
+    const schema = auditResults.find(c => c.title === 'Schema Markup');
+    if (schema && schema.score < 80) {
+      guides.push({
+        title: 'Link Building Guide',
+        href: '/learn/link-building-guide',
+        description: 'Build high-quality backlinks with proven strategies.'
+      });
+    }
+    
+    // Add domain authority guide for low DR sites
+    if (dashboardMetrics && dashboardMetrics.domainRating < 50) {
+      guides.push({
+        title: 'Domain Authority Guide',
+        href: '/learn/domain-authority-guide',
+        description: 'Understand and improve your domain rating and authority.'
+      });
+    }
+    
+    // Add analytics guide
+    guides.push({
+      title: 'Analytics Guide',
+      href: '/learn/analytics-guide',
+      description: 'Track and measure your SEO performance with actionable insights.'
+    });
+    
+    return guides.slice(0, 6); // Max 6 guides
+  }, [auditResults, dashboardMetrics]);
 
   const toggleCategory = (title: string) => {
     setExpandedCategories(prev => {
@@ -1421,7 +1489,6 @@ const AuditResults = () => {
           <WebsiteProfileSection
             domain={decodedDomain}
             profile={websiteProfile}
-            matchedGlossaryTerms={matchedGlossaryTerms}
             isLoading={isProfileLoading}
           />
 
@@ -1970,6 +2037,102 @@ const AuditResults = () => {
                 </div>
               ))}
             </div>
+          </motion.div>
+
+          {/* SEO Resources Section - Glossary Terms & Learning Guides */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mt-16 mb-8"
+          >
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">SEO Resources</span>
+              </div>
+              <h2 className="text-3xl font-bold mb-3">
+                Learn More About{" "}
+                <span className="bg-gradient-to-r from-cyan-400 via-violet-500 to-amber-400 bg-clip-text text-transparent">
+                  SEO Best Practices
+                </span>
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Explore our learning center guides and glossary terms relevant to improving your website's performance.
+              </p>
+            </div>
+
+            {/* Learning Center Guides */}
+            {matchedLearningGuides.length > 0 && (
+              <div className="mb-10">
+                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                  Recommended Guides
+                </h3>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {matchedLearningGuides.map((guide, index) => (
+                    <motion.div
+                      key={guide.href}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <Link
+                        to={guide.href}
+                        className="group block p-5 rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold group-hover:text-primary transition-colors">
+                            {guide.title}
+                          </h4>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {guide.description}
+                        </p>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Glossary Terms */}
+            {matchedGlossaryTerms.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-primary" />
+                  Relevant SEO Concepts
+                </h3>
+                <div className="p-6 rounded-2xl bg-card border border-border/50">
+                  <div className="flex flex-wrap gap-2">
+                    {matchedGlossaryTerms.map((term) => (
+                      <GlossaryTooltip key={term.slug} term={term.term}>
+                        <Link
+                          to={`/learn/glossary/${term.slug}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full bg-gradient-to-r from-primary/10 to-violet-500/10 text-primary hover:from-primary/20 hover:to-violet-500/20 transition-colors border border-primary/20"
+                        >
+                          <Tag className="w-3 h-3" />
+                          {term.term}
+                        </Link>
+                      </GlossaryTooltip>
+                    ))}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Explore our full SEO glossary with 40+ terms and definitions.
+                    </p>
+                    <Link
+                      to="/learn/glossary"
+                      className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      View All Terms
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </main>
