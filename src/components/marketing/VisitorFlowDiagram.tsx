@@ -667,19 +667,10 @@ const VisitorFlowDiagram = ({ onPageFilter, activeFilter }: VisitorFlowDiagramPr
     const visited = nodeList.filter(n => n.isVisited).length;
     const maxPV = Math.max(...Object.values(pathTransitions), 1);
 
-    // Calculate external referrer counts per page based on time range
+    // Calculate external referrer counts per page (ALL-TIME, not filtered by time range)
+    // This matches the starburst indicator which also uses all-time data
     const extCounts: Record<string, number> = {};
-    let filteredExtSessions = filterDate
-      ? externalReferrerSessions.filter(s => new Date(s.started_at) >= filterDate)
-      : externalReferrerSessions;
-    
-    if (filterEndDate) {
-      const endOfDay = new Date(filterEndDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      filteredExtSessions = filteredExtSessions.filter(s => new Date(s.started_at) <= endOfDay);
-    }
-    
-    filteredExtSessions.forEach(s => {
+    externalReferrerSessions.forEach(s => {
       extCounts[s.first_page] = (extCounts[s.first_page] || 0) + 1;
     });
 
