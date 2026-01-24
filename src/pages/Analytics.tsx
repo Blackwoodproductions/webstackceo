@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -21,6 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -145,7 +146,27 @@ const Analytics = () => {
   const [discoverData, setDiscoverData] = useState<PerformanceRow[]>([]);
   
   const [isFetching, setIsFetching] = useState(false);
+  const [isLoadingComparison, setIsLoadingComparison] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  
+  // Cache for domain data to avoid refetching when switching back
+  const dataCache = useRef<Map<string, {
+    dateRange: string;
+    searchType: string;
+    data: {
+      queryData: PerformanceRow[];
+      pageData: PerformanceRow[];
+      countryData: PerformanceRow[];
+      deviceData: PerformanceRow[];
+      dateData: PerformanceRow[];
+      searchAppearanceData: PerformanceRow[];
+      sitemaps: SitemapInfo[];
+    };
+    timestamp: number;
+  }>>(new Map());
+  
+  // Debounce timer ref
+  const fetchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
   // Client ID configuration
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
@@ -244,11 +265,25 @@ const Analytics = () => {
     }
   }, [accessToken]);
 
-  // Fetch data when site selected
+  // Fetch data when site selected - with debouncing
   useEffect(() => {
-    if (selectedSite && accessToken) {
-      fetchAllData();
+    if (!selectedSite || !accessToken) return;
+    
+    // Clear any pending fetch
+    if (fetchDebounceRef.current) {
+      clearTimeout(fetchDebounceRef.current);
     }
+    
+    // Debounce the fetch to prevent rapid switching lag
+    fetchDebounceRef.current = setTimeout(() => {
+      fetchAllData();
+    }, 150);
+    
+    return () => {
+      if (fetchDebounceRef.current) {
+        clearTimeout(fetchDebounceRef.current);
+      }
+    };
   }, [selectedSite, dateRange, searchType, accessToken]);
 
   const handleGoogleLogin = async () => {
@@ -375,48 +410,99 @@ const Analytics = () => {
     return response.data;
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (forceRefresh = false) => {
     if (!selectedSite || !accessToken) return;
+    
+    const cacheKey = `${selectedSite}-${dateRange}-${searchType}`;
+    const cached = dataCache.current.get(cacheKey);
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+    
+    // Use cache if available and not expired (unless force refresh)
+    if (!forceRefresh && cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      setQueryData(cached.data.queryData);
+      setPageData(cached.data.pageData);
+      setCountryData(cached.data.countryData);
+      setDeviceData(cached.data.deviceData);
+      setDateData(cached.data.dateData);
+      setSearchAppearanceData(cached.data.searchAppearanceData);
+      setSitemaps(cached.data.sitemaps);
+      return;
+    }
     
     setIsFetching(true);
     const days = getDaysFromRange(dateRange);
     
     try {
-      // Fetch all data for current search type with increased limits
-      const [queries, pages, countries, devices, dates, searchAppearance, sitemapsRes] = await Promise.all([
+      // Stage 1: Fetch essential data first (date for chart + device for overview)
+      const [dates, devices] = await Promise.all([
+        fetchPerformance(["date"], days, searchType),
+        fetchPerformance(["device"], 5, searchType),
+      ]);
+      
+      // Update UI immediately with essential data
+      const dateRows = dates?.rows || [];
+      const deviceRows = devices?.rows || [];
+      setDateData(dateRows);
+      setDeviceData(deviceRows);
+      
+      // Stage 2: Fetch remaining data in parallel
+      const [queries, pages, countries, searchAppearance, sitemapsRes] = await Promise.all([
         fetchPerformance(["query"], 100, searchType),
         fetchPerformance(["page"], 100, searchType),
         fetchPerformance(["country"], 50, searchType),
-        fetchPerformance(["device"], 5, searchType),
-        fetchPerformance(["date"], days, searchType),
         fetchPerformance(["searchAppearance"], 25, searchType),
         fetchSitemaps(),
       ]);
 
-      setQueryData(queries?.rows || []);
-      setPageData(pages?.rows || []);
-      setCountryData(countries?.rows || []);
-      setDeviceData(devices?.rows || []);
-      setDateData(dates?.rows || []);
-      setSearchAppearanceData(searchAppearance?.rows || []);
-      setSitemaps(sitemapsRes?.sitemap || []);
+      const queryRows = queries?.rows || [];
+      const pageRows = pages?.rows || [];
+      const countryRows = countries?.rows || [];
+      const searchAppRows = searchAppearance?.rows || [];
+      const sitemapRows = sitemapsRes?.sitemap || [];
+      
+      setQueryData(queryRows);
+      setPageData(pageRows);
+      setCountryData(countryRows);
+      setSearchAppearanceData(searchAppRows);
+      setSitemaps(sitemapRows);
+      
+      // Cache the fetched data
+      dataCache.current.set(cacheKey, {
+        dateRange,
+        searchType,
+        data: {
+          queryData: queryRows,
+          pageData: pageRows,
+          countryData: countryRows,
+          deviceData: deviceRows,
+          dateData: dateRows,
+          searchAppearanceData: searchAppRows,
+          sitemaps: sitemapRows,
+        },
+        timestamp: Date.now(),
+      });
+      
+      setIsFetching(false);
 
-      // Fetch comparison data for overview (web, image, discover)
+      // Stage 3: Fetch comparison data in background (non-blocking)
       if (searchType === 'web') {
-        const [webDates, imageDates, discoverDates] = await Promise.all([
+        setIsLoadingComparison(true);
+        Promise.all([
           fetchPerformance(["date"], Math.min(days, 28), 'web'),
           fetchPerformance(["date"], Math.min(days, 28), 'image').catch(() => ({ rows: [] })),
           fetchPerformance(["date"], Math.min(days, 28), 'discover').catch(() => ({ rows: [] })),
-        ]);
-        setWebData(webDates?.rows || []);
-        setImageData(imageDates?.rows || []);
-        setDiscoverData(discoverDates?.rows || []);
+        ]).then(([webDates, imageDates, discoverDates]) => {
+          setWebData(webDates?.rows || []);
+          setImageData(imageDates?.rows || []);
+          setDiscoverData(discoverDates?.rows || []);
+        }).finally(() => {
+          setIsLoadingComparison(false);
+        });
       }
       
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({ title: "Error", description: "Some data failed to load. Please try again.", variant: "destructive" });
-    } finally {
       setIsFetching(false);
     }
   };
@@ -760,7 +846,7 @@ const Analytics = () => {
             </Select>
           </div>
 
-          <Button variant="outline" size="sm" onClick={fetchAllData} disabled={isFetching}>
+          <Button variant="outline" size="sm" onClick={() => fetchAllData(true)} disabled={isFetching}>
             <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -908,47 +994,58 @@ const Analytics = () => {
         </Card>
 
         {/* Search Type Comparison (only for web) */}
-        {searchType === 'web' && comparisonChartData.length > 0 && (
+        {searchType === 'web' && (comparisonChartData.length > 0 || isLoadingComparison) && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Traffic Sources Comparison</CardTitle>
               <CardDescription>Compare clicks across Web, Image, and Discover</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={comparisonChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} width={40} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                    />
-                    <Area type="monotone" dataKey="web" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="image" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
-                    <Area type="monotone" dataKey="discover" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-6 mt-4">
-                {[
-                  { label: "Web", color: "hsl(var(--primary))" },
-                  { label: "Image", color: "#10b981" },
-                  { label: "Discover", color: "#8b5cf6" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm text-muted-foreground">{item.label}</span>
+              {isLoadingComparison && comparisonChartData.length === 0 ? (
+                <div className="h-[200px] w-full flex items-center justify-center">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-sm">Loading comparison data...</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={comparisonChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} width={40} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                        />
+                        <Area type="monotone" dataKey="web" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
+                        <Area type="monotone" dataKey="image" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                        <Area type="monotone" dataKey="discover" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex justify-center gap-6 mt-4">
+                    {[
+                      { label: "Web", color: "hsl(var(--primary))" },
+                      { label: "Image", color: "#10b981" },
+                      { label: "Discover", color: "#8b5cf6" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-sm text-muted-foreground">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
