@@ -542,7 +542,6 @@ const MarketingDashboard = () => {
     { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600' },
     { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600' },
     { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600' },
-    { label: 'With Name', count: funnelStats.withName, icon: UserCheck, color: 'from-amber-400 to-amber-600' },
     { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600' },
     { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600' },
   ];
@@ -881,6 +880,17 @@ const MarketingDashboard = () => {
                 <div className="min-w-0">
                   <p className="text-2xl font-bold text-green-500 leading-tight">{activeVisitors}</p>
                   <p className="text-xs text-muted-foreground">Active Now</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 border-cyan-500/30 bg-cyan-500/5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-cyan-500/20 flex-shrink-0">
+                  <UserCheck className="w-5 h-5 text-cyan-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-2xl font-bold text-cyan-500 leading-tight">{newVisitorsToday}</p>
+                  <p className="text-xs text-muted-foreground">New Today</p>
                 </div>
               </div>
             </Card>
