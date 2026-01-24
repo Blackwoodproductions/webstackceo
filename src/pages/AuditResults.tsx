@@ -655,6 +655,14 @@ const AuditResults = () => {
   const [submitterEmail, setSubmitterEmail] = useState("");
   const [showLinkActiveNotification, setShowLinkActiveNotification] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false); // true when user just claimed in this session
+  
+  // Chart line visibility toggles
+  const [chartLines, setChartLines] = useState({
+    traffic: true,
+    keywords: true,
+    dr: true,
+    value: true,
+  });
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -1529,30 +1537,48 @@ const AuditResults = () => {
                       <Calendar className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">2-Year Performance Trend</span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      {/* Inline Legend */}
-                      <div className="hidden md:flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="text-xs text-muted-foreground">Traffic</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="text-xs text-muted-foreground">Keywords</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                          <span className="text-xs text-muted-foreground">DR</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-violet-500" />
-                          <span className="text-xs text-muted-foreground">Value</span>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      {/* Clickable Legend */}
+                      <button
+                        onClick={() => setChartLines(prev => ({ ...prev, traffic: !prev.traffic }))}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
+                          chartLines.traffic ? 'bg-green-500/10' : 'opacity-40'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${chartLines.traffic ? 'bg-green-500' : 'bg-muted'}`} />
+                        <span className="text-xs text-muted-foreground">Traffic</span>
+                      </button>
+                      <button
+                        onClick={() => setChartLines(prev => ({ ...prev, keywords: !prev.keywords }))}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
+                          chartLines.keywords ? 'bg-amber-500/10' : 'opacity-40'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${chartLines.keywords ? 'bg-amber-500' : 'bg-muted'}`} />
+                        <span className="text-xs text-muted-foreground">Keywords</span>
+                      </button>
+                      <button
+                        onClick={() => setChartLines(prev => ({ ...prev, dr: !prev.dr }))}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
+                          chartLines.dr ? 'bg-primary/10' : 'opacity-40'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${chartLines.dr ? 'bg-primary' : 'bg-muted'}`} />
+                        <span className="text-xs text-muted-foreground">DR</span>
+                      </button>
+                      <button
+                        onClick={() => setChartLines(prev => ({ ...prev, value: !prev.value }))}
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all ${
+                          chartLines.value ? 'bg-violet-500/10' : 'opacity-40'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${chartLines.value ? 'bg-violet-500' : 'bg-muted'}`} />
+                        <span className="text-xs text-muted-foreground">Value</span>
+                      </button>
                     </div>
                   </div>
 
-                  <div className="h-[180px] w-full">
+                  <div className="h-[225px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={historyData}
@@ -1573,7 +1599,7 @@ const AuditResults = () => {
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
                           tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
-                          width={40}
+                          width={45}
                         />
                         <YAxis
                           yAxisId="right"
@@ -1581,7 +1607,7 @@ const AuditResults = () => {
                           stroke="hsl(var(--muted-foreground))"
                           fontSize={10}
                           domain={[0, 100]}
-                          width={30}
+                          width={35}
                         />
                         <Tooltip
                           contentStyle={{
@@ -1601,45 +1627,54 @@ const AuditResults = () => {
                             return [value.toLocaleString(), name];
                           }}
                         />
-                        <Line
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="organicTraffic"
-                          name="Organic Traffic"
-                          stroke="hsl(142, 76%, 36%)"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 4, fill: "hsl(142, 76%, 36%)" }}
-                        />
-                        <Line
-                          yAxisId="left"
-                          dataKey="organicKeywords"
-                          name="Keywords"
-                          stroke="hsl(38, 92%, 50%)"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 4, fill: "hsl(38, 92%, 50%)" }}
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="domainRating"
-                          name="Domain Rating"
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
-                        />
-                        <Line
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="trafficValue"
-                          name="Traffic Value"
-                          stroke="hsl(280, 80%, 60%)"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 4, fill: "hsl(280, 80%, 60%)" }}
-                        />
+                        {chartLines.traffic && (
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="organicTraffic"
+                            name="Organic Traffic"
+                            stroke="hsl(142, 76%, 36%)"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4, fill: "hsl(142, 76%, 36%)" }}
+                          />
+                        )}
+                        {chartLines.keywords && (
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="organicKeywords"
+                            name="Keywords"
+                            stroke="hsl(38, 92%, 50%)"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4, fill: "hsl(38, 92%, 50%)" }}
+                          />
+                        )}
+                        {chartLines.dr && (
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="domainRating"
+                            name="Domain Rating"
+                            stroke="hsl(var(--primary))"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
+                          />
+                        )}
+                        {chartLines.value && (
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="trafficValue"
+                            name="Traffic Value"
+                            stroke="hsl(280, 80%, 60%)"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 4, fill: "hsl(280, 80%, 60%)" }}
+                          />
+                        )}
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
