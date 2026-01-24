@@ -456,7 +456,7 @@ const MarketingDashboard = () => {
   }
 
   if (!user || !session) {
-    navigate('/auth?redirect=/marketing-dashboard');
+    navigate('/auth?redirect=/visitor-intelligence-dashboard');
     return null;
   }
 
@@ -466,7 +466,7 @@ const MarketingDashboard = () => {
         <Card className="p-8 max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-6">
-            You don't have permission to access the marketing dashboard.
+            You don't have permission to access the visitor intelligence dashboard.
           </p>
           <Button onClick={handleLogout} variant="outline">
             <LogOut className="w-4 h-4 mr-2" />
@@ -492,9 +492,9 @@ const MarketingDashboard = () => {
   return (
     <div className="min-h-screen bg-background relative animate-fade-in">
       <SEO 
-        title="Marketing Dashboard | Webstack.ceo"
-        description="Internal marketing analytics dashboard"
-        canonical="/marketing-dashboard"
+        title="Visitor Intelligence Dashboard | Webstack.ceo"
+        description="Real-time visitor intelligence and analytics dashboard"
+        canonical="/visitor-intelligence-dashboard"
       />
 
       {/* Header */}

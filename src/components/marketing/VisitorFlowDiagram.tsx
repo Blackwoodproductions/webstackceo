@@ -104,7 +104,7 @@ const SITE_STRUCTURE: { path: string; parent: string | null; category?: string }
   { path: '/changelog', parent: '/', category: 'main' },
   { path: '/auth', parent: '/', category: 'main' },
   { path: '/admin', parent: '/', category: 'main' },
-  { path: '/marketing-dashboard', parent: '/', category: 'main' },
+  { path: '/visitor-intelligence-dashboard', parent: '/', category: 'main' },
   
   // Feature sub-pages (L2)
   { path: '/features/on-page-seo', parent: '/features', category: 'features' },

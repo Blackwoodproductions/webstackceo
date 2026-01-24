@@ -209,7 +209,7 @@ const Footer = memo(() => {
               © {currentYear} Webstack.ceo by Blackwood Productions. All rights reserved.
             </p>
             <a 
-              href="/marketing-dashboard" 
+              href="/visitor-intelligence-dashboard" 
               className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
             >
               Admin

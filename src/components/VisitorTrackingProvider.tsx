@@ -81,7 +81,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
       // Skip admin/auth pages
       if (location.pathname.includes('/admin') || 
           location.pathname.includes('/auth') ||
-          location.pathname.includes('/marketing-dashboard')) {
+          location.pathname.includes('/visitor-intelligence-dashboard')) {
         return;
       }
 

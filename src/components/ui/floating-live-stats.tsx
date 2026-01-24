@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Users, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const EXCLUDED_ROUTES = ['/admin', '/auth', '/marketing-dashboard'];
+const EXCLUDED_ROUTES = ['/admin', '/auth', '/visitor-intelligence-dashboard'];
 
 const FloatingLiveStats = memo(() => {
   const location = useLocation();
