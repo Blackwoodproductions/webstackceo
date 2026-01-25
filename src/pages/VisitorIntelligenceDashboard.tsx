@@ -2446,7 +2446,14 @@ f.parentNode.insertBefore(j,f);
                     sessionStorage.setItem('gmb_code_verifier', codeVerifier);
                     sessionStorage.setItem('gmb_oauth_pending', 'true');
                     
-                    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1036abortedt-placeholder.apps.googleusercontent.com';
+                    // Reuse client ID from GSC/GA settings
+                    const clientId = localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+                    
+                    if (!clientId) {
+                      toast.error('Please connect Google Search Console first to configure your OAuth credentials');
+                      setGmbConnecting(false);
+                      return;
+                    }
                     const redirectUri = `${window.location.origin}/visitor-intelligence-dashboard`;
                     
                     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
