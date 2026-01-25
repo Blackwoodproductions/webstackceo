@@ -2780,27 +2780,6 @@ f.parentNode.insertBefore(j,f);
               </div>
             </div>
 
-            {/* Bottom row: Feature cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article capture rich snippets and answer boxes in search results', color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
-                { icon: Flame, label: 'Topical Authority', desc: 'Build content silos that establish expertise and dominate your niche verticals', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-                { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Systematically identifies and fills content gaps vs competitors automatically', color: 'text-fuchsia-500', bgColor: 'bg-fuchsia-500/10' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
-                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm mb-1">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Extended Content Section */}
-            <CADEExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
