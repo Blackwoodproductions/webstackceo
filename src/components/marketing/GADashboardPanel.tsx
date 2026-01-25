@@ -95,6 +95,7 @@ interface GAProperty {
   name: string;
   displayName: string;
   propertyType: string;
+  websiteUrl?: string;
 }
 
 interface TrafficSource {
@@ -148,6 +149,35 @@ export const GADashboardPanel = ({
   // Client ID configuration
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
+
+  // Normalize domain for comparison
+  const normalizeDomain = (domain: string): string => {
+    return domain
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/$/, '')
+      .toLowerCase();
+  };
+
+  // Check if external site matches any GA property
+  const isExternalSiteInGA = useMemo(() => {
+    if (!externalSelectedSite || properties.length === 0) return true; // Don't show warning if no site selected or no properties
+    const normalizedExternal = normalizeDomain(externalSelectedSite);
+    return properties.some(prop => {
+      const propDomain = normalizeDomain(prop.displayName);
+      return propDomain.includes(normalizedExternal) || normalizedExternal.includes(propDomain);
+    });
+  }, [externalSelectedSite, properties]);
+
+  // Find matching property for external site
+  const matchingProperty = useMemo(() => {
+    if (!externalSelectedSite || properties.length === 0) return null;
+    const normalizedExternal = normalizeDomain(externalSelectedSite);
+    return properties.find(prop => {
+      const propDomain = normalizeDomain(prop.displayName);
+      return propDomain.includes(normalizedExternal) || normalizedExternal.includes(propDomain);
+    });
+  }, [externalSelectedSite, properties]);
   
   // Check for stored token on mount
   useEffect(() => {
@@ -733,7 +763,48 @@ export const GADashboardPanel = ({
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Key Metrics Grid */}
+        {/* Domain Not in GA Warning */}
+        {isAuthenticated && externalSelectedSite && !isExternalSiteInGA && properties.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Activity className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-amber-500 mb-1">
+                  Domain Not Found in Analytics
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> is not connected to your Google Analytics. 
+                  Add a data stream to start tracking analytics.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    size="sm" 
+                    className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white"
+                    onClick={() => window.open(`https://analytics.google.com/analytics/web/#/admin`, '_blank')}
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Open GA Admin
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="h-7 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                    onClick={() => window.open(`https://support.google.com/analytics/answer/9304153`, '_blank')}
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Setup Guide
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  After adding the data stream, click Refresh below to sync your data.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Key Metrics Grid - only show if domain matches or no external site */}
+        {(isExternalSiteInGA || !externalSelectedSite) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Sessions */}
           <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-xl p-4 border border-orange-500/20">
@@ -793,8 +864,10 @@ export const GADashboardPanel = ({
             <p className="text-xs text-muted-foreground">Avg. Duration</p>
           </div>
         </div>
+        )}
 
-        {/* Engagement Metrics Bar */}
+        {/* Engagement Metrics Bar - only show if domain matches */}
+        {(isExternalSiteInGA || !externalSelectedSite) && (
         <div className="bg-secondary/30 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium flex items-center gap-2">
@@ -826,9 +899,10 @@ export const GADashboardPanel = ({
             </div>
           </div>
         </div>
+        )}
 
         {/* Sessions Chart */}
-        {chartData.length > 0 && (
+        {(isExternalSiteInGA || !externalSelectedSite) && chartData.length > 0 && (
           <div className="bg-secondary/20 rounded-xl p-4">
             <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
@@ -875,7 +949,8 @@ export const GADashboardPanel = ({
           </div>
         )}
 
-        {/* Traffic Sources & Devices */}
+        {/* Traffic Sources & Devices - only show if domain matches */}
+        {(isExternalSiteInGA || !externalSelectedSite) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Traffic Sources */}
           <div className="bg-secondary/20 rounded-xl p-4">
@@ -928,9 +1003,10 @@ export const GADashboardPanel = ({
             )}
           </div>
         </div>
+        )}
 
         {/* Top Pages */}
-        {topPages.length > 0 && (
+        {(isExternalSiteInGA || !externalSelectedSite) && topPages.length > 0 && (
           <div className="bg-secondary/20 rounded-xl p-4">
             <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
