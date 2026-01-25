@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { usePopupOAuth } from '@/hooks/use-popup-oauth';
 import {
   CheckCircle, Circle, ChevronDown, ChevronRight, ExternalLink,
   RefreshCw, Key, Building2, Link2, FileText, ArrowRight, Copy,
@@ -41,6 +42,7 @@ export function GoogleAdsOnboardingWizard({
   onComplete,
   onSkip 
 }: GoogleAdsOnboardingWizardProps) {
+  const { openOAuthPopup } = usePopupOAuth();
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [expandedStep, setExpandedStep] = useState<WizardStep>(1);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -148,50 +150,7 @@ export function GoogleAdsOnboardingWizard({
     handleOAuthCallback();
   }, []);
 
-  // Start OAuth flow
-  const startOAuthFlow = useCallback(async () => {
-    const clientId = getClientId();
-    
-    if (!clientId) {
-      toast.error('Google Client ID not configured');
-      return;
-    }
-
-    setIsConnecting(true);
-    setAuthError(null);
-
-    try {
-      const { codeVerifier, codeChallenge } = await generatePKCE();
-      const state = crypto.randomUUID();
-
-      // Store for callback - including return tab
-      sessionStorage.setItem('google_ads_oauth_state', state);
-      sessionStorage.setItem('google_ads_code_verifier', codeVerifier);
-      sessionStorage.setItem('google_ads_return_tab', 'landing-pages');
-
-      const redirectUri = window.location.origin + window.location.pathname;
-      
-      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-      authUrl.searchParams.set('client_id', clientId);
-      authUrl.searchParams.set('redirect_uri', redirectUri);
-      authUrl.searchParams.set('response_type', 'code');
-      authUrl.searchParams.set('scope', GOOGLE_ADS_SCOPES);
-      authUrl.searchParams.set('access_type', 'offline');
-      authUrl.searchParams.set('prompt', 'consent');
-      authUrl.searchParams.set('code_challenge', codeChallenge);
-      authUrl.searchParams.set('code_challenge_method', 'S256');
-      authUrl.searchParams.set('state', state);
-
-      // Redirect to Google OAuth
-      window.location.href = authUrl.toString();
-    } catch (err: any) {
-      console.error('OAuth start error:', err);
-      setAuthError(err.message || 'Failed to start authentication');
-      setIsConnecting(false);
-    }
-  }, [getClientId, generatePKCE, GOOGLE_ADS_SCOPES]);
-
-  // Fetch customer accounts
+  // Fetch customer accounts - defined before handleOAuthCodeExchange to avoid hoisting issues
   const fetchCustomerAccounts = useCallback(async (token: string) => {
     setIsLoadingAccounts(true);
 
@@ -219,6 +178,115 @@ export function GoogleAdsOnboardingWizard({
       setIsLoadingAccounts(false);
     }
   }, []);
+
+  // Handle OAuth code exchange (called from popup callback)
+  const handleOAuthCodeExchange = useCallback(async (code: string) => {
+    const codeVerifier = sessionStorage.getItem('google_ads_code_verifier');
+    if (!codeVerifier) {
+      setAuthError('OAuth session expired. Please try again.');
+      return;
+    }
+
+    setIsConnecting(true);
+    setAuthError(null);
+
+    try {
+      const redirectUri = window.location.origin + window.location.pathname;
+      
+      const { data, error } = await supabase.functions.invoke('google-oauth-token', {
+        body: {
+          code,
+          codeVerifier,
+          redirectUri,
+        },
+      });
+
+      if (error) throw error;
+
+      setAccessToken(data.access_token);
+      if (data.refresh_token) {
+        setRefreshToken(data.refresh_token);
+      }
+
+      // Move to step 2
+      setCurrentStep(2);
+      setExpandedStep(2);
+      toast.success('Connected to Google successfully!');
+
+      // Fetch customer accounts
+      await fetchCustomerAccounts(data.access_token);
+    } catch (err: any) {
+      console.error('OAuth error:', err);
+      setAuthError(err.message || 'Failed to authenticate with Google');
+      toast.error('Failed to connect to Google Ads');
+    } finally {
+      setIsConnecting(false);
+      sessionStorage.removeItem('google_ads_oauth_state');
+      sessionStorage.removeItem('google_ads_code_verifier');
+      sessionStorage.removeItem('google_ads_return_tab');
+    }
+  }, [fetchCustomerAccounts]);
+
+  // Start OAuth flow
+  const startOAuthFlow = useCallback(async () => {
+    const clientId = getClientId();
+    
+    if (!clientId) {
+      toast.error('Google Client ID not configured');
+      return;
+    }
+
+    setIsConnecting(true);
+    setAuthError(null);
+
+    try {
+      const { codeVerifier, codeChallenge } = await generatePKCE();
+      const state = crypto.randomUUID();
+
+      // Store for callback
+      sessionStorage.setItem('google_ads_oauth_state', state);
+      sessionStorage.setItem('google_ads_code_verifier', codeVerifier);
+      sessionStorage.setItem('google_ads_return_tab', 'landing-pages');
+
+      const redirectUri = window.location.origin + window.location.pathname;
+      
+      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('scope', GOOGLE_ADS_SCOPES);
+      authUrl.searchParams.set('access_type', 'offline');
+      authUrl.searchParams.set('prompt', 'consent');
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+      authUrl.searchParams.set('state', state);
+
+      // Use popup instead of redirect
+      const opened = openOAuthPopup({
+        authUrl: authUrl.toString(),
+        popupName: 'google_ads_oauth',
+        onSuccess: (code) => {
+          void handleOAuthCodeExchange(code);
+        },
+        onError: (error) => {
+          console.error('[GoogleAds] OAuth popup error:', error);
+          setAuthError(error === 'access_denied' 
+            ? 'You denied access to Google Ads.' 
+            : 'Failed to authenticate with Google. Please try again.');
+          setIsConnecting(false);
+        },
+      });
+
+      if (!opened) {
+        toast.error('Popup blocked. Please allow popups for this site and try again.');
+        setIsConnecting(false);
+      }
+    } catch (err: any) {
+      console.error('OAuth start error:', err);
+      setAuthError(err.message || 'Failed to start authentication');
+      setIsConnecting(false);
+    }
+  }, [getClientId, generatePKCE, GOOGLE_ADS_SCOPES, openOAuthPopup, handleOAuthCodeExchange]);
 
   // Select customer account
   const handleSelectCustomer = useCallback((customer: GoogleAdsCustomer) => {
