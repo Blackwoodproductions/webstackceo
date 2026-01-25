@@ -2692,9 +2692,6 @@ f.parentNode.insertBefore(j,f);
                 toast.success(`Successfully connected to ${platform}!`);
               }}
             />
-
-            {/* Extended Content Section */}
-            <BRONExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
