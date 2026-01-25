@@ -111,15 +111,6 @@ export function DomainSelectorBar({
                   </SelectContent>
                 </Select>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 text-xs"
-                onClick={onAddDomainClick}
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add Domain
-              </Button>
               <div className="w-px h-5 bg-border" />
             </>
           ) : (
