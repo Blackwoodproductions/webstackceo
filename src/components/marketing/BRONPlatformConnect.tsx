@@ -143,7 +143,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           <iframe
             src={BRON_DASHBOARD_URL}
             className="w-full border-0"
-            style={{ minHeight: '800px', height: 'calc(100vh - 300px)' }}
+            style={{ minHeight: '2400px' }}
             title="BRON Dashboard"
             allow="clipboard-write"
             sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
