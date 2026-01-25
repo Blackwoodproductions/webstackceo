@@ -2562,48 +2562,105 @@ f.parentNode.insertBefore(j,f);
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="w-8 h-8 text-white" />
+          <div className="space-y-6">
+            {/* Top row: Header section + How It Works grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left - Header section */}
+              <div className="lg:col-span-4">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/15 border border-emerald-500/20 h-full flex flex-col">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mb-4 shadow-lg">
+                    <TrendingUp className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">BRON</h2>
+                  {(selectedTrackedDomain || selectedDomainKey) && (
+                    <p className="text-sm text-primary font-medium mb-2">
+                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-sm flex-1">
+                    Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-emerald-500/20">
+                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                      Coming Soon
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Diamond Flow methodology ensures links come from topically relevant sites.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right - How It Works */}
+              <div className="lg:col-span-8">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  {[
+                    { 
+                      step: '1', 
+                      icon: Boxes,
+                      title: 'Keyword Clustering', 
+                      desc: 'AI-powered topical grouping organizes your keywords into content silos for maximum relevance signals.',
+                      highlight: 'AI-Powered'
+                    },
+                    { 
+                      step: '2', 
+                      icon: Link2,
+                      title: 'Deep Linking', 
+                      desc: 'Strategic backlinks are built into your content clusters from real, relevant business websites.',
+                      highlight: 'Real Websites'
+                    },
+                    { 
+                      step: '3', 
+                      icon: Award,
+                      title: 'DA & DR Growth', 
+                      desc: 'Watch your domain authority and domain rating rise as quality backlinks accumulate over time.',
+                      highlight: 'Authority Building'
+                    },
+                    { 
+                      step: '4', 
+                      icon: Zap,
+                      title: 'Autopilot Links', 
+                      desc: 'Relevant inbound links from real businesses flow in automatically. No PBNs. No spam. Just authentic relationships.',
+                      highlight: 'Industry First'
+                    },
+                  ].map((item) => (
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-emerald-500/5 to-green-500/10 border border-emerald-500/20 flex flex-col min-h-[180px]">
+                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                        {item.step}
+                      </div>
+                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 mt-1">
+                        <item.icon className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <p className="font-semibold text-sm mb-2">{item.title}</p>
+                      <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-emerald-500 border-emerald-500/30 bg-emerald-500/5">
+                        {item.highlight}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold mb-2">BRON</h2>
-            {(selectedTrackedDomain || selectedDomainKey) && (
-              <p className="text-sm text-primary font-medium mb-2">
-                Domain: {selectedTrackedDomain || selectedDomainKey}
-              </p>
-            )}
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+
+            {/* Bottom row: Feature cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: Boxes, label: 'Keyword Clustering', desc: 'AI-powered topical grouping for content silos' },
-                { icon: Link2, label: 'Deep Linking', desc: 'Strategic links into clusters from real business sites' },
-                { icon: Award, label: 'DA & DR Growth', desc: 'Watch your domain authority rise with quality backlinks' },
-                { icon: Zap, label: 'Autopilot Inbound Links', desc: 'Relevant links from real businesses on autopilot' },
+                { icon: Target, label: 'Topical Relevance', desc: 'Links come from websites in your niche, sending strong relevance signals to search engines', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+                { icon: Shield, label: 'No PBNs or Spam', desc: 'Only authentic business relationships—never private blog networks or spammy link farms', color: 'text-green-500', bgColor: 'bg-green-500/10' },
+                { icon: TrendingUp, label: 'Sustainable Growth', desc: 'Build lasting authority that compounds over time, not quick wins that get penalized', color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
               ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-emerald-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm mb-1">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            
-            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-green-500/10 border border-emerald-500/20">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold text-emerald-500">Industry-first:</span> Inbound links on autopilot from relevant, real businesses is unheard of in the link building industry. No PBNs. No spam. Just authentic business relationships.
-              </p>
-            </div>
-            
-            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-              Coming Soon
-            </Badge>
-            
-            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              Diamond Flow methodology ensures links come from topically relevant sites, building genuine authority in your niche.
-            </p>
           </div>
         </div>
       )}
@@ -2611,78 +2668,105 @@ f.parentNode.insertBefore(j,f);
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-white" />
+          <div className="space-y-6">
+            {/* Top row: Header section + How It Works grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left - Header section */}
+              <div className="lg:col-span-4">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/20 h-full flex flex-col">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mb-4 shadow-lg">
+                    <FileText className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">CADE</h2>
+                  {(selectedTrackedDomain || selectedDomainKey) && (
+                    <p className="text-sm text-primary font-medium mb-2">
+                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-sm flex-1">
+                    Content automation and topical authority signals. AI-powered content generation and optimization that matches your native CSS.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-violet-500/20">
+                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                      Coming Soon
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Content that inner-links directly into your most important pages.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right - How It Works */}
+              <div className="lg:col-span-8">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  {[
+                    { 
+                      step: '1', 
+                      icon: Target,
+                      title: 'Competitor Analysis', 
+                      desc: 'CADE analyzes the top 5 ranking competitors for each keyword to understand what makes content rank.',
+                      highlight: '5 Competitors'
+                    },
+                    { 
+                      step: '2', 
+                      icon: Sparkles,
+                      title: 'AI Content Creation', 
+                      desc: 'Generate 7 different article types—listicles, how-tos, guides, and more—each optimized for your target keywords.',
+                      highlight: '7 Article Types'
+                    },
+                    { 
+                      step: '3', 
+                      icon: Network,
+                      title: 'Smart Inner Linking', 
+                      desc: 'Every new piece of content automatically links to your core money pages, driving authority where it matters.',
+                      highlight: 'Auto-Linked'
+                    },
+                    { 
+                      step: '4', 
+                      icon: Palette,
+                      title: 'Native CSS Match', 
+                      desc: 'Articles match your website\'s existing styling perfectly—seamless posts that look like they belong.',
+                      highlight: 'Seamless Design'
+                    },
+                  ].map((item) => (
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 flex flex-col min-h-[180px]">
+                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                        {item.step}
+                      </div>
+                      <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3 mt-1">
+                        <item.icon className="w-5 h-5 text-violet-500" />
+                      </div>
+                      <p className="font-semibold text-sm mb-2">{item.title}</p>
+                      <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-violet-500 border-violet-500/30 bg-violet-500/5">
+                        {item.highlight}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold mb-2">CADE</h2>
-            {(selectedTrackedDomain || selectedDomainKey) && (
-              <p className="text-sm text-primary font-medium mb-2">
-                Domain: {selectedTrackedDomain || selectedDomainKey}
-              </p>
-            )}
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Content automation and topical authority signals. AI-powered content generation and optimization.
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-6">
+
+            {/* Bottom row: Feature cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: Sparkles, label: 'AI Content Generation', desc: 'Create 7 different article types with AI precision' },
-                { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article for rich snippets' },
-                { icon: Network, label: 'Smart Inner Linking', desc: 'Auto-link from new content to your core pages' },
-                { icon: Flame, label: 'Topical Authority', desc: 'Build content silos that establish expertise' },
+                { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article capture rich snippets and answer boxes in search results', color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
+                { icon: Flame, label: 'Topical Authority', desc: 'Build content silos that establish expertise and dominate your niche verticals', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+                { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Systematically identifies and fills content gaps vs competitors automatically', color: 'text-fuchsia-500', bgColor: 'bg-fuchsia-500/10' },
               ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-violet-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-violet-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm mb-1">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            
-            {/* Competitor Analysis Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
-              {[
-                { icon: Target, label: 'Competitor Reverse Engineering', desc: 'Analyzes top 5 ranking competitors for each keyword' },
-                { icon: Palette, label: 'Native CSS Integration', desc: 'Matches your website styling for seamless posts' },
-                { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Identifies and fills content gaps vs competitors' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-purple-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
-              {[
-                { stat: '7', label: 'Article Types', desc: 'Listicles, How-tos, Guides & more' },
-                { stat: '5', label: 'Competitors Analyzed', desc: 'Per keyword target' },
-                { stat: '∞', label: 'FAQ Drops', desc: 'Multiple per article' },
-                { stat: '100%', label: 'Auto-linked', desc: 'To your money pages' },
-              ].map((item) => (
-                <div key={item.label} className="p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20">
-                  <p className="text-2xl font-bold text-violet-500">{item.stat}</p>
-                  <p className="font-medium text-sm">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold text-violet-500">Autopilot Mode:</span> Input your top 5 competitors and CADE will systematically fill keyword gaps, writing better articles than the competition—all while matching your website's native styling.
-              </p>
-            </div>
-            
-            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-              Coming Soon
-            </Badge>
-            
-            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              CADE creates content that inner-links directly into the heart of your website, driving authority to your most important pages.
-            </p>
           </div>
         </div>
       )}
@@ -2692,155 +2776,184 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
           {!gmbAuthenticated ? (
             /* Not Connected State */
-            <div className="text-center py-12 max-w-4xl mx-auto">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <MapPin className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold mb-3">Connect Google Business Profile</h2>
-              {(selectedTrackedDomain || selectedDomainKey) && (
-                <p className="text-sm text-primary font-medium mb-2">
-                  Domain: {selectedTrackedDomain || selectedDomainKey}
-                </p>
-              )}
-              <p className="text-muted-foreground max-w-lg mx-auto mb-6">
-                Manage your Google My Business listings, respond to reviews, update business info, and track local SEO performance—all from one dashboard.
-              </p>
-              
-              {/* Connect Button - Now right after heading */}
-              <Button
-                size="lg"
-                onClick={async () => {
-                  setGmbConnecting(true);
-                  try {
-                    // GMB API requires these scopes
-                    const scopes = [
-                      'https://www.googleapis.com/auth/business.manage',
-                      'openid',
-                      'profile',
-                      'email'
-                    ].join(' ');
-                    
-                    // Generate PKCE code verifier and challenge
-                    const codeVerifier = crypto.randomUUID() + crypto.randomUUID();
-                    const encoder = new TextEncoder();
-                    const data = encoder.encode(codeVerifier);
-                    const digest = await crypto.subtle.digest('SHA-256', data);
-                    const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-                      .replace(/\+/g, '-')
-                      .replace(/\//g, '_')
-                      .replace(/=+$/, '');
-                    
-                    // Store for callback
-                    sessionStorage.setItem('gmb_code_verifier', codeVerifier);
-                    sessionStorage.setItem('gmb_oauth_pending', 'true');
-                    // Also store in localStorage so the verifier is available if we use a popup window
-                    localStorage.setItem('gmb_code_verifier', codeVerifier);
-                    localStorage.setItem('gmb_oauth_pending', 'true');
-                    
-                    // Reuse client ID from GSC/GA settings
-                    const clientId = localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-                    
-                    if (!clientId) {
-                      toast.error('Please connect Google Search Console first to configure your OAuth credentials');
-                      setGmbConnecting(false);
-                      return;
-                    }
-                    const redirectUri = `${window.location.origin}/visitor-intelligence-dashboard`;
-                    
-                    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-                    authUrl.searchParams.set('client_id', clientId);
-                    authUrl.searchParams.set('redirect_uri', redirectUri);
-                    authUrl.searchParams.set('response_type', 'code');
-                    authUrl.searchParams.set('scope', scopes);
-                    authUrl.searchParams.set('code_challenge', base64);
-                    authUrl.searchParams.set('code_challenge_method', 'S256');
-                    authUrl.searchParams.set('access_type', 'offline');
-                    // Force account picker so the user can select the Google login that actually owns the Business Profile.
-                    authUrl.searchParams.set('prompt', 'consent select_account');
-                    authUrl.searchParams.set('state', 'gmb');
+            <div className="space-y-6">
+              {/* Top row: Header section + How It Works grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left - Header section */}
+                <div className="lg:col-span-4">
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-green-500/15 border border-blue-500/20 h-full flex flex-col">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-4 shadow-lg">
+                      <MapPin className="w-7 h-7 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Google Business Profile</h2>
+                    {(selectedTrackedDomain || selectedDomainKey) && (
+                      <p className="text-sm text-primary font-medium mb-2">
+                        Domain: {selectedTrackedDomain || selectedDomainKey}
+                      </p>
+                    )}
+                    <p className="text-muted-foreground text-sm flex-1">
+                      Manage your Google My Business listings, respond to reviews, and track local SEO performance—all from one dashboard.
+                    </p>
+                    <div className="mt-4 pt-4 border-t border-blue-500/20">
+                      <Button
+                        size="lg"
+                        onClick={async () => {
+                          setGmbConnecting(true);
+                          try {
+                            const scopes = [
+                              'https://www.googleapis.com/auth/business.manage',
+                              'openid',
+                              'profile',
+                              'email'
+                            ].join(' ');
+                            
+                            const codeVerifier = crypto.randomUUID() + crypto.randomUUID();
+                            const encoder = new TextEncoder();
+                            const data = encoder.encode(codeVerifier);
+                            const digest = await crypto.subtle.digest('SHA-256', data);
+                            const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
+                              .replace(/\+/g, '-')
+                              .replace(/\//g, '_')
+                              .replace(/=+$/, '');
+                            
+                            sessionStorage.setItem('gmb_code_verifier', codeVerifier);
+                            sessionStorage.setItem('gmb_oauth_pending', 'true');
+                            localStorage.setItem('gmb_code_verifier', codeVerifier);
+                            localStorage.setItem('gmb_oauth_pending', 'true');
+                            
+                            const clientId = localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+                            
+                            if (!clientId) {
+                              toast.error('Please connect Google Search Console first to configure your OAuth credentials');
+                              setGmbConnecting(false);
+                              return;
+                            }
+                            const redirectUri = `${window.location.origin}/visitor-intelligence-dashboard`;
+                            
+                            const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+                            authUrl.searchParams.set('client_id', clientId);
+                            authUrl.searchParams.set('redirect_uri', redirectUri);
+                            authUrl.searchParams.set('response_type', 'code');
+                            authUrl.searchParams.set('scope', scopes);
+                            authUrl.searchParams.set('code_challenge', base64);
+                            authUrl.searchParams.set('code_challenge_method', 'S256');
+                            authUrl.searchParams.set('access_type', 'offline');
+                            authUrl.searchParams.set('prompt', 'consent select_account');
+                            authUrl.searchParams.set('state', 'gmb');
 
-                    const popupWidth = 520;
-                    const popupHeight = 720;
-                    const left = (window.screenX ?? (window as any).screenLeft ?? 0) + (window.outerWidth - popupWidth) / 2;
-                    const top = (window.screenY ?? (window as any).screenTop ?? 0) + (window.outerHeight - popupHeight) / 2;
-                    const popup = window.open(
-                      authUrl.toString(),
-                      'gmb_oauth',
-                      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
-                    );
+                            const popupWidth = 520;
+                            const popupHeight = 720;
+                            const left = (window.screenX ?? (window as any).screenLeft ?? 0) + (window.outerWidth - popupWidth) / 2;
+                            const top = (window.screenY ?? (window as any).screenTop ?? 0) + (window.outerHeight - popupHeight) / 2;
+                            const popup = window.open(
+                              authUrl.toString(),
+                              'gmb_oauth',
+                              `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+                            );
 
-                    // Fallback if popup blocked
-                    if (!popup) {
-                      window.location.href = authUrl.toString();
-                    }
-                  } catch (err) {
-                    console.error('GMB OAuth init error:', err);
-                    toast.error('Failed to start Google Business Profile connection');
-                    setGmbConnecting(false);
-                  }
-                }}
-                disabled={gmbConnecting}
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold px-8 py-6 text-lg mb-2"
-              >
-                {gmbConnecting ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Connecting...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                    Connect Google Business Profile
-                  </span>
-                )}
-              </Button>
-              
-              <p className="text-xs text-muted-foreground mb-8">
-                Requires a Google account with access to at least one Business Profile
-              </p>
-              
-              {/* CADE Integration Banner */}
-              <div className="max-w-lg mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FileText className="w-5 h-5 text-violet-500" />
-                  <span className="font-semibold text-violet-500">Powered by CADE</span>
-                </div>
-                <p className="text-sm text-foreground">
-                  When CADE is active, your newest articles and FAQ drops are automatically posted to your GMB listing—keeping your business profile fresh with insights.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {[
-                  { icon: MapPin, label: 'Manage Locations', desc: 'Update hours, address, photos' },
-                  { icon: MessageCircle, label: 'Reviews', desc: 'Monitor & respond to reviews' },
-                  { icon: BarChart3, label: 'Insights', desc: 'Track views, calls, directions' },
-                  { icon: Newspaper, label: 'Auto Posts', desc: 'CADE posts new content for you' },
-                ].map((feature) => (
-                  <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-blue-500/50 transition-colors">
-                    <feature.icon className="w-6 h-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium text-sm">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                            if (!popup) {
+                              window.location.href = authUrl.toString();
+                            }
+                          } catch (err) {
+                            console.error('GMB OAuth init error:', err);
+                            toast.error('Failed to start Google Business Profile connection');
+                            setGmbConnecting(false);
+                          }
+                        }}
+                        disabled={gmbConnecting}
+                        className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold"
+                      >
+                        {gmbConnecting ? (
+                          <span className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Connecting...
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                            </svg>
+                            Connect Account
+                          </span>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-3 text-center">
+                        Requires access to a Business Profile
+                      </p>
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Right - How It Works */}
+                <div className="lg:col-span-8">
+                  <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                    {[
+                      { 
+                        step: '1', 
+                        icon: Globe,
+                        title: 'Connect Account', 
+                        desc: 'Securely link your Google Business Profile with OAuth authentication to access your listings.',
+                        highlight: 'OAuth 2.0 Secure'
+                      },
+                      { 
+                        step: '2', 
+                        icon: MapPin,
+                        title: 'Manage Locations', 
+                        desc: 'Update business hours, address, photos, and all key information for each location you manage.',
+                        highlight: 'Multi-Location'
+                      },
+                      { 
+                        step: '3', 
+                        icon: MessageCircle,
+                        title: 'Monitor Reviews', 
+                        desc: 'Track and respond to customer reviews directly from your dashboard. Build your reputation.',
+                        highlight: 'Real-Time Alerts'
+                      },
+                      { 
+                        step: '4', 
+                        icon: Newspaper,
+                        title: 'CADE Auto-Posts', 
+                        desc: 'When CADE publishes new articles or FAQs, they\'re automatically shared to your GMB listing.',
+                        highlight: 'Powered by CADE'
+                      },
+                    ].map((item) => (
+                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col min-h-[180px]">
+                        <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                          {item.step}
+                        </div>
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 mt-1">
+                          <item.icon className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <p className="font-semibold text-sm mb-2">{item.title}</p>
+                        <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                        <Badge variant="outline" className="mt-3 w-fit text-[10px] text-blue-500 border-blue-500/30 bg-blue-500/5">
+                          {item.highlight}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              
-              {/* GMB Autopilot Features */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+
+              {/* Bottom row: Feature cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { icon: FileText, label: 'Article Posts', desc: 'New blog articles auto-posted to GMB' },
-                  { icon: HelpCircle, label: 'FAQ Updates', desc: 'FAQ drops keep your Q&A fresh' },
-                  { icon: TrendingUp, label: 'Fresh Insights', desc: 'Consistent activity boosts local rankings' },
+                  { icon: BarChart3, label: 'Performance Insights', desc: 'Track views, calls, direction requests, and website clicks for each location', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+                  { icon: Star, label: 'Review Management', desc: 'Monitor ratings, respond to reviews, and build your online reputation', color: 'text-green-500', bgColor: 'bg-green-500/10' },
+                  { icon: TrendingUp, label: 'Local SEO Boost', desc: 'Consistent GMB activity signals freshness to Google, boosting local rankings', color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
                 ].map((feature) => (
-                  <div key={feature.label} className="p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20">
-                    <feature.icon className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                    <p className="font-medium text-sm">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                      <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm mb-1">{feature.label}</p>
+                      <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3322,84 +3435,105 @@ f.parentNode.insertBefore(j,f);
       {/* Social Signals Tab Content */}
       {activeTab === 'social-signals' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4">
-              <Activity className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Social Signals</h2>
-            {(selectedTrackedDomain || selectedDomainKey) && (
-              <p className="text-sm text-primary font-medium mb-2">
-                Domain: {selectedTrackedDomain || selectedDomainKey}
-              </p>
-            )}
-            <p className="text-muted-foreground max-w-lg mx-auto mb-6">
-              Automated social media posting powered by CADE. Every new blog post and FAQ drop is automatically shared across your connected social profiles.
-            </p>
-            
-            {/* CADE Integration Banner */}
-            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <FileText className="w-5 h-5 text-violet-500" />
-                <span className="font-semibold text-violet-500">Powered by CADE</span>
+          <div className="space-y-6">
+            {/* Top row: Header section + How It Works grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left - Header section */}
+              <div className="lg:col-span-4">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-pink-500/10 to-rose-500/15 border border-pink-500/20 h-full flex flex-col">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-4 shadow-lg">
+                    <Activity className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Social Signals</h2>
+                  {(selectedTrackedDomain || selectedDomainKey) && (
+                    <p className="text-sm text-primary font-medium mb-2">
+                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-sm flex-1">
+                    Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected profiles.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-pink-500/20">
+                    <Badge variant="outline" className="text-violet-500 border-violet-500/30 bg-violet-500/10">
+                      Activates with CADE
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Connect once—CADE handles the rest automatically.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-foreground">
-                Social Signals activates automatically when CADE is enabled. No manual posting required—CADE handles everything.
-              </p>
+
+              {/* Right - How It Works */}
+              <div className="lg:col-span-8">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  {[
+                    { 
+                      step: '1', 
+                      icon: Twitter,
+                      title: 'Connect Platforms', 
+                      desc: 'Link your X (Twitter), LinkedIn, and Facebook accounts securely with OAuth authentication.',
+                      highlight: 'One-Time Setup'
+                    },
+                    { 
+                      step: '2', 
+                      icon: FileText,
+                      title: 'CADE Creates Content', 
+                      desc: 'When CADE publishes new blog posts or FAQ drops, social posts are automatically generated.',
+                      highlight: 'AI-Generated'
+                    },
+                    { 
+                      step: '3', 
+                      icon: Zap,
+                      title: 'Instant Publishing', 
+                      desc: 'Posts go live across all platforms simultaneously the moment new content is published.',
+                      highlight: 'Real-Time'
+                    },
+                    { 
+                      step: '4', 
+                      icon: TrendingUp,
+                      title: 'Drive Traffic Back', 
+                      desc: 'Social posts include links that drive engagement and traffic back to your fresh content.',
+                      highlight: 'Traffic Boost'
+                    },
+                  ].map((item) => (
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20 flex flex-col min-h-[180px]">
+                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                        {item.step}
+                      </div>
+                      <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center mb-3 mt-1">
+                        <item.icon className="w-5 h-5 text-pink-500" />
+                      </div>
+                      <p className="font-semibold text-sm mb-2">{item.title}</p>
+                      <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-pink-500 border-pink-500/30 bg-pink-500/5">
+                        {item.highlight}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            
-            {/* Platform Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
+
+            {/* Bottom row: Platform cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: Twitter, label: 'X (Twitter)', desc: 'Auto-post new articles with hashtags and excerpts', color: 'text-sky-500' },
-                { icon: Linkedin, label: 'LinkedIn', desc: 'Professional posts to your company page', color: 'text-blue-600' },
-                { icon: Facebook, label: 'Facebook', desc: 'Engaging posts with images to your business page', color: 'text-blue-500' },
+                { icon: Twitter, label: 'X (Twitter)', desc: 'Auto-post new articles with hashtags, excerpts, and engaging copy tailored for X audiences', color: 'text-sky-500', bgColor: 'bg-sky-500/10' },
+                { icon: Linkedin, label: 'LinkedIn', desc: 'Professional posts to your company page with business-appropriate messaging', color: 'text-blue-600', bgColor: 'bg-blue-600/10' },
+                { icon: Facebook, label: 'Facebook', desc: 'Engaging posts with images to your business page for maximum reach', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
               ].map((platform) => (
-                <div key={platform.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-pink-500/50 transition-colors">
-                  <platform.icon className={`w-6 h-6 ${platform.color} mx-auto mb-2`} />
-                  <p className="font-medium text-sm">{platform.label}</p>
-                  <p className="text-xs text-muted-foreground">{platform.desc}</p>
+                <div key={platform.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-lg ${platform.bgColor} flex items-center justify-center shrink-0`}>
+                    <platform.icon className={`w-5 h-5 ${platform.color}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm mb-1">{platform.label}</p>
+                    <p className="text-xs text-muted-foreground">{platform.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            
-            {/* Autopilot Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
-              {[
-                { icon: Zap, label: 'Autopilot Posting', desc: 'New content shared instantly upon publish' },
-                { icon: Bell, label: 'Attention Driver', desc: 'Brings traffic back to your latest posts' },
-                { icon: TrendingUp, label: 'Engagement Boost', desc: 'Social signals that influence rankings' },
-                { icon: RefreshCw, label: 'Consistent Presence', desc: 'Never miss a posting opportunity' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-rose-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-rose-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
-              {[
-                { stat: '3', label: 'Platforms', desc: 'X, LinkedIn, Facebook' },
-                { stat: '24/7', label: 'Autopilot', desc: 'Always posting for you' },
-                { stat: '100%', label: 'Automated', desc: 'Zero manual effort' },
-              ].map((item) => (
-                <div key={item.label} className="p-4 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20">
-                  <p className="text-2xl font-bold text-pink-500">{item.stat}</p>
-                  <p className="font-medium text-sm">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            <Badge variant="outline" className="text-violet-500 border-violet-500/30 bg-violet-500/10">
-              Activates with CADE
-            </Badge>
-            
-            <p className="text-xs text-muted-foreground max-w-lg mx-auto">
-              Connect your social accounts once—CADE handles the rest. Every new blog post, FAQ, and content update is shared automatically.
-            </p>
           </div>
         </div>
       )}
