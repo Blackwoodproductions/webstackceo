@@ -218,43 +218,7 @@ const MarketingDashboard = () => {
   const getGmbCooldownUntil = () => Number(sessionStorage.getItem('gmb_cooldown_until') || '0');
   const setGmbCooldownUntil = (ts: number) => sessionStorage.setItem('gmb_cooldown_until', String(ts));
 
-  // Fetch GMB locations for all accounts
-  const fetchGmbLocations = useCallback(async (accessToken: string, accounts: { name: string; accountName: string; type: string }[]) => {
-    if (!accessToken || accounts.length === 0) return;
-    
-    console.log('[GMB] Fetching locations for', accounts.length, 'accounts');
-    const allLocations: { name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[] = [];
-    
-    for (const account of accounts) {
-      try {
-        const locationsRes = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,websiteUri,storefrontAddress`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        
-        if (locationsRes.ok) {
-          const locData = await locationsRes.json();
-          if (locData.locations && Array.isArray(locData.locations)) {
-            allLocations.push(...locData.locations.map((loc: any) => ({
-              name: loc.name,
-              title: loc.title || 'Untitled Location',
-              websiteUri: loc.websiteUri,
-              storefrontAddress: loc.storefrontAddress,
-            })));
-          }
-        } else {
-          console.warn('[GMB] Failed to fetch locations for account:', account.name, locationsRes.status);
-        }
-      } catch (err) {
-        console.error('[GMB] Error fetching locations for account:', account.name, err);
-      }
-    }
-    
-    console.log('[GMB] Found', allLocations.length, 'total locations');
-    setGmbLocations(allLocations);
-    setGmbLastSyncAt(new Date().toISOString());
-  }, []);
-
+  // Use backend edge function for GMB sync (with server-side caching to reduce quota usage)
   const applyGmbToken = useCallback(async (accessToken: string, expiresIn?: number) => {
     // Prevent duplicate concurrent syncs (React StrictMode/dev + rapid clicks can double-invoke).
     if (gmbSyncInFlightRef.current) return;
@@ -280,33 +244,27 @@ const MarketingDashboard = () => {
     setGmbAuthenticated(true);
     setGmbSyncError(null);
 
-    // Fetch GMB accounts
+    // Use edge function with server-side caching (reduces Google API quota usage)
     try {
-      const accountsRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-        headers: { Authorization: `Bearer ${accessToken}` },
+      console.log('[GMB] Calling gmb-sync edge function');
+      const { data, error } = await supabase.functions.invoke('gmb-sync', {
+        body: { accessToken },
       });
 
-      if (!accountsRes.ok) {
-        const body = await accountsRes.text().catch(() => '');
-        const details = body ? ` - ${body.slice(0, 240)}` : '';
+      if (error) {
+        console.error('[GMB] Edge function error:', error);
+        setGmbAccounts([]);
+        setGmbLocations([]);
+        setGmbSyncError(error.message || 'Failed to sync Google Business data');
+        return;
+      }
 
-        // Back off on quota errors so we don't keep hammering and re-triggering 429.
-        if (accountsRes.status === 429) {
-          const until = Date.now() + GMB_RATE_LIMIT_COOLDOWN_MS;
-          setGmbCooldownUntil(until);
-          const seconds = Math.ceil(GMB_RATE_LIMIT_COOLDOWN_MS / 1000);
-          const msg = `Google Business accounts request failed (429). Google quota is being exceeded. Wait ~${seconds}s then retry.${details}`;
-          console.warn('[GMB]', msg);
-          setGmbAccounts([]);
-          setGmbLocations([]);
-          setGmbSyncError(msg);
-          return;
-        }
-
-        // Clear any previous cooldown on non-429 errors.
-        setGmbCooldownUntil(0);
-
-        const msg = `Google Business accounts request failed (${accountsRes.status})${details}`;
+      // Handle quota errors from the edge function
+      if (data?.isQuotaError || data?.status === 429) {
+        const until = Date.now() + GMB_RATE_LIMIT_COOLDOWN_MS;
+        setGmbCooldownUntil(until);
+        const seconds = Math.ceil(GMB_RATE_LIMIT_COOLDOWN_MS / 1000);
+        const msg = `Google Business API quota exceeded (429). Wait ~${seconds}s then retry. ${data?.details || ''}`;
         console.warn('[GMB]', msg);
         setGmbAccounts([]);
         setGmbLocations([]);
@@ -314,35 +272,44 @@ const MarketingDashboard = () => {
         return;
       }
 
-      if (accountsRes.ok) {
-        const accountsData = await accountsRes.json();
-        if (accountsData.accounts && Array.isArray(accountsData.accounts) && accountsData.accounts.length > 0) {
-          const fetchedAccounts = accountsData.accounts.map((a: any) => ({
-            name: a.name,
-            accountName: a.accountName || a.name?.split('/').pop() || 'Business Account',
-            type: a.type || 'PERSONAL',
-          }));
-          setGmbAccounts(fetchedAccounts);
-          
-          // Also fetch locations for all accounts
-          await fetchGmbLocations(accessToken, fetchedAccounts);
-        } else {
-          const msg = 'No Google Business accounts found for the connected Google login.';
-          console.warn('[GMB]', msg, accountsData);
-          setGmbAccounts([]);
-          setGmbLocations([]);
-          setGmbSyncError(msg);
-        }
+      if (data?.error) {
+        console.warn('[GMB] Sync error:', data.error, data.details);
+        setGmbAccounts([]);
+        setGmbLocations([]);
+        setGmbSyncError(`${data.error}${data.details ? ` - ${data.details}` : ''}`);
+        return;
       }
-    } catch (accountErr) {
-      console.error('[GMB] Failed to fetch accounts:', accountErr);
+
+      // Clear any previous cooldown on success
+      setGmbCooldownUntil(0);
+
+      const { accounts, locations, syncedAt, fromCache } = data || {};
+      
+      if (fromCache) {
+        console.log('[GMB] Using cached data from', syncedAt);
+      }
+
+      if (accounts && Array.isArray(accounts) && accounts.length > 0) {
+        setGmbAccounts(accounts);
+        setGmbLocations(locations || []);
+        setGmbLastSyncAt(syncedAt || new Date().toISOString());
+        console.log('[GMB] Synced', accounts.length, 'accounts,', (locations || []).length, 'locations');
+      } else {
+        const msg = 'No Google Business accounts found for the connected Google login.';
+        console.warn('[GMB]', msg);
+        setGmbAccounts([]);
+        setGmbLocations([]);
+        setGmbSyncError(msg);
+      }
+    } catch (err) {
+      console.error('[GMB] Failed to sync:', err);
       setGmbAccounts([]);
       setGmbLocations([]);
-      setGmbSyncError(accountErr instanceof Error ? accountErr.message : 'Failed to fetch Google Business accounts');
+      setGmbSyncError(err instanceof Error ? err.message : 'Failed to sync Google Business data');
     } finally {
       gmbSyncInFlightRef.current = false;
     }
-  }, [fetchGmbLocations]);
+  }, []);
   
   // SEO Audit state for selected domain
   const [savedAuditForDomain, setSavedAuditForDomain] = useState<{
@@ -2765,11 +2732,11 @@ f.parentNode.insertBefore(j,f);
                   accounts={gmbAccounts}
                   onComplete={async () => {
                     setGmbOnboardingStep(0);
-                    // Refresh GMB locations to show the newly created business
+                    // Refresh GMB data to show the newly created business
                     const accessToken = sessionStorage.getItem('gmb_access_token');
-                    if (accessToken && gmbAccounts.length > 0) {
+                    if (accessToken) {
                       toast.info('Refreshing business locations...');
-                      await fetchGmbLocations(accessToken, gmbAccounts);
+                      await applyGmbToken(accessToken);
                       toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
                     } else {
                       toast.success('Business listing process completed');
