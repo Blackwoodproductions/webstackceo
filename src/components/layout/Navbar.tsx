@@ -186,20 +186,35 @@ const Navbar = () => {
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-2">
           {/* Features Dropdown */}
           <div 
             className="relative"
             onMouseEnter={() => setIsFeaturesOpen(true)}
             onMouseLeave={() => setIsFeaturesOpen(false)}
           >
-            <a
+            <motion.a
               href="/features"
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 group overflow-hidden ${
+                isFeaturesOpen 
+                  ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-primary shadow-[0_0_20px_rgba(6,182,212,0.3)]' 
+                  : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+              }`}
             >
-              Features
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFeaturesOpen ? 'rotate-180' : ''}`} />
-            </a>
+              {/* Animated background shimmer */}
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                isFeaturesOpen 
+                  ? 'bg-gradient-to-br from-cyan-400 to-violet-500 shadow-lg' 
+                  : 'bg-primary/10 group-hover:bg-gradient-to-br group-hover:from-cyan-400 group-hover:to-violet-500'
+              }`}>
+                <Zap className={`w-3.5 h-3.5 transition-colors duration-300 ${isFeaturesOpen ? 'text-white' : 'text-primary group-hover:text-white'}`} />
+              </div>
+              <span className="relative">Features</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isFeaturesOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`} />
+            </motion.a>
             
             <AnimatePresence>
               {isFeaturesOpen && (
@@ -302,15 +317,22 @@ const Navbar = () => {
             </AnimatePresence>
           </div>
 
+          {/* Pricing Link - Enhanced */}
           {navLinks.map((link) => (
-            <a
+            <motion.a
               key={link.name}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href, link.isPage)}
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium hover:drop-shadow-[var(--hover-accent-glow)]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-amber-500/10 transition-all duration-300 group overflow-hidden"
             >
-              {link.name}
-            </a>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className="w-6 h-6 rounded-lg bg-amber-500/10 group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-orange-500 flex items-center justify-center transition-all duration-300">
+                <Target className="w-3.5 h-3.5 text-amber-500 group-hover:text-white transition-colors duration-300" />
+              </div>
+              <span className="relative">{link.name}</span>
+            </motion.a>
           ))}
 
           {/* Tools Dropdown */}
@@ -319,13 +341,27 @@ const Navbar = () => {
             onMouseEnter={() => setIsToolsOpen(true)}
             onMouseLeave={() => setIsToolsOpen(false)}
           >
-            <a
+            <motion.a
               href="/tools"
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 group overflow-hidden ${
+                isToolsOpen 
+                  ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
+                  : 'text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10'
+              }`}
             >
-              Tools
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToolsOpen ? 'rotate-180' : ''}`} />
-            </a>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                isToolsOpen 
+                  ? 'bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg' 
+                  : 'bg-emerald-500/10 group-hover:bg-gradient-to-br group-hover:from-emerald-400 group-hover:to-cyan-500'
+              }`}>
+                <Search className={`w-3.5 h-3.5 transition-colors duration-300 ${isToolsOpen ? 'text-white' : 'text-emerald-500 group-hover:text-white'}`} />
+              </div>
+              <span className="relative">Tools</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isToolsOpen ? 'rotate-180 text-emerald-500' : 'group-hover:text-emerald-500'}`} />
+            </motion.a>
             
             <AnimatePresence>
               {isToolsOpen && (
@@ -461,13 +497,27 @@ const Navbar = () => {
             onMouseEnter={() => setIsContactOpen(true)}
             onMouseLeave={() => setIsContactOpen(false)}
           >
-            <a
+            <motion.a
               href="/contact"
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 group overflow-hidden ${
+                isContactOpen 
+                  ? 'bg-gradient-to-r from-rose-500/20 to-pink-500/20 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.3)]' 
+                  : 'text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10'
+              }`}
             >
-              Contact
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isContactOpen ? 'rotate-180' : ''}`} />
-            </a>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                isContactOpen 
+                  ? 'bg-gradient-to-br from-rose-400 to-pink-500 shadow-lg' 
+                  : 'bg-rose-500/10 group-hover:bg-gradient-to-br group-hover:from-rose-400 group-hover:to-pink-500'
+              }`}>
+                <HelpCircle className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-rose-500 group-hover:text-white'}`} />
+              </div>
+              <span className="relative">Contact</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isContactOpen ? 'rotate-180 text-rose-500' : 'group-hover:text-rose-500'}`} />
+            </motion.a>
             
             <AnimatePresence>
               {isContactOpen && (
@@ -512,13 +562,27 @@ const Navbar = () => {
             onMouseEnter={() => setIsBlogOpen(true)}
             onMouseLeave={() => setIsBlogOpen(false)}
           >
-            <a
+            <motion.a
               href="/blog"
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 group overflow-hidden ${
+                isBlogOpen 
+                  ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                  : 'text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10'
+              }`}
             >
-              Blog
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isBlogOpen ? 'rotate-180' : ''}`} />
-            </a>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                isBlogOpen 
+                  ? 'bg-gradient-to-br from-indigo-400 to-purple-500 shadow-lg' 
+                  : 'bg-indigo-500/10 group-hover:bg-gradient-to-br group-hover:from-indigo-400 group-hover:to-purple-500'
+              }`}>
+                <FileText className={`w-3.5 h-3.5 transition-colors duration-300 ${isBlogOpen ? 'text-white' : 'text-indigo-500 group-hover:text-white'}`} />
+              </div>
+              <span className="relative">Blog</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isBlogOpen ? 'rotate-180 text-indigo-500' : 'group-hover:text-indigo-500'}`} />
+            </motion.a>
             
             <AnimatePresence>
               {isBlogOpen && (
@@ -563,12 +627,26 @@ const Navbar = () => {
             onMouseEnter={() => setIsSubmitSiteOpen(true)}
             onMouseLeave={() => setIsSubmitSiteOpen(false)}
           >
-            <button
-              className="text-muted-foreground hover:text-hover-accent transition-all duration-300 font-medium flex items-center gap-1 hover:drop-shadow-[var(--hover-accent-glow)]"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-all duration-300 group overflow-hidden ${
+                isSubmitSiteOpen 
+                  ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)]' 
+                  : 'text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10'
+              }`}
             >
-              Submit Site
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSubmitSiteOpen ? 'rotate-180' : ''}`} />
-            </button>
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                isSubmitSiteOpen 
+                  ? 'bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg' 
+                  : 'bg-amber-500/10 group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-yellow-500'
+              }`}>
+                <TrendingUp className={`w-3.5 h-3.5 transition-colors duration-300 ${isSubmitSiteOpen ? 'text-white' : 'text-amber-500 group-hover:text-white'}`} />
+              </div>
+              <span className="relative">Submit Site</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isSubmitSiteOpen ? 'rotate-180 text-amber-500' : 'group-hover:text-amber-500'}`} />
+            </motion.button>
             
             <AnimatePresence>
               {isSubmitSiteOpen && (
