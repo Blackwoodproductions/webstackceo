@@ -2248,8 +2248,8 @@ const AuditResults = () => {
                 </div>
               </div>
 
-              {/* Social Links & Contact Row */}
-              {websiteProfile && (
+              {/* Social Links & Contact Row - Only show if there's content */}
+              {websiteProfile && (Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) || websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone) && (
                 <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-border/50">
                   {/* Social Links */}
                   {Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) && (
@@ -2298,13 +2298,6 @@ const AuditResults = () => {
                     <a href={`tel:${websiteProfile.contactInfo.phone}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
                       {websiteProfile.contactInfo.phone}
                     </a>
-                  )}
-                  
-                  {/* Category Badge */}
-                  {websiteProfile.detectedCategory && (
-                    <span className="ml-auto text-xs px-2 py-1 rounded-full bg-primary/10 text-primary capitalize">
-                      {websiteProfile.detectedCategory.replace('_', ' ')}
-                    </span>
                   )}
                 </div>
               )}
