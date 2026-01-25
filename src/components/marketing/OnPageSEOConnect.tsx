@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, ShoppingBag, Palette, Rocket, CheckCircle2, 
-  ArrowRight, ExternalLink, Loader2, Shield, Zap,
-  Link2, Plug, Sparkles
+  ArrowRight, ExternalLink, Loader2, Shield,
+  Plug, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,6 @@ interface Platform {
   gradientFrom: string;
   gradientTo: string;
   description: string;
-  steps: string[];
 }
 
 const platforms: Platform[] = [
@@ -30,7 +29,6 @@ const platforms: Platform[] = [
     gradientFrom: "from-blue-500",
     gradientTo: "to-sky-400",
     description: "Auto-optimize meta tags & schema",
-    steps: ["Click Connect", "Authorize access", "Select your site", "Done!"],
   },
   {
     id: "shopify",
@@ -40,7 +38,6 @@ const platforms: Platform[] = [
     gradientFrom: "from-green-500",
     gradientTo: "to-emerald-400",
     description: "Product SEO & store pages",
-    steps: ["Click Connect", "Enter store URL", "Install app", "Authorize"],
   },
   {
     id: "wix",
@@ -50,7 +47,6 @@ const platforms: Platform[] = [
     gradientFrom: "from-amber-500",
     gradientTo: "to-yellow-400",
     description: "Page titles & descriptions",
-    steps: ["Click Connect", "Select site", "Grant permissions", "Ready!"],
   },
   {
     id: "lovable",
@@ -60,7 +56,6 @@ const platforms: Platform[] = [
     gradientFrom: "from-violet-500",
     gradientTo: "to-purple-400",
     description: "Native real-time optimization",
-    steps: ["Click Connect", "Get API key", "Add webhook", "Auto-optimize"],
   },
 ];
 
@@ -165,76 +160,37 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative"
     >
-      {/* Main Container with amber gradient border */}
-      <div className="relative p-8 rounded-2xl bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-yellow-500/5 border border-amber-500/20 overflow-hidden">
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-full blur-3xl" />
+      {/* Main Container - Compact with amber theme */}
+      <div className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-yellow-500/5 border border-amber-500/20 overflow-hidden">
+        {/* Background decorations - smaller */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-full blur-2xl" />
         
         <div className="relative z-10">
-          {/* Header with prominent styling */}
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <motion.div
-                animate={{ 
-                  boxShadow: [
-                    "0 0 20px rgba(245, 158, 11, 0.3)",
-                    "0 0 40px rgba(245, 158, 11, 0.5)",
-                    "0 0 20px rgba(245, 158, 11, 0.3)"
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-xl"
-              >
-                <Plug className="w-8 h-8 text-white" />
-              </motion.div>
-              <div>
-                <h3 className="text-2xl font-bold flex items-center gap-2">
-                  Connect Your Website
-                  <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/30">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    One-Click Setup
-                  </Badge>
-                </h3>
-                <p className="text-muted-foreground mt-1">
-                  Select your platform below to enable AI-powered on-page SEO optimization
-                </p>
-              </div>
+          {/* Compact Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+              <Plug className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                Connect Your Website
+                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/30 text-[10px]">
+                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                  One-Click
+                </Badge>
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Select your platform to enable AI-powered on-page SEO
+              </p>
             </div>
           </div>
 
-          {/* How it works - 3 steps */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[
-              { step: 1, title: "Choose Platform", desc: "Select your CMS below", icon: Link2 },
-              { step: 2, title: "Authorize Access", desc: "One-click OAuth login", icon: Shield },
-              { step: 3, title: "Auto-Optimize", desc: "SEO applied instantly", icon: Zap },
-            ].map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="relative p-4 rounded-xl bg-background/50 border border-amber-500/10 text-center"
-              >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-                  {item.step}
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mt-2 mb-2">
-                  <item.icon className="w-5 h-5 text-amber-500" />
-                </div>
-                <p className="font-semibold text-sm">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Platform Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Platform Cards Grid - Compact */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <AnimatePresence>
               {platforms.map((platform, i) => {
                 const Icon = platform.icon;
@@ -247,17 +203,17 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
                     key={platform.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: i * 0.05 }}
                     onMouseEnter={() => setHoveredPlatform(platform.id)}
                     onMouseLeave={() => setHoveredPlatform(null)}
                     className="group relative"
                   >
                     <div className={`
-                      relative p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer h-full min-h-[280px] flex flex-col
+                      relative p-4 rounded-lg border transition-all duration-300 cursor-pointer h-full flex flex-col
                       ${connected 
                         ? 'bg-green-500/10 border-green-500/30' 
                         : isHovered 
-                          ? `bg-gradient-to-br ${platform.gradientFrom}/10 ${platform.gradientTo}/5 border-${platform.color.replace('text-', '')}/40`
+                          ? `bg-gradient-to-br ${platform.gradientFrom}/10 ${platform.gradientTo}/5 border-amber-500/40`
                           : 'bg-background/50 border-border hover:border-muted-foreground/30'
                       }
                     `}>
@@ -266,37 +222,24 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shadow-lg"
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md"
                         >
-                          <CheckCircle2 className="w-4 h-4 text-white" />
+                          <CheckCircle2 className="w-3 h-3 text-white" />
                         </motion.div>
                       )}
 
-                      {/* Platform Icon */}
-                      <motion.div
-                        animate={isHovered ? { scale: 1.1, rotate: 5 } : { scale: 1, rotate: 0 }}
-                        className={`
-                          w-14 h-14 rounded-xl bg-gradient-to-br ${platform.gradientFrom} ${platform.gradientTo} 
-                          flex items-center justify-center mb-4 shadow-lg
-                        `}
-                      >
-                        <Icon className="w-7 h-7 text-white" />
-                      </motion.div>
-
-                      {/* Platform Info */}
-                      <h4 className="font-bold text-lg mb-1">{platform.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">{platform.description}</p>
-
-                      {/* Quick steps preview */}
-                      <div className="space-y-1 mb-4 flex-1">
-                        {platform.steps.slice(0, 2).map((step, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${platform.gradientFrom}/20 ${platform.gradientTo}/10 flex items-center justify-center shrink-0`}>
-                              <span className={`text-[10px] font-bold ${platform.color}`}>{idx + 1}</span>
-                            </div>
-                            <span className="truncate">{step}</span>
-                          </div>
-                        ))}
+                      {/* Platform Icon & Name Row */}
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <div className={`
+                          w-9 h-9 rounded-lg bg-gradient-to-br ${platform.gradientFrom} ${platform.gradientTo} 
+                          flex items-center justify-center shadow-md shrink-0
+                        `}>
+                          <Icon className="w-4.5 h-4.5 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold text-sm">{platform.name}</h4>
+                          <p className="text-[10px] text-muted-foreground truncate">{platform.description}</p>
+                        </div>
                       </div>
 
                       {/* Connect Button */}
@@ -304,40 +247,28 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
                         onClick={() => handleConnect(platform.id)}
                         disabled={isConnecting || connected}
                         className={`
-                          w-full gap-2 transition-all duration-300
+                          w-full gap-1.5 transition-all duration-300 mt-auto
                           ${connected 
                             ? 'bg-green-500/20 text-green-600 border border-green-500/30 hover:bg-green-500/30' 
-                            : `bg-gradient-to-r ${platform.gradientFrom} ${platform.gradientTo} hover:opacity-90 text-white shadow-lg`
+                            : `bg-gradient-to-r ${platform.gradientFrom} ${platform.gradientTo} hover:opacity-90 text-white shadow-md`
                           }
                         `}
                         size="sm"
                       >
                         {isConnecting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Connecting...
-                          </>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : connected ? (
                           <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            Connected
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span className="text-xs">Connected</span>
                           </>
                         ) : (
                           <>
-                            Connect
-                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            <span className="text-xs">Connect</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </>
                         )}
                       </Button>
-
-                      {/* Hover effect glow */}
-                      {isHovered && !connected && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className={`absolute inset-0 -z-10 rounded-xl bg-gradient-to-br ${platform.gradientFrom}/20 ${platform.gradientTo}/10 blur-xl`}
-                        />
-                      )}
                     </div>
                   </motion.div>
                 );
@@ -345,22 +276,17 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
             </AnimatePresence>
           </div>
 
-          {/* Bottom info bar */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-amber-500/10"
-          >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Shield className="w-4 h-4 text-amber-500" />
-              <span>Secure OAuth 2.0 • Your credentials never touch our servers</span>
+          {/* Bottom info - Compact */}
+          <div className="flex items-center justify-between gap-4 mt-4 pt-3 border-t border-amber-500/10">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Shield className="w-3.5 h-3.5 text-amber-500" />
+              <span>Secure OAuth 2.0</span>
             </div>
-            <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-              <ExternalLink className="w-4 h-4" />
-              View Integration Docs
+            <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2">
+              <ExternalLink className="w-3 h-3" />
+              Docs
             </Button>
-          </motion.div>
+          </div>
         </div>
       </div>
     </motion.div>
