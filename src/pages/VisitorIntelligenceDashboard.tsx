@@ -1769,14 +1769,8 @@ f.parentNode.insertBefore(j,f);
         </div>
         )}
 
-        {/* Google Integrations - Single render to avoid remount loops */}
-        {/* Layout changes based on connection status via CSS classes */}
-        <div className={`mb-8 ${
-          gscAuthenticated && !gaAuthenticated 
-            ? 'space-y-6' 
-            : 'grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch'
-        }`}>
-          {/* Google Search Console Panel */}
+        {/* Google Search Console Panel - Full width */}
+        <div className="mb-8">
           <GSCDashboardPanel 
             externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
             externalDateRange={integratedGscDateRange}
@@ -1805,15 +1799,16 @@ f.parentNode.insertBefore(j,f);
               console.log('[GSC] Auth status changed:', isAuth);
             }}
           />
-          
-          {/* Google Analytics Panel */}
+        </div>
+        
+        {/* Google Analytics Panel - Full width below GSC */}
+        <div className="mb-8">
           <GADashboardPanel 
             externalSelectedSite={selectedTrackedDomain}
             onAuthStatusChange={(isAuth) => {
               setGaAuthenticated(isAuth);
               console.log('[GA] Auth status changed:', isAuth);
             }}
-            fullWidth={gscAuthenticated && !gaAuthenticated}
           />
         </div>
         
