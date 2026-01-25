@@ -253,7 +253,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                     className="group relative"
                   >
                     <div className={`
-                      relative p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer
+                      relative p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer h-full min-h-[280px] flex flex-col
                       ${connected 
                         ? 'bg-green-500/10 border-green-500/30' 
                         : isHovered 
@@ -285,16 +285,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
                       {/* Platform Info */}
                       <h4 className="font-bold text-lg mb-1">{platform.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-4">{platform.description}</p>
+                      <p className="text-sm text-muted-foreground mb-4 min-h-[40px]">{platform.description}</p>
 
                       {/* Quick steps preview */}
-                      <div className="space-y-1 mb-4">
+                      <div className="space-y-1 mb-4 flex-1">
                         {platform.steps.slice(0, 2).map((step, idx) => (
                           <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${platform.gradientFrom}/20 ${platform.gradientTo}/10 flex items-center justify-center`}>
+                            <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${platform.gradientFrom}/20 ${platform.gradientTo}/10 flex items-center justify-center shrink-0`}>
                               <span className={`text-[10px] font-bold ${platform.color}`}>{idx + 1}</span>
                             </div>
-                            {step}
+                            <span className="truncate">{step}</span>
                           </div>
                         ))}
                       </div>
