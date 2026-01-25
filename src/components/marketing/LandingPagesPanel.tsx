@@ -298,7 +298,15 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+        {/* Animated Bubbles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute w-3 h-3 rounded-full bg-orange-400/30 animate-[float_4.5s_ease-in-out_infinite] top-1 left-[12%]" />
+          <div className="absolute w-2 h-2 rounded-full bg-amber-500/25 animate-[float_5s_ease-in-out_infinite_0.6s] top-6 left-[28%]" />
+          <div className="absolute w-3.5 h-3.5 rounded-full bg-yellow-400/20 animate-[float_5.5s_ease-in-out_infinite_1.1s] top-3 left-[42%]" />
+          <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-300/30 animate-[float_4s_ease-in-out_infinite_1.6s] top-5 left-[58%]" />
+          <div className="absolute w-3 h-3 rounded-full bg-amber-400/25 animate-[float_6s_ease-in-out_infinite_2.1s] top-2 left-[72%]" />
+        </div>
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0">
             <Target className="w-7 h-7 text-white" />
@@ -334,20 +342,20 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <div className="flex flex-col items-end gap-2">
               {/* Trust Badges */}
               <div className="flex items-center gap-2">
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite]">
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                   <Award className="w-4 h-4 text-amber-500" />
                   <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite_0.4s]">
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                   <Building className="w-4 h-4 text-slate-500" />
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite_0.8s]">
-                  <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_3s_linear_infinite]" />
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
                   <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
-              {/* Feature Pills */}
+              {/* Feature Pills - Row 1 */}
               <div className="flex items-center gap-1">
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <FlaskConical className="w-2.5 h-2.5 text-orange-500" />
@@ -356,6 +364,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <Flame className="w-2.5 h-2.5 text-red-500" />
                   <span className="text-[9px] font-medium text-red-600 dark:text-red-400">Heatmaps</span>
+                </div>
+              </div>
+              {/* Feature Pills - Row 2 */}
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                  <TrendingUp className="w-2.5 h-2.5 text-amber-500" />
+                  <span className="text-[9px] font-medium text-amber-600 dark:text-amber-400">Quality Score</span>
                 </div>
               </div>
             </div>
