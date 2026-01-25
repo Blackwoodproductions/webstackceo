@@ -67,8 +67,7 @@ serve(async (req) => {
       
       // Simulated customer accounts for demo
       const demoCustomers = [
-        { id: 'demo-123-456-7890', name: 'Demo Account 1', currencyCode: 'USD' },
-        { id: 'demo-098-765-4321', name: 'Demo Account 2', currencyCode: 'USD' },
+        { id: 'demo-123-456-7890', name: 'Demo Account', currencyCode: 'USD' },
       ];
 
       return new Response(JSON.stringify({
