@@ -275,32 +275,18 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           onSkip={handleSkipWizard}
         />
       ) : !isConnected ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-5 space-y-6">
-            {/* Feature Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
-              {[
-                { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages', color: 'text-orange-500' },
-                { icon: FlaskConical, label: 'A/B Testing', desc: 'Headlines, CTAs & layouts', color: 'text-amber-500' },
-                { icon: Flame, label: 'Heat Tracking', desc: 'Click & scroll analytics', color: 'text-red-500' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
-                  <feature.icon className={`w-6 h-6 ${feature.color} mb-2`} />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Connect Button */}
-            <div className="p-6 rounded-xl border-2 border-dashed border-orange-500/30 bg-orange-500/5">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5">
-                  <GoogleAdsIcon />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">Connect Google Ads</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+        <div className="space-y-6">
+          {/* Top row: Connect box + How It Works side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Connect Button - Left side */}
+            <div className="lg:col-span-4">
+              <div className="h-full p-6 rounded-xl border-2 border-dashed border-orange-500/30 bg-orange-500/5">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center gap-2 mb-3">
+                    <GoogleAdsIcon />
+                    <h3 className="text-lg font-semibold">Connect Google Ads</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4 flex-1">
                     Import your active PPC keywords and generate optimized landing pages automatically.
                   </p>
                   <Button
@@ -308,35 +294,54 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
                   >
                     <GoogleAdsIcon />
-                    <span className="ml-2">Connect Google Ads Account</span>
+                    <span className="ml-2">Connect Account</span>
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    We only request read access to your keyword data
+                  <p className="text-xs text-muted-foreground mt-3 text-center">
+                    Read-only keyword access
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* How It Works - Right side */}
+            <div className="lg:col-span-8">
+              <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                {[
+                  { step: '1', title: 'Connect Google Ads', desc: 'Securely link your account' },
+                  { step: '2', title: 'Import Keywords', desc: 'Auto-pull active PPC keywords' },
+                  { step: '3', title: 'Generate Pages', desc: 'AI creates optimized pages' },
+                  { step: '4', title: 'Track & Optimize', desc: 'A/B test with heat maps' },
+                ].map((item) => (
+                  <div key={item.step} className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
+                    <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                      {item.step}
+                    </div>
+                    <p className="font-medium text-sm mt-2">{item.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* How It Works */}
-          <div className="lg:col-span-7">
-            <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {[
-                { step: '1', title: 'Connect Google Ads', desc: 'Securely link your account' },
-                { step: '2', title: 'Import Keywords', desc: 'Auto-pull active PPC keywords' },
-                { step: '3', title: 'Generate Pages', desc: 'AI creates optimized pages' },
-                { step: '4', title: 'Track & Optimize', desc: 'A/B test with heat maps' },
-              ].map((item) => (
-                <div key={item.step} className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
-                  <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
-                    {item.step}
-                  </div>
-                  <p className="font-medium text-sm mt-2">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+          {/* Bottom row: Feature cards in a horizontal row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages with unique content for each target keyword', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+              { icon: FlaskConical, label: 'A/B Testing', desc: 'Test multiple headlines, CTAs, and layouts to maximize conversions', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+              { icon: Flame, label: 'Heat Tracking', desc: 'Visualize user behavior with click and scroll analytics on every page', color: 'text-red-500', bgColor: 'bg-red-500/10' },
+            ].map((feature) => (
+              <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <p className="font-medium text-sm mb-1">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : (
