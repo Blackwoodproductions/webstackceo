@@ -1289,6 +1289,34 @@ const AuditResults = () => {
     setAuditResults(generateAuditResults(decodedDomain, ahrefsData, websiteProfile.technicalSEO));
     console.log('Updated audit results with real technical SEO data');
   }, [websiteProfile?.technicalSEO, decodedDomain, dashboardMetrics, isLoading]);
+
+  // Report height to parent iframe for dynamic sizing
+  useEffect(() => {
+    if (!isEmbedMode) return;
+    
+    const sendHeight = () => {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'iframe-height', height }, '*');
+    };
+    
+    // Send initial height after content loads
+    const timer = setTimeout(sendHeight, 500);
+    
+    // Re-send on resize or content changes
+    const resizeObserver = new ResizeObserver(sendHeight);
+    resizeObserver.observe(document.body);
+    
+    // Also send when loading completes
+    if (!isLoading && !isProfileLoading) {
+      setTimeout(sendHeight, 100);
+    }
+    
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+    };
+  }, [isEmbedMode, isLoading, isProfileLoading]);
+
   const handleSaveClick = () => {
     if (isSaved) return;
     setShowEmailDialog(true);
