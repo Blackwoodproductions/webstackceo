@@ -32,6 +32,7 @@ import { generateAPIDocs } from '@/lib/generateAPIDocs';
 
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
+import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import {
   Select,
@@ -1767,8 +1768,9 @@ f.parentNode.insertBefore(j,f);
         </div>
         )}
 
-        {/* Google Search Console Integration - uses its own domain selector */}
-        <div className="mb-8">
+        {/* Google Integrations - GSC and GA side by side */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Google Search Console Panel */}
           <GSCDashboardPanel 
             externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
             externalDateRange={integratedGscDateRange}
@@ -1799,37 +1801,45 @@ f.parentNode.insertBefore(j,f);
             }}
           />
           
-          {/* Show VI install prompt when GSC domain is not in VI tracking */}
-          {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (
-            <Card className="mt-4 border-primary/30 bg-primary/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Code className="w-4 h-4 text-primary" />
-                  Add {selectedGscDomain} to Visitor Intelligence
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Install the tracking code on <strong>{selectedGscDomain}</strong> to see visitor analytics alongside your GSC data.
-                </p>
-                <Button 
-                  size="sm" 
-                  onClick={() => {
-                    // Add this GSC domain to user-added domains
-                    if (!userAddedDomains.includes(selectedGscDomain)) {
-                      setUserAddedDomains([...userAddedDomains, selectedGscDomain]);
-                    }
-                    setSelectedTrackedDomain(selectedGscDomain);
-                    setSelectedDomainKey(selectedGscDomain);
-                  }}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add to VI Dashboard
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          {/* Google Analytics Panel */}
+          <GADashboardPanel 
+            externalSelectedSite={selectedTrackedDomain}
+            onAuthStatusChange={(isAuth) => {
+              console.log('[GA] Auth status changed:', isAuth);
+            }}
+          />
         </div>
+        
+        {/* Show VI install prompt when GSC domain is not in VI tracking */}
+        {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (
+          <Card className="mb-8 border-primary/30 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Code className="w-4 h-4 text-primary" />
+                Add {selectedGscDomain} to Visitor Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Install the tracking code on <strong>{selectedGscDomain}</strong> to see visitor analytics alongside your GSC data.
+              </p>
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  // Add this GSC domain to user-added domains
+                  if (!userAddedDomains.includes(selectedGscDomain)) {
+                    setUserAddedDomains([...userAddedDomains, selectedGscDomain]);
+                  }
+                  setSelectedTrackedDomain(selectedGscDomain);
+                  setSelectedDomainKey(selectedGscDomain);
+                }}
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add to VI Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         </main>
 
