@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, X, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, MousePointer, ArrowRight,
-  ExternalLink, Flame, Layers, AlertCircle, LogOut
+  ExternalLink, Flame, Layers, AlertCircle, LogOut, Award, Building
 } from 'lucide-react';
 import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
@@ -332,13 +332,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             </>
           ) : (
             <>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
-                <FlaskConical className="w-4 h-4 text-orange-500" />
-                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">A/B Testing</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
+                <Award className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
-                <Flame className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-medium text-red-600 dark:text-red-400">Heat Tracking</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30">
+                <Building className="w-4 h-4 text-orange-500" />
+                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">100+ White Label Agencies</span>
               </div>
             </>
           )}
