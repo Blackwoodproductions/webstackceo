@@ -2082,7 +2082,7 @@ f.parentNode.insertBefore(j,f);
                 key={`case-study-iframe-${savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}`}
                 src={`/case-study/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}?embed=true`}
                 className="w-full border-0"
-                style={{ height: '4000px' }}
+                style={{ height: '8000px' }}
                 scrolling="no"
                 title="SEO Case Study"
               />
