@@ -914,6 +914,9 @@ const AuditResults = () => {
   const [showLinkActiveNotification, setShowLinkActiveNotification] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false); // true when user just claimed in this session
   
+  // Store the actual domain from the database (not the URL slug)
+  const [actualDomain, setActualDomain] = useState<string | null>(null);
+  
   // Chart line visibility toggles
   const [chartLines, setChartLines] = useState({
     traffic: true,
@@ -940,8 +943,9 @@ const AuditResults = () => {
   const [isPageSpeedLoading, setIsPageSpeedLoading] = useState(false);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
-
-  // Computed metrics for new audit sections - NOW USES REAL DATA FROM ENHANCED SCRAPING
+  
+  // For display purposes, prefer the actual domain from DB over the URL slug
+  const displayDomain = actualDomain || decodedDomain;
   const contentMetrics = useMemo(() => {
     if (!websiteProfile) return null;
     
@@ -1362,6 +1366,9 @@ const AuditResults = () => {
           // internalLinkingMetrics, localSEOSignals) for the advanced sections to render.
           // So even if we have basic profile data in the DB, we still scrape and merge.
           if (savedAudit) {
+            // Store the actual domain from the database for display
+            setActualDomain(savedAudit.domain);
+            
             type AuditCategoryEnum = Database["public"]["Enums"]["audit_category"];
             const auditCategoryValues: AuditCategoryEnum[] = [
               'ecommerce',
@@ -2033,8 +2040,8 @@ const AuditResults = () => {
     return (
       <div className="min-h-screen bg-background">
         <SEO
-          title={`Analyzing ${decodedDomain} | Free Domain Audit`}
-          description={`Running comprehensive domain audit for ${decodedDomain}`}
+          title={`Analyzing ${displayDomain} | Free Domain Audit`}
+          description={`Running comprehensive domain audit for ${displayDomain}`}
           noIndex
         />
         {!isEmbedMode && <Navbar />}
@@ -2050,7 +2057,7 @@ const AuditResults = () => {
                 <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
                 <Gauge className="absolute inset-0 m-auto w-10 h-10 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">Analyzing {decodedDomain}</h1>
+              <h1 className="text-2xl font-bold mb-2">Analyzing {displayDomain}</h1>
               <p className="text-muted-foreground mb-8">
                 Running comprehensive domain audit...
               </p>
@@ -2094,8 +2101,8 @@ const AuditResults = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`Domain Audit Results for ${decodedDomain} | Webstack.ceo`}
-        description={`Comprehensive domain audit results for ${decodedDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
+        title={`Domain Audit Results for ${displayDomain} | Webstack.ceo`}
+        description={`Comprehensive domain audit results for ${displayDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
         noIndex
       />
       {!isEmbedMode && <Navbar />}
@@ -2139,16 +2146,16 @@ const AuditResults = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         {isSaved ? (
                           <a 
-                            href={`https://${decodedDomain}`} 
+                            href={`https://${displayDomain}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors flex items-center gap-2 group"
                           >
-                            {decodedDomain}
+                            {displayDomain}
                             <ExternalLink className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </a>
                         ) : (
-                          <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
+                          <h1 className="text-2xl md:text-3xl font-bold">{displayDomain}</h1>
                         )}
                         {isCaseStudyMode && (
                           <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-semibold flex items-center gap-1">
@@ -2399,10 +2406,10 @@ const AuditResults = () => {
               {/* Floating Export PDF Button - hide in embed mode */}
               {!isEmbedMode && (
                 <FloatingExportPDF 
-                  domain={decodedDomain} 
+                  domain={displayDomain} 
                   onExport={() => {
                     generateAuditPDF({
-                      domain: decodedDomain,
+                      domain: displayDomain,
                       overallScore,
                       dashboardMetrics,
                       auditResults,
@@ -2886,7 +2893,7 @@ const AuditResults = () => {
           {/* NEW: Competitor Gap Analysis */}
           <CompetitorGapSection 
             metrics={competitorGapMetrics}
-            currentDomain={decodedDomain}
+            currentDomain={displayDomain}
             currentDR={dashboardMetrics?.domainRating || 0}
             currentTraffic={dashboardMetrics?.organicTraffic || 0}
             isLoading={!dashboardMetrics}
