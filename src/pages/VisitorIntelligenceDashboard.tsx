@@ -1532,19 +1532,6 @@ const MarketingDashboard = () => {
                 {chatOnline ? 'Online' : 'Offline'}
               </Label>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChatPanelOpen(!chatPanelOpen)}
-              className="relative"
-            >
-              <MessageCircle className="w-5 h-5" />
-              {sidebarChats.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
-                  {sidebarChats.length}
-                </span>
-              )}
-            </Button>
           </>
         ) : activeTab === 'seo-audit' ? (
           <>
