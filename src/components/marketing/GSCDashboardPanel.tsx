@@ -951,8 +951,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   if (!isAuthenticated) {
     return (
       <>
-        <Card className="bg-gradient-to-br from-cyan-500/5 to-violet-500/5 border-cyan-500/20">
-          <CardContent className="py-8">
+        <Card className="bg-gradient-to-br from-cyan-500/5 to-violet-500/5 border-cyan-500/20 h-full flex flex-col">
+          <CardContent className="py-8 flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="w-8 h-8 text-white" />
