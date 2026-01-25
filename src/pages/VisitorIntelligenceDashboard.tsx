@@ -1319,10 +1319,10 @@ const MarketingDashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-foreground">Install tracking for {selectedDomainLabel}</p>
+                    <p className="text-sm font-medium text-foreground">Install Visitor Intelligence tracking for {selectedDomainLabel}</p>
                     <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400">Required</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">Add the tracking script to see visitor flow, engagement & leads</p>
+                  <p className="text-xs text-muted-foreground">Add the VI tracking script to see visitor flow, engagement & leads</p>
                 </div>
                 <Collapsible>
                   <CollapsibleTrigger asChild>
