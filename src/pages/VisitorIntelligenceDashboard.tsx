@@ -2543,17 +2543,6 @@ f.parentNode.insertBefore(j,f);
               ))}
             </div>
 
-            {/* BRON Dashboard Iframe */}
-            <div className="mt-8 rounded-xl border border-border overflow-hidden bg-background">
-              <iframe
-                src="https://dashdev.imagehosting.space/"
-                className="w-full border-0"
-                style={{ minHeight: '1200px' }}
-                title="BRON Dashboard"
-                allow="clipboard-write"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
-            </div>
           </div>
         </div>
       )}
