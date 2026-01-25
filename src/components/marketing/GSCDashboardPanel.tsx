@@ -1074,12 +1074,12 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             </div>
           )}
 
-          {/* Controls - Date selector left, dropdowns right */}
-          <div className="flex flex-nowrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3 min-h-[48px]">
+          {/* Controls - Right justified */}
+          <div className="flex flex-nowrap gap-3 items-center justify-end bg-secondary/30 rounded-lg p-3 min-h-[48px]">
             {/* Left side - Date selector only (domain controlled by header)
                 Hidden when parent integrates the date range (VI+GSC). */}
             {!hideDateSelector && (
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
                 <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
                   <SelectTrigger className="w-[110px] h-8 text-xs bg-background border-border">
                     <Calendar className="w-3 h-3 mr-1" />
@@ -1097,7 +1097,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             )}
 
             {/* Right side - Data dropdowns & Refresh */}
-            <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+            <div className="flex items-center gap-1 flex-shrink-0">
               <Button 
                 variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
                 size="sm" 
