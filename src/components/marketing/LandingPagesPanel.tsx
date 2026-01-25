@@ -208,21 +208,27 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mx-auto mb-4">
-          <Target className="w-8 h-8 text-white" />
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0">
+            <Target className="w-7 h-7 text-white" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold">PPC Landing Pages</h2>
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              Import keywords from Google Ads, generate optimized landing pages, and boost your Quality Score with built-in A/B testing and heat tracking.
+            </p>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold mb-2">PPC Landing Pages</h2>
+
         {selectedDomain && (
-          <p className="text-sm text-primary font-medium mb-2">
-            Domain: {selectedDomain}
-          </p>
+          <div className="md:pt-1">
+            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
+              Domain: {selectedDomain}
+            </Badge>
+          </div>
         )}
-        <p className="text-muted-foreground max-w-lg mx-auto mb-4">
-          Import keywords from Google Ads, generate optimized landing pages, 
-          and boost your Quality Score with built-in A/B testing and heat tracking.
-        </p>
-      </div>
+      </header>
 
       {/* Show Wizard when connecting */}
       {showWizard ? (
@@ -232,45 +238,53 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           onSkip={handleSkipWizard}
         />
       ) : !isConnected ? (
-        <div className="max-w-2xl mx-auto">
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {[
-              { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages', color: 'text-orange-500' },
-              { icon: FlaskConical, label: 'A/B Testing', desc: 'Headlines, CTAs & layouts', color: 'text-amber-500' },
-              { icon: Flame, label: 'Heat Tracking', desc: 'Click & scroll analytics', color: 'text-red-500' },
-            ].map((feature) => (
-              <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
-                <feature.icon className={`w-6 h-6 ${feature.color} mx-auto mb-2`} />
-                <p className="font-medium text-sm">{feature.label}</p>
-                <p className="text-xs text-muted-foreground">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-5 space-y-6">
+            {/* Feature Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4">
+              {[
+                { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages', color: 'text-orange-500' },
+                { icon: FlaskConical, label: 'A/B Testing', desc: 'Headlines, CTAs & layouts', color: 'text-amber-500' },
+                { icon: Flame, label: 'Heat Tracking', desc: 'Click & scroll analytics', color: 'text-red-500' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <feature.icon className={`w-6 h-6 ${feature.color} mb-2`} />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
 
-          {/* Connect Button */}
-          <div className="text-center p-6 rounded-xl border-2 border-dashed border-orange-500/30 bg-orange-500/5">
-            <GoogleAdsIcon />
-            <h3 className="text-lg font-semibold mt-3 mb-2">Connect Google Ads</h3>
-            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              Import your active PPC keywords and generate optimized landing pages automatically.
-            </p>
-            <Button 
-              onClick={handleStartConnection}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
-            >
-              <GoogleAdsIcon />
-              <span className="ml-2">Connect Google Ads Account</span>
-            </Button>
-            <p className="text-xs text-muted-foreground mt-3">
-              We only request read access to your keyword data
-            </p>
+            {/* Connect Button */}
+            <div className="p-6 rounded-xl border-2 border-dashed border-orange-500/30 bg-orange-500/5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5">
+                  <GoogleAdsIcon />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1">Connect Google Ads</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Import your active PPC keywords and generate optimized landing pages automatically.
+                  </p>
+                  <Button
+                    onClick={handleStartConnection}
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                  >
+                    <GoogleAdsIcon />
+                    <span className="ml-2">Connect Google Ads Account</span>
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    We only request read access to your keyword data
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* How It Works */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4 text-center">How It Works</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="lg:col-span-7">
+            <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               {[
                 { step: '1', title: 'Connect Google Ads', desc: 'Securely link your account' },
                 { step: '2', title: 'Import Keywords', desc: 'Auto-pull active PPC keywords' },
@@ -291,7 +305,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       ) : (
         <>
           {/* Connected State - Keywords Table */}
-          <div className="max-w-5xl mx-auto">
+          <div className="w-full">
             {/* Summary Cards */}
             {summary && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -315,7 +329,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             )}
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between mb-4 p-3 rounded-xl bg-muted/30 border border-border">
+            <div className="mb-4 p-3 rounded-xl bg-muted/30 border border-border flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <Checkbox
                   checked={selectedKeywords.size === keywords.length && keywords.length > 0}
@@ -325,7 +339,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                   {selectedKeywords.size} of {keywords.length} selected
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <Button
                   variant="outline"
                   size="sm"

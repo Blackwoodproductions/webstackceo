@@ -209,26 +209,55 @@ const MarketingDashboard = () => {
   // Dashboard main tabs
   type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   
-  // Initialize tab from URL hash (for OAuth redirect preservation)
+  const validTabs: DashboardTab[] = [
+    'visitor-intelligence',
+    'seo-audit',
+    'bron',
+    'cade',
+    'gmb',
+    'social-signals',
+    'on-page-seo',
+    'landing-pages',
+  ];
+
+  // Initialize tab from URL hash, and (critically) preserve return-to-tab during OAuth callback
+  // so we don't clear ?code=...&state=... before the Landing Pages wizard can consume it.
   const getInitialTab = (): DashboardTab => {
     const hash = window.location.hash.replace('#', '');
-    const validTabs: DashboardTab[] = ['visitor-intelligence', 'seo-audit', 'bron', 'cade', 'gmb', 'social-signals', 'on-page-seo', 'landing-pages'];
     if (hash && validTabs.includes(hash as DashboardTab)) {
       return hash as DashboardTab;
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const hasOAuthCallback = Boolean(params.get('code') && params.get('state'));
+    const returnTab = sessionStorage.getItem('google_ads_return_tab');
+    if (hasOAuthCallback && returnTab && validTabs.includes(returnTab as DashboardTab)) {
+      return returnTab as DashboardTab;
+    }
+
     return 'visitor-intelligence';
   };
-  
+
   const [activeTab, setActiveTab] = useState<DashboardTab>(getInitialTab);
-  
-  // Update URL hash when tab changes (for bookmark support)
+
+  // If we landed back here with OAuth callback params, force the wizard tab immediately.
+  // (This ensures the wizard mounts, reads the params, exchanges the code, then clears the URL.)
   useEffect(() => {
-    if (activeTab !== 'visitor-intelligence') {
-      window.history.replaceState(null, '', `#${activeTab}`);
-    } else {
-      // Clear hash for default tab
-      window.history.replaceState(null, '', window.location.pathname);
+    const params = new URLSearchParams(window.location.search);
+    const hasOAuthCallback = Boolean(params.get('code') && params.get('state'));
+    const returnTab = sessionStorage.getItem('google_ads_return_tab');
+    if (hasOAuthCallback && returnTab && validTabs.includes(returnTab as DashboardTab)) {
+      setActiveTab(returnTab as DashboardTab);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep URL hash in sync with the active tab WITHOUT clearing query params.
+  // Query params are needed for OAuth callbacks and are cleared by the wizard after consumption.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.hash = activeTab === 'visitor-intelligence' ? '' : `#${activeTab}`;
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }, [activeTab]);
   
   // GMB (Google My Business) state
