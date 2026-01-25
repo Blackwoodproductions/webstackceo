@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  ExternalLink, Shield, LogOut, Sparkles, Loader2
+  ExternalLink, Shield, LogOut, Sparkles, Loader2, Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 interface BRONPlatformConnectProps {
@@ -151,31 +152,41 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Login prompt using connect box style
+  // Login prompt using Connect Your Website box style
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-lg border border-dashed border-green-500/30 bg-green-500/5"
+      className="p-6 rounded-xl border-2 border-dashed border-cyan-500/40 bg-gradient-to-br from-slate-900/50 to-slate-800/30"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="font-medium text-sm">Connect to BRON Dashboard</p>
-            <p className="text-xs text-muted-foreground">Login to access your SEO dashboard</p>
-          </div>
-        </div>
-        <Button
-          onClick={handleLogin}
-          size="sm"
-          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-        >
-          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-          Login
-        </Button>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <Link2 className="w-6 h-6 text-cyan-400" />
+        <h3 className="text-xl font-semibold text-foreground">Connect Your Website</h3>
+      </div>
+
+      {/* Description */}
+      <p className="text-muted-foreground mb-8 leading-relaxed">
+        Connect your CMS to enable automated link building and topical authority through the Diamond Flow methodology.
+      </p>
+
+      {/* Login Button */}
+      <Button
+        onClick={handleLogin}
+        className="mb-6 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium"
+      >
+        <ExternalLink className="w-4 h-4 mr-2" />
+        Login to BRON Dashboard
+      </Button>
+
+      {/* Footer */}
+      <div className="pt-4 border-t border-cyan-500/20">
+        <Badge variant="outline" className="mb-3 border-amber-500/50 text-amber-400 bg-amber-500/10">
+          Coming Soon
+        </Badge>
+        <p className="text-sm text-muted-foreground">
+          Diamond Flow ensures links come from topically relevant sites.
+        </p>
       </div>
     </motion.div>
   );
