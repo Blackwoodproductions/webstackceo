@@ -135,31 +135,52 @@ function rootDomainFromUrl(v: string): string {
 
 // Dynamic iframe component that resizes based on content height
 const CaseStudyIframe = ({ domain }: { domain: string }) => {
-  const [iframeHeight, setIframeHeight] = useState(800); // Start smaller
+  const [iframeHeight, setIframeHeight] = useState(800);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    // Reset loading state when domain changes
+    setIsLoading(true);
+    
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'iframe-height' && typeof event.data.height === 'number') {
-        // Set exact height with no extra padding
         setIframeHeight(event.data.height);
+        // Mark as loaded once we receive height (content is ready)
+        setIsLoading(false);
       }
     };
     
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [domain]);
   
   const slug = domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
   
   return (
-    <iframe
-      key={`case-study-iframe-${domain}`}
-      src={`/case-study/${slug}?embed=true`}
-      className="w-full border-0"
-      style={{ height: `${iframeHeight}px`, minHeight: '400px' }}
-      scrolling="no"
-      title="SEO Case Study"
-    />
+    <div className="relative">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/95 backdrop-blur-sm rounded-xl min-h-[400px]">
+          <div className="relative">
+            {/* Animated circles */}
+            <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-primary animate-pulse" />
+            </div>
+          </div>
+          <p className="mt-4 text-sm font-medium text-foreground">Loading SEO Report...</p>
+          <p className="text-xs text-muted-foreground mt-1">Analyzing domain metrics</p>
+        </div>
+      )}
+      <iframe
+        key={`case-study-iframe-${domain}`}
+        src={`/case-study/${slug}?embed=true`}
+        className={`w-full border-0 transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+        style={{ height: `${iframeHeight}px`, minHeight: '400px' }}
+        scrolling="no"
+        title="SEO Case Study"
+      />
+    </div>
   );
 };
 
