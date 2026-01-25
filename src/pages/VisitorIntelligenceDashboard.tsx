@@ -1123,49 +1123,8 @@ const MarketingDashboard = () => {
             )}
           </div>
           
-          {/* Center: Stats Badges */}
-          <div className="flex-1 flex items-center justify-center gap-2 flex-wrap">
-            {/* Show stats only if no GSC domain selected OR the selected domain has tracking */}
-            {shouldShowViPanels && flowSummary && (
-              <>
-                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                  <Eye className="w-3 h-3 mr-1" />{flowSummary.totalVisits} views
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-violet-500/10 text-violet-400 border-violet-500/30">
-                  <Users className="w-3 h-3 mr-1" />{flowSummary.uniqueSessions} sessions
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                  <MousePointer className="w-3 h-3 mr-1" />{flowSummary.avgPagesPerSession} pg/session
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-400 border-rose-500/30">
-                  <ArrowRight className="w-3 h-3 mr-1" />{flowSummary.bounceRate}% bounce
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                  <UserCheck className="w-3 h-3 mr-1" />{flowSummary.newVisitorsToday} new today
-                </Badge>
-                <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-400 border-orange-500/30">
-                  <Zap className="w-3 h-3 mr-1" />{flowSummary.toolInteractions} tool uses
-                </Badge>
-                {flowSummary.externalReferrals > 0 && (
-                  <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
-                    <TrendingUp className="w-3 h-3 mr-1" />{flowSummary.externalReferrals} referrals
-                  </Badge>
-                )}
-                {flowSummary.activeVisitors > 0 && (
-                  <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
-                    <Activity className="w-3 h-3 mr-1" />{flowSummary.activeVisitors} live
-                  </Badge>
-                )}
-              </>
-            )}
-            {/* Show install tracking prompt when domain selected but no tracking */}
-            {shouldShowInstallPrompt && (
-              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
-                <AlertTriangle className="w-3 h-3 mr-1" />
-                Install tracking code to see visitor data for {selectedDomainLabel}
-              </Badge>
-            )}
-          </div>
+          {/* Spacer for layout balance */}
+          <div className="flex-1" />
           
           {/* Right: API Docs & Chat Controls */}
           <div className="flex items-center gap-3 flex-shrink-0">
