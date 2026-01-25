@@ -6,7 +6,7 @@ interface AnimatedTaglineProps {
 
 const taglines = [
   "by Blackwood Productions",
-  "a Lovable Web App"
+  "a Lovable Web Application"
 ];
 
 export function AnimatedTagline({ className = "" }: AnimatedTaglineProps) {
