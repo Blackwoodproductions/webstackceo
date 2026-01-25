@@ -3005,6 +3005,65 @@ f.parentNode.insertBefore(j,f);
                   </div>
                 ))}
               </div>
+
+              {/* Local SEO Stats & Benefits Section */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/5 via-transparent to-green-500/5 border border-blue-500/10">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-green-500/20 flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Why Google Business Profile Matters</h3>
+                    <p className="text-xs text-muted-foreground">Local search dominance starts here</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+                  {[
+                    { stat: '46%', label: 'of Google searches', sublabel: 'have local intent' },
+                    { stat: '88%', label: 'of mobile searches', sublabel: 'visit within 24hrs' },
+                    { stat: '76%', label: 'of local searches', sublabel: 'visit a business' },
+                    { stat: '28%', label: 'local searches', sublabel: 'result in purchase' },
+                  ].map((item, i) => (
+                    <div key={i} className="text-center p-4 rounded-xl bg-background/50 border border-border/50">
+                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">{item.stat}</p>
+                      <p className="text-xs text-foreground font-medium mt-1">{item.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.sublabel}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Appear in the Local 3-Pack</p>
+                      <p className="text-xs text-muted-foreground">Active GMB listings rank higher in Google's coveted local map results</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Build Trust with Reviews</p>
+                      <p className="text-xs text-muted-foreground">Businesses with 40+ reviews earn 15% more customer trust than competitors</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Drive Foot Traffic & Calls</p>
+                      <p className="text-xs text-muted-foreground">Optimized profiles get 7x more clicks than incomplete listings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">CADE-Powered Automation</p>
+                      <p className="text-xs text-muted-foreground">Automatic FAQ and article posts keep your listing fresh and engaging</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             /* Connected State */
