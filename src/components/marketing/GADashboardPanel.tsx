@@ -831,8 +831,100 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Connected but error loading properties
+  // Connected but error loading properties - show as setup prompt for 403, else show error
   if (isAuthenticated && propertiesError) {
+    // Extract enable-API URL from error message if present
+    const apiUrlMatch = propertiesError.match(/https:\/\/console\.developers\.google\.com\/apis\/api\/analyticsadmin\.googleapis\.com\/overview\?project=\d+/);
+    const enableApiUrl = apiUrlMatch?.[0];
+    const is403 = propertiesError.includes("403");
+
+    if (is403) {
+      // Show as friendly setup card, not an error
+      return (
+        <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    Google Analytics
+                    <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-500">Setup Required</Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs">One more step to complete your connection</CardDescription>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-muted-foreground/30 text-muted-foreground hover:bg-muted h-8">
+                <X className="w-3 h-3 mr-1" />
+                Disconnect
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                    <Key className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                    Enable the Google Analytics Admin API
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your Google account is authenticated, but your Google Cloud project needs the <span className="font-medium">Analytics Admin API</span> enabled to list your GA4 properties.
+                  </p>
+
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    {enableApiUrl ? (
+                      <Button
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                        onClick={() => window.open(enableApiUrl, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Enable API in Google Cloud
+                      </Button>
+                    ) : (
+                      <Button
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                        onClick={() => window.open('https://console.cloud.google.com/apis/library/analyticsadmin.googleapis.com', '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Enable API in Google Cloud
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      className="border-amber-500/30"
+                      onClick={() => {
+                        setPropertiesError(null);
+                        setPropertiesLoaded(false);
+                        fetchProperties();
+                        toast({ title: "Checking again...", description: "Verifying API access." });
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
+
+                  <div className="p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Quick Steps:</span> 1. Click "Enable API in Google Cloud" → 2. Click "Enable" on the Google page → 3. Wait 2-5 minutes → 4. Click "Retry" above
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Non-403 errors: show as actual error
     return (
       <Card className="border-destructive/30">
         <CardHeader className="pb-4">
@@ -855,13 +947,8 @@ export const GADashboardPanel = ({
         <CardContent>
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-center">
             <p className="text-sm text-destructive mb-3">{propertiesError}</p>
-            {propertiesError.includes("403") && (
-              <p className="text-xs text-muted-foreground mb-4">
-                Fixes: ensure your Google OAuth project has <span className="font-medium">Google Analytics Admin API</span> enabled, and that the connected Google account has access to at least one GA4 property.
-              </p>
-            )}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setPropertiesError(null);
                 setPropertiesLoaded(false);
