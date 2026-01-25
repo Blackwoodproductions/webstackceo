@@ -2194,11 +2194,11 @@ const AuditResults = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(isCaseStudyMode ? "/case-studies" : "/")}
+              onClick={() => navigate(isCaseStudyMode ? "/visitor-intelligence-dashboard" : "/")}
               className="mb-6"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {isCaseStudyMode ? "All Case Studies" : "Back to Home"}
+              {isCaseStudyMode ? "Visitor Intelligence" : "Back to Home"}
             </Button>
           )}
 
