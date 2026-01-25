@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair, Twitter, Linkedin, Facebook, Bell, Newspaper, Type, Gauge, ImageIcon
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair, Twitter, Linkedin, Facebook, Bell, Newspaper, Type, Gauge, ImageIcon, Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -2720,6 +2720,18 @@ f.parentNode.insertBefore(j,f);
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
+          {/* Coming Soon Banner */}
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-green-500/10 to-teal-500/10 border border-blue-500/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center animate-pulse">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-blue-400">Coming Soon</p>
+                <p className="text-sm text-muted-foreground">Google Business Profile management is under development and will be available shortly.</p>
+              </div>
+            </div>
+          </div>
           <header className="flex items-start justify-between gap-4 mb-6 relative overflow-hidden">
             {/* Radar Pulse Scanner - GMB */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -3503,6 +3515,18 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'social-signals' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Coming Soon Banner */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-red-500/10 border border-pink-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center animate-pulse">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-pink-400">Coming Soon</p>
+                  <p className="text-sm text-muted-foreground">Social Signals automation is under development and will be available shortly.</p>
+                </div>
+              </div>
+            </div>
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
               {/* Network Nodes & Connections - Social Signals */}
@@ -3680,6 +3704,18 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'on-page-seo' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Coming Soon Banner */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-yellow-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center animate-pulse">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-400">Coming Soon</p>
+                  <p className="text-sm text-muted-foreground">On-page SEO automation is under development and will be available shortly.</p>
+                </div>
+              </div>
+            </div>
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
               {/* Circuit Board Traces - On-page SEO */}
@@ -3921,6 +3957,18 @@ f.parentNode.insertBefore(j,f);
 
       {activeTab === 'landing-pages' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
+          {/* Coming Soon Banner */}
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 border border-cyan-500/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center animate-pulse">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-cyan-400">Coming Soon</p>
+                <p className="text-sm text-muted-foreground">PPC Landing Pages automation is under development and will be available shortly.</p>
+              </div>
+            </div>
+          </div>
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           
           {/* Extended Content Section */}
