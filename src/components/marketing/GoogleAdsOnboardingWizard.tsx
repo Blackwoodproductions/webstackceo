@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +10,7 @@ import { toast } from 'sonner';
 import {
   CheckCircle, Circle, ChevronDown, ChevronRight, ExternalLink,
   RefreshCw, Key, Building2, Link2, FileText, ArrowRight, Copy,
-  AlertCircle
+  AlertCircle, Hash, Info
 } from 'lucide-react';
 
 // Google Ads icon component
@@ -48,6 +50,8 @@ export function GoogleAdsOnboardingWizard({
   const [customers, setCustomers] = useState<GoogleAdsCustomer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<GoogleAdsCustomer | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [manualCustomerId, setManualCustomerId] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const GOOGLE_ADS_SCOPES = [
     'https://www.googleapis.com/auth/adwords',
@@ -223,6 +227,26 @@ export function GoogleAdsOnboardingWizard({
     setExpandedStep(3);
   }, []);
 
+  // Handle manual customer ID input
+  const handleManualCustomerId = useCallback(() => {
+    const cleanId = manualCustomerId.replace(/[^0-9-]/g, '').trim();
+    if (!cleanId || cleanId.length < 10) {
+      toast.error('Please enter a valid Customer ID (e.g., 123-456-7890)');
+      return;
+    }
+    
+    const customer: GoogleAdsCustomer = {
+      id: cleanId,
+      name: `Account ${cleanId}`,
+      currencyCode: 'USD',
+    };
+    
+    setSelectedCustomer(customer);
+    setCurrentStep(3);
+    setExpandedStep(3);
+    toast.success('Customer ID set successfully');
+  }, [manualCustomerId]);
+
   // Confirm and complete
   const handleConfirmConnection = useCallback(() => {
     if (!selectedCustomer || !accessToken) {
@@ -320,46 +344,108 @@ export function GoogleAdsOnboardingWizard({
         return (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Select the Google Ads account you want to use for importing keywords.
+              Select an account from the list, or enter your Customer ID manually.
             </p>
+
+            {/* Developer Token Info Banner */}
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-500">Need a Developer Token?</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    To connect your real Google Ads account, you'll need a Developer Token from Google.{' '}
+                    <a 
+                      href="https://developers.google.com/google-ads/api/docs/get-started/dev-token" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline inline-flex items-center gap-1"
+                    >
+                      Get your token here <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {isLoadingAccounts ? (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="w-6 h-6 animate-spin text-orange-500" />
                 <span className="ml-2 text-sm text-muted-foreground">Loading accounts...</span>
               </div>
-            ) : customers.length > 0 ? (
-              <div className="space-y-2">
-                {customers.map((customer) => (
+            ) : (
+              <>
+                {/* Account list */}
+                {customers.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Available Accounts</p>
+                    {customers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        onClick={() => handleSelectCustomer(customer)}
+                        className={`w-full p-4 rounded-xl border text-left transition-all ${
+                          selectedCustomer?.id === customer.id
+                            ? 'border-orange-500 bg-orange-500/10'
+                            : 'border-border hover:border-orange-500/50 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{customer.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              ID: {customer.id} • {customer.currencyCode}
+                            </p>
+                          </div>
+                          {selectedCustomer?.id === customer.id && (
+                            <CheckCircle className="w-5 h-5 text-orange-500" />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Manual Customer ID Input */}
+                <div className="space-y-3">
                   <button
-                    key={customer.id}
-                    onClick={() => handleSelectCustomer(customer)}
-                    className={`w-full p-4 rounded-xl border text-left transition-all ${
-                      selectedCustomer?.id === customer.id
-                        ? 'border-orange-500 bg-orange-500/10'
-                        : 'border-border hover:border-orange-500/50 hover:bg-muted/50'
-                    }`}
+                    onClick={() => setShowManualInput(!showManualInput)}
+                    className="w-full text-left text-sm text-primary hover:underline flex items-center gap-1"
                   >
-                    <div className="flex items-center justify-between">
+                    <Hash className="w-4 h-4" />
+                    {showManualInput ? 'Hide manual input' : 'Enter Customer ID manually'}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showManualInput ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showManualInput && (
+                    <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
                       <div>
-                        <p className="font-medium">{customer.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          ID: {customer.id} • {customer.currencyCode}
+                        <Label htmlFor="customerId" className="text-sm font-medium">Google Ads Customer ID</Label>
+                        <div className="relative mt-1.5">
+                          <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="customerId"
+                            value={manualCustomerId}
+                            onChange={(e) => setManualCustomerId(e.target.value)}
+                            placeholder="123-456-7890"
+                            className="pl-10"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Find your Customer ID in Google Ads → Settings → Account settings
                         </p>
                       </div>
-                      {selectedCustomer?.id === customer.id && (
-                        <CheckCircle className="w-5 h-5 text-orange-500" />
-                      )}
+                      <Button
+                        onClick={handleManualCustomerId}
+                        disabled={!manualCustomerId.trim()}
+                        className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                      >
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        Use This Customer ID
+                      </Button>
                     </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No Google Ads accounts found</p>
-                <p className="text-xs">Make sure you have access to at least one account</p>
-              </div>
+                  )}
+                </div>
+              </>
             )}
 
             <Button
