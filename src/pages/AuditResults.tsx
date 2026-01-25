@@ -867,37 +867,39 @@ const AuditResults = () => {
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
-  // Computed metrics for new audit sections
+  // Computed metrics for new audit sections - NOW USES REAL DATA FROM ENHANCED SCRAPING
   const contentMetrics = useMemo(() => {
     if (!websiteProfile) return null;
+    
+    // Use real content metrics from enhanced scrape-website edge function
+    const scraped = (websiteProfile as any).contentMetrics;
+    if (scraped && scraped.wordCount > 0) {
+      return {
+        wordCount: scraped.wordCount,
+        sentenceCount: scraped.sentenceCount,
+        paragraphCount: scraped.paragraphCount,
+        avgWordsPerSentence: scraped.avgWordsPerSentence,
+        readingLevel: scraped.readingLevel,
+        readingScore: scraped.fleschKincaidScore,
+        readingGrade: scraped.readingGrade,
+        keywordDensity: scraped.keywordDensity || [],
+        thinContentWarning: scraped.wordCount < 300,
+        longSentences: scraped.longSentences || 0,
+        shortSentences: scraped.shortSentences || 0,
+        isRealData: true
+      };
+    }
+    
+    // Fallback to simulated data if real data not available
     const tech = websiteProfile.technicalSEO;
     if (!tech) return null;
     
-    // Generate realistic content metrics based on technical SEO data
     const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const wordCount = 300 + (hash % 1200); // 300-1500 words
+    const wordCount = 300 + (hash % 1200);
     const sentenceCount = Math.round(wordCount / 15);
     const avgWordsPerSentence = wordCount / sentenceCount;
-    
-    // Flesch-Kincaid score (higher = easier to read)
     const readingScore = Math.max(30, Math.min(80, 70 - (avgWordsPerSentence - 15) * 2));
     const readingLevel = readingScore >= 60 ? "Easy" : readingScore >= 40 ? "Standard" : "Difficult";
-    
-    // Extract keywords from title/description
-    const text = `${websiteProfile.title || ''} ${websiteProfile.description || ''} ${websiteProfile.summary || ''}`.toLowerCase();
-    const words = text.split(/\s+/).filter(w => w.length > 4);
-    const wordFreq: Record<string, number> = {};
-    words.forEach(w => { wordFreq[w] = (wordFreq[w] || 0) + 1; });
-    
-    const keywordDensity = Object.entries(wordFreq)
-      .filter(([_, count]) => count >= 2)
-      .map(([keyword, count]) => ({
-        keyword,
-        count,
-        density: (count / words.length) * 100
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
     
     return {
       wordCount,
@@ -906,14 +908,41 @@ const AuditResults = () => {
       avgWordsPerSentence: Math.round(avgWordsPerSentence * 10) / 10,
       readingLevel,
       readingScore: Math.round(readingScore),
-      keywordDensity,
-      thinContentWarning: wordCount < 300
+      readingGrade: readingScore >= 60 ? '6th-7th Grade' : readingScore >= 40 ? '8th-9th Grade' : 'College Level',
+      keywordDensity: [],
+      thinContentWarning: wordCount < 300,
+      longSentences: 0,
+      shortSentences: 0,
+      isRealData: false
     };
   }, [websiteProfile, decodedDomain]);
 
+  // Internal linking metrics - NOW USES REAL DATA FROM ENHANCED SCRAPING
   const internalLinkingMetrics = useMemo(() => {
     if (!websiteProfile?.technicalSEO) return null;
     const tech = websiteProfile.technicalSEO;
+    
+    // Use real internal linking metrics from enhanced scrape-website edge function
+    const scraped = (websiteProfile as any).internalLinkingMetrics;
+    if (scraped && (scraped.totalInternalLinks > 0 || scraped.totalExternalLinks > 0)) {
+      return {
+        totalInternalLinks: scraped.totalInternalLinks,
+        totalExternalLinks: scraped.totalExternalLinks,
+        uniqueInternalLinks: scraped.uniqueInternalLinks,
+        uniqueExternalLinks: scraped.uniqueExternalLinks,
+        brokenLinks: scraped.brokenLinkCandidates?.length || 0,
+        orphanPages: scraped.orphanRisk ? 1 : 0,
+        avgLinkDepth: scraped.maxLinkDepth || 1,
+        anchorTextDistribution: scraped.anchorTextDistribution || [],
+        linkEquityScore: Math.min(100, Math.max(30, 50 + (scraped.uniqueInternalLinks * 3) - (scraped.brokenLinkCandidates?.length || 0) * 10)),
+        hasNavigationLinks: scraped.hasNavigationLinks,
+        hasFooterLinks: scraped.hasFooterLinks,
+        linksPerSection: scraped.linksPerSection,
+        isRealData: true
+      };
+    }
+    
+    // Fallback to data from basic technicalSEO if enhanced data not available
     const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
     return {
@@ -921,17 +950,20 @@ const AuditResults = () => {
       totalExternalLinks: tech.externalLinks,
       uniqueInternalLinks: Math.round(tech.internalLinks * 0.7),
       uniqueExternalLinks: Math.round(tech.externalLinks * 0.8),
-      brokenLinks: hash % 5 === 0 ? Math.round(hash % 3) : 0,
-      orphanPages: hash % 7 === 0 ? Math.round(hash % 2) : 0,
+      brokenLinks: 0,
+      orphanPages: 0,
       avgLinkDepth: 1.5 + (hash % 30) / 10,
       anchorTextDistribution: [
         { text: "Home", count: 2 + (hash % 3) },
         { text: "About", count: 1 + (hash % 2) },
         { text: "Services", count: 1 + (hash % 3) },
         { text: "Contact", count: 1 + (hash % 2) },
-        { text: "Learn More", count: hash % 4 },
       ].filter(a => a.count > 0),
-      linkEquityScore: Math.min(100, Math.max(30, 60 + (tech.internalLinks * 2) - (tech.externalLinks)))
+      linkEquityScore: Math.min(100, Math.max(30, 60 + (tech.internalLinks * 2) - (tech.externalLinks))),
+      hasNavigationLinks: true,
+      hasFooterLinks: true,
+      linksPerSection: tech.internalLinks / 5,
+      isRealData: false
     };
   }, [websiteProfile, decodedDomain]);
 
@@ -1008,20 +1040,71 @@ const AuditResults = () => {
     };
   }, [dashboardMetrics, websiteProfile, decodedDomain]);
 
+  // Local SEO metrics - NOW USES REAL DATA FROM ENHANCED SCRAPING
   const localSEOMetrics = useMemo(() => {
-    if (!websiteProfile || websiteProfile.detectedCategory !== 'local_business') return null;
+    // Also show for healthcare (dentist, etc.) since that category often has local signals
+    const isLocalBusiness = websiteProfile?.detectedCategory === 'local_business' || 
+                            websiteProfile?.detectedCategory === 'healthcare' ||
+                            websiteProfile?.detectedCategory === 'hospitality' ||
+                            websiteProfile?.detectedCategory === 'real_estate';
     
+    if (!websiteProfile || !isLocalBusiness) return null;
+    
+    // Use real local SEO signals from enhanced scrape-website edge function
+    const scraped = (websiteProfile as any).localSEOSignals;
     const tech = websiteProfile.technicalSEO;
+    
+    if (scraped) {
+      // Extract local keywords from text
+      const text = `${websiteProfile.title || ''} ${websiteProfile.description || ''} ${websiteProfile.summary || ''}`.toLowerCase();
+      const localKeywords: string[] = [];
+      const cityPatterns = ['near', 'local', 'area', 'city', 'town', 'region', 'dental', 'dentist', 'clinic'];
+      cityPatterns.forEach(p => { if (text.includes(p)) localKeywords.push(p); });
+      
+      const overallScore = Math.round(
+        (scraped.hasLocalSchema ? 20 : 0) +
+        (scraped.hasPhone ? 15 : 0) +
+        (scraped.hasAddress ? 15 : 0) +
+        (scraped.hasGoogleMapsEmbed ? 15 : 0) +
+        (scraped.hasBusinessHours ? 10 : 0) +
+        (scraped.hasReviewsSection ? 10 : 0) +
+        (scraped.hasGMBLink ? 10 : 0) +
+        (localKeywords.length > 0 ? 5 : 0)
+      );
+      
+      return {
+        hasLocalSchema: scraped.hasLocalSchema,
+        localSchemaType: scraped.localSchemaType,
+        hasNAP: scraped.hasPhone || scraped.hasAddress,
+        napConsistent: scraped.napConsistent,
+        hasGoogleMapsEmbed: scraped.hasGoogleMapsEmbed,
+        hasLocalKeywords: localKeywords.length > 0,
+        localKeywords,
+        hasBusinessHours: scraped.hasBusinessHours,
+        hoursText: scraped.hoursText,
+        hasReviews: scraped.hasReviewsSection,
+        estimatedReviewCount: scraped.hasReviewsSection ? 15 : 0,
+        hasServiceArea: scraped.hasServiceArea,
+        serviceAreaText: scraped.serviceAreaText,
+        citationScore: Math.round(overallScore * 1.2),
+        gmbSignals: {
+          hasGMBLink: scraped.hasGMBLink,
+          gmbUrl: scraped.gmbUrl
+        },
+        overallScore,
+        isRealData: true
+      };
+    }
+    
+    // Fallback to basic analysis
     const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
     const hasLocalSchema = tech?.schemaTypes?.some(s => 
-      s.toLowerCase().includes('localbusiness') || s.toLowerCase().includes('organization')
+      s.toLowerCase().includes('localbusiness') || s.toLowerCase().includes('organization') || s.toLowerCase().includes('dentist')
     ) || false;
     
     const hasNAP = !!(websiteProfile.contactInfo?.phone || websiteProfile.contactInfo?.email);
-    const hasGoogleMapsEmbed = hash % 3 === 0;
     
-    // Extract local keywords
     const text = `${websiteProfile.title || ''} ${websiteProfile.description || ''} ${websiteProfile.summary || ''}`.toLowerCase();
     const localKeywords: string[] = [];
     const cityPatterns = ['near', 'local', 'area', 'city', 'town', 'region'];
@@ -1030,30 +1113,31 @@ const AuditResults = () => {
     const overallScore = Math.round(
       (hasLocalSchema ? 20 : 0) +
       (hasNAP ? 20 : 0) +
-      (hasGoogleMapsEmbed ? 15 : 0) +
       (websiteProfile.contactInfo?.address ? 15 : 0) +
-      (hash % 3 === 0 ? 10 : 0) + // hours
-      (hash % 4 === 0 ? 10 : 0) + // reviews
       (localKeywords.length > 0 ? 10 : 0)
     );
     
     return {
       hasLocalSchema,
+      localSchemaType: null,
       hasNAP,
-      napConsistent: hasNAP && hash % 4 !== 0,
-      hasGoogleMapsEmbed,
+      napConsistent: hasNAP,
+      hasGoogleMapsEmbed: false,
       hasLocalKeywords: localKeywords.length > 0,
       localKeywords,
-      hasBusinessHours: hash % 3 === 0,
-      hasReviews: hash % 4 === 0,
-      estimatedReviewCount: hash % 4 === 0 ? 10 + hash % 50 : 0,
-      hasServiceArea: hash % 2 === 0,
+      hasBusinessHours: false,
+      hoursText: null,
+      hasReviews: false,
+      estimatedReviewCount: 0,
+      hasServiceArea: false,
+      serviceAreaText: null,
       citationScore: 40 + hash % 40,
       gmbSignals: {
-        hasGMBLink: hash % 5 === 0,
-        gmbUrl: hash % 5 === 0 ? `https://g.page/${decodedDomain.split('.')[0]}` : null
+        hasGMBLink: false,
+        gmbUrl: null
       },
-      overallScore
+      overallScore,
+      isRealData: false
     };
   }, [websiteProfile, decodedDomain]);
   const matchedGlossaryTerms = useMemo(() => {
