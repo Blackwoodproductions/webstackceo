@@ -3901,10 +3901,10 @@ f.parentNode.insertBefore(j,f);
                       variant="outline"
                       size="sm"
                       asChild
-                      className="w-full text-xs"
+                      className="h-7 gap-1.5 text-xs"
                     >
                       <Link to="/case-studies">
-                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        <FileText className="w-3.5 h-3.5" />
                         View Case Studies
                       </Link>
                     </Button>
