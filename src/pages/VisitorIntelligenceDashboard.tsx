@@ -54,6 +54,7 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBOnboardingWizard } from '@/components/marketing/GMBOnboardingWizard';
 import { GMBPerformancePanel } from '@/components/marketing/GMBPerformancePanel';
+import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
 
 interface Lead {
   id: string;
@@ -3258,109 +3259,7 @@ f.parentNode.insertBefore(j,f);
 
       {activeTab === 'landing-pages' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mx-auto mb-4">
-              <Target className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">PPC Landing Pages</h2>
-            {(selectedTrackedDomain || selectedDomainKey) && (
-              <p className="text-sm text-primary font-medium mb-2">
-                Domain: {selectedTrackedDomain || selectedDomainKey}
-              </p>
-            )}
-            <p className="text-muted-foreground max-w-lg mx-auto mb-6">
-              Generate thousands of keyword-specific landing pages with built-in A/B testing. 
-              Boost your Quality Score, lower CPC, and maximize your Google Ads ROI.
-            </p>
-            
-            {/* Feature Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
-              {[
-                { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages', color: 'text-orange-500' },
-                { icon: FlaskConical, label: 'A/B Testing', desc: 'Headlines, CTAs & layouts', color: 'text-amber-500' },
-                { icon: TrendingUp, label: 'Quality Score', desc: 'Improve relevance, lower CPC', color: 'text-green-500' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-orange-500/30 transition-colors">
-                  <feature.icon className={`w-6 h-6 ${feature.color} mx-auto mb-2`} />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            {/* How It Works Section */}
-            <div className="max-w-4xl mx-auto mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">How It Works</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {[
-                  { step: '1', title: 'Connect Google Ads', desc: 'Import keywords directly from your PPC campaigns' },
-                  { step: '2', title: 'AI Page Generation', desc: 'Unique pages created for each keyword' },
-                  { step: '3', title: 'Auto A/B Testing', desc: 'Continuous optimization runs automatically' },
-                  { step: '4', title: 'Lower CPC', desc: 'Higher Quality Scores = less ad spend' },
-                ].map((item) => (
-                  <div key={item.step} className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
-                    <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
-                      {item.step}
-                    </div>
-                    <p className="font-medium text-sm mt-2">{item.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Benefits Grid */}
-            <div className="max-w-3xl mx-auto mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-foreground">Why This Matters</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 text-left">
-                  <div className="flex items-center gap-2 mb-2">
-                    <X className="w-4 h-4 text-destructive" />
-                    <span className="font-medium text-sm text-destructive">Generic Homepage</span>
-                  </div>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Low keyword relevance</li>
-                    <li>• Quality Score: 4-5/10</li>
-                    <li>• Paying $8-15 per click</li>
-                  </ul>
-                </div>
-                <div className="p-4 rounded-xl border border-green-500/30 bg-green-500/5 text-left">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="font-medium text-sm text-green-600 dark:text-green-400">Keyword-Specific Pages</span>
-                  </div>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>• Maximum keyword relevance</li>
-                    <li>• Quality Score: 8-10/10</li>
-                    <li>• Paying $3-6 per click</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto mb-8">
-              {[
-                { stat: '50%+', label: 'Lower CPC' },
-                { stat: '3x', label: 'Higher conversions' },
-                { stat: '8-10', label: 'Avg Quality Score' },
-                { stat: '10,000+', label: 'Pages generated' },
-              ].map((item) => (
-                <div key={item.label} className="p-3 rounded-lg bg-muted/30 border border-border">
-                  <p className="text-xl font-bold text-orange-500">{item.stat}</p>
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
-                </div>
-              ))}
-            </div>
-            
-            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-              Coming Soon
-            </Badge>
-            
-            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              Connect your Google Ads account to automatically import keywords and generate high-converting landing pages at scale.
-            </p>
-          </div>
+          <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
         </div>
       )}
 
