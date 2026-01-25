@@ -205,9 +205,9 @@ const Navbar = () => {
               <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
                 isFeaturesOpen 
                   ? 'bg-gradient-to-br from-cyan-400 to-violet-500 shadow-lg' 
-                  : 'bg-primary/10 group-hover:bg-gradient-to-br group-hover:from-cyan-400 group-hover:to-violet-500'
+                  : 'bg-muted group-hover:bg-gradient-to-br group-hover:from-cyan-400 group-hover:to-violet-500'
               }`}>
-                <Zap className={`w-3.5 h-3.5 transition-colors duration-300 ${isFeaturesOpen ? 'text-white' : 'text-primary group-hover:text-white'}`} />
+                <Zap className={`w-3.5 h-3.5 transition-colors duration-300 ${isFeaturesOpen ? 'text-white' : 'text-muted-foreground group-hover:text-white'}`} />
               </div>
               <span className="relative">Features</span>
               <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isFeaturesOpen ? 'rotate-180 text-primary opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-primary'}`} />
@@ -325,8 +325,8 @@ const Navbar = () => {
               className="relative px-4 py-2 rounded-xl font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-amber-500/10 transition-all duration-300 group overflow-hidden"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <div className="w-6 h-6 rounded-lg bg-amber-500/10 group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-orange-500 flex items-center justify-center transition-all duration-300">
-                <Target className="w-3.5 h-3.5 text-amber-500 group-hover:text-white transition-colors duration-300" />
+              <div className="w-6 h-6 rounded-lg bg-muted group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-orange-500 flex items-center justify-center transition-all duration-300">
+                <Target className="w-3.5 h-3.5 text-muted-foreground group-hover:text-white transition-colors duration-300" />
               </div>
               <span className="relative">{link.name}</span>
             </motion.a>
@@ -352,9 +352,9 @@ const Navbar = () => {
               <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
                 isToolsOpen 
                   ? 'bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg' 
-                  : 'bg-emerald-500/10 group-hover:bg-gradient-to-br group-hover:from-emerald-400 group-hover:to-cyan-500'
+                  : 'bg-muted group-hover:bg-gradient-to-br group-hover:from-emerald-400 group-hover:to-cyan-500'
               }`}>
-                <Search className={`w-3.5 h-3.5 transition-colors duration-300 ${isToolsOpen ? 'text-white' : 'text-emerald-500 group-hover:text-white'}`} />
+                <Search className={`w-3.5 h-3.5 transition-colors duration-300 ${isToolsOpen ? 'text-white' : 'text-muted-foreground group-hover:text-white'}`} />
               </div>
               <span className="relative">Tools</span>
               <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isToolsOpen ? 'rotate-180 text-emerald-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-emerald-500'}`} />
@@ -508,9 +508,9 @@ const Navbar = () => {
               <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
                 isContactOpen 
                   ? 'bg-gradient-to-br from-rose-400 to-pink-500 shadow-lg' 
-                  : 'bg-rose-500/10 group-hover:bg-gradient-to-br group-hover:from-rose-400 group-hover:to-pink-500'
+                  : 'bg-muted group-hover:bg-gradient-to-br group-hover:from-rose-400 group-hover:to-pink-500'
               }`}>
-                <Headset className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-rose-500 group-hover:text-white'}`} />
+                <Headset className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-muted-foreground group-hover:text-white'}`} />
               </div>
               <span className="relative">Contact</span>
               <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isContactOpen ? 'rotate-180 text-rose-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-rose-500'}`} />
@@ -574,9 +574,9 @@ const Navbar = () => {
               <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
                 isSubmitSiteOpen 
                   ? 'bg-gradient-to-br from-amber-400 to-yellow-500 shadow-lg' 
-                  : 'bg-amber-500/10 group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-yellow-500'
+                  : 'bg-muted group-hover:bg-gradient-to-br group-hover:from-amber-400 group-hover:to-yellow-500'
               }`}>
-                <TrendingUp className={`w-3.5 h-3.5 transition-colors duration-300 ${isSubmitSiteOpen ? 'text-white' : 'text-amber-500 group-hover:text-white'}`} />
+                <TrendingUp className={`w-3.5 h-3.5 transition-colors duration-300 ${isSubmitSiteOpen ? 'text-white' : 'text-muted-foreground group-hover:text-white'}`} />
               </div>
               <span className="relative">Submit Site</span>
               <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isSubmitSiteOpen ? 'rotate-180 text-amber-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-amber-500'}`} />
