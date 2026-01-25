@@ -298,7 +298,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <header className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0">
             <Target className="w-7 h-7 text-white" />
@@ -311,25 +311,38 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           </div>
         </div>
 
-        {isConnected && connectedCustomerId && (
-          <div className="md:pt-1 flex items-center gap-2">
-            <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/5">
-              <GoogleAdsIcon />
-              <span className="ml-1.5">
-                {connectedCustomerId.startsWith('demo') ? 'Demo Account' : `Account: ${connectedCustomerId}`}
-              </span>
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDisconnect}
-              className="h-7 text-muted-foreground hover:text-destructive hover:border-destructive/50"
-            >
-              <LogOut className="w-3.5 h-3.5 mr-1" />
-              Disconnect
-            </Button>
-          </div>
-        )}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          {isConnected && connectedCustomerId ? (
+            <>
+              <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/5">
+                <GoogleAdsIcon />
+                <span className="ml-1.5">
+                  {connectedCustomerId.startsWith('demo') ? 'Demo Account' : `Account: ${connectedCustomerId}`}
+                </span>
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDisconnect}
+                className="h-7 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Disconnect
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                <FlaskConical className="w-4 h-4 text-orange-500" />
+                <span className="text-xs font-medium text-orange-600 dark:text-orange-400">A/B Testing</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
+                <Flame className="w-4 h-4 text-red-500" />
+                <span className="text-xs font-medium text-red-600 dark:text-red-400">Heat Tracking</span>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Show Campaign Setup Wizard when connected but no campaigns */}
