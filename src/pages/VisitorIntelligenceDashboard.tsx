@@ -2066,7 +2066,7 @@ f.parentNode.insertBefore(j,f);
                     asChild
                   >
                     <Link 
-                      to={`/audit/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                      to={`/case-study/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
                       target="_blank"
                       className="gap-1.5"
                     >
@@ -2077,10 +2077,10 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
               
-              {/* Iframe container - full height to show entire audit without scrolling */}
+              {/* Iframe container - full height to show entire case study without scrolling */}
               <iframe
-                key={`audit-iframe-${savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}`}
-                src={`/audit/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}?embed=true`}
+                key={`case-study-iframe-${savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}`}
+                src={`/case-study/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}?embed=true`}
                 className="w-full border-0"
                 style={{ height: '4000px' }}
                 scrolling="no"

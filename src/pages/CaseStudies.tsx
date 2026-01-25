@@ -222,7 +222,7 @@ const CaseStudies = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Link to={`/audit/${study.slug}`}>
+                    <Link to={`/case-study/${study.slug}`}>
                       <Card className={`h-full hover:border-primary/50 transition-all hover:shadow-lg bg-gradient-to-br ${config.gradient} border-border/50`}>
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-4">
