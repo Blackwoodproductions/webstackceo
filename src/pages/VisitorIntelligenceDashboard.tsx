@@ -3727,7 +3727,10 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Gauge className="w-5 h-5 text-amber-500" />
+                  On-page Optimization Capabilities
+                </h3>
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
