@@ -1310,6 +1310,9 @@ const AuditResults = () => {
   useEffect(() => {
     if (!decodedDomain) return;
     
+    // Reset profile when domain changes
+    setWebsiteProfile(null);
+    
     const fetchWebsiteProfile = async () => {
       setIsProfileLoading(true);
       try {
@@ -1322,7 +1325,8 @@ const AuditResults = () => {
             .eq('slug', slug)
             .maybeSingle();
           
-          if (savedAudit) {
+          // Only use saved audit data if it has profile information
+          if (savedAudit && (savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary)) {
             // Build profile from saved audit data
             setWebsiteProfile({
               title: savedAudit.site_title || null,
@@ -1348,9 +1352,44 @@ const AuditResults = () => {
             setIsProfileLoading(false);
             return;
           }
+          
+          // If saved audit exists but lacks profile data, fetch live and update DB
+          if (savedAudit) {
+            const actualDomain = savedAudit.domain || decodedDomain;
+            const { data, error } = await supabase.functions.invoke('scrape-website', {
+              body: { url: actualDomain }
+            });
+            
+            if (!error && data?.profile) {
+              setWebsiteProfile(data.profile);
+              
+              // Update the saved_audits record with the scraped profile data
+              const profile = data.profile;
+              await supabase.from('saved_audits').update({
+                site_title: profile.title,
+                site_description: profile.description,
+                site_summary: profile.summary,
+                favicon_url: profile.favicon,
+                logo_url: profile.logo,
+                social_facebook: profile.socialLinks?.facebook,
+                social_twitter: profile.socialLinks?.twitter,
+                social_linkedin: profile.socialLinks?.linkedin,
+                social_instagram: profile.socialLinks?.instagram,
+                social_youtube: profile.socialLinks?.youtube,
+                social_tiktok: profile.socialLinks?.tiktok,
+                contact_email: profile.contactInfo?.email,
+                contact_phone: profile.contactInfo?.phone,
+                contact_address: profile.contactInfo?.address,
+                category: profile.detectedCategory || 'other',
+              }).eq('slug', slug);
+              
+              setIsProfileLoading(false);
+              return;
+            }
+          }
         }
         
-        // Fall back to live scraping
+        // Fall back to live scraping for regular audits or when case study lookup fails
         const { data, error } = await supabase.functions.invoke('scrape-website', {
           body: { url: decodedDomain }
         });
