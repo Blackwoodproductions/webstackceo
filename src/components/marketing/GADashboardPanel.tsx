@@ -635,7 +635,108 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Connected - show comprehensive dashboard
+  // Connected but domain not in GA - show prominent add domain prompt
+  if (isAuthenticated && externalSelectedSite && !isExternalSiteInGA && properties.length > 0) {
+    return (
+      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Google Analytics
+                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Add <span className="font-medium text-foreground">{normalizeDomain(externalSelectedSite)}</span> to see analytics
+                </CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
+              <X className="w-3 h-3 mr-1" />
+              Disconnect
+            </Button>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <Activity className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
+                  Add {normalizeDomain(externalSelectedSite)} to Google Analytics
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your Google Analytics is connected, but <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> doesn't have a data stream configured yet. 
+                  Add a web data stream to start tracking sessions, users, and engagement.
+                </p>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Button 
+                    size="default" 
+                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                    onClick={() => window.open(`https://analytics.google.com/analytics/web/#/a/p/admin/streams/create`, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Add Data Stream
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    onClick={() => window.open(`https://support.google.com/analytics/answer/9304153`, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Setup Guide
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="text-muted-foreground"
+                    onClick={() => {
+                      fetchProperties();
+                      toast({ title: "Checking for new properties...", description: "Refreshing your GA account data." });
+                    }}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Properties
+                  </Button>
+                </div>
+                
+                <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Quick Steps:</span> 1. Click "Add Data Stream" → 2. Select "Web" → 3. Enter <span className="font-mono bg-background px-1 rounded">{normalizeDomain(externalSelectedSite)}</span> → 4. Copy the Measurement ID → 5. Click "Refresh Properties" above
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Show available properties */}
+          {properties.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs text-muted-foreground mb-2">Your connected properties:</p>
+              <div className="flex flex-wrap gap-2">
+                {properties.map(prop => (
+                  <Badge key={prop.name} variant="secondary" className="text-xs">
+                    {prop.displayName}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Connected and domain matches - show comprehensive dashboard
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -645,7 +746,10 @@ export const GADashboardPanel = ({
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
-              <CardTitle className="text-lg">Google Analytics</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Google Analytics
+                <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
+              </CardTitle>
               <CardDescription className="text-xs">
                 {properties.find(p => p.name === selectedProperty)?.displayName || "Traffic and engagement data"}
               </CardDescription>
@@ -676,45 +780,6 @@ export const GADashboardPanel = ({
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Domain Not in GA Warning */}
-        {isAuthenticated && externalSelectedSite && !isExternalSiteInGA && properties.length > 0 && (
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <Activity className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-amber-500 mb-1">
-                  Domain Not Found in Analytics
-                </h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> is not connected to your Google Analytics. 
-                  Add a data stream to start tracking analytics.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button 
-                    size="sm" 
-                    className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white"
-                    onClick={() => window.open(`https://analytics.google.com/analytics/web/#/admin`, '_blank')}
-                  >
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Open GA Admin
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="h-7 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
-                    onClick={() => window.open(`https://support.google.com/analytics/answer/9304153`, '_blank')}
-                  >
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Setup Guide
-                  </Button>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  After adding the data stream, click Refresh below to sync your data.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Key Metrics Grid - only show if domain matches or no external site */}
         {(isExternalSiteInGA || !externalSelectedSite) && (
