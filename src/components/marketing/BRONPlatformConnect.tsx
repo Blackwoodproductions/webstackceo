@@ -4,7 +4,6 @@ import {
   ExternalLink, Shield, LogOut, Sparkles, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 interface BRONPlatformConnectProps {
@@ -152,49 +151,31 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Login button - simple and clean
+  // Login prompt using connect box style
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative"
+      className="p-4 rounded-lg border border-dashed border-green-500/30 bg-green-500/5"
     >
-      <div className="relative p-6 rounded-xl bg-gradient-to-br from-cyan-500/5 via-sky-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden">
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-full blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-xl" />
-
-        <div className="relative z-10 text-center">
-          {/* Header */}
-          <div className="mb-6">
-            <p className="text-sm text-muted-foreground">Connect to your BRON Dashboard</p>
-            <Badge className="mt-3 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px]">
-              <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-              BRON Powered
-            </Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-
-          {/* Login Button */}
-          <Button
-            onClick={handleLogin}
-            size="lg"
-            className="px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg"
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Login to BRON Dashboard
-          </Button>
-
-          {/* Description */}
-          <p className="text-xs text-muted-foreground mt-4 max-w-sm mx-auto">
-            Access your SEO dashboard to monitor rankings, track keywords, and optimize your website performance.
-          </p>
-
-          {/* Footer info */}
-          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-cyan-500/10 text-xs text-muted-foreground">
-            <Shield className="w-3.5 h-3.5 text-cyan-500" />
-            <span>Secure connection via Blackwood Productions</span>
+          <div>
+            <p className="font-medium text-sm">Connect to BRON Dashboard</p>
+            <p className="text-xs text-muted-foreground">Login to access your SEO dashboard</p>
           </div>
         </div>
+        <Button
+          onClick={handleLogin}
+          size="sm"
+          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+        >
+          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+          Login
+        </Button>
       </div>
     </motion.div>
   );
