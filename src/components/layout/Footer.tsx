@@ -55,6 +55,7 @@ const Footer = memo(() => {
     ],
     Resources: [
       { name: "Learning Center", href: "/learn" },
+      { name: "Blog", href: "/learn" },
       { name: "SEO Glossary", href: "/learn/glossary" },
       { name: "FAQ", href: "/faq" },
       { name: "Case Studies", href: "/case-studies" },
