@@ -299,13 +299,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     <div className="space-y-6">
       {/* Header */}
       <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-        {/* Animated Bubbles */}
+        {/* Animated Target Rings - PPC */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-3 h-3 rounded-full bg-orange-400/30 animate-[float_4.5s_ease-in-out_infinite] top-1 left-[12%]" />
-          <div className="absolute w-2 h-2 rounded-full bg-amber-500/25 animate-[float_5s_ease-in-out_infinite_0.6s] top-6 left-[28%]" />
-          <div className="absolute w-3.5 h-3.5 rounded-full bg-yellow-400/20 animate-[float_5.5s_ease-in-out_infinite_1.1s] top-3 left-[42%]" />
-          <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-300/30 animate-[float_4s_ease-in-out_infinite_1.6s] top-5 left-[58%]" />
-          <div className="absolute w-3 h-3 rounded-full bg-amber-400/25 animate-[float_6s_ease-in-out_infinite_2.1s] top-2 left-[72%]" />
+          <div className="absolute w-4 h-4 rounded-full border-2 border-orange-400/40 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] top-1 left-[12%]" />
+          <div className="absolute w-3 h-3 rounded-full border-2 border-amber-500/35 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite_0.4s] top-5 left-[28%]" />
+          <div className="absolute w-5 h-5 rounded-full border-2 border-yellow-400/30 animate-[ping_2.2s_cubic-bezier(0,0,0.2,1)_infinite_0.8s] top-2 left-[42%]" />
+          <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-orange-300/40 animate-[ping_2.8s_cubic-bezier(0,0,0.2,1)_infinite_1.2s] top-4 left-[58%]" />
+          <div className="absolute w-4 h-4 rounded-full border-2 border-amber-400/35 animate-[ping_2.4s_cubic-bezier(0,0,0.2,1)_infinite_1.6s] top-1 left-[72%]" />
         </div>
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0">
@@ -351,7 +351,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
                 <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_3s_linear_infinite]" />
                   <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
