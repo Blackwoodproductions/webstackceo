@@ -1343,14 +1343,14 @@ const MarketingDashboard = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex items-center justify-center w-10 h-10 transition-all rounded-t-lg border-t border-x ${
+              className={`relative flex items-center justify-center w-12 h-11 transition-all rounded-t-lg border-t border-x ${
                 activeTab === tab.id
                   ? 'bg-background text-primary border-border'
                   : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
               }`}
               title={tab.label}
             >
-              <tab.icon className="w-[18px] h-[18px]" />
+              <tab.icon className="w-5 h-5" />
               {/* Active tab bottom cover */}
               {activeTab === tab.id && (
                 <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
