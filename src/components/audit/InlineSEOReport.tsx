@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   TrendingUp,
   TrendingDown,
@@ -20,10 +21,20 @@ import {
   Target,
   Zap,
   Bot,
+  Plus,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ProgressIndicator } from './ProgressIndicator';
 
 interface AuditMetrics {
@@ -75,7 +86,7 @@ interface InlineSEOReportProps {
     created_at: string;
     site_title?: string;
   } | null;
-  onNewAudit: () => void;
+  onNewAudit: (domain: string) => void;
   onRefreshAudit: () => void;
   isRefreshing?: boolean;
   // Cross-dashboard data
@@ -115,6 +126,27 @@ export const InlineSEOReport = ({
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [showNewAuditDialog, setShowNewAuditDialog] = useState(false);
+  const [newAuditDomain, setNewAuditDomain] = useState('');
+  const [isStartingNewAudit, setIsStartingNewAudit] = useState(false);
+
+  const handleStartNewAudit = async () => {
+    if (!newAuditDomain.trim()) {
+      toast.error('Please enter a domain');
+      return;
+    }
+    
+    let cleanDomain = newAuditDomain.trim().toLowerCase();
+    cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    
+    setIsStartingNewAudit(true);
+    setShowNewAuditDialog(false);
+    
+    // Call the parent handler which will run the audit
+    onNewAudit(cleanDomain);
+    setNewAuditDomain('');
+    setIsStartingNewAudit(false);
+  };
 
   // Fetch audit history for this domain
   useEffect(() => {
@@ -251,8 +283,8 @@ export const InlineSEOReport = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={onNewAudit}>
-            <Search className="w-4 h-4 mr-2" />
+          <Button variant="outline" onClick={() => setShowNewAuditDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
             New Audit
           </Button>
           <Button 
@@ -265,6 +297,52 @@ export const InlineSEOReport = ({
           </Button>
         </div>
       </div>
+
+      {/* New Audit Dialog */}
+      <Dialog open={showNewAuditDialog} onOpenChange={setShowNewAuditDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5 text-primary" />
+              Run New SEO Audit
+            </DialogTitle>
+            <DialogDescription>
+              Enter a domain to analyze. The audit will run immediately and save as a new case study with monthly progress tracking.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <Input
+              placeholder="example.com"
+              value={newAuditDomain}
+              onChange={(e) => setNewAuditDomain(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleStartNewAudit()}
+              className="w-full"
+            />
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowNewAuditDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleStartNewAudit}
+                disabled={isStartingNewAudit || !newAuditDomain.trim()}
+                className="bg-gradient-to-r from-primary to-primary/80"
+              >
+                {isStartingNewAudit ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Start Audit
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Progress Summary Banner */}
       {baselineSnapshot && hasImprovements && (

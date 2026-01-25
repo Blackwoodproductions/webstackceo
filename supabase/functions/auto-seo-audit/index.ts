@@ -179,16 +179,16 @@ Deno.serve(async (req) => {
         }
       }
     } else {
-      // Scheduled batch mode - refresh all audits older than 7 days
-      console.log('[Auto-Audit] Batch mode - refreshing stale audits');
+      // Scheduled batch mode - refresh all audits older than 30 days (monthly comparison)
+      console.log('[Auto-Audit] Batch mode - refreshing audits for monthly comparison');
       
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
       const { data: staleAudits, error: fetchError } = await supabase
         .from('saved_audits')
         .select('domain, slug, updated_at')
-        .lt('updated_at', sevenDaysAgo.toISOString())
+        .lt('updated_at', thirtyDaysAgo.toISOString())
         .limit(10); // Process 10 at a time to avoid timeout
       
       if (fetchError) {
