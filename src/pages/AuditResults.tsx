@@ -924,6 +924,20 @@ const AuditResults = () => {
   
   // Baseline metrics for progress tracking (first audit snapshot)
   const [baselineMetrics, setBaselineMetrics] = useState<BaselineMetrics | null>(null);
+  
+  // PageSpeed Insights metrics (real Core Web Vitals data)
+  const [pageSpeedMetrics, setPageSpeedMetrics] = useState<{
+    lcp: { value: number; rating: "good" | "needs-improvement" | "poor"; element?: string };
+    fid: { value: number; rating: "good" | "needs-improvement" | "poor" };
+    cls: { value: number; rating: "good" | "needs-improvement" | "poor"; element?: string };
+    inp: { value: number; rating: "good" | "needs-improvement" | "poor" };
+    ttfb: { value: number; rating: "good" | "needs-improvement" | "poor" };
+    fcp: { value: number; rating: "good" | "needs-improvement" | "poor" };
+    mobile: { score: number; lcp: number; cls: number; fid: number };
+    desktop: { score: number; lcp: number; cls: number; fid: number };
+    recommendations: string[];
+  } | null>(null);
+  const [isPageSpeedLoading, setIsPageSpeedLoading] = useState(false);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
 
@@ -1028,6 +1042,12 @@ const AuditResults = () => {
   }, [websiteProfile, decodedDomain]);
 
   const coreWebVitalsMetrics = useMemo(() => {
+    // Use real PageSpeed data if available
+    if (pageSpeedMetrics) {
+      return pageSpeedMetrics;
+    }
+    
+    // Fallback to simulated data
     const hash = decodedDomain.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
     const getRating = (value: number, good: number, poor: number): "good" | "needs-improvement" | "poor" => {
@@ -1063,7 +1083,7 @@ const AuditResults = () => {
         fcp > 1.8 ? "Eliminate render-blocking resources" : null,
       ].filter(Boolean) as string[]
     };
-  }, [decodedDomain]);
+  }, [decodedDomain, pageSpeedMetrics]);
 
   const competitorGapMetrics = useMemo(() => {
     if (!dashboardMetrics) return null;
@@ -1514,7 +1534,37 @@ const AuditResults = () => {
     fetchWebsiteProfile();
   }, [decodedDomain, isCaseStudyMode]);
 
-  // Update audit results when technicalSEO data becomes available
+  // Fetch PageSpeed Insights data (real Core Web Vitals)
+  useEffect(() => {
+    if (!decodedDomain) return;
+    
+    const fetchPageSpeedData = async () => {
+      setIsPageSpeedLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('pagespeed-insights', {
+          body: { url: decodedDomain },
+        });
+        
+        if (error) {
+          console.error('PageSpeed Insights error:', error);
+          return;
+        }
+        
+        if (data?.metrics) {
+          setPageSpeedMetrics(data.metrics);
+          console.log('PageSpeed Insights data loaded:', data.metrics);
+        } else if (data?.error) {
+          console.warn('PageSpeed API issue:', data.error);
+        }
+      } catch (err) {
+        console.error('PageSpeed fetch error:', err);
+      } finally {
+        setIsPageSpeedLoading(false);
+      }
+    };
+    
+    fetchPageSpeedData();
+  }, [decodedDomain]);
   useEffect(() => {
     if (!websiteProfile?.technicalSEO || !decodedDomain || isLoading) return;
     
@@ -2827,10 +2877,10 @@ const AuditResults = () => {
             isLoading={isProfileLoading} 
           />
 
-          {/* NEW: Core Web Vitals Deep Dive */}
+          {/* NEW: Core Web Vitals Deep Dive - Uses real PageSpeed Insights data */}
           <CoreWebVitalsSection 
             metrics={coreWebVitalsMetrics} 
-            isLoading={isLoading} 
+            isLoading={isLoading || isPageSpeedLoading} 
           />
 
           {/* NEW: Competitor Gap Analysis */}
