@@ -46,22 +46,25 @@ const Footer = memo(() => {
       { name: "Tools", href: "/tools" },
       { name: "Website Audits", href: "/audits" },
     ],
+    "Case Studies": [
+      { name: "All Case Studies", href: "/case-studies" },
+      { name: "E-Commerce", href: "/case-studies?category=ecommerce" },
+      { name: "SaaS", href: "/case-studies?category=saas" },
+      { name: "Local Business", href: "/case-studies?category=local_business" },
+    ],
     Company: [
       { name: "About", href: "/about" },
-      { name: "Blog", href: "/learn" },
       { name: "Careers", href: "/careers" },
       { name: "Contact", href: "/contact" },
     ],
     Resources: [
       { name: "Learning Center", href: "/learn" },
       { name: "SEO Glossary", href: "/learn/glossary" },
-      { name: "Sitemap", href: "/sitemap" },
       { name: "FAQ", href: "/faq" },
     ],
     Legal: [
       { name: "Privacy", href: "/privacy-policy" },
       { name: "Terms", href: "/terms" },
-      { name: "Security", href: "/security" },
       { name: "Cookies", href: "/cookies" },
     ],
   };

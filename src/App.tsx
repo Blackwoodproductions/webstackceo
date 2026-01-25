@@ -35,6 +35,7 @@ const Learn = lazy(() => import("./pages/Learn"));
 const Sitemap = lazy(() => import("./pages/Sitemap"));
 const AuditResults = lazy(() => import("./pages/AuditResults"));
 const WebsiteAudits = lazy(() => import("./pages/WebsiteAudits"));
+const CaseStudies = lazy(() => import("./pages/CaseStudies"));
 const Tools = lazy(() => import("./pages/Tools"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -182,6 +183,7 @@ const App = () => (
               <Route path="/tools" element={<Tools />} />
               <Route path="/analytics" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
               <Route path="/audits" element={<WebsiteAudits />} />
+              <Route path="/case-studies" element={<CaseStudies />} />
               <Route path="/audit/:domain" element={<AuditResults />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

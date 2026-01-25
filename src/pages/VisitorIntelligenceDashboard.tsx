@@ -1047,7 +1047,7 @@ const MarketingDashboard = () => {
           <div className="flex items-end gap-0 ml-8 -mb-3">
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
-              { id: 'seo-audit' as DashboardTab, label: 'SEO Audit', icon: Search },
+              { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'SEO Audit', icon: Search },
               { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
               { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
               { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
