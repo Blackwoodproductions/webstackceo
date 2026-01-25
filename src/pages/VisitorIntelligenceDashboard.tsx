@@ -2077,12 +2077,13 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
               
-              {/* Iframe container - full height to show entire audit */}
+              {/* Iframe container - full height to show entire audit without scrolling */}
               <iframe
                 key={`audit-iframe-${savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}`}
                 src={`/audit/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}?embed=true`}
                 className="w-full border-0"
-                style={{ height: 'calc(100vh - 180px)', minHeight: '800px' }}
+                style={{ height: '4000px' }}
+                scrolling="no"
                 title="SEO Case Study"
               />
             </div>
