@@ -166,6 +166,9 @@ export const GADashboardPanel = ({
   // Client ID configuration
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
+  
+  // Wizard refresh state (must be at top level, before any conditional returns)
+  const [isWizardRefreshing, setIsWizardRefreshing] = useState(false);
 
   // Normalize domain for comparison
   const normalizeDomain = (domain: string): string => {
@@ -698,6 +701,19 @@ export const GADashboardPanel = ({
     setIsFetchingStreams(false);
   };
 
+  // Wizard refresh handler - reloads properties and streams
+  const handleWizardRefresh = async () => {
+    setIsWizardRefreshing(true);
+    toast({ title: "Checking for data streams...", description: "Refreshing your GA account data." });
+    setStreamsLoaded(false);
+    setWebDomainsByProperty({});
+    await fetchProperties();
+    setTimeout(() => {
+      void fetchWebDataStreams();
+      setIsWizardRefreshing(false);
+    }, 500);
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -1080,20 +1096,6 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Track refreshing state for the wizard
-  const [isWizardRefreshing, setIsWizardRefreshing] = useState(false);
-
-  const handleWizardRefresh = async () => {
-    setIsWizardRefreshing(true);
-    toast({ title: "Checking for data streams...", description: "Refreshing your GA account data." });
-    setStreamsLoaded(false);
-    setWebDomainsByProperty({});
-    await fetchProperties();
-    setTimeout(() => {
-      void fetchWebDataStreams();
-      setIsWizardRefreshing(false);
-    }, 500);
-  };
 
   // Connected but domain not in GA - show full onboarding wizard
   // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
