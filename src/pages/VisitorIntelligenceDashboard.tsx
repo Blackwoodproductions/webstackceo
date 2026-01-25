@@ -208,6 +208,7 @@ const MarketingDashboard = () => {
   const [gmbAccounts, setGmbAccounts] = useState<{ name: string; accountName: string; type: string }[]>([]);
   const [gmbLocations, setGmbLocations] = useState<{ name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[]>([]);
   const [selectedGmbAccount, setSelectedGmbAccount] = useState<string | null>(null);
+  const [selectedGmbLocation, setSelectedGmbLocation] = useState<string | null>(null);
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
   const [gmbSyncError, setGmbSyncError] = useState<string | null>(null);
   const [gmbLastSyncAt, setGmbLastSyncAt] = useState<string | null>(null);
@@ -2858,43 +2859,69 @@ f.parentNode.insertBefore(j,f);
                 </div>
               )}
               
-              {gmbLocations.length > 0 && selectedGmbAccount && gmbOnboardingStep === 0 && (
+              {gmbLocations.length > 0 && gmbOnboardingStep === 0 && (
                 <div className="space-y-4 pt-4 border-t border-border">
-                  <h3 className="text-sm font-medium text-muted-foreground">Locations</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-muted-foreground">All Business Locations ({gmbLocations.length})</h3>
+                    <p className="text-xs text-muted-foreground">Click a location to view performance</p>
+                  </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {gmbLocations.map((location) => (
-                      <div
-                        key={location.name}
-                        className={`p-4 rounded-xl border transition-all ${
-                          selectedDomainInGmb?.name === location.name
-                            ? 'border-green-500 bg-green-500/5'
-                            : 'border-border bg-muted/20'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <MapPin className={`w-5 h-5 mt-0.5 ${selectedDomainInGmb?.name === location.name ? 'text-green-500' : 'text-primary'}`} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{location.title}</p>
-                              {selectedDomainInGmb?.name === location.name && (
-                                <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
-                                  Matched
-                                </Badge>
+                    {gmbLocations.map((location) => {
+                      const isMatchedToDomain = selectedDomainInGmb?.name === location.name;
+                      const isSelected = selectedGmbLocation === location.name;
+                      return (
+                        <div
+                          key={location.name}
+                          onClick={() => setSelectedGmbLocation(isSelected ? null : location.name)}
+                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                              : isMatchedToDomain
+                              ? 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
+                              : 'border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/30'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <MapPin className={`w-5 h-5 mt-0.5 ${isSelected ? 'text-primary' : isMatchedToDomain ? 'text-green-500' : 'text-muted-foreground'}`} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium">{location.title}</p>
+                                {isMatchedToDomain && (
+                                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
+                                    Matched to {selectedTrackedDomain || selectedDomainKey}
+                                  </Badge>
+                                )}
+                                {isSelected && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Viewing
+                                  </Badge>
+                                )}
+                              </div>
+                              {location.storefrontAddress && (
+                                <p className="text-sm text-muted-foreground">
+                                  {location.storefrontAddress.locality}, {location.storefrontAddress.administrativeArea}
+                                </p>
+                              )}
+                              {location.websiteUri && (
+                                <p className="text-xs text-primary mt-1">{location.websiteUri}</p>
                               )}
                             </div>
-                            {location.storefrontAddress && (
-                              <p className="text-sm text-muted-foreground">
-                                {location.storefrontAddress.locality}, {location.storefrontAddress.administrativeArea}
-                              </p>
-                            )}
-                            {location.websiteUri && (
-                              <p className="text-xs text-primary mt-1">{location.websiteUri}</p>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                  
+                  {/* Performance Panel for Selected Location */}
+                  {selectedGmbLocation && (
+                    <div className="pt-4">
+                      <GMBPerformancePanel
+                        accessToken={sessionStorage.getItem('gmb_access_token') || ''}
+                        locationName={selectedGmbLocation}
+                        locationTitle={gmbLocations.find(l => l.name === selectedGmbLocation)?.title || 'Business Location'}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
               
