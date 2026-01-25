@@ -182,6 +182,64 @@ interface HistoryDataPoint {
   trafficValue: number;
 }
 
+// Next Report Countdown Component for Case Studies
+const NextReportCountdown = () => {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  
+  useEffect(() => {
+    // Calculate next report date (7 days from now, at midnight)
+    const getNextReportDate = () => {
+      const now = new Date();
+      const nextReport = new Date(now);
+      nextReport.setDate(nextReport.getDate() + 7);
+      nextReport.setHours(0, 0, 0, 0);
+      return nextReport;
+    };
+    
+    const nextReport = getNextReportDate();
+    
+    const updateCountdown = () => {
+      const now = new Date();
+      const diff = nextReport.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20">
+      <Calendar className="w-5 h-5 text-primary" />
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">Next Report Update</span>
+        <div className="flex items-center gap-1.5 font-mono text-sm font-semibold">
+          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{timeLeft.days}d</span>
+          <span className="text-muted-foreground">:</span>
+          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.hours).padStart(2, '0')}h</span>
+          <span className="text-muted-foreground">:</span>
+          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+          <span className="text-muted-foreground">:</span>
+          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Reusable Score Dial Component
 const ScoreDial = ({
   value,
@@ -1923,22 +1981,28 @@ const AuditResults = () => {
                       Save & Get Free Backlink
                     </Button>
                   )}
-                  <Button className="gap-2 min-w-[140px] justify-center" asChild>
-                    <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                      <Phone className="w-4 h-4" />
-                      Book a Call
-                    </a>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
-                    asChild
-                  >
-                    <a href="/pricing">
-                      <Sparkles className="w-4 h-4" />
-                      Get Started
-                    </a>
-                  </Button>
+                  {isCaseStudyMode ? (
+                    <NextReportCountdown />
+                  ) : (
+                    <>
+                      <Button className="gap-2 min-w-[140px] justify-center" asChild>
+                        <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                          <Phone className="w-4 h-4" />
+                          Book a Call
+                        </a>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                        asChild
+                      >
+                        <a href="/pricing">
+                          <Sparkles className="w-4 h-4" />
+                          Get Started
+                        </a>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -3052,6 +3116,49 @@ const AuditResults = () => {
               ))}
             </div>
           </motion.div>
+          )}
+
+          {/* Case Study: Next Report Update Section */}
+          {isCaseStudyMode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-16"
+            >
+              <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 via-violet-500/5 to-primary/10 border border-primary/20">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="text-center md:text-left">
+                    <h2 className="text-2xl font-bold mb-2">
+                      Next Report Update
+                    </h2>
+                    <p className="text-muted-foreground max-w-lg">
+                      This case study is automatically updated every 7 days with fresh metrics from Ahrefs including domain rating, organic traffic, and keyword rankings.
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <NextReportCountdown />
+                  </div>
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-primary/20 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { icon: TrendingUp, label: "Live Metrics", desc: "Real-time Ahrefs data" },
+                    { icon: Calendar, label: "Weekly Updates", desc: "Fresh data every 7 days" },
+                    { icon: BarChart3, label: "Historical Tracking", desc: "2-year trend analysis" },
+                    { icon: Target, label: "Progress Reports", desc: "Track your growth" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-start gap-3 p-3 rounded-lg bg-card/50">
+                      <item.icon className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {/* SEO Resources Section - Glossary Terms & Learning Guides */}
