@@ -51,6 +51,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpandableRow';
+import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 interface Lead {
   id: string;
   email: string;
@@ -1128,151 +1129,29 @@ const MarketingDashboard = () => {
         </div>
       </header>
 
-      {/* Date Range Selector Bar - Only show for Visitor Intelligence tab */}
-      {activeTab === 'visitor-intelligence' && (
-      <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1530px] mx-auto">
-        <div className="px-8 py-2 flex items-center justify-between">
-          {/* Left: VI Domain Selector & Time Range Selector */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* VI Domain Selector - only shows VI tracked domains */}
-            {(() => {
-              // Only show domains with VI tracking (or user-added domains pending tracking)
-              const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
-              
-              const selectValue = selectedTrackedDomain || '';
-              
-              if (viDomains.length > 0) {
-                return (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-primary" />
-                      <Select
-                        value={selectValue} 
-                        onValueChange={(value) => {
-                          setSelectedTrackedDomain(value);
-                          setSelectedDomainKey(value);
-                          // Check if this domain has tracking installed
-                          const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
-                          setGscDomainHasTracking(hasTracking);
-                        }}
-                      >
-                        <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border">
-                          <SelectValue placeholder="Select VI domain" />
-                        </SelectTrigger>
-
-                        <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
-                          {viDomains.map((domain) => {
-                            const hasViTracking = trackedDomains.includes(domain);
-                            return (
-                              <SelectItem
-                                key={domain}
-                                value={domain}
-                                className="text-xs"
-                                indicator={hasViTracking ? (
-                                  <Globe className="w-3.5 h-3.5 text-primary" />
-                                ) : undefined}
-                              >
-                                <span className="truncate max-w-[300px]" title={domain}>
-                                  {domain}
-                                </span>
-                              </SelectItem>
-                            );
-                          })}
-                          <SelectSeparator />
-                          <div 
-                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAddDomainDialogOpen(true);
-                            }}
-                          >
-                            <Plus className="w-3 h-3" />
-                            Add domain
-                          </div>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                );
-              } else {
-                return (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-7 text-xs"
-                      onClick={() => setAddDomainDialogOpen(true)}
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add VI Domain
-                    </Button>
-                    <div className="w-px h-5 bg-border" />
-                  </>
-                );
-              }
-            })()}
-            
-            {/* Time Range Selector */}
-            <div className="flex gap-1">
-              <div className="flex flex-col gap-1 items-center w-5">
-                <CalendarIcon className="w-4 h-4 text-primary mt-1.5" />
-                {pageFilter && <Filter className="w-4 h-4 text-purple-400 mt-1.5" />}
-              </div>
-              <div className="flex flex-col gap-1">
-                <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
-                  <SelectTrigger className="w-[130px] h-7 text-sm bg-background border-border">
-                    <SelectValue placeholder="Range" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border shadow-lg z-50">
-                    <SelectItem value="live">Last 24h</SelectItem>
-                    <SelectItem value="yesterday">Yesterday</SelectItem>
-                    <SelectItem value="week">Week</SelectItem>
-                    <SelectItem value="month">Month</SelectItem>
-                    <SelectItem value="6months">6 Months</SelectItem>
-                    <SelectItem value="1year">Year</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-                {pageFilter && (
-                  <Badge variant="secondary" className="flex items-center gap-2 px-2 py-0.5 h-7 bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
-                    {pageFilter === '/' ? 'Homepage' : pageFilter}
-                    <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5"><X className="w-3 h-3" /></button>
-                  </Badge>
-                )}
-              </div>
-            </div>
-            {diagramTimeRange === 'custom' && (
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !diagramCustomDateRange.from && "text-muted-foreground")}>
-                      {diagramCustomDateRange.from ? format(diagramCustomDateRange.from, "MMM d, yyyy") : "Start date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
-                    <Calendar mode="single" selected={diagramCustomDateRange.from} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, from: date }))} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-                <span className="text-sm text-muted-foreground">to</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !diagramCustomDateRange.to && "text-muted-foreground")}>
-                      {diagramCustomDateRange.to ? format(diagramCustomDateRange.to, "MMM d, yyyy") : "End date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
-                    <Calendar mode="single" selected={diagramCustomDateRange.to} onSelect={(date) => setDiagramCustomDateRange(prev => ({ ...prev, to: date }))} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-          </div>
-          
-          {/* Spacer for layout balance */}
-          <div className="flex-1" />
-          
-          {/* Right: API Docs & Chat Controls */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+      {/* Domain Selector Bar - Show on all tabs */}
+      <DomainSelectorBar
+        trackedDomains={trackedDomains}
+        userAddedDomains={userAddedDomains}
+        selectedDomain={selectedTrackedDomain}
+        onDomainChange={(value) => {
+          setSelectedTrackedDomain(value);
+          setSelectedDomainKey(value);
+          // Check if this domain has tracking installed
+          const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
+          setGscDomainHasTracking(hasTracking);
+        }}
+        onAddDomainClick={() => setAddDomainDialogOpen(true)}
+        showTimeRange={activeTab === 'visitor-intelligence'}
+        timeRange={diagramTimeRange}
+        onTimeRangeChange={setDiagramTimeRange}
+        customDateRange={diagramCustomDateRange}
+        onCustomDateRangeChange={setDiagramCustomDateRange}
+        showPageFilter={activeTab === 'visitor-intelligence'}
+        pageFilter={pageFilter}
+        onPageFilterClear={() => setPageFilter(null)}
+        rightContent={activeTab === 'visitor-intelligence' ? (
+          <>
             {/* API Docs Download */}
             <Button
               variant="outline"
@@ -1309,10 +1188,15 @@ const MarketingDashboard = () => {
                 </span>
               )}
             </Button>
-          </div>
-        </div>
-      </div>
-      )}
+          </>
+        ) : activeTab === 'seo-audit' ? (
+          <>
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              Domain: {selectedTrackedDomain || selectedDomainKey || 'None selected'}
+            </Badge>
+          </>
+        ) : undefined}
+      />
 
       {/* Main Layout - Only show for Visitor Intelligence tab */}
       {activeTab === 'visitor-intelligence' && (
@@ -2459,6 +2343,11 @@ f.parentNode.insertBefore(j,f);
               <TrendingUp className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold mb-2">BRON</h2>
+            {(selectedTrackedDomain || selectedDomainKey) && (
+              <p className="text-sm text-primary font-medium mb-2">
+                Domain: {selectedTrackedDomain || selectedDomainKey}
+              </p>
+            )}
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
             </p>
@@ -2477,6 +2366,11 @@ f.parentNode.insertBefore(j,f);
               <FileText className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold mb-2">CADE</h2>
+            {(selectedTrackedDomain || selectedDomainKey) && (
+              <p className="text-sm text-primary font-medium mb-2">
+                Domain: {selectedTrackedDomain || selectedDomainKey}
+              </p>
+            )}
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Content automation and topical authority signals. AI-powered content generation and optimization.
             </p>
@@ -2495,6 +2389,11 @@ f.parentNode.insertBefore(j,f);
               <Target className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold mb-2">Landing Pages</h2>
+            {(selectedTrackedDomain || selectedDomainKey) && (
+              <p className="text-sm text-primary font-medium mb-2">
+                Domain: {selectedTrackedDomain || selectedDomainKey}
+              </p>
+            )}
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               High-converting PPC landing pages optimized for conversions and quality scores.
             </p>
