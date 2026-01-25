@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { glossaryTerms } from "@/data/glossaryData";
 import { WebsiteProfileSection } from "@/components/audit/WebsiteProfileSection";
@@ -1324,66 +1325,155 @@ const AuditResults = () => {
             .select('*')
             .eq('slug', slug)
             .maybeSingle();
-          
-          // Only use saved audit data if it has profile information
-          if (savedAudit && (savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary)) {
-            // Build profile from saved audit data
-            setWebsiteProfile({
+
+          // IMPORTANT: Case Study pages need enhanced scrape data (technicalSEO, contentMetrics,
+          // internalLinkingMetrics, localSEOSignals) for the advanced sections to render.
+          // So even if we have basic profile data in the DB, we still scrape and merge.
+          if (savedAudit) {
+            type AuditCategoryEnum = Database["public"]["Enums"]["audit_category"];
+            const auditCategoryValues: AuditCategoryEnum[] = [
+              'ecommerce',
+              'saas',
+              'local_business',
+              'blog_media',
+              'professional_services',
+              'healthcare',
+              'finance',
+              'education',
+              'real_estate',
+              'hospitality',
+              'nonprofit',
+              'technology',
+              'other',
+            ];
+            const toAuditCategory = (value: unknown): AuditCategoryEnum => {
+              if (typeof value !== 'string') return 'other';
+              return (auditCategoryValues as readonly string[]).includes(value) ? (value as AuditCategoryEnum) : 'other';
+            };
+
+            const emptyTechnicalSEO: TechnicalSEO = {
+              hasTitle: false,
+              titleLength: 0,
+              hasMetaDescription: false,
+              descriptionLength: 0,
+              hasCanonical: false,
+              canonicalUrl: null,
+              hasViewport: false,
+              hasRobotsMeta: false,
+              robotsContent: null,
+              hasOgTitle: false,
+              hasOgDescription: false,
+              hasOgImage: false,
+              hasOgUrl: false,
+              hasTwitterCard: false,
+              h1Count: 0,
+              h1Text: [],
+              h2Count: 0,
+              h3Count: 0,
+              hasProperHeadingHierarchy: false,
+              totalImages: 0,
+              imagesWithAlt: 0,
+              imagesWithoutAlt: 0,
+              altCoverage: 0,
+              hasSchemaMarkup: false,
+              schemaTypes: [],
+              internalLinks: 0,
+              externalLinks: 0,
+              isHttps: true,
+              hasSitemapLink: false,
+              hasLangAttribute: false,
+              langValue: null,
+            };
+
+            const baseProfileFromDb: WebsiteProfile = {
               title: savedAudit.site_title || null,
               description: savedAudit.site_description || null,
               summary: savedAudit.site_summary || null,
               favicon: savedAudit.favicon_url || null,
               logo: savedAudit.logo_url || null,
               socialLinks: {
-                facebook: savedAudit.social_facebook,
-                twitter: savedAudit.social_twitter,
-                linkedin: savedAudit.social_linkedin,
-                instagram: savedAudit.social_instagram,
-                youtube: savedAudit.social_youtube,
-                tiktok: savedAudit.social_tiktok,
+                facebook: savedAudit.social_facebook || null,
+                twitter: savedAudit.social_twitter || null,
+                linkedin: savedAudit.social_linkedin || null,
+                instagram: savedAudit.social_instagram || null,
+                youtube: savedAudit.social_youtube || null,
+                tiktok: savedAudit.social_tiktok || null,
               },
               contactInfo: {
-                email: savedAudit.contact_email,
-                phone: savedAudit.contact_phone,
-                address: savedAudit.contact_address,
+                email: savedAudit.contact_email || null,
+                phone: savedAudit.contact_phone || null,
+                address: savedAudit.contact_address || null,
               },
               detectedCategory: savedAudit.category || 'other',
-            });
-            setIsProfileLoading(false);
-            return;
-          }
-          
-          // If saved audit exists but lacks profile data, fetch live and update DB
-          if (savedAudit) {
+              // Enables simulated fallbacks if scrape fails
+              technicalSEO: emptyTechnicalSEO,
+            };
+
             const actualDomain = savedAudit.domain || decodedDomain;
             const { data, error } = await supabase.functions.invoke('scrape-website', {
-              body: { url: actualDomain }
+              body: { url: actualDomain },
             });
-            
+
             if (!error && data?.profile) {
-              setWebsiteProfile(data.profile);
-              
-              // Update the saved_audits record with the scraped profile data
-              const profile = data.profile;
-              await supabase.from('saved_audits').update({
-                site_title: profile.title,
-                site_description: profile.description,
-                site_summary: profile.summary,
-                favicon_url: profile.favicon,
-                logo_url: profile.logo,
-                social_facebook: profile.socialLinks?.facebook,
-                social_twitter: profile.socialLinks?.twitter,
-                social_linkedin: profile.socialLinks?.linkedin,
-                social_instagram: profile.socialLinks?.instagram,
-                social_youtube: profile.socialLinks?.youtube,
-                social_tiktok: profile.socialLinks?.tiktok,
-                contact_email: profile.contactInfo?.email,
-                contact_phone: profile.contactInfo?.phone,
-                contact_address: profile.contactInfo?.address,
-                category: profile.detectedCategory || 'other',
-              }).eq('slug', slug);
-              
-              setIsProfileLoading(false);
+              const scrapedProfile = data.profile as WebsiteProfile & Record<string, unknown>;
+
+              const mergedProfile: WebsiteProfile & Record<string, unknown> = {
+                ...scrapedProfile,
+                // Prefer DB fields for “About This Website” so it always matches the selected domain record
+                title: baseProfileFromDb.title || scrapedProfile.title || null,
+                description: baseProfileFromDb.description || scrapedProfile.description || null,
+                summary: baseProfileFromDb.summary || scrapedProfile.summary || null,
+                favicon: baseProfileFromDb.favicon || scrapedProfile.favicon || null,
+                logo: baseProfileFromDb.logo || scrapedProfile.logo || null,
+                detectedCategory: baseProfileFromDb.detectedCategory || scrapedProfile.detectedCategory || 'other',
+                socialLinks: {
+                  facebook: baseProfileFromDb.socialLinks?.facebook ?? scrapedProfile.socialLinks?.facebook ?? null,
+                  twitter: baseProfileFromDb.socialLinks?.twitter ?? scrapedProfile.socialLinks?.twitter ?? null,
+                  linkedin: baseProfileFromDb.socialLinks?.linkedin ?? scrapedProfile.socialLinks?.linkedin ?? null,
+                  instagram: baseProfileFromDb.socialLinks?.instagram ?? scrapedProfile.socialLinks?.instagram ?? null,
+                  youtube: baseProfileFromDb.socialLinks?.youtube ?? scrapedProfile.socialLinks?.youtube ?? null,
+                  tiktok: baseProfileFromDb.socialLinks?.tiktok ?? scrapedProfile.socialLinks?.tiktok ?? null,
+                },
+                contactInfo: {
+                  email: baseProfileFromDb.contactInfo?.email ?? scrapedProfile.contactInfo?.email ?? null,
+                  phone: baseProfileFromDb.contactInfo?.phone ?? scrapedProfile.contactInfo?.phone ?? null,
+                  address: baseProfileFromDb.contactInfo?.address ?? scrapedProfile.contactInfo?.address ?? null,
+                },
+              };
+
+              setWebsiteProfile(mergedProfile);
+
+              // If the DB record lacks profile fields, backfill them for future loads
+              const missingDbProfile = !(savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary);
+              if (missingDbProfile) {
+                await supabase
+                  .from('saved_audits')
+                  .update({
+                    site_title: mergedProfile.title,
+                    site_description: mergedProfile.description,
+                    site_summary: mergedProfile.summary,
+                    favicon_url: mergedProfile.favicon,
+                    logo_url: mergedProfile.logo,
+                    social_facebook: mergedProfile.socialLinks?.facebook,
+                    social_twitter: mergedProfile.socialLinks?.twitter,
+                    social_linkedin: mergedProfile.socialLinks?.linkedin,
+                    social_instagram: mergedProfile.socialLinks?.instagram,
+                    social_youtube: mergedProfile.socialLinks?.youtube,
+                    social_tiktok: mergedProfile.socialLinks?.tiktok,
+                    contact_email: mergedProfile.contactInfo?.email,
+                    contact_phone: mergedProfile.contactInfo?.phone,
+                    contact_address: mergedProfile.contactInfo?.address,
+                    category: toAuditCategory(mergedProfile.detectedCategory),
+                  })
+                  .eq('slug', slug);
+              }
+
+              return;
+            }
+
+            // Scrape failed — fall back to DB-only profile (advanced sections may not render)
+            if (savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary) {
+              setWebsiteProfile(baseProfileFromDb);
               return;
             }
           }
