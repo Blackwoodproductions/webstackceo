@@ -312,16 +312,17 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <Target className="w-7 h-7 text-white" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold">PPC Landing Pages</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold">PPC Landing Pages</h2>
+              <span className="px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wide">Coming Soon</span>
+              </span>
+            </div>
             <p className="text-sm text-muted-foreground max-w-2xl">
               Import keywords from Google Ads, generate optimized landing pages, and boost your Quality Score with built-in A/B testing and heat tracking.
             </p>
           </div>
-        </div>
-        {/* Coming Soon Badge - Centered */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center gap-2 z-10">
-          <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
-          <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wide">Coming Soon</span>
         </div>
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
