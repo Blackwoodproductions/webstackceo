@@ -91,14 +91,18 @@ export function GoogleAdsOnboardingWizard({
       const state = urlParams.get('state');
       const storedState = sessionStorage.getItem('google_ads_oauth_state');
       const codeVerifier = sessionStorage.getItem('google_ads_code_verifier');
+      const returnTab = sessionStorage.getItem('google_ads_return_tab');
 
       if (code && state && state === storedState && codeVerifier) {
         setIsConnecting(true);
         setAuthError(null);
 
         try {
-          // Clear URL params
-          window.history.replaceState({}, '', window.location.pathname);
+          // Clear URL params but preserve hash for tab navigation
+          const newUrl = returnTab 
+            ? `${window.location.pathname}#${returnTab}`
+            : window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
 
           // Exchange code for tokens
           const { data, error } = await supabase.functions.invoke('google-oauth-token', {
@@ -132,6 +136,7 @@ export function GoogleAdsOnboardingWizard({
           // Clean up session storage
           sessionStorage.removeItem('google_ads_oauth_state');
           sessionStorage.removeItem('google_ads_code_verifier');
+          sessionStorage.removeItem('google_ads_return_tab');
         }
       }
     };
@@ -155,9 +160,10 @@ export function GoogleAdsOnboardingWizard({
       const { codeVerifier, codeChallenge } = await generatePKCE();
       const state = crypto.randomUUID();
 
-      // Store for callback
+      // Store for callback - including return tab
       sessionStorage.setItem('google_ads_oauth_state', state);
       sessionStorage.setItem('google_ads_code_verifier', codeVerifier);
+      sessionStorage.setItem('google_ads_return_tab', 'landing-pages');
 
       const redirectUri = window.location.origin + window.location.pathname;
       

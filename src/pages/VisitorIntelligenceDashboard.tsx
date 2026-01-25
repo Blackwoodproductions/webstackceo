@@ -208,7 +208,28 @@ const MarketingDashboard = () => {
   
   // Dashboard main tabs
   type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
-  const [activeTab, setActiveTab] = useState<DashboardTab>('visitor-intelligence');
+  
+  // Initialize tab from URL hash (for OAuth redirect preservation)
+  const getInitialTab = (): DashboardTab => {
+    const hash = window.location.hash.replace('#', '');
+    const validTabs: DashboardTab[] = ['visitor-intelligence', 'seo-audit', 'bron', 'cade', 'gmb', 'social-signals', 'on-page-seo', 'landing-pages'];
+    if (hash && validTabs.includes(hash as DashboardTab)) {
+      return hash as DashboardTab;
+    }
+    return 'visitor-intelligence';
+  };
+  
+  const [activeTab, setActiveTab] = useState<DashboardTab>(getInitialTab);
+  
+  // Update URL hash when tab changes (for bookmark support)
+  useEffect(() => {
+    if (activeTab !== 'visitor-intelligence') {
+      window.history.replaceState(null, '', `#${activeTab}`);
+    } else {
+      // Clear hash for default tab
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [activeTab]);
   
   // GMB (Google My Business) state
   const [gmbAuthenticated, setGmbAuthenticated] = useState<boolean>(false);
