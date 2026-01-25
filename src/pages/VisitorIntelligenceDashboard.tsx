@@ -2694,10 +2694,22 @@ f.parentNode.insertBefore(j,f);
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold">Google Business Profile</h2>
-                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full">
-                        <CheckCircle className="w-3 h-3" />
-                        Connected
-                      </span>
+                      {selectedDomainInGmb ? (
+                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          Connected
+                        </span>
+                      ) : gmbAccounts.length > 0 ? (
+                        <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                          <Globe className="w-3 h-3" />
+                          Account Linked
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <AlertTriangle className="w-3 h-3" />
+                          Setup Required
+                        </span>
+                      )}
                     </div>
                     {(selectedTrackedDomain || selectedDomainKey) && (
                       <p className="text-sm text-muted-foreground">{selectedTrackedDomain || selectedDomainKey}</p>
@@ -2723,7 +2735,7 @@ f.parentNode.insertBefore(j,f);
               </div>
               
               {/* Main Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Left Column - Domain Status */}
                 <div className="space-y-4">
                   {/* Domain Not Found Card */}
