@@ -1548,7 +1548,7 @@ const AuditResults = () => {
     if (!decodedDomain) return;
     
     const CACHE_KEY = `pagespeed_cache_${decodedDomain.replace(/[^a-zA-Z0-9]/g, '_')}`;
-    const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const CACHE_DURATION_MS = 28 * 24 * 60 * 60 * 1000; // 28 days
     
     const fetchPageSpeedData = async () => {
       // Check client-side cache first
