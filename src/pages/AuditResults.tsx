@@ -1481,8 +1481,8 @@ const AuditResults = () => {
         noIndex
       />
       {!isEmbedMode && <Navbar />}
-      <main className={isEmbedMode ? "py-6" : "pt-24 pb-16"}>
-        <div className="max-w-6xl mx-auto px-6">
+      <main className={isEmbedMode ? "py-2 px-4" : "pt-24 pb-16"}>
+        <div className={isEmbedMode ? "w-full" : "max-w-6xl mx-auto px-6"}>
           {/* Back Button - hide in embed mode */}
           {!isEmbedMode && (
             <Button
