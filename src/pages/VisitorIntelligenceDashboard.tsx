@@ -262,21 +262,29 @@ const MarketingDashboard = () => {
   useEffect(() => {
     const fetchAuditForDomain = async () => {
       const domainToCheck = selectedTrackedDomain || selectedDomainKey;
-      if (!domainToCheck || activeTab !== 'seo-audit') {
+      
+      // If no domain selected but we're on seo-audit tab, try to load the most recent audit
+      if (activeTab !== 'seo-audit') {
         setSavedAuditForDomain(null);
         return;
       }
       
-      // Clean the domain for matching
-      const cleanDomain = domainToCheck.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-      
       setIsLoadingAudit(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('saved_audits')
-          .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at')
-          .ilike('domain', cleanDomain)
-          .maybeSingle();
+          .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at');
+        
+        if (domainToCheck) {
+          // Clean the domain for matching
+          const cleanDomain = domainToCheck.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+          query = query.ilike('domain', cleanDomain);
+        } else {
+          // No domain selected - get most recent audit
+          query = query.order('created_at', { ascending: false }).limit(1);
+        }
+        
+        const { data, error } = await query.maybeSingle();
         
         if (error) {
           console.error('Error fetching audit:', error);
@@ -2106,6 +2114,7 @@ f.parentNode.insertBefore(j,f);
               } : null}
               onNewAudit={() => {
                 setInlineAuditData(null);
+                setSavedAuditForDomain(null);
                 setAuditDomainInput('');
               }}
               onRefreshAudit={async () => {
@@ -2179,6 +2188,7 @@ f.parentNode.insertBefore(j,f);
               }}
               onNewAudit={() => {
                 setInlineAuditData(null);
+                setSavedAuditForDomain(null);
                 setAuditDomainInput('');
               }}
               onRefreshAudit={async () => {
