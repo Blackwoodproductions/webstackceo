@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  TrendingUp, TrendingDown, Users, Clock, MousePointer, Eye,
+  TrendingUp, TrendingDown, Users, Clock, Eye,
   BarChart3, RefreshCw, Loader2, ExternalLink, Key, 
-  Activity, Smartphone, Monitor, Tablet, Globe, X,
-  ArrowUpRight, ArrowDownRight, Zap, Target, PieChart
+  Activity, X, ArrowUpRight, ArrowDownRight, Zap, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,9 +28,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  PieChart as RechartsPie,
-  Pie,
-  Cell,
 } from "recharts";
 
 // Google OAuth Config for Analytics
@@ -78,7 +74,7 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
   return base64UrlEncode(digest);
 }
 
-interface GAMetrics {
+export interface GAMetrics {
   sessions: number;
   users: number;
   newUsers: number;
@@ -98,20 +94,6 @@ interface GAProperty {
   websiteUrl?: string;
 }
 
-interface TrafficSource {
-  source: string;
-  sessions: number;
-  percentage: number;
-  color: string;
-}
-
-interface DeviceData {
-  device: string;
-  sessions: number;
-  percentage: number;
-  icon: typeof Monitor;
-}
-
 interface TopPage {
   path: string;
   views: number;
@@ -121,12 +103,14 @@ interface TopPage {
 export interface GADashboardPanelProps {
   externalSelectedSite?: string;
   onAuthStatusChange?: (isAuthenticated: boolean) => void;
+  onMetricsUpdate?: (metrics: GAMetrics | null, isConnected: boolean, domainMatches: boolean) => void;
   fullWidth?: boolean;
 }
 
 export const GADashboardPanel = ({
   externalSelectedSite,
   onAuthStatusChange,
+  onMetricsUpdate,
   fullWidth = false,
 }: GADashboardPanelProps) => {
   const { toast } = useToast();
@@ -141,8 +125,6 @@ export const GADashboardPanel = ({
   const [properties, setProperties] = useState<GAProperty[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<string>("");
   const [metrics, setMetrics] = useState<GAMetrics | null>(null);
-  const [trafficSources, setTrafficSources] = useState<TrafficSource[]>([]);
-  const [deviceData, setDeviceData] = useState<DeviceData[]>([]);
   const [topPages, setTopPages] = useState<TopPage[]>([]);
   const [chartData, setChartData] = useState<{ date: string; sessions: number; users: number }[]>([]);
   
@@ -362,81 +344,6 @@ export const GADashboardPanel = ({
         });
       }
 
-      // Fetch traffic sources
-      const sourcesResponse = await fetch(
-        `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            dateRanges: [{ startDate: "28daysAgo", endDate: "yesterday" }],
-            dimensions: [{ name: "sessionDefaultChannelGroup" }],
-            metrics: [{ name: "sessions" }],
-            limit: 6,
-          }),
-        }
-      );
-
-      if (sourcesResponse.ok) {
-        const sourcesData = await sourcesResponse.json();
-        const totalSessions = sourcesData.rows?.reduce((sum: number, row: any) => 
-          sum + parseFloat(row.metricValues[0]?.value || "0"), 0) || 1;
-        
-        const colors = ["#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#06b6d4"];
-        const sources: TrafficSource[] = (sourcesData.rows || []).map((row: any, i: number) => ({
-          source: row.dimensionValues[0]?.value || "Unknown",
-          sessions: parseFloat(row.metricValues[0]?.value || "0"),
-          percentage: (parseFloat(row.metricValues[0]?.value || "0") / totalSessions) * 100,
-          color: colors[i % colors.length],
-        }));
-        
-        setTrafficSources(sources);
-      }
-
-      // Fetch device breakdown
-      const deviceResponse = await fetch(
-        `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            dateRanges: [{ startDate: "28daysAgo", endDate: "yesterday" }],
-            dimensions: [{ name: "deviceCategory" }],
-            metrics: [{ name: "sessions" }],
-          }),
-        }
-      );
-
-      if (deviceResponse.ok) {
-        const deviceDataRes = await deviceResponse.json();
-        const totalDeviceSessions = deviceDataRes.rows?.reduce((sum: number, row: any) => 
-          sum + parseFloat(row.metricValues[0]?.value || "0"), 0) || 1;
-        
-        const deviceIcons: Record<string, typeof Monitor> = {
-          desktop: Monitor,
-          mobile: Smartphone,
-          tablet: Tablet,
-        };
-        
-        const devices: DeviceData[] = (deviceDataRes.rows || []).map((row: any) => {
-          const device = row.dimensionValues[0]?.value?.toLowerCase() || "unknown";
-          return {
-            device: device.charAt(0).toUpperCase() + device.slice(1),
-            sessions: parseFloat(row.metricValues[0]?.value || "0"),
-            percentage: (parseFloat(row.metricValues[0]?.value || "0") / totalDeviceSessions) * 100,
-            icon: deviceIcons[device] || Monitor,
-          };
-        });
-        
-        setDeviceData(devices);
-      }
-
       // Fetch top pages
       const pagesResponse = await fetch(
         `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
@@ -518,6 +425,12 @@ export const GADashboardPanel = ({
   useEffect(() => {
     onAuthStatusChange?.(isAuthenticated);
   }, [isAuthenticated, onAuthStatusChange]);
+
+  // Notify parent of metrics updates
+  useEffect(() => {
+    const domainMatches = isExternalSiteInGA || !externalSelectedSite;
+    onMetricsUpdate?.(metrics, isAuthenticated, domainMatches);
+  }, [metrics, isAuthenticated, isExternalSiteInGA, externalSelectedSite, onMetricsUpdate]);
 
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
@@ -949,61 +862,6 @@ export const GADashboardPanel = ({
           </div>
         )}
 
-        {/* Traffic Sources & Devices - only show if domain matches */}
-        {(isExternalSiteInGA || !externalSelectedSite) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Traffic Sources */}
-          <div className="bg-secondary/20 rounded-xl p-4">
-            <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
-              <Globe className="w-4 h-4 text-primary" />
-              Traffic Sources
-            </h4>
-            {trafficSources.length > 0 ? (
-              <div className="space-y-3">
-                {trafficSources.slice(0, 5).map((source, i) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="truncate max-w-[150px]">{source.source}</span>
-                      <span className="text-muted-foreground">{formatNumber(source.sessions)} ({source.percentage.toFixed(1)}%)</span>
-                    </div>
-                    <Progress value={source.percentage} className="h-1.5" style={{ '--progress-color': source.color } as any} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground text-sm">No data available</div>
-            )}
-          </div>
-
-          {/* Device Breakdown */}
-          <div className="bg-secondary/20 rounded-xl p-4">
-            <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
-              <Monitor className="w-4 h-4 text-primary" />
-              Device Breakdown
-            </h4>
-            {deviceData.length > 0 ? (
-              <div className="space-y-3">
-                {deviceData.map((device, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                      <device.icon className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span>{device.device}</span>
-                        <span className="text-muted-foreground">{device.percentage.toFixed(1)}%</span>
-                      </div>
-                      <Progress value={device.percentage} className="h-1.5" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground text-sm">No data available</div>
-            )}
-          </div>
-        </div>
-        )}
 
         {/* Top Pages */}
         {(isExternalSiteInGA || !externalSelectedSite) && topPages.length > 0 && (
