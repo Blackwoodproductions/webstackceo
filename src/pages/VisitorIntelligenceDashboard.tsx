@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -2575,9 +2575,35 @@ f.parentNode.insertBefore(j,f);
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
               Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
             </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+              {[
+                { icon: Boxes, label: 'Keyword Clustering', desc: 'AI-powered topical grouping for content silos' },
+                { icon: Link2, label: 'Deep Linking', desc: 'Strategic links into clusters from real business sites' },
+                { icon: Award, label: 'DA & DR Growth', desc: 'Watch your domain authority rise with quality backlinks' },
+                { icon: Zap, label: 'Autopilot Inbound Links', desc: 'Relevant links from real businesses on autopilot' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-emerald-500/50 transition-colors">
+                  <feature.icon className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-green-500/10 border border-emerald-500/20">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold text-emerald-500">Industry-first:</span> Inbound links on autopilot from relevant, real businesses is unheard of in the link building industry. No PBNs. No spam. Just authentic business relationships.
+              </p>
+            </div>
+            
             <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
               Coming Soon
             </Badge>
+            
+            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
+              Diamond Flow methodology ensures links come from topically relevant sites, building genuine authority in your niche.
+            </p>
           </div>
         </div>
       )}
