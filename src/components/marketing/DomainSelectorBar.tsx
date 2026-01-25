@@ -63,7 +63,7 @@ export function DomainSelectorBar({
   const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
   
   return (
-    <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1530px] mx-auto">
+    <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1300px] mx-auto">
       <div className="px-8 py-2 flex items-center justify-between">
         {/* Left: Domain Selector & Time Range */}
         <div className="flex items-center gap-3 flex-shrink-0">
