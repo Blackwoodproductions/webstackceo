@@ -1326,38 +1326,7 @@ const MarketingDashboard = () => {
       />
 
       {/* Header with integrated tabs */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto relative">
-        {/* Tabs - positioned absolutely to extend beyond header bounds */}
-        <div className="absolute left-[180px] -bottom-px flex items-end gap-0 z-20">
-          {[
-            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
-            { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
-            { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
-            { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
-            { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
-            { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity },
-            { id: 'on-page-seo' as DashboardTab, label: 'On-page', icon: FileSearch },
-            { id: 'landing-pages' as DashboardTab, label: 'Landing', icon: Target },
-          ].map((tab, index) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex items-center justify-center w-9 h-9 transition-all rounded-t-lg border-t border-x ${
-                activeTab === tab.id
-                  ? 'bg-background text-primary border-border'
-                  : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
-              }`}
-              title={tab.label}
-            >
-              <tab.icon className="w-4 h-4" />
-              {/* Active tab bottom cover */}
-              {activeTab === tab.id && (
-                <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
-              )}
-            </button>
-          ))}
-        </div>
+      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
         
         <div className="px-8 py-3 flex items-center justify-between">
           {/* Left: Logo */}
@@ -1441,6 +1410,33 @@ const MarketingDashboard = () => {
         showPageFilter={activeTab === 'visitor-intelligence'}
         pageFilter={pageFilter}
         onPageFilterClear={() => setPageFilter(null)}
+        centerContent={
+          <div className="flex items-center gap-0.5">
+            {[
+              { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
+              { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
+              { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
+              { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
+              { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
+              { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity },
+              { id: 'on-page-seo' as DashboardTab, label: 'On-page', icon: FileSearch },
+              { id: 'landing-pages' as DashboardTab, label: 'Landing', icon: Target },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-primary/10 text-primary border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+                title={tab.label}
+              >
+                <tab.icon className="w-[18px] h-[18px]" />
+              </button>
+            ))}
+          </div>
+        }
         rightContent={activeTab === 'visitor-intelligence' ? (
           <>
             {/* API Docs Download */}
