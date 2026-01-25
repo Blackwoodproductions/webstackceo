@@ -1602,21 +1602,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 </Button>
               </div>
 
-              {/* Current Type KPI Row */}
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {[
-                  { label: "Clicks", value: formatNumber(totalMetrics.clicks) },
-                  { label: "Impressions", value: formatNumber(totalMetrics.impressions) },
-                  { label: "CTR", value: (totalMetrics.ctr * 100).toFixed(2) + "%" },
-                  { label: "Position", value: totalMetrics.position.toFixed(1) },
-                ].map((metric, i) => (
-                  <div key={i} className="bg-secondary/30 rounded-md p-2 text-center">
-                    <p className="text-sm font-bold">{isFetching ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
-                    <p className="text-[10px] text-muted-foreground">{metric.label}</p>
-                  </div>
-                ))}
-              </div>
-
               {/* Performance Chart */}
               <div className="h-[150px] w-full mb-4">
                 {isFetching && chartData.length === 0 ? (
