@@ -334,26 +334,26 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <div className="flex flex-col items-end gap-2">
               {/* Trust Badges */}
               <div className="flex items-center gap-2">
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite]">
                   <Award className="w-4 h-4 text-amber-500" />
                   <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite_0.4s]">
                   <Building className="w-4 h-4 text-slate-500" />
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_2.5s_ease-in-out_infinite_0.8s]">
+                  <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_3s_linear_infinite]" />
                   <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
               {/* Feature Pills */}
               <div className="flex items-center gap-1">
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <FlaskConical className="w-2.5 h-2.5 text-orange-500" />
                   <span className="text-[9px] font-medium text-orange-600 dark:text-orange-400">A/B Test</span>
                 </div>
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <Flame className="w-2.5 h-2.5 text-red-500" />
                   <span className="text-[9px] font-medium text-red-600 dark:text-red-400">Heatmaps</span>
                 </div>
