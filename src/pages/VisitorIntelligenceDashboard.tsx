@@ -2846,41 +2846,121 @@ f.parentNode.insertBefore(j,f);
                   </div>
                 </div>
               ) : gmbOnboardingStep === 0 && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                    <Building className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground mb-2">No business accounts found</p>
-                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    This usually means the Google account you connected does not have access to a Business Profile (or you're logged into a different Google account).
-                  </p>
-                  {gmbSyncError && (
-                    <div className="mt-4 mx-auto max-w-xl rounded-lg border border-border bg-muted/30 px-4 py-3 text-left">
-                      <p className="text-[11px] font-medium text-foreground">Sync details</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground break-words">{gmbSyncError}</p>
+                <div className="py-8">
+                  {/* Check if this is a quota error */}
+                  {gmbSyncError?.includes('429') || gmbSyncError?.includes('quota') || gmbSyncError?.includes('Quota') ? (
+                    <div className="max-w-2xl mx-auto">
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle className="w-6 h-6 text-amber-500" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg mb-1">Google Business Profile API Access Required</h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Your Google Cloud project needs API quota approval. Google requires manual approval for Business Profile APIs.
+                            </p>
+                            
+                            <div className="bg-background/50 rounded-lg p-4 mb-4 space-y-3 text-sm">
+                              <p className="font-medium">Follow these steps:</p>
+                              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                                <li>Go to the <a href="https://support.google.com/business/contact/business_profile_apis_contact_form" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">GBP API Contact Form</a></li>
+                                <li>Select <strong>"Quota Increase Request"</strong> from the dropdown</li>
+                                <li>Enter your company name and project number: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">1002415062213</code></li>
+                                <li>Explain your use case (e.g., "SaaS dashboard for managing business listings")</li>
+                                <li>Wait 24-48 hours for Google to review and approve</li>
+                              </ol>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-3">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  window.open('https://support.google.com/business/contact/business_profile_apis_contact_form', '_blank');
+                                }}
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                              >
+                                Open GBP API Form
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  sessionStorage.removeItem('gmb_cooldown_until');
+                                  const token = sessionStorage.getItem('gmb_access_token');
+                                  if (token) {
+                                    toast.info('Retrying sync...');
+                                    applyGmbToken(token);
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry Sync
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  sessionStorage.removeItem('gmb_access_token');
+                                  sessionStorage.removeItem('gmb_token_expiry');
+                                  sessionStorage.removeItem('gmb_cooldown_until');
+                                  setGmbAuthenticated(false);
+                                  setGmbAccounts([]);
+                                  setGmbLocations([]);
+                                  setGmbOnboardingStep(0);
+                                }}
+                              >
+                                Disconnect
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
                       {gmbLastSyncAt && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">Last sync: {new Date(gmbLastSyncAt).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground text-center mt-4">
+                          Last attempt: {new Date(gmbLastSyncAt).toLocaleString()}
+                        </p>
                       )}
                     </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                        <Building className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground mb-2">No business accounts found</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        This usually means the Google account you connected does not have access to a Business Profile (or you're logged into a different Google account).
+                      </p>
+                      {gmbSyncError && (
+                        <div className="mt-4 mx-auto max-w-xl rounded-lg border border-border bg-muted/30 px-4 py-3 text-left">
+                          <p className="text-[11px] font-medium text-foreground">Sync details</p>
+                          <p className="mt-1 text-[11px] text-muted-foreground break-words">{gmbSyncError}</p>
+                          {gmbLastSyncAt && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">Last sync: {new Date(gmbLastSyncAt).toLocaleString()}</p>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-5 flex items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            sessionStorage.removeItem('gmb_access_token');
+                            sessionStorage.removeItem('gmb_token_expiry');
+                            sessionStorage.removeItem('gmb_cooldown_until');
+                            setGmbAuthenticated(false);
+                            setGmbAccounts([]);
+                            setGmbLocations([]);
+                            setGmbOnboardingStep(0);
+                            toast.message('Disconnected. Please reconnect with the correct Google account.');
+                          }}
+                        >
+                          Disconnect & Reconnect
+                        </Button>
+                      </div>
+                    </div>
                   )}
-                  <div className="mt-5 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        sessionStorage.removeItem('gmb_access_token');
-                        sessionStorage.removeItem('gmb_token_expiry');
-                        sessionStorage.removeItem('gmb_cooldown_until');
-                        setGmbAuthenticated(false);
-                        setGmbAccounts([]);
-                        setGmbLocations([]);
-                        setGmbOnboardingStep(0);
-                        toast.message('Disconnected. Please reconnect with the correct Google account.');
-                      }}
-                    >
-                      Disconnect & Reconnect
-                    </Button>
-                  </div>
                 </div>
               )}
               
