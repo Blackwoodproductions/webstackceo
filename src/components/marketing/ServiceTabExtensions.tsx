@@ -334,56 +334,151 @@ interface SocialSignalsExtendedSectionProps {
 }
 
 export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSectionProps) => {
+  const platforms = [
+    { name: "X (Twitter)", icon: Twitter, color: "from-sky-400 to-blue-500", features: ["Thread generation", "Hashtag optimization", "Scheduled tweets"] },
+    { name: "LinkedIn", icon: Linkedin, color: "from-blue-500 to-blue-700", features: ["Professional posts", "Article sharing", "Company updates"] },
+    { name: "Facebook", icon: Facebook, color: "from-blue-600 to-indigo-600", features: ["Page posts", "Story creation", "Engagement tracking"] },
+  ];
+
+  const distributionSteps = [
+    { time: "0s", action: "New article published by CADE", detail: "Content is automatically detected and queued for distribution", status: "complete" },
+    { time: "5s", action: "AI generates platform-specific copy", detail: "Unique posts tailored for each platform's audience and format", status: "complete" },
+    { time: "10s", action: "Hashtags & mentions optimized", detail: "Trending hashtags and relevant mentions added automatically", status: "complete" },
+    { time: "15s", action: "Posts scheduled across all platforms", detail: "Optimal posting times selected based on audience activity", status: "complete" },
+    { time: "Live", action: "Content goes live simultaneously", detail: "Coordinated release maximizes reach and engagement", status: "active" },
+  ];
+
+  const benefits = [
+    { icon: Zap, title: "Zero Manual Work", desc: "Set it and forget it—CADE handles everything" },
+    { icon: Target, title: "Platform Optimization", desc: "Each post is tailored for maximum engagement" },
+    { icon: TrendingUp, title: "Consistent Presence", desc: "Never miss a posting opportunity" },
+    { icon: Sparkles, title: "AI-Powered Copy", desc: "Compelling content that drives clicks" },
+  ];
+
   return (
-    <div className="mt-8 space-y-8">
-      {/* Auto-posting Timeline */}
+    <div className="mt-8 space-y-6">
+      {/* Main Distribution Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="p-8 rounded-2xl bg-muted/30 border border-border"
+        className="p-6 rounded-2xl bg-gradient-to-br from-pink-500/5 via-rose-500/10 to-red-500/5 border border-pink-500/20"
       >
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Bell className="w-5 h-5 text-pink-500" />
-          Automatic Content Distribution
-        </h3>
-        <p className="text-sm text-muted-foreground mb-6">
-          When CADE publishes new content, social posts are generated and scheduled automatically.
-        </p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold flex items-center gap-3">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center"
+              >
+                <Bell className="w-5 h-5 text-white" />
+              </motion.div>
+              Automatic Content Distribution
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+              When CADE publishes new content, social posts are generated and scheduled automatically across all connected platforms.
+            </p>
+          </div>
+          <Badge className="bg-pink-500/10 text-pink-500 border-pink-500/30">
+            Powered by CADE
+          </Badge>
+        </div>
 
-        <div className="relative">
-          <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
-          
-          {[
-            { time: "0s", action: "New article published by CADE", status: "complete" },
-            { time: "5s", action: "AI generates platform-specific copy", status: "complete" },
-            { time: "10s", action: "Posts scheduled across all platforms", status: "complete" },
-            { time: "Live", action: "Content goes live simultaneously", status: "active" },
-          ].map((item, i) => (
+        {/* Platform Cards */}
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          {platforms.map((platform, i) => (
             <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              key={platform.name}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-              className="relative pl-10 pb-6 last:pb-0"
+              transition={{ delay: i * 0.1 }}
+              className="p-4 rounded-xl bg-background/50 border border-border hover:border-pink-500/30 transition-colors"
             >
-              <div className={`absolute left-2 w-5 h-5 rounded-full flex items-center justify-center ${
-                item.status === "active" 
-                  ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
-                  : "bg-pink-500"
-              }`}>
-                <CheckCircle2 className="w-3 h-3 text-white" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
+                  <platform.icon className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-semibold text-sm">{platform.name}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-pink-500 border-pink-500/30">
-                  {item.time}
-                </Badge>
-                <span className="text-sm">{item.action}</span>
-              </div>
+              <ul className="space-y-1.5">
+                {platform.features.map((feature, j) => (
+                  <li key={j} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-pink-500 shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           ))}
         </div>
+
+        {/* Timeline */}
+        <div className="p-4 rounded-xl bg-background/30 border border-border">
+          <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-pink-500" />
+            Distribution Timeline
+          </h4>
+          <div className="relative">
+            <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
+            
+            <div className="space-y-3">
+              {distributionSteps.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative pl-8"
+                >
+                  <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
+                    item.status === "active" 
+                      ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
+                      : "bg-pink-500"
+                  }`}>
+                    <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
+                      {item.time}
+                    </Badge>
+                    <div>
+                      <span className="text-sm font-medium">{item.action}</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Benefits Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-3"
+      >
+        {benefits.map((benefit, i) => (
+          <motion.div
+            key={benefit.title}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.1 }}
+            className="p-4 rounded-xl bg-muted/30 border border-border text-center"
+          >
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mx-auto mb-2">
+              <benefit.icon className="w-5 h-5 text-pink-500" />
+            </div>
+            <h4 className="font-semibold text-sm">{benefit.title}</h4>
+            <p className="text-xs text-muted-foreground mt-1">{benefit.desc}</p>
+          </motion.div>
+        ))}
       </motion.div>
     </div>
   );
