@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -206,7 +206,7 @@ const MarketingDashboard = () => {
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   const [activeTab, setActiveTab] = useState<DashboardTab>('visitor-intelligence');
   
   // GMB (Google My Business) state
@@ -1355,6 +1355,7 @@ const MarketingDashboard = () => {
               { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
               { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
               { id: 'social-signals' as DashboardTab, label: 'Social Signals', icon: Activity },
+              { id: 'on-page-seo' as DashboardTab, label: 'On-page SEO', icon: FileSearch },
               { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
             ].map((tab, index) => (
               <button
@@ -3085,6 +3086,48 @@ f.parentNode.insertBefore(j,f);
             
             <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
               Connect your social accounts to aggregate signals from Facebook, Twitter/X, LinkedIn, Instagram, and more.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* On-page SEO Tab Content */}
+      {activeTab === 'on-page-seo' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4">
+              <FileSearch className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">On-page SEO</h2>
+            {(selectedTrackedDomain || selectedDomainKey) && (
+              <p className="text-sm text-primary font-medium mb-2">
+                Domain: {selectedTrackedDomain || selectedDomainKey}
+              </p>
+            )}
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Optimize your website's content, meta tags, and structure for maximum search visibility and rankings.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+              {[
+                { icon: FileText, label: 'Meta Optimization', desc: 'Titles, descriptions & headers' },
+                { icon: Search, label: 'Keyword Analysis', desc: 'Density & placement tracking' },
+                { icon: Code, label: 'Schema Markup', desc: 'Structured data validation' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <feature.icon className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+              Coming Soon
+            </Badge>
+            
+            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
+              Automated on-page analysis and optimization recommendations for every page on your site.
             </p>
           </div>
         </div>
