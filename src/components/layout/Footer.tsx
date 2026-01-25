@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { VisaIcon, MastercardIcon, AmexIcon, DiscoverIcon, StripeLogo } from "@/components/ui/stripe-payment-icons";
 import { generateServicesPDF } from "@/lib/generateServicesPDF";
+import { AnimatedTagline } from "@/components/ui/animated-tagline";
 
 const Footer = memo(() => {
   const navigate = useNavigate();
@@ -163,8 +164,7 @@ const Footer = memo(() => {
               The unified dashboard for CEOs who demand excellence from their web presence.
             </p>
             <p className="text-sm text-muted-foreground mb-3">
-              A product of{" "}
-              <span className="text-foreground font-medium">Blackwood Productions</span>
+              <AnimatedTagline />
             </p>
             <button
               onClick={async () => {
