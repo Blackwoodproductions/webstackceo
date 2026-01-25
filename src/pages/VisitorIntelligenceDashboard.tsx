@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair, Twitter, Linkedin, Facebook, Bell, Newspaper
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -2702,18 +2702,45 @@ f.parentNode.insertBefore(j,f);
                   Domain: {selectedTrackedDomain || selectedDomainKey}
                 </p>
               )}
-              <p className="text-muted-foreground mb-8">
+              <p className="text-muted-foreground mb-6">
                 Manage your Google My Business listings, respond to reviews, update business info, and track local SEO performance—all from one dashboard.
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {/* CADE Integration Banner */}
+              <div className="max-w-lg mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <FileText className="w-5 h-5 text-violet-500" />
+                  <span className="font-semibold text-violet-500">Powered by CADE</span>
+                </div>
+                <p className="text-sm text-foreground">
+                  When CADE is active, your newest articles and FAQ drops are automatically posted to your GMB listing—keeping your business profile fresh with insights.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
                   { icon: MapPin, label: 'Manage Locations', desc: 'Update hours, address, photos' },
                   { icon: MessageCircle, label: 'Reviews', desc: 'Monitor & respond to reviews' },
                   { icon: BarChart3, label: 'Insights', desc: 'Track views, calls, directions' },
+                  { icon: Newspaper, label: 'Auto Posts', desc: 'CADE posts new content for you' },
                 ].map((feature) => (
-                  <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-blue-500/50 transition-colors">
                     <feature.icon className="w-6 h-6 text-primary mx-auto mb-2" />
+                    <p className="font-medium text-sm">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+              
+              {/* GMB Autopilot Features */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
+                {[
+                  { icon: FileText, label: 'Article Posts', desc: 'New blog articles auto-posted to GMB' },
+                  { icon: HelpCircle, label: 'FAQ Updates', desc: 'FAQ drops keep your Q&A fresh' },
+                  { icon: TrendingUp, label: 'Fresh Insights', desc: 'Consistent activity boosts local rankings' },
+                ].map((feature) => (
+                  <div key={feature.label} className="p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20">
+                    <feature.icon className="w-6 h-6 text-green-500 mx-auto mb-2" />
                     <p className="font-medium text-sm">{feature.label}</p>
                     <p className="text-xs text-muted-foreground">{feature.desc}</p>
                   </div>
@@ -3294,7 +3321,7 @@ f.parentNode.insertBefore(j,f);
       {/* Social Signals Tab Content */}
       {activeTab === 'social-signals' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-16">
+          <div className="text-center py-12">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4">
               <Activity className="w-8 h-8 text-white" />
             </div>
@@ -3304,30 +3331,73 @@ f.parentNode.insertBefore(j,f);
                 Domain: {selectedTrackedDomain || selectedDomainKey}
               </p>
             )}
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Track and amplify your social media presence. Monitor brand mentions, engagement metrics, and social proof signals that influence search rankings.
+            <p className="text-muted-foreground max-w-lg mx-auto mb-6">
+              Automated social media posting powered by CADE. Every new blog post and FAQ drop is automatically shared across your connected social profiles.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+            {/* CADE Integration Banner */}
+            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <FileText className="w-5 h-5 text-violet-500" />
+                <span className="font-semibold text-violet-500">Powered by CADE</span>
+              </div>
+              <p className="text-sm text-foreground">
+                Social Signals activates automatically when CADE is enabled. No manual posting required—CADE handles everything.
+              </p>
+            </div>
+            
+            {/* Platform Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-6">
               {[
-                { icon: MessageCircle, label: 'Brand Mentions', desc: 'Track mentions across platforms' },
-                { icon: TrendingUp, label: 'Engagement', desc: 'Likes, shares, and comments' },
-                { icon: Users, label: 'Audience Growth', desc: 'Follower trends and reach' },
+                { icon: Twitter, label: 'X (Twitter)', desc: 'Auto-post new articles with hashtags and excerpts', color: 'text-sky-500' },
+                { icon: Linkedin, label: 'LinkedIn', desc: 'Professional posts to your company page', color: 'text-blue-600' },
+                { icon: Facebook, label: 'Facebook', desc: 'Engaging posts with images to your business page', color: 'text-blue-500' },
+              ].map((platform) => (
+                <div key={platform.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-pink-500/50 transition-colors">
+                  <platform.icon className={`w-6 h-6 ${platform.color} mx-auto mb-2`} />
+                  <p className="font-medium text-sm">{platform.label}</p>
+                  <p className="text-xs text-muted-foreground">{platform.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            {/* Autopilot Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+              {[
+                { icon: Zap, label: 'Autopilot Posting', desc: 'New content shared instantly upon publish' },
+                { icon: Bell, label: 'Attention Driver', desc: 'Brings traffic back to your latest posts' },
+                { icon: TrendingUp, label: 'Engagement Boost', desc: 'Social signals that influence rankings' },
+                { icon: RefreshCw, label: 'Consistent Presence', desc: 'Never miss a posting opportunity' },
               ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
-                  <feature.icon className="w-6 h-6 text-pink-500 mx-auto mb-2" />
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-rose-500/50 transition-colors">
+                  <feature.icon className="w-6 h-6 text-rose-500 mx-auto mb-2" />
                   <p className="font-medium text-sm">{feature.label}</p>
                   <p className="text-xs text-muted-foreground">{feature.desc}</p>
                 </div>
               ))}
             </div>
             
-            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-              Coming Soon
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+              {[
+                { stat: '3', label: 'Platforms', desc: 'X, LinkedIn, Facebook' },
+                { stat: '24/7', label: 'Autopilot', desc: 'Always posting for you' },
+                { stat: '100%', label: 'Automated', desc: 'Zero manual effort' },
+              ].map((item) => (
+                <div key={item.label} className="p-4 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20">
+                  <p className="text-2xl font-bold text-pink-500">{item.stat}</p>
+                  <p className="font-medium text-sm">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <Badge variant="outline" className="text-violet-500 border-violet-500/30 bg-violet-500/10">
+              Activates with CADE
             </Badge>
             
             <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              Connect your social accounts to aggregate signals from Facebook, Twitter/X, LinkedIn, Instagram, and more.
+              Connect your social accounts once—CADE handles the rest. Every new blog post, FAQ, and content update is shared automatically.
             </p>
           </div>
         </div>
