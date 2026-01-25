@@ -1971,7 +1971,7 @@ const AuditResults = () => {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                  {!isClaimed && (
+                  {!isClaimed && !isCaseStudyMode && (
                     <Button 
                       variant="outline" 
                       className="gap-2 min-w-[160px] justify-center" 
@@ -3118,48 +3118,6 @@ const AuditResults = () => {
           </motion.div>
           )}
 
-          {/* Case Study: Next Report Update Section */}
-          {isCaseStudyMode && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-16"
-            >
-              <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 via-violet-500/5 to-primary/10 border border-primary/20">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="text-center md:text-left">
-                    <h2 className="text-2xl font-bold mb-2">
-                      Next Report Update
-                    </h2>
-                    <p className="text-muted-foreground max-w-lg">
-                      This case study is automatically updated every 7 days with fresh metrics from Ahrefs including domain rating, organic traffic, and keyword rankings.
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <NextReportCountdown />
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-6 border-t border-primary/20 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { icon: TrendingUp, label: "Live Metrics", desc: "Real-time Ahrefs data" },
-                    { icon: Calendar, label: "Weekly Updates", desc: "Fresh data every 7 days" },
-                    { icon: BarChart3, label: "Historical Tracking", desc: "2-year trend analysis" },
-                    { icon: Target, label: "Progress Reports", desc: "Track your growth" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-start gap-3 p-3 rounded-lg bg-card/50">
-                      <item.icon className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* SEO Resources Section - Glossary Terms & Learning Guides */}
           <motion.div
