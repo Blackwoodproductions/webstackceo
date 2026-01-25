@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, X, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, MousePointer, ArrowRight,
-  ExternalLink, Flame, Layers, AlertCircle
+  ExternalLink, Flame, Layers, AlertCircle, LogOut
 } from 'lucide-react';
 import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
@@ -53,7 +53,25 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     return Boolean(code && state && state === storedState);
   };
 
-  const [isConnected, setIsConnected] = useState(false);
+  // Check for stored connection on mount
+  const getStoredConnection = () => {
+    const storedToken = localStorage.getItem('google_ads_access_token');
+    const storedCustomerId = localStorage.getItem('google_ads_customer_id');
+    const storedExpiry = localStorage.getItem('google_ads_token_expiry');
+    
+    // Check if token is still valid (with 5 min buffer)
+    if (storedToken && storedCustomerId && storedExpiry) {
+      const expiryTime = parseInt(storedExpiry, 10);
+      if (Date.now() < expiryTime - 300000) {
+        return { token: storedToken, customerId: storedCustomerId };
+      }
+    }
+    return null;
+  };
+
+  const storedConnection = getStoredConnection();
+  
+  const [isConnected, setIsConnected] = useState(!!storedConnection);
   // Auto-show wizard if returning from OAuth callback
   const [showWizard, setShowWizard] = useState(hasOAuthCallback);
   const [showCampaignSetup, setShowCampaignSetup] = useState(false);
@@ -64,13 +82,26 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [summary, setSummary] = useState<KeywordSummary | null>(null);
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [generatedPages, setGeneratedPages] = useState<any[]>([]);
-  const [connectedCustomerId, setConnectedCustomerId] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [connectedCustomerId, setConnectedCustomerId] = useState<string | null>(storedConnection?.customerId || null);
+  const [accessToken, setAccessToken] = useState<string | null>(storedConnection?.token || null);
 
   const GOOGLE_ADS_SCOPES = 'https://www.googleapis.com/auth/adwords';
 
-  // Handle wizard completion
+  // Restore connection and fetch keywords on mount if we have stored credentials
+  useEffect(() => {
+    if (storedConnection && !hasOAuthCallback()) {
+      // Auto-fetch keywords with stored credentials
+      handleFetchKeywordsWithToken(storedConnection.token, storedConnection.customerId);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle wizard completion - store credentials
   const handleWizardComplete = useCallback((customerId: string, token: string) => {
+    // Store in localStorage for persistence (1 hour expiry)
+    localStorage.setItem('google_ads_access_token', token);
+    localStorage.setItem('google_ads_customer_id', customerId);
+    localStorage.setItem('google_ads_token_expiry', String(Date.now() + 3600000));
+    
     setConnectedCustomerId(customerId);
     setAccessToken(token);
     setIsConnected(true);
@@ -78,6 +109,22 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     
     // Auto-fetch keywords after connection
     handleFetchKeywordsWithToken(token, customerId);
+  }, []);
+
+  // Disconnect and clear stored credentials
+  const handleDisconnect = useCallback(() => {
+    localStorage.removeItem('google_ads_access_token');
+    localStorage.removeItem('google_ads_customer_id');
+    localStorage.removeItem('google_ads_customer_name');
+    localStorage.removeItem('google_ads_token_expiry');
+    
+    setIsConnected(false);
+    setAccessToken(null);
+    setConnectedCustomerId(null);
+    setKeywords([]);
+    setSummary(null);
+    setHasCampaigns(null);
+    toast.info('Disconnected from Google Ads');
   }, []);
 
   // Skip wizard and use demo data
@@ -391,7 +438,16 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                   {selectedKeywords.size} of {keywords.length} selected
                 </span>
               </div>
-              <div className="flex items-center gap-2 justify-end">
+              <div className="flex items-center gap-2 justify-end flex-wrap">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Disconnect
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
