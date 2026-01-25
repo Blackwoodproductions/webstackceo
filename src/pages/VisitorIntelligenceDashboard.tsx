@@ -1326,59 +1326,55 @@ const MarketingDashboard = () => {
       />
 
       {/* Header with integrated tabs */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
-        <div className="px-8 py-3 flex items-center justify-between relative">
-          {/* Left: Logo + Tabs grouped together */}
-          <div className="flex items-end gap-4 flex-1 min-w-0">
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group mb-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center relative group-hover:from-amber-400/20 group-hover:to-yellow-500/20 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110 transition-all duration-700">
-                <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-700" />
-                <span className="absolute font-bold text-[9px] tracking-tight text-primary group-hover:text-amber-400 transition-all duration-700">AI</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground leading-tight">
-                  webstack<span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all duration-500">.ceo</span>
-                </span>
-                <span className="text-[9px] text-muted-foreground tracking-wide">
-                  by Blackwood Productions
-                </span>
-              </div>
-            </a>
-          
-            {/* Tabs Navigation - left-justified after logo */}
-            <div className="flex items-end gap-0 -mb-3 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-              {[
-                { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
-                { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
-                { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
-                { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
-                { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
-                { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity },
-                { id: 'on-page-seo' as DashboardTab, label: 'On-page', icon: FileSearch },
-                { id: 'landing-pages' as DashboardTab, label: 'Landing', icon: Target },
-              ].map((tab, index) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{ zIndex: activeTab === tab.id ? 10 : 5 - index }}
-                  className={`relative flex items-center gap-1 px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all rounded-t-lg border-t border-x whitespace-nowrap flex-shrink-0 ${
-                    activeTab === tab.id
-                      ? 'bg-background text-primary border-border translate-y-px'
-                      : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
-                  }`}
-                  title={tab.label}
-                >
-                  <tab.icon className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
-                  <span className="hidden 2xl:inline">{tab.label}</span>
-                  {/* Active tab bottom cover */}
-                  {activeTab === tab.id && (
-                    <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
-                  )}
-                </button>
-              ))}
+      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto relative">
+        {/* Tabs - positioned absolutely to extend beyond header bounds */}
+        <div className="absolute left-[180px] -bottom-px flex items-end gap-0 z-20">
+          {[
+            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
+            { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
+            { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
+            { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
+            { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
+            { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity },
+            { id: 'on-page-seo' as DashboardTab, label: 'On-page', icon: FileSearch },
+            { id: 'landing-pages' as DashboardTab, label: 'Landing', icon: Target },
+          ].map((tab, index) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
+              className={`relative flex items-center justify-center w-9 h-9 transition-all rounded-t-lg border-t border-x ${
+                activeTab === tab.id
+                  ? 'bg-background text-primary border-border'
+                  : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
+              }`}
+              title={tab.label}
+            >
+              <tab.icon className="w-4 h-4" />
+              {/* Active tab bottom cover */}
+              {activeTab === tab.id && (
+                <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
+              )}
+            </button>
+          ))}
+        </div>
+        
+        <div className="px-8 py-3 flex items-center justify-between">
+          {/* Left: Logo */}
+          <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center relative group-hover:from-amber-400/20 group-hover:to-yellow-500/20 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110 transition-all duration-700">
+              <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-700" />
+              <span className="absolute font-bold text-[9px] tracking-tight text-primary group-hover:text-amber-400 transition-all duration-700">AI</span>
             </div>
-          </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground leading-tight">
+                webstack<span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all duration-500">.ceo</span>
+              </span>
+              <span className="text-[9px] text-muted-foreground tracking-wide">
+                by Blackwood Productions
+              </span>
+            </div>
+          </a>
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-4">
