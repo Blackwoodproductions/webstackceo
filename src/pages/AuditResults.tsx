@@ -2318,7 +2318,6 @@ const AuditResults = () => {
             transition={{ delay: 0.05 }}
             className="mb-8"
           >
-            <h2 className="text-xl font-bold mb-6">Technical Health Overview</h2>
             <div className="p-6 rounded-2xl bg-card border border-border/50">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {auditResults.map((category, i) => {
