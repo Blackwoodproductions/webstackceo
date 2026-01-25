@@ -38,6 +38,7 @@ import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
+import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import {
   Select,
   SelectGroup,
@@ -2682,6 +2683,9 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
+
+            {/* Extended Content Section */}
+            <BRONExtendedSection />
           </div>
         </div>
       )}
@@ -2788,6 +2792,9 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
+
+            {/* Extended Content Section */}
+            <CADEExtendedSection />
           </div>
         </div>
       )}
@@ -3555,6 +3562,9 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
+
+            {/* Extended Content Section */}
+            <SocialSignalsExtendedSection />
           </div>
         </div>
       )}
@@ -3661,6 +3671,9 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
+
+            {/* Extended Content Section */}
+            <OnPageSEOExtendedSection />
           </div>
         </div>
       )}
