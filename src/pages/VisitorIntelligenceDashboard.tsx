@@ -33,6 +33,7 @@ import { generateAPIDocs } from '@/lib/generateAPIDocs';
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
+import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import {
   Select,
@@ -183,6 +184,19 @@ const MarketingDashboard = () => {
   const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
   const [gaAuthenticated, setGaAuthenticated] = useState<boolean>(false);
+  const [gaMetrics, setGaMetrics] = useState<{
+    sessions: number;
+    users: number;
+    newUsers: number;
+    pageViews: number;
+    avgSessionDuration: number;
+    bounceRate: number;
+    engagementRate: number;
+    pagesPerSession: number;
+    sessionsChange: number;
+    usersChange: number;
+  } | null>(null);
+  const [gaDomainMatches, setGaDomainMatches] = useState<boolean>(false);
   const [selectedGscSiteUrl, setSelectedGscSiteUrl] = useState<string>("");
   const selectedGscDomainRef = useRef<string>("");
   const [gscProfile, setGscProfile] = useState<GoogleUserProfile | null>(null);
@@ -1417,6 +1431,11 @@ f.parentNode.insertBefore(j,f);
           {/* Full Width Stats Layout - only show if tracking installed or no domain selected */}
           {shouldShowViPanels && (
           <div className="space-y-4 mb-6">
+          {/* Google Analytics Metrics Boxes - Show at top when GA is connected and domain matches */}
+          {gaAuthenticated && gaMetrics && gaDomainMatches && (
+            <GAMetricsBoxes metrics={gaMetrics} />
+          )}
+          
           {/* Quick Stats Row - Full Width (expandable) */}
           <QuickStatsExpandableRow
             activeVisitors={activeVisitors}
@@ -1808,6 +1827,11 @@ f.parentNode.insertBefore(j,f);
             onAuthStatusChange={(isAuth) => {
               setGaAuthenticated(isAuth);
               console.log('[GA] Auth status changed:', isAuth);
+            }}
+            onMetricsUpdate={(metrics, isConnected, domainMatches) => {
+              setGaMetrics(metrics);
+              setGaDomainMatches(domainMatches);
+              console.log('[GA] Metrics updated:', { hasMetrics: !!metrics, isConnected, domainMatches });
             }}
           />
         </div>
