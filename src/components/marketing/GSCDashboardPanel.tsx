@@ -248,7 +248,6 @@ export const GSCDashboardPanel = ({
         picture: profile.picture,
       };
       localStorage.setItem("gsc_google_profile", JSON.stringify(minimal));
-      sessionStorage.setItem("gsc_google_profile", JSON.stringify(minimal));
       window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: minimal } }));
     } catch {
       // ignore
@@ -270,8 +269,9 @@ export const GSCDashboardPanel = ({
 
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
-    const storedToken = sessionStorage.getItem("gsc_access_token");
-    const tokenExpiry = sessionStorage.getItem("gsc_token_expiry");
+    // Use localStorage for persistent storage across browser sessions
+    const storedToken = localStorage.getItem("gsc_access_token");
+    const tokenExpiry = localStorage.getItem("gsc_token_expiry");
     
     // Check for valid stored token first
     if (storedToken && tokenExpiry) {
@@ -287,8 +287,8 @@ export const GSCDashboardPanel = ({
       } else {
         // Token expired - clear it and prompt reconnection
         console.log("[GSC] Stored token has expired, clearing...");
-        sessionStorage.removeItem("gsc_access_token");
-        sessionStorage.removeItem("gsc_token_expiry");
+        localStorage.removeItem("gsc_access_token");
+        localStorage.removeItem("gsc_token_expiry");
         toast({
           title: "Session Expired",
           description: "Your Google Search Console session has expired. Please reconnect.",
@@ -307,7 +307,7 @@ export const GSCDashboardPanel = ({
       hasCode: !!code, 
       hasError: !!error,
       pathname: window.location.pathname,
-      hasVerifier: !!sessionStorage.getItem("gsc_code_verifier")
+      hasVerifier: !!localStorage.getItem("gsc_code_verifier")
     });
 
     // Handle OAuth error response
@@ -325,7 +325,7 @@ export const GSCDashboardPanel = ({
 
     // Process OAuth code if present
     if (code) {
-      const verifier = sessionStorage.getItem("gsc_code_verifier");
+      const verifier = localStorage.getItem("gsc_code_verifier");
       const redirectUri = getOAuthRedirectUri();
       
       console.log("[GSC] Processing OAuth code:", { 
@@ -375,11 +375,11 @@ export const GSCDashboardPanel = ({
             const expiresIn = Number(tokenJson.expires_in ?? 3600);
             const expiry = Date.now() + expiresIn * 1000;
             
-            console.log("[GSC] Token received, storing...", { expiresIn, expiry: new Date(expiry) });
+            console.log("[GSC] Token received, storing in localStorage...", { expiresIn, expiry: new Date(expiry) });
             
-            sessionStorage.setItem("gsc_access_token", tokenJson.access_token);
-            sessionStorage.setItem("gsc_token_expiry", expiry.toString());
-            sessionStorage.removeItem("gsc_code_verifier");
+            localStorage.setItem("gsc_access_token", tokenJson.access_token);
+            localStorage.setItem("gsc_token_expiry", expiry.toString());
+            localStorage.removeItem("gsc_code_verifier");
             
             setAccessToken(tokenJson.access_token);
             setIsAuthenticated(true);
@@ -404,7 +404,7 @@ export const GSCDashboardPanel = ({
             description: e instanceof Error ? e.message : "Failed to complete Google authentication",
             variant: "destructive",
           });
-          sessionStorage.removeItem("gsc_code_verifier");
+          localStorage.removeItem("gsc_code_verifier");
           window.history.replaceState({}, document.title, window.location.pathname);
         } finally {
           setIsLoading(false);
@@ -548,7 +548,7 @@ export const GSCDashboardPanel = ({
       console.log("[GSC] Redirect URI:", redirectUri);
       
       const verifier = generateCodeVerifier();
-      sessionStorage.setItem("gsc_code_verifier", verifier);
+      localStorage.setItem("gsc_code_verifier", verifier);
       const challenge = await generateCodeChallenge(verifier);
 
       const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
@@ -584,10 +584,10 @@ export const GSCDashboardPanel = ({
   };
 
   const handleDisconnect = () => {
-    sessionStorage.removeItem("gsc_access_token");
-    sessionStorage.removeItem("gsc_token_expiry");
-    sessionStorage.removeItem("gsc_google_profile");
+    localStorage.removeItem("gsc_access_token");
+    localStorage.removeItem("gsc_token_expiry");
     localStorage.removeItem("gsc_google_profile");
+    localStorage.removeItem("gsc_code_verifier");
     window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: null } }));
     setAccessToken(null);
     setIsAuthenticated(false);
@@ -611,8 +611,8 @@ export const GSCDashboardPanel = ({
       if (response.data?.error?.status === "UNAUTHENTICATED" || 
           response.data?.error?.code === 401) {
         console.log("[GSC] Token invalid, triggering re-authentication");
-        sessionStorage.removeItem("gsc_access_token");
-        sessionStorage.removeItem("gsc_token_expiry");
+        localStorage.removeItem("gsc_access_token");
+        localStorage.removeItem("gsc_token_expiry");
         setAccessToken(null);
         setIsAuthenticated(false);
         toast({
@@ -719,8 +719,8 @@ export const GSCDashboardPanel = ({
     if (response.data?.error?.status === "UNAUTHENTICATED" || 
         response.data?.error?.code === 401) {
       console.log("[GSC] Token invalid during performance fetch");
-      sessionStorage.removeItem("gsc_access_token");
-      sessionStorage.removeItem("gsc_token_expiry");
+      localStorage.removeItem("gsc_access_token");
+      localStorage.removeItem("gsc_token_expiry");
       setAccessToken(null);
       setIsAuthenticated(false);
       toast({
