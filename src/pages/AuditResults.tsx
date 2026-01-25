@@ -1308,6 +1308,7 @@ const AuditResults = () => {
   };
 
   // Fetch website profile - for case studies, also load saved data from DB
+  // OPTIMIZED: Run DB query and scrape in parallel for faster loading
   useEffect(() => {
     if (!decodedDomain) return;
     
@@ -1317,14 +1318,25 @@ const AuditResults = () => {
     const fetchWebsiteProfile = async () => {
       setIsProfileLoading(true);
       try {
-        // For case studies, first try to load from saved_audits table
+        const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        
+        // For case studies, run both queries in parallel for speed
         if (isCaseStudyMode) {
-          const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-          const { data: savedAudit } = await supabase
-            .from('saved_audits')
-            .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
+          // Start both fetches simultaneously
+          const [savedAuditResult, scrapeResult] = await Promise.all([
+            supabase
+              .from('saved_audits')
+              .select('*')
+              .eq('slug', slug)
+              .maybeSingle(),
+            supabase.functions.invoke('scrape-website', {
+              body: { url: decodedDomain },
+            }),
+          ]);
+
+          const savedAudit = savedAuditResult.data;
+          const scrapeData = scrapeResult.data;
+          const scrapeError = scrapeResult.error;
 
           // IMPORTANT: Case Study pages need enhanced scrape data (technicalSEO, contentMetrics,
           // internalLinkingMetrics, localSEOSignals) for the advanced sections to render.
@@ -1409,13 +1421,9 @@ const AuditResults = () => {
               technicalSEO: emptyTechnicalSEO,
             };
 
-            const actualDomain = savedAudit.domain || decodedDomain;
-            const { data, error } = await supabase.functions.invoke('scrape-website', {
-              body: { url: actualDomain },
-            });
-
-            if (!error && data?.profile) {
-              const scrapedProfile = data.profile as WebsiteProfile & Record<string, unknown>;
+            // Use the parallel scrape result instead of fetching again
+            if (!scrapeError && scrapeData?.profile) {
+              const scrapedProfile = scrapeData.profile as WebsiteProfile & Record<string, unknown>;
 
               const mergedProfile: WebsiteProfile & Record<string, unknown> = {
                 ...scrapedProfile,
@@ -1445,8 +1453,9 @@ const AuditResults = () => {
 
               // If the DB record lacks profile fields, backfill them for future loads
               const missingDbProfile = !(savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary);
+              // Backfill DB in background - fire and forget (don't block UI)
               if (missingDbProfile) {
-                await supabase
+                supabase
                   .from('saved_audits')
                   .update({
                     site_title: mergedProfile.title,
@@ -1471,11 +1480,17 @@ const AuditResults = () => {
               return;
             }
 
-            // Scrape failed — fall back to DB-only profile (advanced sections may not render)
+            // Scrape failed — fall back to DB-only profile
             if (savedAudit.site_title || savedAudit.site_description || savedAudit.site_summary) {
               setWebsiteProfile(baseProfileFromDb);
               return;
             }
+          }
+          
+          // No saved audit found but scrape succeeded - use scrape data
+          if (!scrapeError && scrapeData?.profile) {
+            setWebsiteProfile(scrapeData.profile);
+            return;
           }
         }
         
@@ -1797,9 +1812,8 @@ const AuditResults = () => {
       }
     };
 
-    // Add a small delay for UX then fetch
-    const timer = setTimeout(fetchAuditData, 1500);
-    return () => clearTimeout(timer);
+    // Fetch immediately - no artificial delay for performance
+    fetchAuditData();
   }, [decodedDomain, navigate]);
 
   const overallScore = auditResults.length
