@@ -41,7 +41,7 @@ import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
-import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
+
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import {
   Select,
@@ -2455,6 +2455,13 @@ f.parentNode.insertBefore(j,f);
                     <p className="text-sm text-muted-foreground mb-4 flex-1">
                       Connect your CMS to enable automated link building and topical authority through the Diamond Flow methodology.
                     </p>
+                    <Button
+                      onClick={() => window.open('https://dashdev.imagehosting.space/login', '_blank')}
+                      className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      Login to BRON Dashboard
+                    </Button>
                     <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
                       Coming Soon
                     </Badge>
@@ -2516,14 +2523,6 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
             </div>
-
-            {/* Platform Connection Section */}
-            <BRONPlatformConnect 
-              domain={selectedTrackedDomain || selectedDomainKey} 
-              onConnectionComplete={(platform) => {
-                toast.success(`Successfully connected to ${platform}!`);
-              }}
-            />
 
             {/* Bottom row: Feature cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
