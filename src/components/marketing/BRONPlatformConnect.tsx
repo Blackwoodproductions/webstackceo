@@ -1,296 +1,276 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
-  Globe, ShoppingBag, Palette, Rocket, CheckCircle2, 
-  ArrowRight, ExternalLink, Loader2, Shield, Zap, Settings,
-  Link2, Plug, Sparkles
+  User, Lock, ExternalLink, Loader2, Shield, LogOut,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-
-interface Platform {
-  id: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  gradientFrom: string;
-  gradientTo: string;
-  description: string;
-  steps: string[];
-}
-
-const platforms: Platform[] = [
-  {
-    id: "wordpress",
-    name: "WordPress",
-    icon: Globe,
-    color: "text-blue-500",
-    gradientFrom: "from-blue-500",
-    gradientTo: "to-sky-400",
-    description: "Auto-publish blog posts & pages",
-    steps: ["Click Connect", "Authorize access", "Select your site", "Done!"],
-  },
-  {
-    id: "shopify",
-    name: "Shopify",
-    icon: ShoppingBag,
-    color: "text-green-500",
-    gradientFrom: "from-green-500",
-    gradientTo: "to-emerald-400",
-    description: "Blog articles & product content",
-    steps: ["Click Connect", "Enter store URL", "Install app", "Authorize"],
-  },
-  {
-    id: "wix",
-    name: "Wix",
-    icon: Palette,
-    color: "text-amber-500",
-    gradientFrom: "from-amber-500",
-    gradientTo: "to-yellow-400",
-    description: "Blog posts & dynamic pages",
-    steps: ["Click Connect", "Select site", "Grant permissions", "Ready!"],
-  },
-  {
-    id: "lovable",
-    name: "Lovable",
-    icon: Rocket,
-    color: "text-violet-500",
-    gradientFrom: "from-violet-500",
-    gradientTo: "to-purple-400",
-    description: "Native real-time streaming",
-    steps: ["Click Connect", "Get API key", "Add webhook", "Stream content"],
-  },
-];
-
-interface ConnectionStatus {
-  platform: string;
-  connected: boolean;
-  lastSync?: string;
-  siteName?: string;
-}
 
 interface BRONPlatformConnectProps {
   domain?: string;
   onConnectionComplete?: (platform: string) => void;
 }
 
+const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space";
+const STORAGE_KEY = "bron_dashboard_auth";
+
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
-  const [connecting, setConnecting] = useState<string | null>(null);
-  const [connections, setConnections] = useState<ConnectionStatus[]>([]);
-  const [hoveredPlatform, setHoveredPlatform] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const getAuthUrl = (platformId: string): string => {
-    const redirectUri = `${window.location.origin}/auth/callback/${platformId}`;
-    const state = crypto.randomUUID().replace(/-/g, "");
-    
-    sessionStorage.setItem(`oauth_state_${platformId}`, state);
-    sessionStorage.setItem(`oauth_redirect_path`, window.location.pathname + window.location.hash);
-
-    switch (platformId) {
-      case "wordpress":
-        const wpClientId = import.meta.env.VITE_WORDPRESS_CLIENT_ID || "YOUR_WP_CLIENT_ID";
-        return `https://public-api.wordpress.com/oauth2/authorize?client_id=${wpClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=global&state=${state}`;
-      case "shopify":
-        return `#shopify-connect`;
-      case "wix":
-        const wixClientId = import.meta.env.VITE_WIX_CLIENT_ID || "YOUR_WIX_CLIENT_ID";
-        return `https://www.wix.com/installer/install?appId=${wixClientId}&redirectUrl=${encodeURIComponent(redirectUri)}&state=${state}`;
-      case "lovable":
-        return `#lovable-connect`;
-      default:
-        return "#";
-    }
-  };
-
-  const handleConnect = async (platformId: string) => {
-    setConnecting(platformId);
-    
-    try {
-      const platform = platforms.find(p => p.id === platformId);
-      if (!platform) return;
-
-      if (platformId === "lovable") {
-        const { error } = await supabase.functions.invoke("bron-platform-connect", {
-          body: { 
-            action: "generate_api_key",
-            platform: platformId,
-            domain 
-          }
-        });
-
-        if (error) throw error;
-
-        setConnections(prev => [...prev.filter(c => c.platform !== platformId), {
-          platform: platformId,
-          connected: true,
-          lastSync: new Date().toISOString(),
-          siteName: domain || "Lovable App"
-        }]);
-
-        toast({
-          title: "Lovable Connected!",
-          description: "Your API key has been generated. Content will stream automatically.",
-        });
-
-        onConnectionComplete?.(platformId);
-      } else {
-        const authUrl = getAuthUrl(platformId);
-        
-        if (authUrl.startsWith("#")) {
-          toast({
-            title: "Configuration Required",
-            description: `Please configure your ${platform.name} credentials first.`,
-          });
+  // Check for existing auth on mount
+  useEffect(() => {
+    const storedAuth = localStorage.getItem(STORAGE_KEY);
+    if (storedAuth) {
+      try {
+        const authData = JSON.parse(storedAuth);
+        if (authData.authenticated && authData.expiry > Date.now()) {
+          setIsAuthenticated(true);
         } else {
-          window.location.href = authUrl;
+          localStorage.removeItem(STORAGE_KEY);
         }
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
       }
-    } catch (error) {
-      console.error("Connection error:", error);
+    }
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
       toast({
-        title: "Connection Failed",
-        description: "Unable to connect to the platform. Please try again.",
+        title: "Missing Credentials",
+        description: "Please enter both email and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoggingIn(true);
+
+    try {
+      // Simulate auth delay - in production this would hit the actual BRON API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Store auth state (24 hour expiry)
+      const authData = {
+        authenticated: true,
+        email,
+        expiry: Date.now() + 24 * 60 * 60 * 1000,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+      
+      setIsAuthenticated(true);
+      onConnectionComplete?.("bron");
+      
+      toast({
+        title: "Successfully Connected!",
+        description: "Your BRON dashboard is now loaded.",
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login Failed",
+        description: "Unable to authenticate. Please check your credentials.",
         variant: "destructive",
       });
     } finally {
-      setConnecting(null);
+      setIsLoggingIn(false);
     }
   };
 
-  const isConnected = (platformId: string) => {
-    return connections.some(c => c.platform === platformId && c.connected);
+  const handleLogout = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setIsAuthenticated(false);
+    setEmail("");
+    setPassword("");
+    toast({
+      title: "Logged Out",
+      description: "You have been disconnected from the BRON dashboard.",
+    });
   };
 
+  // Show iframe when authenticated
+  if (isAuthenticated) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative"
+      >
+        {/* Header with logout */}
+        <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-green-600 dark:text-green-400">BRON Dashboard Connected</p>
+              <p className="text-xs text-muted-foreground">Blackwood SEO V2</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
+              className="text-xs gap-1"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Open in New Tab
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-xs gap-1 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+            >
+              <LogOut className="w-3 h-3" />
+              Disconnect
+            </Button>
+          </div>
+        </div>
+
+        {/* Dashboard iframe */}
+        <div className="rounded-xl border border-border overflow-hidden bg-background">
+          <iframe
+            src={BRON_DASHBOARD_URL}
+            className="w-full min-h-[600px] border-0"
+            title="BRON Dashboard"
+            allow="clipboard-write"
+          />
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Login form - styled like Blackwood SEO V2
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative"
     >
-      {/* Main Container - Compact */}
-      <div className="relative p-5 rounded-xl bg-gradient-to-br from-cyan-500/5 via-sky-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden">
-        {/* Background decorations - smaller */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-full blur-2xl" />
+      <div className="relative p-6 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700/50 shadow-lg overflow-hidden">
+        {/* Background grid pattern */}
+        <div className="absolute inset-0 opacity-30 dark:opacity-10" style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }} />
         
+        {/* Decorative blurs */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
+
         <div className="relative z-10">
-          {/* Compact Header */}
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shadow-md">
-              <Plug className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                Connect Your Website
-                <Badge className="bg-cyan-500/10 text-cyan-500 border-cyan-500/30 text-[10px]">
-                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                  One-Click
-                </Badge>
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Select your platform to receive AI-generated content
-              </p>
-            </div>
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold tracking-wide text-slate-600 dark:text-slate-300">
+              BLACKWOOD SEO V2
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">Dashboard Login</p>
+            <Badge className="mt-2 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px]">
+              <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+              BRON Powered
+            </Badge>
           </div>
 
-          {/* Platform Cards Grid - Compact */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <AnimatePresence>
-              {platforms.map((platform, i) => {
-                const Icon = platform.icon;
-                const connected = isConnected(platform.id);
-                const isHovered = hoveredPlatform === platform.id;
-                const isConnecting = connecting === platform.id;
-                
-                return (
-                  <motion.div
-                    key={platform.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    onMouseEnter={() => setHoveredPlatform(platform.id)}
-                    onMouseLeave={() => setHoveredPlatform(null)}
-                    className="group relative"
-                  >
-                    <div className={`
-                      relative p-4 rounded-lg border transition-all duration-300 cursor-pointer h-full flex flex-col
-                      ${connected 
-                        ? 'bg-green-500/10 border-green-500/30' 
-                        : isHovered 
-                          ? `bg-gradient-to-br ${platform.gradientFrom}/10 ${platform.gradientTo}/5 border-cyan-500/40`
-                          : 'bg-background/50 border-border hover:border-muted-foreground/30'
-                      }
-                    `}>
-                      {/* Connected indicator */}
-                      {connected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md"
-                        >
-                          <CheckCircle2 className="w-3 h-3 text-white" />
-                        </motion.div>
-                      )}
-
-                      {/* Platform Icon & Name Row */}
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <div className={`
-                          w-9 h-9 rounded-lg bg-gradient-to-br ${platform.gradientFrom} ${platform.gradientTo} 
-                          flex items-center justify-center shadow-md shrink-0
-                        `}>
-                          <Icon className="w-4.5 h-4.5 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-sm">{platform.name}</h4>
-                          <p className="text-[10px] text-muted-foreground truncate">{platform.description}</p>
-                        </div>
-                      </div>
-
-                      {/* Connect Button */}
-                      <Button
-                        onClick={() => handleConnect(platform.id)}
-                        disabled={isConnecting || connected}
-                        className={`
-                          w-full gap-1.5 transition-all duration-300 mt-auto
-                          ${connected 
-                            ? 'bg-green-500/20 text-green-600 border border-green-500/30 hover:bg-green-500/30' 
-                            : `bg-gradient-to-r ${platform.gradientFrom} ${platform.gradientTo} hover:opacity-90 text-white shadow-md`
-                          }
-                        `}
-                        size="sm"
-                      >
-                        {isConnecting ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : connected ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span className="text-xs">Connected</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-xs">Connect</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-
-          {/* Bottom info - Compact */}
-          <div className="flex items-center justify-between gap-4 mt-4 pt-3 border-t border-cyan-500/10">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Shield className="w-3.5 h-3.5 text-cyan-500" />
-              <span>Secure OAuth 2.0</span>
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
+            {/* Email Input */}
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <User className="w-4 h-4 text-slate-500" />
+              </div>
+              <Input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-14 h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 rounded-lg"
+              />
             </div>
-            <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2">
-              <ExternalLink className="w-3 h-3" />
-              Docs
+
+            {/* Password Input */}
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <Lock className="w-4 h-4 text-slate-500" />
+              </div>
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-14 h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 rounded-lg"
+              />
+            </div>
+
+            {/* Login Button */}
+            <Button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg shadow-md"
+            >
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                "LOGIN"
+              )}
             </Button>
+          </form>
+
+          {/* Links */}
+          <div className="flex items-center justify-center gap-4 mt-4 text-xs">
+            <a 
+              href="https://dashdev.imagehosting.space/register" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
+            >
+              Register Now
+            </a>
+            <a 
+              href="https://dashdev.imagehosting.space/reset-password" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
+            >
+              Reset Password
+            </a>
+            <a 
+              href="https://dashdev.imagehosting.space/live-results" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
+            >
+              Live Results
+            </a>
+          </div>
+
+          {/* Description */}
+          <p className="text-center text-xs text-muted-foreground mt-4 max-w-xs mx-auto">
+            Access your SEO dashboard to monitor rankings, track keywords, and optimize your website performance.
+          </p>
+
+          {/* Footer links */}
+          <div className="flex items-center justify-center gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50 text-[10px] text-muted-foreground">
+            <a href="#" className="hover:text-foreground">Privacy Policy</a>
+            <span>|</span>
+            <a href="#" className="hover:text-foreground">Terms of Service</a>
+            <span>|</span>
+            <a href="#" className="hover:text-foreground">Support</a>
           </div>
         </div>
       </div>
