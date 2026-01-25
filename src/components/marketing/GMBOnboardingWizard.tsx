@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AddressAutocomplete } from './AddressAutocomplete';
 
 interface BusinessHours {
   day: string;
@@ -391,12 +392,22 @@ export const GMBOnboardingWizard = ({
             <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium mb-1.5">Street Address *</Label>
-                <Input
-                  placeholder="123 Main Street, Suite 100"
+                <AddressAutocomplete
                   value={streetAddress}
-                  onChange={(e) => setStreetAddress(e.target.value)}
+                  onChange={setStreetAddress}
+                  onAddressSelect={(address) => {
+                    setStreetAddress(address.streetAddress);
+                    setCity(address.city);
+                    setState(address.state);
+                    setPostalCode(address.postalCode);
+                    toast.success('Address auto-filled!');
+                  }}
+                  placeholder="Start typing your address..."
                   className="text-base"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Type to search and auto-fill address fields
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
