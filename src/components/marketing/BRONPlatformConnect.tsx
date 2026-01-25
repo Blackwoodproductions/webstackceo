@@ -132,7 +132,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             </div>
             <div>
               <p className="text-sm font-semibold text-green-600 dark:text-green-400">BRON Dashboard Connected</p>
-              <p className="text-xs text-muted-foreground">Blackwood SEO V2</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -256,7 +255,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 <iframe
                   src={BRON_LOGIN_URL}
                   className="w-full border-0"
-                  style={{ minHeight: '400px' }}
+                  style={{ minHeight: '600px' }}
                   title="BRON Login"
                   allow="clipboard-write"
                   sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
