@@ -311,11 +311,23 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           </div>
         </div>
 
-        {selectedDomain && (
-          <div className="md:pt-1">
-            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
-              Domain: {selectedDomain}
+        {isConnected && connectedCustomerId && (
+          <div className="md:pt-1 flex items-center gap-2">
+            <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/5">
+              <GoogleAdsIcon />
+              <span className="ml-1.5">
+                {connectedCustomerId.startsWith('demo') ? 'Demo Account' : `Account: ${connectedCustomerId}`}
+              </span>
             </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDisconnect}
+              className="h-7 px-2 text-muted-foreground hover:text-destructive"
+              title="Disconnect from Google Ads"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         )}
       </header>
