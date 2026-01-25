@@ -162,6 +162,9 @@ const MarketingDashboard = () => {
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
+  // Dashboard main tabs
+  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'landing-pages';
+  const [activeTab, setActiveTab] = useState<DashboardTab>('visitor-intelligence');
   // User-added domains
   const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
     const stored = localStorage.getItem('vi_user_added_domains');
@@ -988,7 +991,34 @@ const MarketingDashboard = () => {
         </div>
       </header>
 
-      {/* Date Range Selector Bar */}
+      {/* Main Tabs Navigation */}
+      <div className="border-x border-b border-border bg-card/80 backdrop-blur-sm max-w-[1530px] mx-auto">
+        <div className="px-8 flex items-center gap-1">
+          {[
+            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
+            { id: 'seo-audit' as DashboardTab, label: 'SEO Audit', icon: Search },
+            { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
+            { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
+            { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
+                activeTab === tab.id
+                  ? 'border-primary text-primary bg-primary/5'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Date Range Selector Bar - Only show for Visitor Intelligence tab */}
+      {activeTab === 'visitor-intelligence' && (
       <div className="border-x border-b border-border bg-card/50 backdrop-blur-sm sticky top-4 z-40 max-w-[1530px] mx-auto">
         <div className="px-8 py-2 flex items-center justify-between">
           {/* Left: VI Domain Selector & Time Range Selector */}
@@ -1171,8 +1201,10 @@ const MarketingDashboard = () => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Main Layout */}
+      {/* Main Layout - Only show for Visitor Intelligence tab */}
+      {activeTab === 'visitor-intelligence' && (
       <div className="flex min-h-[calc(100vh-180px)] max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
@@ -1950,8 +1982,85 @@ f.parentNode.insertBefore(j,f);
           </div>
         </div>
       </div>
+      )}
 
-      {/* Floating Chat Bar */}
+      {/* SEO Audit Tab Content */}
+      {activeTab === 'seo-audit' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">SEO Audit</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Comprehensive SEO analysis including domain authority, backlinks, organic traffic, and actionable recommendations.
+            </p>
+            <Button 
+              onClick={() => navigate('/audits')}
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              View Saved Audits
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* BRON Tab Content */}
+      {activeTab === 'bron' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">BRON</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
+            </p>
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+              Coming Soon
+            </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* CADE Tab Content */}
+      {activeTab === 'cade' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">CADE</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Content automation and topical authority signals. AI-powered content generation and optimization.
+            </p>
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+              Coming Soon
+            </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Landing Pages Tab Content */}
+      {activeTab === 'landing-pages' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mx-auto mb-4">
+              <Target className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Landing Pages</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              High-converting PPC landing pages optimized for conversions and quality scores.
+            </p>
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+              Coming Soon
+            </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Chat Bar - Show on all tabs */}
       <FloatingChatBar isOnline={chatOnline} selectedChatId={selectedChatId} onChatClose={() => setSelectedChatId(null)} />
 
       {/* Close Lead Dialog */}
