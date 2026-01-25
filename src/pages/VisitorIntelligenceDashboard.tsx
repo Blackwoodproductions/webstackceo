@@ -1044,7 +1044,7 @@ const MarketingDashboard = () => {
           </div>
           
           {/* Tabs Navigation - positioned after logo */}
-          <div className="flex items-end gap-0 ml-8 -mb-3">
+          <div className="flex items-end gap-0 ml-6 -mb-3">
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
               { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'SEO Audit', icon: Search },
@@ -1056,7 +1056,7 @@ const MarketingDashboard = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{ zIndex: activeTab === tab.id ? 10 : 5 - index }}
-                className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all rounded-t-lg border-t border-x ${
+                className={`relative flex items-center gap-2 px-6 py-2.5 text-sm font-medium transition-all rounded-t-lg border-t border-x ${
                   activeTab === tab.id
                     ? 'bg-background text-primary border-border translate-y-px'
                     : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-2 first:ml-0'
