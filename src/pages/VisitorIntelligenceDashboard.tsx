@@ -1448,10 +1448,6 @@ const MarketingDashboard = () => {
               }`}
               title={tab.isPaid ? `${tab.label} (Premium Add-on)` : tab.label}
             >
-              {/* Premium indicator dot */}
-              {tab.isPaid && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
-              )}
               <tab.icon className={`w-4 h-4 ${tab.isPaid && activeTab === tab.id ? 'text-amber-500' : ''}`} />
               <span className="text-[9px] font-medium leading-none">{tab.label}</span>
               {/* Active tab bottom cover */}
@@ -2599,15 +2595,27 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-7 h-7 text-white" />
+            <header className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">BRON</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    Link building and content clustering automation. Build topical authority through the Diamond Flow methodology with real business partnerships.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">BRON</h2>
-                <p className="text-sm text-muted-foreground max-w-2xl">
-                  Link building and content clustering automation. Build topical authority through the Diamond Flow methodology with real business partnerships.
-                </p>
+              <div className="hidden md:flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                  <Shield className="w-4 h-4 text-cyan-500" />
+                  <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">No PBNs</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Real Partnerships</span>
+                </div>
               </div>
             </header>
 
@@ -2721,15 +2729,27 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
-                <FileText className="w-7 h-7 text-white" />
+            <header className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
+                  <FileText className="w-7 h-7 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">CADE</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    Content automation and topical authority signals. AI-powered content generation that matches your native CSS and inner-links to your money pages.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">CADE</h2>
-                <p className="text-sm text-muted-foreground max-w-2xl">
-                  Content automation and topical authority signals. AI-powered content generation that matches your native CSS and inner-links to your money pages.
-                </p>
+              <div className="hidden md:flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <span className="text-xs font-medium text-violet-600 dark:text-violet-400">7 Article Types</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Native CSS Match</span>
+                </div>
               </div>
             </header>
 
@@ -2841,15 +2861,27 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           {/* Header Section - matching other tabs */}
-          <header className="flex items-start gap-4 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
-              <MapPin className="w-7 h-7 text-white" />
+          <header className="flex items-start justify-between gap-4 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
+                <MapPin className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">Google Business Profile</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  Manage your Google My Business listings, respond to reviews, and track local SEO performance. When CADE is active, new articles and FAQs are automatically posted to your GMB listing.
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h2 className="text-2xl font-bold">Google Business Profile</h2>
-              <p className="text-sm text-muted-foreground max-w-2xl">
-                Manage your Google My Business listings, respond to reviews, and track local SEO performance. When CADE is active, new articles and FAQs are automatically posted to your GMB listing.
-              </p>
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+                <Globe className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Local SEO</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                <Star className="w-4 h-4 text-green-500" />
+                <span className="text-xs font-medium text-green-600 dark:text-green-400">Review Management</span>
+              </div>
             </div>
           </header>
 
@@ -3573,15 +3605,27 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
-                <Activity className="w-7 h-7 text-white" />
+            <header className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
+                  <Activity className="w-7 h-7 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">Social Signals</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected X, LinkedIn, and Facebook profiles.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">Social Signals</h2>
-                <p className="text-sm text-muted-foreground max-w-2xl">
-                  Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected X, LinkedIn, and Facebook profiles.
-                </p>
+              <div className="hidden md:flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20">
+                  <Zap className="w-4 h-4 text-pink-500" />
+                  <span className="text-xs font-medium text-pink-600 dark:text-pink-400">Auto-Publish</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20">
+                  <Twitter className="w-4 h-4 text-sky-500" />
+                  <span className="text-xs font-medium text-sky-600 dark:text-sky-400">3 Platforms</span>
+                </div>
               </div>
             </header>
 
@@ -3690,15 +3734,27 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
-                <FileSearch className="w-7 h-7 text-white" />
+            <header className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                  <FileSearch className="w-7 h-7 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">On-page SEO</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    AI-powered on-page optimization that handles tedious manual work—meta tags, schema markup, and content structure—saving you time and money.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">On-page SEO</h2>
-                <p className="text-sm text-muted-foreground max-w-2xl">
-                  AI-powered on-page optimization that handles tedious manual work—meta tags, schema markup, and content structure—saving you time and money.
-                </p>
+              <div className="hidden md:flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                  <Gauge className="w-4 h-4 text-amber-500" />
+                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">24/7 Monitoring</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                  <Code className="w-4 h-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Rich Snippets</span>
+                </div>
               </div>
             </header>
 
