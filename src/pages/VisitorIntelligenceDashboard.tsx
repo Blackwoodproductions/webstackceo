@@ -3326,12 +3326,7 @@ f.parentNode.insertBefore(j,f);
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4">
               <Activity className="w-8 h-8 text-white" />
             </div>
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold">Social Signals</h2>
-              <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
-                Activates with CADE
-              </Badge>
-            </div>
+            <h2 className="text-2xl font-bold mb-2">Social Signals</h2>
             {(selectedTrackedDomain || selectedDomainKey) && (
               <p className="text-sm text-primary font-medium mb-2">
                 Domain: {selectedTrackedDomain || selectedDomainKey}
@@ -3397,6 +3392,10 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
+            
+            <Badge variant="outline" className="text-violet-500 border-violet-500/30 bg-violet-500/10">
+              Activates with CADE
+            </Badge>
             
             <p className="text-xs text-muted-foreground max-w-lg mx-auto">
               Connect your social accounts once—CADE handles the rest. Every new blog post, FAQ, and content update is shared automatically.
