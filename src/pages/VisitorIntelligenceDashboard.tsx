@@ -2685,18 +2685,16 @@ f.parentNode.insertBefore(j,f);
               ))}
             </div>
 
+            {/* Platform Connection Section */}
+            <BRONPlatformConnect 
+              domain={selectedTrackedDomain || selectedDomainKey} 
+              onConnectionComplete={(platform) => {
+                toast.success(`Successfully connected to ${platform}!`);
+              }}
+            />
+
             {/* Extended Content Section */}
             <BRONExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
-
-            {/* Platform Connection Section */}
-            <div className="mt-8 pt-8 border-t border-border">
-              <BRONPlatformConnect 
-                domain={selectedTrackedDomain || selectedDomainKey} 
-                onConnectionComplete={(platform) => {
-                  toast.success(`Successfully connected to ${platform}!`);
-                }}
-              />
-            </div>
           </div>
         </div>
       )}
