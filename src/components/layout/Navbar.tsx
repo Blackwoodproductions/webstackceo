@@ -210,7 +210,7 @@ const Navbar = () => {
                 <Zap className={`w-3.5 h-3.5 transition-colors duration-300 ${isFeaturesOpen ? 'text-white' : 'text-primary group-hover:text-white'}`} />
               </div>
               <span className="relative">Features</span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isFeaturesOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`} />
+              <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isFeaturesOpen ? 'rotate-180 text-primary opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-primary'}`} />
             </motion.a>
             
             <AnimatePresence>
@@ -357,7 +357,7 @@ const Navbar = () => {
                 <Search className={`w-3.5 h-3.5 transition-colors duration-300 ${isToolsOpen ? 'text-white' : 'text-emerald-500 group-hover:text-white'}`} />
               </div>
               <span className="relative">Tools</span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isToolsOpen ? 'rotate-180 text-emerald-500' : 'group-hover:text-emerald-500'}`} />
+              <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isToolsOpen ? 'rotate-180 text-emerald-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-emerald-500'}`} />
             </motion.a>
             
             <AnimatePresence>
@@ -513,7 +513,7 @@ const Navbar = () => {
                 <Headset className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-rose-500 group-hover:text-white'}`} />
               </div>
               <span className="relative">Contact</span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isContactOpen ? 'rotate-180 text-rose-500' : 'group-hover:text-rose-500'}`} />
+              <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isContactOpen ? 'rotate-180 text-rose-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-rose-500'}`} />
             </motion.a>
             
             <AnimatePresence>
@@ -579,7 +579,7 @@ const Navbar = () => {
                 <TrendingUp className={`w-3.5 h-3.5 transition-colors duration-300 ${isSubmitSiteOpen ? 'text-white' : 'text-amber-500 group-hover:text-white'}`} />
               </div>
               <span className="relative">Submit Site</span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isSubmitSiteOpen ? 'rotate-180 text-amber-500' : 'group-hover:text-amber-500'}`} />
+              <ChevronDown className={`w-4 h-4 transition-all duration-300 ${isSubmitSiteOpen ? 'rotate-180 text-amber-500 opacity-100' : 'opacity-0 group-hover:opacity-100 group-hover:text-amber-500'}`} />
             </motion.button>
             
             <AnimatePresence>
