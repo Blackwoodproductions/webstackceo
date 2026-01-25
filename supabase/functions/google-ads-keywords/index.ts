@@ -82,7 +82,8 @@ serve(async (req) => {
 
     // Get active keywords from campaigns
     if (action === 'get-keywords') {
-      const { domain } = await req.json().catch(() => ({}));
+      const body = await req.json().catch(() => ({}));
+      const domain = body.domain;
       
       if (!accessToken || !customerId) {
         throw new Error('Access token and customer ID required');
@@ -91,24 +92,19 @@ serve(async (req) => {
       console.log('[Google Ads] Fetching keywords for customer:', customerId, 'domain:', domain);
 
       // In production, this would query the Google Ads API with proper developer token
-      // For demo purposes, we simulate different scenarios based on domain/customerId
+      // For demo accounts (customerId starts with "demo"), always prompt to set up campaign
+      // This allows users to add their own domain and keywords through the wizard
+      const isDemoAccount = customerId.startsWith('demo');
       
-      // Simulate "no campaigns" scenario for domains not matching demo data
-      // This triggers the campaign setup wizard
-      const hasExistingCampaigns = !domain || 
-        domain.includes('demo') || 
-        domain.includes('webstack') || 
-        domain.includes('example') ||
-        customerId.includes('demo');
-      
-      if (!hasExistingCampaigns) {
-        console.log('[Google Ads] No campaigns found for domain:', domain);
+      if (isDemoAccount) {
+        console.log('[Google Ads] Demo account detected - prompting campaign setup for domain:', domain);
         return new Response(JSON.stringify({
           keywords: [],
           summary: null,
           hasCampaigns: false,
           isDemo: true,
-          message: 'No active campaigns found for this domain',
+          isDemoAccount: true,
+          message: `No active campaigns found for ${domain || 'your domain'}. Set up your first campaign to start generating landing pages.`,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
