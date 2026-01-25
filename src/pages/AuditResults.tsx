@@ -1325,9 +1325,9 @@ const AuditResults = () => {
           if (savedAudit) {
             // Build profile from saved audit data
             setWebsiteProfile({
-              title: savedAudit.site_title || '',
-              description: savedAudit.site_description || '',
-              summary: savedAudit.site_summary || '',
+              title: savedAudit.site_title || null,
+              description: savedAudit.site_description || null,
+              summary: savedAudit.site_summary || null,
               favicon: savedAudit.favicon_url || null,
               logo: savedAudit.logo_url || null,
               socialLinks: {
@@ -2568,7 +2568,7 @@ const AuditResults = () => {
 
 
           {/* Website Description Box */}
-          {(isProfileLoading || (websiteProfile && (websiteProfile.title || websiteProfile.summary))) && (
+          {(isProfileLoading || (websiteProfile && (websiteProfile.title || websiteProfile.summary || websiteProfile.description))) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
