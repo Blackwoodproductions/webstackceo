@@ -1096,7 +1096,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </div>
             )}
 
-            {/* Right side - Data dropdowns & Refresh */}
+            {/* Data dropdowns */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <Button 
                 variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
@@ -1128,14 +1128,16 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 Countries
                 {activeDropdown === 'countries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
               </Button>
-
-              <div className="w-px h-6 bg-border mx-1" />
-
-              <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); fetchSites(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
-                <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
             </div>
+
+            {/* Spacer to push refresh to right */}
+            <div className="flex-1" />
+
+            {/* Refresh button - right justified */}
+            <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); fetchSites(); }} disabled={isFetching || isLoadingAllTypes} className="h-8 flex-shrink-0">
+              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
           </div>
 
           {/* Dropdown Content Panels */}
