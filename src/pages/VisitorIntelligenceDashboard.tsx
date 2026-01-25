@@ -208,6 +208,8 @@ const MarketingDashboard = () => {
   const [gmbLocations, setGmbLocations] = useState<{ name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[]>([]);
   const [selectedGmbAccount, setSelectedGmbAccount] = useState<string | null>(null);
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
+  const [gmbSyncError, setGmbSyncError] = useState<string | null>(null);
+  const [gmbLastSyncAt, setGmbLastSyncAt] = useState<string | null>(null);
 
   // Fetch GMB locations for all accounts
   const fetchGmbLocations = useCallback(async (accessToken: string, accounts: { name: string; accountName: string; type: string }[]) => {
@@ -243,6 +245,7 @@ const MarketingDashboard = () => {
     
     console.log('[GMB] Found', allLocations.length, 'total locations');
     setGmbLocations(allLocations);
+    setGmbLastSyncAt(new Date().toISOString());
   }, []);
 
   const applyGmbToken = useCallback(async (accessToken: string, expiresIn?: number) => {
@@ -253,6 +256,7 @@ const MarketingDashboard = () => {
     sessionStorage.setItem('gmb_token_expiry', expiry.toString());
 
     setGmbAuthenticated(true);
+    setGmbSyncError(null);
 
     // Fetch GMB accounts
     try {
@@ -260,9 +264,20 @@ const MarketingDashboard = () => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
+      if (!accountsRes.ok) {
+        const body = await accountsRes.text().catch(() => '');
+        const details = body ? ` - ${body.slice(0, 240)}` : '';
+        const msg = `Google Business accounts request failed (${accountsRes.status})${details}`;
+        console.warn('[GMB]', msg);
+        setGmbAccounts([]);
+        setGmbLocations([]);
+        setGmbSyncError(msg);
+        return;
+      }
+
       if (accountsRes.ok) {
         const accountsData = await accountsRes.json();
-        if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
+        if (accountsData.accounts && Array.isArray(accountsData.accounts) && accountsData.accounts.length > 0) {
           const fetchedAccounts = accountsData.accounts.map((a: any) => ({
             name: a.name,
             accountName: a.accountName || a.name?.split('/').pop() || 'Business Account',
@@ -272,10 +287,19 @@ const MarketingDashboard = () => {
           
           // Also fetch locations for all accounts
           await fetchGmbLocations(accessToken, fetchedAccounts);
+        } else {
+          const msg = 'No Google Business accounts found for the connected Google login.';
+          console.warn('[GMB]', msg, accountsData);
+          setGmbAccounts([]);
+          setGmbLocations([]);
+          setGmbSyncError(msg);
         }
       }
     } catch (accountErr) {
       console.error('[GMB] Failed to fetch accounts:', accountErr);
+      setGmbAccounts([]);
+      setGmbLocations([]);
+      setGmbSyncError(accountErr instanceof Error ? accountErr.message : 'Failed to fetch Google Business accounts');
     }
   }, [fetchGmbLocations]);
   
@@ -2576,7 +2600,8 @@ f.parentNode.insertBefore(j,f);
                     authUrl.searchParams.set('code_challenge', base64);
                     authUrl.searchParams.set('code_challenge_method', 'S256');
                     authUrl.searchParams.set('access_type', 'offline');
-                    authUrl.searchParams.set('prompt', 'consent');
+                    // Force account picker so the user can select the Google login that actually owns the Business Profile.
+                    authUrl.searchParams.set('prompt', 'consent select_account');
                     authUrl.searchParams.set('state', 'gmb');
 
                     const popupWidth = 520;
@@ -2784,6 +2809,15 @@ f.parentNode.insertBefore(j,f);
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                     This usually means the Google account you connected does not have access to a Business Profile (or you're logged into a different Google account).
                   </p>
+                  {gmbSyncError && (
+                    <div className="mt-4 mx-auto max-w-xl rounded-lg border border-border bg-muted/30 px-4 py-3 text-left">
+                      <p className="text-[11px] font-medium text-foreground">Sync details</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground break-words">{gmbSyncError}</p>
+                      {gmbLastSyncAt && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">Last sync: {new Date(gmbLastSyncAt).toLocaleString()}</p>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-5 flex items-center justify-center gap-2">
                     <Button
                       variant="outline"
