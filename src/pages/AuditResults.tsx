@@ -1543,11 +1543,31 @@ const AuditResults = () => {
     fetchWebsiteProfile();
   }, [decodedDomain, isCaseStudyMode]);
 
-  // Fetch PageSpeed Insights data (real Core Web Vitals)
+  // Fetch PageSpeed Insights data (real Core Web Vitals) - with client-side caching
   useEffect(() => {
     if (!decodedDomain) return;
     
+    const CACHE_KEY = `pagespeed_cache_${decodedDomain.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+    
     const fetchPageSpeedData = async () => {
+      // Check client-side cache first
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data: cachedData, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          if (age < CACHE_DURATION_MS && cachedData?.metrics) {
+            console.log('[PageSpeed] Using cached data (age:', Math.round(age / 1000 / 60), 'min)');
+            setPageSpeedMetrics(cachedData.metrics);
+            setIsPageSpeedLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Ignore cache read errors
+      }
+      
       setIsPageSpeedLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('pagespeed-insights', {
@@ -1562,6 +1582,13 @@ const AuditResults = () => {
         if (data?.metrics) {
           setPageSpeedMetrics(data.metrics);
           console.log('PageSpeed Insights data loaded:', data.metrics);
+          
+          // Cache the result
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+          } catch {
+            // Ignore cache write errors (e.g., quota exceeded)
+          }
         } else if (data?.error) {
           console.warn('PageSpeed API issue:', data.error);
         }
