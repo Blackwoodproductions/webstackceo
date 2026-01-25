@@ -182,6 +182,7 @@ const MarketingDashboard = () => {
   const [gscTrackingByDomain, setGscTrackingByDomain] = useState<Record<string, boolean>>({});
   const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
+  const [gaAuthenticated, setGaAuthenticated] = useState<boolean>(false);
   const [selectedGscSiteUrl, setSelectedGscSiteUrl] = useState<string>("");
   const selectedGscDomainRef = useRef<string>("");
   const [gscProfile, setGscProfile] = useState<GoogleUserProfile | null>(null);
@@ -1768,47 +1769,99 @@ f.parentNode.insertBefore(j,f);
         </div>
         )}
 
-        {/* Google Integrations - GSC and GA side by side */}
-        <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Google Search Console Panel */}
-          <GSCDashboardPanel 
-            externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
-            externalDateRange={integratedGscDateRange}
-            hideDateSelector={true}
-            onSiteChange={(site) => {
-              // When GSC domain changes, update parent state for integration logic
-              const cleanDomain = normalizeDomain(site);
-              setSelectedGscDomain(cleanDomain);
-              setSelectedGscSiteUrl(site);
-              selectedGscDomainRef.current = cleanDomain;
-              console.log('[GSC Panel] Site changed to:', cleanDomain);
-            }}
-            onDataLoaded={(data) => {
-              console.log('GSC data loaded:', data);
-            }}
-            onTrackingStatus={(hasTracking, domain) => {
-              const cleanDomain = normalizeDomain(domain);
-              setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
-              console.log(`Tracking status for ${cleanDomain}: ${hasTracking ? 'installed' : 'not installed'}`);
-            }}
-            onSitesLoaded={(sites) => {
-              setGscSites(sites);
-              console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
-            }}
-            onAuthStatusChange={(isAuth) => {
-              setGscAuthenticated(isAuth);
-              console.log('[GSC] Auth status changed:', isAuth);
-            }}
-          />
-          
-          {/* Google Analytics Panel */}
-          <GADashboardPanel 
-            externalSelectedSite={selectedTrackedDomain}
-            onAuthStatusChange={(isAuth) => {
-              console.log('[GA] Auth status changed:', isAuth);
-            }}
-          />
-        </div>
+        {/* Google Integrations - Responsive layout based on connection status */}
+        {/* Show side-by-side when both need connection OR when both are connected */}
+        {/* Show GA full-width at bottom when only GA needs connection */}
+        {(!gscAuthenticated || gaAuthenticated) && (
+          <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            {/* Google Search Console Panel */}
+            <GSCDashboardPanel 
+              externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
+              externalDateRange={integratedGscDateRange}
+              hideDateSelector={true}
+              onSiteChange={(site) => {
+                const cleanDomain = normalizeDomain(site);
+                setSelectedGscDomain(cleanDomain);
+                setSelectedGscSiteUrl(site);
+                selectedGscDomainRef.current = cleanDomain;
+                console.log('[GSC Panel] Site changed to:', cleanDomain);
+              }}
+              onDataLoaded={(data) => {
+                console.log('GSC data loaded:', data);
+              }}
+              onTrackingStatus={(hasTracking, domain) => {
+                const cleanDomain = normalizeDomain(domain);
+                setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
+                console.log(`Tracking status for ${cleanDomain}: ${hasTracking ? 'installed' : 'not installed'}`);
+              }}
+              onSitesLoaded={(sites) => {
+                setGscSites(sites);
+                console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
+              }}
+              onAuthStatusChange={(isAuth) => {
+                setGscAuthenticated(isAuth);
+                console.log('[GSC] Auth status changed:', isAuth);
+              }}
+            />
+            
+            {/* Google Analytics Panel - side by side */}
+            <GADashboardPanel 
+              externalSelectedSite={selectedTrackedDomain}
+              onAuthStatusChange={(isAuth) => {
+                setGaAuthenticated(isAuth);
+                console.log('[GA] Auth status changed:', isAuth);
+              }}
+            />
+          </div>
+        )}
+        
+        {/* GSC Panel alone when GSC connected but GA not */}
+        {gscAuthenticated && !gaAuthenticated && (
+          <>
+            <div className="mb-8">
+              <GSCDashboardPanel 
+                externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
+                externalDateRange={integratedGscDateRange}
+                hideDateSelector={true}
+                onSiteChange={(site) => {
+                  const cleanDomain = normalizeDomain(site);
+                  setSelectedGscDomain(cleanDomain);
+                  setSelectedGscSiteUrl(site);
+                  selectedGscDomainRef.current = cleanDomain;
+                  console.log('[GSC Panel] Site changed to:', cleanDomain);
+                }}
+                onDataLoaded={(data) => {
+                  console.log('GSC data loaded:', data);
+                }}
+                onTrackingStatus={(hasTracking, domain) => {
+                  const cleanDomain = normalizeDomain(domain);
+                  setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
+                  console.log(`Tracking status for ${cleanDomain}: ${hasTracking ? 'installed' : 'not installed'}`);
+                }}
+                onSitesLoaded={(sites) => {
+                  setGscSites(sites);
+                  console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
+                }}
+                onAuthStatusChange={(isAuth) => {
+                  setGscAuthenticated(isAuth);
+                  console.log('[GSC] Auth status changed:', isAuth);
+                }}
+              />
+            </div>
+            
+            {/* GA Full-width prompt at bottom */}
+            <div className="mb-8">
+              <GADashboardPanel 
+                externalSelectedSite={selectedTrackedDomain}
+                onAuthStatusChange={(isAuth) => {
+                  setGaAuthenticated(isAuth);
+                  console.log('[GA] Auth status changed:', isAuth);
+                }}
+                fullWidth={true}
+              />
+            </div>
+          </>
+        )}
         
         {/* Show VI install prompt when GSC domain is not in VI tracking */}
         {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (
