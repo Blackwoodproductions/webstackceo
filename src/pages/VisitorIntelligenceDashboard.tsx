@@ -209,6 +209,42 @@ const MarketingDashboard = () => {
   const [selectedGmbAccount, setSelectedGmbAccount] = useState<string | null>(null);
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
 
+  // Fetch GMB locations for all accounts
+  const fetchGmbLocations = useCallback(async (accessToken: string, accounts: { name: string; accountName: string; type: string }[]) => {
+    if (!accessToken || accounts.length === 0) return;
+    
+    console.log('[GMB] Fetching locations for', accounts.length, 'accounts');
+    const allLocations: { name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[] = [];
+    
+    for (const account of accounts) {
+      try {
+        const locationsRes = await fetch(
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,websiteUri,storefrontAddress`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        
+        if (locationsRes.ok) {
+          const locData = await locationsRes.json();
+          if (locData.locations && Array.isArray(locData.locations)) {
+            allLocations.push(...locData.locations.map((loc: any) => ({
+              name: loc.name,
+              title: loc.title || 'Untitled Location',
+              websiteUri: loc.websiteUri,
+              storefrontAddress: loc.storefrontAddress,
+            })));
+          }
+        } else {
+          console.warn('[GMB] Failed to fetch locations for account:', account.name, locationsRes.status);
+        }
+      } catch (err) {
+        console.error('[GMB] Error fetching locations for account:', account.name, err);
+      }
+    }
+    
+    console.log('[GMB] Found', allLocations.length, 'total locations');
+    setGmbLocations(allLocations);
+  }, []);
+
   const applyGmbToken = useCallback(async (accessToken: string, expiresIn?: number) => {
     const safeExpiresIn = Number(expiresIn ?? 3600);
     const expiry = Date.now() + safeExpiresIn * 1000;
@@ -227,17 +263,21 @@ const MarketingDashboard = () => {
       if (accountsRes.ok) {
         const accountsData = await accountsRes.json();
         if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
-          setGmbAccounts(accountsData.accounts.map((a: any) => ({
+          const fetchedAccounts = accountsData.accounts.map((a: any) => ({
             name: a.name,
             accountName: a.accountName || a.name?.split('/').pop() || 'Business Account',
             type: a.type || 'PERSONAL',
-          })));
+          }));
+          setGmbAccounts(fetchedAccounts);
+          
+          // Also fetch locations for all accounts
+          await fetchGmbLocations(accessToken, fetchedAccounts);
         }
       }
     } catch (accountErr) {
       console.error('[GMB] Failed to fetch accounts:', accountErr);
     }
-  }, []);
+  }, [fetchGmbLocations]);
   
   // SEO Audit state for selected domain
   const [savedAuditForDomain, setSavedAuditForDomain] = useState<{
@@ -2651,10 +2691,17 @@ f.parentNode.insertBefore(j,f);
                   accessToken={sessionStorage.getItem('gmb_access_token') || ''}
                   accountId={selectedGmbAccount}
                   accounts={gmbAccounts}
-                  onComplete={() => {
+                  onComplete={async () => {
                     setGmbOnboardingStep(0);
-                    // Refresh GMB data
-                    toast.success('Business listing process completed');
+                    // Refresh GMB locations to show the newly created business
+                    const accessToken = sessionStorage.getItem('gmb_access_token');
+                    if (accessToken && gmbAccounts.length > 0) {
+                      toast.info('Refreshing business locations...');
+                      await fetchGmbLocations(accessToken, gmbAccounts);
+                      toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
+                    } else {
+                      toast.success('Business listing process completed');
+                    }
                   }}
                   onCancel={() => {
                     setGmbOnboardingStep(0);
