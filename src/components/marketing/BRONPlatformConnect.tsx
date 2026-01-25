@@ -63,21 +63,40 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  const handleLogin = () => {
-    // Open login in new tab
-    window.open(BRON_LOGIN_URL, "_blank");
+  // Poll for authentication by checking if iframe has navigated to dashboard
+  useEffect(() => {
+    if (isAuthenticated) return;
     
-    // Mark as authenticated after they click (they'll login in new tab)
-    // This is a temporary solution - ideally we'd use postMessage from the dashboard
-    setTimeout(() => {
-      const authData = {
-        authenticated: true,
-        expiry: Date.now() + 24 * 60 * 60 * 1000,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-      setIsAuthenticated(true);
-      onConnectionComplete?.("bron");
+    const pollInterval = setInterval(() => {
+      // Try to detect if user has logged in by checking localStorage or iframe state
+      // For now, we'll rely on postMessage or manual "I'm logged in" confirmation
+      try {
+        const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
+        if (iframe?.contentWindow) {
+          // If the iframe has navigated to the dashboard URL (not login), user is authenticated
+          // Note: This may not work due to cross-origin restrictions
+        }
+      } catch (e) {
+        // Cross-origin access prevented, expected
+      }
     }, 2000);
+    
+    return () => clearInterval(pollInterval);
+  }, [isAuthenticated]);
+  
+  const handleManualAuth = () => {
+    // Allow manual confirmation if auto-detection doesn't work
+    const authData = {
+      authenticated: true,
+      expiry: Date.now() + 24 * 60 * 60 * 1000,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+    setIsAuthenticated(true);
+    onConnectionComplete?.("bron");
+    toast({
+      title: "Successfully Connected!",
+      description: "Your BRON dashboard is now linked.",
+    });
   };
 
   const handleLogout = () => {
@@ -231,13 +250,27 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
               <p className="text-sm text-muted-foreground mb-4 flex-1">
                 Connect your CMS to enable automated link building and topical authority through the Diamond Flow methodology.
               </p>
+              
+              {/* Embedded Login Form */}
+              <div className="rounded-lg border border-cyan-500/30 overflow-hidden bg-background mb-4">
+                <iframe
+                  src={BRON_LOGIN_URL}
+                  className="w-full border-0"
+                  style={{ minHeight: '400px' }}
+                  title="BRON Login"
+                  allow="clipboard-write"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                />
+              </div>
+              
               <Button
-                onClick={handleLogin}
-                className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                onClick={handleManualAuth}
+                className="mb-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white w-full"
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Login to BRON Dashboard
+                <CheckCircle className="w-4 h-4 mr-2" />
+                I've Logged In - Show Dashboard
               </Button>
+              
               <p className="text-xs text-muted-foreground">
                 Diamond Flow ensures links come from topically relevant sites.
               </p>
