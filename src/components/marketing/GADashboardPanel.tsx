@@ -341,6 +341,13 @@ export const GADashboardPanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, accessToken, externalSelectedSite, propertiesLoaded, properties.map((p) => p.name).join(",")]);
 
+  // Auto-select the matching property when streams are loaded and a match is found
+  useEffect(() => {
+    if (matchingProperty && matchingProperty.name !== selectedProperty) {
+      setSelectedProperty(matchingProperty.name);
+    }
+  }, [matchingProperty, selectedProperty]);
+
   // Fetch data when property is selected
   useEffect(() => {
     if (selectedProperty && accessToken) {
