@@ -331,29 +331,30 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
               </Button>
             </>
           ) : (
-            <>
-              {/* Feature Pills */}
+            <div className="flex flex-col items-end gap-2">
+              {/* Trust Badges */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20">
-                  <FlaskConical className="w-4 h-4 text-orange-500" />
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">A/B Testing</span>
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
-                  <Flame className="w-4 h-4 text-red-500" />
-                  <span className="text-xs font-medium text-red-600 dark:text-red-400">Heat Tracking</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pl-3 border-l border-border">
-                <div className="flex flex-col items-center justify-center px-2 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
-                  <Award className="w-5 h-5 text-amber-500" />
-                  <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                </div>
-                <div className="flex flex-col items-center justify-center px-2 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
-                  <Building className="w-5 h-5 text-slate-500" />
-                  <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                  <Building className="w-4 h-4 text-slate-500" />
+                  <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
               </div>
-            </>
+              {/* Feature Pills */}
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
+                  <FlaskConical className="w-3 h-3 text-orange-500" />
+                  <span className="text-[10px] font-medium text-orange-600 dark:text-orange-400">A/B Testing</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-500/10 border border-red-500/20">
+                  <Flame className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] font-medium text-red-600 dark:text-red-400">Heat Tracking</span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </header>
