@@ -2720,12 +2720,6 @@ f.parentNode.insertBefore(j,f);
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
-          {/* Coming Soon Banner */}
-          <div className="mb-4 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20 inline-flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
-            <span className="text-xs font-medium text-blue-400">Coming Soon</span>
-            <span className="text-xs text-muted-foreground">— This feature is under development</span>
-          </div>
           <header className="flex items-start justify-between gap-4 mb-6 relative overflow-hidden">
             {/* Radar Pulse Scanner - GMB */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -2752,6 +2746,11 @@ f.parentNode.insertBefore(j,f);
                   Manage your Google My Business listings, respond to reviews, and track local SEO performance. When CADE is active, new articles and FAQs are automatically posted to your GMB listing.
                 </p>
               </div>
+            </div>
+            {/* Coming Soon Badge - Centered */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center gap-2 z-10">
+              <Clock className="w-3 h-3 text-blue-400 animate-pulse" />
+              <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">Coming Soon</span>
             </div>
             <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
               {/* Trust Badges */}
@@ -3509,12 +3508,6 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'social-signals' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
-            {/* Coming Soon Banner */}
-            <div className="px-3 py-2 rounded-lg bg-pink-500/10 border border-pink-500/20 inline-flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-              <span className="text-xs font-medium text-pink-400">Coming Soon</span>
-              <span className="text-xs text-muted-foreground">— This feature is under development</span>
-            </div>
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
               {/* Network Nodes & Connections - Social Signals */}
@@ -3550,6 +3543,11 @@ f.parentNode.insertBefore(j,f);
                     Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected X, LinkedIn, and Facebook profiles.
                   </p>
                 </div>
+              </div>
+              {/* Coming Soon Badge - Centered */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-pink-500/15 border border-pink-500/30 flex items-center gap-2 z-10">
+                <Clock className="w-3 h-3 text-pink-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-pink-400 uppercase tracking-wide">Coming Soon</span>
               </div>
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
@@ -3692,12 +3690,6 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'on-page-seo' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
-            {/* Coming Soon Banner */}
-            <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 inline-flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span className="text-xs font-medium text-amber-400">Coming Soon</span>
-              <span className="text-xs text-muted-foreground">— This feature is under development</span>
-            </div>
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
               {/* Circuit Board Traces - On-page SEO */}
@@ -3730,6 +3722,11 @@ f.parentNode.insertBefore(j,f);
                     AI-powered on-page optimization that handles tedious manual work—meta tags, schema markup, and content structure—saving you time and money.
                   </p>
                 </div>
+              </div>
+              {/* Coming Soon Badge - Centered */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center gap-2 z-10">
+                <Clock className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide">Coming Soon</span>
               </div>
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
@@ -3939,12 +3936,6 @@ f.parentNode.insertBefore(j,f);
 
       {activeTab === 'landing-pages' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
-          {/* Coming Soon Banner */}
-          <div className="mb-4 px-3 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 inline-flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-            <span className="text-xs font-medium text-cyan-400">Coming Soon</span>
-            <span className="text-xs text-muted-foreground">— This feature is under development</span>
-          </div>
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           
           {/* Extended Content Section */}
