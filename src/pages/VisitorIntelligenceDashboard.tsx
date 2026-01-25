@@ -3739,8 +3739,56 @@ f.parentNode.insertBefore(j,f);
             {/* Bottom row: Auto-scrolling Feature Carousel */}
             <OnPageSEOCarousel />
 
-            {/* Extended Content Section */}
-            <OnPageSEOExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
+            {/* Connection Section */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-yellow-500/5 border border-amber-500/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                  <Globe className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Connect Your Website</h3>
+                  <p className="text-sm text-muted-foreground">Enable AI-powered on-page optimization</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                {[
+                  { step: '1', title: 'Verify Ownership', desc: 'Add our tracking code or connect via Google Search Console to verify site ownership', icon: Shield },
+                  { step: '2', title: 'Activate BRON', desc: 'On-page SEO runs on our BRON engine—activate it in the BRON tab to enable automation', icon: Zap },
+                  { step: '3', title: 'Auto-Optimize', desc: 'BRON scans your pages and applies meta tags, schema markup, and alt text automatically', icon: Sparkles },
+                ].map((item) => (
+                  <div key={item.step} className="relative p-5 rounded-xl bg-background/50 border border-amber-500/10">
+                    <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                      {item.step}
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 mt-1">
+                      <item.icon className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <p className="font-semibold text-sm mb-1">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl bg-background/60 border border-border">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-cyan-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">On-page SEO is powered by BRON</p>
+                    <p className="text-xs text-muted-foreground">Connect BRON to unlock automated on-page optimization</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setActiveTab('bron')}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Go to BRON
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
