@@ -3541,108 +3541,105 @@ f.parentNode.insertBefore(j,f);
       {/* On-page SEO Tab Content */}
       {activeTab === 'on-page-seo' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4">
-              <FileSearch className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">On-page SEO</h2>
-            {(selectedTrackedDomain || selectedDomainKey) && (
-              <p className="text-sm text-primary font-medium mb-2">
-                Domain: {selectedTrackedDomain || selectedDomainKey}
-              </p>
-            )}
-            <p className="text-muted-foreground max-w-lg mx-auto mb-6">
-              AI-powered on-page optimization that handles the tedious work humans used to do manually—saving you time and money while improving rankings.
-            </p>
-            
-            {/* BRON Integration Banner */}
-            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/15 border border-emerald-500/30">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                <span className="font-semibold text-emerald-500">Powered by BRON</span>
+          <div className="space-y-6">
+            {/* Top row: Header section + How It Works grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left - Header section */}
+              <div className="lg:col-span-4">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/15 border border-emerald-500/20 h-full flex flex-col">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4 shadow-lg">
+                    <FileSearch className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">On-page SEO</h2>
+                  {(selectedTrackedDomain || selectedDomainKey) && (
+                    <p className="text-sm text-primary font-medium mb-2">
+                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-sm flex-1">
+                    AI-powered on-page optimization that handles tedious manual work—saving you time and money while improving rankings.
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-emerald-500/20">
+                    <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
+                      Powered by BRON
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      What used to take SEO specialists hours now happens in seconds.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-foreground">
-                BRON's AI handles on-page optimization automatically—what used to take SEO specialists hours now happens in seconds.
-              </p>
-            </div>
-            
-            {/* Core Features */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-6">
-              {[
-                { icon: FileText, label: 'Meta Optimization', desc: 'AI-crafted titles, descriptions & headers' },
-                { icon: Search, label: 'Keyword Placement', desc: 'Strategic density & natural insertion' },
-                { icon: Code, label: 'Schema Markup', desc: 'Auto-generated structured data' },
-                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text for all images' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-emerald-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+
+              {/* Right - How It Works */}
+              <div className="lg:col-span-8">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  {[
+                    { 
+                      step: '1', 
+                      icon: Search,
+                      title: 'Page Analysis', 
+                      desc: 'BRON scans every page on your site, analyzing titles, headers, content structure, and keyword usage.',
+                      highlight: 'Full Site Scan'
+                    },
+                    { 
+                      step: '2', 
+                      icon: FileText,
+                      title: 'Meta Optimization', 
+                      desc: 'AI crafts perfect title tags, meta descriptions, and headers optimized for both users and search engines.',
+                      highlight: 'AI-Generated'
+                    },
+                    { 
+                      step: '3', 
+                      icon: Code,
+                      title: 'Schema & Structure', 
+                      desc: 'Automatically generates structured data markup and ensures proper H1-H6 hierarchy across all pages.',
+                      highlight: 'Rich Snippets'
+                    },
+                    { 
+                      step: '4', 
+                      icon: Gauge,
+                      title: 'Continuous Scoring', 
+                      desc: 'Real-time readability and SEO scoring with automatic fixes applied as issues are detected.',
+                      highlight: '24/7 Monitoring'
+                    },
+                  ].map((item) => (
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/10 border border-emerald-500/20 flex flex-col min-h-[180px]">
+                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                        {item.step}
+                      </div>
+                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 mt-1">
+                        <item.icon className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <p className="font-semibold text-sm mb-2">{item.title}</p>
+                      <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-emerald-500 border-emerald-500/30 bg-emerald-500/5">
+                        {item.highlight}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            {/* AI vs Human Tasks */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
-              {[
-                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure across all pages' },
-                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization' },
-                { icon: Gauge, label: 'Content Scoring', desc: 'Readability & SEO score analysis' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-teal-500/50 transition-colors">
-                  <feature.icon className="w-6 h-6 text-teal-500 mx-auto mb-2" />
-                  <p className="font-medium text-sm">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            {/* Time & Money Savings Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
-              {[
-                { stat: '10+', label: 'Hours Saved', desc: 'Per page optimization' },
-                { stat: '85%', label: 'Cost Reduction', desc: 'vs. manual SEO work' },
-                { stat: '100%', label: 'Automated', desc: 'No human intervention' },
-                { stat: '24/7', label: 'Monitoring', desc: 'Continuous optimization' },
-              ].map((item) => (
-                <div key={item.label} className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/10 border border-emerald-500/20">
-                  <p className="text-2xl font-bold text-emerald-500">{item.stat}</p>
-                  <p className="font-medium text-sm">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-            
-            {/* What AI Handles */}
-            <div className="max-w-3xl mx-auto mb-8 p-4 rounded-xl bg-muted/20 border border-border">
-              <p className="text-sm font-medium text-foreground mb-3">Tasks BRON handles that humans used to do manually:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  'Title tag optimization',
-                  'Meta description writing',
-                  'Header tag structure',
-                  'Keyword density analysis',
-                  'Image alt text',
-                  'Internal link audit',
-                  'Schema markup',
-                  'Content gap analysis',
-                  'Readability scoring',
-                  'URL structure',
-                ].map((task) => (
-                  <span key={task} className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    {task}
-                  </span>
-                ))}
               </div>
             </div>
-            
-            <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
-              Activates with BRON
-            </Badge>
-            
-            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              Stop paying for manual SEO audits. BRON's AI continuously optimizes every page on your site automatically.
-            </p>
+
+            {/* Bottom row: Feature cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text automatically generated for all images across your site', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
+                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization and strategic internal link suggestions', color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
+                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure enforced across all pages for optimal crawlability', color: 'text-cyan-500', bgColor: 'bg-cyan-500/10' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm mb-1">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
