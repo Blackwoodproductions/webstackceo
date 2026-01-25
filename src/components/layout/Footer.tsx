@@ -46,6 +46,7 @@ const Footer = memo(() => {
       { name: "Pricing", href: "/pricing" },
       { name: "Tools", href: "/tools" },
       { name: "Website Audits", href: "/audits" },
+      { name: "Changelog", href: "/changelog" },
     ],
     Company: [
       { name: "About", href: "/about" },

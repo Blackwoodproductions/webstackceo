@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Sparkles, Shield, BarChart3, Calendar, Tag, 
   ArrowRight, Rocket, Brain, Target, TrendingUp,
-  CheckCircle2, Zap, Globe, Eye, MessageCircle, Image
+  CheckCircle2, Zap, Globe, Eye, MessageCircle, Image, type LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -11,6 +12,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
+import { supabase } from "@/integrations/supabase/client";
 
 type ChangeType = "feature" | "improvement" | "fix" | "announcement";
 
@@ -20,10 +22,15 @@ interface ChangelogEntry {
   title: string;
   description: string;
   type: ChangeType;
-  icon: typeof Sparkles;
+  icon: LucideIcon;
   changes: string[];
   highlight?: boolean;
 }
+
+const iconMap: Record<string, LucideIcon> = {
+  Sparkles, Shield, BarChart3, Rocket, Brain, Target, TrendingUp,
+  CheckCircle2, Zap, Globe, Eye, MessageCircle, Image
+};
 
 const changeTypeConfig: Record<ChangeType, { label: string; color: string; bg: string }> = {
   feature: { label: "New Feature", color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/20" },
@@ -32,7 +39,7 @@ const changeTypeConfig: Record<ChangeType, { label: string; color: string; bg: s
   announcement: { label: "Announcement", color: "text-violet-400", bg: "bg-violet-400/10 border-violet-400/20" },
 };
 
-const changelog: ChangelogEntry[] = [
+const staticChangelog: ChangelogEntry[] = [
   {
     date: "January 24, 2026",
     version: "2.5.0",
@@ -194,6 +201,50 @@ const changelog: ChangelogEntry[] = [
 ];
 
 const Changelog = () => {
+  const [dynamicEntries, setDynamicEntries] = useState<ChangelogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDynamicChangelog = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("changelog_entries")
+          .select("*")
+          .eq("is_published", true)
+          .order("published_at", { ascending: false });
+
+        if (error) throw error;
+
+        if (data) {
+          const mappedEntries: ChangelogEntry[] = data.map((entry) => ({
+            date: new Date(entry.published_at || entry.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+            }),
+            version: entry.version,
+            title: entry.title,
+            description: entry.description,
+            type: entry.type as ChangeType,
+            icon: iconMap[entry.icon] || Zap,
+            changes: Array.isArray(entry.changes) ? entry.changes as string[] : [],
+            highlight: entry.highlight
+          }));
+          setDynamicEntries(mappedEntries);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dynamic changelog:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDynamicChangelog();
+  }, []);
+
+  // Combine dynamic entries (newest) with static entries
+  const allEntries = [...dynamicEntries, ...staticChangelog];
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
@@ -268,7 +319,7 @@ const Changelog = () => {
               <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-primary/50 to-transparent hidden md:block" />
               
               <div className="space-y-12">
-                {changelog.map((entry, index) => {
+                {allEntries.map((entry, index) => {
                   const typeConfig = changeTypeConfig[entry.type];
                   const Icon = entry.icon;
                   
