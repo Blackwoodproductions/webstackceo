@@ -2176,10 +2176,10 @@ const AuditResults = () => {
                         )}
                       </p>
                       
-                      {/* Website Description - integrated into header */}
-                      {websiteProfile?.description && (
-                        <p className="text-sm text-muted-foreground mt-2 max-w-2xl line-clamp-2">
-                          {websiteProfile.description}
+                      {/* Website Description - use summary if available, fallback to description */}
+                      {(websiteProfile?.summary || websiteProfile?.description) && (
+                        <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
+                          {websiteProfile.summary || websiteProfile.description}
                         </p>
                       )}
                       
