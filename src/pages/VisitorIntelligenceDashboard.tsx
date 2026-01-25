@@ -3847,7 +3847,7 @@ f.parentNode.insertBefore(j,f);
                       asChild
                       className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/30"
                     >
-                      <Link to="/website-audits#audit">
+                      <Link to="/audits#audit">
                         <Zap className="w-4 h-4 mr-2" />
                         Run Free Audit
                       </Link>
