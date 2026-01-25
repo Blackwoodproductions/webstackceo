@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -825,8 +825,10 @@ const getStatusIcon = (status: "pass" | "warning" | "fail") => {
 const AuditResults = () => {
   const { domain } = useParams<{ domain: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isEmbedMode = searchParams.get('embed') === 'true';
+  const isCaseStudyMode = location.pathname.startsWith('/case-study/');
   const [isLoading, setIsLoading] = useState(true);
   const [auditResults, setAuditResults] = useState<AuditCategory[]>([]);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
@@ -1488,11 +1490,11 @@ const AuditResults = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(isCaseStudyMode ? "/case-studies" : "/")}
               className="mb-6"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              {isCaseStudyMode ? "Back to Case Studies" : "Back to Home"}
             </Button>
           )}
 
@@ -1532,6 +1534,12 @@ const AuditResults = () => {
                         ) : (
                           <h1 className="text-2xl md:text-3xl font-bold">{decodedDomain}</h1>
                         )}
+                        {isCaseStudyMode && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-semibold flex items-center gap-1">
+                            <BarChart3 className="w-3 h-3" />
+                            Case Study
+                          </span>
+                        )}
                         {dashboardMetrics?.isReal && (
                           <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
                             <ExternalLink className="w-3 h-3" />
@@ -1540,7 +1548,7 @@ const AuditResults = () => {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Free Website Audit Tool
+                        {isCaseStudyMode ? 'Monthly SEO Progress Tracking' : 'Free Website Audit Tool'}
                         {dashboardMetrics?.ahrefsRank > 0 && (
                           <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted">
                             Ahrefs Rank: #{dashboardMetrics.ahrefsRank.toLocaleString()}
