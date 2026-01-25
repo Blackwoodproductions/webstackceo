@@ -187,11 +187,11 @@ const NextReportCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   
   useEffect(() => {
-    // Calculate next report date (7 days from now, at midnight)
+    // Calculate next report date (28 days from now, at midnight)
     const getNextReportDate = () => {
       const now = new Date();
       const nextReport = new Date(now);
-      nextReport.setDate(nextReport.getDate() + 7);
+      nextReport.setDate(nextReport.getDate() + 28);
       nextReport.setHours(0, 0, 0, 0);
       return nextReport;
     };
@@ -2004,19 +2004,6 @@ const AuditResults = () => {
                       )}
                     </div>
                   </div>
-                  
-                  {/* Website Description/Summary - About This Website */}
-                  {(websiteProfile?.summary || websiteProfile?.description) && (
-                    <div className="mt-4 pt-4 border-t border-border/30">
-                      <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-primary" />
-                        About This Website
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {websiteProfile.summary || websiteProfile.description}
-                      </p>
-                    </div>
-                  )}
 
                 </div>
 
