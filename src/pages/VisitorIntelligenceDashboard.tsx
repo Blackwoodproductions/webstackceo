@@ -2636,7 +2636,8 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
                       step: '1', 
@@ -2667,7 +2668,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Industry First'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-cyan-500/5 to-sky-500/10 border border-cyan-500/20 flex flex-col">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-cyan-500/5 to-sky-500/10 border border-cyan-500/20 flex flex-col min-h-[180px]">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -2757,7 +2758,8 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
                       step: '1', 
@@ -2788,7 +2790,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Seamless Design'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 flex flex-col">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 flex flex-col min-h-[180px]">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -2961,7 +2963,8 @@ f.parentNode.insertBefore(j,f);
 
                 {/* Right - How It Works */}
                 <div className="lg:col-span-8">
-                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
+                  <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                     {[
                       { 
                         step: '1', 
@@ -2992,7 +2995,7 @@ f.parentNode.insertBefore(j,f);
                         highlight: 'Powered by CADE'
                       },
                     ].map((item) => (
-                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col flex-1">
+                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col min-h-[180px]">
                         <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                           {item.step}
                         </div>
@@ -3607,7 +3610,8 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
                       step: '1', 
@@ -3638,7 +3642,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Traffic Boost'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20 flex flex-col">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20 flex flex-col min-h-[180px]">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -3723,7 +3727,8 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
+                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
                       step: '1', 
@@ -3754,7 +3759,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: '24/7 Monitoring'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20 flex flex-col">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20 flex flex-col min-h-[180px]">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
