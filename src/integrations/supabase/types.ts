@@ -186,6 +186,59 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_history: {
+        Row: {
+          ahrefs_rank: number | null
+          audit_id: string | null
+          backlinks: number | null
+          domain: string
+          domain_rating: number | null
+          id: string
+          organic_keywords: number | null
+          organic_traffic: number | null
+          referring_domains: number | null
+          snapshot_at: string
+          source: string | null
+          traffic_value: number | null
+        }
+        Insert: {
+          ahrefs_rank?: number | null
+          audit_id?: string | null
+          backlinks?: number | null
+          domain: string
+          domain_rating?: number | null
+          id?: string
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          snapshot_at?: string
+          source?: string | null
+          traffic_value?: number | null
+        }
+        Update: {
+          ahrefs_rank?: number | null
+          audit_id?: string | null
+          backlinks?: number | null
+          domain?: string
+          domain_rating?: number | null
+          id?: string
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          snapshot_at?: string
+          source?: string | null
+          traffic_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_history_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "saved_audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string

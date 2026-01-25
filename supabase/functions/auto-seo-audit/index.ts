@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         const slug = result.domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
         
         // Upsert to saved_audits (no submitter_email = no free directory link)
-        const { error: upsertError } = await supabase
+        const { data: savedAudit, error: upsertError } = await supabase
           .from('saved_audits')
           .upsert({
             domain: result.domain,
@@ -145,13 +145,37 @@ Deno.serve(async (req) => {
             referring_domains: result.metrics.referring_domains,
             traffic_value: result.metrics.traffic_value,
             ahrefs_rank: result.metrics.ahrefs_rank,
-            category: 'other', // Default category, can be updated later
-          }, { onConflict: 'slug' });
+            category: 'other',
+          }, { onConflict: 'slug' })
+          .select('id')
+          .single();
         
         if (upsertError) {
           console.error('[Auto-Audit] Error saving audit:', upsertError);
         } else {
           console.log(`[Auto-Audit] Saved audit for ${result.domain}`);
+          
+          // Insert history snapshot for progress tracking
+          const { error: historyError } = await supabase
+            .from('audit_history')
+            .insert({
+              audit_id: savedAudit?.id,
+              domain: result.domain,
+              domain_rating: result.metrics.domain_rating,
+              organic_traffic: result.metrics.organic_traffic,
+              organic_keywords: result.metrics.organic_keywords,
+              backlinks: result.metrics.backlinks,
+              referring_domains: result.metrics.referring_domains,
+              traffic_value: result.metrics.traffic_value,
+              ahrefs_rank: result.metrics.ahrefs_rank,
+              source: 'manual',
+            });
+          
+          if (historyError) {
+            console.error('[Auto-Audit] Error saving history:', historyError);
+          } else {
+            console.log(`[Auto-Audit] Saved history snapshot for ${result.domain}`);
+          }
         }
       }
     } else {
@@ -182,6 +206,13 @@ Deno.serve(async (req) => {
         results.push(result);
         
         if (result.success && result.metrics) {
+          // Get the audit ID first
+          const { data: existingAudit } = await supabase
+            .from('saved_audits')
+            .select('id')
+            .eq('slug', audit.slug)
+            .single();
+          
           const { error: updateError } = await supabase
             .from('saved_audits')
             .update({
@@ -198,6 +229,28 @@ Deno.serve(async (req) => {
           
           if (updateError) {
             console.error(`[Auto-Audit] Error updating audit for ${audit.domain}:`, updateError);
+          } else {
+            // Insert history snapshot for progress tracking
+            const { error: historyError } = await supabase
+              .from('audit_history')
+              .insert({
+                audit_id: existingAudit?.id,
+                domain: result.domain,
+                domain_rating: result.metrics.domain_rating,
+                organic_traffic: result.metrics.organic_traffic,
+                organic_keywords: result.metrics.organic_keywords,
+                backlinks: result.metrics.backlinks,
+                referring_domains: result.metrics.referring_domains,
+                traffic_value: result.metrics.traffic_value,
+                ahrefs_rank: result.metrics.ahrefs_rank,
+                source: 'auto',
+              });
+            
+            if (historyError) {
+              console.error(`[Auto-Audit] Error saving history for ${audit.domain}:`, historyError);
+            } else {
+              console.log(`[Auto-Audit] Saved history snapshot for ${result.domain}`);
+            }
           }
         }
         
