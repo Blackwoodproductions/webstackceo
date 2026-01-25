@@ -900,31 +900,6 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
           ))}
         </div>
       </motion.div>
-
-      {/* Google Ads Integration */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="p-6 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20"
-      >
-        <div className="flex items-center gap-4">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center"
-          >
-            <Target className="w-6 h-6 text-white" />
-          </motion.div>
-          <div className="flex-1">
-            <p className="font-semibold">Google Ads Keyword Import</p>
-            <p className="text-sm text-muted-foreground">Connect your account to auto-generate pages for all active keywords</p>
-          </div>
-          <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
-            Import Keywords
-          </Button>
-        </div>
-      </motion.div>
     </div>
   );
 };
