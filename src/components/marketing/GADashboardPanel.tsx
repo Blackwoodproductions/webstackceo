@@ -94,6 +94,16 @@ interface GAProperty {
   websiteUrl?: string;
 }
 
+interface GADataStream {
+  name: string;
+  type?: string;
+  displayName?: string;
+  webStreamData?: {
+    defaultUri?: string;
+    measurementId?: string;
+  };
+}
+
 interface TopPage {
   path: string;
   views: number;
@@ -130,6 +140,12 @@ export const GADashboardPanel = ({
   const [metrics, setMetrics] = useState<GAMetrics | null>(null);
   const [topPages, setTopPages] = useState<TopPage[]>([]);
   const [chartData, setChartData] = useState<{ date: string; sessions: number; users: number }[]>([]);
+
+  // Domain verification via GA4 Web Data Streams (more reliable than property displayName)
+  const [webDomainsByProperty, setWebDomainsByProperty] = useState<Record<string, string[]>>({});
+  const [streamsLoaded, setStreamsLoaded] = useState(false);
+  const [streamsError, setStreamsError] = useState<string | null>(null);
+  const [isFetchingStreams, setIsFetchingStreams] = useState(false);
   
   // Client ID configuration
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
@@ -148,11 +164,26 @@ export const GADashboardPanel = ({
   const isExternalSiteInGA = useMemo(() => {
     // If no external site selected, we can't check - but don't show metrics without a domain
     if (!externalSelectedSite) return false;
-    // If no properties loaded yet, we're still loading
-    if (properties.length === 0) return false;
+
+    // Prefer web stream defaultUri matching when available.
+    // Don't assume "not found" until streams have loaded.
+    if (!streamsLoaded) return false;
     
     const normalizedExternal = normalizeDomain(externalSelectedSite);
-    console.log('[GA] Checking domain match:', { externalSelectedSite, normalizedExternal, properties: properties.map(p => ({ name: p.displayName, normalized: normalizeDomain(p.displayName) })) });
+
+    const domains = Object.values(webDomainsByProperty).flat();
+    if (domains.length > 0) {
+      const match = domains.some((d) => {
+        const nd = normalizeDomain(d);
+        return nd.includes(normalizedExternal) || normalizedExternal.includes(nd);
+      });
+      console.log("[GA] Domain match (streams) result:", { normalizedExternal, match, domains });
+      return match;
+    }
+
+    // Fallback: legacy heuristic against property displayName (kept for backwards compatibility)
+    if (properties.length === 0) return false;
+    console.log('[GA] Checking domain match (fallback displayName):', { externalSelectedSite, normalizedExternal, properties: properties.map(p => ({ name: p.displayName, normalized: normalizeDomain(p.displayName) })) });
     
     const match = properties.some(prop => {
       const propDomain = normalizeDomain(prop.displayName);
@@ -161,17 +192,31 @@ export const GADashboardPanel = ({
     
     console.log('[GA] Domain match result:', match);
     return match;
-  }, [externalSelectedSite, properties]);
+  }, [externalSelectedSite, properties, streamsLoaded, webDomainsByProperty]);
 
   // Find matching property for external site
   const matchingProperty = useMemo(() => {
     if (!externalSelectedSite || properties.length === 0) return null;
+    if (!streamsLoaded) return null;
     const normalizedExternal = normalizeDomain(externalSelectedSite);
+
+    // Prefer matching by web data stream defaultUri
+    for (const prop of properties) {
+      const domains = webDomainsByProperty[prop.name] || [];
+      for (const d of domains) {
+        const nd = normalizeDomain(d);
+        if (nd.includes(normalizedExternal) || normalizedExternal.includes(nd)) {
+          return prop;
+        }
+      }
+    }
+
+    // Fallback to displayName matching
     return properties.find(prop => {
       const propDomain = normalizeDomain(prop.displayName);
       return propDomain.includes(normalizedExternal) || normalizedExternal.includes(propDomain);
     });
-  }, [externalSelectedSite, properties]);
+  }, [externalSelectedSite, properties, streamsLoaded, webDomainsByProperty]);
   
   // Check for stored token on mount
   useEffect(() => {
@@ -267,6 +312,20 @@ export const GADashboardPanel = ({
     }
   }, [isAuthenticated, accessToken]);
 
+  // Once properties are loaded, fetch Web Data Streams to reliably determine which domains exist.
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+    if (!externalSelectedSite) return;
+    if (!propertiesLoaded) return;
+    if (properties.length === 0) {
+      setStreamsLoaded(true);
+      return;
+    }
+
+    void fetchWebDataStreams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, accessToken, externalSelectedSite, propertiesLoaded, properties.map((p) => p.name).join(",")]);
+
   // Fetch data when property is selected
   useEffect(() => {
     if (selectedProperty && accessToken) {
@@ -286,6 +345,9 @@ export const GADashboardPanel = ({
     setIsFetchingProperties(true);
     setPropertiesLoaded(false);
     setPropertiesError(null);
+    setStreamsLoaded(false);
+    setStreamsError(null);
+    setWebDomainsByProperty({});
 
     try {
       console.log("[GA] Fetching properties...");
@@ -342,6 +404,59 @@ export const GADashboardPanel = ({
     } finally {
       setPropertiesLoaded(true);
       setIsFetchingProperties(false);
+    }
+  };
+
+  const fetchWebDataStreams = async () => {
+    if (!accessToken) return;
+    if (isFetchingStreams) return;
+
+    setIsFetchingStreams(true);
+    setStreamsLoaded(false);
+    setStreamsError(null);
+
+    try {
+      const entries = await Promise.all(
+        properties.map(async (prop) => {
+          const url = `https://analyticsadmin.googleapis.com/v1beta/${prop.name}/dataStreams`;
+          const res = await fetch(url, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+
+          if (!res.ok) {
+            // If this fails, we can't reliably check domain membership.
+            // Keep error non-blocking; user can still pick a property manually.
+            let details = "";
+            try {
+              const errJson = await res.json();
+              details = errJson?.error?.message || errJson?.error?.status || "";
+            } catch {
+              // ignore
+            }
+            throw new Error(
+              `Failed to fetch data streams (${res.status}) for ${prop.displayName}. ${details}`.trim()
+            );
+          }
+
+          const data = await res.json();
+          const streams: GADataStream[] = data?.dataStreams || [];
+          const uris = streams
+            .map((s) => s.webStreamData?.defaultUri)
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+
+          return [prop.name, uris] as const;
+        })
+      );
+
+      const next: Record<string, string[]> = {};
+      for (const [propName, uris] of entries) next[propName] = uris;
+      setWebDomainsByProperty(next);
+    } catch (e: any) {
+      console.error("[GA] Error fetching web data streams:", e);
+      setStreamsError(e?.message || "Failed to load data streams");
+    } finally {
+      setStreamsLoaded(true);
+      setIsFetchingStreams(false);
     }
   };
 
@@ -549,6 +664,10 @@ export const GADashboardPanel = ({
     setPropertiesLoaded(false);
     setPropertiesError(null);
     setIsFetchingProperties(false);
+    setWebDomainsByProperty({});
+    setStreamsLoaded(false);
+    setStreamsError(null);
+    setIsFetchingStreams(false);
   };
 
   const formatDuration = (seconds: number) => {
@@ -832,8 +951,23 @@ export const GADashboardPanel = ({
     );
   }
 
+  // Properties are loaded but we're still verifying Web Data Streams for the selected domain
+  if (isAuthenticated && externalSelectedSite && propertiesLoaded && !streamsLoaded && !streamsError) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Checking GA4 web data streams…</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Connected but domain not in GA - show prominent add domain prompt
-  if (isAuthenticated && externalSelectedSite && !isExternalSiteInGA) {
+  // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
+  if (isAuthenticated && externalSelectedSite && propertiesLoaded && streamsLoaded && !streamsError && !isExternalSiteInGA) {
     return (
       <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
         <CardHeader className="pb-4">
@@ -872,7 +1006,7 @@ export const GADashboardPanel = ({
                   Add {normalizeDomain(externalSelectedSite)} to Google Analytics
                 </h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Your Google Analytics is connected, but <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> doesn't have a data stream configured yet. 
+                  Your Google Analytics is connected, but <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> doesn't appear in your GA4 Web Data Streams yet.
                   Add a web data stream to start tracking sessions, users, and engagement.
                 </p>
                 
