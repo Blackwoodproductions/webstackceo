@@ -1101,7 +1101,17 @@ export const GADashboardPanel = ({
                   <Button 
                     size="default" 
                     className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                    onClick={() => window.open(`https://analytics.google.com/analytics/web/#/a/p/admin/streams/create`, '_blank')}
+                    onClick={() => {
+                      // Link directly to the Data Streams page for the first property (or admin home)
+                      const firstProp = properties[0];
+                      if (firstProp) {
+                        // Extract numeric property ID from "properties/123456789"
+                        const propId = firstProp.name.replace("properties/", "");
+                        window.open(`https://analytics.google.com/analytics/web/#/p${propId}/admin/streams`, '_blank');
+                      } else {
+                        window.open('https://analytics.google.com/analytics/web/#/admin', '_blank');
+                      }
+                    }}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Add Data Stream
