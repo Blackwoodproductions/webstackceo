@@ -198,6 +198,15 @@ export const CADEExtendedSection = ({ domain }: CADEExtendedSectionProps) => {
         viewport={{ once: true }}
         className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/5 via-purple-500/10 to-fuchsia-500/5 border border-violet-500/20 overflow-hidden"
       >
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
+              <FloatingParticle delay={i * 0.4} color="bg-violet-400" />
+            </div>
+          ))}
+        </div>
+
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <motion.div 
@@ -334,12 +343,6 @@ interface SocialSignalsExtendedSectionProps {
 }
 
 export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSectionProps) => {
-  const platforms = [
-    { name: "X (Twitter)", icon: Twitter, color: "from-sky-400 to-blue-500", features: ["Thread generation", "Hashtag optimization", "Scheduled tweets"] },
-    { name: "LinkedIn", icon: Linkedin, color: "from-blue-500 to-blue-700", features: ["Professional posts", "Article sharing", "Company updates"] },
-    { name: "Facebook", icon: Facebook, color: "from-blue-600 to-indigo-600", features: ["Page posts", "Story creation", "Engagement tracking"] },
-  ];
-
   const distributionSteps = [
     { time: "0s", action: "New article published by CADE", detail: "Content is automatically detected and queued for distribution", status: "complete" },
     { time: "5s", action: "AI generates platform-specific copy", detail: "Unique posts tailored for each platform's audience and format", status: "complete" },
@@ -362,95 +365,77 @@ export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSe
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="p-6 rounded-2xl bg-gradient-to-br from-pink-500/5 via-rose-500/10 to-red-500/5 border border-pink-500/20"
+        className="relative p-6 rounded-2xl bg-gradient-to-br from-pink-500/5 via-rose-500/10 to-red-500/5 border border-pink-500/20 overflow-hidden"
       >
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-bold flex items-center gap-3">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center"
-              >
-                <Bell className="w-5 h-5 text-white" />
-              </motion.div>
-              Automatic Content Distribution
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-              When CADE publishes new content, social posts are generated and scheduled automatically across all connected platforms.
-            </p>
-          </div>
-          <Badge className="bg-pink-500/10 text-pink-500 border-pink-500/30">
-            Powered by CADE
-          </Badge>
-        </div>
-
-        {/* Platform Cards */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {platforms.map((platform, i) => (
-            <motion.div
-              key={platform.name}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="p-4 rounded-xl bg-background/50 border border-border hover:border-pink-500/30 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
-                  <platform.icon className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-semibold text-sm">{platform.name}</span>
-              </div>
-              <ul className="space-y-1.5">
-                {platform.features.map((feature, j) => (
-                  <li key={j} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="w-3 h-3 text-pink-500 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
+              <FloatingParticle delay={i * 0.4} color="bg-pink-400" />
+            </div>
           ))}
         </div>
 
-        {/* Timeline */}
-        <div className="p-4 rounded-xl bg-background/30 border border-border">
-          <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-pink-500" />
-            Distribution Timeline
-          </h4>
-          <div className="relative">
-            <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
-            
-            <div className="space-y-3">
-              {distributionSteps.map((item, i) => (
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold flex items-center gap-3">
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="relative pl-8"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center"
                 >
-                  <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
-                    item.status === "active" 
-                      ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
-                      : "bg-pink-500"
-                  }`}>
-                    <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
-                      {item.time}
-                    </Badge>
-                    <div>
-                      <span className="text-sm font-medium">{item.action}</span>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
-                    </div>
-                  </div>
+                  <Bell className="w-5 h-5 text-white" />
                 </motion.div>
-              ))}
+                Automatic Content Distribution
+              </h3>
+              <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+                When CADE publishes new content, social posts are generated and scheduled automatically across all connected platforms.
+              </p>
+            </div>
+            <Badge className="bg-pink-500/10 text-pink-500 border-pink-500/30">
+              Powered by CADE
+            </Badge>
+          </div>
+
+          {/* Timeline */}
+          <div className="p-4 rounded-xl bg-background/30 border border-border">
+            <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-pink-500" />
+              Distribution Timeline
+            </h4>
+            <div className="relative">
+              <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
+              
+              <div className="space-y-3">
+                {distributionSteps.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="relative pl-8"
+                  >
+                    <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
+                      item.status === "active" 
+                        ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
+                        : "bg-pink-500"
+                    }`}>
+                      <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
+                        {item.time}
+                      </Badge>
+                      <div>
+                        <span className="text-sm font-medium">{item.action}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -506,9 +491,18 @@ export const OnPageSEOExtendedSection = ({ domain }: OnPageSEOExtendedSectionPro
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="p-8 rounded-2xl bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-yellow-500/5 border border-amber-500/20"
+        className="relative p-8 rounded-2xl bg-gradient-to-br from-amber-500/5 via-orange-500/10 to-yellow-500/5 border border-amber-500/20 overflow-hidden"
       >
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
+              <FloatingParticle delay={i * 0.4} color="bg-amber-400" />
+            </div>
+          ))}
+        </div>
+
+        <h3 className="text-xl font-bold mb-6 flex items-center gap-3 relative z-10">
           <motion.div
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -654,6 +648,15 @@ export const GMBExtendedSection = ({ domain }: GMBExtendedSectionProps) => {
         viewport={{ once: true }}
         className="relative p-8 rounded-2xl bg-gradient-to-br from-red-500/5 via-orange-500/10 to-yellow-500/5 border border-red-500/20 overflow-hidden"
       >
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
+              <FloatingParticle delay={i * 0.4} color="bg-red-400" />
+            </div>
+          ))}
+        </div>
+
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <motion.div 
@@ -801,6 +804,15 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
         viewport={{ once: true }}
         className="relative p-8 rounded-2xl bg-gradient-to-br from-cyan-500/5 via-blue-500/10 to-indigo-500/5 border border-cyan-500/20 overflow-hidden"
       >
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
+              <FloatingParticle delay={i * 0.4} color="bg-cyan-400" />
+            </div>
+          ))}
+        </div>
+
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
             <motion.div 
