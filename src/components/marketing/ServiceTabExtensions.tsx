@@ -771,28 +771,6 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
 
   return (
     <div className="mt-8 space-y-8">
-      {/* Benefits Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {benefits.map((item, i) => (
-          <motion.div
-            key={item.benefit}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="p-5 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 text-center"
-          >
-            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
-              <item.icon className="w-5 h-5 text-cyan-500" />
-            </div>
-            <p className="text-2xl font-bold text-cyan-500">{item.value}</p>
-            <p className="font-medium text-sm mt-1">{item.benefit}</p>
-            <p className="text-xs text-muted-foreground">{item.desc}</p>
-          </motion.div>
-        ))}
-      </div>
-
       {/* Page Types Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -850,54 +828,86 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
         </div>
       </motion.div>
 
-      {/* A/B Testing & Analytics */}
+      {/* Combined A/B Testing & Results Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="p-8 rounded-2xl bg-muted/30 border border-border"
+        className="p-8 rounded-2xl bg-gradient-to-br from-slate-900/50 to-slate-800/30 border border-cyan-500/20 overflow-hidden relative"
       >
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-cyan-500" />
-          Built-in A/B Testing & Heat Tracking
-        </h3>
-        <p className="text-sm text-muted-foreground mb-6">
-          Every landing page includes automatic split testing and visitor heat maps to optimize conversions.
-        </p>
-        
-        <div className="grid md:grid-cols-3 gap-4">
-          {[
-            { label: "Version A", desc: "Original design", progress: 45 },
-            { label: "Version B", desc: "New headline", progress: 55 },
-            { label: "Winner", desc: "Auto-selected after 1000 visits", progress: 100 },
-          ].map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="p-4 rounded-xl bg-background/50 border border-cyan-500/10"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium text-sm">{item.label}</span>
-                <span className="text-xs text-muted-foreground">{item.progress}%</span>
-              </div>
-              <motion.div 
-                className="h-2 rounded-full bg-muted overflow-hidden"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
+        {/* Background decoration */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-2xl" />
+        </div>
+
+        <div className="relative z-10">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-cyan-500" />
+            Built-in A/B Testing & Heat Tracking
+          </h3>
+
+          {/* Results Stats - Moved from separate section */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {benefits.map((item, i) => (
+              <motion.div
+                key={item.benefit}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className="p-5 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 text-center"
               >
-                <div 
-                  className={`h-full rounded-full ${i === 2 ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-cyan-500/50'}`}
-                  style={{ width: `${item.progress}%` }}
-                />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
+                  <item.icon className="w-5 h-5 text-cyan-500" />
+                </div>
+                <p className="text-2xl font-bold text-cyan-500">{item.value}</p>
+                <p className="font-medium text-sm mt-1">{item.benefit}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
               </motion.div>
-              <p className="text-xs text-muted-foreground mt-2">{item.desc}</p>
-            </motion.div>
-          ))}
+            ))}
+          </div>
+
+          {/* A/B Testing Progress */}
+          <p className="text-sm text-muted-foreground mb-4">
+            Every landing page includes automatic split testing and visitor heat maps to optimize conversions.
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { label: "Version A", desc: "Original design", progress: 45 },
+              { label: "Version B", desc: "New headline", progress: 55 },
+              { label: "Winner", desc: "Auto-selected after 1000 visits", progress: 100 },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-4 rounded-xl bg-background/50 border border-cyan-500/10"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-sm">{item.label}</span>
+                  <span className="text-xs text-muted-foreground">{item.progress}%</span>
+                </div>
+                <motion.div 
+                  className="h-2 rounded-full bg-muted overflow-hidden"
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
+                >
+                  <div 
+                    className={`h-full rounded-full ${i === 2 ? 'bg-gradient-to-r from-cyan-500 to-blue-500' : 'bg-cyan-500/50'}`}
+                    style={{ width: `${item.progress}%` }}
+                  />
+                </motion.div>
+                <p className="text-xs text-muted-foreground mt-2">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>
