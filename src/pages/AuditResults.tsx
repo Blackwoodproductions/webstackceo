@@ -2174,8 +2174,8 @@ const AuditResults = () => {
 
 
 
-
-          {/* Pricing Section */}
+          {/* Pricing Section - hide in Case Study mode */}
+          {!isCaseStudyMode && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -2354,6 +2354,7 @@ const AuditResults = () => {
               ))}
             </div>
           </motion.div>
+          )}
 
           {/* SEO Resources Section - Glossary Terms & Learning Guides */}
           <motion.div
