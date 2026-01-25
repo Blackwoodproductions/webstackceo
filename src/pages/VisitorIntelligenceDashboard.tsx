@@ -267,12 +267,15 @@ const MarketingDashboard = () => {
         return;
       }
       
+      // Clean the domain for matching
+      const cleanDomain = domainToCheck.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+      
       setIsLoadingAudit(true);
       try {
         const { data, error } = await supabase
           .from('saved_audits')
           .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at')
-          .eq('domain', domainToCheck)
+          .ilike('domain', cleanDomain)
           .maybeSingle();
         
         if (error) {
@@ -314,10 +317,11 @@ const MarketingDashboard = () => {
         if (activeTab === 'seo-audit') {
           setSavedAuditForDomain(null);
           setIsLoadingAudit(true);
+          const cleanDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
           const { data: auditData } = await supabase
             .from('saved_audits')
             .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at')
-            .eq('domain', domain)
+            .ilike('domain', cleanDomain)
             .maybeSingle();
           setSavedAuditForDomain(auditData);
           setIsLoadingAudit(false);
