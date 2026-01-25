@@ -74,6 +74,7 @@ import {
   Mail,
   Gift,
   X,
+  MapPin,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -1295,27 +1296,46 @@ const AuditResults = () => {
     if (!isEmbedMode) return;
     
     const sendHeight = () => {
-      const height = document.documentElement.scrollHeight;
+      // Get actual content height more accurately
+      const body = document.body;
+      const html = document.documentElement;
+      const height = Math.max(
+        body.scrollHeight, body.offsetHeight,
+        html.clientHeight, html.scrollHeight, html.offsetHeight
+      );
       window.parent.postMessage({ type: 'iframe-height', height }, '*');
     };
     
-    // Send initial height after content loads
-    const timer = setTimeout(sendHeight, 500);
+    // Send height multiple times as content loads
+    const timers = [
+      setTimeout(sendHeight, 300),
+      setTimeout(sendHeight, 800),
+      setTimeout(sendHeight, 1500),
+      setTimeout(sendHeight, 3000),
+    ];
     
     // Re-send on resize or content changes
-    const resizeObserver = new ResizeObserver(sendHeight);
+    const resizeObserver = new ResizeObserver(() => {
+      setTimeout(sendHeight, 50);
+    });
     resizeObserver.observe(document.body);
     
-    // Also send when loading completes
-    if (!isLoading && !isProfileLoading) {
+    // Mutation observer for dynamic content
+    const mutationObserver = new MutationObserver(() => {
       setTimeout(sendHeight, 100);
-    }
+    });
+    mutationObserver.observe(document.body, { 
+      childList: true, 
+      subtree: true,
+      attributes: true 
+    });
     
     return () => {
-      clearTimeout(timer);
+      timers.forEach(clearTimeout);
       resizeObserver.disconnect();
+      mutationObserver.disconnect();
     };
-  }, [isEmbedMode, isLoading, isProfileLoading]);
+  }, [isEmbedMode, isLoading, isProfileLoading, dashboardMetrics, websiteProfile]);
 
   const handleSaveClick = () => {
     if (isSaved) return;
@@ -2465,15 +2485,86 @@ const AuditResults = () => {
                     <div className="h-4 w-full bg-muted animate-pulse rounded" />
                     <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
                   </div>
-                ) : websiteProfile && (
-                  <div className="space-y-3">
+                ) : websiteProfile ? (
+                  <div className="space-y-4">
                     {websiteProfile.title && (
                       <h3 className="text-lg font-semibold text-foreground">{websiteProfile.title}</h3>
+                    )}
+                    {websiteProfile.description && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">{websiteProfile.description}</p>
                     )}
                     {websiteProfile.summary && (
                       <p className="text-muted-foreground leading-relaxed">{websiteProfile.summary}</p>
                     )}
+                    
+                    {/* Contact Info */}
+                    {(websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone || websiteProfile.contactInfo?.address) && (
+                      <div className="pt-3 border-t border-border/50 space-y-2">
+                        <h4 className="text-sm font-medium text-foreground">Contact Information</h4>
+                        <div className="grid gap-2 text-sm">
+                          {websiteProfile.contactInfo?.email && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="w-4 h-4 text-primary" />
+                              <span>{websiteProfile.contactInfo.email}</span>
+                            </div>
+                          )}
+                          {websiteProfile.contactInfo?.phone && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Phone className="w-4 h-4 text-primary" />
+                              <span>{websiteProfile.contactInfo.phone}</span>
+                            </div>
+                          )}
+                          {websiteProfile.contactInfo?.address && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <MapPin className="w-4 h-4 text-primary" />
+                              <span>{websiteProfile.contactInfo.address}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Social Links */}
+                    {(websiteProfile.socialLinks?.facebook || websiteProfile.socialLinks?.twitter || websiteProfile.socialLinks?.linkedin || websiteProfile.socialLinks?.instagram) && (
+                      <div className="pt-3 border-t border-border/50">
+                        <h4 className="text-sm font-medium text-foreground mb-2">Social Profiles</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {websiteProfile.socialLinks?.facebook && (
+                            <a href={websiteProfile.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              Facebook
+                            </a>
+                          )}
+                          {websiteProfile.socialLinks?.twitter && (
+                            <a href={websiteProfile.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              Twitter
+                            </a>
+                          )}
+                          {websiteProfile.socialLinks?.linkedin && (
+                            <a href={websiteProfile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              LinkedIn
+                            </a>
+                          )}
+                          {websiteProfile.socialLinks?.instagram && (
+                            <a href={websiteProfile.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              Instagram
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Category Badge */}
+                    {websiteProfile.detectedCategory && websiteProfile.detectedCategory !== 'other' && (
+                      <div className="pt-3 border-t border-border/50">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-gradient-to-r from-primary/10 to-violet-500/10 text-primary border border-primary/20">
+                          <Tag className="w-3 h-3" />
+                          {websiteProfile.detectedCategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Unable to load website information.</p>
                 )}
               </div>
             </motion.div>
@@ -2601,50 +2692,48 @@ const AuditResults = () => {
             <h2 className="text-2xl font-bold mb-8 text-center">
               Our <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">Core Services</span>
             </h2>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-4">
               {/* BRON Card */}
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-cyan-500/10 border-2 border-cyan-500/30 hover:border-cyan-400/50 transition-all group"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/50 transition-all group"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/25">
-                      <Link2 className="w-6 h-6 text-white" />
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/25">
+                      <Link2 className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                         BRON
                       </h3>
-                      <p className="text-xs text-muted-foreground">Backlink Ranking Optimization Network</p>
+                      <p className="text-[10px] text-muted-foreground">Backlink Ranking Optimization Network</p>
                     </div>
                   </div>
                   
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    Real business website deep links using our proprietary Diamond Flow methodology. Unlike PBNs, BRON sources links exclusively from legitimate, niche-relevant websites.
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">
+                    Real business website deep links using our proprietary Diamond Flow methodology.
                   </p>
                   
-                  <div className="mb-4 rounded-xl overflow-hidden border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
+                  <div className="mb-3 rounded-lg overflow-hidden border border-cyan-500/20 shadow-md shadow-cyan-500/10 max-h-32">
                     <img 
                       src={bronDiamondFlow} 
                       alt="BRON Diamond Flow Architecture" 
-                      className="w-full h-auto"
+                      className="w-full h-auto object-cover"
                     />
                   </div>
                   
-                  <ul className="space-y-2 mb-4">
+                  <ul className="space-y-1 mb-3">
                     {[
                       'Deep links from real business websites',
                       'Diamond Flow link architecture',
-                      'Domain Rating & Authority boosting',
-                      'Links directed to your money page',
-                      'Weekly keyword ranking reports'
+                      'Domain Rating & Authority boosting'
                     ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+                      <li key={i} className="flex items-center gap-1.5 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-cyan-400 shrink-0" />
                         <span className="text-muted-foreground">{item}</span>
                       </li>
                     ))}
@@ -2652,10 +2741,10 @@ const AuditResults = () => {
                   
                   <Link 
                     to="/features/off-page-seo" 
-                    className="inline-flex items-center gap-2 text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
                   >
                     Learn about BRON
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </motion.div>
@@ -2665,44 +2754,42 @@ const AuditResults = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-violet-500/10 border-2 border-violet-500/30 hover:border-violet-400/50 transition-all group"
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/30 hover:border-violet-400/50 transition-all group"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                      <FileText className="w-6 h-6 text-white" />
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
+                      <FileText className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
                         CADE
                       </h3>
-                      <p className="text-xs text-muted-foreground">Content Automation & Domain Enhancement</p>
+                      <p className="text-[10px] text-muted-foreground">Content Automation & Domain Enhancement</p>
                     </div>
                   </div>
                   
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    Ongoing content with 7 blog types, each generating 3-5 FAQs with individual URLs. Content posted to social media for engagement signals that build topical authority.
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">
+                    Ongoing content with 7 blog types, each generating 3-5 FAQs with individual URLs.
                   </p>
                   
-                  <div className="mb-4 rounded-xl overflow-hidden border border-violet-500/20 shadow-lg shadow-violet-500/10">
+                  <div className="mb-3 rounded-lg overflow-hidden border border-violet-500/20 shadow-md shadow-violet-500/10 max-h-32">
                     <img 
                       src={cadeContentAutomation} 
                       alt="CADE Content Automation" 
-                      className="w-full h-auto"
+                      className="w-full h-auto object-cover"
                     />
                   </div>
                   
-                  <ul className="space-y-2 mb-4">
+                  <ul className="space-y-1 mb-3">
                     {[
                       '7 types of automated blog content',
                       'FAQs with individual URLs',
-                      'Social media signal distribution',
-                      'Smart internal linking',
-                      'Competitor reverse engineering'
+                      'Social media signal distribution'
                     ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0" />
+                      <li key={i} className="flex items-center gap-1.5 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-violet-400 shrink-0" />
                         <span className="text-muted-foreground">{item}</span>
                       </li>
                     ))}
@@ -2710,10 +2797,10 @@ const AuditResults = () => {
                   
                   <Link 
                     to="/features/automated-blog" 
-                    className="inline-flex items-center gap-2 text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
                   >
                     Learn about CADE
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </motion.div>
