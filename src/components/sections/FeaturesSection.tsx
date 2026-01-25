@@ -84,7 +84,7 @@ const addOnFeatures = [
   {
     icon: MousePointerClick,
     title: "PPC Landing Pages",
-    description: "High-converting landing pages optimized for paid campaigns. Maximize your ad spend with pages built to convert.",
+    description: "Generate thousands of keyword-specific pages with A/B testing. Boost Quality Score, lower CPC, and maximize ROI.",
     href: "/features/ppc-landing-pages",
   },
   {
