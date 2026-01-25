@@ -231,10 +231,12 @@ export const GSCDashboardPanel = ({
   
   // Check if the externally selected site is in GSC
   const isExternalSiteInGsc = useMemo(() => {
-    if (!externalSelectedSite || !sites.length) return true; // Default to true if no data yet
+    if (!externalSelectedSite) return true; // No site selected
+    if (!isAuthenticated) return true; // Not authenticated, can't check
+    if (sites.length === 0) return true; // Sites not loaded yet
     const normalizedExternal = normalizeGscDomain(externalSelectedSite);
     return sites.some(site => normalizeGscDomain(site.siteUrl) === normalizedExternal);
-  }, [externalSelectedSite, sites]);
+  }, [externalSelectedSite, sites, isAuthenticated]);
 
   const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
     if (!profile) return;
@@ -1033,7 +1035,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         
         <CardContent className="space-y-4">
           {/* Domain Not in GSC Warning */}
-          {externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
+          {isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -1042,14 +1044,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     Domain Not Found in Search Console
                   </h4>
                   <p className="text-xs text-muted-foreground mb-3">
-                    <span className="font-medium">{externalSelectedSite}</span> is not connected to your Google Search Console. 
+                    <span className="font-medium">{normalizeGscDomain(externalSelectedSite)}</span> is not connected to your Google Search Console. 
                     Add it to start tracking search performance.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button 
                       size="sm" 
                       className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white"
-                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${externalSelectedSite}`, '_blank')}
+                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${normalizeGscDomain(externalSelectedSite)}`, '_blank')}
                     >
                       <ExternalLink className="w-3 h-3 mr-1" />
                       Add Domain Property
@@ -1058,7 +1060,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                       size="sm" 
                       variant="outline"
                       className="h-7 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
-                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=https://${externalSelectedSite}/`, '_blank')}
+                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=https://${normalizeGscDomain(externalSelectedSite)}/`, '_blank')}
                     >
                       <ExternalLink className="w-3 h-3 mr-1" />
                       Add URL Prefix
