@@ -35,9 +35,9 @@ export const ContentReadabilitySection = ({ metrics, isLoading }: ContentReadabi
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="h-full"
       >
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
+        <div className="p-6 rounded-2xl bg-card border border-border/50 h-full">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
             Content & Readability Analysis
@@ -65,9 +65,9 @@ export const ContentReadabilitySection = ({ metrics, isLoading }: ContentReadabi
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-8"
+      className="h-full"
     >
-      <div className="p-6 rounded-2xl bg-card border border-border/50">
+      <div className="p-6 rounded-2xl bg-card border border-border/50 h-full">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />

@@ -2179,6 +2179,13 @@ const AuditResults = () => {
                         )}
                       </p>
                       
+                      {/* Website Description - integrated into header */}
+                      {websiteProfile?.description && (
+                        <p className="text-sm text-muted-foreground mt-2 max-w-2xl line-clamp-2">
+                          {websiteProfile.description}
+                        </p>
+                      )}
+                      
                       {/* Claimed Notification - below subtitle, left-justified */}
                       {isClaimed && (
                         <motion.div
@@ -2767,122 +2774,17 @@ const AuditResults = () => {
           </motion.div>
 
 
-          {/* Website Description Box */}
-          {(isProfileLoading || (websiteProfile && (websiteProfile.title || websiteProfile.summary || websiteProfile.description))) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="mb-8"
-            >
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  About This Website
-                </h2>
-                {isProfileLoading ? (
-                  <div className="space-y-3">
-                    <div className="h-5 w-2/3 bg-muted animate-pulse rounded" />
-                    <div className="h-4 w-full bg-muted animate-pulse rounded" />
-                    <div className="h-4 w-full bg-muted animate-pulse rounded" />
-                    <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
-                  </div>
-                ) : websiteProfile ? (
-                  <div className="space-y-4">
-                    {websiteProfile.title && (
-                      <h3 className="text-lg font-semibold text-foreground">{websiteProfile.title}</h3>
-                    )}
-                    {websiteProfile.description && (
-                      <p className="text-sm text-muted-foreground leading-relaxed">{websiteProfile.description}</p>
-                    )}
-                    {websiteProfile.summary && (
-                      <p className="text-muted-foreground leading-relaxed">{websiteProfile.summary}</p>
-                    )}
-                    
-                    {/* Contact Info */}
-                    {(websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone || websiteProfile.contactInfo?.address) && (
-                      <div className="pt-3 border-t border-border/50 space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">Contact Information</h4>
-                        <div className="grid gap-2 text-sm">
-                          {websiteProfile.contactInfo?.email && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Mail className="w-4 h-4 text-primary" />
-                              <span>{websiteProfile.contactInfo.email}</span>
-                            </div>
-                          )}
-                          {websiteProfile.contactInfo?.phone && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Phone className="w-4 h-4 text-primary" />
-                              <span>{websiteProfile.contactInfo.phone}</span>
-                            </div>
-                          )}
-                          {websiteProfile.contactInfo?.address && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <MapPin className="w-4 h-4 text-primary" />
-                              <span>{websiteProfile.contactInfo.address}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Social Links */}
-                    {(websiteProfile.socialLinks?.facebook || websiteProfile.socialLinks?.twitter || websiteProfile.socialLinks?.linkedin || websiteProfile.socialLinks?.instagram) && (
-                      <div className="pt-3 border-t border-border/50">
-                        <h4 className="text-sm font-medium text-foreground mb-2">Social Profiles</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {websiteProfile.socialLinks?.facebook && (
-                            <a href={websiteProfile.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              Facebook
-                            </a>
-                          )}
-                          {websiteProfile.socialLinks?.twitter && (
-                            <a href={websiteProfile.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              Twitter
-                            </a>
-                          )}
-                          {websiteProfile.socialLinks?.linkedin && (
-                            <a href={websiteProfile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              LinkedIn
-                            </a>
-                          )}
-                          {websiteProfile.socialLinks?.instagram && (
-                            <a href={websiteProfile.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              Instagram
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Category Badge */}
-                    {websiteProfile.detectedCategory && websiteProfile.detectedCategory !== 'other' && (
-                      <div className="pt-3 border-t border-border/50">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-gradient-to-r from-primary/10 to-violet-500/10 text-primary border border-primary/20">
-                          <Tag className="w-3 h-3" />
-                          {websiteProfile.detectedCategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Unable to load website information.</p>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* NEW: Content & Readability Analysis */}
-          <ContentReadabilitySection 
-            metrics={contentMetrics} 
-            isLoading={isProfileLoading} 
-          />
-
-          {/* NEW: Internal Linking Analysis */}
-          <InternalLinkingSection 
-            metrics={internalLinkingMetrics} 
-            isLoading={isProfileLoading} 
-          />
+          {/* Content & Readability + Internal Linking - Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <ContentReadabilitySection 
+              metrics={contentMetrics} 
+              isLoading={isProfileLoading} 
+            />
+            <InternalLinkingSection 
+              metrics={internalLinkingMetrics} 
+              isLoading={isProfileLoading} 
+            />
+          </div>
 
           {/* NEW: Core Web Vitals Deep Dive - Uses real PageSpeed Insights data */}
           <CoreWebVitalsSection 
