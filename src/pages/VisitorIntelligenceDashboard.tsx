@@ -1038,9 +1038,10 @@ const MarketingDashboard = () => {
       {/* Header with integrated tabs */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
         <div className="px-8 py-3 flex items-center justify-between relative">
-          {/* Left: Logo */}
-          <div className="flex items-center gap-4 flex-shrink-0">
-            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
+          {/* Left: Logo + Tabs grouped together */}
+          <div className="flex items-end gap-4">
+            {/* Logo */}
+            <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group mb-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center relative group-hover:from-amber-400/20 group-hover:to-yellow-500/20 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110 transition-all duration-700">
                 <Shield className="w-7 h-7 text-primary group-hover:text-amber-400 transition-colors duration-700" />
                 <span className="absolute font-bold text-[9px] tracking-tight text-primary group-hover:text-amber-400 transition-all duration-700">AI</span>
@@ -1054,10 +1055,9 @@ const MarketingDashboard = () => {
                 </span>
               </div>
             </a>
-          </div>
           
-          {/* Tabs Navigation - positioned after logo */}
-          <div className="flex items-end gap-0 ml-6 -mb-3">
+            {/* Tabs Navigation - left-justified after logo */}
+            <div className="flex items-end gap-0 -mb-3">
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
               { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'SEO Audit', icon: Search },
@@ -1083,6 +1083,7 @@ const MarketingDashboard = () => {
                 )}
               </button>
             ))}
+            </div>
           </div>
           
           {/* Right: User Controls */}
