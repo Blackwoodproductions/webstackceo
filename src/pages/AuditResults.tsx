@@ -1670,6 +1670,93 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
+          {/* Technical Health Overview - Moved above dials */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-8"
+          >
+            <h2 className="text-xl font-bold mb-6">Technical Health Overview</h2>
+            <div className="p-6 rounded-2xl bg-card border border-border/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {auditResults.map((category, i) => {
+                  const barColor = category.score >= 80 
+                    ? "bg-gradient-to-r from-green-500 to-emerald-400" 
+                    : category.score >= 60 
+                    ? "bg-gradient-to-r from-amber-500 to-orange-400" 
+                    : "bg-gradient-to-r from-red-500 to-rose-400";
+                  const passedChecks = category.checks.filter((c) => c.status === "pass").length;
+                  const totalChecks = category.checks.length;
+                  
+                  return (
+                    <motion.div
+                      key={category.title}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + i * 0.05 }}
+                      className={`p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all border border-border/30 ${
+                        category.isRealData ? 'ring-1 ring-primary/30' : ''
+                      }`}
+                      onClick={() => toggleCategory(category.title)}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
+                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
+                          </div>
+                          <span className="text-sm font-medium">{category.title}</span>
+                          {category.isRealData && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
+                              LIVE
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold ${getScoreColor(category.score)}`}>
+                            {category.score}
+                          </span>
+                          {expandedCategories.has(category.title) ? (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Progress bar */}
+                      <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${category.score}%` }}
+                          transition={{ duration: 0.8, delay: 0.15 + i * 0.05, ease: "easeOut" }}
+                          className={`h-full ${barColor} rounded-full`}
+                        />
+                      </div>
+                      
+                      {/* Check summary */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{passedChecks}/{totalChecks} checks passed</span>
+                        <div className="flex items-center gap-1">
+                          {passedChecks === totalChecks ? (
+                            <CheckCircle2 className="w-3 h-3 text-green-500" />
+                          ) : passedChecks >= totalChecks / 2 ? (
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          ) : (
+                            <XCircle className="w-3 h-3 text-red-500" />
+                          )}
+                          <span>
+                            {passedChecks === totalChecks ? 'All clear' : passedChecks >= totalChecks / 2 ? 'Needs attention' : 'Critical'}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+
           {/* Dashboard Metrics Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -2077,370 +2164,6 @@ const AuditResults = () => {
             </motion.div>
           )}
 
-          {/* Category Scores Overview - Dial Style */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
-            <h2 className="text-xl font-bold mb-6">Technical Health Overview</h2>
-            <div className="p-6 rounded-2xl bg-card border border-border/50">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {auditResults.map((category, i) => {
-                  const barColor = category.score >= 80 
-                    ? "bg-gradient-to-r from-green-500 to-emerald-400" 
-                    : category.score >= 60 
-                    ? "bg-gradient-to-r from-amber-500 to-orange-400" 
-                    : "bg-gradient-to-r from-red-500 to-rose-400";
-                  const passedChecks = category.checks.filter((c) => c.status === "pass").length;
-                  const totalChecks = category.checks.length;
-                  
-                  return (
-                    <motion.div
-                      key={category.title}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + i * 0.05 }}
-                      className={`p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all border border-border/30 ${
-                        category.isRealData ? 'ring-1 ring-primary/30' : ''
-                      }`}
-                      onClick={() => toggleCategory(category.title)}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
-                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
-                          </div>
-                          <span className="text-sm font-medium">{category.title}</span>
-                          {category.isRealData && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
-                              LIVE
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${getScoreColor(category.score)}`}>
-                            {category.score}
-                          </span>
-                          {expandedCategories.has(category.title) ? (
-                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Progress bar */}
-                      <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${category.score}%` }}
-                          transition={{ duration: 0.8, delay: 0.3 + i * 0.05, ease: "easeOut" }}
-                          className={`h-full ${barColor} rounded-full`}
-                        />
-                      </div>
-                      
-                      {/* Check summary */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{passedChecks}/{totalChecks} checks passed</span>
-                        <div className="flex items-center gap-1">
-                          {passedChecks === totalChecks ? (
-                            <CheckCircle2 className="w-3 h-3 text-green-500" />
-                          ) : passedChecks >= totalChecks / 2 ? (
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                          ) : (
-                            <XCircle className="w-3 h-3 text-red-500" />
-                          )}
-                          <span>
-                            {passedChecks === totalChecks ? 'All clear' : passedChecks >= totalChecks / 2 ? 'Needs attention' : 'Critical'}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Detailed Results - Collapsible Cards - MOVED ABOVE RECOMMENDATIONS */}
-          <div className="space-y-4 mb-8">
-            {auditResults.map((category, catIndex) => (
-              <motion.div
-                key={category.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + catIndex * 0.05 }}
-                className="rounded-2xl bg-card border border-border/50 overflow-hidden"
-              >
-                {/* Header - Always Visible */}
-                <button
-                  onClick={() => toggleCategory(category.title)}
-                  className="w-full p-5 flex items-center justify-between hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${getScoreGradient(category.score)}/20`}>
-                      <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <h2 className="font-semibold">{category.title}</h2>
-                        {category.isRealData && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
-                            Live Data
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {category.checks.filter((c) => c.status === "pass").length}/{category.checks.length} checks passed
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <span className={`text-xl font-bold ${getScoreColor(category.score)}`}>
-                        {category.score}
-                      </span>
-                      <span className="text-sm text-muted-foreground">/100</span>
-                    </div>
-                    {expandedCategories.has(category.title) ? (
-                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    )}
-                  </div>
-                </button>
-
-                {/* Expanded Content */}
-                <AnimatePresence>
-                  {expandedCategories.has(category.title) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="border-t border-border/50 divide-y divide-border/50">
-                        {category.checks.map((check) => (
-                          <div
-                            key={check.name}
-                            className="p-4 flex items-start gap-3 hover:bg-muted/20 transition-colors"
-                          >
-                            {getStatusIcon(check.status)}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className="font-medium">{check.name}</span>
-                                {check.value && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                                    {check.value}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {check.description}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Actionable Recommendations - NOW BELOW DETAILED REPORTS */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="mb-16"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-xl font-bold">Actionable Recommendations</h2>
-              <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 font-semibold">
-                {recommendations.filter(r => r.priority === 'high').length} High Priority
-              </span>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              {recommendations.map((rec, i) => (
-                <motion.div
-                  key={rec.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.05 }}
-                  className={`p-5 rounded-2xl border ${
-                    rec.priority === 'high' 
-                      ? 'bg-gradient-to-br from-red-500/5 to-orange-500/5 border-red-500/20' 
-                      : rec.priority === 'medium'
-                      ? 'bg-gradient-to-br from-amber-500/5 to-yellow-500/5 border-amber-500/20'
-                      : 'bg-card border-border/50'
-                  }`}
-                >
-                  {/* Magazine-style layout for BRON and CADE with text wrapping around images */}
-                  {rec.service ? (
-                    <div>
-                      {/* Header with icon and badges */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className={`p-2 rounded-lg shrink-0 ${
-                          rec.priority === 'high'
-                            ? 'bg-red-500/10'
-                            : rec.priority === 'medium'
-                            ? 'bg-amber-500/10'
-                            : 'bg-primary/10'
-                        }`}>
-                          <rec.icon className={`w-5 h-5 ${
-                            rec.priority === 'high'
-                              ? 'text-red-500'
-                              : rec.priority === 'medium'
-                              ? 'text-amber-500'
-                              : 'text-primary'
-                          }`} />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <h3 className="font-semibold text-lg">{rec.title}</h3>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                              rec.service === 'BRON'
-                                ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-600 dark:text-violet-400'
-                                : 'bg-gradient-to-r from-primary/20 to-cyan-500/20 text-primary'
-                            }`}>
-                              {rec.service}
-                            </span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              rec.priority === 'high'
-                                ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                                : rec.priority === 'medium'
-                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                                : 'bg-primary/20 text-primary'
-                            }`}>
-                              {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
-                            </span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                              {rec.category}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Text with floated image */}
-                      <div className="mb-4">
-                        {/* Floated image on the right */}
-                        <div className={`float-right ml-4 mb-2 w-36 sm:w-44 rounded-xl overflow-hidden border ${
-                          rec.service === 'BRON' 
-                            ? 'border-violet-500/30 bg-gradient-to-br from-violet-500/10 to-purple-500/10' 
-                            : 'border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-primary/10'
-                        }`}>
-                          <img 
-                            src={rec.service === 'BRON' ? bronDiamondFlow : cadeContentAutomation} 
-                            alt={rec.service === 'BRON' ? 'BRON Diamond Flow Architecture' : 'CADE Content Automation'}
-                            className="w-full h-auto object-contain"
-                          />
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{rec.description}</p>
-                      </div>
-                      
-                      {/* Clear float and full-width action list */}
-                      <div className="clear-both pt-2 border-t border-border/30">
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {rec.actions.map((action, j) => (
-                            <span 
-                              key={j}
-                              className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
-                            >
-                              <Check className="w-3 h-3 text-green-500" />
-                              {action}
-                            </span>
-                          ))}
-                          {rec.comingSoon?.map((feature, j) => (
-                            <span 
-                              key={`coming-${j}`}
-                              className="text-xs px-2 py-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-1 border border-amber-500/20"
-                            >
-                              <Clock className="w-3 h-3" />
-                              {feature}
-                              <span className="text-[9px] font-semibold">Coming Soon</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Standard layout for non-service recommendations */
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        rec.priority === 'high'
-                          ? 'bg-red-500/10'
-                          : rec.priority === 'medium'
-                          ? 'bg-amber-500/10'
-                          : 'bg-primary/10'
-                      }`}>
-                        <rec.icon className={`w-5 h-5 ${
-                          rec.priority === 'high'
-                            ? 'text-red-500'
-                            : rec.priority === 'medium'
-                            ? 'text-amber-500'
-                            : 'text-primary'
-                        }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h3 className="font-semibold">{rec.title}</h3>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                            rec.priority === 'high'
-                              ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                              : rec.priority === 'medium'
-                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                              : 'bg-primary/20 text-primary'
-                          }`}>
-                            {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Medium' : 'Low'}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                            {rec.category}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {rec.actions.map((action, j) => (
-                            <span 
-                              key={j}
-                              className="text-xs px-2 py-1 rounded-md bg-muted/50 text-foreground flex items-center gap-1"
-                            >
-                              <Check className="w-3 h-3 text-green-500" />
-                              {action}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-primary/10 border border-primary/20">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-lg mb-1">BRON + CADE included with every dashboard subscription</h3>
-                  <p className="text-sm text-muted-foreground">
-                    <strong>BRON</strong> (Backlink Ranking Optimization Network): Diamond Flow links, DR/DA boosting, weekly ranking reports. 
-                    <strong className="ml-2">CADE</strong> (Content Automation and Domain Enhancement): 7 blog types, FAQ URLs, social signals, competitor analysis.
-                  </p>
-                </div>
-                <Button className="shrink-0 gap-2" asChild>
-                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                    <Phone className="w-4 h-4" />
-                    Book a Free Consultation
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
 
 
 
