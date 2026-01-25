@@ -82,14 +82,39 @@ serve(async (req) => {
 
     // Get active keywords from campaigns
     if (action === 'get-keywords') {
+      const { domain } = await req.json().catch(() => ({}));
+      
       if (!accessToken || !customerId) {
         throw new Error('Access token and customer ID required');
       }
 
-      console.log('[Google Ads] Fetching keywords for customer:', customerId);
+      console.log('[Google Ads] Fetching keywords for customer:', customerId, 'domain:', domain);
+
+      // In production, this would query the Google Ads API with proper developer token
+      // For demo purposes, we simulate different scenarios based on domain/customerId
+      
+      // Simulate "no campaigns" scenario for domains not matching demo data
+      // This triggers the campaign setup wizard
+      const hasExistingCampaigns = !domain || 
+        domain.includes('demo') || 
+        domain.includes('webstack') || 
+        domain.includes('example') ||
+        customerId.includes('demo');
+      
+      if (!hasExistingCampaigns) {
+        console.log('[Google Ads] No campaigns found for domain:', domain);
+        return new Response(JSON.stringify({
+          keywords: [],
+          summary: null,
+          hasCampaigns: false,
+          isDemo: true,
+          message: 'No active campaigns found for this domain',
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       // Simulated keywords for demo
-      // In production, this would query the Google Ads API with proper developer token
       const demoKeywords = [
         { id: 'kw-1', text: 'best seo tools', matchType: 'BROAD', avgCpc: 4.50, impressions: 12500, clicks: 450, qualityScore: 6 },
         { id: 'kw-2', text: 'seo software for agencies', matchType: 'PHRASE', avgCpc: 8.20, impressions: 8200, clicks: 320, qualityScore: 5 },
@@ -116,6 +141,64 @@ serve(async (req) => {
           estimatedMonthlySpend: totalSpend.toFixed(2),
           potentialMonthlySavings: potentialSavings.toFixed(2),
         },
+        hasCampaigns: true,
+        isDemo: true,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Suggest keywords based on website URL
+    if (action === 'suggest-keywords') {
+      const { websiteUrl } = await req.json().catch(() => ({}));
+      
+      console.log('[Google Ads] Generating keyword suggestions for:', websiteUrl);
+
+      // In production, this would use Google Ads Keyword Planner API
+      // For demo, we generate suggestions based on the domain
+      const domainName = (websiteUrl || '')
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .split('.')[0]
+        .replace(/[^a-zA-Z]/g, ' ')
+        .trim();
+
+      const suggestions = [
+        `${domainName} services`,
+        `best ${domainName}`,
+        `${domainName} near me`,
+        `${domainName} company`,
+        `professional ${domainName}`,
+        `${domainName} solutions`,
+        `affordable ${domainName}`,
+        `top ${domainName} provider`,
+      ].filter(s => s.length < 50);
+
+      return new Response(JSON.stringify({
+        suggestions,
+        isDemo: true,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create a new campaign with keywords
+    if (action === 'create-campaign') {
+      const { campaign } = await req.json().catch(() => ({}));
+      
+      console.log('[Google Ads] Creating campaign:', campaign?.name);
+
+      // In production, this would use Google Ads API to create:
+      // 1. A new campaign
+      // 2. An ad group
+      // 3. Keywords for the ad group
+      // 4. Responsive search ads
+
+      // For demo, we simulate success
+      return new Response(JSON.stringify({
+        success: true,
+        campaignId: `campaign-${Date.now()}`,
+        message: 'Campaign created successfully (demo mode)',
         isDemo: true,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

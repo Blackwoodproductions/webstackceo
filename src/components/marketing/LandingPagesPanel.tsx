@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, X, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, MousePointer, ArrowRight,
-  ExternalLink, Flame, Layers
+  ExternalLink, Flame, Layers, AlertCircle
 } from 'lucide-react';
 import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
+import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
 
 interface Keyword {
   id: string;
@@ -45,6 +46,8 @@ const GoogleAdsIcon = () => (
 export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [showCampaignSetup, setShowCampaignSetup] = useState(false);
+  const [hasCampaigns, setHasCampaigns] = useState<boolean | null>(null);
   const [isFetchingKeywords, setIsFetchingKeywords] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -83,6 +86,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   // Fetch keywords with specific token/customer
   const handleFetchKeywordsWithToken = useCallback(async (token: string, customerId: string) => {
     setIsFetchingKeywords(true);
+    setHasCampaigns(null);
     
     try {
       const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
@@ -90,6 +94,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           action: 'get-keywords',
           accessToken: token,
           customerId: customerId,
+          domain: selectedDomain,
         },
       });
 
@@ -97,8 +102,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
       setKeywords(data.keywords || []);
       setSummary(data.summary || null);
+      setHasCampaigns(data.hasCampaigns !== false);
       
-      if (data.isDemo) {
+      // If no campaigns, show the campaign setup wizard
+      if (data.hasCampaigns === false) {
+        setShowCampaignSetup(true);
+        toast.info('No active campaigns found. Let\'s set one up!');
+      } else if (data.isDemo) {
         toast.info('Demo mode - Google Ads API developer token required for live data');
       }
     } catch (err) {
@@ -107,11 +117,12 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     } finally {
       setIsFetchingKeywords(false);
     }
-  }, []);
+  }, [selectedDomain]);
 
   // Fetch keywords with demo data
   const handleFetchKeywords = useCallback(async () => {
     setIsFetchingKeywords(true);
+    setHasCampaigns(null);
     
     try {
       const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
@@ -119,6 +130,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           action: 'get-keywords',
           accessToken: accessToken || 'demo-token',
           customerId: connectedCustomerId || 'demo-customer',
+          domain: selectedDomain,
         },
       });
 
@@ -126,8 +138,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
       setKeywords(data.keywords || []);
       setSummary(data.summary || null);
+      setHasCampaigns(data.hasCampaigns !== false);
       
-      if (data.isDemo) {
+      // If no campaigns, show the campaign setup wizard
+      if (data.hasCampaigns === false) {
+        setShowCampaignSetup(true);
+        toast.info('No active campaigns found. Let\'s set one up!');
+      } else if (data.isDemo) {
         toast.info('Showing demo data - Connect Google Ads API for live keywords');
       }
     } catch (err) {
@@ -136,7 +153,19 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     } finally {
       setIsFetchingKeywords(false);
     }
-  }, [accessToken, connectedCustomerId]);
+  }, [accessToken, connectedCustomerId, selectedDomain]);
+
+  // Handle campaign setup completion
+  const handleCampaignSetupComplete = useCallback(() => {
+    setShowCampaignSetup(false);
+    setHasCampaigns(true);
+    // Re-fetch keywords after campaign creation
+    if (accessToken && connectedCustomerId) {
+      handleFetchKeywordsWithToken(accessToken, connectedCustomerId);
+    } else {
+      handleFetchKeywords();
+    }
+  }, [accessToken, connectedCustomerId, handleFetchKeywordsWithToken, handleFetchKeywords]);
 
   const handleToggleKeyword = (keywordId: string) => {
     setSelectedKeywords(prev => {
@@ -230,8 +259,16 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         )}
       </header>
 
-      {/* Show Wizard when connecting */}
-      {showWizard ? (
+      {/* Show Campaign Setup Wizard when connected but no campaigns */}
+      {showCampaignSetup && isConnected && accessToken && connectedCustomerId ? (
+        <GoogleAdsCampaignSetupWizard
+          domain={selectedDomain || ''}
+          customerId={connectedCustomerId}
+          accessToken={accessToken}
+          onComplete={handleCampaignSetupComplete}
+          onCancel={() => setShowCampaignSetup(false)}
+        />
+      ) : showWizard ? (
         <GoogleAdsOnboardingWizard
           domain={selectedDomain || ''}
           onComplete={handleWizardComplete}
@@ -436,8 +473,25 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                No keywords found. Make sure you have active campaigns in Google Ads.
+              <div className="p-8 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                <div className="flex flex-col items-center text-center">
+                  <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Active Campaigns Found</h3>
+                  <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                    {selectedDomain ? (
+                      <>We couldn't find any Google Ads campaigns targeting <span className="font-medium text-primary">{selectedDomain}</span>.</>
+                    ) : (
+                      <>We couldn't find any active campaigns in your Google Ads account.</>
+                    )}
+                  </p>
+                  <Button
+                    onClick={() => setShowCampaignSetup(true)}
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Create Your First Campaign
+                  </Button>
+                </div>
               </div>
             )}
 
