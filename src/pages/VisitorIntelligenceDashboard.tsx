@@ -1404,7 +1404,7 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-24 px-6 md:px-10 lg:px-16">
+    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16">
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
