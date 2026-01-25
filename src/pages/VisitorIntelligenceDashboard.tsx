@@ -1433,12 +1433,13 @@ f.parentNode.insertBefore(j,f);
             <div className="mb-6">
               <GADashboardPanel 
                 externalSelectedSite={selectedTrackedDomain}
-                onAuthStatusChange={(isAuth) => {
-                  setGaAuthenticated(isAuth);
-                }}
-                onMetricsUpdate={(metrics, isConnected, domainMatches) => {
+                onAuthStatusChange={setGaAuthenticated}
+                onMetricsUpdate={(metrics, _isConnected, domainMatches) => {
                   setGaMetrics(metrics);
-                  setGaDomainMatches(domainMatches);
+                  // Only update if actually different to prevent loops
+                  if (domainMatches !== gaDomainMatches) {
+                    setGaDomainMatches(domainMatches);
+                  }
                 }}
                 hidePropertySelector
               />
@@ -1838,12 +1839,13 @@ f.parentNode.insertBefore(j,f);
         <div className="mb-8">
           <GADashboardPanel 
             externalSelectedSite={selectedTrackedDomain}
-            onAuthStatusChange={(isAuth) => {
-              setGaAuthenticated(isAuth);
-            }}
-            onMetricsUpdate={(metrics, isConnected, domainMatches) => {
+            onAuthStatusChange={setGaAuthenticated}
+            onMetricsUpdate={(metrics, _isConnected, domainMatches) => {
               setGaMetrics(metrics);
-              setGaDomainMatches(domainMatches);
+              // Only update if actually different to prevent loops
+              if (domainMatches !== gaDomainMatches) {
+                setGaDomainMatches(domainMatches);
+              }
             }}
             hidePropertySelector
           />
