@@ -121,6 +121,35 @@ function normalizeDomain(v: string): string {
     .replace(/\/$/, '');
 }
 
+// Dynamic iframe component that resizes based on content height
+const CaseStudyIframe = ({ domain }: { domain: string }) => {
+  const [iframeHeight, setIframeHeight] = useState(2000);
+  
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'iframe-height' && typeof event.data.height === 'number') {
+        setIframeHeight(event.data.height + 50); // Add small buffer
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+  
+  const slug = domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  
+  return (
+    <iframe
+      key={`case-study-iframe-${domain}`}
+      src={`/case-study/${slug}?embed=true`}
+      className="w-full border-0"
+      style={{ height: `${iframeHeight}px` }}
+      scrolling="no"
+      title="SEO Case Study"
+    />
+  );
+};
+
 const MarketingDashboard = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -2077,14 +2106,9 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
               
-              {/* Iframe container - full height to show entire case study without scrolling */}
-              <iframe
-                key={`case-study-iframe-${savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}`}
-                src={`/case-study/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}?embed=true`}
-                className="w-full border-0"
-                style={{ height: '8000px' }}
-                scrolling="no"
-                title="SEO Case Study"
+              {/* Iframe container - dynamically sized based on content */}
+              <CaseStudyIframe 
+                domain={savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || ''}
               />
             </div>
           ) : (
