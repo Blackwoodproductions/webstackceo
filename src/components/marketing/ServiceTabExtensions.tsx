@@ -44,27 +44,17 @@ const FloatingParticle = ({ delay, color }: { delay: number; color: string }) =>
 );
 
 // ============ BRON Extended Section ============
-export const BRONExtendedSection = () => {
-  const stats = [
-    { label: "Average DA Increase", value: 23, suffix: "%", icon: TrendingUp },
-    { label: "Links Built Monthly", value: 847, suffix: "+", icon: Link2 },
-    { label: "Partner Network", value: 12500, suffix: "+", icon: Users },
-    { label: "Time to First Link", value: 48, suffix: "hrs", icon: Clock },
-  ];
+interface BRONExtendedSectionProps {
+  domain?: string;
+}
 
-  const testimonials = [
-    {
-      quote: "BRON took our DA from 24 to 51 in just 8 months. The quality of links is incredible.",
-      author: "Sarah Chen",
-      role: "SEO Director, TechScale",
-      avatar: "SC"
-    },
-    {
-      quote: "Finally, link building that doesn't feel like spam. Real businesses, real results.",
-      author: "Marcus Williams",
-      role: "Founder, GrowthLab",
-      avatar: "MW"
-    }
+export const BRONExtendedSection = ({ domain }: BRONExtendedSectionProps) => {
+  // Platform capabilities - not fake client data
+  const capabilities = [
+    { label: "Partner Network Size", value: "12,500+", icon: Users, desc: "Verified businesses" },
+    { label: "Niche Categories", value: "200+", icon: Target, desc: "Industry verticals" },
+    { label: "Avg. Placement Time", value: "48hrs", icon: Clock, desc: "From request to live" },
+    { label: "Quality Guarantee", value: "DA 30+", icon: Award, desc: "Minimum site authority" },
   ];
 
   return (
@@ -137,11 +127,11 @@ export const BRONExtendedSection = () => {
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Platform Capabilities Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
+        {capabilities.map((cap, i) => (
           <motion.div
-            key={stat.label}
+            key={cap.label}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -150,50 +140,45 @@ export const BRONExtendedSection = () => {
             className="p-5 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/5 border border-emerald-500/20 text-center"
           >
             <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-3">
-              <stat.icon className="w-5 h-5 text-emerald-500" />
+              <cap.icon className="w-5 h-5 text-emerald-500" />
             </div>
-            <p className="text-2xl font-bold text-emerald-500">
-              <AnimatedNumber value={stat.value} suffix={stat.suffix} />
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+            <p className="text-2xl font-bold text-emerald-500">{cap.value}</p>
+            <p className="text-xs font-medium mt-1">{cap.label}</p>
+            <p className="text-[10px] text-muted-foreground">{cap.desc}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Testimonials */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {testimonials.map((t, i) => (
-          <motion.div
-            key={t.author}
-            initial={{ opacity: 0, x: i === 0 ? -20 : 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="p-6 rounded-xl bg-muted/30 border border-border"
-          >
-            <div className="flex gap-1 mb-3">
-              {[...Array(5)].map((_, j) => (
-                <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
-              ))}
+      {/* Domain-specific CTA */}
+      {domain && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="p-6 rounded-xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20"
+        >
+          <div className="flex items-center gap-4">
+            <Globe className="w-8 h-8 text-emerald-500" />
+            <div className="flex-1">
+              <p className="font-semibold">Ready to build authority for {domain}?</p>
+              <p className="text-sm text-muted-foreground">Start your link building campaign with our partner network</p>
             </div>
-            <p className="text-sm text-foreground mb-4 italic">"{t.quote}"</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white font-bold text-sm">
-                {t.avatar}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{t.author}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600">
+              Get Started
+            </Button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
 
 // ============ CADE Extended Section ============
-export const CADEExtendedSection = () => {
+interface CADEExtendedSectionProps {
+  domain?: string;
+}
+
+export const CADEExtendedSection = ({ domain }: CADEExtendedSectionProps) => {
   const contentTypes = [
     { type: "Listicles", desc: "Top 10, Best Of, X Ways To...", icon: "📋" },
     { type: "How-To Guides", desc: "Step-by-step tutorials", icon: "📖" },
@@ -344,11 +329,16 @@ export const CADEExtendedSection = () => {
 };
 
 // ============ Social Signals Extended Section ============
-export const SocialSignalsExtendedSection = () => {
+interface SocialSignalsExtendedSectionProps {
+  domain?: string;
+}
+
+export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSectionProps) => {
+  // Platform capabilities - not fake stats
   const platforms = [
-    { name: "X (Twitter)", posts: 234, engagement: "12.4K", color: "from-sky-400 to-blue-500", icon: Twitter },
-    { name: "LinkedIn", posts: 156, engagement: "8.7K", color: "from-blue-500 to-blue-700", icon: Linkedin },
-    { name: "Facebook", posts: 189, engagement: "15.2K", color: "from-blue-600 to-indigo-600", icon: Facebook },
+    { name: "X (Twitter)", desc: "Thread generation & scheduling", color: "from-sky-400 to-blue-500", icon: Twitter },
+    { name: "LinkedIn", desc: "Professional post automation", color: "from-blue-500 to-blue-700", icon: Linkedin },
+    { name: "Facebook", desc: "Page & group distribution", color: "from-blue-600 to-indigo-600", icon: Facebook },
   ];
 
   return (
@@ -387,25 +377,11 @@ export const SocialSignalsExtendedSection = () => {
                 </div>
                 <span className="font-semibold">{platform.name}</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-2xl font-bold">{platform.posts}</p>
-                  <p className="text-xs text-muted-foreground">Posts this month</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-pink-500">{platform.engagement}</p>
-                  <p className="text-xs text-muted-foreground">Engagements</p>
-                </div>
+              <p className="text-sm text-muted-foreground">{platform.desc}</p>
+              <div className="mt-4 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-pink-500" />
+                <span className="text-xs">Auto-scheduling enabled</span>
               </div>
-              <motion.div 
-                className="mt-4 h-2 rounded-full bg-muted overflow-hidden"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
-              >
-                <div className={`h-full bg-gradient-to-r ${platform.color} w-3/4`} />
-              </motion.div>
             </motion.div>
           ))}
         </div>
@@ -465,18 +441,23 @@ export const SocialSignalsExtendedSection = () => {
 };
 
 // ============ On-page SEO Extended Section ============
-export const OnPageSEOExtendedSection = () => {
-  const optimizations = [
-    { task: "Meta titles optimized", count: 156, color: "emerald" },
-    { task: "Meta descriptions written", count: 156, color: "teal" },
-    { task: "H1 tags fixed", count: 23, color: "cyan" },
-    { task: "Image alt tags added", count: 412, color: "green" },
-    { task: "Schema markup generated", count: 89, color: "lime" },
+interface OnPageSEOExtendedSectionProps {
+  domain?: string;
+}
+
+export const OnPageSEOExtendedSection = ({ domain }: OnPageSEOExtendedSectionProps) => {
+  // Capabilities list - not fake completion stats
+  const capabilities = [
+    { task: "Meta title optimization", icon: Type, desc: "AI-generated, keyword-rich titles" },
+    { task: "Meta description writing", icon: FileText, desc: "Compelling CTAs under 160 chars" },
+    { task: "H1-H6 structure analysis", icon: Gauge, desc: "Proper heading hierarchy" },
+    { task: "Image alt text generation", icon: ImageIcon, desc: "Accessible, keyword-optimized" },
+    { task: "Schema markup injection", icon: Code, desc: "Rich snippets for SERPs" },
   ];
 
   return (
     <div className="mt-8 space-y-8">
-      {/* Optimization Progress */}
+      {/* Optimization Capabilities */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -491,32 +472,26 @@ export const OnPageSEOExtendedSection = () => {
           >
             <Gauge className="w-5 h-5 text-white" />
           </motion.div>
-          Optimization Tasks Completed
+          On-page Optimization Capabilities
         </h3>
 
-        <div className="space-y-4">
-          {optimizations.map((opt, i) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {capabilities.map((cap, i) => (
             <motion.div
-              key={opt.task}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              key={cap.task}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="flex items-center gap-4"
+              className="p-4 rounded-xl bg-background/50 border border-emerald-500/10 flex items-start gap-3"
             >
-              <div className="w-32 text-sm font-medium">{opt.task}</div>
-              <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"
-                  initial={{ width: 0 }}
-                  whileInView={{ width: `${Math.min(100, opt.count / 4)}%` }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.8 }}
-                />
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <cap.icon className="w-5 h-5 text-emerald-500" />
               </div>
-              <Badge className="bg-emerald-500 min-w-[60px] justify-center">
-                {opt.count}
-              </Badge>
+              <div>
+                <p className="font-medium text-sm">{cap.task}</p>
+                <p className="text-xs text-muted-foreground">{cap.desc}</p>
+              </div>
             </motion.div>
           ))}
         </div>

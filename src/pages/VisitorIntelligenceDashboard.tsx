@@ -2685,7 +2685,7 @@ f.parentNode.insertBefore(j,f);
             </div>
 
             {/* Extended Content Section */}
-            <BRONExtendedSection />
+            <BRONExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
@@ -2794,7 +2794,7 @@ f.parentNode.insertBefore(j,f);
             </div>
 
             {/* Extended Content Section */}
-            <CADEExtendedSection />
+            <CADEExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
@@ -3564,7 +3564,7 @@ f.parentNode.insertBefore(j,f);
             </div>
 
             {/* Extended Content Section */}
-            <SocialSignalsExtendedSection />
+            <SocialSignalsExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
@@ -3673,7 +3673,7 @@ f.parentNode.insertBefore(j,f);
             </div>
 
             {/* Extended Content Section */}
-            <OnPageSEOExtendedSection />
+            <OnPageSEOExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
       )}
