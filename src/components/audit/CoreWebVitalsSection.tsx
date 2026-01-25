@@ -72,15 +72,114 @@ export const CoreWebVitalsSection = ({ metrics, isLoading }: CoreWebVitalsSectio
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="p-6 rounded-2xl bg-card border border-border/50">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-primary" />
+        <div className="p-6 rounded-2xl bg-card border border-border/50 overflow-hidden relative">
+          {/* Scanning line animation */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-transparent"
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Gauge className="w-5 h-5 text-primary" />
+            </motion.div>
             Core Web Vitals Deep Dive
+            <motion.span
+              className="ml-2 text-xs font-normal text-primary"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              Analyzing...
+            </motion.span>
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-24 bg-muted animate-pulse rounded-xl" />
+          
+          {/* Futuristic grid loader */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative z-10">
+            {["LCP", "FID", "CLS", "INP", "TTFB", "FCP"].map((label, i) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                className="h-28 rounded-xl bg-gradient-to-br from-muted/50 to-muted/20 border border-border/30 relative overflow-hidden"
+              >
+                {/* Glowing border effect */}
+                <motion.div
+                  className="absolute inset-0 rounded-xl"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent)`,
+                    backgroundSize: "200% 100%",
+                  }}
+                  animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: i * 0.2 }}
+                />
+                
+                {/* Content */}
+                <div className="relative z-10 p-4 h-full flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-foreground/80">{label}</span>
+                    <motion.div
+                      className="w-4 h-4 rounded-full bg-primary/30"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
+                    />
+                  </div>
+                  
+                  {/* Animated bars */}
+                  <div className="space-y-2">
+                    <motion.div
+                      className="h-2 bg-primary/20 rounded-full overflow-hidden"
+                    >
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-primary/50 via-primary to-primary/50 rounded-full"
+                        animate={{ x: ["-100%", "100%"] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.1 }}
+                        style={{ width: "50%" }}
+                      />
+                    </motion.div>
+                    <motion.div
+                      className="h-1.5 bg-muted rounded-full"
+                      style={{ width: `${60 + i * 8}%` }}
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.1 }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Corner accent */}
+                <motion.div
+                  className="absolute top-0 right-0 w-8 h-8"
+                  style={{
+                    background: "linear-gradient(135deg, transparent 50%, hsl(var(--primary) / 0.2) 50%)",
+                  }}
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                />
+              </motion.div>
             ))}
+          </div>
+          
+          {/* Bottom progress indicator */}
+          <div className="mt-6 relative z-10">
+            <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground">
+              <motion.div
+                className="flex gap-1"
+              >
+                {[0, 1, 2].map((dot) => (
+                  <motion.div
+                    key={dot}
+                    className="w-1.5 h-1.5 rounded-full bg-primary"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: dot * 0.15 }}
+                  />
+                ))}
+              </motion.div>
+              <span>Fetching real-time performance metrics from Google</span>
+            </div>
           </div>
         </div>
       </motion.div>
