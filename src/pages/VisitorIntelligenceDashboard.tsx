@@ -39,6 +39,7 @@ import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
+import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import {
@@ -3735,24 +3736,8 @@ f.parentNode.insertBefore(j,f);
               </div>
             </div>
 
-            {/* Bottom row: Feature cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text automatically generated for all images across your site', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization and strategic internal link suggestions', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
-                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure enforced across all pages for optimal crawlability', color: 'text-amber-600', bgColor: 'bg-amber-600/10' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
-                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm mb-1">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Bottom row: Auto-scrolling Feature Carousel */}
+            <OnPageSEOCarousel />
 
             {/* Extended Content Section */}
             <OnPageSEOExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
