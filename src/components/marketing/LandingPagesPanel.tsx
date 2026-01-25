@@ -10,6 +10,7 @@ import {
   RefreshCw, Zap, BarChart3, Eye, MousePointer, ArrowRight,
   ExternalLink, Flame, Layers
 } from 'lucide-react';
+import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 
 interface Keyword {
   id: string;
@@ -43,34 +44,72 @@ const GoogleAdsIcon = () => (
 
 export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [isFetchingKeywords, setIsFetchingKeywords] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [summary, setSummary] = useState<KeywordSummary | null>(null);
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
   const [generatedPages, setGeneratedPages] = useState<any[]>([]);
+  const [connectedCustomerId, setConnectedCustomerId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   const GOOGLE_ADS_SCOPES = 'https://www.googleapis.com/auth/adwords';
 
-  const handleConnectGoogleAds = useCallback(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  // Handle wizard completion
+  const handleWizardComplete = useCallback((customerId: string, token: string) => {
+    setConnectedCustomerId(customerId);
+    setAccessToken(token);
+    setIsConnected(true);
+    setShowWizard(false);
     
-    // For demo purposes, we'll simulate the connection
-    // In production, you would need a Google Ads Developer Token
-    setIsConnecting(true);
-    
-    // Simulate OAuth flow
-    setTimeout(() => {
-      setIsConnected(true);
-      setIsConnecting(false);
-      toast.success('Connected to Google Ads (Demo Mode)');
-      
-      // Auto-fetch keywords after connection
-      handleFetchKeywords();
-    }, 1500);
+    // Auto-fetch keywords after connection
+    handleFetchKeywordsWithToken(token, customerId);
   }, []);
 
+  // Skip wizard and use demo data
+  const handleSkipWizard = useCallback(() => {
+    setShowWizard(false);
+    setIsConnected(true);
+    toast.info('Using demo data - Connect Google Ads for live keywords');
+    handleFetchKeywords();
+  }, []);
+
+  // Start the connection wizard
+  const handleStartConnection = useCallback(() => {
+    setShowWizard(true);
+  }, []);
+
+  // Fetch keywords with specific token/customer
+  const handleFetchKeywordsWithToken = useCallback(async (token: string, customerId: string) => {
+    setIsFetchingKeywords(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
+        body: {
+          action: 'get-keywords',
+          accessToken: token,
+          customerId: customerId,
+        },
+      });
+
+      if (error) throw error;
+
+      setKeywords(data.keywords || []);
+      setSummary(data.summary || null);
+      
+      if (data.isDemo) {
+        toast.info('Demo mode - Google Ads API developer token required for live data');
+      }
+    } catch (err) {
+      console.error('Error fetching keywords:', err);
+      toast.error('Failed to fetch keywords');
+    } finally {
+      setIsFetchingKeywords(false);
+    }
+  }, []);
+
+  // Fetch keywords with demo data
   const handleFetchKeywords = useCallback(async () => {
     setIsFetchingKeywords(true);
     
@@ -78,8 +117,8 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
         body: {
           action: 'get-keywords',
-          accessToken: 'demo-token',
-          customerId: 'demo-customer',
+          accessToken: accessToken || 'demo-token',
+          customerId: connectedCustomerId || 'demo-customer',
         },
       });
 
@@ -97,7 +136,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     } finally {
       setIsFetchingKeywords(false);
     }
-  }, []);
+  }, [accessToken, connectedCustomerId]);
 
   const handleToggleKeyword = (keywordId: string) => {
     setSelectedKeywords(prev => {
@@ -185,8 +224,14 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </p>
       </div>
 
-      {/* Connection Status & CTA */}
-      {!isConnected ? (
+      {/* Show Wizard when connecting */}
+      {showWizard ? (
+        <GoogleAdsOnboardingWizard
+          domain={selectedDomain || ''}
+          onComplete={handleWizardComplete}
+          onSkip={handleSkipWizard}
+        />
+      ) : !isConnected ? (
         <div className="max-w-2xl mx-auto">
           {/* Feature Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -211,21 +256,11 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
               Import your active PPC keywords and generate optimized landing pages automatically.
             </p>
             <Button 
-              onClick={handleConnectGoogleAds}
-              disabled={isConnecting}
+              onClick={handleStartConnection}
               className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
             >
-              {isConnecting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <GoogleAdsIcon />
-                  <span className="ml-2">Connect Google Ads Account</span>
-                </>
-              )}
+              <GoogleAdsIcon />
+              <span className="ml-2">Connect Google Ads Account</span>
             </Button>
             <p className="text-xs text-muted-foreground mt-3">
               We only request read access to your keyword data
