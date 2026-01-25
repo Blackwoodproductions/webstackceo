@@ -38,7 +38,7 @@ import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
-import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection } from '@/components/marketing/ServiceTabExtensions';
+import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import {
   Select,
   SelectGroup,
@@ -3455,6 +3455,9 @@ f.parentNode.insertBefore(j,f);
                   </p>
                 </div>
               )}
+
+              {/* Extended Content Section */}
+              <GMBExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
             </div>
           )}
         </div>
@@ -3681,6 +3684,9 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'landing-pages' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
+          
+          {/* Extended Content Section */}
+          <PPCLandingPagesExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
         </div>
       )}
 
