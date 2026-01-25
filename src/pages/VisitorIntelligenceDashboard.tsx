@@ -2763,13 +2763,17 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Diamonds - CADE */}
+              {/* Matrix Data Streams - CADE */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-3 h-3 rotate-45 bg-violet-400/40 animate-[pulse-glow_2s_ease-in-out_infinite] top-3 left-[15%]" />
-                <div className="absolute w-2.5 h-2.5 rotate-45 bg-purple-500/35 animate-[pulse-glow_2.5s_ease-in-out_infinite_0.4s] top-6 left-[30%]" />
-                <div className="absolute w-4 h-4 rotate-45 bg-fuchsia-400/30 animate-[pulse-glow_3s_ease-in-out_infinite_0.8s] top-1 left-[45%]" />
-                <div className="absolute w-2 h-2 rotate-45 bg-violet-300/40 animate-[pulse-glow_2.2s_ease-in-out_infinite_1.2s] top-5 left-[60%]" />
-                <div className="absolute w-3.5 h-3.5 rotate-45 bg-purple-400/35 animate-[pulse-glow_2.8s_ease-in-out_infinite_1.6s] top-2 left-[75%]" />
+                {/* Vertical falling data streams */}
+                <div className="absolute w-px h-16 bg-gradient-to-b from-transparent via-violet-400/60 to-transparent animate-[slide-down_2s_linear_infinite] left-[12%] -top-4" />
+                <div className="absolute w-px h-12 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent animate-[slide-down_2.5s_linear_infinite_0.3s] left-[25%] -top-4" />
+                <div className="absolute w-px h-20 bg-gradient-to-b from-transparent via-fuchsia-400/40 to-transparent animate-[slide-down_1.8s_linear_infinite_0.6s] left-[40%] -top-4" />
+                <div className="absolute w-px h-14 bg-gradient-to-b from-transparent via-violet-500/55 to-transparent animate-[slide-down_2.2s_linear_infinite_0.9s] left-[55%] -top-4" />
+                <div className="absolute w-px h-18 bg-gradient-to-b from-transparent via-purple-400/45 to-transparent animate-[slide-down_1.6s_linear_infinite_1.2s] left-[70%] -top-4" />
+                <div className="absolute w-px h-10 bg-gradient-to-b from-transparent via-fuchsia-500/50 to-transparent animate-[slide-down_2.8s_linear_infinite_1.5s] left-[82%] -top-4" />
+                {/* Horizontal scan line */}
+                <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent animate-[slide-right_3s_linear_infinite] top-1/2" />
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
@@ -2927,13 +2931,20 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <header className="flex items-start justify-between gap-4 mb-6 relative overflow-hidden">
-            {/* Animated Map Pins - GMB */}
+            {/* Radar Pulse Scanner - GMB */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute w-2 h-3 rounded-t-full bg-blue-400/40 animate-[bounce_1.5s_ease-in-out_infinite] top-2 left-[12%]" />
-              <div className="absolute w-1.5 h-2.5 rounded-t-full bg-green-500/35 animate-[bounce_2s_ease-in-out_infinite_0.3s] top-5 left-[28%]" />
-              <div className="absolute w-2.5 h-3.5 rounded-t-full bg-teal-400/30 animate-[bounce_1.8s_ease-in-out_infinite_0.6s] top-1 left-[42%]" />
-              <div className="absolute w-2 h-3 rounded-t-full bg-blue-300/40 animate-[bounce_2.2s_ease-in-out_infinite_0.9s] top-4 left-[58%]" />
-              <div className="absolute w-1.5 h-2.5 rounded-t-full bg-green-400/35 animate-[bounce_1.6s_ease-in-out_infinite_1.2s] top-3 left-[72%]" />
+              {/* Central radar pulse */}
+              <div className="absolute left-[15%] top-1/2 -translate-y-1/2">
+                <div className="w-8 h-8 rounded-full border border-blue-400/40 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                <div className="absolute inset-0 w-8 h-8 rounded-full border border-green-400/30 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_0.5s]" />
+                <div className="absolute inset-2 w-4 h-4 rounded-full bg-blue-500/30" />
+              </div>
+              {/* GPS signal dots */}
+              <div className="absolute w-2 h-2 rounded-full bg-green-400/50 animate-[pulse_1.5s_ease-in-out_infinite] top-2 left-[35%]" />
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-teal-400/40 animate-[pulse_1.8s_ease-in-out_infinite_0.3s] top-6 left-[50%]" />
+              <div className="absolute w-2.5 h-2.5 rounded-full bg-blue-400/45 animate-[pulse_2s_ease-in-out_infinite_0.6s] top-3 left-[65%]" />
+              {/* Connecting lines */}
+              <div className="absolute w-20 h-px bg-gradient-to-r from-blue-400/30 via-green-400/20 to-transparent top-4 left-[30%] animate-[pulse_2.5s_ease-in-out_infinite]" />
             </div>
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
@@ -3704,13 +3715,28 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Hearts/Likes - Social Signals */}
+              {/* Network Nodes & Connections - Social Signals */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-3 h-3 bg-pink-400/40 animate-[scale-in_1s_ease-in-out_infinite_alternate] top-1 left-[8%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
-                <div className="absolute w-2.5 h-2.5 bg-rose-500/35 animate-[scale-in_1.2s_ease-in-out_infinite_alternate_0.2s] top-5 left-[22%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
-                <div className="absolute w-2 h-2 bg-pink-300/30 animate-[scale-in_1.4s_ease-in-out_infinite_alternate_0.4s] top-7 left-[38%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
-                <div className="absolute w-3.5 h-3.5 bg-rose-400/40 animate-[scale-in_1.1s_ease-in-out_infinite_alternate_0.6s] top-2 left-[52%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
-                <div className="absolute w-2.5 h-2.5 bg-pink-500/35 animate-[scale-in_1.3s_ease-in-out_infinite_alternate_0.8s] top-4 left-[68%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
+                {/* Glowing network nodes */}
+                <div className="absolute w-3 h-3 rounded-full bg-pink-500/50 shadow-[0_0_10px_rgba(236,72,153,0.5)] animate-[pulse_2s_ease-in-out_infinite] top-2 left-[10%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-rose-400/40 shadow-[0_0_8px_rgba(251,113,133,0.4)] animate-[pulse_2.3s_ease-in-out_infinite_0.3s] top-6 left-[28%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-pink-400/45 shadow-[0_0_10px_rgba(244,114,182,0.4)] animate-[pulse_1.8s_ease-in-out_infinite_0.6s] top-3 left-[48%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.5)] animate-[pulse_2.5s_ease-in-out_infinite_0.9s] top-5 left-[65%]" />
+                <div className="absolute w-3 h-3 rounded-full bg-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.4)] animate-[pulse_2s_ease-in-out_infinite_1.2s] top-1 left-[80%]" />
+                {/* Connection lines between nodes */}
+                <svg className="absolute inset-0 w-full h-full opacity-30">
+                  <line x1="12%" y1="30%" x2="28%" y2="70%" stroke="url(#pinkGradient)" strokeWidth="1" className="animate-[pulse_3s_ease-in-out_infinite]" />
+                  <line x1="28%" y1="70%" x2="48%" y2="40%" stroke="url(#pinkGradient)" strokeWidth="1" className="animate-[pulse_3s_ease-in-out_infinite_0.5s]" />
+                  <line x1="48%" y1="40%" x2="65%" y2="60%" stroke="url(#pinkGradient)" strokeWidth="1" className="animate-[pulse_3s_ease-in-out_infinite_1s]" />
+                  <line x1="65%" y1="60%" x2="80%" y2="20%" stroke="url(#pinkGradient)" strokeWidth="1" className="animate-[pulse_3s_ease-in-out_infinite_1.5s]" />
+                  <defs>
+                    <linearGradient id="pinkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="rgb(236,72,153)" stopOpacity="0.5" />
+                      <stop offset="50%" stopColor="rgb(244,114,182)" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="rgb(251,113,133)" stopOpacity="0.5" />
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
@@ -3866,13 +3892,25 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Code Brackets - On-page SEO */}
+              {/* Circuit Board Traces - On-page SEO */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute text-amber-400/50 text-lg font-mono animate-[fade-in_1s_ease-in-out_infinite_alternate] top-1 left-[10%]">&lt;/&gt;</div>
-                <div className="absolute text-orange-500/45 text-sm font-mono animate-[fade-in_1.2s_ease-in-out_infinite_alternate_0.2s] top-5 left-[25%]">{'{}'}</div>
-                <div className="absolute text-yellow-400/40 text-base font-mono animate-[fade-in_1.4s_ease-in-out_infinite_alternate_0.4s] top-3 left-[40%]">&lt;&gt;</div>
-                <div className="absolute text-amber-300/50 text-lg font-mono animate-[fade-in_1.1s_ease-in-out_infinite_alternate_0.6s] top-0 left-[55%]">[ ]</div>
-                <div className="absolute text-orange-400/45 text-sm font-mono animate-[fade-in_1.3s_ease-in-out_infinite_alternate_0.8s] top-4 left-[70%]">#</div>
+                {/* Horizontal traces with traveling light */}
+                <div className="absolute h-px w-16 bg-gradient-to-r from-amber-500/50 via-orange-400/30 to-transparent top-3 left-[8%]">
+                  <div className="absolute w-2 h-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)] animate-[slide-right_1.5s_linear_infinite]" />
+                </div>
+                <div className="absolute h-px w-20 bg-gradient-to-r from-transparent via-orange-500/40 to-amber-400/50 top-6 left-[25%]">
+                  <div className="absolute w-2 h-full bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.8)] animate-[slide-right_2s_linear_infinite_0.5s]" />
+                </div>
+                <div className="absolute h-px w-14 bg-gradient-to-r from-yellow-500/40 via-amber-400/50 to-transparent top-2 left-[50%]">
+                  <div className="absolute w-2 h-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)] animate-[slide-right_1.8s_linear_infinite_1s]" />
+                </div>
+                <div className="absolute h-px w-18 bg-gradient-to-r from-transparent via-amber-500/35 to-orange-400/45 top-5 left-[70%]">
+                  <div className="absolute w-2 h-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-[slide-right_2.2s_linear_infinite_1.5s]" />
+                </div>
+                {/* Circuit nodes */}
+                <div className="absolute w-2 h-2 rounded-sm bg-amber-500/60 shadow-[0_0_4px_rgba(245,158,11,0.6)] top-2.5 left-[8%]" />
+                <div className="absolute w-1.5 h-1.5 rounded-sm bg-orange-400/50 shadow-[0_0_4px_rgba(251,146,60,0.5)] top-5.5 left-[45%]" />
+                <div className="absolute w-2 h-2 rounded-sm bg-yellow-500/55 shadow-[0_0_4px_rgba(234,179,8,0.6)] top-1.5 left-[64%]" />
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
