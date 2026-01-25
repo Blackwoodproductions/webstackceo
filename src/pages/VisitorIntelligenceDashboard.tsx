@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair, Twitter, Linkedin, Facebook, Bell, Newspaper
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair, Twitter, Linkedin, Facebook, Bell, Newspaper, Type, Gauge, ImageIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -3407,7 +3407,7 @@ f.parentNode.insertBefore(j,f);
       {/* On-page SEO Tab Content */}
       {activeTab === 'on-page-seo' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
-          <div className="text-center py-16">
+          <div className="text-center py-12">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4">
               <FileSearch className="w-8 h-8 text-white" />
             </div>
@@ -3417,17 +3417,30 @@ f.parentNode.insertBefore(j,f);
                 Domain: {selectedTrackedDomain || selectedDomainKey}
               </p>
             )}
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Optimize your website's content, meta tags, and structure for maximum search visibility and rankings.
+            <p className="text-muted-foreground max-w-lg mx-auto mb-6">
+              AI-powered on-page optimization that handles the tedious work humans used to do manually—saving you time and money while improving rankings.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+            {/* BRON Integration Banner */}
+            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/15 border border-emerald-500/30">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <span className="font-semibold text-emerald-500">Powered by BRON</span>
+              </div>
+              <p className="text-sm text-foreground">
+                BRON's AI handles on-page optimization automatically—what used to take SEO specialists hours now happens in seconds.
+              </p>
+            </div>
+            
+            {/* Core Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-6">
               {[
-                { icon: FileText, label: 'Meta Optimization', desc: 'Titles, descriptions & headers' },
-                { icon: Search, label: 'Keyword Analysis', desc: 'Density & placement tracking' },
-                { icon: Code, label: 'Schema Markup', desc: 'Structured data validation' },
+                { icon: FileText, label: 'Meta Optimization', desc: 'AI-crafted titles, descriptions & headers' },
+                { icon: Search, label: 'Keyword Placement', desc: 'Strategic density & natural insertion' },
+                { icon: Code, label: 'Schema Markup', desc: 'Auto-generated structured data' },
+                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text for all images' },
               ].map((feature) => (
-                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-emerald-500/50 transition-colors">
                   <feature.icon className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
                   <p className="font-medium text-sm">{feature.label}</p>
                   <p className="text-xs text-muted-foreground">{feature.desc}</p>
@@ -3435,12 +3448,66 @@ f.parentNode.insertBefore(j,f);
               ))}
             </div>
             
-            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-              Coming Soon
+            {/* AI vs Human Tasks */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
+              {[
+                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure across all pages' },
+                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization' },
+                { icon: Gauge, label: 'Content Scoring', desc: 'Readability & SEO score analysis' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-teal-500/50 transition-colors">
+                  <feature.icon className="w-6 h-6 text-teal-500 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            {/* Time & Money Savings Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+              {[
+                { stat: '10+', label: 'Hours Saved', desc: 'Per page optimization' },
+                { stat: '85%', label: 'Cost Reduction', desc: 'vs. manual SEO work' },
+                { stat: '100%', label: 'Automated', desc: 'No human intervention' },
+                { stat: '24/7', label: 'Monitoring', desc: 'Continuous optimization' },
+              ].map((item) => (
+                <div key={item.label} className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/10 border border-emerald-500/20">
+                  <p className="text-2xl font-bold text-emerald-500">{item.stat}</p>
+                  <p className="font-medium text-sm">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            {/* What AI Handles */}
+            <div className="max-w-3xl mx-auto mb-8 p-4 rounded-xl bg-muted/20 border border-border">
+              <p className="text-sm font-medium text-foreground mb-3">Tasks BRON handles that humans used to do manually:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {[
+                  'Title tag optimization',
+                  'Meta description writing',
+                  'Header tag structure',
+                  'Keyword density analysis',
+                  'Image alt text',
+                  'Internal link audit',
+                  'Schema markup',
+                  'Content gap analysis',
+                  'Readability scoring',
+                  'URL structure',
+                ].map((task) => (
+                  <span key={task} className="px-3 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    {task}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
+              Activates with BRON
             </Badge>
             
             <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
-              Automated on-page analysis and optimization recommendations for every page on your site.
+              Stop paying for manual SEO audits. BRON's AI continuously optimizes every page on your site automatically.
             </p>
           </div>
         </div>
