@@ -3659,8 +3659,8 @@ f.parentNode.insertBefore(j,f);
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left - Header section */}
               <div className="lg:col-span-4">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/15 border border-emerald-500/20 h-full flex flex-col">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4 shadow-lg">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/15 border border-amber-500/20 h-full flex flex-col">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 shadow-lg">
                     <FileSearch className="w-7 h-7 text-white" />
                   </div>
                   <h2 className="text-2xl font-bold mb-2">On-page SEO</h2>
@@ -3672,8 +3672,8 @@ f.parentNode.insertBefore(j,f);
                   <p className="text-muted-foreground text-sm flex-1">
                     AI-powered on-page optimization that handles tedious manual work—saving you time and money while improving rankings.
                   </p>
-                  <div className="mt-4 pt-4 border-t border-emerald-500/20">
-                    <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 bg-emerald-500/10">
+                  <div className="mt-4 pt-4 border-t border-amber-500/20">
+                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
                       Powered by BRON
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-3">
@@ -3717,16 +3717,16 @@ f.parentNode.insertBefore(j,f);
                       highlight: '24/7 Monitoring'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-emerald-500/5 to-teal-500/10 border border-emerald-500/20 flex flex-col min-h-[180px]">
-                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20 flex flex-col min-h-[180px]">
+                      <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-3 mt-1">
-                        <item.icon className="w-5 h-5 text-emerald-500" />
+                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-3 mt-1">
+                        <item.icon className="w-5 h-5 text-amber-500" />
                       </div>
                       <p className="font-semibold text-sm mb-2">{item.title}</p>
                       <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
-                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-emerald-500 border-emerald-500/30 bg-emerald-500/5">
+                      <Badge variant="outline" className="mt-3 w-fit text-[10px] text-amber-500 border-amber-500/30 bg-amber-500/5">
                         {item.highlight}
                       </Badge>
                     </div>
@@ -3738,9 +3738,9 @@ f.parentNode.insertBefore(j,f);
             {/* Bottom row: Feature cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text automatically generated for all images across your site', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10' },
-                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization and strategic internal link suggestions', color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
-                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure enforced across all pages for optimal crawlability', color: 'text-cyan-500', bgColor: 'bg-cyan-500/10' },
+                { icon: ImageIcon, label: 'Image Alt Tags', desc: 'SEO-optimized alt text automatically generated for all images across your site', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
+                { icon: Link2, label: 'Internal Linking', desc: 'Smart anchor text optimization and strategic internal link suggestions', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
+                { icon: Type, label: 'Header Hierarchy', desc: 'Proper H1-H6 structure enforced across all pages for optimal crawlability', color: 'text-amber-600', bgColor: 'bg-amber-600/10' },
               ].map((feature) => (
                 <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
                   <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
