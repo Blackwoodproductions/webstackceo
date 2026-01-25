@@ -6,6 +6,7 @@ import {
   ExternalLink, Key, Download, Smartphone, Monitor, Tablet,
   Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp, X
 } from "lucide-react";
+import { usePopupOAuth } from "@/hooks/use-popup-oauth";
 import { GSCAdvancedReporting } from "./GSCAdvancedReporting";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -164,6 +165,7 @@ export const GSCDashboardPanel = ({
   hideDateSelector,
 }: GSCDashboardPanelProps) => {
   const { toast } = useToast();
+  const { openOAuthPopup } = usePopupOAuth();
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -533,6 +535,83 @@ export const GSCDashboardPanel = ({
     }
   }, [dateData, onDataLoaded]);
 
+  // Handle OAuth code exchange (called from popup callback)
+  const handleOAuthCodeExchange = useCallback(async (code: string) => {
+    const verifier = localStorage.getItem("gsc_code_verifier");
+    if (!verifier) {
+      toast({
+        title: "Authentication Error",
+        description: "OAuth session expired. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const redirectUri = getOAuthRedirectUri();
+      console.log("[GSC] Exchanging OAuth code for token via popup...");
+      
+      const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+        body: { code, codeVerifier: verifier, redirectUri },
+      });
+
+      if (tokenRes.error || tokenRes.data?.error) {
+        throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
+      }
+
+      const { access_token, expires_in, scope, id_token } = tokenRes.data;
+
+      if (typeof scope === "string" && !scope.includes("webmasters")) {
+        throw new Error("Google granted no Search Console permissions. Please reconnect and approve the Search Console access request.");
+      }
+
+      const expiryTime = Date.now() + (expires_in || 3600) * 1000;
+      
+      console.log("[GSC] Token received via popup, storing in localStorage...");
+      localStorage.setItem("gsc_access_token", access_token);
+      localStorage.setItem("gsc_token_expiry", expiryTime.toString());
+      localStorage.removeItem("gsc_code_verifier");
+
+      // Extract profile from id_token if available
+      if (id_token) {
+        try {
+          const payloadBase64 = id_token.split(".")[1];
+          const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+          const payload = JSON.parse(payloadJson);
+          const profile: GoogleUserProfile = {
+            name: payload.name,
+            email: payload.email,
+            picture: payload.picture,
+          };
+          localStorage.setItem("gsc_google_profile", JSON.stringify(profile));
+          window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile } }));
+        } catch {
+          console.warn("[GSC] Could not decode id_token");
+        }
+      }
+      
+      setAccessToken(access_token);
+      setIsAuthenticated(true);
+      
+      toast({
+        title: "Google Search Console Connected",
+        description: "Successfully linked your Search Console account.",
+      });
+    } catch (error: any) {
+      console.error("[GSC] Token exchange error:", error);
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect to Google Search Console.",
+        variant: "destructive",
+      });
+      setAccessToken(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
     console.log("[GSC] Attempting login, client ID present:", !!clientId, "ID prefix:", clientId?.substring(0, 20));
@@ -560,9 +639,36 @@ export const GSCDashboardPanel = ({
       authUrl.searchParams.set("code_challenge_method", "S256");
       authUrl.searchParams.set("prompt", "consent");
       authUrl.searchParams.set("access_type", "online");
+      authUrl.searchParams.set("state", "gsc");
 
-      console.log("[GSC] Redirecting to Google OAuth...");
-      window.location.href = authUrl.toString();
+      console.log("[GSC] Opening OAuth popup...");
+      
+      // Use popup instead of redirect
+      const opened = openOAuthPopup({
+        authUrl: authUrl.toString(),
+        popupName: "gsc_oauth",
+        onSuccess: (code) => {
+          void handleOAuthCodeExchange(code);
+        },
+        onError: (error) => {
+          console.error("[GSC] OAuth popup error:", error);
+          toast({
+            title: "Authentication Error",
+            description: error === "access_denied" 
+              ? "You denied access to Google Search Console." 
+              : "Failed to authenticate with Google. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
+
+      if (!opened) {
+        toast({
+          title: "Popup Blocked",
+          description: "Please allow popups for this site and try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("[GSC] Error initiating OAuth:", error);
       toast({

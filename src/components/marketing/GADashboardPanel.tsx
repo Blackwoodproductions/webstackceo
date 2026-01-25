@@ -4,6 +4,7 @@ import {
   BarChart3, RefreshCw, Loader2, ExternalLink, Key, 
   Activity, X, ArrowUpRight, ArrowDownRight, Zap, Target
 } from "lucide-react";
+import { usePopupOAuth } from "@/hooks/use-popup-oauth";
 import { GAOnboardingWizard } from "./GAOnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -127,6 +128,7 @@ export const GADashboardPanel = ({
   hidePropertySelector = false,
 }: GADashboardPanelProps) => {
   const { toast } = useToast();
+  const { openOAuthPopup } = usePopupOAuth();
 
   // Avoid effect loops when parent passes inline callbacks.
   // Store the latest callbacks in refs so our effects don't depend on function identity.
@@ -641,6 +643,63 @@ export const GADashboardPanel = ({
     onMetricsUpdateRef.current?.(metrics, isAuthenticated, domainMatches);
   }, [metrics, isAuthenticated, isExternalSiteInGA, externalSelectedSite, streamsLoaded]);
 
+  // Handle OAuth code exchange (called from popup callback)
+  const handleOAuthCodeExchange = useCallback(async (code: string) => {
+    const verifier = localStorage.getItem("ga_code_verifier");
+    if (!verifier) {
+      toast({
+        title: "Authentication Error",
+        description: "OAuth session expired. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const redirectUri = getOAuthRedirectUri();
+      const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+        body: { code, codeVerifier: verifier, redirectUri },
+      });
+
+      if (tokenRes.error || tokenRes.data?.error) {
+        throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
+      }
+
+      const { access_token, expires_in, scope } = tokenRes.data;
+
+      if (typeof scope === "string" && !scope.includes("analytics.readonly")) {
+        throw new Error("Google granted no Analytics permissions. Please reconnect and approve the Analytics access request.");
+      }
+
+      const expiryTime = Date.now() + (expires_in || 3600) * 1000;
+      
+      console.log("[GA] Token received via popup, storing in localStorage...");
+      localStorage.setItem("ga_access_token", access_token);
+      localStorage.setItem("ga_token_expiry", expiryTime.toString());
+      localStorage.removeItem("ga_code_verifier");
+      
+      setAccessToken(access_token);
+      setIsAuthenticated(true);
+      
+      toast({
+        title: "Google Analytics Connected",
+        description: "Successfully linked your Analytics account.",
+      });
+    } catch (error: any) {
+      console.error("[GA] Token exchange error:", error);
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect to Google Analytics.",
+        variant: "destructive",
+      });
+      setAccessToken(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
     
@@ -666,7 +725,32 @@ export const GADashboardPanel = ({
       authUrl.searchParams.set("access_type", "online");
       authUrl.searchParams.set("state", "ga");
 
-      window.location.href = authUrl.toString();
+      // Use popup instead of redirect
+      const opened = openOAuthPopup({
+        authUrl: authUrl.toString(),
+        popupName: "ga_oauth",
+        onSuccess: (code) => {
+          void handleOAuthCodeExchange(code);
+        },
+        onError: (error) => {
+          console.error("[GA] OAuth popup error:", error);
+          toast({
+            title: "Authentication Error",
+            description: error === "access_denied" 
+              ? "You denied access to Google Analytics." 
+              : "Failed to authenticate with Google. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
+
+      if (!opened) {
+        toast({
+          title: "Popup Blocked",
+          description: "Please allow popups for this site and try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("[GA] Error initiating OAuth:", error);
       toast({
