@@ -143,12 +143,21 @@ export const GADashboardPanel = ({
 
   // Check if external site matches any GA property
   const isExternalSiteInGA = useMemo(() => {
-    if (!externalSelectedSite || properties.length === 0) return true; // Don't show warning if no site selected or no properties
+    // If no external site selected, we can't check - but don't show metrics without a domain
+    if (!externalSelectedSite) return false;
+    // If no properties loaded yet, we're still loading
+    if (properties.length === 0) return false;
+    
     const normalizedExternal = normalizeDomain(externalSelectedSite);
-    return properties.some(prop => {
+    console.log('[GA] Checking domain match:', { externalSelectedSite, normalizedExternal, properties: properties.map(p => ({ name: p.displayName, normalized: normalizeDomain(p.displayName) })) });
+    
+    const match = properties.some(prop => {
       const propDomain = normalizeDomain(prop.displayName);
       return propDomain.includes(normalizedExternal) || normalizedExternal.includes(propDomain);
     });
+    
+    console.log('[GA] Domain match result:', match);
+    return match;
   }, [externalSelectedSite, properties]);
 
   // Find matching property for external site
@@ -635,8 +644,22 @@ export const GADashboardPanel = ({
     );
   }
 
+  // Connected but still loading properties
+  if (isAuthenticated && properties.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Loading Google Analytics properties...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Connected but domain not in GA - show prominent add domain prompt
-  if (isAuthenticated && externalSelectedSite && !isExternalSiteInGA && properties.length > 0) {
+  if (isAuthenticated && externalSelectedSite && !isExternalSiteInGA) {
     return (
       <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
         <CardHeader className="pb-4">
