@@ -707,7 +707,12 @@ const MarketingDashboard = () => {
     const storedToken = sessionStorage.getItem('gmb_access_token');
     const storedExpiry = sessionStorage.getItem('gmb_token_expiry');
     if (storedToken && storedExpiry && Date.now() < Number(storedExpiry)) {
-      setGmbAuthenticated(true);
+      // IMPORTANT: Don't just mark "authenticated"; also hydrate accounts + locations.
+      const remainingSeconds = Math.max(
+        60,
+        Math.floor((Number(storedExpiry) - Date.now()) / 1000)
+      );
+      void applyGmbToken(storedToken, remainingSeconds);
     }
     
     // Handle OAuth callback
@@ -782,7 +787,7 @@ const MarketingDashboard = () => {
         }
       })();
     }
-  }, []);
+  }, [applyGmbToken]);
 
   // Receive OAuth token from popup without navigating away
   useEffect(() => {
@@ -2777,8 +2782,25 @@ f.parentNode.insertBefore(j,f);
                   </div>
                   <p className="text-muted-foreground mb-2">No business accounts found</p>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                    Make sure your Google account has access to at least one Business Profile
+                    This usually means the Google account you connected does not have access to a Business Profile (or you're logged into a different Google account).
                   </p>
+                  <div className="mt-5 flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        sessionStorage.removeItem('gmb_access_token');
+                        sessionStorage.removeItem('gmb_token_expiry');
+                        setGmbAuthenticated(false);
+                        setGmbAccounts([]);
+                        setGmbLocations([]);
+                        setGmbOnboardingStep(0);
+                        toast.message('Disconnected. Please reconnect with the correct Google account.');
+                      }}
+                    >
+                      Disconnect & Reconnect
+                    </Button>
+                  </div>
                 </div>
               )}
               
