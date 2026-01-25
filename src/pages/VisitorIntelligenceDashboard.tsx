@@ -1428,13 +1428,26 @@ f.parentNode.insertBefore(j,f);
             </div>
           )}
 
+          {/* Google Analytics Panel - Show at TOP when connected and domain matches */}
+          {gaAuthenticated && gaDomainMatches && (
+            <div className="mb-6">
+              <GADashboardPanel 
+                externalSelectedSite={selectedTrackedDomain}
+                onAuthStatusChange={(isAuth) => {
+                  setGaAuthenticated(isAuth);
+                }}
+                onMetricsUpdate={(metrics, isConnected, domainMatches) => {
+                  setGaMetrics(metrics);
+                  setGaDomainMatches(domainMatches);
+                }}
+                hidePropertySelector
+              />
+            </div>
+          )}
+
           {/* Full Width Stats Layout - only show if tracking installed or no domain selected */}
           {shouldShowViPanels && (
           <div className="space-y-4 mb-6">
-          {/* Google Analytics Metrics Boxes - Show at top when GA is connected and domain matches */}
-          {gaAuthenticated && gaMetrics && gaDomainMatches && (
-            <GAMetricsBoxes metrics={gaMetrics} />
-          )}
           
           {/* Quick Stats Row - Full Width (expandable) */}
           <QuickStatsExpandableRow
@@ -1820,21 +1833,22 @@ f.parentNode.insertBefore(j,f);
           />
         </div>
         
-        {/* Google Analytics Panel - Full width below GSC */}
+        {/* Google Analytics Panel - Show only when NOT connected or domain doesn't match (setup prompts) */}
+        {(!gaAuthenticated || !gaDomainMatches) && (
         <div className="mb-8">
           <GADashboardPanel 
             externalSelectedSite={selectedTrackedDomain}
             onAuthStatusChange={(isAuth) => {
               setGaAuthenticated(isAuth);
-              console.log('[GA] Auth status changed:', isAuth);
             }}
             onMetricsUpdate={(metrics, isConnected, domainMatches) => {
               setGaMetrics(metrics);
               setGaDomainMatches(domainMatches);
-              console.log('[GA] Metrics updated:', { hasMetrics: !!metrics, isConnected, domainMatches });
             }}
+            hidePropertySelector
           />
         </div>
+        )}
         
         {/* Show VI install prompt when GSC domain is not in VI tracking */}
         {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (

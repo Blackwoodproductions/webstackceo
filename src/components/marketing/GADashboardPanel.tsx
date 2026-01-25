@@ -115,6 +115,7 @@ export interface GADashboardPanelProps {
   onAuthStatusChange?: (isAuthenticated: boolean) => void;
   onMetricsUpdate?: (metrics: GAMetrics | null, isConnected: boolean, domainMatches: boolean) => void;
   fullWidth?: boolean;
+  hidePropertySelector?: boolean;
 }
 
 export const GADashboardPanel = ({
@@ -122,6 +123,7 @@ export const GADashboardPanel = ({
   onAuthStatusChange,
   onMetricsUpdate,
   fullWidth = false,
+  hidePropertySelector = false,
 }: GADashboardPanelProps) => {
   const { toast } = useToast();
   
@@ -1191,7 +1193,7 @@ export const GADashboardPanel = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {properties.length > 1 && (
+            {!hidePropertySelector && properties.length > 1 && (
               <select 
                 value={selectedProperty} 
                 onChange={(e) => setSelectedProperty(e.target.value)}
