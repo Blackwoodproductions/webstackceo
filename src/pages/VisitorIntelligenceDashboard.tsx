@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star, Boxes, Link2, Award, Sparkles, HelpCircle, Network, Flame, Palette, Crosshair
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -2625,7 +2625,7 @@ f.parentNode.insertBefore(j,f);
               Content automation and topical authority signals. AI-powered content generation and optimization.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto mb-6">
               {[
                 { icon: Sparkles, label: 'AI Content Generation', desc: 'Create 7 different article types with AI precision' },
                 { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article for rich snippets' },
@@ -2640,9 +2640,25 @@ f.parentNode.insertBefore(j,f);
               ))}
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
+            {/* Competitor Analysis Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
+              {[
+                { icon: Target, label: 'Competitor Reverse Engineering', desc: 'Analyzes top 5 ranking competitors for each keyword' },
+                { icon: Palette, label: 'Native CSS Integration', desc: 'Matches your website styling for seamless posts' },
+                { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Identifies and fills content gaps vs competitors' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-purple-500/50 transition-colors">
+                  <feature.icon className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
               {[
                 { stat: '7', label: 'Article Types', desc: 'Listicles, How-tos, Guides & more' },
+                { stat: '5', label: 'Competitors Analyzed', desc: 'Per keyword target' },
                 { stat: '∞', label: 'FAQ Drops', desc: 'Multiple per article' },
                 { stat: '100%', label: 'Auto-linked', desc: 'To your money pages' },
               ].map((item) => (
@@ -2652,6 +2668,12 @@ f.parentNode.insertBefore(j,f);
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
               ))}
+            </div>
+            
+            <div className="max-w-2xl mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold text-violet-500">Autopilot Mode:</span> Input your top 5 competitors and CADE will systematically fill keyword gaps, writing better articles than the competition—all while matching your website's native styling.
+              </p>
             </div>
             
             <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
