@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -825,6 +825,8 @@ const getStatusIcon = (status: "pass" | "warning" | "fail") => {
 const AuditResults = () => {
   const { domain } = useParams<{ domain: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEmbedMode = searchParams.get('embed') === 'true';
   const [isLoading, setIsLoading] = useState(true);
   const [auditResults, setAuditResults] = useState<AuditCategory[]>([]);
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
@@ -1417,8 +1419,8 @@ const AuditResults = () => {
           description={`Running comprehensive domain audit for ${decodedDomain}`}
           noIndex
         />
-        <Navbar />
-        <main className="pt-24 pb-16">
+        {!isEmbedMode && <Navbar />}
+        <main className={isEmbedMode ? "py-8" : "pt-24 pb-16"}>
           <div className="max-w-4xl mx-auto px-6">
             <motion.div
               initial={{ opacity: 0 }}
@@ -1478,19 +1480,21 @@ const AuditResults = () => {
         description={`Comprehensive domain audit results for ${decodedDomain}. Check page speed, backlinks, schema markup, meta tags, and security analysis.`}
         noIndex
       />
-      <Navbar />
-      <main className="pt-24 pb-16">
+      {!isEmbedMode && <Navbar />}
+      <main className={isEmbedMode ? "py-6" : "pt-24 pb-16"}>
         <div className="max-w-6xl mx-auto px-6">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+          {/* Back Button - hide in embed mode */}
+          {!isEmbedMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="mb-6"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          )}
 
           {/* Combined Hero Section: Free Website Audit + Website Profile */}
           <motion.div
@@ -2790,8 +2794,12 @@ const AuditResults = () => {
         </DialogContent>
       </Dialog>
 
-      <Footer />
-      <BackToTop />
+      {!isEmbedMode && (
+        <>
+          <Footer />
+          <BackToTop />
+        </>
+      )}
     </div>
   );
 };
