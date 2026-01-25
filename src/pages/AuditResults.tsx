@@ -79,6 +79,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
 
@@ -938,6 +939,9 @@ const AuditResults = () => {
     recommendations: string[];
   } | null>(null);
   const [isPageSpeedLoading, setIsPageSpeedLoading] = useState(false);
+  
+  // All saved case studies for the selector
+  const [allCaseStudies, setAllCaseStudies] = useState<Array<{ slug: string; domain: string; favicon_url: string | null }>>([]);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
   
@@ -1740,6 +1744,33 @@ const AuditResults = () => {
     checkExisting();
   }, [decodedDomain]);
 
+  // Fetch all case studies for the selector (only in case study mode)
+  useEffect(() => {
+    if (!isCaseStudyMode) return;
+    
+    const fetchAllCaseStudies = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('saved_audits')
+          .select('slug, domain, favicon_url')
+          .order('domain', { ascending: true });
+        
+        if (error) {
+          console.error('Error fetching case studies:', error);
+          return;
+        }
+        
+        if (data) {
+          setAllCaseStudies(data);
+        }
+      } catch (err) {
+        console.error('Case studies fetch error:', err);
+      }
+    };
+    
+    fetchAllCaseStudies();
+  }, [isCaseStudyMode]);
+
   // Fetch baseline metrics from first audit history snapshot
   useEffect(() => {
     if (!decodedDomain) return;
@@ -2103,18 +2134,70 @@ const AuditResults = () => {
         noIndex
       />
       {!isEmbedMode && <Navbar />}
-      <main className={isEmbedMode ? "py-2 px-4" : "pt-24 pb-16"}>
+      
+      {/* Case Study Selector Bar - only in case study mode */}
+      {!isEmbedMode && isCaseStudyMode && allCaseStudies.length > 0 && (
+        <div className="sticky top-16 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                <Select
+                  value={decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}
+                  onValueChange={(slug) => navigate(`/case-study/${slug}`)}
+                >
+                  <SelectTrigger className="w-[220px] h-8 text-sm bg-background border-border">
+                    <SelectValue placeholder="Select case study" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg z-50 max-h-[300px]">
+                    {allCaseStudies.map((cs) => (
+                      <SelectItem key={cs.slug} value={cs.slug} className="text-sm">
+                        <div className="flex items-center gap-2">
+                          {cs.favicon_url && (
+                            <img src={cs.favicon_url} alt="" className="w-4 h-4 rounded object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          )}
+                          <span className="truncate max-w-[180px]">{cs.domain}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-px h-5 bg-border" />
+              <span className="text-xs text-muted-foreground">
+                {allCaseStudies.length} case {allCaseStudies.length === 1 ? 'study' : 'studies'} available
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
+                <Link to="/case-studies">
+                  <BarChart3 className="w-3.5 h-3.5 mr-1.5" />
+                  View All
+                </Link>
+              </Button>
+              <Button size="sm" className="h-8 text-xs gap-1.5" asChild>
+                <a href="/pricing">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Get Started
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <main className={isEmbedMode ? "py-2 px-4" : "pt-8 pb-16"}>
         <div className={isEmbedMode ? "w-full" : "max-w-6xl mx-auto px-6"}>
-          {/* Back Button - hide in embed mode */}
-          {!isEmbedMode && (
+          {/* Back Button - hide in embed mode and case study mode (has selector bar instead) */}
+          {!isEmbedMode && !isCaseStudyMode && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(isCaseStudyMode ? "/case-studies" : "/")}
+              onClick={() => navigate("/")}
               className="mb-6"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {isCaseStudyMode ? "Back to Case Studies" : "Back to Home"}
+              Back to Home
             </Button>
           )}
 
