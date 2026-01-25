@@ -108,6 +108,18 @@ export default {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(400%)" },
         },
+        "ring-bell": {
+          "0%": { transform: "rotate(0deg)" },
+          "10%": { transform: "rotate(14deg)" },
+          "20%": { transform: "rotate(-14deg)" },
+          "30%": { transform: "rotate(10deg)" },
+          "40%": { transform: "rotate(-10deg)" },
+          "50%": { transform: "rotate(6deg)" },
+          "60%": { transform: "rotate(-6deg)" },
+          "70%": { transform: "rotate(2deg)" },
+          "80%": { transform: "rotate(-2deg)" },
+          "90%, 100%": { transform: "rotate(0deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -115,6 +127,7 @@ export default {
         "float": "float 6s ease-in-out infinite",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
         "gradient-shift": "gradient-shift 8s ease infinite",
+        "ring-bell": "ring-bell 0.8s ease-in-out",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

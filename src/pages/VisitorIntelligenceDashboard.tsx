@@ -221,6 +221,11 @@ const MarketingDashboard = () => {
     const stored = localStorage.getItem('chat_operator_online');
     return stored !== null ? stored === 'true' : true;
   });
+  const [operatorStatus, setOperatorStatus] = useState<'online' | 'busy' | 'away' | 'offline'>(() => {
+    const stored = localStorage.getItem('chat_operator_status');
+    return (stored as 'online' | 'busy' | 'away' | 'offline') || 'online';
+  });
+  const [hasNewMessage, setHasNewMessage] = useState(false);
   const [siteArchOpen, setSiteArchOpen] = useState(false);
   const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
   const [diagramTimeRange, setDiagramTimeRange] = useState<TimeRange>('live');
@@ -594,10 +599,21 @@ const MarketingDashboard = () => {
     }
   }, [activeTab]);
 
-  // Persist chat online status
+  // Persist chat online status and operator status
   useEffect(() => {
     localStorage.setItem('chat_operator_online', String(chatOnline));
   }, [chatOnline]);
+
+  useEffect(() => {
+    localStorage.setItem('chat_operator_status', operatorStatus);
+    // If status is offline, also set chatOnline to false
+    const isOffline = operatorStatus === 'offline';
+    if (isOffline) {
+      setChatOnline(false);
+    } else if (!chatOnline) {
+      setChatOnline(true);
+    }
+  }, [operatorStatus]);
 
   // Fetch sidebar chats
   const fetchSidebarChats = async () => {
@@ -670,11 +686,14 @@ const MarketingDashboard = () => {
     };
   }, [chatOnline]);
 
-  // Track new chats for notification badge
+  // Track new chats for notification badge and ring animation
   useEffect(() => {
     if (sidebarChats.length > prevChatCount && prevChatCount > 0) {
-      // New chat arrived
+      // New chat arrived - trigger ring animation
       playNotificationSound();
+      setHasNewMessage(true);
+      // Reset animation after it completes
+      setTimeout(() => setHasNewMessage(false), 1500);
     }
     setPrevChatCount(sidebarChats.length);
   }, [sidebarChats.length]);
@@ -1581,18 +1600,48 @@ const MarketingDashboard = () => {
               </Button>
             )}
             
-            {/* Online/Offline toggle - only on VI tab */}
+            {/* Operator Status Selector - only on VI tab */}
             {activeTab === 'visitor-intelligence' && (
               <div className="flex items-center gap-2">
-                <Switch
-                  id="chat-online"
-                  checked={chatOnline}
-                  onCheckedChange={setChatOnline}
-                  className="data-[state=checked]:bg-green-500"
-                />
-                <Label htmlFor="chat-online" className="text-xs text-muted-foreground">
-                  {chatOnline ? 'Online' : 'Offline'}
-                </Label>
+                <Select value={operatorStatus} onValueChange={(v) => setOperatorStatus(v as typeof operatorStatus)}>
+                  <SelectTrigger className="h-7 w-[110px] text-xs gap-1.5 bg-background">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${
+                        operatorStatus === 'online' ? 'bg-green-500 animate-pulse' :
+                        operatorStatus === 'busy' ? 'bg-amber-500' :
+                        operatorStatus === 'away' ? 'bg-yellow-500' :
+                        'bg-gray-500'
+                      }`} />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="online">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        Online
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="busy">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        Busy
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="away">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                        Away
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="offline">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-gray-500" />
+                        Offline
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </>
@@ -2266,26 +2315,36 @@ f.parentNode.insertBefore(j,f);
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
-                onClick={() => setChatPanelOpen(!chatPanelOpen)}
+                onClick={() => {
+                  setChatPanelOpen(!chatPanelOpen);
+                  setHasNewMessage(false); // Clear notification when opening
+                }}
                 className="flex items-center justify-center gap-2 p-3 cursor-pointer"
               >
-                <div className="relative">
+                <div className={`relative ${hasNewMessage ? 'animate-ring-bell' : ''}`}>
                   {chatOnline ? (
                     <>
-                      <MessageCircle className="w-5 h-5 text-cyan-500/30 absolute inset-0 animate-ping" />
-                      <MessageCircle className="w-5 h-5 text-cyan-500 relative" />
+                      <MessageCircle className={`w-5 h-5 absolute inset-0 ${hasNewMessage ? 'text-amber-500/50 animate-ping' : 'text-cyan-500/30 animate-ping'}`} />
+                      <MessageCircle className={`w-5 h-5 relative ${hasNewMessage ? 'text-amber-500' : 'text-cyan-500'}`} />
                     </>
                   ) : (
                     <MessageCircle className="w-5 h-5 text-muted-foreground" />
                   )}
                   {chatOnline && sidebarChats.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500 animate-bounce' : 'bg-red-500 animate-pulse'}`}>
                       {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
                     </span>
                   )}
                 </div>
                 {chatPanelOpen && (
-                  <span className="text-sm font-medium text-foreground">Live Chats</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">Live Chats</span>
+                    {hasNewMessage && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-medium animate-pulse">
+                        NEW
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
