@@ -1997,29 +1997,42 @@ f.parentNode.insertBefore(j,f);
                 site_title: savedAuditForDomain.site_title || undefined,
               } : null}
               onNewAudit={async (domain: string) => {
-                // Start new audit immediately
+                console.log('[SEO Audit] Starting new audit for:', domain);
+                // IMPORTANT: Set loading state BEFORE clearing data
+                setIsRunningAudit(true);
+                setInlineAuditError(null);
+                // Small delay to ensure UI updates before clearing data
+                await new Promise(resolve => setTimeout(resolve, 50));
                 setInlineAuditData(null);
                 setSavedAuditForDomain(null);
                 setAuditDomainInput(domain);
-                setIsRunningAudit(true);
-                setInlineAuditError(null);
                 
                 try {
+                  console.log('[SEO Audit] Calling domain-audit edge function...');
                   const { data, error } = await supabase.functions.invoke('domain-audit', {
                     body: { domain }
                   });
+                  
+                  console.log('[SEO Audit] Edge function response:', { data, error });
+                  
                   if (error) throw error;
                   
+                  // Map the response - handle both direct ahrefs object and nested structure
+                  const ahrefsData = data?.ahrefs || data;
                   const auditMetrics = {
                     domain,
-                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
-                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
-                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
-                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
-                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
-                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
-                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                    domainRating: ahrefsData?.domainRating ?? null,
+                    organicTraffic: ahrefsData?.organicTraffic ?? null,
+                    organicKeywords: ahrefsData?.organicKeywords ?? null,
+                    backlinks: ahrefsData?.backlinks ?? null,
+                    referringDomains: ahrefsData?.referringDomains ?? null,
+                    trafficValue: ahrefsData?.trafficValue ?? null,
+                    ahrefsRank: ahrefsData?.ahrefsRank ?? null,
                   };
+                  
+                  console.log('[SEO Audit] Mapped audit metrics:', auditMetrics);
+                  
+                  // Set the data first, then turn off loading
                   setInlineAuditData(auditMetrics);
                   
                   // Auto-save and create history snapshot
@@ -2036,9 +2049,10 @@ f.parentNode.insertBefore(j,f);
                     ahrefs_rank: auditMetrics.ahrefsRank,
                   }, { onConflict: 'slug' });
                   
+                  console.log('[SEO Audit] Audit saved successfully');
                   toast.success(`Audit complete for ${domain} - saved as case study`);
                 } catch (err) {
-                  console.error('Audit error:', err);
+                  console.error('[SEO Audit] Error:', err);
                   setInlineAuditError('Failed to run audit');
                   toast.error('Failed to run audit');
                 } finally {
@@ -2047,25 +2061,28 @@ f.parentNode.insertBefore(j,f);
               }}
               onRefreshAudit={async () => {
                 const domainToAudit = inlineAuditData.domain;
+                console.log('[SEO Audit] Refreshing audit for:', domainToAudit);
                 setIsRunningAudit(true);
                 setInlineAuditError(null);
                 try {
                   const { data, error } = await supabase.functions.invoke('domain-audit', {
                     body: { domain: domainToAudit }
                   });
+                  console.log('[SEO Audit] Refresh response:', { data, error });
                   if (error) throw error;
+                  
+                  const ahrefsData = data?.ahrefs || data;
                   const auditMetrics = {
                     domain: domainToAudit,
-                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
-                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
-                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
-                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
-                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
-                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
-                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                    domainRating: ahrefsData?.domainRating ?? null,
+                    organicTraffic: ahrefsData?.organicTraffic ?? null,
+                    organicKeywords: ahrefsData?.organicKeywords ?? null,
+                    backlinks: ahrefsData?.backlinks ?? null,
+                    referringDomains: ahrefsData?.referringDomains ?? null,
+                    trafficValue: ahrefsData?.trafficValue ?? null,
+                    ahrefsRank: ahrefsData?.ahrefsRank ?? null,
                   };
                   setInlineAuditData(auditMetrics);
-                  // Auto-save and create history snapshot
                   const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
                   await supabase.from('saved_audits').upsert({
                     domain: domainToAudit,
@@ -2080,7 +2097,7 @@ f.parentNode.insertBefore(j,f);
                   }, { onConflict: 'slug' });
                   toast.success('Audit refreshed and saved');
                 } catch (err) {
-                  console.error('Audit error:', err);
+                  console.error('[SEO Audit] Refresh error:', err);
                   setInlineAuditError('Failed to refresh audit');
                   toast.error('Failed to refresh audit');
                 } finally {
@@ -2115,32 +2132,38 @@ f.parentNode.insertBefore(j,f);
                 site_title: savedAuditForDomain.site_title || undefined,
               }}
               onNewAudit={async (domain: string) => {
-                // Start new audit immediately
+                console.log('[SEO Audit] Starting new audit for:', domain);
+                setIsRunningAudit(true);
+                setInlineAuditError(null);
+                await new Promise(resolve => setTimeout(resolve, 50));
                 setInlineAuditData(null);
                 setSavedAuditForDomain(null);
                 setAuditDomainInput(domain);
-                setIsRunningAudit(true);
-                setInlineAuditError(null);
                 
                 try {
+                  console.log('[SEO Audit] Calling domain-audit edge function...');
                   const { data, error } = await supabase.functions.invoke('domain-audit', {
                     body: { domain }
                   });
+                  
+                  console.log('[SEO Audit] Edge function response:', { data, error });
                   if (error) throw error;
                   
+                  const ahrefsData = data?.ahrefs || data;
                   const auditMetrics = {
                     domain,
-                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
-                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
-                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
-                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
-                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
-                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
-                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                    domainRating: ahrefsData?.domainRating ?? null,
+                    organicTraffic: ahrefsData?.organicTraffic ?? null,
+                    organicKeywords: ahrefsData?.organicKeywords ?? null,
+                    backlinks: ahrefsData?.backlinks ?? null,
+                    referringDomains: ahrefsData?.referringDomains ?? null,
+                    trafficValue: ahrefsData?.trafficValue ?? null,
+                    ahrefsRank: ahrefsData?.ahrefsRank ?? null,
                   };
+                  
+                  console.log('[SEO Audit] Mapped audit metrics:', auditMetrics);
                   setInlineAuditData(auditMetrics);
                   
-                  // Auto-save
                   const slug = domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
                   await supabase.from('saved_audits').upsert({
                     domain,
@@ -2154,9 +2177,10 @@ f.parentNode.insertBefore(j,f);
                     ahrefs_rank: auditMetrics.ahrefsRank,
                   }, { onConflict: 'slug' });
                   
+                  console.log('[SEO Audit] Audit saved successfully');
                   toast.success(`Audit complete for ${domain} - saved as case study`);
                 } catch (err) {
-                  console.error('Audit error:', err);
+                  console.error('[SEO Audit] Error:', err);
                   setInlineAuditError('Failed to run audit');
                   toast.error('Failed to run audit');
                 } finally {
@@ -2165,22 +2189,26 @@ f.parentNode.insertBefore(j,f);
               }}
               onRefreshAudit={async () => {
                 const domainToAudit = savedAuditForDomain.domain;
+                console.log('[SEO Audit] Refreshing audit for:', domainToAudit);
                 setIsRunningAudit(true);
                 setInlineAuditError(null);
                 try {
                   const { data, error } = await supabase.functions.invoke('domain-audit', {
                     body: { domain: domainToAudit }
                   });
+                  console.log('[SEO Audit] Refresh response:', { data, error });
                   if (error) throw error;
+                  
+                  const ahrefsData = data?.ahrefs || data;
                   const auditMetrics = {
                     domain: domainToAudit,
-                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
-                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
-                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
-                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
-                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
-                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
-                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                    domainRating: ahrefsData?.domainRating ?? null,
+                    organicTraffic: ahrefsData?.organicTraffic ?? null,
+                    organicKeywords: ahrefsData?.organicKeywords ?? null,
+                    backlinks: ahrefsData?.backlinks ?? null,
+                    referringDomains: ahrefsData?.referringDomains ?? null,
+                    trafficValue: ahrefsData?.trafficValue ?? null,
+                    ahrefsRank: ahrefsData?.ahrefsRank ?? null,
                   };
                   setInlineAuditData(auditMetrics);
                   const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
@@ -2197,7 +2225,7 @@ f.parentNode.insertBefore(j,f);
                   }, { onConflict: 'slug' });
                   toast.success('Audit refreshed and saved');
                 } catch (err) {
-                  console.error('Audit error:', err);
+                  console.error('[SEO Audit] Refresh error:', err);
                   setInlineAuditError('Failed to refresh audit');
                   toast.error('Failed to refresh audit');
                 } finally {
@@ -2246,6 +2274,7 @@ f.parentNode.insertBefore(j,f);
                     cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
                     cleanDomain = cleanDomain.split("/")[0];
                     
+                    console.log('[SEO Audit] Form submit - running audit for:', cleanDomain);
                     setIsRunningAudit(true);
                     setInlineAuditError(null);
                     
@@ -2254,22 +2283,25 @@ f.parentNode.insertBefore(j,f);
                         body: { domain: cleanDomain }
                       });
                       
+                      console.log('[SEO Audit] Form audit response:', { data, error });
                       if (error) throw error;
                       
+                      const ahrefsData = data?.ahrefs || data;
                       const auditMetrics = {
                         domain: cleanDomain,
-                        domainRating: data?.metrics?.domain_rating || data?.ahrefsData?.domain_rating || null,
-                        organicTraffic: data?.metrics?.organic_traffic || data?.ahrefsData?.organic?.traffic || null,
-                        organicKeywords: data?.metrics?.organic_keywords || data?.ahrefsData?.organic?.keywords || null,
-                        backlinks: data?.metrics?.backlinks || data?.ahrefsData?.backlinks_live || null,
-                        referringDomains: data?.metrics?.referring_domains || data?.ahrefsData?.refdomains_live || null,
-                        trafficValue: data?.metrics?.traffic_value || data?.ahrefsData?.organic?.cost || null,
-                        ahrefsRank: data?.metrics?.ahrefs_rank || data?.ahrefsData?.ahrefs_rank || null,
+                        domainRating: ahrefsData?.domainRating ?? null,
+                        organicTraffic: ahrefsData?.organicTraffic ?? null,
+                        organicKeywords: ahrefsData?.organicKeywords ?? null,
+                        backlinks: ahrefsData?.backlinks ?? null,
+                        referringDomains: ahrefsData?.referringDomains ?? null,
+                        trafficValue: ahrefsData?.trafficValue ?? null,
+                        ahrefsRank: ahrefsData?.ahrefsRank ?? null,
                       };
                       
+                      console.log('[SEO Audit] Mapped metrics:', auditMetrics);
                       setInlineAuditData(auditMetrics);
                       
-                      // Auto-save to saved_audits (without submitter_email - no free link)
+                      // Auto-save to saved_audits
                       const slug = cleanDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
                       await supabase.from('saved_audits').upsert({
                         domain: cleanDomain,
@@ -2281,11 +2313,11 @@ f.parentNode.insertBefore(j,f);
                         referring_domains: auditMetrics.referringDomains,
                         traffic_value: auditMetrics.trafficValue,
                         ahrefs_rank: auditMetrics.ahrefsRank,
-                        // No submitter_email - they don't get the free directory link
                       }, { onConflict: 'slug' });
                       
+                      toast.success(`Audit complete for ${cleanDomain}`);
                     } catch (err) {
-                      console.error('Audit error:', err);
+                      console.error('[SEO Audit] Form error:', err);
                       setInlineAuditError('Failed to run audit. Please try again.');
                     } finally {
                       setIsRunningAudit(false);
