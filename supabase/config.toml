@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.scheduled-indexation-check]
 verify_jwt = false
+
+[functions.auto-seo-audit]
+verify_jwt = false

@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { User, Session } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -289,6 +290,43 @@ const MarketingDashboard = () => {
     
     fetchAuditForDomain();
   }, [selectedTrackedDomain, selectedDomainKey, activeTab]);
+
+  // Trigger auto SEO audit for a domain
+  const triggerAutoAudit = useCallback(async (domain: string) => {
+    console.log('[VI Dashboard] Triggering auto-audit for:', domain);
+    toast.info(`Running SEO audit for ${domain}...`);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-seo-audit', {
+        body: { domain }
+      });
+      
+      if (error) {
+        console.error('[VI Dashboard] Auto-audit error:', error);
+        toast.error('Failed to run audit');
+        return;
+      }
+      
+      if (data?.success) {
+        toast.success(`SEO audit complete for ${domain}`);
+        // Refresh the audit data if we're on the SEO Audit tab
+        if (activeTab === 'seo-audit') {
+          setSavedAuditForDomain(null);
+          setIsLoadingAudit(true);
+          const { data: auditData } = await supabase
+            .from('saved_audits')
+            .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at')
+            .eq('domain', domain)
+            .maybeSingle();
+          setSavedAuditForDomain(auditData);
+          setIsLoadingAudit(false);
+        }
+      }
+    } catch (err) {
+      console.error('[VI Dashboard] Auto-audit error:', err);
+      toast.error('Failed to run audit');
+    }
+  }, [activeTab]);
 
   // Persist chat online status
   useEffect(() => {
@@ -2616,6 +2654,8 @@ f.parentNode.insertBefore(j,f);
                       setGscDomainHasTracking(false);
                       setNewDomainInput('');
                       setAddDomainDialogOpen(false);
+                      // Trigger auto SEO audit
+                      triggerAutoAudit(domain);
                     }
                   }
                 }}
@@ -2642,6 +2682,8 @@ f.parentNode.insertBefore(j,f);
                 setGscDomainHasTracking(false);
                 setNewDomainInput('');
                 setAddDomainDialogOpen(false);
+                // Trigger auto SEO audit
+                triggerAutoAudit(domain);
               }
             }}>
               Add Domain
