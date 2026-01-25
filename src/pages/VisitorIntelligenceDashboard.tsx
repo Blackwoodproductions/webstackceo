@@ -1656,8 +1656,8 @@ const MarketingDashboard = () => {
                     className="flex flex-col items-center justify-center gap-1 p-3 border-b border-border hover:bg-secondary/30 transition-colors"
                     title="Open Visitor Intelligence"
                   >
-                    <BarChart3 className="w-5 h-5 text-primary" />
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <BarChart3 className="w-[22px] h-[22px] text-primary" />
+                    <ChevronRight className="w-[18px] h-[18px] text-muted-foreground" />
                   </button>
                   
                   {/* Compact page indicators with full visual data */}
