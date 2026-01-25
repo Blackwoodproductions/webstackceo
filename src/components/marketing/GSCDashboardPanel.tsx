@@ -218,9 +218,7 @@ export const GSCDashboardPanel = ({
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
   
-  // Tracking code generator
-  const [showCodeGenerator, setShowCodeGenerator] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
+  
   
   // Advanced reporting toggle
   const [showAdvancedReporting, setShowAdvancedReporting] = useState(true);
@@ -1023,25 +1021,7 @@ export const GSCDashboardPanel = ({
     return num.toString();
   };
 
-  // Tracking code
-  const trackingCode = useMemo(() => {
-    const cleanDomain = selectedSite?.replace('sc-domain:', '').replace('https://', '').replace('http://', '') || 'your-domain.com';
-    return `<!-- Webstack.ceo Visitor Intelligence -->
-<script>
-(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://webstack.ceo/track.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','wscLayer','${cleanDomain}');
-</script>
-<!-- End Webstack.ceo Visitor Intelligence -->`;
-  }, [selectedSite]);
-
-  const handleCopyCode = () => {
-    navigator.clipboard.writeText(trackingCode);
-    setCodeCopied(true);
-    setTimeout(() => setCodeCopied(false), 2000);
-  };
+  
 
   if (isLoading) {
     return (
@@ -1130,10 +1110,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowCodeGenerator(true)}>
-                <Code className="w-4 h-4 mr-1" />
-                Get Code
-              </Button>
               <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
                 <X className="w-3 h-3 mr-1" />
                 Disconnect
@@ -1843,41 +1819,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           isFetching={isFetching}
         />
       )}
-
-      {/* Code Generator Dialog */}
-      <Dialog open={showCodeGenerator} onOpenChange={setShowCodeGenerator}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Code className="w-5 h-5 text-primary" />
-              Tracking Code Generator
-            </DialogTitle>
-            <DialogDescription>
-              Add this code to your website to enable visitor intelligence tracking for {selectedSite?.replace('sc-domain:', '').replace('https://', '') || 'your domain'}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-zinc-900 rounded-lg p-4 relative">
-              <pre className="text-xs text-green-400 overflow-x-auto whitespace-pre-wrap font-mono">{trackingCode}</pre>
-              <Button size="sm" variant="secondary" className="absolute top-2 right-2" onClick={handleCopyCode}>
-                {codeCopied ? <><Check className="w-3 h-3 mr-1" />Copied!</> : <><Copy className="w-3 h-3 mr-1" />Copy</>}
-              </Button>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
-              <p className="font-medium">Installation Instructions:</p>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
-                <li>Copy the code above</li>
-                <li>Paste it into the <code className="bg-background px-1 rounded">&lt;head&gt;</code> section of your website</li>
-                <li>The code will automatically track visitor behavior, page views, and engagement</li>
-                <li>Data will sync with this dashboard in real-time</li>
-              </ol>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCodeGenerator(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
