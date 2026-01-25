@@ -3828,6 +3828,17 @@ f.parentNode.insertBefore(j,f);
               </div>
             </div>
 
+            {/* Bottom row: Auto-scrolling Feature Carousel */}
+            <OnPageSEOCarousel />
+
+            {/* Platform Connection Section */}
+            <OnPageSEOConnect 
+              domain={selectedTrackedDomain || selectedDomainKey} 
+              onConnectionComplete={(platform) => {
+                toast.success(`Successfully connected to ${platform}!`);
+              }}
+            />
+
             {/* FREE SEO Audit & Case Study Promo Section */}
             <div className="relative p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 via-indigo-500/15 to-violet-500/10 border-2 border-blue-500/30 overflow-hidden">
               {/* Background glow effect */}
@@ -3904,17 +3915,6 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
             </div>
-
-            {/* Bottom row: Auto-scrolling Feature Carousel */}
-            <OnPageSEOCarousel />
-
-            {/* Platform Connection Section */}
-            <OnPageSEOConnect 
-              domain={selectedTrackedDomain || selectedDomainKey} 
-              onConnectionComplete={(platform) => {
-                toast.success(`Successfully connected to ${platform}!`);
-              }}
-            />
           </div>
         </div>
       )}
