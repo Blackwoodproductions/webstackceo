@@ -81,6 +81,7 @@ serve(async (req: Request) => {
       
       console.error(`[gmb-sync] Accounts API failed (${status}):`, body.slice(0, 500));
       
+      // Return 200 with error info so frontend can handle it properly
       return new Response(
         JSON.stringify({ 
           error: `Google Business accounts request failed (${status})`,
@@ -89,7 +90,7 @@ serve(async (req: Request) => {
           isQuotaError: status === 429
         }),
         { 
-          status: status === 429 ? 429 : 502, 
+          status: 200,  // Return 200 so frontend gets the structured error
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       );
