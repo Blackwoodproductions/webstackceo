@@ -228,6 +228,13 @@ export const GSCDashboardPanel = ({
   
   // Performance by Source expanded state - open by default with WEB selected
   const [showSourceDetails, setShowSourceDetails] = useState(true);
+  
+  // Check if the externally selected site is in GSC
+  const isExternalSiteInGsc = useMemo(() => {
+    if (!externalSelectedSite || !sites.length) return true; // Default to true if no data yet
+    const normalizedExternal = normalizeGscDomain(externalSelectedSite);
+    return sites.some(site => normalizeGscDomain(site.siteUrl) === normalizedExternal);
+  }, [externalSelectedSite, sites]);
 
   const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
     if (!profile) return;
@@ -1025,12 +1032,52 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {/* Domain Not in GSC Warning */}
+          {externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-amber-500 mb-1">
+                    Domain Not Found in Search Console
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    <span className="font-medium">{externalSelectedSite}</span> is not connected to your Google Search Console. 
+                    Add it to start tracking search performance.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      size="sm" 
+                      className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white"
+                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${externalSelectedSite}`, '_blank')}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Add Domain Property
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-7 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=https://${externalSelectedSite}/`, '_blank')}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Add URL Prefix
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    After adding, click Refresh below to sync your data.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Controls - Date selector left, dropdowns right */}
-          <div className="flex flex-wrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3">
+          <div className="flex flex-nowrap gap-3 items-center justify-between bg-secondary/30 rounded-lg p-3 min-h-[48px]">
             {/* Left side - Date selector only (domain controlled by header)
                 Hidden when parent integrates the date range (VI+GSC). */}
             {!hideDateSelector && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
                   <SelectTrigger className="w-[110px] h-8 text-xs bg-background border-border">
                     <Calendar className="w-3 h-3 mr-1" />
@@ -1048,7 +1095,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             )}
 
             {/* Right side - Data dropdowns & Refresh */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
               <Button 
                 variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
                 size="sm" 
@@ -1082,7 +1129,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
+              <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); fetchSites(); }} disabled={isFetching || isLoadingAllTypes} className="h-8">
                 <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
