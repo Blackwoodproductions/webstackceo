@@ -167,9 +167,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         <div className="relative z-10 text-center">
           {/* Header */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold tracking-wide text-foreground mb-2">
-              BLACKWOOD SEO V2
-            </h3>
             <p className="text-sm text-muted-foreground">Connect to your BRON Dashboard</p>
             <Badge className="mt-3 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px]">
               <Sparkles className="w-2.5 h-2.5 mr-0.5" />
