@@ -1,4 +1,5 @@
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
@@ -2186,18 +2187,18 @@ const AuditResults = () => {
         </div>
       )}
       
-      <main className={isEmbedMode ? "py-2 px-4" : "pt-8 pb-16"}>
+      <main className={isEmbedMode ? "py-2 px-4" : cn("pb-16", isCaseStudyMode ? "pt-20" : "pt-8")}>
         <div className={isEmbedMode ? "w-full" : "max-w-6xl mx-auto px-6"}>
-          {/* Back Button - hide in embed mode and case study mode (has selector bar instead) */}
-          {!isEmbedMode && !isCaseStudyMode && (
+          {/* Back Button - hide in embed mode */}
+          {!isEmbedMode && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(isCaseStudyMode ? "/case-studies" : "/")}
               className="mb-6"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              {isCaseStudyMode ? "All Case Studies" : "Back to Home"}
             </Button>
           )}
 
