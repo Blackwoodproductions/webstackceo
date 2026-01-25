@@ -234,11 +234,10 @@ const MarketingDashboard = () => {
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
-    'seo-audit',
     'bron',
     'cade',
     'gmb',
@@ -523,8 +522,8 @@ const MarketingDashboard = () => {
     const fetchAuditForDomain = async () => {
       const domainToCheck = selectedTrackedDomain || selectedDomainKey;
       
-      // If no domain selected but we're on seo-audit tab, try to load the most recent audit
-      if (activeTab !== 'seo-audit') {
+      // If no domain selected but we're on on-page-seo tab, try to load the most recent audit
+      if (activeTab !== 'on-page-seo') {
         setSavedAuditForDomain(null);
         return;
       }
@@ -581,8 +580,8 @@ const MarketingDashboard = () => {
       
       if (data?.success) {
         toast.success(`SEO audit complete for ${domain}`);
-        // Refresh the audit data if we're on the SEO Audit tab
-        if (activeTab === 'seo-audit') {
+        // Refresh the audit data if we're on the On-page SEO tab
+        if (activeTab === 'on-page-seo') {
           setSavedAuditForDomain(null);
           setIsLoadingAudit(true);
           const cleanDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -1425,7 +1424,6 @@ const MarketingDashboard = () => {
         <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
           {[
             { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye, isPaid: false },
-            { id: 'seo-audit' as DashboardTab, label: 'Audit', icon: Search, isPaid: false },
             { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp, isPaid: true },
             { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText, isPaid: true },
             { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin, isPaid: true },
@@ -1562,12 +1560,6 @@ const MarketingDashboard = () => {
                 {chatOnline ? 'Online' : 'Offline'}
               </Label>
             </div>
-          </>
-        ) : activeTab === 'seo-audit' ? (
-          <>
-            <Badge variant="outline" className="text-xs text-muted-foreground">
-              Domain: {selectedTrackedDomain || selectedDomainKey || 'None selected'}
-            </Badge>
           </>
         ) : undefined}
       />
@@ -2353,242 +2345,6 @@ f.parentNode.insertBefore(j,f);
       </div>
       )}
 
-      {/* SEO Audit Tab Content - Case Study via iframe */}
-      {activeTab === 'seo-audit' && (
-        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border overflow-hidden glow-primary">
-          {isLoadingAudit || isRunningAudit ? (
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Analyzing domain...</p>
-            </div>
-          ) : (selectedTrackedDomain || selectedDomainKey || savedAuditForDomain?.domain) ? (
-            /* Embed Case Study page via iframe */
-            <div className="relative">
-              {/* Action bar above iframe */}
-              <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                    <Search className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">Case Study</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      const domainToAudit = savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey;
-                      if (!domainToAudit) return;
-                      
-                      setIsRunningAudit(true);
-                      try {
-                        const { data, error } = await supabase.functions.invoke('domain-audit', {
-                          body: { domain: domainToAudit }
-                        });
-                        if (error) throw error;
-                        
-                        const ahrefsData = data?.ahrefs || data;
-                        const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-                        await supabase.from('saved_audits').upsert({
-                          domain: domainToAudit,
-                          slug,
-                          domain_rating: ahrefsData?.domainRating ?? null,
-                          organic_traffic: ahrefsData?.organicTraffic ?? null,
-                          organic_keywords: ahrefsData?.organicKeywords ?? null,
-                          backlinks: ahrefsData?.backlinks ?? null,
-                          referring_domains: ahrefsData?.referringDomains ?? null,
-                          traffic_value: ahrefsData?.trafficValue ?? null,
-                          ahrefs_rank: ahrefsData?.ahrefsRank ?? null,
-                        }, { onConflict: 'slug' });
-                        
-                        // Also save to audit_history for progress tracking
-                        await supabase.from('audit_history').insert({
-                          domain: domainToAudit,
-                          domain_rating: ahrefsData?.domainRating ?? null,
-                          organic_traffic: ahrefsData?.organicTraffic ?? null,
-                          organic_keywords: ahrefsData?.organicKeywords ?? null,
-                          backlinks: ahrefsData?.backlinks ?? null,
-                          referring_domains: ahrefsData?.referringDomains ?? null,
-                          traffic_value: ahrefsData?.trafficValue ?? null,
-                          ahrefs_rank: ahrefsData?.ahrefsRank ?? null,
-                        });
-                        
-                        toast.success('Audit refreshed and saved');
-                        // Refresh the iframe by forcing re-render
-                        setSavedAuditForDomain(prev => prev ? { ...prev } : prev);
-                      } catch (err) {
-                        console.error('Failed to refresh audit:', err);
-                        toast.error('Failed to refresh audit');
-                      } finally {
-                        setIsRunningAudit(false);
-                      }
-                    }}
-                    className="gap-1.5"
-                  >
-                    <RefreshCw className={cn("w-3.5 h-3.5", isRunningAudit && "animate-spin")} />
-                    Refresh
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <Link 
-                      to={`/case-study/${(savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || '').replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
-                      target="_blank"
-                      className="gap-1.5"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      Open Full Page
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Iframe container - dynamically sized based on content */}
-              <CaseStudyIframe 
-                domain={savedAuditForDomain?.domain || selectedTrackedDomain || selectedDomainKey || ''}
-              />
-            </div>
-          ) : (
-            /* No domain selected - show input prompt */
-            <div className="p-8">
-              <div className="max-w-2xl mx-auto text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center mx-auto mb-6">
-                  <Search className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold mb-3">Run Your First SEO Audit</h2>
-                <p className="text-muted-foreground mb-8">
-                  Select a domain from the dropdown above or enter one to get a comprehensive SEO analysis including domain authority, backlinks, organic traffic, and actionable recommendations.
-                </p>
-                
-                {inlineAuditError && (
-                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                    {inlineAuditError}
-                  </div>
-                )}
-                
-                <form 
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const domainToAudit = auditDomainInput.trim();
-                    if (!domainToAudit) return;
-                    let cleanDomain = domainToAudit.toLowerCase();
-                    cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
-                    cleanDomain = cleanDomain.split("/")[0];
-                    
-                    setIsRunningAudit(true);
-                    setInlineAuditError(null);
-                    
-                    try {
-                      const { data, error } = await supabase.functions.invoke('domain-audit', {
-                        body: { domain: cleanDomain }
-                      });
-                      
-                      if (error) throw error;
-                      
-                      const ahrefsData = data?.ahrefs || data;
-                      const slug = cleanDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-                      
-                      // Save to saved_audits
-                      await supabase.from('saved_audits').upsert({
-                        domain: cleanDomain,
-                        slug,
-                        domain_rating: ahrefsData?.domainRating ?? null,
-                        organic_traffic: ahrefsData?.organicTraffic ?? null,
-                        organic_keywords: ahrefsData?.organicKeywords ?? null,
-                        backlinks: ahrefsData?.backlinks ?? null,
-                        referring_domains: ahrefsData?.referringDomains ?? null,
-                        traffic_value: ahrefsData?.trafficValue ?? null,
-                        ahrefs_rank: ahrefsData?.ahrefsRank ?? null,
-                      }, { onConflict: 'slug' });
-                      
-                      // Also save to audit_history
-                      await supabase.from('audit_history').insert({
-                        domain: cleanDomain,
-                        domain_rating: ahrefsData?.domainRating ?? null,
-                        organic_traffic: ahrefsData?.organicTraffic ?? null,
-                        organic_keywords: ahrefsData?.organicKeywords ?? null,
-                        backlinks: ahrefsData?.backlinks ?? null,
-                        referring_domains: ahrefsData?.referringDomains ?? null,
-                        traffic_value: ahrefsData?.trafficValue ?? null,
-                        ahrefs_rank: ahrefsData?.ahrefsRank ?? null,
-                      });
-                      
-                      // Set states to show iframe
-                      setSelectedTrackedDomain(cleanDomain);
-                      setSelectedDomainKey(cleanDomain);
-                      setSavedAuditForDomain({
-                        id: '',
-                        domain: cleanDomain,
-                        slug,
-                        site_title: null,
-                        domain_rating: ahrefsData?.domainRating ?? null,
-                        organic_traffic: ahrefsData?.organicTraffic ?? null,
-                        organic_keywords: ahrefsData?.organicKeywords ?? null,
-                        backlinks: ahrefsData?.backlinks ?? null,
-                        referring_domains: ahrefsData?.referringDomains ?? null,
-                        traffic_value: ahrefsData?.trafficValue ?? null,
-                        created_at: new Date().toISOString(),
-                      });
-                      
-                      toast.success(`Audit complete for ${cleanDomain}`);
-                      setAuditDomainInput('');
-                    } catch (err) {
-                      console.error('[SEO Audit] Form error:', err);
-                      setInlineAuditError('Failed to run audit. Please try again.');
-                    } finally {
-                      setIsRunningAudit(false);
-                    }
-                  }}
-                  className="max-w-xl mx-auto"
-                >
-                  <div className="relative flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Enter domain (e.g., example.com)"
-                        value={auditDomainInput}
-                        onChange={(e) => setAuditDomainInput(e.target.value)}
-                        className="pl-12 h-14 text-lg bg-background/80 backdrop-blur border-border/50 focus:border-primary/50"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      size="lg"
-                      disabled={isRunningAudit || !auditDomainInput.trim()}
-                      className="h-14 px-8 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-lg"
-                    >
-                      {isRunningAudit ? (
-                        <span className="flex items-center gap-2">
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Analyzing...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          <Zap className="w-5 h-5" />
-                          Run Audit
-                        </span>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-                
-                <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
-                  <Zap className="w-3 h-3 text-amber-500" />
-                  <span>Instant • Comprehensive • Auto-saved</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
@@ -4034,6 +3790,83 @@ f.parentNode.insertBefore(j,f);
                       </Badge>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+
+            {/* FREE SEO Audit & Case Study Promo Section */}
+            <div className="relative p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 via-indigo-500/15 to-violet-500/10 border-2 border-blue-500/30 overflow-hidden">
+              {/* Background glow effect */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl" />
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  {/* Left content */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/30">
+                      <Search className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-bold">FREE SEO Audit</h3>
+                        <Badge className="bg-green-500/20 text-green-500 border-green-500/30 animate-pulse">
+                          100% Free
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground max-w-xl">
+                        Get a comprehensive SEO analysis of any domain—instantly. Track your progress over time with our ongoing Case Study reports that update automatically.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
+                          <span>Domain Rating</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                          <span>Organic Traffic</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Link2 className="w-3.5 h-3.5 text-violet-500" />
+                          <span>Backlink Analysis</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Gauge className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Core Web Vitals</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Right CTA */}
+                  <div className="flex flex-col items-center gap-3 lg:min-w-[200px]">
+                    <Button
+                      size="lg"
+                      asChild
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold shadow-lg shadow-blue-500/30"
+                    >
+                      <Link to="/website-audits">
+                        <Zap className="w-4 h-4 mr-2" />
+                        Run Free Audit
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="w-full text-xs"
+                    >
+                      <Link to="/case-studies">
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        View Case Studies
+                      </Link>
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      No signup required • Instant results
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
