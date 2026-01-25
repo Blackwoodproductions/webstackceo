@@ -379,19 +379,49 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             {/* How It Works - Right side */}
             <div className="lg:col-span-8">
               <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                 {[
-                  { step: '1', title: 'Connect Google Ads', desc: 'Securely link your account' },
-                  { step: '2', title: 'Import Keywords', desc: 'Auto-pull active PPC keywords' },
-                  { step: '3', title: 'Generate Pages', desc: 'AI creates optimized pages' },
-                  { step: '4', title: 'Track & Optimize', desc: 'A/B test with heat maps' },
+                  { 
+                    step: '1', 
+                    icon: Target,
+                    title: 'Connect Google Ads', 
+                    desc: 'Securely link your Google Ads account with read-only access to import your active campaigns and keywords.',
+                    highlight: 'OAuth 2.0 Secure'
+                  },
+                  { 
+                    step: '2', 
+                    icon: BarChart3,
+                    title: 'Import Keywords', 
+                    desc: 'Automatically pull your active PPC keywords along with Quality Scores, CPC data, and performance metrics.',
+                    highlight: 'Real-time Sync'
+                  },
+                  { 
+                    step: '3', 
+                    icon: Zap,
+                    title: 'Generate Pages', 
+                    desc: 'AI creates keyword-specific landing pages optimized for conversions with unique content for each target.',
+                    highlight: 'AI-Powered'
+                  },
+                  { 
+                    step: '4', 
+                    icon: FlaskConical,
+                    title: 'Track & Optimize', 
+                    desc: 'Built-in A/B testing and heat maps show exactly what works. Watch your Quality Score and conversions improve.',
+                    highlight: 'Heat Tracking'
+                  },
                 ].map((item) => (
-                  <div key={item.step} className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
-                    <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/10 border border-orange-500/20 flex flex-col min-h-[180px]">
+                    <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                       {item.step}
                     </div>
-                    <p className="font-medium text-sm mt-2">{item.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center mb-3 mt-1">
+                      <item.icon className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <p className="font-semibold text-sm mb-2">{item.title}</p>
+                    <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
+                    <Badge variant="outline" className="mt-3 w-fit text-[10px] text-orange-500 border-orange-500/30 bg-orange-500/5">
+                      {item.highlight}
+                    </Badge>
                   </div>
                 ))}
               </div>
