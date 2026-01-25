@@ -1435,7 +1435,7 @@ const MarketingDashboard = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex flex-col items-center justify-center w-16 h-14 transition-all rounded-t-lg border-t border-x gap-0.5 ${
+              className={`relative flex flex-col items-center justify-center w-16 h-11 transition-all rounded-t-lg border-t border-x gap-0.5 ${
                 activeTab === tab.id
                   ? 'bg-background text-primary border-border'
                   : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
