@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import { generateAPIDocs } from '@/lib/generateAPIDocs';
 import { InlineSEOReport } from '@/components/audit/InlineSEOReport';
+import { AnimatedTagline } from '@/components/ui/animated-tagline';
 
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
@@ -1437,9 +1438,7 @@ const MarketingDashboard = () => {
               <span className="text-xl font-bold text-foreground leading-tight">
                 webstack<span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-violet-500 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all duration-500">.ceo</span>
               </span>
-              <span className="text-[9px] text-muted-foreground tracking-wide">
-                by Blackwood Productions
-              </span>
+              <AnimatedTagline className="text-[9px] text-muted-foreground tracking-wide" />
             </div>
           </a>
           

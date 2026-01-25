@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { AnimatedTagline } from "@/components/ui/animated-tagline";
 import { useTheme } from "next-themes";
 import { 
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
@@ -180,9 +181,7 @@ const Navbar = () => {
                   : "bg-gradient-to-r from-cyan-400 to-violet-500"
               }`}>.ceo</span>
             </span>
-            <span className="text-[10px] text-muted-foreground tracking-wide">
-              by Blackwood Productions
-            </span>
+            <AnimatedTagline className="text-[10px] text-muted-foreground tracking-wide" />
           </div>
         </a>
 
