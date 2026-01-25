@@ -131,8 +131,8 @@ const Footer = memo(() => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
-          <div className="col-span-2">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
+          <div className="col-span-2 md:col-span-2">
             <a 
               href="/" 
               className="flex items-center gap-2 mb-4"
