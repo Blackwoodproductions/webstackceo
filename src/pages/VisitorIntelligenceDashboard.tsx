@@ -733,7 +733,7 @@ const MarketingDashboard = () => {
   useEffect(() => {
     const readProfile = () => {
       try {
-        const raw = localStorage.getItem('gsc_google_profile') || sessionStorage.getItem('gsc_google_profile');
+        const raw = localStorage.getItem('gsc_google_profile');
         if (!raw) {
           setGscProfile(null);
           return;

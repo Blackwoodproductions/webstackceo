@@ -237,23 +237,25 @@ export const GADashboardPanel = ({
     });
   }, [externalSelectedSite, properties, streamsLoaded, webDomainsByProperty]);
   
-  // Check for stored token on mount
+  // Check for stored token on mount - use localStorage for persistence
   useEffect(() => {
-    const storedToken = sessionStorage.getItem("ga_access_token");
-    const tokenExpiry = sessionStorage.getItem("ga_token_expiry");
+    const storedToken = localStorage.getItem("ga_access_token");
+    const tokenExpiry = localStorage.getItem("ga_token_expiry");
     
     if (storedToken && tokenExpiry) {
       const expiryTime = parseInt(tokenExpiry);
       const timeRemaining = expiryTime - Date.now();
       
       if (timeRemaining > 0) {
+        console.log("[GA] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
         setAccessToken(storedToken);
         setIsAuthenticated(true);
         setIsLoading(false);
         return;
       } else {
-        sessionStorage.removeItem("ga_access_token");
-        sessionStorage.removeItem("ga_token_expiry");
+        console.log("[GA] Stored token has expired, clearing...");
+        localStorage.removeItem("ga_access_token");
+        localStorage.removeItem("ga_token_expiry");
       }
     }
     
@@ -263,7 +265,7 @@ export const GADashboardPanel = ({
     const state = url.searchParams.get("state");
     
     if (code && state === "ga") {
-      const verifier = sessionStorage.getItem("ga_code_verifier");
+      const verifier = localStorage.getItem("ga_code_verifier");
       
       if (verifier) {
         setIsLoading(true);
@@ -289,9 +291,10 @@ export const GADashboardPanel = ({
             }
             const expiryTime = Date.now() + (expires_in || 3600) * 1000;
             
-            sessionStorage.setItem("ga_access_token", access_token);
-            sessionStorage.setItem("ga_token_expiry", expiryTime.toString());
-            sessionStorage.removeItem("ga_code_verifier");
+            console.log("[GA] Token received, storing in localStorage...");
+            localStorage.setItem("ga_access_token", access_token);
+            localStorage.setItem("ga_token_expiry", expiryTime.toString());
+            localStorage.removeItem("ga_code_verifier");
             
             setAccessToken(access_token);
             setIsAuthenticated(true);
@@ -649,7 +652,7 @@ export const GADashboardPanel = ({
     try {
       const redirectUri = getOAuthRedirectUri();
       const verifier = generateCodeVerifier();
-      sessionStorage.setItem("ga_code_verifier", verifier);
+      localStorage.setItem("ga_code_verifier", verifier);
       const challenge = await generateCodeChallenge(verifier);
 
       const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
@@ -685,8 +688,9 @@ export const GADashboardPanel = ({
   };
 
   const handleDisconnect = () => {
-    sessionStorage.removeItem("ga_access_token");
-    sessionStorage.removeItem("ga_token_expiry");
+    localStorage.removeItem("ga_access_token");
+    localStorage.removeItem("ga_token_expiry");
+    localStorage.removeItem("ga_code_verifier");
     setAccessToken(null);
     setIsAuthenticated(false);
     setMetrics(null);
