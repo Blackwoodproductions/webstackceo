@@ -111,7 +111,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     handleFetchKeywordsWithToken(token, customerId);
   }, []);
 
-  // Disconnect and clear stored credentials
+  // Disconnect and clear stored credentials - return to domain selection
   const handleDisconnect = useCallback(() => {
     localStorage.removeItem('google_ads_access_token');
     localStorage.removeItem('google_ads_customer_id');
@@ -124,6 +124,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     setKeywords([]);
     setSummary(null);
     setHasCampaigns(null);
+    setShowWizard(false);
+    setShowCampaignSetup(false);
+    setSelectedKeywords(new Set());
+    setGeneratedPages([]);
     toast.info('Disconnected from Google Ads');
   }, []);
 
