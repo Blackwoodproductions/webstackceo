@@ -156,7 +156,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
         </div>
 
-        {/* Dashboard iframe */}
+        {/* Info banner for iframe configuration */}
+        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              If the dashboard shows a 419 error, click "Open Dashboard" above to use it in a new tab while iframe permissions are being configured.
+            </p>
+          </div>
+        </div>
+
+        {/* Dashboard iframe - full width */}
         <div className="rounded-xl border border-border overflow-hidden bg-background">
           <iframe
             src={BRON_DASHBOARD_URL}
