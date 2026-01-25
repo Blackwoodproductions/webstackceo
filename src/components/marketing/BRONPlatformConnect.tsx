@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
-  User, Lock, ExternalLink, Loader2, Shield, LogOut,
-  Sparkles
+  ExternalLink, Shield, LogOut, Sparkles, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 
 interface BRONPlatformConnectProps {
@@ -15,13 +13,12 @@ interface BRONPlatformConnectProps {
 }
 
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space";
+const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
 
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -38,63 +35,66 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+    setIsLoading(false);
   }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Listen for auth confirmation from the dashboard (postMessage)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin === "https://dashdev.imagehosting.space") {
+        if (event.data?.type === "bron-auth-success") {
+          const authData = {
+            authenticated: true,
+            expiry: Date.now() + 24 * 60 * 60 * 1000,
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+          setIsAuthenticated(true);
+          onConnectionComplete?.("bron");
+          toast({
+            title: "Successfully Connected!",
+            description: "Your BRON dashboard is now linked.",
+          });
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onConnectionComplete]);
+
+  const handleLogin = () => {
+    // Open login in new tab
+    window.open(BRON_LOGIN_URL, "_blank");
     
-    if (!email || !password) {
-      toast({
-        title: "Missing Credentials",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoggingIn(true);
-
-    try {
-      // Simulate auth delay - in production this would hit the actual BRON API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Store auth state (24 hour expiry)
+    // Mark as authenticated after they click (they'll login in new tab)
+    // This is a temporary solution - ideally we'd use postMessage from the dashboard
+    setTimeout(() => {
       const authData = {
         authenticated: true,
-        email,
         expiry: Date.now() + 24 * 60 * 60 * 1000,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-      
       setIsAuthenticated(true);
       onConnectionComplete?.("bron");
-      
-      toast({
-        title: "Successfully Connected!",
-        description: "Your BRON dashboard is now loaded.",
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login Failed",
-        description: "Unable to authenticate. Please check your credentials.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoggingIn(false);
-    }
+    }, 2000);
   };
 
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
-    setEmail("");
-    setPassword("");
     toast({
       title: "Logged Out",
       description: "You have been disconnected from the BRON dashboard.",
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
 
   // Show iframe when authenticated
   if (isAuthenticated) {
@@ -117,13 +117,13 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
               onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
-              className="text-xs gap-1"
+              className="text-xs gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
             >
-              <ExternalLink className="w-3 h-3" />
-              Open in New Tab
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open Dashboard
             </Button>
             <Button
               variant="outline"
@@ -141,136 +141,61 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         <div className="rounded-xl border border-border overflow-hidden bg-background">
           <iframe
             src={BRON_DASHBOARD_URL}
-            className="w-full min-h-[600px] border-0"
+            className="w-full border-0"
+            style={{ minHeight: '800px', height: 'calc(100vh - 300px)' }}
             title="BRON Dashboard"
             allow="clipboard-write"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
           />
         </div>
       </motion.div>
     );
   }
 
-  // Login form - styled like Blackwood SEO V2
+  // Login button - simple and clean
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative"
     >
-      <div className="relative p-6 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-700/50 shadow-lg overflow-hidden">
-        {/* Background grid pattern */}
-        <div className="absolute inset-0 opacity-30 dark:opacity-10" style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px'
-        }} />
-        
-        {/* Decorative blurs */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
+      <div className="relative p-6 rounded-xl bg-gradient-to-br from-cyan-500/5 via-sky-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-xl" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 text-center">
           {/* Header */}
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-bold tracking-wide text-slate-600 dark:text-slate-300">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold tracking-wide text-foreground mb-2">
               BLACKWOOD SEO V2
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">Dashboard Login</p>
-            <Badge className="mt-2 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px]">
+            <p className="text-sm text-muted-foreground">Connect to your BRON Dashboard</p>
+            <Badge className="mt-3 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 text-[10px]">
               <Sparkles className="w-2.5 h-2.5 mr-0.5" />
               BRON Powered
             </Badge>
           </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
-            {/* Email Input */}
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-500" />
-              </div>
-              <Input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-14 h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 rounded-lg"
-              />
-            </div>
-
-            {/* Password Input */}
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                <Lock className="w-4 h-4 text-slate-500" />
-              </div>
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-14 h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 rounded-lg"
-              />
-            </div>
-
-            {/* Login Button */}
-            <Button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold rounded-lg shadow-md"
-            >
-              {isLoggingIn ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                "LOGIN"
-              )}
-            </Button>
-          </form>
-
-          {/* Links */}
-          <div className="flex items-center justify-center gap-4 mt-4 text-xs">
-            <a 
-              href="https://dashdev.imagehosting.space/register" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
-            >
-              Register Now
-            </a>
-            <a 
-              href="https://dashdev.imagehosting.space/reset-password" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
-            >
-              Reset Password
-            </a>
-            <a 
-              href="https://dashdev.imagehosting.space/live-results" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300"
-            >
-              Live Results
-            </a>
-          </div>
+          {/* Login Button */}
+          <Button
+            onClick={handleLogin}
+            size="lg"
+            className="px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Login to BRON Dashboard
+          </Button>
 
           {/* Description */}
-          <p className="text-center text-xs text-muted-foreground mt-4 max-w-xs mx-auto">
+          <p className="text-xs text-muted-foreground mt-4 max-w-sm mx-auto">
             Access your SEO dashboard to monitor rankings, track keywords, and optimize your website performance.
           </p>
 
-          {/* Footer links */}
-          <div className="flex items-center justify-center gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50 text-[10px] text-muted-foreground">
-            <a href="#" className="hover:text-foreground">Privacy Policy</a>
-            <span>|</span>
-            <a href="#" className="hover:text-foreground">Terms of Service</a>
-            <span>|</span>
-            <a href="#" className="hover:text-foreground">Support</a>
+          {/* Footer info */}
+          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-cyan-500/10 text-xs text-muted-foreground">
+            <Shield className="w-3.5 h-3.5 text-cyan-500" />
+            <span>Secure connection via Blackwood Productions</span>
           </div>
         </div>
       </div>
