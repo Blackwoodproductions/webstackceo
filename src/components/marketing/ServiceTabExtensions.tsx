@@ -344,18 +344,42 @@ interface SocialSignalsExtendedSectionProps {
 
 export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSectionProps) => {
   const distributionSteps = [
-    { time: "0s", action: "New article published by CADE", detail: "Content is automatically detected and queued for distribution", status: "complete" },
-    { time: "5s", action: "AI generates platform-specific copy", detail: "Unique posts tailored for each platform's audience and format", status: "complete" },
-    { time: "10s", action: "Hashtags & mentions optimized", detail: "Trending hashtags and relevant mentions added automatically", status: "complete" },
-    { time: "15s", action: "Posts scheduled across all platforms", detail: "Optimal posting times selected based on audience activity", status: "complete" },
-    { time: "Live", action: "Content goes live simultaneously", detail: "Coordinated release maximizes reach and engagement", status: "active" },
+    { time: "0s", action: "Article published by CADE", detail: "Content queued for distribution", status: "complete" },
+    { time: "5s", action: "AI generates copy", detail: "Platform-specific posts created", status: "complete" },
+    { time: "10s", action: "Hashtags optimized", detail: "Trending tags added automatically", status: "complete" },
+    { time: "15s", action: "Posts scheduled", detail: "Optimal times selected", status: "complete" },
+    { time: "Live", action: "Content goes live", detail: "Simultaneous release", status: "active" },
+  ];
+
+  const platformExamples = [
+    { 
+      platform: "X (Twitter)", 
+      icon: Twitter, 
+      color: "from-sky-400 to-blue-500",
+      preview: "🚀 New guide: How to boost your local SEO rankings in 2025! Key takeaways inside 👇\n\n#SEO #LocalBusiness #Marketing",
+      stats: { chars: 142, hashtags: 3 }
+    },
+    { 
+      platform: "LinkedIn", 
+      icon: Linkedin, 
+      color: "from-blue-500 to-blue-700",
+      preview: "Excited to share our latest comprehensive guide on local SEO strategies that are actually working in 2025.\n\nHere's what we cover:\n✅ Google Business optimization\n✅ Review generation tactics\n✅ Local citation building",
+      stats: { chars: 240, hashtags: 0 }
+    },
+    { 
+      platform: "Facebook", 
+      icon: Facebook, 
+      color: "from-blue-600 to-indigo-600",
+      preview: "📍 Want to rank higher in local searches? We just published a complete guide covering everything from GMB optimization to review strategies. Check it out!",
+      stats: { chars: 168, hashtags: 0 }
+    },
   ];
 
   const benefits = [
-    { icon: Zap, title: "Zero Manual Work", desc: "Set it and forget it—CADE handles everything" },
-    { icon: Target, title: "Platform Optimization", desc: "Each post is tailored for maximum engagement" },
-    { icon: TrendingUp, title: "Consistent Presence", desc: "Never miss a posting opportunity" },
-    { icon: Sparkles, title: "AI-Powered Copy", desc: "Compelling content that drives clicks" },
+    { icon: Zap, title: "Zero Manual Work", desc: "CADE handles everything" },
+    { icon: Target, title: "Platform Optimized", desc: "Tailored for each network" },
+    { icon: TrendingUp, title: "Consistent Presence", desc: "Never miss a post" },
+    { icon: Sparkles, title: "AI-Powered Copy", desc: "Compelling content" },
   ];
 
   return (
@@ -390,7 +414,7 @@ export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSe
                 Automatic Content Distribution
               </h3>
               <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-                When CADE publishes new content, social posts are generated and scheduled automatically across all connected platforms.
+                When CADE publishes new content, social posts are generated and scheduled automatically.
               </p>
             </div>
             <Badge className="bg-pink-500/10 text-pink-500 border-pink-500/30">
@@ -398,41 +422,73 @@ export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSe
             </Badge>
           </div>
 
-          {/* Timeline */}
-          <div className="p-4 rounded-xl bg-background/30 border border-border">
-            <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-pink-500" />
-              Distribution Timeline
-            </h4>
-            <div className="relative">
-              <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
-              
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-2 gap-4">
+            {/* Timeline - Left */}
+            <div className="p-4 rounded-xl bg-background/30 border border-border">
+              <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-pink-500" />
+                Distribution Timeline
+              </h4>
+              <div className="relative">
+                <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
+                
+                <div className="space-y-2.5">
+                  {distributionSteps.map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }}
+                      className="relative pl-8"
+                    >
+                      <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
+                        item.status === "active" 
+                          ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
+                          : "bg-pink-500"
+                      }`}>
+                        <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
+                          {item.time}
+                        </Badge>
+                        <div>
+                          <span className="text-sm font-medium">{item.action}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{item.detail}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Platform Previews - Right */}
+            <div className="p-4 rounded-xl bg-background/30 border border-border">
+              <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-pink-500" />
+                AI-Generated Post Previews
+              </h4>
               <div className="space-y-3">
-                {distributionSteps.map((item, i) => (
+                {platformExamples.map((platform, i) => (
                   <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    key={platform.platform}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="relative pl-8"
+                    className="p-3 rounded-lg bg-background/50 border border-border"
                   >
-                    <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
-                      item.status === "active" 
-                        ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
-                        : "bg-pink-500"
-                    }`}>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
-                        {item.time}
-                      </Badge>
-                      <div>
-                        <span className="text-sm font-medium">{item.action}</span>
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-6 h-6 rounded bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
+                        <platform.icon className="w-3 h-3 text-white" />
                       </div>
+                      <span className="text-xs font-semibold">{platform.platform}</span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{platform.stats.chars} chars</span>
                     </div>
+                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-3">{platform.preview}</p>
                   </motion.div>
                 ))}
               </div>
