@@ -238,10 +238,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Login to BRON Dashboard
               </Button>
-              <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
-                Coming Soon
-              </Badge>
-              <p className="text-xs text-muted-foreground mt-3">
+              <p className="text-xs text-muted-foreground">
                 Diamond Flow ensures links come from topically relevant sites.
               </p>
             </div>
