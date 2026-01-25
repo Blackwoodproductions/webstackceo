@@ -45,16 +45,6 @@ export const OnPageSEOCarousel = () => {
 
   return (
     <div className="relative">
-      <div className="flex items-center justify-end mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={scrollRight}
-          className="text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </div>
       <div
         ref={scrollContainerRef}
         className="flex gap-4 overflow-x-auto pb-2 scroll-smooth"
@@ -85,7 +75,7 @@ export const OnPageSEOCarousel = () => {
         ))}
       </div>
       {/* Gradient fade on right edge */}
-      <div className="absolute right-0 top-[52px] bottom-2 w-16 bg-gradient-to-l from-card to-transparent pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-card to-transparent pointer-events-none" />
     </div>
   );
 };
