@@ -2598,29 +2598,37 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'bron' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Title Header */}
+            <header className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">BRON</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  Link building and content clustering automation. Build topical authority through the Diamond Flow methodology with real business partnerships.
+                </p>
+              </div>
+            </header>
+
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left - Header section */}
               <div className="lg:col-span-4">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-sky-500/15 border border-cyan-500/20 h-full flex flex-col">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center mb-4 shadow-lg">
-                    <TrendingUp className="w-7 h-7 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">BRON</h2>
-                  {(selectedTrackedDomain || selectedDomainKey) && (
-                    <p className="text-sm text-primary font-medium mb-2">
-                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                <div className="h-full p-6 rounded-xl border-2 border-dashed border-cyan-500/30 bg-cyan-500/5">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Link2 className="w-5 h-5 text-cyan-500" />
+                      <h3 className="text-lg font-semibold">Connect Your Website</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">
+                      Connect your CMS to enable automated link building and topical authority through the Diamond Flow methodology.
                     </p>
-                  )}
-                  <p className="text-muted-foreground text-sm flex-1">
-                    Link building and content clustering automation. Build topical authority through the Diamond Flow methodology.
-                  </p>
-                  <div className="mt-4 pt-4 border-t border-cyan-500/20">
-                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
                       Coming Soon
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-3">
-                      Diamond Flow methodology ensures links come from topically relevant sites.
+                      Diamond Flow ensures links come from topically relevant sites.
                     </p>
                   </div>
                 </div>
@@ -2628,8 +2636,7 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
                   {[
                     { 
                       step: '1', 
@@ -2660,7 +2667,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Industry First'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-cyan-500/5 to-sky-500/10 border border-cyan-500/20 flex flex-col min-h-[180px]">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-cyan-500/5 to-sky-500/10 border border-cyan-500/20 flex flex-col">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -2712,25 +2719,33 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'cade' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Title Header */}
+            <header className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
+                <FileText className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">CADE</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  Content automation and topical authority signals. AI-powered content generation that matches your native CSS and inner-links to your money pages.
+                </p>
+              </div>
+            </header>
+
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left - Header section */}
+              {/* Left - Connect section */}
               <div className="lg:col-span-4">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/20 h-full flex flex-col">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mb-4 shadow-lg">
-                    <FileText className="w-7 h-7 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">CADE</h2>
-                  {(selectedTrackedDomain || selectedDomainKey) && (
-                    <p className="text-sm text-primary font-medium mb-2">
-                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                <div className="h-full p-6 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="w-5 h-5 text-violet-500" />
+                      <h3 className="text-lg font-semibold">Connect Your Website</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">
+                      Connect your CMS to enable automated content generation that reverse-engineers competitor rankings.
                     </p>
-                  )}
-                  <p className="text-muted-foreground text-sm flex-1">
-                    Content automation and topical authority signals. AI-powered content generation and optimization that matches your native CSS.
-                  </p>
-                  <div className="mt-4 pt-4 border-t border-violet-500/20">
-                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
                       Coming Soon
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-3">
@@ -2742,8 +2757,7 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
                   {[
                     { 
                       step: '1', 
@@ -2774,7 +2788,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Seamless Design'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 flex flex-col min-h-[180px]">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20 flex flex-col">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -3548,25 +3562,33 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'social-signals' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Title Header */}
+            <header className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
+                <Activity className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">Social Signals</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected X, LinkedIn, and Facebook profiles.
+                </p>
+              </div>
+            </header>
+
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left - Header section */}
+              {/* Left - Connect section */}
               <div className="lg:col-span-4">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-pink-500/10 to-rose-500/15 border border-pink-500/20 h-full flex flex-col">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-4 shadow-lg">
-                    <Activity className="w-7 h-7 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Social Signals</h2>
-                  {(selectedTrackedDomain || selectedDomainKey) && (
-                    <p className="text-sm text-primary font-medium mb-2">
-                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                <div className="h-full p-6 rounded-xl border-2 border-dashed border-pink-500/30 bg-pink-500/5">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Activity className="w-5 h-5 text-pink-500" />
+                      <h3 className="text-lg font-semibold">Connect Accounts</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">
+                      Link your social media accounts to enable automated posting when CADE publishes new content.
                     </p>
-                  )}
-                  <p className="text-muted-foreground text-sm flex-1">
-                    Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected profiles.
-                  </p>
-                  <div className="mt-4 pt-4 border-t border-pink-500/20">
-                    <Badge variant="outline" className="text-violet-500 border-violet-500/30 bg-violet-500/10">
+                    <Badge variant="outline" className="w-fit text-violet-500 border-violet-500/30 bg-violet-500/10">
                       Activates with CADE
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-3">
@@ -3578,8 +3600,7 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
                   {[
                     { 
                       step: '1', 
@@ -3610,7 +3631,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: 'Traffic Boost'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20 flex flex-col min-h-[180px]">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-pink-500/5 to-rose-500/10 border border-pink-500/20 flex flex-col">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
@@ -3657,25 +3678,33 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'on-page-seo' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
+            {/* Title Header */}
+            <header className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                <FileSearch className="w-7 h-7 text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-bold">On-page SEO</h2>
+                <p className="text-sm text-muted-foreground max-w-2xl">
+                  AI-powered on-page optimization that handles tedious manual work—meta tags, schema markup, and content structure—saving you time and money.
+                </p>
+              </div>
+            </header>
+
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left - Header section */}
+              {/* Left - Connect section */}
               <div className="lg:col-span-4">
-                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/15 border border-amber-500/20 h-full flex flex-col">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 shadow-lg">
-                    <FileSearch className="w-7 h-7 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">On-page SEO</h2>
-                  {(selectedTrackedDomain || selectedDomainKey) && (
-                    <p className="text-sm text-primary font-medium mb-2">
-                      Domain: {selectedTrackedDomain || selectedDomainKey}
+                <div className="h-full p-6 rounded-xl border-2 border-dashed border-amber-500/30 bg-amber-500/5">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileSearch className="w-5 h-5 text-amber-500" />
+                      <h3 className="text-lg font-semibold">Connect Your Website</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">
+                      Connect your CMS to enable automated on-page optimization powered by BRON.
                     </p>
-                  )}
-                  <p className="text-muted-foreground text-sm flex-1">
-                    AI-powered on-page optimization that handles tedious manual work—saving you time and money while improving rankings.
-                  </p>
-                  <div className="mt-4 pt-4 border-t border-amber-500/20">
-                    <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
                       Powered by BRON
                     </Badge>
                     <p className="text-xs text-muted-foreground mt-3">
@@ -3687,8 +3716,7 @@ f.parentNode.insertBefore(j,f);
 
               {/* Right - How It Works */}
               <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
                   {[
                     { 
                       step: '1', 
@@ -3719,7 +3747,7 @@ f.parentNode.insertBefore(j,f);
                       highlight: '24/7 Monitoring'
                     },
                   ].map((item) => (
-                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20 flex flex-col min-h-[180px]">
+                    <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20 flex flex-col">
                       <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                         {item.step}
                       </div>
