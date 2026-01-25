@@ -2838,27 +2838,35 @@ f.parentNode.insertBefore(j,f);
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
+          {/* Header Section - matching other tabs */}
+          <header className="flex items-start gap-4 mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
+              <MapPin className="w-7 h-7 text-white" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold">Google Business Profile</h2>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                Manage your Google My Business listings, respond to reviews, and track local SEO performance. When CADE is active, new articles and FAQs are automatically posted to your GMB listing.
+              </p>
+            </div>
+          </header>
+
           {!gmbAuthenticated ? (
             /* Not Connected State */
             <div className="space-y-6">
-              {/* Top row: Header section + How It Works grid */}
+              {/* Top row: Connect panel + How It Works grid */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left - Header section */}
+                {/* Left - Connect panel */}
                 <div className="lg:col-span-4">
                   <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-green-500/15 border border-blue-500/20 h-full flex flex-col">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-4 shadow-lg">
-                      <MapPin className="w-7 h-7 text-white" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-4 shadow-lg">
+                      <Globe className="w-6 h-6 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">Google Business Profile</h2>
-                    {(selectedTrackedDomain || selectedDomainKey) && (
-                      <p className="text-sm text-primary font-medium mb-2">
-                        Domain: {selectedTrackedDomain || selectedDomainKey}
-                      </p>
-                    )}
+                    <h3 className="text-lg font-bold mb-2">Connect Your Account</h3>
                     <p className="text-muted-foreground text-sm flex-1">
-                      Manage your Google My Business listings, respond to reviews, and track local SEO performance—all from one dashboard.
+                      Link your Google Business Profile to manage listings and track performance.
                     </p>
-                    <div className="mt-4 pt-4 border-t border-blue-500/20">
+                    <div className="mt-auto pt-4 border-t border-blue-500/20">
                       <Button
                         size="lg"
                         onClick={async () => {
@@ -2953,39 +2961,38 @@ f.parentNode.insertBefore(j,f);
 
                 {/* Right - How It Works */}
                 <div className="lg:col-span-8">
-                  <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 h-full">
                     {[
                       { 
                         step: '1', 
                         icon: Globe,
                         title: 'Connect Account', 
-                        desc: 'Securely link your Google Business Profile with OAuth authentication to access your listings.',
+                        desc: 'Securely link your Google Business Profile with OAuth authentication.',
                         highlight: 'OAuth 2.0 Secure'
                       },
                       { 
                         step: '2', 
                         icon: MapPin,
                         title: 'Manage Locations', 
-                        desc: 'Update business hours, address, photos, and all key information for each location you manage.',
+                        desc: 'Update hours, address, photos, and key info for each location.',
                         highlight: 'Multi-Location'
                       },
                       { 
                         step: '3', 
                         icon: MessageCircle,
                         title: 'Monitor Reviews', 
-                        desc: 'Track and respond to customer reviews directly from your dashboard. Build your reputation.',
+                        desc: 'Track and respond to customer reviews. Build your reputation.',
                         highlight: 'Real-Time Alerts'
                       },
                       { 
                         step: '4', 
                         icon: Newspaper,
                         title: 'CADE Auto-Posts', 
-                        desc: 'When CADE publishes new articles or FAQs, they\'re automatically shared to your GMB listing.',
+                        desc: 'Articles and FAQs are auto-shared to your GMB listing.',
                         highlight: 'Powered by CADE'
                       },
                     ].map((item) => (
-                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col min-h-[180px]">
+                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col flex-1">
                         <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                           {item.step}
                         </div>
