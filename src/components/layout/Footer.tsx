@@ -46,25 +46,22 @@ const Footer = memo(() => {
       { name: "Tools", href: "/tools" },
       { name: "Website Audits", href: "/audits" },
     ],
-    "Case Studies": [
-      { name: "All Case Studies", href: "/case-studies" },
-      { name: "E-Commerce", href: "/case-studies?category=ecommerce" },
-      { name: "SaaS", href: "/case-studies?category=saas" },
-      { name: "Local Business", href: "/case-studies?category=local_business" },
-    ],
     Company: [
       { name: "About", href: "/about" },
       { name: "Careers", href: "/careers" },
       { name: "Contact", href: "/contact" },
+      { name: "Marketplace", href: "/marketplace" },
     ],
     Resources: [
       { name: "Learning Center", href: "/learn" },
       { name: "SEO Glossary", href: "/learn/glossary" },
       { name: "FAQ", href: "/faq" },
+      { name: "Case Studies", href: "/case-studies" },
     ],
     Legal: [
       { name: "Privacy", href: "/privacy-policy" },
       { name: "Terms", href: "/terms" },
+      { name: "Security", href: "/security" },
       { name: "Cookies", href: "/cookies" },
     ],
   };
@@ -134,7 +131,7 @@ const Footer = memo(() => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2">
             <a 
               href="/" 
