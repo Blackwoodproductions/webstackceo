@@ -122,6 +122,7 @@ export const GADashboardPanel = ({
   const [isFetching, setIsFetching] = useState(false);
   const [propertiesLoaded, setPropertiesLoaded] = useState(false);
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
+  const [isFetchingProperties, setIsFetchingProperties] = useState(false);
   
   // Data state
   const [properties, setProperties] = useState<GAProperty[]>([]);
@@ -213,7 +214,15 @@ export const GADashboardPanel = ({
               throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
             }
 
-            const { access_token, expires_in } = tokenRes.data;
+            const { access_token, expires_in, scope } = tokenRes.data;
+
+            // If Google returns scopes, ensure we actually received Analytics access.
+            // (Prevents "connected" UI with a token that can only access GSC/userinfo.)
+            if (typeof scope === "string" && !scope.includes("analytics.readonly")) {
+              throw new Error(
+                "Google granted no Analytics permissions. Please reconnect and approve the Analytics access request."
+              );
+            }
             const expiryTime = Date.now() + (expires_in || 3600) * 1000;
             
             sessionStorage.setItem("ga_access_token", access_token);
@@ -236,6 +245,10 @@ export const GADashboardPanel = ({
               description: error.message || "Failed to connect to Google Analytics.",
               variant: "destructive",
             });
+
+            // Ensure we don't get stuck in a "connected" loading state after a failed callback.
+            setAccessToken(null);
+            setIsAuthenticated(false);
           } finally {
             setIsLoading(false);
           }
@@ -262,29 +275,51 @@ export const GADashboardPanel = ({
   }, [selectedProperty, accessToken]);
 
   const fetchProperties = async () => {
-    if (!accessToken) return;
-    
+    if (!accessToken) {
+      // If we somehow got into an authenticated state without a token, don't spin forever.
+      setPropertiesError("Google session is missing/expired. Please reconnect.");
+      setPropertiesLoaded(true);
+      return;
+    }
+
+    if (isFetchingProperties) return;
+    setIsFetchingProperties(true);
+    setPropertiesLoaded(false);
     setPropertiesError(null);
-    
+
     try {
-      console.log('[GA] Fetching properties...');
+      console.log("[GA] Fetching properties...");
+
       const response = await fetch(
         "https://analyticsadmin.googleapis.com/v1beta/accountSummaries",
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
-      
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[GA] Properties fetch failed:', response.status, errorText);
-        throw new Error(`Failed to fetch properties: ${response.status}`);
+        let details = "";
+        try {
+          const errJson = await response.json();
+          const msg = errJson?.error?.message;
+          const status = errJson?.error?.status;
+          details = [status, msg].filter(Boolean).join(": ");
+        } catch {
+          // ignore
+        }
+
+        // Make 403 actionable (most common: API not enabled or insufficient permissions/scopes)
+        if (response.status === 403) {
+          throw new Error(
+            `Failed to fetch properties (403). ${details || "Your Google OAuth app likely needs the Google Analytics Admin API enabled, or your account doesn't have permission."}`
+          );
+        }
+
+        throw new Error(`Failed to fetch properties (${response.status}). ${details}`.trim());
       }
-      
+
       const data = await response.json();
-      console.log('[GA] Properties response:', data);
+      console.log("[GA] Properties response:", data);
+
       const allProperties: GAProperty[] = [];
-      
       data.accountSummaries?.forEach((account: any) => {
         account.propertySummaries?.forEach((prop: any) => {
           allProperties.push({
@@ -294,18 +329,19 @@ export const GADashboardPanel = ({
           });
         });
       });
-      
-      console.log('[GA] Parsed properties:', allProperties);
+
+      console.log("[GA] Parsed properties:", allProperties);
       setProperties(allProperties);
-      setPropertiesLoaded(true);
-      
+
       if (allProperties.length > 0 && !selectedProperty) {
         setSelectedProperty(allProperties[0].name);
       }
     } catch (error: any) {
       console.error("[GA] Error fetching properties:", error);
-      setPropertiesError(error.message || "Failed to load properties");
-      setPropertiesLoaded(true); // Mark as loaded even on error to stop spinner
+      setPropertiesError(error?.message || "Failed to load properties");
+    } finally {
+      setPropertiesLoaded(true);
+      setIsFetchingProperties(false);
     }
   };
 
@@ -512,6 +548,7 @@ export const GADashboardPanel = ({
     setSelectedProperty("");
     setPropertiesLoaded(false);
     setPropertiesError(null);
+    setIsFetchingProperties(false);
   };
 
   const formatDuration = (seconds: number) => {
@@ -588,7 +625,7 @@ export const GADashboardPanel = ({
                     <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary hover:underline">Google Cloud Console</a></li>
                     <li>Create OAuth 2.0 Client ID</li>
                     <li>Add redirect URI: <code className="bg-background px-1 rounded">{window.location.origin}/visitor-intelligence-dashboard</code></li>
-                    <li>Enable Google Analytics Data API</li>
+                    <li>Enable Google Analytics Data API + Analytics Admin API</li>
                   </ol>
                 </div>
               </div>
@@ -647,7 +684,7 @@ export const GADashboardPanel = ({
                   <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" className="text-primary hover:underline">Google Cloud Console</a></li>
                   <li>Create OAuth 2.0 Client ID</li>
                   <li>Add redirect URI: <code className="bg-background px-1 rounded">{window.location.origin}/visitor-intelligence-dashboard</code></li>
-                  <li>Enable Google Analytics Data API</li>
+                  <li>Enable Google Analytics Data API + Analytics Admin API</li>
                 </ol>
               </div>
             </div>
@@ -699,6 +736,11 @@ export const GADashboardPanel = ({
         <CardContent>
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-center">
             <p className="text-sm text-destructive mb-3">{propertiesError}</p>
+            {propertiesError.includes("403") && (
+              <p className="text-xs text-muted-foreground mb-4">
+                Fixes: ensure your Google OAuth project has <span className="font-medium">Google Analytics Admin API</span> enabled, and that the connected Google account has access to at least one GA4 property.
+              </p>
+            )}
             <Button 
               variant="outline" 
               onClick={() => {
@@ -711,6 +753,20 @@ export const GADashboardPanel = ({
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </Button>
+            <div className="mt-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  handleDisconnect();
+                  setTimeout(() => {
+                    void handleGoogleLogin();
+                  }, 50);
+                }}
+                className="text-muted-foreground"
+              >
+                Disconnect & Reconnect
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
