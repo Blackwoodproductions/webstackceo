@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -44,8 +44,18 @@ const GoogleAdsIcon = () => (
 );
 
 export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
+  // Check if returning from OAuth callback on mount
+  const hasOAuthCallback = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const storedState = sessionStorage.getItem('google_ads_oauth_state');
+    return Boolean(code && state && state === storedState);
+  };
+
   const [isConnected, setIsConnected] = useState(false);
-  const [showWizard, setShowWizard] = useState(false);
+  // Auto-show wizard if returning from OAuth callback
+  const [showWizard, setShowWizard] = useState(hasOAuthCallback);
   const [showCampaignSetup, setShowCampaignSetup] = useState(false);
   const [hasCampaigns, setHasCampaigns] = useState<boolean | null>(null);
   const [isFetchingKeywords, setIsFetchingKeywords] = useState(false);
