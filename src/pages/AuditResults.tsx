@@ -2004,6 +2004,19 @@ const AuditResults = () => {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Website Description/Summary - About This Website */}
+                  {(websiteProfile?.summary || websiteProfile?.description) && (
+                    <div className="mt-4 pt-4 border-t border-border/30">
+                      <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-primary" />
+                        About This Website
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {websiteProfile.summary || websiteProfile.description}
+                      </p>
+                    </div>
+                  )}
 
                 </div>
 
