@@ -206,7 +206,7 @@ const MarketingDashboard = () => {
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'seo-audit' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'landing-pages';
   const [activeTab, setActiveTab] = useState<DashboardTab>('visitor-intelligence');
   
   // GMB (Google My Business) state
@@ -1354,6 +1354,7 @@ const MarketingDashboard = () => {
               { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
               { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
               { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
+              { id: 'social-signals' as DashboardTab, label: 'Social Signals', icon: Activity },
               { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
             ].map((tab, index) => (
               <button
@@ -3044,6 +3045,48 @@ f.parentNode.insertBefore(j,f);
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Social Signals Tab Content */}
+      {activeTab === 'social-signals' && (
+        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mx-auto mb-4">
+              <Activity className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Social Signals</h2>
+            {(selectedTrackedDomain || selectedDomainKey) && (
+              <p className="text-sm text-primary font-medium mb-2">
+                Domain: {selectedTrackedDomain || selectedDomainKey}
+              </p>
+            )}
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Track and amplify your social media presence. Monitor brand mentions, engagement metrics, and social proof signals that influence search rankings.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
+              {[
+                { icon: MessageCircle, label: 'Brand Mentions', desc: 'Track mentions across platforms' },
+                { icon: TrendingUp, label: 'Engagement', desc: 'Likes, shares, and comments' },
+                { icon: Users, label: 'Audience Growth', desc: 'Follower trends and reach' },
+              ].map((feature) => (
+                <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <feature.icon className="w-6 h-6 text-pink-500 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+            
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+              Coming Soon
+            </Badge>
+            
+            <p className="text-xs text-muted-foreground mt-4 max-w-lg mx-auto">
+              Connect your social accounts to aggregate signals from Facebook, Twitter/X, LinkedIn, Instagram, and more.
+            </p>
+          </div>
         </div>
       )}
 
