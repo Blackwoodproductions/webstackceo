@@ -302,51 +302,6 @@ export const CompetitorGapSection = ({
           </div>
         )}
 
-        {/* SERP Features */}
-        {metrics.serpFeatures.length > 0 && (
-          <div className="px-6 pb-6">
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border border-amber-500/20">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-white" />
-                </div>
-                <span>SERP Feature Opportunities</span>
-              </h3>
-              <div className="flex flex-wrap gap-3">
-                {metrics.serpFeatures.map((feature, i) => (
-                  <motion.div
-                    key={feature.feature}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className={`px-4 py-3 rounded-xl text-sm flex items-center gap-2.5 ${
-                      feature.hasIt 
-                        ? "bg-gradient-to-r from-emerald-500/20 to-green-500/10 text-emerald-400 border border-emerald-500/30" 
-                        : "bg-muted/50 text-muted-foreground border border-border/50 hover:border-amber-500/30 hover:bg-amber-500/10 transition-colors"
-                    }`}
-                  >
-                    {feature.hasIt ? (
-                      <Zap className="w-4 h-4" />
-                    ) : (
-                      <Target className="w-4 h-4" />
-                    )}
-                    <span className="font-medium">{feature.feature}</span>
-                    {!feature.hasIt && feature.competitorsHaveIt > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
-                        {feature.competitorsHaveIt} have it
-                      </span>
-                    )}
-                    {feature.hasIt && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                        ✓ Active
-                      </span>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* CTA Footer */}
         <div className="p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border-t border-border/30">

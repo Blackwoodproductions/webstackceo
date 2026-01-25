@@ -81,8 +81,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
-import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
-import cadeContentAutomation from "@/assets/cade-content-automation.png";
 
 // Baseline metrics from first audit for progress tracking
 interface BaselineMetrics {
@@ -465,7 +463,6 @@ const generateAuditResults = (
     return Math.round(min + ((hash % 100) / 100) * (max - min));
   };
 
-  // Page Speed still uses estimated values (would need PageSpeed Insights API for real data)
   const speedScore = randomScore(72, 20);
   
   // Calculate scores from real technical SEO data when available
@@ -2886,130 +2883,6 @@ const AuditResults = () => {
             })}
           </AnimatePresence>
 
-          {/* BRON & CADE Feature Cards - Original Standalone Design */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="mb-12"
-          >
-            <h2 className="text-2xl font-bold mb-8 text-center">
-              Our <span className="bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">Core Services</span>
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {/* BRON Card */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400/50 transition-all group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/25">
-                      <Link2 className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                        BRON
-                      </h3>
-                      <p className="text-[10px] text-muted-foreground">Backlink Ranking Optimization Network</p>
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">
-                    Real business website deep links using our proprietary Diamond Flow methodology.
-                  </p>
-                  
-                  <div className="mb-3 rounded-lg overflow-hidden border border-cyan-500/20 shadow-md shadow-cyan-500/10 max-h-32">
-                    <img 
-                      src={bronDiamondFlow} 
-                      alt="BRON Diamond Flow Architecture" 
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                  
-                  <ul className="space-y-1 mb-3">
-                    {[
-                      'Deep links from real business websites',
-                      'Diamond Flow link architecture',
-                      'Domain Rating & Authority boosting'
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-1.5 text-xs">
-                        <CheckCircle2 className="w-3 h-3 text-cyan-400 shrink-0" />
-                        <span className="text-muted-foreground">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Link 
-                    to="/features/off-page-seo" 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
-                  >
-                    Learn about BRON
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              </motion.div>
-              
-              {/* CADE Card */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/30 hover:border-violet-400/50 transition-all group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-                        CADE
-                      </h3>
-                      <p className="text-[10px] text-muted-foreground">Content Automation & Domain Enhancement</p>
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2">
-                    Ongoing content with 7 blog types, each generating 3-5 FAQs with individual URLs.
-                  </p>
-                  
-                  <div className="mb-3 rounded-lg overflow-hidden border border-violet-500/20 shadow-md shadow-violet-500/10 max-h-32">
-                    <img 
-                      src={cadeContentAutomation} 
-                      alt="CADE Content Automation" 
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                  
-                  <ul className="space-y-1 mb-3">
-                    {[
-                      '7 types of automated blog content',
-                      'FAQs with individual URLs',
-                      'Social media signal distribution'
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-1.5 text-xs">
-                        <CheckCircle2 className="w-3 h-3 text-violet-400 shrink-0" />
-                        <span className="text-muted-foreground">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Link 
-                    to="/features/automated-blog" 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors"
-                  >
-                    Learn about CADE
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
 
           {/* Other Actionable Recommendations */}
           {recommendations.filter(r => !r.service).length > 0 && (
