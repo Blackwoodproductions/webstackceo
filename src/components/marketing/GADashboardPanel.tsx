@@ -4,6 +4,7 @@ import {
   BarChart3, RefreshCw, Loader2, ExternalLink, Key, 
   Activity, X, ArrowUpRight, ArrowDownRight, Zap, Target
 } from "lucide-react";
+import { GAOnboardingWizard } from "./GAOnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1079,7 +1080,22 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Connected but domain not in GA - show prominent add domain prompt
+  // Track refreshing state for the wizard
+  const [isWizardRefreshing, setIsWizardRefreshing] = useState(false);
+
+  const handleWizardRefresh = async () => {
+    setIsWizardRefreshing(true);
+    toast({ title: "Checking for data streams...", description: "Refreshing your GA account data." });
+    setStreamsLoaded(false);
+    setWebDomainsByProperty({});
+    await fetchProperties();
+    setTimeout(() => {
+      void fetchWebDataStreams();
+      setIsWizardRefreshing(false);
+    }, 500);
+  };
+
+  // Connected but domain not in GA - show full onboarding wizard
   // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
   if (isAuthenticated && externalSelectedSite && propertiesLoaded && streamsLoaded && !streamsError && !isExternalSiteInGA) {
     return (
@@ -1092,11 +1108,11 @@ export const GADashboardPanel = ({
               </div>
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  Google Analytics
-                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
+                  Google Analytics Setup
+                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Account Connected</Badge>
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Add <span className="font-medium text-foreground">{normalizeDomain(externalSelectedSite)}</span> to see analytics
+                  Complete setup to track <span className="font-medium text-foreground">{normalizeDomain(externalSelectedSite)}</span>
                 </CardDescription>
               </div>
             </div>
@@ -1108,91 +1124,12 @@ export const GADashboardPanel = ({
         </CardHeader>
         
         <CardContent>
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                  <Activity className="w-8 h-8 text-white" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
-                  Add {normalizeDomain(externalSelectedSite)} to Google Analytics
-                </h4>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Your Google Analytics is connected, but <span className="font-medium">{normalizeDomain(externalSelectedSite)}</span> doesn't appear in your GA4 Web Data Streams yet.
-                  Add a web data stream to start tracking sessions, users, and engagement.
-                </p>
-                
-                <div className="flex flex-wrap gap-3">
-                  <Button 
-                    size="default" 
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                    onClick={() => {
-                      // Link directly to the Data Streams page for the first property (or admin home)
-                      const firstProp = properties[0];
-                      if (firstProp) {
-                        // Extract numeric property ID from "properties/123456789"
-                        const propId = firstProp.name.replace("properties/", "");
-                        window.open(`https://analytics.google.com/analytics/web/#/p${propId}/admin/streams`, '_blank');
-                      } else {
-                        window.open('https://analytics.google.com/analytics/web/#/admin', '_blank');
-                      }
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Add Data Stream
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    className="border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
-                    onClick={() => window.open(`https://support.google.com/analytics/answer/9304153`, '_blank')}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Setup Guide
-                  </Button>
-                  <Button 
-                    variant="ghost"
-                    className="text-muted-foreground"
-                    onClick={async () => {
-                      toast({ title: "Checking for data streams...", description: "Refreshing your GA account data." });
-                      // Reset streams state and re-fetch
-                      setStreamsLoaded(false);
-                      setWebDomainsByProperty({});
-                      await fetchProperties();
-                      // Explicitly trigger streams fetch after properties load
-                      setTimeout(() => {
-                        void fetchWebDataStreams();
-                      }, 100);
-                    }}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
-                </div>
-                
-                <div className="mt-4 p-3 bg-secondary/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Quick Steps:</span> 1. Click "Add Data Stream" → 2. Select "Web" → 3. Enter <span className="font-mono bg-background px-1 rounded">{normalizeDomain(externalSelectedSite)}</span> → 4. Copy the Measurement ID → 5. Click "Refresh Properties" above
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Show available properties */}
-          {properties.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs text-muted-foreground mb-2">Your connected properties:</p>
-              <div className="flex flex-wrap gap-2">
-                {properties.map(prop => (
-                  <Badge key={prop.name} variant="secondary" className="text-xs">
-                    {prop.displayName}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+          <GAOnboardingWizard
+            domain={externalSelectedSite}
+            properties={properties}
+            onRefresh={handleWizardRefresh}
+            isRefreshing={isWizardRefreshing}
+          />
         </CardContent>
       </Card>
     );
