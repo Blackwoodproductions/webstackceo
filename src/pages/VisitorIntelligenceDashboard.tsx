@@ -2741,16 +2741,17 @@ f.parentNode.insertBefore(j,f);
                 <MapPin className="w-7 h-7 text-white" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-2xl font-bold">Google Business Profile</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold">Google Business Profile</h2>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-blue-400 animate-pulse" />
+                    <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">Coming Soon</span>
+                  </span>
+                </div>
                 <p className="text-sm text-muted-foreground max-w-2xl">
                   Manage your Google My Business listings, respond to reviews, and track local SEO performance. When CADE is active, new articles and FAQs are automatically posted to your GMB listing.
                 </p>
               </div>
-            </div>
-            {/* Coming Soon Badge - Centered */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center gap-2 z-10">
-              <Clock className="w-3 h-3 text-blue-400 animate-pulse" />
-              <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wide">Coming Soon</span>
             </div>
             <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
               {/* Trust Badges */}
@@ -3538,16 +3539,17 @@ f.parentNode.insertBefore(j,f);
                   <Activity className="w-7 h-7 text-white" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-2xl font-bold">Social Signals</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold">Social Signals</h2>
+                    <span className="px-2.5 py-1 rounded-full bg-pink-500/15 border border-pink-500/30 flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-pink-400 animate-pulse" />
+                      <span className="text-[10px] font-semibold text-pink-400 uppercase tracking-wide">Coming Soon</span>
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground max-w-2xl">
                     Automated social media posting powered by CADE. Every new blog post and FAQ drop is shared across your connected X, LinkedIn, and Facebook profiles.
                   </p>
                 </div>
-              </div>
-              {/* Coming Soon Badge - Centered */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-pink-500/15 border border-pink-500/30 flex items-center gap-2 z-10">
-                <Clock className="w-3 h-3 text-pink-400 animate-pulse" />
-                <span className="text-[10px] font-semibold text-pink-400 uppercase tracking-wide">Coming Soon</span>
               </div>
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
@@ -3717,16 +3719,17 @@ f.parentNode.insertBefore(j,f);
                   <FileSearch className="w-7 h-7 text-white" />
                 </div>
                 <div className="space-y-1">
-                  <h2 className="text-2xl font-bold">On-page SEO</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold">On-page SEO</h2>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-amber-400 animate-pulse" />
+                      <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide">Coming Soon</span>
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground max-w-2xl">
                     AI-powered on-page optimization that handles tedious manual work—meta tags, schema markup, and content structure—saving you time and money.
                   </p>
                 </div>
-              </div>
-              {/* Coming Soon Badge - Centered */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center gap-2 z-10">
-                <Clock className="w-3 h-3 text-amber-400 animate-pulse" />
-                <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide">Coming Soon</span>
               </div>
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
