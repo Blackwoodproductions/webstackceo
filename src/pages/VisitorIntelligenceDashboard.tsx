@@ -1770,9 +1770,9 @@ f.parentNode.insertBefore(j,f);
         {/* Google Search Console Integration - uses its own domain selector */}
         <div className="mb-8">
           <GSCDashboardPanel 
-            externalSelectedSite={matchingGscSiteUrl}
-            externalDateRange={shouldIntegrateGscDate ? integratedGscDateRange : undefined}
-            hideDateSelector={shouldIntegrateGscDate}
+            externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
+            externalDateRange={integratedGscDateRange}
+            hideDateSelector={true}
             onSiteChange={(site) => {
               // When GSC domain changes, update parent state for integration logic
               const cleanDomain = normalizeDomain(site);
