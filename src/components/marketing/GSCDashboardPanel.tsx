@@ -4,7 +4,7 @@ import {
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
   RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
   ExternalLink, Key, Download, Smartphone, Monitor, Tablet,
-  Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp
+  Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp, X
 } from "lucide-react";
 import { GSCAdvancedReporting } from "./GSCAdvancedReporting";
 import { Button } from "@/components/ui/button";
@@ -1028,7 +1028,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 <Code className="w-4 h-4 mr-1" />
                 Get Code
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleDisconnect}>Disconnect</Button>
+              <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                <X className="w-3 h-3 mr-1" />
+                Disconnect
+              </Button>
             </div>
           </div>
         </CardHeader>
