@@ -45,11 +45,7 @@ export const OnPageSEOCarousel = () => {
 
   return (
     <div className="relative">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Gauge className="w-5 h-5 text-amber-500" />
-          On-page Optimization Capabilities
-        </h3>
+      <div className="flex items-center justify-end mb-4">
         <Button
           variant="ghost"
           size="sm"
