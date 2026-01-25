@@ -2890,27 +2890,27 @@ const AuditResults = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
-              className="mb-12"
+              className="mb-8"
             >
-              <h2 className="text-xl font-bold mb-6">Additional Recommendations</h2>
-              <div className="grid md:grid-cols-2 gap-6">
+              <h2 className="text-lg font-bold mb-4">Additional Recommendations</h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {recommendations.filter(r => !r.service).map((rec, i) => (
                   <motion.div
                     key={rec.title}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + i * 0.1 }}
-                    className="p-6 rounded-2xl border bg-card border-border/50"
+                    transition={{ delay: 0.3 + i * 0.05 }}
+                    className="p-4 rounded-xl border bg-card border-border/50"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2.5 rounded-xl ${
+                    <div className="flex items-start gap-3">
+                      <div className={`p-1.5 rounded-lg shrink-0 ${
                         rec.priority === 'high' 
                           ? 'bg-red-500/20' 
                           : rec.priority === 'medium' 
                           ? 'bg-amber-500/20' 
                           : 'bg-green-500/20'
                       }`}>
-                        <rec.icon className={`w-5 h-5 ${
+                        <rec.icon className={`w-4 h-4 ${
                           rec.priority === 'high' 
                             ? 'text-red-400' 
                             : rec.priority === 'medium' 
@@ -2918,26 +2918,25 @@ const AuditResults = () => {
                             : 'text-green-400'
                         }`} />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <h3 className="font-semibold text-lg">{rec.title}</h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="font-semibold text-sm">{rec.title}</h3>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                             rec.priority === 'high' 
                               ? 'bg-red-500/20 text-red-400' 
                               : rec.priority === 'medium' 
                               ? 'bg-amber-500/20 text-amber-400' 
                               : 'bg-green-500/20 text-green-400'
                           }`}>
-                            {rec.priority} priority
+                            {rec.priority}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{rec.description}</p>
-                        
-                        <ul className="space-y-1.5">
-                          {rec.actions.map((action, j) => (
-                            <li key={j} className="flex items-center gap-2 text-sm">
-                              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-                              <span className="text-muted-foreground">{action}</span>
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{rec.description}</p>
+                        <ul className="space-y-0.5">
+                          {rec.actions.slice(0, 3).map((action, j) => (
+                            <li key={j} className="flex items-center gap-1.5 text-xs">
+                              <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
+                              <span className="text-muted-foreground truncate">{action}</span>
                             </li>
                           ))}
                         </ul>
