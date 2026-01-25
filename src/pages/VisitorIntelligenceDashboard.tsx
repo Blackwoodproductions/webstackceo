@@ -2666,6 +2666,14 @@ f.parentNode.insertBefore(j,f);
               </div>
             </div>
 
+            {/* Platform Connection Section */}
+            <BRONPlatformConnect 
+              domain={selectedTrackedDomain || selectedDomainKey} 
+              onConnectionComplete={(platform) => {
+                toast.success(`Successfully connected to ${platform}!`);
+              }}
+            />
+
             {/* Bottom row: Feature cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
@@ -2684,14 +2692,6 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
-
-            {/* Platform Connection Section */}
-            <BRONPlatformConnect 
-              domain={selectedTrackedDomain || selectedDomainKey} 
-              onConnectionComplete={(platform) => {
-                toast.success(`Successfully connected to ${platform}!`);
-              }}
-            />
           </div>
         </div>
       )}
