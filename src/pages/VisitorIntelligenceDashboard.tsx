@@ -123,12 +123,13 @@ function normalizeDomain(v: string): string {
 
 // Dynamic iframe component that resizes based on content height
 const CaseStudyIframe = ({ domain }: { domain: string }) => {
-  const [iframeHeight, setIframeHeight] = useState(2000);
+  const [iframeHeight, setIframeHeight] = useState(800); // Start smaller
   
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'iframe-height' && typeof event.data.height === 'number') {
-        setIframeHeight(event.data.height + 50); // Add small buffer
+        // Set exact height with no extra padding
+        setIframeHeight(event.data.height);
       }
     };
     
@@ -143,7 +144,7 @@ const CaseStudyIframe = ({ domain }: { domain: string }) => {
       key={`case-study-iframe-${domain}`}
       src={`/case-study/${slug}?embed=true`}
       className="w-full border-0"
-      style={{ height: `${iframeHeight}px` }}
+      style={{ height: `${iframeHeight}px`, minHeight: '400px' }}
       scrolling="no"
       title="SEO Case Study"
     />

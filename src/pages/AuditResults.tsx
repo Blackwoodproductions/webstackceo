@@ -1306,13 +1306,51 @@ const AuditResults = () => {
     });
   };
 
-  // Fetch website profile
+  // Fetch website profile - for case studies, also load saved data from DB
   useEffect(() => {
     if (!decodedDomain) return;
     
     const fetchWebsiteProfile = async () => {
       setIsProfileLoading(true);
       try {
+        // For case studies, first try to load from saved_audits table
+        if (isCaseStudyMode) {
+          const slug = decodedDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+          const { data: savedAudit } = await supabase
+            .from('saved_audits')
+            .select('*')
+            .eq('slug', slug)
+            .maybeSingle();
+          
+          if (savedAudit) {
+            // Build profile from saved audit data
+            setWebsiteProfile({
+              title: savedAudit.site_title || '',
+              description: savedAudit.site_description || '',
+              summary: savedAudit.site_summary || '',
+              favicon: savedAudit.favicon_url || null,
+              logo: savedAudit.logo_url || null,
+              socialLinks: {
+                facebook: savedAudit.social_facebook,
+                twitter: savedAudit.social_twitter,
+                linkedin: savedAudit.social_linkedin,
+                instagram: savedAudit.social_instagram,
+                youtube: savedAudit.social_youtube,
+                tiktok: savedAudit.social_tiktok,
+              },
+              contactInfo: {
+                email: savedAudit.contact_email,
+                phone: savedAudit.contact_phone,
+                address: savedAudit.contact_address,
+              },
+              detectedCategory: savedAudit.category || 'other',
+            });
+            setIsProfileLoading(false);
+            return;
+          }
+        }
+        
+        // Fall back to live scraping
         const { data, error } = await supabase.functions.invoke('scrape-website', {
           body: { url: decodedDomain }
         });
@@ -1330,7 +1368,7 @@ const AuditResults = () => {
     };
     
     fetchWebsiteProfile();
-  }, [decodedDomain]);
+  }, [decodedDomain, isCaseStudyMode]);
 
   // Update audit results when technicalSEO data becomes available
   useEffect(() => {
