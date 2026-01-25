@@ -1419,8 +1419,8 @@ const MarketingDashboard = () => {
 
       {/* Header with integrated tabs - wrapped with glow effect */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1300px] mx-auto relative glow-primary">
-        {/* Tabs - offset right from center, floating at bottom of header */}
-        <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 192px))' }}>
+        {/* Tabs - offset slightly right from center, floating at bottom of header */}
+        <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
           {[
             { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye },
             { id: 'seo-audit' as DashboardTab, label: 'Audit', icon: Search },
@@ -1435,7 +1435,7 @@ const MarketingDashboard = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex flex-col items-center justify-center w-14 h-12 transition-all rounded-t-lg border-t border-x gap-0.5 ${
+              className={`relative flex flex-col items-center justify-center w-16 h-14 transition-all rounded-t-lg border-t border-x gap-0.5 ${
                 activeTab === tab.id
                   ? 'bg-background text-primary border-border'
                   : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
