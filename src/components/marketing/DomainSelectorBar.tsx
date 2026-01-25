@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Globe, Plus, CalendarIcon, Filter, X, ChevronDown } from 'lucide-react';
+import { Globe, Plus, CalendarIcon, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,6 +36,9 @@ interface DomainSelectorBarProps {
   pageFilter?: string | null;
   onPageFilterClear?: () => void;
   
+  // Center content slot (for tabs)
+  centerContent?: React.ReactNode;
+  
   // Right side content slot
   rightContent?: React.ReactNode;
 }
@@ -55,6 +57,7 @@ export function DomainSelectorBar({
   showPageFilter = false,
   pageFilter,
   onPageFilterClear,
+  centerContent,
   rightContent,
 }: DomainSelectorBarProps) {
   const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
@@ -210,8 +213,15 @@ export function DomainSelectorBar({
           )}
         </div>
         
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Center: Tabs (if provided) */}
+        {centerContent && (
+          <div className="flex items-center justify-center">
+            {centerContent}
+          </div>
+        )}
+        
+        {/* Spacer - only if no center content */}
+        {!centerContent && <div className="flex-1" />}
         
         {/* Right: Custom content */}
         {rightContent && (
