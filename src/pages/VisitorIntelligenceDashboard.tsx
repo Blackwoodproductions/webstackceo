@@ -2751,12 +2751,12 @@ f.parentNode.insertBefore(j,f);
               </div>
               
               {/* Main Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column - Domain Status */}
-                <div className="space-y-4">
+                <div className="flex flex-col">
                   {/* Domain Not Found Card */}
                   {(selectedTrackedDomain || selectedDomainKey) && !selectedDomainInGmb && gmbOnboardingStep === 0 && (
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden">
+                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden flex-1 flex flex-col">
                       <div className="p-5">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center">
@@ -2909,10 +2909,10 @@ f.parentNode.insertBefore(j,f);
                 </div>
 
                 {/* Right Column - API Status / Actions */}
-                <div className="space-y-4">
+                <div className="flex flex-col">
                   {/* Quota Error Card */}
                   {gmbOnboardingStep === 0 && gmbAccounts.length === 0 && (gmbSyncError?.includes('429') || gmbSyncError?.includes('quota') || gmbSyncError?.includes('Quota')) && (
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden">
+                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden flex-1 flex flex-col">
                       <div className="px-5 py-3 border-b border-amber-500/20 bg-amber-500/5">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4 text-amber-500" />
