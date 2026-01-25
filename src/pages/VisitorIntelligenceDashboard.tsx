@@ -2591,7 +2591,7 @@ f.parentNode.insertBefore(j,f);
               )}
 
               {/* Onboarding Wizard */}
-              {gmbOnboardingStep > 0 && gmbAccounts.length > 0 && (
+              {gmbOnboardingStep > 0 && (
                 <GMBOnboardingWizard
                   domain={selectedTrackedDomain || selectedDomainKey}
                   accessToken={sessionStorage.getItem('gmb_access_token') || ''}
