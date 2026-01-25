@@ -1422,27 +1422,28 @@ const MarketingDashboard = () => {
         {/* Tabs - offset right from center, floating at bottom of header */}
         <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 192px))' }}>
           {[
-            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
-            { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
-            { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
-            { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
-            { id: 'gmb' as DashboardTab, label: 'GMB', icon: MapPin },
+            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye },
+            { id: 'seo-audit' as DashboardTab, label: 'Audit', icon: Search },
+            { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp },
+            { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText },
+            { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin },
             { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity },
-            { id: 'on-page-seo' as DashboardTab, label: 'On-page', icon: FileSearch },
-            { id: 'landing-pages' as DashboardTab, label: 'Landing', icon: Target },
+            { id: 'on-page-seo' as DashboardTab, label: 'SEO', icon: FileSearch },
+            { id: 'landing-pages' as DashboardTab, label: 'PPC', icon: Target },
           ].map((tab, index) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex items-center justify-center w-12 h-11 transition-all rounded-t-lg border-t border-x ${
+              className={`relative flex flex-col items-center justify-center w-14 h-12 transition-all rounded-t-lg border-t border-x gap-0.5 ${
                 activeTab === tab.id
                   ? 'bg-background text-primary border-border'
                   : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
               }`}
               title={tab.label}
             >
-              <tab.icon className="w-5 h-5" />
+              <tab.icon className="w-4 h-4" />
+              <span className="text-[9px] font-medium leading-none">{tab.label}</span>
               {/* Active tab bottom cover */}
               {activeTab === tab.id && (
                 <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
