@@ -1,15 +1,17 @@
 import { memo, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 const FloatingCodeBox = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [topPosition, setTopPosition] = useState('8rem');
   const [isGold, setIsGold] = useState(false);
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isEmbedMode = searchParams.get('embed') === 'true';
 
-  // Hide on admin/dashboard pages
+  // Hide on admin/dashboard pages and in embed mode
   const hiddenPaths = ['/visitor-intelligence-dashboard', '/admin'];
-  const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
+  const shouldHide = isEmbedMode || hiddenPaths.some(path => location.pathname.startsWith(path));
 
   // Delay render to not block initial page paint
   useEffect(() => {
