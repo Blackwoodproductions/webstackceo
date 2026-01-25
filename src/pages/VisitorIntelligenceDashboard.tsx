@@ -1604,16 +1604,8 @@ const MarketingDashboard = () => {
             {activeTab === 'visitor-intelligence' && (
               <div className="flex items-center gap-2">
                 <Select value={operatorStatus} onValueChange={(v) => setOperatorStatus(v as typeof operatorStatus)}>
-                  <SelectTrigger className="h-7 w-[110px] text-xs gap-1.5 bg-background">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${
-                        operatorStatus === 'online' ? 'bg-green-500 animate-pulse' :
-                        operatorStatus === 'busy' ? 'bg-amber-500' :
-                        operatorStatus === 'away' ? 'bg-yellow-500' :
-                        'bg-gray-500'
-                      }`} />
-                      <SelectValue />
-                    </div>
+                  <SelectTrigger className="h-7 w-[110px] text-xs bg-background">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
                     <SelectItem value="online">
