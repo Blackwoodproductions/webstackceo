@@ -2172,7 +2172,197 @@ const AuditResults = () => {
             </motion.div>
           )}
 
+          {/* SEO Health Scores - Expandable Category Details */}
+          <AnimatePresence mode="wait">
+            {Array.from(expandedCategories).map((categoryTitle) => {
+              const category = auditResults.find(c => c.title === categoryTitle);
+              if (!category) return null;
+              
+              return (
+                <motion.div
+                  key={categoryTitle}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-8 overflow-hidden"
+                >
+                  <div className="p-6 rounded-2xl bg-card border border-border/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
+                          <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">{category.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {category.checks.filter(c => c.status === 'pass').length} of {category.checks.length} checks passed
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
+                        {category.score}/100
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {category.checks.map((check, i) => (
+                        <motion.div
+                          key={check.name}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
+                        >
+                          {getStatusIcon(check.status)}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm">{check.name}</span>
+                              {check.value && (
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  check.status === 'pass' ? 'bg-green-500/20 text-green-400' :
+                                  check.status === 'warning' ? 'bg-amber-500/20 text-amber-400' :
+                                  'bg-red-500/20 text-red-400'
+                                }`}>
+                                  {check.value}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{check.description}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCategory(categoryTitle)}
+                      className="mt-4 w-full"
+                    >
+                      <ChevronUp className="w-4 h-4 mr-2" />
+                      Collapse
+                    </Button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
+          {/* Actionable Recommendations Section */}
+          {recommendations.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="mb-12"
+            >
+              <h2 className="text-xl font-bold mb-6">Actionable Recommendations</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                {recommendations.map((rec, i) => (
+                  <motion.div
+                    key={rec.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className={`p-6 rounded-2xl border ${
+                      rec.service === 'BRON' 
+                        ? 'bg-gradient-to-br from-cyan-500/5 to-blue-500/5 border-cyan-500/30' 
+                        : rec.service === 'CADE'
+                        ? 'bg-gradient-to-br from-violet-500/5 to-purple-500/5 border-violet-500/30'
+                        : 'bg-card border-border/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`p-2.5 rounded-xl ${
+                        rec.priority === 'high' 
+                          ? 'bg-red-500/20' 
+                          : rec.priority === 'medium' 
+                          ? 'bg-amber-500/20' 
+                          : 'bg-green-500/20'
+                      }`}>
+                        <rec.icon className={`w-5 h-5 ${
+                          rec.priority === 'high' 
+                            ? 'text-red-400' 
+                            : rec.priority === 'medium' 
+                            ? 'text-amber-400' 
+                            : 'text-green-400'
+                        }`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className="font-semibold text-lg">{rec.title}</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            rec.priority === 'high' 
+                              ? 'bg-red-500/20 text-red-400' 
+                              : rec.priority === 'medium' 
+                              ? 'bg-amber-500/20 text-amber-400' 
+                              : 'bg-green-500/20 text-green-400'
+                          }`}>
+                            {rec.priority} priority
+                          </span>
+                          {rec.service && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                              rec.service === 'BRON' 
+                                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white' 
+                                : 'bg-gradient-to-r from-violet-500 to-purple-500 text-white'
+                            }`}>
+                              {rec.service}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{rec.description}</p>
+                        
+                        {/* Service-specific illustration */}
+                        {rec.service === 'BRON' && (
+                          <div className="mb-4 rounded-lg overflow-hidden border border-cyan-500/20">
+                            <img 
+                              src={bronDiamondFlow} 
+                              alt="BRON Diamond Flow Architecture" 
+                              className="w-full h-auto"
+                            />
+                          </div>
+                        )}
+                        {rec.service === 'CADE' && (
+                          <div className="mb-4 rounded-lg overflow-hidden border border-violet-500/20">
+                            <img 
+                              src={cadeContentAutomation} 
+                              alt="CADE Content Automation" 
+                              className="w-full h-auto"
+                            />
+                          </div>
+                        )}
+                        
+                        <ul className="space-y-1.5 mb-4">
+                          {rec.actions.map((action, j) => (
+                            <li key={j} className="flex items-center gap-2 text-sm">
+                              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                              <span className="text-muted-foreground">{action}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        
+                        {rec.comingSoon && rec.comingSoon.length > 0 && (
+                          <div className="pt-3 border-t border-border/50">
+                            <span className="text-xs text-muted-foreground">Coming soon:</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {rec.comingSoon.map((item, j) => (
+                                <span 
+                                  key={j} 
+                                  className="text-xs px-2 py-1 rounded-full bg-muted/50 text-muted-foreground"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Pricing Section - hide in Case Study mode */}
           {!isCaseStudyMode && (
