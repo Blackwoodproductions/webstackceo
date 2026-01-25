@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, X, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, MousePointer, ArrowRight,
-  ExternalLink, Flame, Layers, AlertCircle, LogOut, Award, Building
+  ExternalLink, Flame, Layers, AlertCircle, LogOut, Award, Building, Sparkles
 } from 'lucide-react';
 import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
@@ -341,6 +341,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
                 <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
                   <Building className="w-4 h-4 text-slate-500" />
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
+                </div>
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
               {/* Feature Pills */}
