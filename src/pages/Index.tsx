@@ -33,7 +33,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
       {/* Full-page interactive grid */}
-      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.125} />
+      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.156} />
       {/* Floating AI Shield */}
       <FloatingAIShield />
       <FloatingAIShield />
