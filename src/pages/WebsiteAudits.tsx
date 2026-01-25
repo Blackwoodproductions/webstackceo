@@ -7,6 +7,7 @@ import SEO from "@/components/SEO";
 import BackToTop from "@/components/ui/back-to-top";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import DomainAuditSection from "@/components/sections/DomainAuditSection";
 import { Button } from "@/components/ui/button";
 import {
   Globe,
@@ -124,6 +125,9 @@ const WebsiteAudits = () => {
       <BackToTop />
 
       <main className="pt-24 pb-16">
+        {/* Domain Audit Input Section */}
+        <DomainAuditSection />
+        
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <motion.div
