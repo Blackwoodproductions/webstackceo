@@ -53,6 +53,7 @@ import { cn } from '@/lib/utils';
 import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpandableRow';
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBOnboardingWizard } from '@/components/marketing/GMBOnboardingWizard';
+import { GMBPerformancePanel } from '@/components/marketing/GMBPerformancePanel';
 
 interface Lead {
   id: string;
@@ -2750,29 +2751,38 @@ f.parentNode.insertBefore(j,f);
 
               {/* Show matched location if domain is found */}
               {selectedDomainInGmb && (
-                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-6 h-6 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-1">Domain Linked to Business Profile</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        <span className="font-medium text-foreground">{selectedTrackedDomain || selectedDomainKey}</span> is linked to:
-                      </p>
-                      <div className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
-                        <MapPin className="w-5 h-5 text-primary" />
-                        <div>
-                          <p className="font-medium">{selectedDomainInGmb.title}</p>
-                          {selectedDomainInGmb.storefrontAddress && (
-                            <p className="text-sm text-muted-foreground">
-                              {selectedDomainInGmb.storefrontAddress.locality}, {selectedDomainInGmb.storefrontAddress.administrativeArea}
-                            </p>
-                          )}
+                <div className="space-y-6">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-6 h-6 text-green-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-lg mb-1">Domain Linked to Business Profile</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          <span className="font-medium text-foreground">{selectedTrackedDomain || selectedDomainKey}</span> is linked to:
+                        </p>
+                        <div className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
+                          <MapPin className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium">{selectedDomainInGmb.title}</p>
+                            {selectedDomainInGmb.storefrontAddress && (
+                              <p className="text-sm text-muted-foreground">
+                                {selectedDomainInGmb.storefrontAddress.locality}, {selectedDomainInGmb.storefrontAddress.administrativeArea}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Performance Insights Panel */}
+                  <GMBPerformancePanel
+                    accessToken={sessionStorage.getItem('gmb_access_token') || ''}
+                    locationName={selectedDomainInGmb.name}
+                    locationTitle={selectedDomainInGmb.title}
+                  />
                 </div>
               )}
 
