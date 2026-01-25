@@ -2692,7 +2692,7 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
           {!gmbAuthenticated ? (
             /* Not Connected State */
-            <div className="text-center py-16 max-w-xl mx-auto">
+            <div className="text-center py-12 max-w-4xl mx-auto">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <MapPin className="w-10 h-10 text-white" />
               </div>
@@ -2702,51 +2702,11 @@ f.parentNode.insertBefore(j,f);
                   Domain: {selectedTrackedDomain || selectedDomainKey}
                 </p>
               )}
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground max-w-lg mx-auto mb-6">
                 Manage your Google My Business listings, respond to reviews, update business info, and track local SEO performance—all from one dashboard.
               </p>
               
-              {/* CADE Integration Banner */}
-              <div className="max-w-lg mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FileText className="w-5 h-5 text-violet-500" />
-                  <span className="font-semibold text-violet-500">Powered by CADE</span>
-                </div>
-                <p className="text-sm text-foreground">
-                  When CADE is active, your newest articles and FAQ drops are automatically posted to your GMB listing—keeping your business profile fresh with insights.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {[
-                  { icon: MapPin, label: 'Manage Locations', desc: 'Update hours, address, photos' },
-                  { icon: MessageCircle, label: 'Reviews', desc: 'Monitor & respond to reviews' },
-                  { icon: BarChart3, label: 'Insights', desc: 'Track views, calls, directions' },
-                  { icon: Newspaper, label: 'Auto Posts', desc: 'CADE posts new content for you' },
-                ].map((feature) => (
-                  <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-blue-500/50 transition-colors">
-                    <feature.icon className="w-6 h-6 text-primary mx-auto mb-2" />
-                    <p className="font-medium text-sm">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-              
-              {/* GMB Autopilot Features */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
-                {[
-                  { icon: FileText, label: 'Article Posts', desc: 'New blog articles auto-posted to GMB' },
-                  { icon: HelpCircle, label: 'FAQ Updates', desc: 'FAQ drops keep your Q&A fresh' },
-                  { icon: TrendingUp, label: 'Fresh Insights', desc: 'Consistent activity boosts local rankings' },
-                ].map((feature) => (
-                  <div key={feature.label} className="p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20">
-                    <feature.icon className="w-6 h-6 text-green-500 mx-auto mb-2" />
-                    <p className="font-medium text-sm">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
-                ))}
-              </div>
-
+              {/* Connect Button - Now right after heading */}
               <Button
                 size="lg"
                 onClick={async () => {
@@ -2820,7 +2780,7 @@ f.parentNode.insertBefore(j,f);
                   }
                 }}
                 disabled={gmbConnecting}
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold px-8 py-6 text-lg"
+                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold px-8 py-6 text-lg mb-2"
               >
                 {gmbConnecting ? (
                   <span className="flex items-center gap-2">
@@ -2840,9 +2800,50 @@ f.parentNode.insertBefore(j,f);
                 )}
               </Button>
               
-              <p className="text-xs text-muted-foreground mt-4">
+              <p className="text-xs text-muted-foreground mb-8">
                 Requires a Google account with access to at least one Business Profile
               </p>
+              
+              {/* CADE Integration Banner */}
+              <div className="max-w-lg mx-auto mb-8 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/15 border border-violet-500/30">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <FileText className="w-5 h-5 text-violet-500" />
+                  <span className="font-semibold text-violet-500">Powered by CADE</span>
+                </div>
+                <p className="text-sm text-foreground">
+                  When CADE is active, your newest articles and FAQ drops are automatically posted to your GMB listing—keeping your business profile fresh with insights.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { icon: MapPin, label: 'Manage Locations', desc: 'Update hours, address, photos' },
+                  { icon: MessageCircle, label: 'Reviews', desc: 'Monitor & respond to reviews' },
+                  { icon: BarChart3, label: 'Insights', desc: 'Track views, calls, directions' },
+                  { icon: Newspaper, label: 'Auto Posts', desc: 'CADE posts new content for you' },
+                ].map((feature) => (
+                  <div key={feature.label} className="p-4 rounded-xl bg-muted/30 border border-border hover:border-blue-500/50 transition-colors">
+                    <feature.icon className="w-6 h-6 text-primary mx-auto mb-2" />
+                    <p className="font-medium text-sm">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
+              
+              {/* GMB Autopilot Features */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                {[
+                  { icon: FileText, label: 'Article Posts', desc: 'New blog articles auto-posted to GMB' },
+                  { icon: HelpCircle, label: 'FAQ Updates', desc: 'FAQ drops keep your Q&A fresh' },
+                  { icon: TrendingUp, label: 'Fresh Insights', desc: 'Consistent activity boosts local rankings' },
+                ].map((feature) => (
+                  <div key={feature.label} className="p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20">
+                    <feature.icon className="w-6 h-6 text-green-500 mx-auto mb-2" />
+                    <p className="font-medium text-sm">{feature.label}</p>
+                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             /* Connected State */
