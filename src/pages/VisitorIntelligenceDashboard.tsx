@@ -1412,7 +1412,7 @@ const MarketingDashboard = () => {
       />
 
       {/* Header with integrated tabs - wrapped with glow effect, sticky */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1300px] mx-auto relative glow-primary sticky top-4 z-50">
+      <header className="border border-border bg-card rounded-t-xl max-w-[1300px] mx-auto relative glow-primary sticky top-0 z-50">
         {/* Tabs - offset slightly right from center, floating at bottom of header */}
         <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
           {[
