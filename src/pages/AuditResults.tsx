@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { glossaryTerms } from "@/data/glossaryData";
 import { WebsiteProfileSection } from "@/components/audit/WebsiteProfileSection";
+import { ProgressIndicator, ProgressSummaryBanner } from "@/components/audit/ProgressIndicator";
 import GlossaryTooltip from "@/components/ui/glossary-tooltip";
 import { Link } from "react-router-dom";
 import {
@@ -75,6 +76,17 @@ import FloatingExportPDF from "@/components/ui/floating-export-pdf";
 import { generateAuditPDF } from "@/lib/generateAuditPDF";
 import bronDiamondFlow from "@/assets/bron-seo-diamond-flow.png";
 import cadeContentAutomation from "@/assets/cade-content-automation.png";
+
+// Baseline metrics from first audit for progress tracking
+interface BaselineMetrics {
+  domainRating: number;
+  organicTraffic: number;
+  organicKeywords: number;
+  backlinks: number;
+  referringDomains: number;
+  trafficValue: number;
+  snapshotDate: string;
+}
 
 interface TechnicalSEO {
   hasTitle: boolean;
@@ -840,10 +852,11 @@ const AuditResults = () => {
     dr: true,
     value: true,
   });
+  
+  // Baseline metrics for progress tracking (first audit snapshot)
+  const [baselineMetrics, setBaselineMetrics] = useState<BaselineMetrics | null>(null);
 
   const decodedDomain = domain ? decodeURIComponent(domain) : "";
-
-  // Match glossary terms based on audit categories and website profile
   const matchedGlossaryTerms = useMemo(() => {
     const relevantTerms: Array<{ term: string; slug: string; shortDescription: string }> = [];
     const categories = new Set<string>();
@@ -1100,6 +1113,45 @@ const AuditResults = () => {
     };
     
     checkExisting();
+  }, [decodedDomain]);
+
+  // Fetch baseline metrics from first audit history snapshot
+  useEffect(() => {
+    if (!decodedDomain) return;
+    
+    const fetchBaseline = async () => {
+      try {
+        // Get the earliest audit history record for this domain
+        const { data, error } = await supabase
+          .from('audit_history')
+          .select('*')
+          .eq('domain', decodedDomain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0])
+          .order('snapshot_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error fetching baseline:', error);
+          return;
+        }
+        
+        if (data) {
+          setBaselineMetrics({
+            domainRating: data.domain_rating || 0,
+            organicTraffic: Number(data.organic_traffic) || 0,
+            organicKeywords: Number(data.organic_keywords) || 0,
+            backlinks: Number(data.backlinks) || 0,
+            referringDomains: Number(data.referring_domains) || 0,
+            trafficValue: Number(data.traffic_value) || 0,
+            snapshotDate: data.snapshot_at,
+          });
+        }
+      } catch (err) {
+        console.error('Baseline fetch error:', err);
+      }
+    };
+    
+    fetchBaseline();
   }, [decodedDomain]);
 
   useEffect(() => {
@@ -1637,60 +1689,143 @@ const AuditResults = () => {
                 }}
               />
 
+              {/* Progress Summary Banner - shows when there's historical data */}
+              {baselineMetrics && dashboardMetrics && (
+                <ProgressSummaryBanner
+                  metrics={{
+                    domainRating: { current: dashboardMetrics.domainRating, baseline: baselineMetrics.domainRating },
+                    organicTraffic: { current: dashboardMetrics.organicTraffic, baseline: baselineMetrics.organicTraffic },
+                    organicKeywords: { current: dashboardMetrics.organicKeywords, baseline: baselineMetrics.organicKeywords },
+                    backlinks: { current: dashboardMetrics.backlinks, baseline: baselineMetrics.backlinks },
+                    referringDomains: { current: dashboardMetrics.referringDomains, baseline: baselineMetrics.referringDomains },
+                    trafficValue: { current: dashboardMetrics.trafficValue, baseline: baselineMetrics.trafficValue },
+                  }}
+                  baselineDate={baselineMetrics.snapshotDate}
+                />
+              )}
+
               {/* Main Dials Row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-6">
                 {dashboardMetrics && (
                   <>
-                    <ScoreDial
-                      value={dashboardMetrics.domainRating}
-                      max={100}
-                      label="Domain Rating"
-                      size="md"
-                      color="violet"
-                    />
-                    <ScoreDial
-                      value={dashboardMetrics.organicTraffic}
-                      max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
-                      label="Organic Traffic"
-                      size="md"
-                      color="green"
-                      showPercentage={false}
-                      suffix="/mo"
-                    />
-                    <ScoreDial
-                      value={dashboardMetrics.trafficValue}
-                      max={Math.max(dashboardMetrics.trafficValue * 1.5, 100)}
-                      label="Traffic Value"
-                      size="md"
-                      color="cyan"
-                      showPercentage={false}
-                      prefix="$"
-                      showFullNumber={true}
-                    />
-                    <ScoreDial
-                      value={dashboardMetrics.organicKeywords}
-                      max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
-                      label="Organic Keywords"
-                      size="md"
-                      color="amber"
-                      showPercentage={false}
-                    />
-                    <ScoreDial
-                      value={dashboardMetrics.backlinks}
-                      max={Math.max(dashboardMetrics.backlinks * 1.2, 1000)}
-                      label="Backlinks"
-                      size="md"
-                      color="primary"
-                      showPercentage={false}
-                    />
-                    <ScoreDial
-                      value={dashboardMetrics.referringDomains}
-                      max={Math.max(dashboardMetrics.referringDomains * 1.3, 500)}
-                      label="Referring Domains"
-                      size="md"
-                      color="green"
-                      showPercentage={false}
-                    />
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.domainRating}
+                        max={100}
+                        label="Domain Rating"
+                        size="md"
+                        color="violet"
+                      />
+                      {baselineMetrics && dashboardMetrics.domainRating !== baselineMetrics.domainRating && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.domainRating}
+                            baseline={baselineMetrics.domainRating}
+                            showPercent={false}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.organicTraffic}
+                        max={Math.max(dashboardMetrics.organicTraffic * 1.5, 1000)}
+                        label="Organic Traffic"
+                        size="md"
+                        color="green"
+                        showPercentage={false}
+                        suffix="/mo"
+                      />
+                      {baselineMetrics && dashboardMetrics.organicTraffic !== baselineMetrics.organicTraffic && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.organicTraffic}
+                            baseline={baselineMetrics.organicTraffic}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.trafficValue}
+                        max={Math.max(dashboardMetrics.trafficValue * 1.5, 100)}
+                        label="Traffic Value"
+                        size="md"
+                        color="cyan"
+                        showPercentage={false}
+                        prefix="$"
+                        showFullNumber={true}
+                      />
+                      {baselineMetrics && dashboardMetrics.trafficValue !== baselineMetrics.trafficValue && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.trafficValue}
+                            baseline={baselineMetrics.trafficValue}
+                            format="currency"
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.organicKeywords}
+                        max={Math.max(dashboardMetrics.organicKeywords * 1.5, 100)}
+                        label="Organic Keywords"
+                        size="md"
+                        color="amber"
+                        showPercentage={false}
+                      />
+                      {baselineMetrics && dashboardMetrics.organicKeywords !== baselineMetrics.organicKeywords && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.organicKeywords}
+                            baseline={baselineMetrics.organicKeywords}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.backlinks}
+                        max={Math.max(dashboardMetrics.backlinks * 1.2, 1000)}
+                        label="Backlinks"
+                        size="md"
+                        color="primary"
+                        showPercentage={false}
+                      />
+                      {baselineMetrics && dashboardMetrics.backlinks !== baselineMetrics.backlinks && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.backlinks}
+                            baseline={baselineMetrics.backlinks}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <ScoreDial
+                        value={dashboardMetrics.referringDomains}
+                        max={Math.max(dashboardMetrics.referringDomains * 1.3, 500)}
+                        label="Referring Domains"
+                        size="md"
+                        color="green"
+                        showPercentage={false}
+                      />
+                      {baselineMetrics && dashboardMetrics.referringDomains !== baselineMetrics.referringDomains && (
+                        <div className="mt-2">
+                          <ProgressIndicator
+                            current={dashboardMetrics.referringDomains}
+                            baseline={baselineMetrics.referringDomains}
+                            size="sm"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
