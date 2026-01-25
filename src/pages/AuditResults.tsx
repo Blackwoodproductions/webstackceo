@@ -2137,9 +2137,16 @@ const AuditResults = () => {
       
       {/* Case Study Selector Bar - only in case study mode */}
       {!isEmbedMode && isCaseStudyMode && allCaseStudies.length > 0 && (
-        <div className="sticky top-16 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
+        <div className="bg-card/95 backdrop-blur-sm border-b border-border">
           <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground" asChild>
+                <Link to="/case-studies">
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  All Case Studies
+                </Link>
+              </Button>
+              <div className="w-px h-5 bg-border" />
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-primary" />
                 <Select
@@ -2163,18 +2170,11 @@ const AuditResults = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="w-px h-5 bg-border" />
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground hidden sm:block">
                 {allCaseStudies.length} case {allCaseStudies.length === 1 ? 'study' : 'studies'} available
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-                <Link to="/case-studies">
-                  <BarChart3 className="w-3.5 h-3.5 mr-1.5" />
-                  View All
-                </Link>
-              </Button>
               <Button size="sm" className="h-8 text-xs gap-1.5" asChild>
                 <a href="/pricing">
                   <Sparkles className="w-3.5 h-3.5" />
