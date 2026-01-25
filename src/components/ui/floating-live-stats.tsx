@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Users, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +7,8 @@ const EXCLUDED_ROUTES = ['/admin', '/auth', '/visitor-intelligence-dashboard'];
 
 const FloatingLiveStats = memo(() => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const isEmbedMode = searchParams.get('embed') === 'true';
   const [isVisible, setIsVisible] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
   const [newToday, setNewToday] = useState(0);
@@ -14,8 +16,8 @@ const FloatingLiveStats = memo(() => {
   const [opacity, setOpacity] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Check if current route should show stats
-  const shouldShow = !EXCLUDED_ROUTES.some(route => location.pathname.startsWith(route));
+  // Check if current route should show stats (hide in embed mode or excluded routes)
+  const shouldShow = !isEmbedMode && !EXCLUDED_ROUTES.some(route => location.pathname.startsWith(route));
 
   // Delay render to not block initial page paint
   useEffect(() => {

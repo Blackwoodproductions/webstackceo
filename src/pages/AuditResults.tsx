@@ -1679,19 +1679,21 @@ const AuditResults = () => {
           >
             <div className="p-6 rounded-2xl bg-card border border-border/50">
 
-              {/* Floating Export PDF Button */}
-              <FloatingExportPDF 
-                domain={decodedDomain} 
-                onExport={() => {
-                  generateAuditPDF({
-                    domain: decodedDomain,
-                    overallScore,
-                    dashboardMetrics,
-                    auditResults,
-                    historyData: historyData || undefined,
-                  });
-                }}
-              />
+              {/* Floating Export PDF Button - hide in embed mode */}
+              {!isEmbedMode && (
+                <FloatingExportPDF 
+                  domain={decodedDomain} 
+                  onExport={() => {
+                    generateAuditPDF({
+                      domain: decodedDomain,
+                      overallScore,
+                      dashboardMetrics,
+                      auditResults,
+                      historyData: historyData || undefined,
+                    });
+                  }}
+                />
+              )}
 
               {/* Progress Summary Banner - shows when there's historical data */}
               {baselineMetrics && dashboardMetrics && (
