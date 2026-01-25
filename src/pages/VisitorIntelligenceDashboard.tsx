@@ -40,6 +40,7 @@ import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
 import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
+import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import {
   Select,
   SelectGroup,
@@ -2798,9 +2799,13 @@ f.parentNode.insertBefore(j,f);
                 </div>
               ))}
             </div>
-
-            {/* Extended Content Section */}
-            <CADEExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
+            {/* Platform Connection Section */}
+            <CADEPlatformConnect 
+              domain={selectedTrackedDomain || selectedDomainKey} 
+              onConnectionComplete={(platform) => {
+                toast.success(`Successfully connected to ${platform}!`);
+              }}
+            />
           </div>
         </div>
       )}
