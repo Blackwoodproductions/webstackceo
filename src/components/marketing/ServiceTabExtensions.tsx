@@ -384,114 +384,54 @@ export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSe
 
   return (
     <div className="mt-8 space-y-6">
-      {/* Main Distribution Section */}
+      {/* CADE Subscription Required Box */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="relative p-6 rounded-2xl bg-gradient-to-br from-pink-500/5 via-rose-500/10 to-red-500/5 border border-pink-500/20 overflow-hidden"
+        className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/15 to-pink-500/10 border-2 border-violet-500/30 overflow-hidden"
       >
-        {/* Floating particles */}
+        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="absolute" style={{ left: `${10 + i * 12}%`, top: "50%" }}>
-              <FloatingParticle delay={i * 0.4} color="bg-pink-400" />
-            </div>
-          ))}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold flex items-center gap-3">
-                <motion.div
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center"
-                >
-                  <Bell className="w-5 h-5 text-white" />
-                </motion.div>
-                Automatic Content Distribution
-              </h3>
-              <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-                When CADE publishes new content, social posts are generated and scheduled automatically.
-              </p>
-            </div>
-            <Badge className="bg-pink-500/10 text-pink-500 border-pink-500/30">
-              Powered by CADE
-            </Badge>
-          </div>
-
-          {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-4">
-            {/* Timeline - Left */}
-            <div className="p-4 rounded-xl bg-background/30 border border-border">
-              <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-pink-500" />
-                Distribution Timeline
-              </h4>
-              <div className="relative">
-                <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-pink-500 via-rose-500 to-transparent" />
-                
-                <div className="space-y-2.5">
-                  {distributionSteps.map((item, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.1 }}
-                      className="relative pl-8"
-                    >
-                      <div className={`absolute left-1 w-4 h-4 rounded-full flex items-center justify-center ${
-                        item.status === "active" 
-                          ? "bg-gradient-to-br from-pink-500 to-rose-500 animate-pulse" 
-                          : "bg-pink-500"
-                      }`}>
-                        <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-pink-500 border-pink-500/30 text-xs shrink-0">
-                          {item.time}
-                        </Badge>
-                        <div>
-                          <span className="text-sm font-medium">{item.action}</span>
-                          <span className="text-xs text-muted-foreground ml-2">{item.detail}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
+              >
+                <Sparkles className="w-7 h-7 text-white" />
+              </motion.div>
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  CADE Subscription Required
+                  <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
+                    Content Engine
+                  </Badge>
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                  Social Signals is powered by CADE. When you subscribe, every new article and FAQ drop is automatically shared across your connected social platforms.
+                </p>
               </div>
             </div>
 
-            {/* Platform Previews - Right */}
-            <div className="p-4 rounded-xl bg-background/30 border border-border">
-              <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-pink-500" />
-                AI-Generated Post Previews
-              </h4>
-              <div className="space-y-3">
-                {platformExamples.map((platform, i) => (
-                  <motion.div
-                    key={platform.platform}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="p-3 rounded-lg bg-background/50 border border-border"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`w-6 h-6 rounded bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
-                        <platform.icon className="w-3 h-3 text-white" />
-                      </div>
-                      <span className="text-xs font-semibold">{platform.platform}</span>
-                      <span className="text-[10px] text-muted-foreground ml-auto">{platform.stats.chars} chars</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-3">{platform.preview}</p>
-                  </motion.div>
-                ))}
+            <div className="flex flex-col items-center p-4 rounded-xl bg-background/50 border border-violet-500/20 min-w-[200px]">
+              <p className="text-sm text-muted-foreground">Starting at</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-violet-500">$99</span>
+                <span className="text-sm text-muted-foreground">/month</span>
               </div>
+              <div className="mt-2 space-y-1 text-center">
+                <p className="text-xs text-muted-foreground">2 articles per week</p>
+                <p className="text-xs text-muted-foreground">3-5 FAQs per article</p>
+              </div>
+              <Badge variant="outline" className="mt-3 text-violet-500 border-violet-500/30">
+                Includes Social Signals
+              </Badge>
             </div>
           </div>
         </div>
