@@ -1152,7 +1152,7 @@ export const GADashboardPanel = ({
                 <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
               </CardTitle>
               <CardDescription className="text-xs">
-                {properties.find(p => p.name === selectedProperty)?.displayName || "Traffic and engagement data"}
+                {externalSelectedSite ? normalizeDomain(externalSelectedSite) : (properties.find(p => p.name === selectedProperty)?.displayName || "Traffic and engagement data")}
               </CardDescription>
             </div>
           </div>
