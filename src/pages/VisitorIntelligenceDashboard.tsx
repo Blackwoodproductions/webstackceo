@@ -517,33 +517,26 @@ const MarketingDashboard = () => {
     setSelectedGmbLocation(selectedDomainInGmb?.name ?? null);
   }, [selectedDomainInGmb?.name]);
 
-  // Fetch saved audit for selected domain when tab changes or domain changes
+  // Fetch saved audit for selected domain (used for the audit pill on all tabs)
   useEffect(() => {
     const fetchAuditForDomain = async () => {
       const domainToCheck = selectedTrackedDomain || selectedDomainKey;
       
-      // If no domain selected but we're on on-page-seo tab, try to load the most recent audit
-      if (activeTab !== 'on-page-seo') {
+      // If no domain selected, clear the audit state
+      if (!domainToCheck) {
         setSavedAuditForDomain(null);
         return;
       }
       
       setIsLoadingAudit(true);
       try {
-        let query = supabase
+        // Clean the domain for matching
+        const cleanDomain = domainToCheck.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+        const { data, error } = await supabase
           .from('saved_audits')
-          .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at');
-        
-        if (domainToCheck) {
-          // Clean the domain for matching
-          const cleanDomain = domainToCheck.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-          query = query.ilike('domain', cleanDomain);
-        } else {
-          // No domain selected - get most recent audit
-          query = query.order('created_at', { ascending: false }).limit(1);
-        }
-        
-        const { data, error } = await query.maybeSingle();
+          .select('id, domain, slug, site_title, domain_rating, organic_traffic, organic_keywords, backlinks, referring_domains, traffic_value, created_at')
+          .ilike('domain', cleanDomain)
+          .maybeSingle();
         
         if (error) {
           console.error('Error fetching audit:', error);
@@ -560,7 +553,7 @@ const MarketingDashboard = () => {
     };
     
     fetchAuditForDomain();
-  }, [selectedTrackedDomain, selectedDomainKey, activeTab]);
+  }, [selectedTrackedDomain, selectedDomainKey]);
 
   // Trigger auto SEO audit for a domain
   const triggerAutoAudit = useCallback(async (domain: string) => {
@@ -1535,33 +1528,74 @@ const MarketingDashboard = () => {
         onCustomDateRangeChange={setDiagramCustomDateRange}
         showPageFilter={activeTab === 'visitor-intelligence'}
         pageFilter={pageFilter}
-        rightContent={activeTab === 'visitor-intelligence' ? (
+        rightContent={(
           <>
-            {/* API Docs Download */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => generateAPIDocs()}
-              className="h-7 gap-1.5 text-xs"
-              title="Download API Documentation PDF"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">API Docs</span>
-            </Button>
+            {/* Free SEO Audit / Case Study Pill */}
+            {selectedTrackedDomain && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  const cleanDomain = selectedTrackedDomain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                  if (savedAuditForDomain) {
+                    // Navigate to case study page
+                    navigate(`/case-study/${encodeURIComponent(cleanDomain)}`);
+                  } else {
+                    // Run audit first, then navigate
+                    triggerAutoAudit(cleanDomain);
+                    navigate(`/audit/${encodeURIComponent(cleanDomain)}`);
+                  }
+                }}
+                className={`h-7 gap-1.5 text-xs font-semibold rounded-full px-4 ${
+                  savedAuditForDomain 
+                    ? 'bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white' 
+                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white'
+                }`}
+                title={savedAuditForDomain ? 'View 28-day Case Study report' : 'Run a free SEO audit for this domain'}
+              >
+                {savedAuditForDomain ? (
+                  <>
+                    <FileSearch className="w-3.5 h-3.5" />
+                    <span>CASE STUDY</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Free SEO Audit</span>
+                  </>
+                )}
+              </Button>
+            )}
             
-            <div className="flex items-center gap-2">
-              <Switch
-                id="chat-online"
-                checked={chatOnline}
-                onCheckedChange={setChatOnline}
-                className="data-[state=checked]:bg-green-500"
-              />
-              <Label htmlFor="chat-online" className="text-xs text-muted-foreground">
-                {chatOnline ? 'Online' : 'Offline'}
-              </Label>
-            </div>
+            {/* API Docs Download - only on VI tab */}
+            {activeTab === 'visitor-intelligence' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => generateAPIDocs()}
+                className="h-7 gap-1.5 text-xs"
+                title="Download API Documentation PDF"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">API Docs</span>
+              </Button>
+            )}
+            
+            {/* Online/Offline toggle - only on VI tab */}
+            {activeTab === 'visitor-intelligence' && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="chat-online"
+                  checked={chatOnline}
+                  onCheckedChange={setChatOnline}
+                  className="data-[state=checked]:bg-green-500"
+                />
+                <Label htmlFor="chat-online" className="text-xs text-muted-foreground">
+                  {chatOnline ? 'Online' : 'Offline'}
+                </Label>
+              </div>
+            )}
           </>
-        ) : undefined}
+        )}
       />
 
       {/* Main Layout - Only show for Visitor Intelligence tab */}
