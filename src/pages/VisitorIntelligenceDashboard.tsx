@@ -30,6 +30,7 @@ import { useTheme } from 'next-themes';
 import { format } from 'date-fns';
 import SEO from '@/components/SEO';
 import { generateAPIDocs } from '@/lib/generateAPIDocs';
+import { InlineSEOReport } from '@/components/audit/InlineSEOReport';
 
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
@@ -2091,199 +2092,141 @@ f.parentNode.insertBefore(j,f);
               <p className="text-sm text-muted-foreground">Analyzing domain...</p>
             </div>
           ) : inlineAuditData ? (
-            /* Inline audit results */
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                    <Globe className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{inlineAuditData.domain}</h2>
-                    <p className="text-sm text-muted-foreground">SEO Audit Results</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setInlineAuditData(null);
-                      setAuditDomainInput('');
-                    }}
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    New Audit
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(`/audit/${encodeURIComponent(inlineAuditData.domain)}`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-                  >
-                    View Full Report
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Domain Rating</p>
-                  <p className="text-2xl font-bold text-blue-400">{inlineAuditData.domainRating ?? '—'}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Organic Traffic</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {inlineAuditData.organicTraffic ? inlineAuditData.organicTraffic.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Keywords</p>
-                  <p className="text-2xl font-bold text-violet-400">
-                    {inlineAuditData.organicKeywords ? inlineAuditData.organicKeywords.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Backlinks</p>
-                  <p className="text-2xl font-bold text-amber-400">
-                    {inlineAuditData.backlinks ? inlineAuditData.backlinks.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Referring Domains</p>
-                  <p className="text-2xl font-bold text-cyan-400">
-                    {inlineAuditData.referringDomains ? inlineAuditData.referringDomains.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Traffic Value</p>
-                  <p className="text-2xl font-bold text-rose-400">
-                    ${inlineAuditData.trafficValue ? inlineAuditData.trafficValue.toLocaleString() : '0'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-center text-sm text-muted-foreground">
-                <Badge variant="outline" className="text-green-500 border-green-500/30">
-                  <Activity className="w-3 h-3 mr-1" />
-                  Auto-saved to your audits
-                </Badge>
-              </div>
-            </div>
+            /* Inline audit results with full report */
+            <InlineSEOReport
+              auditData={inlineAuditData}
+              savedAudit={savedAuditForDomain ? {
+                domain: savedAuditForDomain.domain,
+                created_at: savedAuditForDomain.created_at,
+                site_title: savedAuditForDomain.site_title || undefined,
+              } : null}
+              onNewAudit={() => {
+                setInlineAuditData(null);
+                setAuditDomainInput('');
+              }}
+              onRefreshAudit={async () => {
+                const domainToAudit = inlineAuditData.domain;
+                setIsRunningAudit(true);
+                setInlineAuditError(null);
+                try {
+                  const { data, error } = await supabase.functions.invoke('domain-audit', {
+                    body: { domain: domainToAudit }
+                  });
+                  if (error) throw error;
+                  const auditMetrics = {
+                    domain: domainToAudit,
+                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
+                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
+                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
+                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
+                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
+                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
+                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                  };
+                  setInlineAuditData(auditMetrics);
+                  // Auto-save and create history snapshot
+                  const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                  await supabase.from('saved_audits').upsert({
+                    domain: domainToAudit,
+                    slug,
+                    domain_rating: auditMetrics.domainRating,
+                    organic_traffic: auditMetrics.organicTraffic,
+                    organic_keywords: auditMetrics.organicKeywords,
+                    backlinks: auditMetrics.backlinks,
+                    referring_domains: auditMetrics.referringDomains,
+                    traffic_value: auditMetrics.trafficValue,
+                    ahrefs_rank: auditMetrics.ahrefsRank,
+                  }, { onConflict: 'slug' });
+                  toast.success('Audit refreshed and saved');
+                } catch (err) {
+                  console.error('Audit error:', err);
+                  setInlineAuditError('Failed to refresh audit');
+                  toast.error('Failed to refresh audit');
+                } finally {
+                  setIsRunningAudit(false);
+                }
+              }}
+              isRefreshing={isRunningAudit}
+              viMetrics={sessions.length > 0 ? {
+                sessions: sessions.length,
+                leads: leads.length,
+                toolInteractions: toolInteractions.length,
+              } : undefined}
+              gaMetrics={gaMetrics}
+              gscMetrics={undefined} // GSC metrics would need to be passed from GSCDashboardPanel
+            />
           ) : savedAuditForDomain ? (
-            /* Saved audit exists - show summary */
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                    <Globe className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{savedAuditForDomain.domain}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {savedAuditForDomain.site_title || 'SEO Audit Results'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button 
-                    variant="outline"
-                    onClick={async () => {
-                      // Re-run audit for this domain
-                      const domainToAudit = savedAuditForDomain.domain;
-                      setIsRunningAudit(true);
-                      setInlineAuditError(null);
-                      try {
-                        const { data, error } = await supabase.functions.invoke('domain-audit', {
-                          body: { domain: domainToAudit }
-                        });
-                        if (error) throw error;
-                        const auditMetrics = {
-                          domain: domainToAudit,
-                          domainRating: data?.metrics?.domain_rating || data?.ahrefsData?.domain_rating || null,
-                          organicTraffic: data?.metrics?.organic_traffic || data?.ahrefsData?.organic?.traffic || null,
-                          organicKeywords: data?.metrics?.organic_keywords || data?.ahrefsData?.organic?.keywords || null,
-                          backlinks: data?.metrics?.backlinks || data?.ahrefsData?.backlinks_live || null,
-                          referringDomains: data?.metrics?.referring_domains || data?.ahrefsData?.refdomains_live || null,
-                          trafficValue: data?.metrics?.traffic_value || data?.ahrefsData?.organic?.cost || null,
-                          ahrefsRank: data?.metrics?.ahrefs_rank || data?.ahrefsData?.ahrefs_rank || null,
-                        };
-                        setInlineAuditData(auditMetrics);
-                        // Auto-save (update existing)
-                        const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-                        await supabase.from('saved_audits').upsert({
-                          domain: domainToAudit,
-                          slug,
-                          domain_rating: auditMetrics.domainRating,
-                          organic_traffic: auditMetrics.organicTraffic,
-                          organic_keywords: auditMetrics.organicKeywords,
-                          backlinks: auditMetrics.backlinks,
-                          referring_domains: auditMetrics.referringDomains,
-                          traffic_value: auditMetrics.trafficValue,
-                          ahrefs_rank: auditMetrics.ahrefsRank,
-                        }, { onConflict: 'slug' });
-                      } catch (err) {
-                        console.error('Audit error:', err);
-                        setInlineAuditError('Failed to run audit');
-                      } finally {
-                        setIsRunningAudit(false);
-                      }
-                    }}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh Audit
-                  </Button>
-                  <Button 
-                    onClick={() => navigate(`/audit/${savedAuditForDomain.slug}`)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    View Full Audit
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Domain Rating</p>
-                  <p className="text-2xl font-bold text-blue-400">{savedAuditForDomain.domain_rating ?? '—'}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Organic Traffic</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {savedAuditForDomain.organic_traffic ? savedAuditForDomain.organic_traffic.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Keywords</p>
-                  <p className="text-2xl font-bold text-violet-400">
-                    {savedAuditForDomain.organic_keywords ? savedAuditForDomain.organic_keywords.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Backlinks</p>
-                  <p className="text-2xl font-bold text-amber-400">
-                    {savedAuditForDomain.backlinks ? savedAuditForDomain.backlinks.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Referring Domains</p>
-                  <p className="text-2xl font-bold text-cyan-400">
-                    {savedAuditForDomain.referring_domains ? savedAuditForDomain.referring_domains.toLocaleString() : '—'}
-                  </p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">Traffic Value</p>
-                  <p className="text-2xl font-bold text-rose-400">
-                    ${savedAuditForDomain.traffic_value ? savedAuditForDomain.traffic_value.toLocaleString() : '0'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="text-center text-sm text-muted-foreground">
-                Last updated: {new Date(savedAuditForDomain.created_at).toLocaleDateString()}
-              </div>
-            </div>
+            /* Saved audit exists - show full report */
+            <InlineSEOReport
+              auditData={{
+                domain: savedAuditForDomain.domain,
+                domainRating: savedAuditForDomain.domain_rating,
+                organicTraffic: savedAuditForDomain.organic_traffic ? Number(savedAuditForDomain.organic_traffic) : null,
+                organicKeywords: savedAuditForDomain.organic_keywords ? Number(savedAuditForDomain.organic_keywords) : null,
+                backlinks: savedAuditForDomain.backlinks ? Number(savedAuditForDomain.backlinks) : null,
+                referringDomains: savedAuditForDomain.referring_domains ? Number(savedAuditForDomain.referring_domains) : null,
+                trafficValue: savedAuditForDomain.traffic_value ? Number(savedAuditForDomain.traffic_value) : null,
+                ahrefsRank: null,
+              }}
+              savedAudit={{
+                domain: savedAuditForDomain.domain,
+                created_at: savedAuditForDomain.created_at,
+                site_title: savedAuditForDomain.site_title || undefined,
+              }}
+              onNewAudit={() => {
+                setInlineAuditData(null);
+                setAuditDomainInput('');
+              }}
+              onRefreshAudit={async () => {
+                const domainToAudit = savedAuditForDomain.domain;
+                setIsRunningAudit(true);
+                setInlineAuditError(null);
+                try {
+                  const { data, error } = await supabase.functions.invoke('domain-audit', {
+                    body: { domain: domainToAudit }
+                  });
+                  if (error) throw error;
+                  const auditMetrics = {
+                    domain: domainToAudit,
+                    domainRating: data?.ahrefs?.domainRating || data?.metrics?.domain_rating || null,
+                    organicTraffic: data?.ahrefs?.organicTraffic || data?.metrics?.organic_traffic || null,
+                    organicKeywords: data?.ahrefs?.organicKeywords || data?.metrics?.organic_keywords || null,
+                    backlinks: data?.ahrefs?.backlinks || data?.metrics?.backlinks || null,
+                    referringDomains: data?.ahrefs?.referringDomains || data?.metrics?.referring_domains || null,
+                    trafficValue: data?.ahrefs?.trafficValue || data?.metrics?.traffic_value || null,
+                    ahrefsRank: data?.ahrefs?.ahrefsRank || data?.metrics?.ahrefs_rank || null,
+                  };
+                  setInlineAuditData(auditMetrics);
+                  const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                  await supabase.from('saved_audits').upsert({
+                    domain: domainToAudit,
+                    slug,
+                    domain_rating: auditMetrics.domainRating,
+                    organic_traffic: auditMetrics.organicTraffic,
+                    organic_keywords: auditMetrics.organicKeywords,
+                    backlinks: auditMetrics.backlinks,
+                    referring_domains: auditMetrics.referringDomains,
+                    traffic_value: auditMetrics.trafficValue,
+                    ahrefs_rank: auditMetrics.ahrefsRank,
+                  }, { onConflict: 'slug' });
+                  toast.success('Audit refreshed and saved');
+                } catch (err) {
+                  console.error('Audit error:', err);
+                  setInlineAuditError('Failed to refresh audit');
+                  toast.error('Failed to refresh audit');
+                } finally {
+                  setIsRunningAudit(false);
+                }
+              }}
+              isRefreshing={isRunningAudit}
+              viMetrics={sessions.length > 0 ? {
+                sessions: sessions.length,
+                leads: leads.length,
+                toolInteractions: toolInteractions.length,
+              } : undefined}
+              gaMetrics={gaMetrics}
+              gscMetrics={undefined}
+            />
           ) : (
             /* No audit - show input prompt */
             <div className="p-8">
