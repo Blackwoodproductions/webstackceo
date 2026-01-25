@@ -2551,6 +2551,7 @@ f.parentNode.insertBefore(j,f);
                 style={{ minHeight: '1200px' }}
                 title="BRON Dashboard"
                 allow="clipboard-write"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
               />
             </div>
           </div>
