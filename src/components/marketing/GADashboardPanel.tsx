@@ -120,6 +120,8 @@ export const GADashboardPanel = ({
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
+  const [propertiesLoaded, setPropertiesLoaded] = useState(false);
+  const [propertiesError, setPropertiesError] = useState<string | null>(null);
   
   // Data state
   const [properties, setProperties] = useState<GAProperty[]>([]);
@@ -262,7 +264,10 @@ export const GADashboardPanel = ({
   const fetchProperties = async () => {
     if (!accessToken) return;
     
+    setPropertiesError(null);
+    
     try {
+      console.log('[GA] Fetching properties...');
       const response = await fetch(
         "https://analyticsadmin.googleapis.com/v1beta/accountSummaries",
         {
@@ -270,9 +275,14 @@ export const GADashboardPanel = ({
         }
       );
       
-      if (!response.ok) throw new Error("Failed to fetch properties");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[GA] Properties fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch properties: ${response.status}`);
+      }
       
       const data = await response.json();
+      console.log('[GA] Properties response:', data);
       const allProperties: GAProperty[] = [];
       
       data.accountSummaries?.forEach((account: any) => {
@@ -285,12 +295,17 @@ export const GADashboardPanel = ({
         });
       });
       
+      console.log('[GA] Parsed properties:', allProperties);
       setProperties(allProperties);
+      setPropertiesLoaded(true);
+      
       if (allProperties.length > 0 && !selectedProperty) {
         setSelectedProperty(allProperties[0].name);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("[GA] Error fetching properties:", error);
+      setPropertiesError(error.message || "Failed to load properties");
+      setPropertiesLoaded(true); // Mark as loaded even on error to stop spinner
     }
   };
 
@@ -495,6 +510,8 @@ export const GADashboardPanel = ({
     setMetrics(null);
     setProperties([]);
     setSelectedProperty("");
+    setPropertiesLoaded(false);
+    setPropertiesError(null);
   };
 
   const formatDuration = (seconds: number) => {
@@ -644,14 +661,115 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Connected but still loading properties
-  if (isAuthenticated && properties.length === 0) {
+  // Connected but still loading properties (and no error)
+  if (isAuthenticated && !propertiesLoaded && !propertiesError) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Loading Google Analytics properties...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Connected but error loading properties
+  if (isAuthenticated && propertiesError) {
+    return (
+      <Card className="border-destructive/30">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Google Analytics</CardTitle>
+                <CardDescription className="text-xs text-destructive">Error loading properties</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
+              <X className="w-3 h-3 mr-1" />
+              Disconnect
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-center">
+            <p className="text-sm text-destructive mb-3">{propertiesError}</p>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setPropertiesError(null);
+                setPropertiesLoaded(false);
+                fetchProperties();
+              }}
+              className="border-primary"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Connected but no properties found in account
+  if (isAuthenticated && propertiesLoaded && properties.length === 0) {
+    return (
+      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Google Analytics
+                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
+                </CardTitle>
+                <CardDescription className="text-xs">No properties found in your account</CardDescription>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
+              <X className="w-3 h-3 mr-1" />
+              Disconnect
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 text-center">
+            <Activity className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
+              Create Your First GA4 Property
+            </h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Your Google Analytics account doesn't have any properties yet. Create a property to start tracking website analytics.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button 
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                onClick={() => window.open('https://analytics.google.com/analytics/web/#/admin/create-property', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Create Property
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setPropertiesLoaded(false);
+                  fetchProperties();
+                  toast({ title: "Refreshing...", description: "Checking for new properties." });
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
