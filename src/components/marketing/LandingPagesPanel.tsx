@@ -320,13 +320,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
               </span>
             </Badge>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleDisconnect}
-              className="h-7 px-2 text-muted-foreground hover:text-destructive"
-              title="Disconnect from Google Ads"
+              className="h-7 text-muted-foreground hover:text-destructive hover:border-destructive/50"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5 mr-1" />
+              Disconnect
             </Button>
           </div>
         )}
