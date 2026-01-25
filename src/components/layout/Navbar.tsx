@@ -6,7 +6,7 @@ import { AnimatedTagline } from "@/components/ui/animated-tagline";
 import { useTheme } from "next-themes";
 import { 
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
-  Search, Link2, PenTool, HelpCircle, UserCheck, Eye,
+  Search, Link2, PenTool, HelpCircle, Headset, UserCheck, Eye,
   MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield,
   FileText, Target, Zap
 } from "lucide-react";
@@ -510,7 +510,7 @@ const Navbar = () => {
                   ? 'bg-gradient-to-br from-rose-400 to-pink-500 shadow-lg' 
                   : 'bg-rose-500/10 group-hover:bg-gradient-to-br group-hover:from-rose-400 group-hover:to-pink-500'
               }`}>
-                <HelpCircle className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-rose-500 group-hover:text-white'}`} />
+                <Headset className={`w-3.5 h-3.5 transition-colors duration-300 ${isContactOpen ? 'text-white' : 'text-rose-500 group-hover:text-white'}`} />
               </div>
               <span className="relative">Contact</span>
               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isContactOpen ? 'rotate-180 text-rose-500' : 'group-hover:text-rose-500'}`} />
