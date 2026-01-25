@@ -2607,14 +2607,28 @@ f.parentNode.insertBefore(j,f);
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
+              <div className="hidden md:flex items-center gap-4 shrink-0">
+                {/* Feature Pills */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                    <Shield className="w-4 h-4 text-cyan-500" />
+                    <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">No PBNs</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">Real Partnerships</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30">
-                  <Building className="w-4 h-4 text-cyan-500" />
-                  <span className="text-xs font-medium text-cyan-600 dark:text-cyan-400">100+ White Label Agencies</span>
+                {/* Trust Badges */}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1000+ CEOs</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                    <Building className="w-5 h-5 text-slate-500" />
+                    <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">100+ Agencies</span>
+                  </div>
                 </div>
               </div>
             </header>
@@ -2741,14 +2755,28 @@ f.parentNode.insertBefore(j,f);
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
+              <div className="hidden md:flex items-center gap-4 shrink-0">
+                {/* Feature Pills */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <span className="text-xs font-medium text-violet-600 dark:text-violet-400">7 Article Types</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">Native CSS Match</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/30">
-                  <Building className="w-4 h-4 text-violet-500" />
-                  <span className="text-xs font-medium text-violet-600 dark:text-violet-400">100+ White Label Agencies</span>
+                {/* Trust Badges */}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1000+ CEOs</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                    <Building className="w-5 h-5 text-slate-500" />
+                    <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">100+ Agencies</span>
+                  </div>
                 </div>
               </div>
             </header>
@@ -2873,14 +2901,28 @@ f.parentNode.insertBefore(j,f);
                 </p>
               </div>
             </div>
-            <div className="hidden md:flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
-                <Award className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
+            <div className="hidden md:flex items-center gap-4 shrink-0">
+              {/* Feature Pills */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+                  <Globe className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Local SEO</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                  <Star className="w-4 h-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Review Management</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-500/30">
-                <Building className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">100+ White Label Agencies</span>
+              {/* Trust Badges */}
+              <div className="flex items-center gap-2 pl-3 border-l border-border">
+                <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                  <Award className="w-5 h-5 text-amber-500" />
+                  <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1000+ CEOs</span>
+                </div>
+                <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                  <Building className="w-5 h-5 text-slate-500" />
+                  <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">100+ Agencies</span>
+                </div>
               </div>
             </div>
           </header>
@@ -3617,14 +3659,28 @@ f.parentNode.insertBefore(j,f);
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
+              <div className="hidden md:flex items-center gap-4 shrink-0">
+                {/* Feature Pills */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20">
+                    <Zap className="w-4 h-4 text-pink-500" />
+                    <span className="text-xs font-medium text-pink-600 dark:text-pink-400">Auto-Publish</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20">
+                    <Twitter className="w-4 h-4 text-sky-500" />
+                    <span className="text-xs font-medium text-sky-600 dark:text-sky-400">3 Platforms</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/30">
-                  <Building className="w-4 h-4 text-pink-500" />
-                  <span className="text-xs font-medium text-pink-600 dark:text-pink-400">100+ White Label Agencies</span>
+                {/* Trust Badges */}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1000+ CEOs</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                    <Building className="w-5 h-5 text-slate-500" />
+                    <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">100+ Agencies</span>
+                  </div>
                 </div>
               </div>
             </header>
@@ -3746,14 +3802,28 @@ f.parentNode.insertBefore(j,f);
                   </p>
                 </div>
               </div>
-              <div className="hidden md:flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">1,000+ CEOs Trust Us</span>
+              <div className="hidden md:flex items-center gap-4 shrink-0">
+                {/* Feature Pills */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    <Gauge className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">24/7 Monitoring</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                    <Code className="w-4 h-4 text-green-500" />
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">Rich Snippets</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30">
-                  <Building className="w-4 h-4 text-orange-500" />
-                  <span className="text-xs font-medium text-orange-600 dark:text-orange-400">100+ White Label Agencies</span>
+                {/* Trust Badges */}
+                <div className="flex items-center gap-2 pl-3 border-l border-border">
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm">
+                    <Award className="w-5 h-5 text-amber-500" />
+                    <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1000+ CEOs</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-14 h-12 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm">
+                    <Building className="w-5 h-5 text-slate-500" />
+                    <span className="text-[8px] font-bold text-slate-600 dark:text-slate-400 mt-0.5">100+ Agencies</span>
+                  </div>
                 </div>
               </div>
             </header>
