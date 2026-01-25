@@ -170,10 +170,10 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       className="relative"
     >
       {/* Main Container with gradient border */}
-      <div className="relative p-8 rounded-2xl bg-gradient-to-br from-emerald-500/5 via-green-500/10 to-teal-500/5 border border-emerald-500/20 overflow-hidden">
+      <div className="relative p-8 rounded-2xl bg-gradient-to-br from-cyan-500/5 via-sky-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-green-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-sky-500/10 to-transparent rounded-full blur-3xl" />
         
         <div className="relative z-10">
           {/* Header with prominent styling */}
@@ -182,20 +182,20 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
               <motion.div
                 animate={{ 
                   boxShadow: [
-                    "0 0 20px rgba(16, 185, 129, 0.3)",
-                    "0 0 40px rgba(16, 185, 129, 0.5)",
-                    "0 0 20px rgba(16, 185, 129, 0.3)"
+                    "0 0 20px rgba(6, 182, 212, 0.3)",
+                    "0 0 40px rgba(6, 182, 212, 0.5)",
+                    "0 0 20px rgba(6, 182, 212, 0.3)"
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-xl"
+                className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shadow-xl"
               >
                 <Plug className="w-8 h-8 text-white" />
               </motion.div>
               <div>
                 <h3 className="text-2xl font-bold flex items-center gap-2">
                   Connect Your Website
-                  <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30">
+                  <Badge className="bg-cyan-500/10 text-cyan-500 border-cyan-500/30">
                     <Sparkles className="w-3 h-3 mr-1" />
                     One-Click Setup
                   </Badge>
@@ -219,13 +219,13 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="relative p-4 rounded-xl bg-background/50 border border-emerald-500/10 text-center"
+                className="relative p-4 rounded-xl bg-background/50 border border-cyan-500/10 text-center"
               >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center text-white text-xs font-bold shadow-lg">
                   {item.step}
                 </div>
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mt-2 mb-2">
-                  <item.icon className="w-5 h-5 text-emerald-500" />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center mx-auto mt-2 mb-2">
+                  <item.icon className="w-5 h-5 text-cyan-500" />
                 </div>
                 <p className="font-semibold text-sm">{item.title}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
@@ -350,10 +350,10 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-emerald-500/10"
+            className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-cyan-500/10"
           >
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Shield className="w-4 h-4 text-emerald-500" />
+              <Shield className="w-4 h-4 text-cyan-500" />
               <span>Secure OAuth 2.0 • Your credentials never touch our servers</span>
             </div>
             <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
