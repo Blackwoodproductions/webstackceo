@@ -820,6 +820,7 @@ const MarketingDashboard = () => {
 
             // If this is running in an OAuth popup, send token to opener and close.
             if (window.opener && !window.opener.closed) {
+              console.log('[GMB] Sending OAuth success to parent window via postMessage');
               window.opener.postMessage(
                 { type: 'gmb-oauth-success', accessToken: tokenJson.access_token, expiresIn },
                 window.location.origin
@@ -828,10 +829,12 @@ const MarketingDashboard = () => {
                 window.close();
                 return;
               } catch {
-                // ignore
+                // If close fails, continue to apply token in this window
+                console.log('[GMB] Could not close popup, applying token in this window');
               }
             }
 
+            console.log('[GMB] Applying token directly (not in popup or popup close failed)');
             await applyGmbToken(tokenJson.access_token, expiresIn);
             toast.success('Connected to Google Business Profile');
           }
@@ -853,11 +856,19 @@ const MarketingDashboard = () => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
       const data = e.data as any;
+      
+      console.log('[GMB] Received postMessage:', data?.type);
+      
       if (data?.type !== 'gmb-oauth-success' || !data?.accessToken) return;
 
+      console.log('[GMB] Processing OAuth success from popup');
       setGmbConnecting(true);
+      
       Promise.resolve(applyGmbToken(String(data.accessToken), Number(data.expiresIn ?? 3600)))
-        .then(() => toast.success('Connected to Google Business Profile'))
+        .then(() => {
+          console.log('[GMB] Successfully applied token from popup');
+          toast.success('Connected to Google Business Profile');
+        })
         .catch((err) => {
           console.error('[GMB] Popup OAuth apply error:', err);
           toast.error('Failed to finish Google Business Profile connection');
@@ -866,7 +877,12 @@ const MarketingDashboard = () => {
     };
 
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
+    console.log('[GMB] Message listener registered');
+    
+    return () => {
+      window.removeEventListener('message', onMessage);
+      console.log('[GMB] Message listener removed');
+    };
   }, [applyGmbToken]);
   
   // CRITICAL: Always keep gscDomainHasTracking TRUE when a tracked domain is selected
