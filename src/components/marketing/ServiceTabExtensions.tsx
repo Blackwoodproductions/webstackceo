@@ -848,7 +848,7 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
           </h3>
 
           {/* Results Stats - Moved from separate section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {benefits.map((item, i) => (
               <motion.div
                 key={item.benefit}
@@ -857,14 +857,14 @@ export const PPCLandingPagesExtendedSection = ({ domain }: PPCLandingPagesExtend
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 whileHover={{ scale: 1.02, y: -2 }}
-                className="p-5 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 text-center"
+                className="p-3 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 text-center"
               >
-                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
-                  <item.icon className="w-5 h-5 text-cyan-500" />
+                <div className="w-8 h-8 rounded-md bg-cyan-500/10 flex items-center justify-center mx-auto mb-2">
+                  <item.icon className="w-4 h-4 text-cyan-500" />
                 </div>
-                <p className="text-2xl font-bold text-cyan-500">{item.value}</p>
-                <p className="font-medium text-sm mt-1">{item.benefit}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                <p className="text-xl font-bold text-cyan-500">{item.value}</p>
+                <p className="font-medium text-xs mt-0.5">{item.benefit}</p>
+                <p className="text-[10px] text-muted-foreground">{item.desc}</p>
               </motion.div>
             ))}
           </div>
