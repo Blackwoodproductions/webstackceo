@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   TrendingUp, TrendingDown, Users, Clock, Eye,
   BarChart3, RefreshCw, Loader2, ExternalLink, Key, 
@@ -126,6 +126,19 @@ export const GADashboardPanel = ({
   hidePropertySelector = false,
 }: GADashboardPanelProps) => {
   const { toast } = useToast();
+
+  // Avoid effect loops when parent passes inline callbacks.
+  // Store the latest callbacks in refs so our effects don't depend on function identity.
+  const onAuthStatusChangeRef = useRef<GADashboardPanelProps["onAuthStatusChange"]>(onAuthStatusChange);
+  const onMetricsUpdateRef = useRef<GADashboardPanelProps["onMetricsUpdate"]>(onMetricsUpdate);
+
+  useEffect(() => {
+    onAuthStatusChangeRef.current = onAuthStatusChange;
+  }, [onAuthStatusChange]);
+
+  useEffect(() => {
+    onMetricsUpdateRef.current = onMetricsUpdate;
+  }, [onMetricsUpdate]);
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -600,14 +613,19 @@ export const GADashboardPanel = ({
 
   // Notify parent of auth status changes
   useEffect(() => {
-    onAuthStatusChange?.(isAuthenticated);
-  }, [isAuthenticated, onAuthStatusChange]);
+    onAuthStatusChangeRef.current?.(isAuthenticated);
+  }, [isAuthenticated]);
 
   // Notify parent of metrics updates
   useEffect(() => {
-    const domainMatches = isExternalSiteInGA || !externalSelectedSite;
-    onMetricsUpdate?.(metrics, isAuthenticated, domainMatches);
-  }, [metrics, isAuthenticated, isExternalSiteInGA, externalSelectedSite, onMetricsUpdate]);
+    // While streams are still loading, don't flip the parent state back and forth.
+    // Keep this optimistic until we can verify via web data streams.
+    const domainMatches = externalSelectedSite
+      ? (streamsLoaded ? isExternalSiteInGA : true)
+      : true;
+
+    onMetricsUpdateRef.current?.(metrics, isAuthenticated, domainMatches);
+  }, [metrics, isAuthenticated, isExternalSiteInGA, externalSelectedSite, streamsLoaded]);
 
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();

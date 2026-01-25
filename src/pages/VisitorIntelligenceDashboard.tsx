@@ -1428,23 +1428,23 @@ f.parentNode.insertBefore(j,f);
             </div>
           )}
 
-          {/* Google Analytics Panel - Show at TOP when connected and domain matches */}
-          {gaAuthenticated && gaDomainMatches && (
-            <div className="mb-6">
-              <GADashboardPanel 
-                externalSelectedSite={selectedTrackedDomain}
-                onAuthStatusChange={setGaAuthenticated}
-                onMetricsUpdate={(metrics, _isConnected, domainMatches) => {
-                  setGaMetrics(metrics);
-                  // Only update if actually different to prevent loops
-                  if (domainMatches !== gaDomainMatches) {
-                    setGaDomainMatches(domainMatches);
-                  }
-                }}
-                hidePropertySelector
-              />
-            </div>
-          )}
+          {/* Google Analytics Panel (single instance)
+              Kept in ONE location to prevent layout "jumping"/refresh loops.
+              It will show connect/setup prompts until the selected domain is verified. */}
+          <div className="mb-6">
+            <GADashboardPanel 
+              externalSelectedSite={selectedTrackedDomain}
+              onAuthStatusChange={setGaAuthenticated}
+              onMetricsUpdate={(metrics, _isConnected, domainMatches) => {
+                setGaMetrics(metrics);
+                // Only update if actually different to prevent loops
+                if (domainMatches !== gaDomainMatches) {
+                  setGaDomainMatches(domainMatches);
+                }
+              }}
+              hidePropertySelector
+            />
+          </div>
 
           {/* Full Width Stats Layout - only show if tracking installed or no domain selected */}
           {shouldShowViPanels && (
@@ -1834,23 +1834,7 @@ f.parentNode.insertBefore(j,f);
           />
         </div>
         
-        {/* Google Analytics Panel - Show only when NOT connected or domain doesn't match (setup prompts) */}
-        {(!gaAuthenticated || !gaDomainMatches) && (
-        <div className="mb-8">
-          <GADashboardPanel 
-            externalSelectedSite={selectedTrackedDomain}
-            onAuthStatusChange={setGaAuthenticated}
-            onMetricsUpdate={(metrics, _isConnected, domainMatches) => {
-              setGaMetrics(metrics);
-              // Only update if actually different to prevent loops
-              if (domainMatches !== gaDomainMatches) {
-                setGaDomainMatches(domainMatches);
-              }
-            }}
-            hidePropertySelector
-          />
-        </div>
-        )}
+
         
         {/* Show VI install prompt when GSC domain is not in VI tracking */}
         {shouldShowInstallPrompt && selectedGscDomain && !selectedTrackedDomain && (
