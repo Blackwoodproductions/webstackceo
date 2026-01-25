@@ -2596,13 +2596,13 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Bubbles */}
+              {/* Animated Rising Bubbles - BRON */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-3 h-3 rounded-full bg-cyan-400/30 animate-[float_4s_ease-in-out_infinite] top-2 left-[10%]" />
-                <div className="absolute w-2 h-2 rounded-full bg-sky-500/25 animate-[float_5s_ease-in-out_infinite_0.5s] top-8 left-[25%]" />
-                <div className="absolute w-4 h-4 rounded-full bg-cyan-300/20 animate-[float_6s_ease-in-out_infinite_1s] top-4 left-[40%]" />
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-sky-400/30 animate-[float_4.5s_ease-in-out_infinite_1.5s] top-6 left-[55%]" />
-                <div className="absolute w-3 h-3 rounded-full bg-cyan-500/25 animate-[float_5.5s_ease-in-out_infinite_2s] top-1 left-[70%]" />
+                <div className="absolute w-3 h-3 rounded-full bg-cyan-400/40 animate-[float_3s_ease-in-out_infinite] top-2 left-[10%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-sky-500/35 animate-[float_4s_ease-in-out_infinite_0.5s] top-8 left-[25%]" />
+                <div className="absolute w-4 h-4 rounded-full bg-cyan-300/30 animate-[float_5s_ease-in-out_infinite_1s] top-4 left-[40%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-sky-400/40 animate-[float_3.5s_ease-in-out_infinite_1.5s] top-6 left-[55%]" />
+                <div className="absolute w-3 h-3 rounded-full bg-cyan-500/35 animate-[float_4.5s_ease-in-out_infinite_2s] top-1 left-[70%]" />
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
@@ -2627,7 +2627,7 @@ f.parentNode.insertBefore(j,f);
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_4s_linear_infinite]" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
@@ -2763,13 +2763,13 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Bubbles */}
+              {/* Animated Diamonds - CADE */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-3 h-3 rounded-full bg-violet-400/30 animate-[float_5s_ease-in-out_infinite] top-3 left-[15%]" />
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-purple-500/25 animate-[float_4s_ease-in-out_infinite_0.7s] top-6 left-[30%]" />
-                <div className="absolute w-4 h-4 rounded-full bg-fuchsia-400/20 animate-[float_6s_ease-in-out_infinite_1.2s] top-1 left-[45%]" />
-                <div className="absolute w-2 h-2 rounded-full bg-violet-300/30 animate-[float_4.5s_ease-in-out_infinite_1.8s] top-5 left-[60%]" />
-                <div className="absolute w-3.5 h-3.5 rounded-full bg-purple-400/25 animate-[float_5.5s_ease-in-out_infinite_2.3s] top-2 left-[75%]" />
+                <div className="absolute w-3 h-3 rotate-45 bg-violet-400/40 animate-[pulse-glow_2s_ease-in-out_infinite] top-3 left-[15%]" />
+                <div className="absolute w-2.5 h-2.5 rotate-45 bg-purple-500/35 animate-[pulse-glow_2.5s_ease-in-out_infinite_0.4s] top-6 left-[30%]" />
+                <div className="absolute w-4 h-4 rotate-45 bg-fuchsia-400/30 animate-[pulse-glow_3s_ease-in-out_infinite_0.8s] top-1 left-[45%]" />
+                <div className="absolute w-2 h-2 rotate-45 bg-violet-300/40 animate-[pulse-glow_2.2s_ease-in-out_infinite_1.2s] top-5 left-[60%]" />
+                <div className="absolute w-3.5 h-3.5 rotate-45 bg-purple-400/35 animate-[pulse-glow_2.8s_ease-in-out_infinite_1.6s] top-2 left-[75%]" />
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
@@ -2794,7 +2794,7 @@ f.parentNode.insertBefore(j,f);
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
@@ -2927,13 +2927,13 @@ f.parentNode.insertBefore(j,f);
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <header className="flex items-start justify-between gap-4 mb-6 relative overflow-hidden">
-            {/* Animated Bubbles */}
+            {/* Animated Map Pins - GMB */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute w-3 h-3 rounded-full bg-blue-400/30 animate-[float_4.5s_ease-in-out_infinite] top-2 left-[12%]" />
-              <div className="absolute w-2 h-2 rounded-full bg-green-500/25 animate-[float_5s_ease-in-out_infinite_0.6s] top-7 left-[28%]" />
-              <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-400/20 animate-[float_5.5s_ease-in-out_infinite_1.1s] top-3 left-[42%]" />
-              <div className="absolute w-2.5 h-2.5 rounded-full bg-blue-300/30 animate-[float_4s_ease-in-out_infinite_1.6s] top-5 left-[58%]" />
-              <div className="absolute w-3 h-3 rounded-full bg-green-400/25 animate-[float_6s_ease-in-out_infinite_2.1s] top-1 left-[72%]" />
+              <div className="absolute w-2 h-3 rounded-t-full bg-blue-400/40 animate-[bounce_1.5s_ease-in-out_infinite] top-2 left-[12%]" />
+              <div className="absolute w-1.5 h-2.5 rounded-t-full bg-green-500/35 animate-[bounce_2s_ease-in-out_infinite_0.3s] top-5 left-[28%]" />
+              <div className="absolute w-2.5 h-3.5 rounded-t-full bg-teal-400/30 animate-[bounce_1.8s_ease-in-out_infinite_0.6s] top-1 left-[42%]" />
+              <div className="absolute w-2 h-3 rounded-t-full bg-blue-300/40 animate-[bounce_2.2s_ease-in-out_infinite_0.9s] top-4 left-[58%]" />
+              <div className="absolute w-1.5 h-2.5 rounded-t-full bg-green-400/35 animate-[bounce_1.6s_ease-in-out_infinite_1.2s] top-3 left-[72%]" />
             </div>
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
@@ -2958,7 +2958,7 @@ f.parentNode.insertBefore(j,f);
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
                 <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_3s_linear_infinite]" />
                   <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
@@ -3704,13 +3704,13 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Bubbles */}
+              {/* Animated Hearts/Likes - Social Signals */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-pink-400/30 animate-[float_4s_ease-in-out_infinite] top-1 left-[8%]" />
-                <div className="absolute w-3 h-3 rounded-full bg-rose-500/25 animate-[float_5s_ease-in-out_infinite_0.4s] top-5 left-[22%]" />
-                <div className="absolute w-2 h-2 rounded-full bg-pink-300/20 animate-[float_4.5s_ease-in-out_infinite_0.9s] top-7 left-[38%]" />
-                <div className="absolute w-3.5 h-3.5 rounded-full bg-rose-400/30 animate-[float_5.5s_ease-in-out_infinite_1.4s] top-2 left-[52%]" />
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-pink-500/25 animate-[float_6s_ease-in-out_infinite_1.9s] top-4 left-[68%]" />
+                <div className="absolute w-3 h-3 bg-pink-400/40 animate-[scale-in_1s_ease-in-out_infinite_alternate] top-1 left-[8%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
+                <div className="absolute w-2.5 h-2.5 bg-rose-500/35 animate-[scale-in_1.2s_ease-in-out_infinite_alternate_0.2s] top-5 left-[22%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
+                <div className="absolute w-2 h-2 bg-pink-300/30 animate-[scale-in_1.4s_ease-in-out_infinite_alternate_0.4s] top-7 left-[38%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
+                <div className="absolute w-3.5 h-3.5 bg-rose-400/40 animate-[scale-in_1.1s_ease-in-out_infinite_alternate_0.6s] top-2 left-[52%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
+                <div className="absolute w-2.5 h-2.5 bg-pink-500/35 animate-[scale-in_1.3s_ease-in-out_infinite_alternate_0.8s] top-4 left-[68%]" style={{clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 50% 75%, 20% 100%, 0% 35%)'}} />
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
@@ -3735,7 +3735,7 @@ f.parentNode.insertBefore(j,f);
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <Sparkles className="w-4 h-4 text-violet-500 animate-[ping_1.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
@@ -3866,13 +3866,13 @@ f.parentNode.insertBefore(j,f);
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Animated Bubbles */}
+              {/* Animated Code Brackets - On-page SEO */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute w-3 h-3 rounded-full bg-amber-400/30 animate-[float_5s_ease-in-out_infinite] top-2 left-[10%]" />
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-500/25 animate-[float_4.5s_ease-in-out_infinite_0.5s] top-6 left-[25%]" />
-                <div className="absolute w-2 h-2 rounded-full bg-yellow-400/20 animate-[float_5.5s_ease-in-out_infinite_1s] top-4 left-[40%]" />
-                <div className="absolute w-3.5 h-3.5 rounded-full bg-amber-300/30 animate-[float_4s_ease-in-out_infinite_1.5s] top-1 left-[55%]" />
-                <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-400/25 animate-[float_6s_ease-in-out_infinite_2s] top-5 left-[70%]" />
+                <div className="absolute text-amber-400/50 text-lg font-mono animate-[fade-in_1s_ease-in-out_infinite_alternate] top-1 left-[10%]">&lt;/&gt;</div>
+                <div className="absolute text-orange-500/45 text-sm font-mono animate-[fade-in_1.2s_ease-in-out_infinite_alternate_0.2s] top-5 left-[25%]">{'{}'}</div>
+                <div className="absolute text-yellow-400/40 text-base font-mono animate-[fade-in_1.4s_ease-in-out_infinite_alternate_0.4s] top-3 left-[40%]">&lt;&gt;</div>
+                <div className="absolute text-amber-300/50 text-lg font-mono animate-[fade-in_1.1s_ease-in-out_infinite_alternate_0.6s] top-0 left-[55%]">[ ]</div>
+                <div className="absolute text-orange-400/45 text-sm font-mono animate-[fade-in_1.3s_ease-in-out_infinite_alternate_0.8s] top-4 left-[70%]">#</div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
@@ -3897,7 +3897,7 @@ f.parentNode.insertBefore(j,f);
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default hover:-translate-y-0.5">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <Sparkles className="w-4 h-4 text-violet-500 animate-[bounce_1s_ease-in-out_infinite]" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
