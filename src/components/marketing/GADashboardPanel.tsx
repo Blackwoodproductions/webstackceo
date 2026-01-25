@@ -1127,13 +1127,20 @@ export const GADashboardPanel = ({
                   <Button 
                     variant="ghost"
                     className="text-muted-foreground"
-                    onClick={() => {
-                      fetchProperties();
-                      toast({ title: "Checking for new properties...", description: "Refreshing your GA account data." });
+                    onClick={async () => {
+                      toast({ title: "Checking for data streams...", description: "Refreshing your GA account data." });
+                      // Reset streams state and re-fetch
+                      setStreamsLoaded(false);
+                      setWebDomainsByProperty({});
+                      await fetchProperties();
+                      // Explicitly trigger streams fetch after properties load
+                      setTimeout(() => {
+                        void fetchWebDataStreams();
+                      }, 100);
                     }}
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh Properties
+                    Refresh
                   </Button>
                 </div>
                 
