@@ -2595,7 +2595,15 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start justify-between gap-4">
+            <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+              {/* Animated Bubbles */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-3 h-3 rounded-full bg-cyan-400/30 animate-[float_4s_ease-in-out_infinite] top-2 left-[10%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-sky-500/25 animate-[float_5s_ease-in-out_infinite_0.5s] top-8 left-[25%]" />
+                <div className="absolute w-4 h-4 rounded-full bg-cyan-300/20 animate-[float_6s_ease-in-out_infinite_1s] top-4 left-[40%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-sky-400/30 animate-[float_4.5s_ease-in-out_infinite_1.5s] top-6 left-[55%]" />
+                <div className="absolute w-3 h-3 rounded-full bg-cyan-500/25 animate-[float_5.5s_ease-in-out_infinite_2s] top-1 left-[70%]" />
+              </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
                   <TrendingUp className="w-7 h-7 text-white" />
@@ -2610,20 +2618,20 @@ f.parentNode.insertBefore(j,f);
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_3s_ease-in-out_infinite]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Award className="w-4 h-4 text-amber-500" />
                     <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_3s_ease-in-out_infinite_0.5s]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Building className="w-4 h-4 text-slate-500" />
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[pulse_3s_ease-in-out_infinite_1s]">
-                    <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_4s_linear_infinite]" />
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
-                {/* Feature Pills */}
+                {/* Feature Pills - Row 1 */}
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Shield className="w-2.5 h-2.5 text-cyan-500" />
@@ -2632,6 +2640,13 @@ f.parentNode.insertBefore(j,f);
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <CheckCircle className="w-2.5 h-2.5 text-green-500" />
                     <span className="text-[9px] font-medium text-green-600 dark:text-green-400">Real Partners</span>
+                  </div>
+                </div>
+                {/* Feature Pills - Row 2 */}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                    <TrendingUp className="w-2.5 h-2.5 text-sky-500" />
+                    <span className="text-[9px] font-medium text-sky-600 dark:text-sky-400">DA Growth</span>
                   </div>
                 </div>
               </div>
@@ -2747,7 +2762,15 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start justify-between gap-4">
+            <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+              {/* Animated Bubbles */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-3 h-3 rounded-full bg-violet-400/30 animate-[float_5s_ease-in-out_infinite] top-3 left-[15%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-purple-500/25 animate-[float_4s_ease-in-out_infinite_0.7s] top-6 left-[30%]" />
+                <div className="absolute w-4 h-4 rounded-full bg-fuchsia-400/20 animate-[float_6s_ease-in-out_infinite_1.2s] top-1 left-[45%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-violet-300/30 animate-[float_4.5s_ease-in-out_infinite_1.8s] top-5 left-[60%]" />
+                <div className="absolute w-3.5 h-3.5 rounded-full bg-purple-400/25 animate-[float_5.5s_ease-in-out_infinite_2.3s] top-2 left-[75%]" />
+              </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
                   <FileText className="w-7 h-7 text-white" />
@@ -2762,20 +2785,20 @@ f.parentNode.insertBefore(j,f);
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[bounce_2s_ease-in-out_infinite]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Award className="w-4 h-4 text-amber-500" />
                     <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[bounce_2s_ease-in-out_infinite_0.3s]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Building className="w-4 h-4 text-slate-500" />
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[bounce_2s_ease-in-out_infinite_0.6s]">
-                    <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
-                {/* Feature Pills */}
+                {/* Feature Pills - Row 1 */}
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Sparkles className="w-2.5 h-2.5 text-violet-500" />
@@ -2784,6 +2807,13 @@ f.parentNode.insertBefore(j,f);
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <CheckCircle className="w-2.5 h-2.5 text-green-500" />
                     <span className="text-[9px] font-medium text-green-600 dark:text-green-400">CSS Match</span>
+                  </div>
+                </div>
+                {/* Feature Pills - Row 2 */}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                    <Network className="w-2.5 h-2.5 text-purple-500" />
+                    <span className="text-[9px] font-medium text-purple-600 dark:text-purple-400">Inner Links</span>
                   </div>
                 </div>
               </div>
@@ -2896,8 +2926,15 @@ f.parentNode.insertBefore(j,f);
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
-          {/* Header Section - matching other tabs */}
-          <header className="flex items-start justify-between gap-4 mb-6">
+          <header className="flex items-start justify-between gap-4 mb-6 relative overflow-hidden">
+            {/* Animated Bubbles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute w-3 h-3 rounded-full bg-blue-400/30 animate-[float_4.5s_ease-in-out_infinite] top-2 left-[12%]" />
+              <div className="absolute w-2 h-2 rounded-full bg-green-500/25 animate-[float_5s_ease-in-out_infinite_0.6s] top-7 left-[28%]" />
+              <div className="absolute w-3.5 h-3.5 rounded-full bg-teal-400/20 animate-[float_5.5s_ease-in-out_infinite_1.1s] top-3 left-[42%]" />
+              <div className="absolute w-2.5 h-2.5 rounded-full bg-blue-300/30 animate-[float_4s_ease-in-out_infinite_1.6s] top-5 left-[58%]" />
+              <div className="absolute w-3 h-3 rounded-full bg-green-400/25 animate-[float_6s_ease-in-out_infinite_2.1s] top-1 left-[72%]" />
+            </div>
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shrink-0 shadow-lg">
                 <MapPin className="w-7 h-7 text-white" />
@@ -2912,20 +2949,20 @@ f.parentNode.insertBefore(j,f);
             <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
               {/* Trust Badges */}
               <div className="flex items-center gap-2">
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[fade-in_0.5s_ease-out] hover:animate-none">
-                  <Award className="w-4 h-4 text-amber-500 animate-pulse" />
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                  <Award className="w-4 h-4 text-amber-500" />
                   <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[fade-in_0.5s_ease-out_0.2s_both]">
-                  <Building className="w-4 h-4 text-slate-500 animate-pulse" />
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                  <Building className="w-4 h-4 text-slate-500" />
                   <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                 </div>
-                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[fade-in_0.5s_ease-out_0.4s_both]">
-                  <Sparkles className="w-4 h-4 text-violet-500 animate-[spin_3s_linear_infinite]" />
+                <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
                   <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                 </div>
               </div>
-              {/* Feature Pills */}
+              {/* Feature Pills - Row 1 */}
               <div className="flex items-center gap-1">
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <Globe className="w-2.5 h-2.5 text-blue-500" />
@@ -2934,6 +2971,13 @@ f.parentNode.insertBefore(j,f);
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                   <Star className="w-2.5 h-2.5 text-green-500" />
                   <span className="text-[9px] font-medium text-green-600 dark:text-green-400">Reviews</span>
+                </div>
+              </div>
+              {/* Feature Pills - Row 2 */}
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 hover:bg-teal-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                  <MapPin className="w-2.5 h-2.5 text-teal-500" />
+                  <span className="text-[9px] font-medium text-teal-600 dark:text-teal-400">Map Pack</span>
                 </div>
               </div>
             </div>
@@ -3659,7 +3703,15 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start justify-between gap-4">
+            <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+              {/* Animated Bubbles */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-pink-400/30 animate-[float_4s_ease-in-out_infinite] top-1 left-[8%]" />
+                <div className="absolute w-3 h-3 rounded-full bg-rose-500/25 animate-[float_5s_ease-in-out_infinite_0.4s] top-5 left-[22%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-pink-300/20 animate-[float_4.5s_ease-in-out_infinite_0.9s] top-7 left-[38%]" />
+                <div className="absolute w-3.5 h-3.5 rounded-full bg-rose-400/30 animate-[float_5.5s_ease-in-out_infinite_1.4s] top-2 left-[52%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-pink-500/25 animate-[float_6s_ease-in-out_infinite_1.9s] top-4 left-[68%]" />
+              </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shrink-0">
                   <Activity className="w-7 h-7 text-white" />
@@ -3674,20 +3726,20 @@ f.parentNode.insertBefore(j,f);
               <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
                 {/* Trust Badges */}
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[scale-in_0.4s_ease-out]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Award className="w-4 h-4 text-amber-500" />
                     <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[scale-in_0.4s_ease-out_0.15s_both]">
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                     <Building className="w-4 h-4 text-slate-500" />
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default animate-[scale-in_0.4s_ease-out_0.3s_both]">
-                    <Sparkles className="w-4 h-4 text-violet-500 animate-[ping_1.5s_cubic-bezier(0,0,0.2,1)_infinite]" />
+                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
-                {/* Feature Pills */}
+                {/* Feature Pills - Row 1 */}
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-pink-500/10 border border-pink-500/20 hover:bg-pink-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Zap className="w-2.5 h-2.5 text-pink-500" />
@@ -3696,6 +3748,13 @@ f.parentNode.insertBefore(j,f);
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Twitter className="w-2.5 h-2.5 text-sky-500" />
                     <span className="text-[9px] font-medium text-sky-600 dark:text-sky-400">3 Platforms</span>
+                  </div>
+                </div>
+                {/* Feature Pills - Row 2 */}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                    <Bell className="w-2.5 h-2.5 text-rose-500" />
+                    <span className="text-[9px] font-medium text-rose-600 dark:text-rose-400">Engagement</span>
                   </div>
                 </div>
               </div>
@@ -3806,7 +3865,15 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
-            <header className="flex items-start justify-between gap-4">
+            <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+              {/* Animated Bubbles */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-3 h-3 rounded-full bg-amber-400/30 animate-[float_5s_ease-in-out_infinite] top-2 left-[10%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-500/25 animate-[float_4.5s_ease-in-out_infinite_0.5s] top-6 left-[25%]" />
+                <div className="absolute w-2 h-2 rounded-full bg-yellow-400/20 animate-[float_5.5s_ease-in-out_infinite_1s] top-4 left-[40%]" />
+                <div className="absolute w-3.5 h-3.5 rounded-full bg-amber-300/30 animate-[float_4s_ease-in-out_infinite_1.5s] top-1 left-[55%]" />
+                <div className="absolute w-2.5 h-2.5 rounded-full bg-orange-400/25 animate-[float_6s_ease-in-out_infinite_2s] top-5 left-[70%]" />
+              </div>
               <div className="flex items-start gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
                   <FileSearch className="w-7 h-7 text-white" />
@@ -3822,19 +3889,19 @@ f.parentNode.insertBefore(j,f);
                 {/* Trust Badges */}
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default hover:-translate-y-0.5">
-                    <Award className="w-4 h-4 text-amber-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                    <Award className="w-4 h-4 text-amber-500" />
                     <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default hover:-translate-y-0.5">
-                    <Building className="w-4 h-4 text-slate-500 animate-[pulse_2s_ease-in-out_infinite_0.5s]" />
+                    <Building className="w-4 h-4 text-slate-500" />
                     <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
                   </div>
                   <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default hover:-translate-y-0.5">
-                    <Sparkles className="w-4 h-4 text-violet-500 animate-[bounce_1s_ease-in-out_infinite]" />
+                    <Sparkles className="w-4 h-4 text-violet-500" />
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
-                {/* Feature Pills */}
+                {/* Feature Pills - Row 1 */}
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Gauge className="w-2.5 h-2.5 text-amber-500" />
@@ -3843,6 +3910,13 @@ f.parentNode.insertBefore(j,f);
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:scale-105 transition-all duration-200 cursor-default">
                     <Code className="w-2.5 h-2.5 text-green-500" />
                     <span className="text-[9px] font-medium text-green-600 dark:text-green-400">Snippets</span>
+                  </div>
+                </div>
+                {/* Feature Pills - Row 2 */}
+                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/20 hover:scale-105 transition-all duration-200 cursor-default">
+                    <Type className="w-2.5 h-2.5 text-orange-500" />
+                    <span className="text-[9px] font-medium text-orange-600 dark:text-orange-400">Meta Tags</span>
                   </div>
                 </div>
               </div>
