@@ -2401,6 +2401,11 @@ f.parentNode.insertBefore(j,f);
                 <MapPin className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-3xl font-bold mb-3">Connect Google Business Profile</h2>
+              {(selectedTrackedDomain || selectedDomainKey) && (
+                <p className="text-sm text-primary font-medium mb-2">
+                  Domain: {selectedTrackedDomain || selectedDomainKey}
+                </p>
+              )}
               <p className="text-muted-foreground mb-8">
                 Manage your Google My Business listings, respond to reviews, update business info, and track local SEO performance—all from one dashboard.
               </p>
@@ -2509,10 +2514,17 @@ f.parentNode.insertBefore(j,f);
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Google Business Profile</h2>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                      Connected
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                        Connected
+                      </p>
+                      {(selectedTrackedDomain || selectedDomainKey) && (
+                        <Badge variant="outline" className="text-xs">
+                          {selectedTrackedDomain || selectedDomainKey}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Button
