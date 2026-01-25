@@ -183,6 +183,17 @@ const MarketingDashboard = () => {
   const [isLoadingAudit, setIsLoadingAudit] = useState(false);
   const [auditDomainInput, setAuditDomainInput] = useState('');
   const [isRunningAudit, setIsRunningAudit] = useState(false);
+  const [inlineAuditData, setInlineAuditData] = useState<{
+    domain: string;
+    domainRating: number | null;
+    organicTraffic: number | null;
+    organicKeywords: number | null;
+    backlinks: number | null;
+    referringDomains: number | null;
+    trafficValue: number | null;
+    ahrefsRank: number | null;
+  } | null>(null);
+  const [inlineAuditError, setInlineAuditError] = useState<string | null>(null);
   
   // User-added domains
   const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
@@ -993,8 +1004,8 @@ const MarketingDashboard = () => {
             </a>
           </div>
           
-          {/* Center: Main Tabs Navigation - Overlapping tab style */}
-          <div className="flex items-end gap-0 absolute left-1/2 -translate-x-1/2 bottom-0">
+          {/* Tabs Navigation - positioned after logo */}
+          <div className="flex items-end gap-0 ml-8 -mb-3">
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
               { id: 'seo-audit' as DashboardTab, label: 'SEO Audit', icon: Search },
@@ -1006,14 +1017,14 @@ const MarketingDashboard = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{ zIndex: activeTab === tab.id ? 10 : 5 - index }}
-                className={`relative flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all rounded-t-lg border-t border-x ${
+                className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all rounded-t-lg border-t border-x ${
                   activeTab === tab.id
                     ? 'bg-background text-primary border-border translate-y-px'
-                    : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-3 first:ml-0'
+                    : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-2 first:ml-0'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
                 {/* Active tab bottom cover */}
                 {activeTab === tab.id && (
                   <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
@@ -2036,12 +2047,92 @@ f.parentNode.insertBefore(j,f);
       {/* SEO Audit Tab Content */}
       {activeTab === 'seo-audit' && (
         <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
-          {isLoadingAudit ? (
-            <div className="flex items-center justify-center py-24">
+          {isLoadingAudit || isRunningAudit ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">Analyzing domain...</p>
+            </div>
+          ) : inlineAuditData ? (
+            /* Inline audit results */
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                    <Globe className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">{inlineAuditData.domain}</h2>
+                    <p className="text-sm text-muted-foreground">SEO Audit Results</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setInlineAuditData(null);
+                      setAuditDomainInput('');
+                    }}
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    New Audit
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(`/audit/${encodeURIComponent(inlineAuditData.domain)}`)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                  >
+                    View Full Report
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Domain Rating</p>
+                  <p className="text-2xl font-bold text-blue-400">{inlineAuditData.domainRating ?? '—'}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Organic Traffic</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    {inlineAuditData.organicTraffic ? inlineAuditData.organicTraffic.toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Keywords</p>
+                  <p className="text-2xl font-bold text-violet-400">
+                    {inlineAuditData.organicKeywords ? inlineAuditData.organicKeywords.toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Backlinks</p>
+                  <p className="text-2xl font-bold text-amber-400">
+                    {inlineAuditData.backlinks ? inlineAuditData.backlinks.toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Referring Domains</p>
+                  <p className="text-2xl font-bold text-cyan-400">
+                    {inlineAuditData.referringDomains ? inlineAuditData.referringDomains.toLocaleString() : '—'}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/10 border border-rose-500/20">
+                  <p className="text-xs text-muted-foreground mb-1">Traffic Value</p>
+                  <p className="text-2xl font-bold text-rose-400">
+                    ${inlineAuditData.trafficValue ? inlineAuditData.trafficValue.toLocaleString() : '0'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="text-center text-sm text-muted-foreground">
+                <Badge variant="outline" className="text-green-500 border-green-500/30">
+                  <Activity className="w-3 h-3 mr-1" />
+                  Auto-saved to your audits
+                </Badge>
+              </div>
             </div>
           ) : savedAuditForDomain ? (
-            /* Audit exists - show summary */
+            /* Saved audit exists - show summary */
             <div className="p-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
@@ -2055,13 +2146,62 @@ f.parentNode.insertBefore(j,f);
                     </p>
                   </div>
                 </div>
-                <Button 
-                  onClick={() => navigate(`/audit/${savedAuditForDomain.slug}`)}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  View Full Audit
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline"
+                    onClick={async () => {
+                      // Re-run audit for this domain
+                      const domainToAudit = savedAuditForDomain.domain;
+                      setIsRunningAudit(true);
+                      setInlineAuditError(null);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('domain-audit', {
+                          body: { domain: domainToAudit }
+                        });
+                        if (error) throw error;
+                        const auditMetrics = {
+                          domain: domainToAudit,
+                          domainRating: data?.metrics?.domain_rating || data?.ahrefsData?.domain_rating || null,
+                          organicTraffic: data?.metrics?.organic_traffic || data?.ahrefsData?.organic?.traffic || null,
+                          organicKeywords: data?.metrics?.organic_keywords || data?.ahrefsData?.organic?.keywords || null,
+                          backlinks: data?.metrics?.backlinks || data?.ahrefsData?.backlinks_live || null,
+                          referringDomains: data?.metrics?.referring_domains || data?.ahrefsData?.refdomains_live || null,
+                          trafficValue: data?.metrics?.traffic_value || data?.ahrefsData?.organic?.cost || null,
+                          ahrefsRank: data?.metrics?.ahrefs_rank || data?.ahrefsData?.ahrefs_rank || null,
+                        };
+                        setInlineAuditData(auditMetrics);
+                        // Auto-save (update existing)
+                        const slug = domainToAudit.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                        await supabase.from('saved_audits').upsert({
+                          domain: domainToAudit,
+                          slug,
+                          domain_rating: auditMetrics.domainRating,
+                          organic_traffic: auditMetrics.organicTraffic,
+                          organic_keywords: auditMetrics.organicKeywords,
+                          backlinks: auditMetrics.backlinks,
+                          referring_domains: auditMetrics.referringDomains,
+                          traffic_value: auditMetrics.trafficValue,
+                          ahrefs_rank: auditMetrics.ahrefsRank,
+                        }, { onConflict: 'slug' });
+                      } catch (err) {
+                        console.error('Audit error:', err);
+                        setInlineAuditError('Failed to run audit');
+                      } finally {
+                        setIsRunningAudit(false);
+                      }
+                    }}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Audit
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(`/audit/${savedAuditForDomain.slug}`)}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    View Full Audit
+                  </Button>
+                </div>
               </div>
               
               {/* Metrics Grid */}
@@ -2107,7 +2247,7 @@ f.parentNode.insertBefore(j,f);
               </div>
             </div>
           ) : (
-            /* No audit - show input prompt like homepage */
+            /* No audit - show input prompt */
             <div className="p-8">
               <div className="max-w-2xl mx-auto text-center">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center mx-auto mb-6">
@@ -2115,7 +2255,7 @@ f.parentNode.insertBefore(j,f);
                 </div>
                 <h2 className="text-3xl font-bold mb-3">
                   {selectedTrackedDomain || selectedDomainKey ? (
-                    <>No Audit Found for <span className="text-primary">{selectedTrackedDomain || selectedDomainKey}</span></>
+                    <>Run SEO Audit for <span className="text-primary">{selectedTrackedDomain || selectedDomainKey}</span></>
                   ) : (
                     'Run Your First SEO Audit'
                   )}
@@ -2124,18 +2264,65 @@ f.parentNode.insertBefore(j,f);
                   Get a comprehensive SEO analysis including domain authority, backlinks, organic traffic, and actionable recommendations.
                 </p>
                 
+                {inlineAuditError && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                    {inlineAuditError}
+                  </div>
+                )}
+                
                 <form 
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const domainToAudit = auditDomainInput.trim() || selectedTrackedDomain || selectedDomainKey;
                     if (!domainToAudit) return;
                     let cleanDomain = domainToAudit.toLowerCase();
                     cleanDomain = cleanDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
                     cleanDomain = cleanDomain.split("/")[0];
+                    
                     setIsRunningAudit(true);
-                    setTimeout(() => {
-                      navigate(`/audit/${encodeURIComponent(cleanDomain)}`);
-                    }, 300);
+                    setInlineAuditError(null);
+                    
+                    try {
+                      const { data, error } = await supabase.functions.invoke('domain-audit', {
+                        body: { domain: cleanDomain }
+                      });
+                      
+                      if (error) throw error;
+                      
+                      const auditMetrics = {
+                        domain: cleanDomain,
+                        domainRating: data?.metrics?.domain_rating || data?.ahrefsData?.domain_rating || null,
+                        organicTraffic: data?.metrics?.organic_traffic || data?.ahrefsData?.organic?.traffic || null,
+                        organicKeywords: data?.metrics?.organic_keywords || data?.ahrefsData?.organic?.keywords || null,
+                        backlinks: data?.metrics?.backlinks || data?.ahrefsData?.backlinks_live || null,
+                        referringDomains: data?.metrics?.referring_domains || data?.ahrefsData?.refdomains_live || null,
+                        trafficValue: data?.metrics?.traffic_value || data?.ahrefsData?.organic?.cost || null,
+                        ahrefsRank: data?.metrics?.ahrefs_rank || data?.ahrefsData?.ahrefs_rank || null,
+                      };
+                      
+                      setInlineAuditData(auditMetrics);
+                      
+                      // Auto-save to saved_audits (without submitter_email - no free link)
+                      const slug = cleanDomain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                      await supabase.from('saved_audits').upsert({
+                        domain: cleanDomain,
+                        slug,
+                        domain_rating: auditMetrics.domainRating,
+                        organic_traffic: auditMetrics.organicTraffic,
+                        organic_keywords: auditMetrics.organicKeywords,
+                        backlinks: auditMetrics.backlinks,
+                        referring_domains: auditMetrics.referringDomains,
+                        traffic_value: auditMetrics.trafficValue,
+                        ahrefs_rank: auditMetrics.ahrefsRank,
+                        // No submitter_email - they don't get the free directory link
+                      }, { onConflict: 'slug' });
+                      
+                    } catch (err) {
+                      console.error('Audit error:', err);
+                      setInlineAuditError('Failed to run audit. Please try again.');
+                    } finally {
+                      setIsRunningAudit(false);
+                    }
                   }}
                   className="max-w-xl mx-auto"
                 >
@@ -2173,7 +2360,7 @@ f.parentNode.insertBefore(j,f);
                 
                 <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
                   <Zap className="w-3 h-3 text-amber-500" />
-                  <span>Instant • Free • Comprehensive</span>
+                  <span>Instant • Comprehensive • Auto-saved</span>
                 </div>
               </div>
             </div>
