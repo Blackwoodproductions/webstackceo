@@ -1327,8 +1327,8 @@ const MarketingDashboard = () => {
 
       {/* Header with integrated tabs */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto relative">
-        {/* Tabs - centered, floating at bottom of header */}
-        <div className="absolute left-1/2 -translate-x-1/2 -bottom-px flex items-end gap-0 z-20">
+        {/* Tabs - offset right from center, floating at bottom of header */}
+        <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 192px))' }}>
           {[
             { id: 'visitor-intelligence' as DashboardTab, label: 'Visitors', icon: Eye },
             { id: 'seo-audit' as DashboardTab, label: (inlineAuditData || savedAuditForDomain) ? 'Case Study' : 'Audit', icon: Search },
