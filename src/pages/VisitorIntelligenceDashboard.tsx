@@ -208,6 +208,36 @@ const MarketingDashboard = () => {
   const [gmbLocations, setGmbLocations] = useState<{ name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[]>([]);
   const [selectedGmbAccount, setSelectedGmbAccount] = useState<string | null>(null);
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
+
+  const applyGmbToken = useCallback(async (accessToken: string, expiresIn?: number) => {
+    const safeExpiresIn = Number(expiresIn ?? 3600);
+    const expiry = Date.now() + safeExpiresIn * 1000;
+
+    sessionStorage.setItem('gmb_access_token', accessToken);
+    sessionStorage.setItem('gmb_token_expiry', expiry.toString());
+
+    setGmbAuthenticated(true);
+
+    // Fetch GMB accounts
+    try {
+      const accountsRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
+          setGmbAccounts(accountsData.accounts.map((a: any) => ({
+            name: a.name,
+            accountName: a.accountName || a.name?.split('/').pop() || 'Business Account',
+            type: a.type || 'PERSONAL',
+          })));
+        }
+      }
+    } catch (accountErr) {
+      console.error('[GMB] Failed to fetch accounts:', accountErr);
+    }
+  }, []);
   
   // SEO Audit state for selected domain
   const [savedAuditForDomain, setSavedAuditForDomain] = useState<{
@@ -646,7 +676,7 @@ const MarketingDashboard = () => {
     const state = url.searchParams.get('state');
     
     if (code && state === 'gmb') {
-      const verifier = sessionStorage.getItem('gmb_code_verifier');
+      const verifier = sessionStorage.getItem('gmb_code_verifier') || localStorage.getItem('gmb_code_verifier');
       
       if (!verifier) {
         console.error('[GMB] No code verifier found');
@@ -676,36 +706,29 @@ const MarketingDashboard = () => {
           }
           
           if (tokenJson?.access_token) {
-            const expiresIn = Number(tokenJson.expires_in ?? 3600);
-            const expiry = Date.now() + expiresIn * 1000;
-            
-            sessionStorage.setItem('gmb_access_token', tokenJson.access_token);
-            sessionStorage.setItem('gmb_token_expiry', expiry.toString());
+            // Clear verifier in both storage types (popup flow uses localStorage)
             sessionStorage.removeItem('gmb_code_verifier');
             sessionStorage.removeItem('gmb_oauth_pending');
-            
-            setGmbAuthenticated(true);
-            
-            // Fetch GMB accounts
-            try {
-              const accountsRes = await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts', {
-                headers: { Authorization: `Bearer ${tokenJson.access_token}` },
-              });
-              
-              if (accountsRes.ok) {
-                const accountsData = await accountsRes.json();
-                if (accountsData.accounts && Array.isArray(accountsData.accounts)) {
-                  setGmbAccounts(accountsData.accounts.map((a: any) => ({
-                    name: a.name,
-                    accountName: a.accountName || a.name?.split('/').pop() || 'Business Account',
-                    type: a.type || 'PERSONAL',
-                  })));
-                }
+            localStorage.removeItem('gmb_code_verifier');
+            localStorage.removeItem('gmb_oauth_pending');
+
+            const expiresIn = Number(tokenJson.expires_in ?? 3600);
+
+            // If this is running in an OAuth popup, send token to opener and close.
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage(
+                { type: 'gmb-oauth-success', accessToken: tokenJson.access_token, expiresIn },
+                window.location.origin
+              );
+              try {
+                window.close();
+                return;
+              } catch {
+                // ignore
               }
-            } catch (accountErr) {
-              console.error('[GMB] Failed to fetch accounts:', accountErr);
             }
-            
+
+            await applyGmbToken(tokenJson.access_token, expiresIn);
             toast.success('Connected to Google Business Profile');
           }
         } catch (err) {
@@ -720,6 +743,27 @@ const MarketingDashboard = () => {
       })();
     }
   }, []);
+
+  // Receive OAuth token from popup without navigating away
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as any;
+      if (data?.type !== 'gmb-oauth-success' || !data?.accessToken) return;
+
+      setGmbConnecting(true);
+      Promise.resolve(applyGmbToken(String(data.accessToken), Number(data.expiresIn ?? 3600)))
+        .then(() => toast.success('Connected to Google Business Profile'))
+        .catch((err) => {
+          console.error('[GMB] Popup OAuth apply error:', err);
+          toast.error('Failed to finish Google Business Profile connection');
+        })
+        .finally(() => setGmbConnecting(false));
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [applyGmbToken]);
   
   // CRITICAL: Always keep gscDomainHasTracking TRUE when a tracked domain is selected
   // This prevents race conditions where GSC callbacks might incorrectly set it to false
@@ -2465,6 +2509,9 @@ f.parentNode.insertBefore(j,f);
                     // Store for callback
                     sessionStorage.setItem('gmb_code_verifier', codeVerifier);
                     sessionStorage.setItem('gmb_oauth_pending', 'true');
+                    // Also store in localStorage so the verifier is available if we use a popup window
+                    localStorage.setItem('gmb_code_verifier', codeVerifier);
+                    localStorage.setItem('gmb_oauth_pending', 'true');
                     
                     // Reuse client ID from GSC/GA settings
                     const clientId = localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -2486,8 +2533,21 @@ f.parentNode.insertBefore(j,f);
                     authUrl.searchParams.set('access_type', 'offline');
                     authUrl.searchParams.set('prompt', 'consent');
                     authUrl.searchParams.set('state', 'gmb');
-                    
-                    window.location.href = authUrl.toString();
+
+                    const popupWidth = 520;
+                    const popupHeight = 720;
+                    const left = (window.screenX ?? (window as any).screenLeft ?? 0) + (window.outerWidth - popupWidth) / 2;
+                    const top = (window.screenY ?? (window as any).screenTop ?? 0) + (window.outerHeight - popupHeight) / 2;
+                    const popup = window.open(
+                      authUrl.toString(),
+                      'gmb_oauth',
+                      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+                    );
+
+                    // Fallback if popup blocked
+                    if (!popup) {
+                      window.location.href = authUrl.toString();
+                    }
                   } catch (err) {
                     console.error('GMB OAuth init error:', err);
                     toast.error('Failed to start Google Business Profile connection');
@@ -2577,12 +2637,6 @@ f.parentNode.insertBefore(j,f);
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Add Business to Google Maps
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.open('https://business.google.com/', '_blank')}
-                        >
-                          Open Google Business Profile
                         </Button>
                       </div>
                     </div>
