@@ -972,9 +972,9 @@ const MarketingDashboard = () => {
         canonical="/visitor-intelligence-dashboard"
       />
 
-      {/* Header */}
+      {/* Header with integrated tabs */}
       <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto">
-        <div className="px-8 py-4 flex items-center justify-between relative">
+        <div className="px-8 py-3 flex items-center justify-between relative">
           {/* Left: Logo */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
@@ -993,11 +993,33 @@ const MarketingDashboard = () => {
             </a>
           </div>
           
-          {/* Center: Title */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="text-lg font-semibold text-foreground whitespace-nowrap">Visitor Intelligence</h1>
-            <span className="text-sm text-muted-foreground hidden lg:inline">— Marketing Funnel Analytics</span>
+          {/* Center: Main Tabs Navigation - Overlapping tab style */}
+          <div className="flex items-end gap-0 absolute left-1/2 -translate-x-1/2 bottom-0">
+            {[
+              { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
+              { id: 'seo-audit' as DashboardTab, label: 'SEO Audit', icon: Search },
+              { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
+              { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
+              { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
+            ].map((tab, index) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ zIndex: activeTab === tab.id ? 10 : 5 - index }}
+                className={`relative flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-all rounded-t-lg border-t border-x ${
+                  activeTab === tab.id
+                    ? 'bg-background text-primary border-border translate-y-px'
+                    : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-3 first:ml-0'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+                {/* Active tab bottom cover */}
+                {activeTab === tab.id && (
+                  <span className="absolute -bottom-px left-0 right-0 h-px bg-background" />
+                )}
+              </button>
+            ))}
           </div>
           
           {/* Right: User Controls */}
@@ -1043,39 +1065,6 @@ const MarketingDashboard = () => {
           </div>
         </div>
       </header>
-
-      {/* Main Tabs Navigation - Overlapping tab style */}
-      <div className="max-w-[1530px] mx-auto relative">
-        <div className="px-8 flex items-end gap-0 relative">
-          {[
-            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor Intelligence', icon: Eye },
-            { id: 'seo-audit' as DashboardTab, label: 'SEO Audit', icon: Search },
-            { id: 'bron' as DashboardTab, label: 'BRON', icon: TrendingUp },
-            { id: 'cade' as DashboardTab, label: 'CADE', icon: FileText },
-            { id: 'landing-pages' as DashboardTab, label: 'Landing Pages', icon: Target },
-          ].map((tab, index) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{ zIndex: activeTab === tab.id ? 10 : 5 - index }}
-              className={`relative flex items-center gap-2 px-5 py-3 text-sm font-medium transition-all rounded-t-xl border-t border-x ${
-                activeTab === tab.id
-                  ? 'bg-card text-primary border-border -mb-px'
-                  : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border-transparent -ml-2 first:ml-0'
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-              {/* Active tab bottom cover */}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-px bg-card" />
-              )}
-            </button>
-          ))}
-        </div>
-        {/* Border line under tabs */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
-      </div>
 
       {/* Date Range Selector Bar - Only show for Visitor Intelligence tab */}
       {activeTab === 'visitor-intelligence' && (
@@ -2473,6 +2462,15 @@ f.parentNode.insertBefore(j,f);
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bottom-right title badge - outside main content */}
+      <div className="max-w-[1530px] mx-auto flex justify-end mt-4 pb-6">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30 border border-border/50 text-muted-foreground">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Visitor Intelligence</span>
+          <span className="text-xs hidden sm:inline">— Marketing Funnel Analytics</span>
+        </div>
+      </div>
     </div>
   );
 };
