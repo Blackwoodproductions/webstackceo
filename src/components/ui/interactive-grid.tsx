@@ -161,24 +161,7 @@ const InteractiveGrid = ({
         }
       }
 
-      // Draw intersection highlights (dots at grid intersections)
-      ctx.globalAlpha = 1;
-      for (let i = 0; i <= cols; i++) {
-        for (let j = 0; j <= rows; j++) {
-          const x = i * cellSize;
-          const y = j * cellSize;
-          const dist = Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my));
-          const intensity = Math.max(0, 1 - dist / (glowRadius * 0.8));
-          
-          if (intensity > 0.15) {
-            ctx.beginPath();
-            ctx.arc(x, y, 1.5 + intensity * 1.5, 0, Math.PI * 2);
-            ctx.fillStyle = computedColor;
-            ctx.globalAlpha = intensity * 0.6;
-            ctx.fill();
-          }
-        }
-      }
+      // Intersection dots removed per user request
 
       animationRef.current = requestAnimationFrame(draw);
     };
