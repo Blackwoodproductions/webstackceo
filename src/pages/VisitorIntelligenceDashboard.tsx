@@ -21,7 +21,7 @@ import {
 import { 
   Users, Mail, Phone, MousePointer, FileText, TrendingUp, 
   LogOut, RefreshCw, BarChart3, Target, UserCheck, Building,
-  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch
+  DollarSign, ArrowRight, Eye, Zap, Activity, X, Filter, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Sun, Moon, MessageCircle, Calendar as CalendarIcon, User as UserIcon, FlaskConical, Search, AlertTriangle, Code, Download, Globe, Plus, Shield, MapPin, FileSearch, Star
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -2750,6 +2750,66 @@ f.parentNode.insertBefore(j,f);
                           <Plus className="w-4 h-4 mr-2" />
                           Add Business to Google Maps
                         </Button>
+                      </div>
+                      
+                      {/* Simulated Google Maps Listing Preview */}
+                      <div className="border-t border-amber-500/20 bg-background/40 p-4">
+                        <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3" />
+                          Preview of your listing on Google Maps
+                        </p>
+                        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-sm">
+                          {/* Map placeholder */}
+                          <div className="h-32 bg-gradient-to-br from-blue-100 to-green-50 dark:from-blue-950/30 dark:to-green-950/20 relative">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              {/* Stylized map grid lines */}
+                              <div className="absolute inset-0 opacity-20">
+                                <div className="grid grid-cols-6 h-full">
+                                  {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="border-r border-muted-foreground/20" />
+                                  ))}
+                                </div>
+                                <div className="absolute inset-0 grid grid-rows-4">
+                                  {[...Array(4)].map((_, i) => (
+                                    <div key={i} className="border-b border-muted-foreground/20" />
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Center pin */}
+                              <div className="relative z-10">
+                                <div className="w-8 h-8 rounded-full bg-red-500 shadow-lg flex items-center justify-center animate-pulse">
+                                  <MapPin className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45" />
+                              </div>
+                            </div>
+                          </div>
+                          {/* Listing card */}
+                          <div className="p-3">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Building className="w-5 h-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate">Your Business Name</p>
+                                <p className="text-xs text-muted-foreground">Business Category</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                  ))}
+                                  <span className="text-xs text-muted-foreground ml-1">(0 reviews)</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                  <Globe className="w-3 h-3" />
+                                  {selectedTrackedDomain || selectedDomainKey}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                          This is a preview. Your actual listing will appear on Google Maps after verification.
+                        </p>
                       </div>
                     </div>
                   )}
