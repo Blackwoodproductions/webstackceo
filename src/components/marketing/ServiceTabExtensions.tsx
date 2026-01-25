@@ -334,59 +334,8 @@ interface SocialSignalsExtendedSectionProps {
 }
 
 export const SocialSignalsExtendedSection = ({ domain }: SocialSignalsExtendedSectionProps) => {
-  // Platform capabilities - not fake stats
-  const platforms = [
-    { name: "X (Twitter)", desc: "Thread generation & scheduling", color: "from-sky-400 to-blue-500", icon: Twitter },
-    { name: "LinkedIn", desc: "Professional post automation", color: "from-blue-500 to-blue-700", icon: Linkedin },
-    { name: "Facebook", desc: "Page & group distribution", color: "from-blue-600 to-indigo-600", icon: Facebook },
-  ];
-
   return (
     <div className="mt-8 space-y-8">
-      {/* Platform Performance */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="p-8 rounded-2xl bg-gradient-to-br from-pink-500/5 via-rose-500/10 to-red-500/5 border border-pink-500/20"
-      >
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center"
-          >
-            <Activity className="w-5 h-5 text-white" />
-          </motion.div>
-          Platform Performance Dashboard
-        </h3>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {platforms.map((platform, i) => (
-            <motion.div
-              key={platform.name}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="p-5 rounded-xl bg-background/50 border border-border"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
-                  <platform.icon className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-semibold">{platform.name}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">{platform.desc}</p>
-              <div className="mt-4 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-pink-500" />
-                <span className="text-xs">Auto-scheduling enabled</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Auto-posting Timeline */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
