@@ -124,6 +124,13 @@ function normalizeDomain(v: string): string {
     .replace(/\/$/, '');
 }
 
+function rootDomainFromUrl(v: string): string {
+  return (v || '')
+    .toLowerCase()
+    .replace(/^(https?:\/\/)?(www\.)?/, '')
+    .split('/')[0];
+}
+
 // Dynamic iframe component that resizes based on content height
 const CaseStudyIframe = ({ domain }: { domain: string }) => {
   const [iframeHeight, setIframeHeight] = useState(800); // Start smaller
@@ -405,15 +412,33 @@ const MarketingDashboard = () => {
 
   // Check if selected domain matches any GMB location
   const selectedDomainInGmb = useMemo(() => {
-    const currentDomain = (selectedTrackedDomain || selectedDomainKey).toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    const currentDomain = rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey);
     if (!currentDomain || !gmbLocations.length) return null;
     
     return gmbLocations.find(loc => {
       if (!loc.websiteUri) return false;
-      const locDomain = loc.websiteUri.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+      const locDomain = rootDomainFromUrl(loc.websiteUri);
       return locDomain === currentDomain || locDomain.includes(currentDomain) || currentDomain.includes(locDomain);
     });
   }, [selectedTrackedDomain, selectedDomainKey, gmbLocations]);
+
+  const gmbLocationsForSelectedDomain = useMemo(() => {
+    const currentDomain = rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey);
+    if (!gmbLocations.length) return [];
+    // If no domain is selected yet, keep the list unfiltered.
+    if (!currentDomain) return gmbLocations;
+
+    return gmbLocations.filter((loc) => {
+      if (!loc.websiteUri) return false;
+      const locDomain = rootDomainFromUrl(loc.websiteUri);
+      return locDomain === currentDomain || locDomain.includes(currentDomain) || currentDomain.includes(locDomain);
+    });
+  }, [gmbLocations, selectedDomainKey, selectedTrackedDomain]);
+
+  // Keep the UI focused on the selected domain's matching location.
+  useEffect(() => {
+    setSelectedGmbLocation(selectedDomainInGmb?.name ?? null);
+  }, [selectedDomainInGmb?.name]);
 
   // Fetch saved audit for selected domain when tab changes or domain changes
   useEffect(() => {
@@ -2859,14 +2884,16 @@ f.parentNode.insertBefore(j,f);
                 </div>
               )}
               
-              {gmbLocations.length > 0 && gmbOnboardingStep === 0 && (
+              {gmbLocationsForSelectedDomain.length > 0 && gmbOnboardingStep === 0 && (
                 <div className="space-y-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">All Business Locations ({gmbLocations.length})</h3>
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Locations for {selectedTrackedDomain || selectedDomainKey || 'selected domain'} ({gmbLocationsForSelectedDomain.length})
+                    </h3>
                     <p className="text-xs text-muted-foreground">Click a location to view performance</p>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
-                    {gmbLocations.map((location) => {
+                    {gmbLocationsForSelectedDomain.map((location) => {
                       const isMatchedToDomain = selectedDomainInGmb?.name === location.name;
                       const isSelected = selectedGmbLocation === location.name;
                       return (
