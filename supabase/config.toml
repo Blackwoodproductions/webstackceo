@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.gmb-create-location]
 verify_jwt = false
+
+[functions.gmb-sync]
+verify_jwt = false
