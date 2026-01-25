@@ -239,6 +239,57 @@ export type Database = {
           },
         ]
       }
+      changelog_entries: {
+        Row: {
+          aggregation_end: string | null
+          aggregation_start: string | null
+          changes: Json
+          commit_hashes: Json | null
+          created_at: string
+          description: string
+          highlight: boolean
+          icon: string
+          id: string
+          is_published: boolean
+          published_at: string | null
+          title: string
+          type: string
+          version: string
+        }
+        Insert: {
+          aggregation_end?: string | null
+          aggregation_start?: string | null
+          changes?: Json
+          commit_hashes?: Json | null
+          created_at?: string
+          description: string
+          highlight?: boolean
+          icon?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title: string
+          type?: string
+          version: string
+        }
+        Update: {
+          aggregation_end?: string | null
+          aggregation_start?: string | null
+          changes?: Json
+          commit_hashes?: Json | null
+          created_at?: string
+          description?: string
+          highlight?: boolean
+          icon?: string
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          title?: string
+          type?: string
+          version?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
