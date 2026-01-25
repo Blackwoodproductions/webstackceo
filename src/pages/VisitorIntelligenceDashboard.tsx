@@ -1417,8 +1417,8 @@ const MarketingDashboard = () => {
         canonical="/visitor-intelligence-dashboard"
       />
 
-      {/* Header with integrated tabs */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1530px] mx-auto relative">
+      {/* Header with integrated tabs - wrapped with glow effect */}
+      <header className="border border-border bg-card rounded-t-xl max-w-[1300px] mx-auto relative glow-primary">
         {/* Tabs - offset right from center, floating at bottom of header */}
         <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 192px))' }}>
           {[
@@ -1567,7 +1567,7 @@ const MarketingDashboard = () => {
 
       {/* Main Layout - Only show for Visitor Intelligence tab */}
       {activeTab === 'visitor-intelligence' && (
-      <div className="flex min-h-[calc(100vh-180px)] max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border">
+      <div className="flex min-h-[calc(100vh-180px)] max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border glow-primary">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
@@ -2348,7 +2348,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* SEO Audit Tab Content - Case Study via iframe */}
       {activeTab === 'seo-audit' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border overflow-hidden">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border overflow-hidden glow-primary">
           {isLoadingAudit || isRunningAudit ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
@@ -2585,7 +2585,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -2699,7 +2699,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -2812,7 +2812,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           {!gmbAuthenticated ? (
             /* Not Connected State */
             <div className="space-y-6">
@@ -3476,7 +3476,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* Social Signals Tab Content */}
       {activeTab === 'social-signals' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -3585,7 +3585,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* On-page SEO Tab Content */}
       {activeTab === 'on-page-seo' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Top row: Header section + How It Works grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -3693,7 +3693,7 @@ f.parentNode.insertBefore(j,f);
       )}
 
       {activeTab === 'landing-pages' && (
-        <div className="max-w-[1530px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8">
+        <div className="max-w-[1300px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           
           {/* Extended Content Section */}
@@ -3934,7 +3934,7 @@ f.parentNode.insertBefore(j,f);
       </Dialog>
 
       {/* Bottom-right title badge - outside main content */}
-      <div className="max-w-[1530px] mx-auto flex justify-end mt-4 pb-6">
+      <div className="max-w-[1300px] mx-auto flex justify-end mt-4 pb-6">
         <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30 border border-border/50 text-muted-foreground">
           <BarChart3 className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Visitor Intelligence</span>
