@@ -210,6 +210,13 @@ const MarketingDashboard = () => {
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
   const [gmbSyncError, setGmbSyncError] = useState<string | null>(null);
   const [gmbLastSyncAt, setGmbLastSyncAt] = useState<string | null>(null);
+  const gmbSyncInFlightRef = useRef(false);
+
+  // Google can enforce very low per-minute quotas on newly-enabled Business Profile APIs.
+  // We keep a short client-side cooldown so we don't spam the endpoint and stay stuck at 429.
+  const GMB_RATE_LIMIT_COOLDOWN_MS = 70_000;
+  const getGmbCooldownUntil = () => Number(sessionStorage.getItem('gmb_cooldown_until') || '0');
+  const setGmbCooldownUntil = (ts: number) => sessionStorage.setItem('gmb_cooldown_until', String(ts));
 
   // Fetch GMB locations for all accounts
   const fetchGmbLocations = useCallback(async (accessToken: string, accounts: { name: string; accountName: string; type: string }[]) => {
@@ -249,6 +256,21 @@ const MarketingDashboard = () => {
   }, []);
 
   const applyGmbToken = useCallback(async (accessToken: string, expiresIn?: number) => {
+    // Prevent duplicate concurrent syncs (React StrictMode/dev + rapid clicks can double-invoke).
+    if (gmbSyncInFlightRef.current) return;
+
+    const cooldownUntil = getGmbCooldownUntil();
+    if (Date.now() < cooldownUntil) {
+      const seconds = Math.max(1, Math.ceil((cooldownUntil - Date.now()) / 1000));
+      setGmbSyncError(
+        `Google temporarily rate-limited this project (429). Please wait ~${seconds}s and try again.`
+      );
+      return;
+    }
+
+    gmbSyncInFlightRef.current = true;
+    setGmbLastSyncAt(new Date().toISOString());
+
     const safeExpiresIn = Number(expiresIn ?? 3600);
     const expiry = Date.now() + safeExpiresIn * 1000;
 
@@ -267,6 +289,23 @@ const MarketingDashboard = () => {
       if (!accountsRes.ok) {
         const body = await accountsRes.text().catch(() => '');
         const details = body ? ` - ${body.slice(0, 240)}` : '';
+
+        // Back off on quota errors so we don't keep hammering and re-triggering 429.
+        if (accountsRes.status === 429) {
+          const until = Date.now() + GMB_RATE_LIMIT_COOLDOWN_MS;
+          setGmbCooldownUntil(until);
+          const seconds = Math.ceil(GMB_RATE_LIMIT_COOLDOWN_MS / 1000);
+          const msg = `Google Business accounts request failed (429). Google quota is being exceeded. Wait ~${seconds}s then retry.${details}`;
+          console.warn('[GMB]', msg);
+          setGmbAccounts([]);
+          setGmbLocations([]);
+          setGmbSyncError(msg);
+          return;
+        }
+
+        // Clear any previous cooldown on non-429 errors.
+        setGmbCooldownUntil(0);
+
         const msg = `Google Business accounts request failed (${accountsRes.status})${details}`;
         console.warn('[GMB]', msg);
         setGmbAccounts([]);
@@ -300,6 +339,8 @@ const MarketingDashboard = () => {
       setGmbAccounts([]);
       setGmbLocations([]);
       setGmbSyncError(accountErr instanceof Error ? accountErr.message : 'Failed to fetch Google Business accounts');
+    } finally {
+      gmbSyncInFlightRef.current = false;
     }
   }, [fetchGmbLocations]);
   
@@ -2677,6 +2718,7 @@ f.parentNode.insertBefore(j,f);
                   size="sm"
                   onClick={() => {
                     sessionStorage.removeItem('gmb_access_token');
+                    sessionStorage.removeItem('gmb_cooldown_until');
                     setGmbAuthenticated(false);
                     setGmbAccounts([]);
                     setGmbLocations([]);
@@ -2825,6 +2867,7 @@ f.parentNode.insertBefore(j,f);
                       onClick={() => {
                         sessionStorage.removeItem('gmb_access_token');
                         sessionStorage.removeItem('gmb_token_expiry');
+                        sessionStorage.removeItem('gmb_cooldown_until');
                         setGmbAuthenticated(false);
                         setGmbAccounts([]);
                         setGmbLocations([]);
