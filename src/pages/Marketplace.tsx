@@ -33,6 +33,9 @@ import PartnerApplicationDialog from "@/components/marketplace/PartnerApplicatio
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import InteractiveGrid from "@/components/ui/interactive-grid";
+import { HighTechBackground } from "@/components/ui/high-tech-background";
 
 // Icon mapping for categories
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -268,7 +271,14 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Futuristic Background Effects */}
+      <FloatingOrbs className="fixed inset-0 z-0" />
+      <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
+      <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
+      <CyberLines className="fixed inset-0 z-0" />
+      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
+      <HUDOverlay className="fixed inset-0 z-0" />
       <SEO
         title="Partner Marketplace - Find Trusted Service Providers"
         description="Discover vetted marketing partners, SEO agencies, and web professionals. Find the right partner for your business needs."

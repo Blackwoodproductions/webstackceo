@@ -9,13 +9,23 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
 import diamondFlowImg from "@/assets/bron-seo-diamond-flow.png";
 import { CheckCircle2, Layers } from "lucide-react";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import InteractiveGrid from "@/components/ui/interactive-grid";
+import { HighTechBackground } from "@/components/ui/high-tech-background";
 
 const FAQ = () => {
   // Generate dynamic FAQ schema from actual content
   const faqSchema = generateFAQSchema();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Futuristic Background Effects */}
+      <FloatingOrbs className="fixed inset-0 z-0" />
+      <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
+      <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
+      <CyberLines className="fixed inset-0 z-0" />
+      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
+      <HUDOverlay className="fixed inset-0 z-0" />
       <SEO
         title="FAQ - Frequently Asked Questions"
         description="Find answers to common questions about Webstack.ceo. Learn about our pricing, features, support, integrations, and how to get started."

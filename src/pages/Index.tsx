@@ -16,6 +16,8 @@ import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import FloatingAIShield from "@/components/ui/floating-ai-shield";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import { HighTechBackground } from "@/components/ui/high-tech-background";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import SEO from "@/components/SEO";
 import ogImages from "@/assets/og";
@@ -31,11 +33,15 @@ const Index = () => {
   useKeyboardNavigation();
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Full-page interactive grid */}
-      <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.156} />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Futuristic Background Effects */}
+      <FloatingOrbs className="fixed inset-0 z-0" />
+      <FuturisticParticles className="fixed inset-0 z-0" particleCount={40} variant="default" />
+      <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
+      <CyberLines className="fixed inset-0 z-0" />
+      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
+      <HUDOverlay className="fixed inset-0 z-0" />
       {/* Floating AI Shield */}
-      <FloatingAIShield />
       <FloatingAIShield />
       <SEO
         title="Webstack.ceo | Niche Linking on Autopilot for SEO Agencies"
