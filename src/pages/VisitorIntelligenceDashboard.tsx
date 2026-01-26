@@ -2568,8 +2568,10 @@ f.parentNode.insertBefore(j,f);
                         'from-lime-400 to-green-500',
                         'from-violet-400 to-purple-500',
                       ];
+                      const visitorIcons = [Eye, Zap, Flame, Star, Target, Crosshair, Sparkles, Activity];
                       const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
                       const colorClass = colors[hash % colors.length];
+                      const VisitorIcon = visitorIcons[hash % visitorIcons.length];
                       const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
                       const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m ago` : `${Math.floor(timeSince / 60)}h ago`;
                       
@@ -2601,7 +2603,7 @@ f.parentNode.insertBefore(j,f);
                           className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-emerald-500/10 border border-dashed border-emerald-500/20"
                         >
                           <div className={`relative w-8 h-8 rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
-                            <Eye className="w-4 h-4 text-white" />
+                            <VisitorIcon className="w-4 h-4 text-white" />
                             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400">
                               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
                             </span>
@@ -2677,6 +2679,8 @@ f.parentNode.insertBefore(j,f);
                   ];
                   const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
                   const colorClass = colors[hash % colors.length];
+                  const visitorIcons = [Eye, Zap, Flame, Star, Target, Crosshair, Sparkles, Activity];
+                  const VisitorIcon = visitorIcons[hash % visitorIcons.length];
                   const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
                   const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m` : `${Math.floor(timeSince / 60)}h`;
                   
@@ -2712,7 +2716,7 @@ f.parentNode.insertBefore(j,f);
                       title={`${visitor.first_page || '/'} • ${timeLabel}`}
                     >
                       <div className={`w-full h-full rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center border-2 border-dashed border-white/30`}>
-                        <Eye className="w-4 h-4 text-white" />
+                        <VisitorIcon className="w-4 h-4 text-white" />
                       </div>
                       {/* Live indicator */}
                       <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
