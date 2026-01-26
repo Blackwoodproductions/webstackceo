@@ -1414,12 +1414,12 @@ const MarketingDashboard = () => {
 
   // Calculate funnel percentages
   const funnelSteps = [
-    { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600', bgGradient: 'from-blue-500/15 to-blue-600/10', borderColor: 'border-blue-500/30', gridColor: 'hsl(217 91% 60%)' },
-    { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600', bgGradient: 'from-cyan-500/15 to-cyan-600/10', borderColor: 'border-cyan-500/30', gridColor: 'hsl(186 91% 50%)' },
-    { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600', bgGradient: 'from-violet-500/15 to-violet-600/10', borderColor: 'border-violet-500/30', gridColor: 'hsl(262 83% 58%)' },
-    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600', bgGradient: 'from-orange-500/15 to-orange-600/10', borderColor: 'border-orange-500/30', gridColor: 'hsl(24 95% 53%)' },
-    { label: 'Open', count: leads.filter(l => l.status === 'open').length, icon: FileText, color: 'from-slate-400 to-slate-600', bgGradient: 'from-slate-500/15 to-slate-600/10', borderColor: 'border-slate-500/30', gridColor: 'hsl(215 16% 47%)' },
-    { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600', bgGradient: 'from-green-500/15 to-green-600/10', borderColor: 'border-green-500/30', gridColor: 'hsl(142 71% 45%)' },
+    { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600', bgGradient: 'from-blue-500/8 to-blue-600/5', borderColor: 'border-blue-500/20' },
+    { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600', bgGradient: 'from-cyan-500/8 to-cyan-600/5', borderColor: 'border-cyan-500/20' },
+    { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600', bgGradient: 'from-violet-500/8 to-violet-600/5', borderColor: 'border-violet-500/20' },
+    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600', bgGradient: 'from-orange-500/8 to-orange-600/5', borderColor: 'border-orange-500/20' },
+    { label: 'Open', count: leads.filter(l => l.status === 'open').length, icon: FileText, color: 'from-slate-400 to-slate-600', bgGradient: 'from-slate-500/8 to-slate-600/5', borderColor: 'border-slate-500/20' },
+    { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600', bgGradient: 'from-green-500/8 to-green-600/5', borderColor: 'border-green-500/20' },
   ];
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
@@ -2023,9 +2023,7 @@ f.parentNode.insertBefore(j,f);
                   whileHover={{ scale: 1.02 }}
                   className="h-full"
                 >
-                  <Card className={`relative overflow-hidden h-full min-h-[88px] p-4 group ${step.borderColor} bg-gradient-to-br ${step.bgGradient} hover:shadow-md transition-all`}>
-                    {/* Subtle corner glow only */}
-                    <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/15 to-transparent rounded-bl-[30px] pointer-events-none`} />
+                  <Card className={`relative overflow-hidden h-full min-h-[88px] p-4 group border ${step.borderColor} bg-gradient-to-br ${step.bgGradient} hover:shadow-sm transition-all`}>
                     <div className="flex items-center gap-3 relative z-10">
                       <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0 shadow-md`}>
                         <step.icon className="w-5 h-5 text-white" />
@@ -2055,18 +2053,7 @@ f.parentNode.insertBefore(j,f);
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
             {/* Combined Tab Header with Lead Quality Stats - Full Width */}
-            <div className="relative overflow-hidden flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border group">
-              {/* High-tech grid pattern */}
-              <div 
-                className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                style={{
-                  backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-                  backgroundSize: '20px 20px'
-                }}
-              />
-              {/* Corner glows */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[50px] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[50px] pointer-events-none" />
+            <div className="flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/20 border border-border/50">
               {/* Tabs - takes up left portion */}
               <TabsList className="flex-1 grid grid-cols-3 bg-background/40 p-1 h-auto gap-1 rounded-lg">
                 <TabsTrigger value="leads" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
@@ -2086,41 +2073,34 @@ f.parentNode.insertBefore(j,f);
               {/* Lead Quality Stats - takes up right portion */}
               <div className="flex-1 grid grid-cols-5 gap-2">
                 {[
-                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, dotColor: 'bg-blue-500', activeClass: 'bg-blue-500/20 border-blue-500/50', glowColor: 'from-blue-500/10' },
-                  { label: 'Named', count: funnelStats.withName, dotColor: 'bg-amber-500', activeClass: 'bg-amber-500/20 border-amber-500/50', glowColor: 'from-amber-500/10' },
-                  { label: 'Qualified', count: funnelStats.withCompanyInfo, dotColor: 'bg-orange-500', activeClass: 'bg-orange-500/20 border-orange-500/50', glowColor: 'from-orange-500/10' },
-                  { label: 'Closed', count: funnelStats.closedLeads, dotColor: 'bg-green-500', activeClass: 'bg-green-500/20 border-green-500/50', glowColor: 'from-green-500/10' },
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, dotColor: 'bg-blue-500', activeClass: 'bg-blue-500/15 border-blue-500/40' },
+                  { label: 'Named', count: funnelStats.withName, dotColor: 'bg-amber-500', activeClass: 'bg-amber-500/15 border-amber-500/40' },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, dotColor: 'bg-orange-500', activeClass: 'bg-orange-500/15 border-orange-500/40' },
+                  { label: 'Closed', count: funnelStats.closedLeads, dotColor: 'bg-green-500', activeClass: 'bg-green-500/15 border-green-500/40' },
                 ].map((item) => (
-                  <motion.button
+                  <button
                     key={item.label}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
                     onClick={() => setExpandedStatFilter(expandedStatFilter === item.label ? null : item.label)}
-                    className={`relative overflow-hidden flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer group ${
+                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
                       expandedStatFilter === item.label 
                         ? item.activeClass 
-                        : 'bg-background/60 border-border/30 hover:border-border'
+                        : 'bg-background/50 border-border/40 hover:border-border hover:bg-background/70'
                     }`}
                   >
-                    {/* Corner glow */}
-                    <div className={`absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl ${item.glowColor} to-transparent rounded-bl-[20px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity`} />
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor} relative z-10`} />
-                    <span className="text-xs text-muted-foreground relative z-10">{item.label}</span>
-                    <span className="font-bold text-sm relative z-10">{Math.max(0, item.count)}</span>
-                    <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform relative z-10 ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
-                  </motion.button>
+                    <div className={`w-2 h-2 rounded-full ${item.dotColor}`} />
+                    <span className="text-xs text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold text-sm">{Math.max(0, item.count)}</span>
+                    <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
+                  </button>
                 ))}
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={handleCreateTestLead}
-                  className="relative overflow-hidden flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-amber-500/50 text-amber-500 hover:bg-amber-500/10 transition-colors group"
+                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/50 border border-amber-500/40 text-amber-500 hover:bg-amber-500/10 transition-colors"
                   title="Create a test lead for demo purposes"
                 >
-                  <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-[20px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <FlaskConical className="w-3.5 h-3.5 relative z-10" />
-                  <span className="text-xs relative z-10">Test Lead</span>
-                </motion.button>
+                  <FlaskConical className="w-3.5 h-3.5" />
+                  <span className="text-xs">Test Lead</span>
+                </button>
               </div>
             </div>
 
@@ -2188,24 +2168,10 @@ f.parentNode.insertBefore(j,f);
             )}
 
               <TabsContent value="leads" className="mt-0">
-                <Card className="relative overflow-hidden p-0 border-border group">
-                  {/* High-tech grid pattern */}
-                  <div 
-                    className="absolute inset-0 opacity-[0.015] pointer-events-none"
-                    style={{
-                      backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-                      backgroundSize: '24px 24px'
-                    }}
-                  />
-                  {/* Corner accent glow */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[60px] pointer-events-none" />
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[60px] pointer-events-none" />
-                  {/* Floating particles */}
-                  <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-primary/40 animate-pulse pointer-events-none" />
-                  <div className="absolute bottom-[25%] left-[5%] w-1.5 h-1.5 rounded-full bg-primary/30 animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
-                  <div className="max-h-[420px] overflow-auto relative z-10">
+                <Card className="p-0 border-border/50 bg-card/50">
+                  <div className="max-h-[420px] overflow-auto">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+                      <TableHeader className="sticky top-0 bg-card z-10">
                         <TableRow>
                           <TableHead className="text-xs">Email</TableHead>
                           <TableHead className="text-xs">Name</TableHead>
@@ -2273,14 +2239,10 @@ f.parentNode.insertBefore(j,f);
                 </Card>
               </TabsContent>
 
-              {/* Customer Journey Tab */}
               <TabsContent value="journey" className="mt-0">
                 <div className="grid grid-cols-2 gap-3">
                   {/* Top Entry Pages */}
-                  <Card className="relative overflow-hidden p-4 border-border group">
-                    {/* Grid pattern */}
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(142 71% 45%) 1px, transparent 1px), linear-gradient(90deg, hsl(142 71% 45%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-[40px] pointer-events-none" />
+                  <Card className="p-4 border-border/50 bg-card/50">
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <Eye className="w-4 h-4 text-green-500" />
                       Top Entry Pages
@@ -2305,10 +2267,7 @@ f.parentNode.insertBefore(j,f);
                   </Card>
 
                   {/* Tool Usage by Type */}
-                  <Card className="relative overflow-hidden p-4 border-border group">
-                    {/* Grid pattern */}
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(262 83% 58%) 1px, transparent 1px), linear-gradient(90deg, hsl(262 83% 58%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-[40px] pointer-events-none" />
+                  <Card className="p-4 border-border/50 bg-card/50">
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <MousePointer className="w-4 h-4 text-violet-500" />
                       Tool Usage
@@ -2333,10 +2292,7 @@ f.parentNode.insertBefore(j,f);
                   </Card>
 
                   {/* Recent Lead Sources */}
-                  <Card className="relative overflow-hidden p-4 col-span-2 border-border group">
-                    {/* Grid pattern */}
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(330 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(330 80% 60%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-pink-500/10 to-transparent rounded-bl-[50px] pointer-events-none" />
+                  <Card className="p-4 col-span-2 border-border/50 bg-card/50">
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <FileText className="w-4 h-4 text-pink-500" />
                       Lead Sources
@@ -2363,14 +2319,10 @@ f.parentNode.insertBefore(j,f);
 
               {/* Tool Usage Tab */}
               <TabsContent value="tools" className="mt-0">
-                <Card className="relative overflow-hidden p-0 border-border group">
-                  {/* High-tech grid pattern */}
-                  <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[60px] pointer-events-none" />
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[60px] pointer-events-none" />
-                  <div className="max-h-[420px] overflow-auto relative z-10">
+                <Card className="p-0 border-border/50 bg-card/50">
+                  <div className="max-h-[420px] overflow-auto">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+                      <TableHeader className="sticky top-0 bg-card z-10">
                         <TableRow>
                           <TableHead className="text-xs">Tool</TableHead>
                           <TableHead className="text-xs">Type</TableHead>
