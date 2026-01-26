@@ -2576,8 +2576,10 @@ f.parentNode.insertBefore(j,f);
                       const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m ago` : `${Math.floor(timeSince / 60)}h ago`;
                       
                       return (
-                        <div
+                        <motion.div
                           key={visitor.session_id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
                           onClick={async () => {
                             const { data: newConv } = await supabase
                               .from('chat_conversations')
@@ -2600,23 +2602,64 @@ f.parentNode.insertBefore(j,f);
                               toast.success('Chat started with visitor');
                             }
                           }}
-                          className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-emerald-500/10 border border-dashed border-emerald-500/20"
+                          className="group relative flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-primary/5 border border-primary/10 hover:border-primary/30 backdrop-blur-sm"
                         >
-                          <div className={`relative w-8 h-8 rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
-                            <VisitorIcon className="w-4 h-4 text-white" />
-                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400">
+                          {/* Glow effect on hover */}
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          
+                          {/* Futuristic icon container */}
+                          <div className="relative flex-shrink-0">
+                            {/* Outer glow ring */}
+                            <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-30 blur-sm group-hover:opacity-50 transition-opacity`} />
+                            
+                            {/* Main square */}
+                            <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
+                              {/* Inner highlight */}
+                              <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
+                              
+                              {/* Scan line effect */}
+                              <motion.div 
+                                className="absolute inset-0 rounded-lg overflow-hidden"
+                                initial={false}
+                              >
+                                <motion.div 
+                                  className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                                  animate={{ y: [0, 36, 0] }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                />
+                              </motion.div>
+                              
+                              {/* Icon */}
+                              <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
+                              
+                              {/* Corner accents */}
+                              <div className="absolute top-0 left-0 w-1.5 h-1.5 border-l-2 border-t-2 border-white/40 rounded-tl-sm" />
+                              <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-r-2 border-b-2 border-white/40 rounded-br-sm" />
+                            </div>
+                            
+                            {/* Live indicator with pulse */}
+                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/50">
                               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
                             </span>
                           </div>
-                          <div className="flex-1 min-w-0">
+                          
+                          <div className="flex-1 min-w-0 relative z-10">
                             <p className="text-xs font-medium text-foreground truncate">
                               {visitor.first_page || '/'}
                             </p>
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                               {timeLabel} • Click to engage
                             </p>
                           </div>
-                        </div>
+                          
+                          {/* Shimmer effect on hover */}
+                          <motion.div 
+                            className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+                            animate={{ x: ['-100%', '200%'] }}
+                            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                          />
+                        </motion.div>
                       );
                     })}
                   </>
@@ -2685,10 +2728,11 @@ f.parentNode.insertBefore(j,f);
                   const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m` : `${Math.floor(timeSince / 60)}h`;
                   
                   return (
-                    <div
+                    <motion.div
                       key={visitor.session_id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
                       onClick={async () => {
-                        // Create a new conversation and engage this visitor
                         const { data: newConv } = await supabase
                           .from('chat_conversations')
                           .insert({
@@ -2700,7 +2744,6 @@ f.parentNode.insertBefore(j,f);
                           .single();
                         
                         if (newConv) {
-                          // Add system message
                           await supabase.from('chat_messages').insert({
                             conversation_id: newConv.id,
                             sender_type: 'system',
@@ -2712,24 +2755,69 @@ f.parentNode.insertBefore(j,f);
                           toast.success('Chat started with visitor');
                         }
                       }}
-                      className="relative w-9 h-9 rounded-md cursor-pointer transition-all hover:scale-110 group"
+                      className="relative w-10 h-10 cursor-pointer group"
                       title={`${visitor.first_page || '/'} • ${timeLabel}`}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <div className={`w-full h-full rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center border-2 border-dashed border-white/30`}>
-                        <VisitorIcon className="w-4 h-4 text-white" />
+                      {/* Outer glow */}
+                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-40 blur-md group-hover:opacity-70 transition-opacity`} />
+                      
+                      {/* Main container */}
+                      <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-xl overflow-hidden`}>
+                        {/* Inner highlight */}
+                        <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/25 to-transparent" />
+                        
+                        {/* Grid pattern overlay */}
+                        <div 
+                          className="absolute inset-0 opacity-20"
+                          style={{
+                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                            backgroundSize: '4px 4px'
+                          }}
+                        />
+                        
+                        {/* Scan line */}
+                        <motion.div 
+                          className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                          animate={{ y: [-20, 40] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        />
+                        
+                        {/* Icon */}
+                        <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
+                        
+                        {/* Corner tech accents */}
+                        <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
+                        <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
+                        
+                        {/* Shimmer on hover */}
+                        <motion.div 
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100"
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
+                        />
                       </div>
-                      {/* Live indicator */}
-                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
+                      
+                      {/* Live indicator with enhanced glow */}
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/60">
                         <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
                       </span>
-                      {/* Hover tooltip */}
-                      <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <div className="bg-popover border border-border rounded-lg px-2 py-1 shadow-lg whitespace-nowrap">
-                          <p className="text-[10px] text-foreground font-medium">{visitor.first_page || '/'}</p>
-                          <p className="text-[9px] text-muted-foreground">Click to engage • {timeLabel}</p>
+                      
+                      {/* Hover tooltip with glass effect */}
+                      <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none scale-95 group-hover:scale-100">
+                        <div className="bg-background/90 backdrop-blur-xl border border-primary/20 rounded-xl px-3 py-2 shadow-2xl shadow-primary/10 whitespace-nowrap">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className={`w-2 h-2 rounded-sm bg-gradient-to-br ${colorClass}`} />
+                            <p className="text-[11px] text-foreground font-semibold">{visitor.first_page || '/'}</p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Click to engage • {timeLabel}
+                          </p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
 
