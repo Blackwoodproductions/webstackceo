@@ -2015,22 +2015,46 @@ f.parentNode.insertBefore(j,f);
                 ? ((step.count / funnelSteps[index - 1].count) * 100).toFixed(0)
                 : null;
               return (
-                <Card key={step.label} className="p-4">
-                  <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0`}>
-                      <step.icon className="w-5 h-5 text-white" />
+                <motion.div
+                  key={step.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                >
+                  <Card className="relative overflow-hidden p-4 group border-border hover:shadow-lg transition-shadow">
+                    {/* Grid pattern */}
+                    <div 
+                      className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                      style={{
+                        backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                        backgroundSize: '16px 16px'
+                      }}
+                    />
+                    {/* Corner glow */}
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-[40px] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity" />
+                    {/* Shimmer effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    <div className="flex items-center gap-2 relative z-10">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0 shadow-lg`}>
+                        <step.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{step.label}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{step.label}</p>
-                    </div>
-                  </div>
-                  {conversionFromPrev && (
-                    <div className="mt-2 text-[10px] text-muted-foreground">
-                      <span className="text-foreground font-medium">{conversionFromPrev}%</span> from prev
-                    </div>
-                  )}
-                </Card>
+                    {conversionFromPrev && (
+                      <div className="mt-2 text-[10px] text-muted-foreground relative z-10">
+                        <span className="text-foreground font-medium">{conversionFromPrev}%</span> from prev
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
@@ -2064,34 +2088,41 @@ f.parentNode.insertBefore(j,f);
               {/* Lead Quality Stats - takes up right portion */}
               <div className="flex-1 grid grid-cols-5 gap-2">
                 {[
-                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, dotColor: 'bg-blue-500', activeClass: 'bg-blue-500/20 border-blue-500/50' },
-                  { label: 'Named', count: funnelStats.withName, dotColor: 'bg-amber-500', activeClass: 'bg-amber-500/20 border-amber-500/50' },
-                  { label: 'Qualified', count: funnelStats.withCompanyInfo, dotColor: 'bg-orange-500', activeClass: 'bg-orange-500/20 border-orange-500/50' },
-                  { label: 'Closed', count: funnelStats.closedLeads, dotColor: 'bg-green-500', activeClass: 'bg-green-500/20 border-green-500/50' },
+                  { label: 'Open', count: funnelStats.leads - funnelStats.closedLeads, dotColor: 'bg-blue-500', activeClass: 'bg-blue-500/20 border-blue-500/50', glowColor: 'from-blue-500/10' },
+                  { label: 'Named', count: funnelStats.withName, dotColor: 'bg-amber-500', activeClass: 'bg-amber-500/20 border-amber-500/50', glowColor: 'from-amber-500/10' },
+                  { label: 'Qualified', count: funnelStats.withCompanyInfo, dotColor: 'bg-orange-500', activeClass: 'bg-orange-500/20 border-orange-500/50', glowColor: 'from-orange-500/10' },
+                  { label: 'Closed', count: funnelStats.closedLeads, dotColor: 'bg-green-500', activeClass: 'bg-green-500/20 border-green-500/50', glowColor: 'from-green-500/10' },
                 ].map((item) => (
-                  <button
+                  <motion.button
                     key={item.label}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setExpandedStatFilter(expandedStatFilter === item.label ? null : item.label)}
-                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
+                    className={`relative overflow-hidden flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer group ${
                       expandedStatFilter === item.label 
                         ? item.activeClass 
                         : 'bg-background/60 border-border/30 hover:border-border'
                     }`}
                   >
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor}`} />
-                    <span className="text-xs text-muted-foreground">{item.label}</span>
-                    <span className="font-bold text-sm">{Math.max(0, item.count)}</span>
-                    <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
-                  </button>
+                    {/* Corner glow */}
+                    <div className={`absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl ${item.glowColor} to-transparent rounded-bl-[20px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor} relative z-10`} />
+                    <span className="text-xs text-muted-foreground relative z-10">{item.label}</span>
+                    <span className="font-bold text-sm relative z-10">{Math.max(0, item.count)}</span>
+                    <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform relative z-10 ${expandedStatFilter === item.label ? 'rotate-180' : ''}`} />
+                  </motion.button>
                 ))}
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleCreateTestLead}
-                  className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-amber-500/50 text-amber-500 hover:bg-amber-500/10 transition-colors"
+                  className="relative overflow-hidden flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-background/60 border border-amber-500/50 text-amber-500 hover:bg-amber-500/10 transition-colors group"
                   title="Create a test lead for demo purposes"
                 >
-                  <FlaskConical className="w-3.5 h-3.5" />
-                  <span className="text-xs">Test Lead</span>
-                </button>
+                  <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-[20px] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <FlaskConical className="w-3.5 h-3.5 relative z-10" />
+                  <span className="text-xs relative z-10">Test Lead</span>
+                </motion.button>
               </div>
             </div>
 
