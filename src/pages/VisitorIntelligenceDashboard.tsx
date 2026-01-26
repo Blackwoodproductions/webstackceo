@@ -44,7 +44,7 @@ import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
 
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
-import { CADEApiDashboard } from '@/components/marketing/CADEApiDashboard';
+import { CADELoginBox } from '@/components/marketing/CADELoginBox';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
 import {
   Select,
@@ -3497,8 +3497,8 @@ f.parentNode.insertBefore(j,f);
               }}
             />
 
-            {/* CADE API Dashboard - Live System Data */}
-            <CADEApiDashboard domain={selectedTrackedDomain || selectedDomainKey} />
+            {/* CADE API Login & Dashboard */}
+            <CADELoginBox domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
           </div>
         </div>
