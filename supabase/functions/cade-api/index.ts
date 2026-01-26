@@ -14,7 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    const { action, domain, params, apiKey: userApiKey } = await req.json();
+    const requestBody = await req.json();
+    const { action, domain, params, apiKey: userApiKey } = requestBody;
+    
+    console.log(`[CADE API] Received body keys: ${Object.keys(requestBody).join(', ')}`);
+    console.log(`[CADE API] User API key provided: ${!!userApiKey}, length: ${userApiKey?.length || 0}`);
     
     // Use user-provided API key first, fall back to environment variable
     const apiKey = userApiKey || Deno.env.get("CADE_API_KEY");
@@ -27,11 +31,11 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}, Using user key: ${!!userApiKey}`);
+    console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}, Using user key: ${!!userApiKey}, Key prefix: ${apiKey.substring(0, 8)}...`);
 
     let endpoint = "";
     let method = "GET";
-    let body: string | null = null;
+    let postBody: string | null = null;
 
     switch (action) {
       case "health":
@@ -95,7 +99,7 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/crawler/crawl-domain";
-        body = JSON.stringify({ domain, ...params });
+        postBody = JSON.stringify({ domain, ...params });
         break;
 
       case "generate-content":
@@ -107,7 +111,7 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/content/";
-        body = JSON.stringify({ domain, ...params });
+        postBody = JSON.stringify({ domain, ...params });
         break;
 
       case "generate-faq":
@@ -119,7 +123,7 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/content/faq";
-        body = JSON.stringify({ domain, ...params });
+        postBody = JSON.stringify({ domain, ...params });
         break;
 
       default:
@@ -144,8 +148,8 @@ serve(async (req) => {
       headers,
     };
 
-    if (body && method !== "GET") {
-      fetchOptions.body = body;
+    if (postBody && method !== "GET") {
+      fetchOptions.body = postBody;
     }
 
     const response = await fetch(url, fetchOptions);

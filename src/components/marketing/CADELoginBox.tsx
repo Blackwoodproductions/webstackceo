@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Key, LogIn, LogOut, Loader2, CheckCircle2, AlertTriangle,
@@ -105,6 +105,13 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoadingKey, setIsLoadingKey] = useState(true);
+  const [hasAutoCrawled, setHasAutoCrawled] = useState(false);
+
+  // Use ref to always have current API key value in callbacks
+  const apiKeyRef = useRef(apiKey);
+  useEffect(() => {
+    apiKeyRef.current = apiKey;
+  }, [apiKey]);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -191,16 +198,15 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   }, [domain, previousDomain, isConnected]);
 
-  // Fetch data when connected or domain changes
-  useEffect(() => {
-    if (isConnected && apiKey) {
-      fetchAllData();
-    }
-  }, [isConnected, apiKey, domain]);
-
-  const callCadeApi = async (action: string, params?: Record<string, unknown>) => {
+  // Helper function to call CADE API with current API key
+  const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, currentDomain?: string) => {
+    const key = apiKeyRef.current;
+    const targetDomain = currentDomain || domain;
+    
+    console.log(`[CADE] Calling ${action} with key: ${key ? key.substring(0, 8) + '...' : 'none'}, domain: ${targetDomain}`);
+    
     const { data, error } = await supabase.functions.invoke("cade-api", {
-      body: { action, domain, params, apiKey },
+      body: { action, domain: targetDomain, params, apiKey: key },
     });
 
     if (error) {
@@ -209,10 +215,17 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
 
     return data;
-  };
+  }, [domain]);
 
+  // Fetch all data from CADE API
   const fetchAllData = useCallback(async () => {
+    if (!apiKeyRef.current) {
+      console.log("[CADE] No API key available, skipping fetch");
+      return;
+    }
+    
     setError(null);
+    console.log("[CADE] Fetching all data...");
 
     try {
       // Fetch all system data in parallel
@@ -227,6 +240,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       // Process health data
       if (healthRes.status === "fulfilled") {
         const data = healthRes.value?.data || healthRes.value;
+        console.log("[CADE] Health data:", data);
         setHealth(prev => ({ ...prev, ...data }));
       }
 
@@ -282,9 +296,26 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
           callCadeApi("get-faqs"),
         ]);
 
+        console.log("[CADE] Domain profile response:", profileRes);
+        console.log("[CADE] FAQs response:", faqsRes);
+
         if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
-          setDomainProfile(profileRes.value?.data || profileRes.value);
+          const profile = profileRes.value?.data || profileRes.value;
+          setDomainProfile(profile);
+          
+          // Check if domain needs crawling
+          if (!profile?.last_crawl && !hasAutoCrawled) {
+            console.log("[CADE] Domain not crawled yet, triggering auto-crawl");
+            triggerAutoCrawl();
+          }
+        } else if (profileRes.status === "fulfilled" && profileRes.value?.error) {
+          // Domain not found in CADE, trigger crawl
+          console.log("[CADE] Domain not found, triggering crawl");
+          if (!hasAutoCrawled) {
+            triggerAutoCrawl();
+          }
         }
+        
         if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
           const faqData = faqsRes.value?.data || faqsRes.value;
           setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
@@ -295,7 +326,56 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [domain]);
+  }, [domain, callCadeApi, hasAutoCrawled]);
+
+  // Auto-crawl function
+  const triggerAutoCrawl = useCallback(async () => {
+    if (!domain || !apiKeyRef.current || hasAutoCrawled) return;
+    
+    setHasAutoCrawled(true);
+    setCrawling(true);
+    toast.info(`Starting automatic crawl for ${domain}...`);
+    
+    try {
+      const crawlRes = await callCadeApi("crawl-domain", { force: true });
+      console.log("[CADE] Auto-crawl response:", crawlRes);
+      
+      if (crawlRes && !crawlRes.error) {
+        toast.success(`Domain crawl initiated for ${domain}`);
+        // Poll for updates
+        setTimeout(() => fetchAllData(), 5000);
+      } else if (crawlRes?.error) {
+        console.log("[CADE] Crawl error:", crawlRes.error);
+        toast.error(`Crawl failed: ${crawlRes.error.message || crawlRes.error}`);
+      }
+    } catch (crawlErr) {
+      console.error("[CADE] Auto-crawl error:", crawlErr);
+      toast.error("Failed to start domain crawl");
+    } finally {
+      setCrawling(false);
+    }
+  }, [domain, callCadeApi, hasAutoCrawled, fetchAllData]);
+
+  // Fetch data when connected or domain changes
+  useEffect(() => {
+    if (isConnected && apiKey) {
+      fetchAllData();
+    }
+  }, [isConnected, apiKey, domain, fetchAllData]);
+
+  // Reset auto-crawl flag when domain changes
+  useEffect(() => {
+    if (domain !== previousDomain) {
+      setHasAutoCrawled(false);
+      setDomainProfile(null);
+      setFaqs([]);
+      setPreviousDomain(domain);
+      
+      if (isConnected && previousDomain && domain) {
+        toast.info(`Switched to domain: ${domain}`);
+      }
+    }
+  }, [domain, previousDomain, isConnected]);
 
   const handleLogin = async () => {
     if (!apiKey.trim()) {
