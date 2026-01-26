@@ -519,7 +519,16 @@ const MarketingDashboard = () => {
   // User-added domains
   const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
     const stored = localStorage.getItem('vi_user_added_domains');
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    try {
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // Self-heal: if the stored value is corrupted, remove it so the app can't crash
+      // during render on subsequent visits.
+      localStorage.removeItem('vi_user_added_domains');
+      return [];
+    }
   });
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
   const [newDomainInput, setNewDomainInput] = useState('');
