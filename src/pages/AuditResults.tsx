@@ -2493,17 +2493,17 @@ const AuditResults = () => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
                         >
-                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 font-medium flex items-center gap-1.5 border border-emerald-500/30">
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            SSL Secure
-                          </span>
                           <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-medium flex items-center gap-1.5 border border-cyan-500/30">
-                            <Zap className="w-3.5 h-3.5" />
-                            Real-Time Data
+                            <Users className="w-3.5 h-3.5" />
+                            100+ Agencies
+                          </span>
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 font-medium flex items-center gap-1.5 border border-amber-500/30">
+                            <Crown className="w-3.5 h-3.5" />
+                            1,000+ CEOs
                           </span>
                           <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 font-medium flex items-center gap-1.5 border border-violet-500/30">
-                            <HeadphonesIcon className="w-3.5 h-3.5" />
-                            24/7 Support
+                            <Bot className="w-3.5 h-3.5" />
+                            AI-Powered
                           </span>
                         </motion.div>
                       </div>
