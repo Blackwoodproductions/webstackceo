@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, Zap, Target, RefreshCw, LogIn
+  Award, Sparkles, Zap, Target, RefreshCw, LogIn
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { BRONExtendedSection } from "./ServiceTabExtensions";
 import { supabase } from "@/integrations/supabase/client";
-
+import { BronDashboard } from "./BronDashboard";
 interface BRONPlatformConnectProps {
   domain?: string;
   onConnectionComplete?: (platform: string) => void;
@@ -297,67 +297,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show embedded dashboard when authenticated
-  if (isAuthenticated) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-4"
-      >
-        {/* Simple header with logout */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-medium text-green-600 dark:text-green-400">BRON Dashboard</span>
-            {domain && <span className="text-sm text-muted-foreground">• {domain}</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const iframe = document.getElementById('bron-dashboard-iframe') as HTMLIFrameElement | null;
-                if (iframe) iframe.src = iframe.src;
-              }}
-              className="h-8 px-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
-              className="h-8 px-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="h-8 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/50"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-
-        {/* Embedded BRON Dashboard */}
-        <div className="rounded-xl overflow-hidden border border-border shadow-lg bg-background">
-          <iframe
-            id="bron-dashboard-iframe"
-            src={BRON_DASHBOARD_URL}
-            className="w-full h-[750px] border-0"
-            title="BRON Dashboard"
-            allow="clipboard-write; clipboard-read"
-          />
-        </div>
-      </motion.div>
-    );
+  // Show custom-built BRON dashboard when authenticated (no iframe!)
+  if (isAuthenticated && domain) {
+    return <BronDashboard domain={domain} onLogout={handleLogout} />;
   }
 
   // Auto-login in progress or waiting for domain selection
@@ -490,7 +432,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           <p className="text-xs text-muted-foreground">Intelligent link strategies</p>
         </div>
         <div className="p-4 rounded-lg bg-secondary/30">
-          <Building className="w-6 h-6 mx-auto mb-2 text-green-400" />
+          <Award className="w-6 h-6 mx-auto mb-2 text-green-400" />
           <p className="text-sm font-medium">Real Websites</p>
           <p className="text-xs text-muted-foreground">No PBNs, only quality sites</p>
         </div>
