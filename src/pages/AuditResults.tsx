@@ -2834,14 +2834,82 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
-          {/* Dashboard Metrics Card */}
+          {/* Dashboard Metrics Card - High-Tech Design */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="mb-12"
           >
-            <div className="p-6 rounded-2xl bg-card border border-border/50">
+            {/* Outer Glow Container */}
+            <div className="relative group">
+              {/* Animated gradient glow background */}
+              <motion.div
+                className="absolute -inset-[1px] rounded-[22px] opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"
+                animate={{
+                  background: [
+                    "linear-gradient(45deg, rgba(139,92,246,0.4), rgba(34,211,238,0.3), rgba(251,191,36,0.3))",
+                    "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(251,191,36,0.3), rgba(139,92,246,0.4))",
+                    "linear-gradient(225deg, rgba(251,191,36,0.3), rgba(139,92,246,0.4), rgba(34,211,238,0.3))",
+                    "linear-gradient(315deg, rgba(139,92,246,0.4), rgba(34,211,238,0.3), rgba(251,191,36,0.3))",
+                  ],
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              />
+              
+              {/* Main Card */}
+              <div className="relative p-6 rounded-2xl bg-gradient-to-br from-card via-card/98 to-violet-500/5 border border-border/50 backdrop-blur-xl overflow-hidden">
+                {/* Grid pattern overlay */}
+                <div 
+                  className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                    backgroundSize: '25px 25px',
+                  }}
+                />
+                
+                {/* Corner accents */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-violet-500/10 via-primary/5 to-transparent rounded-bl-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-cyan-500/10 via-primary/5 to-transparent rounded-tr-[80px] pointer-events-none" />
+                
+                {/* Floating particles */}
+                <motion.div
+                  className="absolute top-6 right-12 w-2 h-2 rounded-full bg-violet-400/50"
+                  animate={{ y: [0, -10, 0], opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+                <motion.div
+                  className="absolute top-12 right-24 w-1.5 h-1.5 rounded-full bg-cyan-400/50"
+                  animate={{ y: [0, -8, 0], opacity: [0.2, 0.7, 0.2] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                />
+                <motion.div
+                  className="absolute bottom-8 left-16 w-1 h-1 rounded-full bg-amber-400/50"
+                  animate={{ y: [0, -6, 0], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 1 }}
+                />
+                
+                {/* Animated scanning line */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none"
+                  animate={{ y: ["-100%", "200%"] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                />
+
+                {/* Section Header */}
+                <div className="flex items-center gap-3 mb-6 relative z-10">
+                  <motion.div 
+                    className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500/20 to-primary/10 border border-violet-500/20"
+                    animate={{ boxShadow: ["0 0 0 0 rgba(139,92,246,0)", "0 0 25px 3px rgba(139,92,246,0.15)", "0 0 0 0 rgba(139,92,246,0)"] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <BarChart3 className="w-5 h-5 text-violet-400" />
+                  </motion.div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Domain Authority Metrics</h3>
+                    <p className="text-xs text-muted-foreground">Real-time SEO performance data</p>
+                  </div>
+                </div>
 
               {/* Floating Export PDF Button - hide in embed mode */}
               {!isEmbedMode && (
@@ -3203,6 +3271,7 @@ const AuditResults = () => {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </motion.div>
 
@@ -3243,11 +3312,13 @@ const AuditResults = () => {
             />
           )}
 
-          {/* SEO Health Scores - Expandable Category Details */}
+          {/* SEO Health Scores - Expandable Category Details - High-Tech Design */}
           <AnimatePresence mode="wait">
             {Array.from(expandedCategories).map((categoryTitle) => {
               const category = auditResults.find(c => c.title === categoryTitle);
               if (!category) return null;
+              
+              const scoreColor = category.score >= 80 ? 'emerald' : category.score >= 60 ? 'amber' : 'red';
               
               return (
                 <motion.div
@@ -3257,62 +3328,147 @@ const AuditResults = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="mb-8 overflow-hidden"
                 >
-                  <div className="p-6 rounded-2xl bg-card border border-border/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
-                          <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">{category.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {category.checks.filter(c => c.status === 'pass').length} of {category.checks.length} checks passed
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`text-2xl font-bold ${getScoreColor(category.score)}`}>
-                        {category.score}/100
-                      </div>
-                    </div>
+                  {/* Outer Glow Container */}
+                  <div className="relative group">
+                    {/* Animated gradient glow background */}
+                    <motion.div
+                      className={`absolute -inset-[1px] rounded-[22px] opacity-40 group-hover:opacity-70 transition-opacity duration-500 blur-sm bg-gradient-to-r ${
+                        scoreColor === 'emerald' ? 'from-emerald-500/30 to-green-500/30' :
+                        scoreColor === 'amber' ? 'from-amber-500/30 to-orange-500/30' :
+                        'from-red-500/30 to-rose-500/30'
+                      }`}
+                    />
                     
-                    <div className="space-y-3">
-                      {category.checks.map((check, i) => (
-                        <motion.div
-                          key={check.name}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
-                        >
-                          {getStatusIcon(check.status)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-sm">{check.name}</span>
-                              {check.value && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  check.status === 'pass' ? 'bg-green-500/20 text-green-400' :
-                                  check.status === 'warning' ? 'bg-amber-500/20 text-amber-400' :
-                                  'bg-red-500/20 text-red-400'
-                                }`}>
-                                  {check.value}
-                                </span>
+                    {/* Main Card */}
+                    <div className={`relative p-6 rounded-2xl border border-border/50 backdrop-blur-xl overflow-hidden bg-gradient-to-br from-card via-card/98 ${
+                      scoreColor === 'emerald' ? 'to-emerald-500/5' :
+                      scoreColor === 'amber' ? 'to-amber-500/5' :
+                      'to-red-500/5'
+                    }`}>
+                      {/* Grid pattern overlay */}
+                      <div 
+                        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                        style={{
+                          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                          backgroundSize: '20px 20px',
+                        }}
+                      />
+                      
+                      {/* Floating particles */}
+                      <motion.div
+                        className={`absolute top-4 right-8 w-1.5 h-1.5 rounded-full ${
+                          scoreColor === 'emerald' ? 'bg-emerald-400/60' :
+                          scoreColor === 'amber' ? 'bg-amber-400/60' :
+                          'bg-red-400/60'
+                        }`}
+                        animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      />
+                      
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-5 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <motion.div 
+                            className={`p-2.5 rounded-xl border ${
+                              scoreColor === 'emerald' ? 'bg-gradient-to-br from-emerald-500/25 to-green-500/15 border-emerald-500/30' :
+                              scoreColor === 'amber' ? 'bg-gradient-to-br from-amber-500/25 to-orange-500/15 border-amber-500/30' :
+                              'bg-gradient-to-br from-red-500/25 to-rose-500/15 border-red-500/30'
+                            }`}
+                            animate={{ boxShadow: [
+                              `0 0 0 0 rgba(${scoreColor === 'emerald' ? '16,185,129' : scoreColor === 'amber' ? '251,191,36' : '239,68,68'},0)`,
+                              `0 0 20px 2px rgba(${scoreColor === 'emerald' ? '16,185,129' : scoreColor === 'amber' ? '251,191,36' : '239,68,68'},0.2)`,
+                              `0 0 0 0 rgba(${scoreColor === 'emerald' ? '16,185,129' : scoreColor === 'amber' ? '251,191,36' : '239,68,68'},0)`
+                            ] }}
+                            transition={{ duration: 2.5, repeat: Infinity }}
+                          >
+                            <category.icon className={`w-5 h-5 ${getScoreColor(category.score)}`} />
+                          </motion.div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-bold">{category.title}</h3>
+                              {category.isRealData && (
+                                <motion.span 
+                                  className="text-[8px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/30 to-violet-500/30 text-primary font-bold border border-primary/30"
+                                  animate={{ opacity: [1, 0.6, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                  LIVE DATA
+                                </motion.span>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">{check.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {category.checks.filter(c => c.status === 'pass').length} of {category.checks.length} checks passed
+                            </p>
                           </div>
+                        </div>
+                        <motion.div 
+                          className={`text-3xl font-bold ${getScoreColor(category.score)}`}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 200 }}
+                        >
+                          {category.score}<span className="text-lg text-muted-foreground">/100</span>
                         </motion.div>
-                      ))}
+                      </div>
+                      
+                      {/* Checks List */}
+                      <div className="space-y-3 relative z-10">
+                        {category.checks.map((check, i) => (
+                          <motion.div
+                            key={check.name}
+                            initial={{ opacity: 0, x: -15 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            whileHover={{ x: 3 }}
+                            className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                              check.status === 'pass' 
+                                ? 'bg-gradient-to-r from-emerald-500/10 to-transparent border-emerald-500/20 hover:border-emerald-500/40' 
+                                : check.status === 'warning'
+                                ? 'bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/20 hover:border-amber-500/40'
+                                : 'bg-gradient-to-r from-red-500/10 to-transparent border-red-500/20 hover:border-red-500/40'
+                            }`}
+                          >
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: i * 0.05 + 0.1, type: "spring" }}
+                            >
+                              {getStatusIcon(check.status)}
+                            </motion.div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-sm">{check.name}</span>
+                                {check.value && (
+                                  <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
+                                    check.status === 'pass' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                    check.status === 'warning' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                    'bg-red-500/20 text-red-400 border-red-500/30'
+                                  }`}>
+                                    {check.value}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{check.description}</p>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                      
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCategory(categoryTitle)}
+                          className="mt-5 w-full border border-border/50 hover:border-primary/30 hover:bg-primary/5"
+                        >
+                          <ChevronUp className="w-4 h-4 mr-2" />
+                          Collapse Details
+                        </Button>
+                      </motion.div>
                     </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleCategory(categoryTitle)}
-                      className="mt-4 w-full"
-                    >
-                      <ChevronUp className="w-4 h-4 mr-2" />
-                      Collapse
-                    </Button>
                   </div>
                 </motion.div>
               );
@@ -3320,7 +3476,7 @@ const AuditResults = () => {
           </AnimatePresence>
 
 
-          {/* Other Actionable Recommendations */}
+          {/* Other Actionable Recommendations - High-Tech Design */}
           {recommendations.filter(r => !r.service).length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -3328,58 +3484,144 @@ const AuditResults = () => {
               transition={{ delay: 0.35 }}
               className="mb-8"
             >
-              <h2 className="text-lg font-bold mb-4">Additional Recommendations</h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {recommendations.filter(r => !r.service).map((rec, i) => (
+              {/* Outer Glow Container */}
+              <div className="relative group">
+                {/* Animated gradient glow background */}
+                <motion.div
+                  className="absolute -inset-[1px] rounded-[22px] opacity-25 group-hover:opacity-50 transition-opacity duration-500 blur-sm"
+                  animate={{
+                    background: [
+                      "linear-gradient(90deg, rgba(251,191,36,0.3), rgba(239,68,68,0.3), rgba(16,185,129,0.3))",
+                      "linear-gradient(180deg, rgba(239,68,68,0.3), rgba(16,185,129,0.3), rgba(251,191,36,0.3))",
+                      "linear-gradient(270deg, rgba(16,185,129,0.3), rgba(251,191,36,0.3), rgba(239,68,68,0.3))",
+                      "linear-gradient(360deg, rgba(251,191,36,0.3), rgba(239,68,68,0.3), rgba(16,185,129,0.3))",
+                    ],
+                  }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                />
+                
+                {/* Main Card */}
+                <div className="relative p-6 rounded-2xl bg-gradient-to-br from-card via-card/98 to-amber-500/5 border border-border/50 backdrop-blur-xl overflow-hidden">
+                  {/* Grid pattern overlay */}
+                  <div 
+                    className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                    style={{
+                      backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                      backgroundSize: '25px 25px',
+                    }}
+                  />
+                  
+                  {/* Corner accents */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 via-primary/5 to-transparent rounded-bl-[80px] pointer-events-none" />
+                  
+                  {/* Floating particles */}
                   <motion.div
-                    key={rec.title}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.05 }}
-                    className="p-4 rounded-xl border bg-card border-border/50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-1.5 rounded-lg shrink-0 ${
-                        rec.priority === 'high' 
-                          ? 'bg-red-500/20' 
-                          : rec.priority === 'medium' 
-                          ? 'bg-amber-500/20' 
-                          : 'bg-green-500/20'
-                      }`}>
-                        <rec.icon className={`w-4 h-4 ${
-                          rec.priority === 'high' 
-                            ? 'text-red-400' 
-                            : rec.priority === 'medium' 
-                            ? 'text-amber-400' 
-                            : 'text-green-400'
-                        }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-sm">{rec.title}</h3>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                            rec.priority === 'high' 
-                              ? 'bg-red-500/20 text-red-400' 
-                              : rec.priority === 'medium' 
-                              ? 'bg-amber-500/20 text-amber-400' 
-                              : 'bg-green-500/20 text-green-400'
-                          }`}>
-                            {rec.priority}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{rec.description}</p>
-                        <ul className="space-y-0.5">
-                          {rec.actions.slice(0, 3).map((action, j) => (
-                            <li key={j} className="flex items-center gap-1.5 text-xs">
-                              <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
-                              <span className="text-muted-foreground truncate">{action}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                    className="absolute top-5 right-10 w-1.5 h-1.5 rounded-full bg-amber-400/50"
+                    animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                  <motion.div
+                    className="absolute top-10 right-20 w-1 h-1 rounded-full bg-red-400/50"
+                    animate={{ y: [0, -6, 0], opacity: [0.2, 0.6, 0.2] }}
+                    transition={{ duration: 2.5, repeat: Infinity, delay: 0.7 }}
+                  />
+                  
+                  {/* Section Header */}
+                  <div className="flex items-center gap-3 mb-5 relative z-10">
+                    <motion.div 
+                      className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/20"
+                      animate={{ boxShadow: ["0 0 0 0 rgba(251,191,36,0)", "0 0 20px 2px rgba(251,191,36,0.15)", "0 0 0 0 rgba(251,191,36,0)"] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      <Target className="w-5 h-5 text-amber-400" />
+                    </motion.div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Actionable Recommendations</h3>
+                      <p className="text-xs text-muted-foreground">Priority improvements for better rankings</p>
                     </div>
-                  </motion.div>
-                ))}
+                  </div>
+                  
+                  {/* Cards Grid */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+                    {recommendations.filter(r => !r.service).map((rec, i) => {
+                      const priorityColors = {
+                        high: { bg: 'from-red-500/15 to-rose-500/10', border: 'border-red-500/30', glow: 'hover:shadow-red-500/20' },
+                        medium: { bg: 'from-amber-500/15 to-orange-500/10', border: 'border-amber-500/30', glow: 'hover:shadow-amber-500/20' },
+                        low: { bg: 'from-green-500/15 to-emerald-500/10', border: 'border-green-500/30', glow: 'hover:shadow-green-500/20' },
+                      };
+                      const colors = priorityColors[rec.priority];
+                      
+                      return (
+                        <motion.div
+                          key={rec.title}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 + i * 0.05 }}
+                          whileHover={{ scale: 1.02, y: -3 }}
+                          className={`relative p-4 rounded-xl border bg-gradient-to-br ${colors.bg} ${colors.border} hover:shadow-lg ${colors.glow} transition-all cursor-default overflow-hidden`}
+                        >
+                          {/* Card glow */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity pointer-events-none rounded-xl" />
+                          
+                          <div className="flex items-start gap-3 relative">
+                            <motion.div 
+                              className={`p-2 rounded-lg shrink-0 ${
+                                rec.priority === 'high' 
+                                  ? 'bg-gradient-to-br from-red-500/30 to-rose-500/20 border border-red-500/40' 
+                                  : rec.priority === 'medium' 
+                                  ? 'bg-gradient-to-br from-amber-500/30 to-orange-500/20 border border-amber-500/40' 
+                                  : 'bg-gradient-to-br from-green-500/30 to-emerald-500/20 border border-green-500/40'
+                              }`}
+                              whileHover={{ rotate: [0, -5, 5, 0] }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <rec.icon className={`w-4 h-4 ${
+                                rec.priority === 'high' 
+                                  ? 'text-red-400' 
+                                  : rec.priority === 'medium' 
+                                  ? 'text-amber-400' 
+                                  : 'text-green-400'
+                              }`} />
+                            </motion.div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                                <h3 className="font-semibold text-sm">{rec.title}</h3>
+                                <motion.span 
+                                  className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${
+                                    rec.priority === 'high' 
+                                      ? 'bg-red-500/30 text-red-300 border border-red-500/40' 
+                                      : rec.priority === 'medium' 
+                                      ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40' 
+                                      : 'bg-green-500/30 text-green-300 border border-green-500/40'
+                                  }`}
+                                  animate={rec.priority === 'high' ? { opacity: [1, 0.6, 1] } : {}}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                  {rec.priority}
+                                </motion.span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-2.5 line-clamp-2">{rec.description}</p>
+                              <ul className="space-y-1">
+                                {rec.actions.slice(0, 3).map((action, j) => (
+                                  <motion.li 
+                                    key={j} 
+                                    className="flex items-center gap-2 text-xs"
+                                    initial={{ opacity: 0, x: -5 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 + j * 0.05 }}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
+                                    <span className="text-muted-foreground truncate">{action}</span>
+                                  </motion.li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
