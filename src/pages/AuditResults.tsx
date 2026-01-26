@@ -2654,88 +2654,182 @@ const AuditResults = () => {
             </div>
           </motion.div>
 
-          {/* Technical Health Overview - Moved above dials */}
+          {/* Technical Health Overview - High-Tech Design */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
             className="mb-8"
           >
-            <div className="p-6 rounded-2xl bg-card border border-border/50">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {auditResults.map((category, i) => {
-                  const barColor = category.score >= 80 
-                    ? "bg-gradient-to-r from-green-500 to-emerald-400" 
-                    : category.score >= 60 
-                    ? "bg-gradient-to-r from-amber-500 to-orange-400" 
-                    : "bg-gradient-to-r from-red-500 to-rose-400";
-                  const passedChecks = category.checks.filter((c) => c.status === "pass").length;
-                  const totalChecks = category.checks.length;
-                  
-                  return (
-                    <motion.div
-                      key={category.title}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
-                      className={`p-4 rounded-xl cursor-pointer hover:bg-muted/30 transition-all border border-border/30 ${
-                        category.isRealData ? 'ring-1 ring-primary/30' : ''
-                      }`}
-                      onClick={() => toggleCategory(category.title)}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg ${category.score >= 80 ? 'bg-green-500/20' : category.score >= 60 ? 'bg-amber-500/20' : 'bg-red-500/20'}`}>
-                            <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
+            {/* Outer Glow Container */}
+            <div className="relative group">
+              {/* Animated gradient glow background */}
+              <motion.div
+                className="absolute -inset-[1px] rounded-[22px] opacity-40 group-hover:opacity-70 transition-opacity duration-500 blur-sm"
+                animate={{
+                  background: [
+                    "linear-gradient(0deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3), rgba(16,185,129,0.2))",
+                    "linear-gradient(120deg, rgba(139,92,246,0.3), rgba(16,185,129,0.2), rgba(34,211,238,0.3))",
+                    "linear-gradient(240deg, rgba(16,185,129,0.2), rgba(34,211,238,0.3), rgba(139,92,246,0.3))",
+                    "linear-gradient(360deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3), rgba(16,185,129,0.2))",
+                  ],
+                }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              />
+              
+              {/* Main Card */}
+              <div className="relative p-6 rounded-2xl bg-gradient-to-br from-card via-card/98 to-primary/5 border border-border/50 backdrop-blur-xl overflow-hidden">
+                {/* Grid pattern overlay */}
+                <div 
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                    backgroundSize: '30px 30px',
+                  }}
+                />
+                
+                {/* Corner accents */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 via-primary/5 to-transparent rounded-bl-[80px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-emerald-500/10 via-primary/5 to-transparent rounded-tr-[60px] pointer-events-none" />
+                
+                {/* Floating particles */}
+                <motion.div
+                  className="absolute top-4 right-8 w-1.5 h-1.5 rounded-full bg-cyan-400/60"
+                  animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div
+                  className="absolute top-8 right-16 w-1 h-1 rounded-full bg-violet-400/60"
+                  animate={{ y: [0, -6, 0], opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+                />
+                <motion.div
+                  className="absolute bottom-6 left-10 w-1 h-1 rounded-full bg-emerald-400/60"
+                  animate={{ y: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                />
+
+                {/* Section Header */}
+                <div className="flex items-center gap-3 mb-5 relative z-10">
+                  <motion.div 
+                    className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 border border-primary/20"
+                    animate={{ boxShadow: ["0 0 0 0 rgba(34,211,238,0)", "0 0 20px 2px rgba(34,211,238,0.15)", "0 0 0 0 rgba(34,211,238,0)"] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <Gauge className="w-5 h-5 text-primary" />
+                  </motion.div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Technical Health Overview</h3>
+                    <p className="text-xs text-muted-foreground">Click any category to expand details</p>
+                  </div>
+                </div>
+
+                {/* Categories Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+                  {auditResults.map((category, i) => {
+                    const barColor = category.score >= 80 
+                      ? "bg-gradient-to-r from-green-500 to-emerald-400" 
+                      : category.score >= 60 
+                      ? "bg-gradient-to-r from-amber-500 to-orange-400" 
+                      : "bg-gradient-to-r from-red-500 to-rose-400";
+                    const glowColor = category.score >= 80 
+                      ? "shadow-emerald-500/20" 
+                      : category.score >= 60 
+                      ? "shadow-amber-500/20" 
+                      : "shadow-red-500/20";
+                    const passedChecks = category.checks.filter((c) => c.status === "pass").length;
+                    const totalChecks = category.checks.length;
+                    
+                    return (
+                      <motion.div
+                        key={category.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        className={`relative p-4 rounded-xl cursor-pointer transition-all border border-border/40 bg-gradient-to-br from-muted/30 to-transparent hover:border-primary/40 hover:shadow-lg ${glowColor} ${
+                          category.isRealData ? 'ring-1 ring-primary/30' : ''
+                        }`}
+                        onClick={() => toggleCategory(category.title)}
+                      >
+                        {/* Card glow effect on hover */}
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 hover:opacity-100 transition-opacity pointer-events-none" />
+                        
+                        <div className="flex items-center justify-between mb-3 relative">
+                          <div className="flex items-center gap-2">
+                            <motion.div 
+                              className={`p-2 rounded-lg ${category.score >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/10 border border-green-500/30' : category.score >= 60 ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30' : 'bg-gradient-to-br from-red-500/20 to-rose-500/10 border border-red-500/30'}`}
+                              whileHover={{ rotate: [0, -5, 5, 0] }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <category.icon className={`w-4 h-4 ${getScoreColor(category.score)}`} />
+                            </motion.div>
+                            <span className="text-sm font-semibold">{category.title}</span>
+                            {category.isRealData && (
+                              <motion.span 
+                                className="text-[8px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/30 to-violet-500/30 text-primary font-bold border border-primary/30"
+                                animate={{ opacity: [1, 0.6, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                LIVE
+                              </motion.span>
+                            )}
                           </div>
-                          <span className="text-sm font-medium">{category.title}</span>
-                          {category.isRealData && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold">
-                              LIVE
+                          <div className="flex items-center gap-2">
+                            <motion.span 
+                              className={`text-xl font-bold ${getScoreColor(category.score)}`}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.2 + i * 0.05, type: "spring" }}
+                            >
+                              {category.score}
+                            </motion.span>
+                            <motion.div
+                              animate={{ rotate: expandedCategories.has(category.title) ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            </motion.div>
+                          </div>
+                        </div>
+                        
+                        {/* Animated Progress bar */}
+                        <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden mb-3 border border-border/30">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${category.score}%` }}
+                            transition={{ duration: 1, delay: 0.2 + i * 0.05, ease: "easeOut" }}
+                            className={`h-full ${barColor} rounded-full relative`}
+                          >
+                            {/* Shimmer effect */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                              animate={{ x: ["-100%", "200%"] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                            />
+                          </motion.div>
+                        </div>
+                        
+                        {/* Check summary */}
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{passedChecks}/{totalChecks} checks passed</span>
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/30 border border-border/30">
+                            {passedChecks === totalChecks ? (
+                              <CheckCircle2 className="w-3 h-3 text-green-500" />
+                            ) : passedChecks >= totalChecks / 2 ? (
+                              <AlertTriangle className="w-3 h-3 text-amber-500" />
+                            ) : (
+                              <XCircle className="w-3 h-3 text-red-500" />
+                            )}
+                            <span className={passedChecks === totalChecks ? 'text-green-500' : passedChecks >= totalChecks / 2 ? 'text-amber-500' : 'text-red-500'}>
+                              {passedChecks === totalChecks ? 'All clear' : passedChecks >= totalChecks / 2 ? 'Needs work' : 'Critical'}
                             </span>
-                          )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-lg font-bold ${getScoreColor(category.score)}`}>
-                            {category.score}
-                          </span>
-                          {expandedCategories.has(category.title) ? (
-                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Progress bar */}
-                      <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${category.score}%` }}
-                          transition={{ duration: 0.8, delay: 0.15 + i * 0.05, ease: "easeOut" }}
-                          className={`h-full ${barColor} rounded-full`}
-                        />
-                      </div>
-                      
-                      {/* Check summary */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{passedChecks}/{totalChecks} checks passed</span>
-                        <div className="flex items-center gap-1">
-                          {passedChecks === totalChecks ? (
-                            <CheckCircle2 className="w-3 h-3 text-green-500" />
-                          ) : passedChecks >= totalChecks / 2 ? (
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                          ) : (
-                            <XCircle className="w-3 h-3 text-red-500" />
-                          )}
-                          <span>
-                            {passedChecks === totalChecks ? 'All clear' : passedChecks >= totalChecks / 2 ? 'Needs attention' : 'Critical'}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </motion.div>
