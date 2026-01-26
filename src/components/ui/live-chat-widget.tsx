@@ -163,24 +163,72 @@ const LiveChatWidget = () => {
     });
   };
 
+  // Demo active chats for visual representation
+  const activeChats = [
+    { id: 'demo-1', initials: 'JD', color: 'from-emerald-400 to-teal-500', hasUnread: true },
+  ];
+
   return (
     <>
-      {/* Chat Button */}
+      {/* Chat Button Stack */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            onClick={handleOpen}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
-            aria-label="Open chat"
-          >
-            <MessageCircle className="w-6 h-6" />
-            {/* Notification dot */}
-            <span className={`absolute top-0 right-0 w-4 h-4 rounded-full border-2 border-background ${hasNewMessage ? 'bg-red-500 animate-bounce' : 'bg-green-400 animate-pulse'}`} />
-          </motion.button>
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-3">
+            {/* Active Chat Indicators - stacked above main button */}
+            {activeChats.map((chat, index) => (
+              <motion.button
+                key={chat.id}
+                initial={{ scale: 0, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0, opacity: 0, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.1 }}
+                onClick={handleOpen}
+                className={`relative w-11 h-11 rounded-full bg-gradient-to-br ${chat.color} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-xs font-bold border-2 border-background`}
+                aria-label={`Open chat with ${chat.initials}`}
+              >
+                {chat.initials}
+                {/* Unread indicator */}
+                {chat.hasUnread && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-background"
+                  >
+                    <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />
+                  </motion.span>
+                )}
+                {/* Connection line to main button */}
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gradient-to-b from-border to-transparent" />
+              </motion.button>
+            ))}
+            
+            {/* Main Chat Button */}
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              onClick={handleOpen}
+              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+              aria-label="Open chat"
+            >
+              <MessageCircle className="w-6 h-6" />
+              {/* Status indicator */}
+              <span className={`absolute top-0 right-0 w-4 h-4 rounded-full border-2 border-background ${hasNewMessage ? 'bg-red-500' : 'bg-emerald-400'}`}>
+                {hasNewMessage && <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />}
+              </span>
+              {/* Active count badge */}
+              {activeChats.length > 0 && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background"
+                >
+                  {activeChats.length}
+                </motion.span>
+              )}
+            </motion.button>
+          </div>
         )}
       </AnimatePresence>
 
