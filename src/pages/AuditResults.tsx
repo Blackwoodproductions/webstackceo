@@ -223,21 +223,42 @@ const NextReportCountdown = () => {
   }, []);
   
   return (
-    <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20">
-      <Calendar className="w-5 h-5 text-primary" />
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground">Next Report Update</span>
-        <div className="flex items-center gap-1.5 font-mono text-sm font-semibold">
-          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{timeLeft.days}d</span>
-          <span className="text-muted-foreground">:</span>
-          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.hours).padStart(2, '0')}h</span>
-          <span className="text-muted-foreground">:</span>
-          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-          <span className="text-muted-foreground">:</span>
-          <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+    <motion.div 
+      className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-gradient-to-br from-primary/15 via-violet-500/10 to-cyan-500/10 border border-primary/30 shadow-lg shadow-primary/10 min-w-[280px]"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.4 }}
+    >
+      <div className="relative">
+        <motion.div
+          className="absolute -inset-1 rounded-xl bg-gradient-to-r from-primary/30 to-violet-500/30 blur-sm"
+          animate={{ opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+        <div className="relative p-3 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30">
+          <Calendar className="w-6 h-6 text-primary" />
         </div>
       </div>
-    </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-semibold text-foreground">Case Studies on Autopilot</span>
+        <span className="text-xs text-muted-foreground">Next report update in:</span>
+        <div className="flex items-center gap-1 font-mono text-base font-bold mt-1">
+          <span className="px-2.5 py-1 rounded-lg bg-gradient-to-b from-primary/30 to-primary/20 text-primary border border-primary/30 shadow-sm">{timeLeft.days}d</span>
+          <span className="text-primary/60 font-bold">:</span>
+          <span className="px-2.5 py-1 rounded-lg bg-gradient-to-b from-primary/30 to-primary/20 text-primary border border-primary/30 shadow-sm">{String(timeLeft.hours).padStart(2, '0')}h</span>
+          <span className="text-primary/60 font-bold">:</span>
+          <span className="px-2.5 py-1 rounded-lg bg-gradient-to-b from-primary/30 to-primary/20 text-primary border border-primary/30 shadow-sm">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+          <span className="text-primary/60 font-bold">:</span>
+          <motion.span 
+            className="px-2.5 py-1 rounded-lg bg-gradient-to-b from-cyan-500/30 to-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-sm"
+            animate={{ opacity: [1, 0.7, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            {String(timeLeft.seconds).padStart(2, '0')}s
+          </motion.span>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
