@@ -75,8 +75,26 @@ const ActiveVisitorsWidget = () => {
         return;
       }
 
-      const sessionIds = sessions.map((s: any) => s.session_id);
-      const userIds = sessions
+      // DEDUPLICATION: For authenticated users, keep only the most recent session per user_id
+      // For anonymous users, keep all sessions (they're already unique per tab via sessionStorage)
+      const deduplicatedSessions: any[] = [];
+      const seenUserIds = new Set<string>();
+      
+      for (const session of sessions) {
+        if (session.user_id) {
+          // Authenticated user - only keep their most recent session
+          if (!seenUserIds.has(session.user_id)) {
+            seenUserIds.add(session.user_id);
+            deduplicatedSessions.push(session);
+          }
+        } else {
+          // Anonymous user - keep the session
+          deduplicatedSessions.push(session);
+        }
+      }
+
+      const sessionIds = deduplicatedSessions.map((s: any) => s.session_id);
+      const userIds = deduplicatedSessions
         .map((s: any) => s.user_id)
         .filter((id: string | null) => id !== null);
 
@@ -126,7 +144,7 @@ const ActiveVisitorsWidget = () => {
 
       const chatSessions = new Set((chatsRes.data || []).map((c: any) => c.session_id));
 
-      const enrichedSessions: ActiveSession[] = sessions.map((session: any) => {
+      const enrichedSessions: ActiveSession[] = deduplicatedSessions.map((session: any) => {
         const profile = session.user_id ? profilesMap[session.user_id] : null;
         const scopes = session.user_id ? tokensMap[session.user_id] : null;
         
