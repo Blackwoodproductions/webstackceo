@@ -20,6 +20,24 @@ interface LiveVisitor {
   started_at: string;
 }
 
+// Extract domain from referrer URL
+const getReferrerDomain = (referrer: string | null): string | null => {
+  if (!referrer) return null;
+  try {
+    const url = new URL(referrer);
+    return url.hostname;
+  } catch {
+    return null;
+  }
+};
+
+// Get favicon URL for a domain
+const getFaviconUrl = (domain: string | null): string | null => {
+  if (!domain) return null;
+  // Use Google's favicon service for reliable favicon fetching
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+};
+
 const LiveChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -31,6 +49,8 @@ const LiveChatWidget = () => {
   const [selectedVisitor, setSelectedVisitor] = useState<LiveVisitor | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [referrerDomain, setReferrerDomain] = useState<string | null>(null);
+  const [faviconError, setFaviconError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check for logged-in user
@@ -79,7 +99,7 @@ const LiveChatWidget = () => {
     return () => clearInterval(interval);
   }, [fetchLiveVisitors]);
 
-  // Get or create session ID
+  // Get or create session ID and fetch referrer
   useEffect(() => {
     const storedSessionId = sessionStorage.getItem("chat_session_id");
     if (storedSessionId) {
@@ -88,6 +108,16 @@ const LiveChatWidget = () => {
       const newSessionId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       sessionStorage.setItem("chat_session_id", newSessionId);
       setSessionId(newSessionId);
+    }
+    
+    // Get referrer from document or sessionStorage
+    const referrer = document.referrer || sessionStorage.getItem("visitor_referrer");
+    if (referrer) {
+      sessionStorage.setItem("visitor_referrer", referrer);
+      const domain = getReferrerDomain(referrer);
+      if (domain && domain !== window.location.hostname) {
+        setReferrerDomain(domain);
+      }
     }
   }, []);
 
@@ -335,10 +365,20 @@ const LiveChatWidget = () => {
               exit={{ scale: 0, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
               onClick={handleOpen}
-              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group overflow-hidden"
               aria-label="Open chat"
             >
-              <MessageCircle className="w-6 h-6" />
+              {/* Show referrer favicon or default MessageCircle icon */}
+              {referrerDomain && !faviconError ? (
+                <img
+                  src={getFaviconUrl(referrerDomain)!}
+                  alt={`Visitor from ${referrerDomain}`}
+                  className="w-7 h-7 rounded-sm"
+                  onError={() => setFaviconError(true)}
+                />
+              ) : (
+                <MessageCircle className="w-6 h-6" />
+              )}
               {/* Status indicator */}
               <span className={`absolute top-0 right-0 w-4 h-4 rounded-full border-2 border-background ${hasNewMessage ? 'bg-red-500' : 'bg-emerald-400'}`}>
                 {hasNewMessage && <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />}
