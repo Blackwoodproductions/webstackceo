@@ -1,9 +1,8 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay, CornerBlobs } from "@/components/ui/futuristic-particles";
+import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import InteractiveGrid from "@/components/ui/interactive-grid";
-import { HighTechBackground } from "@/components/ui/high-tech-background";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
 
@@ -16,14 +15,9 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden">
-      {/* Futuristic Background Effects */}
-      <CornerBlobs className="fixed inset-0 z-0" />
-      <FloatingOrbs className="fixed inset-0 z-0" />
-      <FuturisticParticles className="fixed inset-0 z-0" particleCount={50} variant="cosmic" />
+      {/* VI Dashboard Background Effects - exact replica */}
+      <VIDashboardEffects />
       <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={150} glowIntensity={0.15} />
-      <CyberLines className="fixed inset-0 z-0" />
-      <HighTechBackground variant="intense" showParticles={false} className="fixed inset-0 z-0" />
-      <HUDOverlay className="fixed inset-0 z-0" />
 
       <div className="text-center relative z-10">
         <motion.div

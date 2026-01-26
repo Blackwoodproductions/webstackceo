@@ -17,6 +17,7 @@ import AdminApplicationsTab from "@/components/admin/AdminApplicationsTab";
 import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
 import InteractiveGrid from "@/components/ui/interactive-grid";
+import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -152,7 +153,8 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background relative animate-fade-in">
-      {/* Full-page interactive grid background */}
+      {/* VI Dashboard Background Effects */}
+      <VIDashboardEffects />
       <InteractiveGrid className="fixed inset-0 opacity-40 pointer-events-none z-0" glowRadius={120} glowIntensity={0.4} />
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur sticky top-0 z-50">

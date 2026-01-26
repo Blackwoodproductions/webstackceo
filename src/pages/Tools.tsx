@@ -9,6 +9,8 @@ import BackToTop from "@/components/ui/back-to-top";
 import ScrollProgress from "@/components/ui/scroll-progress";
 import SEO from "@/components/SEO";
 import QuickMetricCheck from "@/components/QuickMetricCheck";
+import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
+import InteractiveGrid from "@/components/ui/interactive-grid";
 
 const tools = [
   {
@@ -79,7 +81,10 @@ const tools = [
 
 const Tools = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* VI Dashboard Background Effects - exact replica */}
+      <VIDashboardEffects />
+      <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
       <SEO
         title="Free SEO Tools | Webstack.ceo"
         description="Use our free SEO tools to analyze backlinks, check domain authority, test page speed, audit technical SEO, and more. Get instant results for your website."
