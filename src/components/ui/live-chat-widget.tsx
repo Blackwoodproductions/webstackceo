@@ -61,12 +61,29 @@ const LiveChatWidget = () => {
   // Check for logged-in user and fetch profile with avatar
   useEffect(() => {
     const checkUser = async () => {
+      // First check localStorage for cached profile (faster initial render)
+      const cachedProfile = localStorage.getItem('unified_google_profile');
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile);
+          if (parsed.picture) setUserAvatar(parsed.picture);
+          if (parsed.name) setUserName(parsed.name);
+          if (parsed.email) setUserEmail(parsed.email);
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || null);
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
         
-        // Fetch avatar from profiles table
+        // Set from metadata first for immediate display
+        const metaAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        if (metaAvatar) setUserAvatar(metaAvatar);
+        
+        // Then fetch from profiles table for most accurate avatar
         const { data: profile } = await supabase
           .from('profiles')
           .select('avatar_url, full_name')
@@ -75,15 +92,15 @@ const LiveChatWidget = () => {
         
         if (profile?.avatar_url) {
           setUserAvatar(profile.avatar_url);
-        } else {
-          // Fallback to user metadata
-          setUserAvatar(user.user_metadata?.avatar_url || user.user_metadata?.picture || null);
+        }
+        if (profile?.full_name) {
+          setUserName(profile.full_name);
         }
       }
     };
     checkUser();
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUserEmail(session.user.email || null);
         setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
@@ -93,14 +110,17 @@ const LiveChatWidget = () => {
         setTimeout(async () => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('avatar_url')
+            .select('avatar_url, full_name')
             .eq('user_id', session.user.id)
             .maybeSingle();
           if (profile?.avatar_url) {
             setUserAvatar(profile.avatar_url);
           }
+          if (profile?.full_name) {
+            setUserName(profile.full_name);
+          }
         }, 0);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setUserEmail(null);
         setUserName(null);
         setUserAvatar(null);
