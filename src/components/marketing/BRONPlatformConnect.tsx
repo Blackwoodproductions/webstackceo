@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
   Award, Building, Sparkles, CheckCircle, Boxes, Zap, Target,
-  LogIn, ArrowRight
+  LogIn, ArrowRight, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { CADEApiDashboard } from "./CADEApiDashboard";
 
 interface BRONPlatformConnectProps {
   domain?: string;
@@ -209,7 +210,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show iframe when authenticated
+  // Show CADE API Dashboard when authenticated
   if (isAuthenticated) {
     return (
       <motion.div
@@ -225,6 +226,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             </div>
             <div>
               <p className="text-sm font-semibold text-green-600 dark:text-green-400">BRON Dashboard Connected</p>
+              {domain && (
+                <p className="text-xs text-muted-foreground">Domain: {domain}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -235,7 +239,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
               className="text-xs gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Open Dashboard
+              Open External Dashboard
             </Button>
             <Button
               variant="outline"
@@ -249,29 +253,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
         </div>
 
-        {/* Info banner for iframe configuration */}
-        <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
-            </div>
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              If the dashboard shows a 419 error, click "Open Dashboard" above to use it in a new tab.
-            </p>
-          </div>
-        </div>
-
-        {/* Dashboard iframe - full width */}
-        <div className="rounded-xl border border-border overflow-hidden bg-background">
-          <iframe
-            src={BRON_DASHBOARD_URL}
-            className="w-full border-0"
-            style={{ minHeight: '2400px' }}
-            title="BRON Dashboard"
-            allow="clipboard-write"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-          />
-        </div>
+        {/* CADE API Dashboard Content */}
+        <CADEApiDashboard domain={domain} />
       </motion.div>
     );
   }
