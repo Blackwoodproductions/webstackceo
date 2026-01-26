@@ -2423,20 +2423,42 @@ const AuditResults = () => {
                       </div>
                     </div>
                     
-                    {/* Website Description */}
+                    {/* Website Description with Timer & Badges */}
                     {(websiteProfile?.summary || websiteProfile?.description) && (
                       <motion.div 
-                        className="flex items-start gap-3 mt-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-transparent border-l-2 border-primary/50"
+                        className="flex items-start gap-6 mt-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-transparent border-l-2 border-primary/50"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                       >
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
-                          <Sparkles className="w-4 h-4 text-primary" />
+                        {/* Description */}
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {websiteProfile.summary || websiteProfile.description}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
-                          {websiteProfile.summary || websiteProfile.description}
-                        </p>
+                        
+                        {/* Timer & Badges - aligned right */}
+                        <div className="shrink-0 flex flex-col items-end gap-2">
+                          <NextReportCountdown />
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                              <Users className="w-5 h-5 text-cyan-500" />
+                              <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                              <Crown className="w-5 h-5 text-amber-500" />
+                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                              <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                              <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
                     
@@ -2468,66 +2490,37 @@ const AuditResults = () => {
 
                   {/* Action Buttons */}
                   <motion.div 
-                    className="flex items-start gap-3 shrink-0"
+                    className="flex items-center gap-3 shrink-0"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <div className="flex flex-col items-end gap-3">
-                      {/* Buttons Row */}
-                      <div className="flex items-center gap-3">
-                        {!isClaimed && !isCaseStudyMode && (
-                          <Button 
-                            variant="outline" 
-                            className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
-                            onClick={handleSaveClick}
-                          >
-                            <Gift className="w-4 h-4 text-primary" />
-                            Save & Get Free Backlink
-                          </Button>
-                        )}
-                        <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
-                          <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                            <Phone className="w-4 h-4" />
-                            Book a Call
-                          </a>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
-                          asChild
-                        >
-                          <a href="/pricing">
-                            <Sparkles className="w-4 h-4" />
-                            Get Started
-                          </a>
-                        </Button>
-                      </div>
-                      {/* Timer Box - offset down and left */}
-                      <div className="mt-20 -mr-24">
-                        <NextReportCountdown />
-                      </div>
-                      {/* Trust Badges - under timer, same offset */}
-                      <motion.div 
-                        className="flex items-center gap-2 -mr-24"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
+                    {!isClaimed && !isCaseStudyMode && (
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
+                        onClick={handleSaveClick}
                       >
-                        <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                          <Users className="w-5 h-5 text-cyan-500" />
-                          <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                          <Crown className="w-5 h-5 text-amber-500" />
-                          <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                          <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                          <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
-                        </div>
-                      </motion.div>
-                    </div>
+                        <Gift className="w-4 h-4 text-primary" />
+                        Save & Get Free Backlink
+                      </Button>
+                    )}
+                    <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
+                      <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                        <Phone className="w-4 h-4" />
+                        Book a Call
+                      </a>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                      asChild
+                    >
+                      <a href="/pricing">
+                        <Sparkles className="w-4 h-4" />
+                        Get Started
+                      </a>
+                    </Button>
                   </motion.div>
                 </div>
 
