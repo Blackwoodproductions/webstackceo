@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import {
   CheckCircle, Circle, ChevronDown, ChevronRight, Globe, Target,
   Plus, Trash2, DollarSign, Calendar, Zap, ArrowRight, RefreshCw,
-  AlertCircle, Lightbulb, TrendingUp, Search, Tag
+  AlertCircle, Lightbulb, TrendingUp, Search, Tag, Building, User, ExternalLink
 } from 'lucide-react';
 
 // Google Ads icon component
@@ -30,7 +30,7 @@ interface GoogleAdsCampaignSetupWizardProps {
   onCancel: () => void;
 }
 
-type SetupStep = 1 | 2 | 3 | 4;
+type SetupStep = 0 | 1 | 2 | 3 | 4;
 
 interface KeywordEntry {
   id: string;
@@ -38,16 +38,33 @@ interface KeywordEntry {
   matchType: 'BROAD' | 'PHRASE' | 'EXACT';
 }
 
+interface AdsAccount {
+  customerId: string;
+  descriptiveName: string;
+  currencyCode: string;
+}
+
 export function GoogleAdsCampaignSetupWizard({
   domain,
-  customerId,
+  customerId: initialCustomerId,
   accessToken,
   onComplete,
   onCancel,
 }: GoogleAdsCampaignSetupWizardProps) {
-  const [currentStep, setCurrentStep] = useState<SetupStep>(1);
-  const [expandedStep, setExpandedStep] = useState<SetupStep>(1);
+  // Start at step 0 (account selection) if no valid customer ID
+  const hasValidCustomerId = initialCustomerId && initialCustomerId !== 'unified-auth' && initialCustomerId.match(/^\d{3}-?\d{3}-?\d{4}$/);
+  const [currentStep, setCurrentStep] = useState<SetupStep>(hasValidCustomerId ? 1 : 0);
+  const [expandedStep, setExpandedStep] = useState<SetupStep>(hasValidCustomerId ? 1 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Account selection state (Step 0)
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
+  const [availableAccounts, setAvailableAccounts] = useState<AdsAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<AdsAccount | null>(null);
+  const [manualCustomerId, setManualCustomerId] = useState('');
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [verifiedCustomerId, setVerifiedCustomerId] = useState<string>(hasValidCustomerId ? initialCustomerId : '');
   
   // Form state
   const [websiteUrl, setWebsiteUrl] = useState(domain ? `https://${domain}` : '');
@@ -58,6 +75,85 @@ export function GoogleAdsCampaignSetupWizard({
   ]);
   const [suggestedKeywords, setSuggestedKeywords] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  // Fetch available Google Ads accounts on mount (Step 0)
+  const fetchAdsAccounts = useCallback(async () => {
+    setIsLoadingAccounts(true);
+    setAccountError(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
+        body: {
+          action: 'list-accounts',
+          accessToken,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data.accounts && data.accounts.length > 0) {
+        setAvailableAccounts(data.accounts);
+        // Auto-select if only one account
+        if (data.accounts.length === 1) {
+          setSelectedAccount(data.accounts[0]);
+        }
+      } else {
+        // No accounts found - show manual entry
+        setShowManualEntry(true);
+        setAccountError('No Google Ads accounts found. Enter your Customer ID manually or create a new account.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching Ads accounts:', err);
+      setShowManualEntry(true);
+      setAccountError('Could not fetch accounts automatically. Please enter your Customer ID.');
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  }, [accessToken]);
+
+  // Load accounts when starting at step 0
+  useEffect(() => {
+    if (currentStep === 0 && !isLoadingAccounts && availableAccounts.length === 0 && !showManualEntry) {
+      fetchAdsAccounts();
+    }
+  }, [currentStep]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Validate and verify customer ID format
+  const validateCustomerId = (id: string): string | null => {
+    // Remove dashes for validation
+    const cleanId = id.replace(/-/g, '');
+    if (!/^\d{10}$/.test(cleanId)) {
+      return 'Customer ID must be 10 digits (e.g., 123-456-7890)';
+    }
+    return null;
+  };
+
+  // Handle account selection and proceed
+  const handleAccountConfirm = useCallback(async () => {
+    let customerId = '';
+    
+    if (selectedAccount) {
+      customerId = selectedAccount.customerId;
+    } else if (manualCustomerId) {
+      const error = validateCustomerId(manualCustomerId);
+      if (error) {
+        setAccountError(error);
+        return;
+      }
+      customerId = manualCustomerId.replace(/-/g, '');
+    } else {
+      setAccountError('Please select an account or enter a Customer ID');
+      return;
+    }
+    
+    // Store the verified customer ID
+    setVerifiedCustomerId(customerId);
+    localStorage.setItem('google_ads_customer_id', customerId);
+    
+    // Proceed to step 1
+    setCurrentStep(1);
+    setExpandedStep(1);
+  }, [selectedAccount, manualCustomerId]);
 
   const addKeyword = () => {
     setKeywords(prev => [...prev, { id: Date.now().toString(), text: '', matchType: 'BROAD' }]);
@@ -115,6 +211,7 @@ export function GoogleAdsCampaignSetupWizard({
   // Submit campaign setup
   const handleCreateCampaign = useCallback(async () => {
     const validKeywords = keywords.filter(k => k.text.trim());
+    const finalCustomerId = verifiedCustomerId || initialCustomerId;
     
     if (!websiteUrl.trim()) {
       toast.error('Please enter your website URL');
@@ -133,7 +230,7 @@ export function GoogleAdsCampaignSetupWizard({
         body: {
           action: 'create-campaign',
           accessToken,
-          customerId,
+          customerId: finalCustomerId,
           campaign: {
             name: campaignName,
             websiteUrl,
@@ -162,7 +259,7 @@ export function GoogleAdsCampaignSetupWizard({
     } finally {
       setIsSubmitting(false);
     }
-  }, [accessToken, customerId, campaignName, websiteUrl, dailyBudget, keywords, onComplete]);
+  }, [accessToken, verifiedCustomerId, initialCustomerId, campaignName, websiteUrl, dailyBudget, keywords, onComplete]);
 
   const getStepStatus = (step: SetupStep) => {
     if (step < currentStep) return 'complete';
@@ -183,6 +280,143 @@ export function GoogleAdsCampaignSetupWizard({
 
   const renderStepContent = (step: SetupStep) => {
     switch (step) {
+      case 0:
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Connect your Google Ads account to manage campaigns for <span className="text-primary font-medium">{domain}</span>.
+            </p>
+
+            {/* Loading state */}
+            {isLoadingAccounts && (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="w-6 h-6 animate-spin text-orange-500 mr-3" />
+                <span className="text-muted-foreground">Finding your Google Ads accounts...</span>
+              </div>
+            )}
+
+            {/* Account selection */}
+            {!isLoadingAccounts && availableAccounts.length > 0 && !showManualEntry && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Select Google Ads Account</Label>
+                <div className="space-y-2">
+                  {availableAccounts.map((account) => (
+                    <button
+                      key={account.customerId}
+                      onClick={() => setSelectedAccount(account)}
+                      className={`w-full p-4 rounded-xl border text-left transition-all ${
+                        selectedAccount?.customerId === account.customerId
+                          ? 'border-orange-500 bg-orange-500/10'
+                          : 'border-border hover:border-orange-500/50 hover:bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          selectedAccount?.customerId === account.customerId
+                            ? 'bg-orange-500'
+                            : 'bg-muted'
+                        }`}>
+                          <Building className={`w-5 h-5 ${
+                            selectedAccount?.customerId === account.customerId
+                              ? 'text-white'
+                              : 'text-muted-foreground'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="font-medium">{account.descriptiveName || 'Unnamed Account'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {account.customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')} • {account.currencyCode || 'USD'}
+                          </p>
+                        </div>
+                        {selectedAccount?.customerId === account.customerId && (
+                          <CheckCircle className="w-5 h-5 text-orange-500 ml-auto" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowManualEntry(true)}
+                  className="text-sm text-muted-foreground hover:text-primary underline"
+                >
+                  Enter Customer ID manually instead
+                </button>
+              </div>
+            )}
+
+            {/* Manual entry */}
+            {!isLoadingAccounts && (showManualEntry || availableAccounts.length === 0) && (
+              <div className="space-y-4">
+                {accountError && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-amber-500">{accountError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="customerId" className="text-sm font-medium">Google Ads Customer ID</Label>
+                  <div className="relative mt-1.5">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="customerId"
+                      value={manualCustomerId}
+                      onChange={(e) => {
+                        // Auto-format with dashes
+                        const value = e.target.value.replace(/[^0-9-]/g, '');
+                        setManualCustomerId(value);
+                        setAccountError(null);
+                      }}
+                      placeholder="123-456-7890"
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Find this in your Google Ads account settings (10-digit number)
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border bg-muted/20">
+                  <p className="text-sm font-medium mb-2">Don't have a Google Ads account?</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Create one for free to start running PPC campaigns.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open('https://ads.google.com/home/signup/', '_blank')}
+                    className="w-full"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Create Google Ads Account
+                  </Button>
+                </div>
+
+                {availableAccounts.length > 0 && (
+                  <button
+                    onClick={() => setShowManualEntry(false)}
+                    className="text-sm text-muted-foreground hover:text-primary underline"
+                  >
+                    ← Back to account selection
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Continue button */}
+            {!isLoadingAccounts && (
+              <Button
+                onClick={handleAccountConfirm}
+                disabled={!selectedAccount && !manualCustomerId}
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50"
+              >
+                Continue with this Account
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        );
+
       case 1:
         return (
           <div className="space-y-4">
@@ -449,12 +683,23 @@ export function GoogleAdsCampaignSetupWizard({
     }
   };
 
-  const steps = [
+  // Include Step 0 only if user needs to select an account
+  const allSteps = [
+    { number: 0, title: 'Connect Account', desc: 'Select Google Ads account' },
     { number: 1, title: 'Website & Campaign', desc: 'Enter your details' },
     { number: 2, title: 'Add Keywords', desc: 'Choose target keywords' },
     { number: 3, title: 'Set Budget', desc: 'Configure daily spend' },
     { number: 4, title: 'Launch', desc: 'Start your campaign' },
   ];
+  
+  // Filter to only show Step 0 if we started there (no valid customer ID)
+  const steps = hasValidCustomerId 
+    ? allSteps.filter(s => s.number !== 0) 
+    : allSteps;
+  
+  const totalSteps = steps.length;
+  const currentStepIndex = steps.findIndex(s => s.number === currentStep);
+  const progressPercent = ((currentStepIndex + 1) / totalSteps) * 100;
 
   return (
     <div className="w-full">
@@ -464,18 +709,23 @@ export function GoogleAdsCampaignSetupWizard({
           <GoogleAdsIcon className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold">Set Up Google Ads Campaign</h3>
+          <h3 className="text-lg font-semibold">
+            {currentStep === 0 ? 'Connect Google Ads Account' : 'Set Up Google Ads Campaign'}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            No active campaigns found. Let's create one for <span className="text-primary font-medium">{domain}</span>
+            {currentStep === 0 
+              ? <>Link your Google Ads account to manage campaigns for <span className="text-primary font-medium">{domain}</span></>
+              : <>Creating campaign for <span className="text-primary font-medium">{domain}</span></>
+            }
           </p>
         </div>
       </div>
 
       {/* Progress */}
       <div className="mb-6">
-        <Progress value={(currentStep / 4) * 100} className="h-2" />
+        <Progress value={progressPercent} className="h-2" />
         <div className="flex justify-between mt-2">
-          {steps.map((step) => (
+          {steps.map((step, index) => (
             <div
               key={step.number}
               className={`text-xs ${
@@ -484,7 +734,7 @@ export function GoogleAdsCampaignSetupWizard({
                 'text-muted-foreground'
               }`}
             >
-              Step {step.number}
+              Step {index + 1}
             </div>
           ))}
         </div>
