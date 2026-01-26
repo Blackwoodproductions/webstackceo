@@ -1366,71 +1366,83 @@ export const GSCDashboardPanel = ({
             </div>
           )}
 
-          {/* Controls - Right justified */}
-          <div className="flex flex-nowrap gap-3 items-center justify-end bg-secondary/30 rounded-lg p-3 min-h-[48px]">
-            {/* Left side - Date selector only (domain controlled by header)
-                Hidden when parent integrates the date range (VI+GSC). */}
-            {!hideDateSelector && (
-              <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
-                <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
-                  <SelectTrigger className="w-[110px] h-8 text-xs bg-background border-border">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border z-50">
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="28">28 days</SelectItem>
-                    <SelectItem value="90">3 months</SelectItem>
-                    <SelectItem value="180">6 months</SelectItem>
-                    <SelectItem value="365">12 months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          {/* Controls - Enhanced with glassmorphism */}
+          <motion.div 
+            className="relative overflow-hidden flex flex-nowrap gap-3 items-center justify-end bg-gradient-to-r from-cyan-500/5 via-secondary/30 to-violet-500/5 rounded-xl p-3 min-h-[48px] border border-cyan-500/10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {/* Subtle shimmer */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent pointer-events-none"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+            />
+            <div className="relative z-10 flex flex-nowrap gap-3 items-center justify-end w-full">
+              {/* Left side - Date selector only (domain controlled by header)
+                  Hidden when parent integrates the date range (VI+GSC). */}
+              {!hideDateSelector && (
+                <div className="flex items-center gap-2 flex-shrink-0 mr-auto">
+                  <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeType)}>
+                    <SelectTrigger className="w-[110px] h-8 text-xs bg-background/50 border-cyan-500/20 backdrop-blur-sm">
+                      <Calendar className="w-3 h-3 mr-1 text-cyan-400" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border border-border z-50">
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="28">28 days</SelectItem>
+                      <SelectItem value="90">3 months</SelectItem>
+                      <SelectItem value="180">6 months</SelectItem>
+                      <SelectItem value="365">12 months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-            {/* Data dropdowns */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button 
-                variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveDropdown(activeDropdown === 'queries' ? null : 'queries')}
-                className="h-8 text-xs"
-              >
-                <Search className="w-3 h-3 mr-1" />
-                Queries
-                {activeDropdown === 'queries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-              </Button>
-              <Button 
-                variant={activeDropdown === 'pages' ? "secondary" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveDropdown(activeDropdown === 'pages' ? null : 'pages')}
-                className="h-8 text-xs"
-              >
-                <FileText className="w-3 h-3 mr-1" />
-                Pages
-                {activeDropdown === 'pages' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-              </Button>
-              <Button 
-                variant={activeDropdown === 'countries' ? "secondary" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveDropdown(activeDropdown === 'countries' ? null : 'countries')}
-                className="h-8 text-xs"
-              >
-                <Globe className="w-3 h-3 mr-1" />
-                Countries
-                {activeDropdown === 'countries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+              {/* Data dropdowns */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Button 
+                  variant={activeDropdown === 'queries' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setActiveDropdown(activeDropdown === 'queries' ? null : 'queries')}
+                  className={`h-8 text-xs hover:bg-cyan-500/10 ${activeDropdown === 'queries' ? 'bg-cyan-500/20 border-cyan-500/30' : ''}`}
+                >
+                  <Search className="w-3 h-3 mr-1 text-cyan-400" />
+                  Queries
+                  {activeDropdown === 'queries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                </Button>
+                <Button 
+                  variant={activeDropdown === 'pages' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setActiveDropdown(activeDropdown === 'pages' ? null : 'pages')}
+                  className={`h-8 text-xs hover:bg-violet-500/10 ${activeDropdown === 'pages' ? 'bg-violet-500/20 border-violet-500/30' : ''}`}
+                >
+                  <FileText className="w-3 h-3 mr-1 text-violet-400" />
+                  Pages
+                  {activeDropdown === 'pages' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                </Button>
+                <Button 
+                  variant={activeDropdown === 'countries' ? "secondary" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setActiveDropdown(activeDropdown === 'countries' ? null : 'countries')}
+                  className={`h-8 text-xs hover:bg-emerald-500/10 ${activeDropdown === 'countries' ? 'bg-emerald-500/20 border-emerald-500/30' : ''}`}
+                >
+                  <Globe className="w-3 h-3 mr-1 text-emerald-400" />
+                  Countries
+                  {activeDropdown === 'countries' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
+                </Button>
+              </div>
+
+              {/* Spacer to push refresh to right */}
+              <div className="flex-1" />
+
+              {/* Refresh button - right justified */}
+              <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); fetchSites(); }} disabled={isFetching || isLoadingAllTypes} className="h-8 flex-shrink-0 hover:bg-cyan-500/10">
+                <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
+                Refresh
               </Button>
             </div>
-
-            {/* Spacer to push refresh to right */}
-            <div className="flex-1" />
-
-            {/* Refresh button - right justified */}
-            <Button variant="ghost" size="sm" onClick={() => { fetchAllData(true); fetchAllTypesData(); fetchSites(); }} disabled={isFetching || isLoadingAllTypes} className="h-8 flex-shrink-0">
-              <RefreshCw className={`w-3 h-3 mr-1 ${isFetching || isLoadingAllTypes ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+          </motion.div>
 
           {/* Compact Dropdown Panels */}
           {activeDropdown === 'queries' && (
@@ -1558,137 +1570,268 @@ export const GSCDashboardPanel = ({
             </div>
           )}
 
-          {/* Compact Combined Section: Devices + Sources */}
+          {/* Compact Combined Section: Devices + Sources - Enhanced */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Device Breakdown - Compact */}
-            <div className="bg-secondary/20 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Monitor className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-xs font-medium">Devices</span>
+            {/* Device Breakdown - Enhanced with glassmorphism */}
+            <motion.div 
+              className="relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 rounded-xl p-3 border border-amber-500/15"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {/* Subtle grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                style={{
+                  backgroundImage: `linear-gradient(hsl(38 92% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(38 92% 50%) 1px, transparent 1px)`,
+                  backgroundSize: '20px 20px',
+                }}
+              />
+              {/* Corner glow */}
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-amber-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-400/20 flex items-center justify-center">
+                    <Monitor className="w-3.5 h-3.5 text-amber-400" />
+                  </div>
+                  <span className="text-xs font-semibold bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent">Devices</span>
+                </div>
+                <div className="flex gap-2">
+                  {(['DESKTOP', 'MOBILE', 'TABLET'] as const).map((deviceType, idx) => {
+                    const device = deviceData.find(d => d.keys[0] === deviceType);
+                    const clicks = device?.clicks || 0;
+                    const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
+                    const pct = totalClicks > 0 ? (clicks / totalClicks) * 100 : 0;
+                    const Icon = deviceType === 'DESKTOP' ? Monitor : deviceType === 'MOBILE' ? Smartphone : Tablet;
+                    const colors = ['amber', 'orange', 'yellow'];
+                    
+                    return (
+                      <motion.div 
+                        key={deviceType} 
+                        className={`relative overflow-hidden flex-1 bg-gradient-to-br from-${colors[idx]}-500/10 to-card rounded-xl p-3 text-center border border-${colors[idx]}-500/20 group/device`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 + idx * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover/device:opacity-100 pointer-events-none"
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ duration: 2.5, repeat: Infinity }}
+                        />
+                        <Icon className="w-5 h-5 mx-auto mb-1.5 text-amber-400" />
+                        <motion.p 
+                          className="text-lg font-bold"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.25 + idx * 0.05, type: 'spring' }}
+                        >
+                          {isFetching ? "—" : `${pct.toFixed(0)}%`}
+                        </motion.p>
+                        <p className="text-[9px] text-muted-foreground capitalize">{deviceType.toLowerCase()}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex gap-2">
-                {(['DESKTOP', 'MOBILE', 'TABLET'] as const).map((deviceType) => {
-                  const device = deviceData.find(d => d.keys[0] === deviceType);
-                  const clicks = device?.clicks || 0;
-                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
-                  const pct = totalClicks > 0 ? (clicks / totalClicks) * 100 : 0;
-                  const Icon = deviceType === 'DESKTOP' ? Monitor : deviceType === 'MOBILE' ? Smartphone : Tablet;
-                  
-                  return (
-                    <div key={deviceType} className="flex-1 bg-secondary/30 rounded-lg p-2 text-center">
-                      <Icon className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-lg font-bold">{isFetching ? "—" : `${pct.toFixed(0)}%`}</p>
-                      <p className="text-[9px] text-muted-foreground capitalize">{deviceType.toLowerCase()}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            </motion.div>
 
-            {/* Performance by Source - Compact */}
-            <div className="bg-secondary/20 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-violet-500" />
-                <span className="text-xs font-medium">Sources</span>
-                {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground ml-auto" />}
+            {/* Performance by Source - Enhanced with glassmorphism */}
+            <motion.div 
+              className="relative overflow-hidden bg-gradient-to-br from-violet-500/5 via-card to-cyan-500/5 rounded-xl p-3 border border-violet-500/15"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {/* Subtle grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                style={{
+                  backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                  backgroundSize: '20px 20px',
+                }}
+              />
+              {/* Corner glow */}
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-violet-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-400/20 to-cyan-400/20 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                  </div>
+                  <span className="text-xs font-semibold bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">Sources</span>
+                  {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-violet-400 ml-auto" />}
+                </div>
+                <div className="flex gap-1.5">
+                  {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type, idx) => {
+                    const data = allTypesData[type];
+                    const config = SEARCH_TYPE_CONFIG[type];
+                    const hasData = data.clicks > 0 || data.impressions > 0;
+                    const isActive = searchType === type;
+                    
+                    return (
+                      <motion.button
+                        key={type}
+                        onClick={() => { setSearchType(type); setShowSourceDetails(true); }}
+                        className={`relative overflow-hidden flex-1 flex flex-col items-center p-2 rounded-xl transition-all border ${
+                          isActive 
+                            ? 'bg-gradient-to-br from-cyan-500/20 to-violet-500/10 border-cyan-500/40 shadow-lg shadow-cyan-500/10' 
+                            : hasData 
+                              ? 'bg-gradient-to-br from-secondary/50 to-card border-border/50 hover:border-violet-500/30' 
+                              : 'opacity-40 border-border/30'
+                        }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 + idx * 0.03 }}
+                        whileHover={{ scale: isActive ? 1 : 1.03 }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent pointer-events-none"
+                            animate={{ x: ['-100%', '200%'] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                        )}
+                        <div className="relative z-10 w-6 h-6 rounded-lg flex items-center justify-center mb-0.5" style={{ color: config.color }}>
+                          {config.icon}
+                        </div>
+                        <span className="text-xs font-bold">{hasData ? formatNumber(data.clicks) : '—'}</span>
+                        <span className="text-[8px] text-muted-foreground">{config.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex gap-1.5">
-                {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
-                  const data = allTypesData[type];
-                  const config = SEARCH_TYPE_CONFIG[type];
-                  const hasData = data.clicks > 0 || data.impressions > 0;
-                  const isActive = searchType === type;
-                  
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => { setSearchType(type); setShowSourceDetails(true); }}
-                      className={`flex-1 flex flex-col items-center p-1.5 rounded-lg transition-all ${
-                        isActive ? 'bg-primary/20 ring-1 ring-primary/50' : hasData ? 'bg-secondary/50 hover:bg-secondary/80' : 'opacity-40'
-                      }`}
-                    >
-                      <div className="w-6 h-6 rounded flex items-center justify-center mb-0.5" style={{ color: config.color }}>
-                        {config.icon}
-                      </div>
-                      <span className="text-xs font-bold">{hasData ? formatNumber(data.clicks) : '—'}</span>
-                      <span className="text-[8px] text-muted-foreground">{config.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Compact Display Window - Chart and KPIs */}
+          {/* Compact Display Window - Chart and KPIs - Enhanced */}
           {showSourceDetails && (
-            <div className="bg-secondary/10 rounded-lg p-3 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 text-xs" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
-                    {SEARCH_TYPE_CONFIG[searchType].icon}
-                    <span className="font-medium">{SEARCH_TYPE_CONFIG[searchType].label}</span>
+            <motion.div 
+              className="relative overflow-hidden bg-gradient-to-br from-cyan-500/5 via-card to-violet-500/5 rounded-xl p-4 border border-cyan-500/15"
+              initial={{ opacity: 0, y: 10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Subtle grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                style={{
+                  backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                  backgroundSize: '24px 24px',
+                }}
+              />
+              {/* Corner glows */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-bl-[50px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-violet-500/10 to-transparent rounded-tr-[40px] pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${SEARCH_TYPE_CONFIG[searchType].color}20` }}>
+                      <span style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>{SEARCH_TYPE_CONFIG[searchType].icon}</span>
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
+                      {SEARCH_TYPE_CONFIG[searchType].label}
+                    </span>
+                    <Badge variant="secondary" className="text-[9px] h-4 bg-cyan-500/10 border-cyan-500/20 text-cyan-400">{dateRange}d</Badge>
                   </div>
-                  <Badge variant="secondary" className="text-[9px] h-4">{dateRange}d</Badge>
+                  <Button variant="ghost" size="sm" onClick={() => setShowSourceDetails(false)} className="h-6 px-2 text-[10px] hover:bg-cyan-500/10">
+                    <ChevronUp className="w-3 h-3" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setShowSourceDetails(false)} className="h-5 px-1.5 text-[10px]">
-                  <ChevronUp className="w-3 h-3" />
-                </Button>
-              </div>
 
-              {/* Compact Chart */}
-              <div className="h-[100px] w-full mb-2">
-                {isFetching && chartData.length === 0 ? (
-                  <Skeleton className="h-full w-full" />
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
-                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} width={30} />
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '6px', fontSize: '11px' }} />
-                      <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
+                {/* Compact Chart - Enhanced */}
+                <div className="relative h-[100px] w-full mb-3 rounded-lg overflow-hidden bg-gradient-to-r from-secondary/20 to-secondary/10">
+                  {isFetching && chartData.length === 0 ? (
+                    <Skeleton className="h-full w-full" />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="gscClicksGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={SEARCH_TYPE_CONFIG[searchType].color} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
+                        <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} width={30} />
+                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: `1px solid ${SEARCH_TYPE_CONFIG[searchType].color}40`, borderRadius: '10px', fontSize: '11px', boxShadow: `0 4px 20px ${SEARCH_TYPE_CONFIG[searchType].color}20` }} />
+                        <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
 
-              {/* Compact KPI Row */}
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { label: "Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "text-primary" },
-                  { label: "Impressions", value: formatNumber(combinedMetrics.impressions), icon: Eye, color: "text-cyan-500" },
-                  { label: "CTR", value: (combinedMetrics.ctr * 100).toFixed(1) + "%", icon: Target, color: "text-violet-500" },
-                  { label: "Position", value: combinedMetrics.position > 0 ? combinedMetrics.position.toFixed(1) : "—", icon: TrendingUp, color: "text-amber-500" },
-                ].map((metric, i) => (
-                  <div key={i} className="bg-secondary/30 rounded-lg p-2 text-center">
-                    <metric.icon className={`w-3 h-3 mx-auto mb-0.5 ${metric.color}`} />
-                    <p className="text-sm font-bold">{isLoadingAllTypes ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
-                    <p className="text-[8px] text-muted-foreground">{metric.label}</p>
-                  </div>
-                ))}
+                {/* Compact KPI Row - Enhanced */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "cyan", gradient: "from-cyan-500/15 to-cyan-500/5", border: "border-cyan-500/20" },
+                    { label: "Impressions", value: formatNumber(combinedMetrics.impressions), icon: Eye, color: "violet", gradient: "from-violet-500/15 to-violet-500/5", border: "border-violet-500/20" },
+                    { label: "CTR", value: (combinedMetrics.ctr * 100).toFixed(1) + "%", icon: Target, color: "emerald", gradient: "from-emerald-500/15 to-emerald-500/5", border: "border-emerald-500/20" },
+                    { label: "Position", value: combinedMetrics.position > 0 ? combinedMetrics.position.toFixed(1) : "—", icon: TrendingUp, color: "amber", gradient: "from-amber-500/15 to-amber-500/5", border: "border-amber-500/20" },
+                  ].map((metric, i) => (
+                    <motion.div 
+                      key={i} 
+                      className={`relative overflow-hidden bg-gradient-to-br ${metric.gradient} rounded-xl p-2.5 text-center border ${metric.border} group/kpi`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.05 }}
+                      whileHover={{ scale: 1.03 }}
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover/kpi:opacity-100 pointer-events-none"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <metric.icon className={`w-3.5 h-3.5 mx-auto mb-1 text-${metric.color}-400`} />
+                      <motion.p 
+                        className="text-sm font-bold"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 + i * 0.05, type: 'spring' }}
+                      >
+                        {isLoadingAllTypes ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}
+                      </motion.p>
+                      <p className="text-[8px] text-muted-foreground">{metric.label}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Advanced Reporting Toggle - Compact */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAdvancedReporting(!showAdvancedReporting)}
-            className="w-full justify-between h-8 text-xs mt-2 border-t border-border/30 rounded-none pt-3"
+          {/* Advanced Reporting Toggle - Enhanced */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
           >
-            <span className="flex items-center gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
-              Advanced Reporting
-            </span>
-            {showAdvancedReporting ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedReporting(!showAdvancedReporting)}
+              className="relative overflow-hidden w-full justify-between h-10 text-xs mt-2 rounded-xl bg-gradient-to-r from-violet-500/5 via-secondary/20 to-cyan-500/5 border border-violet-500/10 hover:border-violet-500/30 hover:bg-violet-500/10 group"
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <span className="relative z-10 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-400/20 to-cyan-400/20 flex items-center justify-center">
+                  <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+                </div>
+                <span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent font-semibold">
+                  Advanced Reporting
+                </span>
+              </span>
+              {showAdvancedReporting ? <ChevronUp className="w-4 h-4 text-violet-400" /> : <ChevronDown className="w-4 h-4 text-violet-400" />}
+            </Button>
+          </motion.div>
         </CardContent>
       </Card>
 
