@@ -25,6 +25,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [isWaitingForPopup, setIsWaitingForPopup] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
+  const hasTriggeredAutoLogin = useRef(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -112,6 +114,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
+    setPopupBlocked(false);
     setIsWaitingForPopup(true);
 
     const width = 520;
@@ -127,17 +130,24 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     if (!popup) {
       setIsWaitingForPopup(false);
-      toast({
-        title: "Popup Blocked",
-        description: "Please allow popups to login to BRON.",
-        variant: "destructive",
-      });
+      setPopupBlocked(true);
       return;
     }
 
     popupRef.current = popup;
     startLoginPolling();
   };
+
+  // Auto-trigger login popup when component mounts (if not authenticated and domain is set)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && domain && !hasTriggeredAutoLogin.current && !isWaitingForPopup && !popupBlocked) {
+      hasTriggeredAutoLogin.current = true;
+      const timer = setTimeout(() => {
+        openLoginPopup();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isAuthenticated, domain, isWaitingForPopup, popupBlocked]);
 
   const handleCancelLogin = () => {
     if (pollRef.current) window.clearInterval(pollRef.current);
@@ -297,38 +307,75 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         ))}
       </div>
 
-      {/* Connect Card with Login Button */}
-      <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
-        <CardHeader className="text-center pb-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl">
-            {domain ? "Connect to BRON" : "Select a Domain"}
-          </CardTitle>
-          <CardDescription>
-            {domain 
-              ? "Click below to login and access the Diamond Flow link building platform."
-              : "Select a domain from the dropdown above to connect to the BRON platform."
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {domain ? (
+      {/* Popup Blocked Instructions */}
+      {popupBlocked && (
+        <Card className="border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-background to-amber-500/5">
+          <CardHeader className="text-center pb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl text-amber-600 dark:text-amber-400">Popup Blocked</CardTitle>
+            <CardDescription>
+              Your browser blocked the login popup. Please allow popups for this site to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-secondary/50 rounded-lg p-4 text-sm space-y-3">
+              <p className="font-semibold">How to allow popups:</p>
+              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                <li>Look for a <strong>blocked popup icon</strong> in your browser's address bar (usually on the right)</li>
+                <li>Click the icon and select <strong>"Always allow popups from this site"</strong></li>
+                <li>Alternatively, go to your browser settings → Privacy/Security → Popups → Add this site to allowed list</li>
+              </ol>
+              <p className="text-xs text-muted-foreground pt-2">
+                After allowing popups, click the button below to try again.
+              </p>
+            </div>
             <Button
-              onClick={openLoginPopup}
-              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
+              onClick={() => {
+                setPopupBlocked(false);
+                hasTriggeredAutoLogin.current = false;
+                openLoginPopup();
+              }}
+              className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold"
             >
               <LogIn className="w-5 h-5 mr-2" />
-              Login to BRON
+              Try Again
             </Button>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center">
-              Use the domain selector in the header to choose which domain to connect.
-            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Connect Card - shows when waiting for domain or ready to connect */}
+      {!popupBlocked && (
+        <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
+          <CardHeader className="text-center pb-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
+              {domain ? (
+                <Loader2 className="w-8 h-8 text-white animate-spin" />
+              ) : (
+                <TrendingUp className="w-8 h-8 text-white" />
+              )}
+            </div>
+            <CardTitle className="text-2xl">
+              {domain ? "Connecting to BRON..." : "Select a Domain"}
+            </CardTitle>
+            <CardDescription>
+              {domain 
+                ? "Opening login popup... Once you sign in, the dashboard will load automatically."
+                : "Select a domain from the dropdown above to connect to the BRON platform."
+              }
+            </CardDescription>
+          </CardHeader>
+          {!domain && (
+            <CardContent className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Use the domain selector in the header to choose which domain to connect.
+              </p>
+            </CardContent>
           )}
-        </CardContent>
-      </Card>
+        </Card>
+      )}
 
       {/* Info about the integration */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
