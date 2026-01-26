@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Activity, BarChart3, Key, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { OAuthLoadingOverlay } from "@/components/ui/oauth-loading-overlay";
 import { UseUnifiedGoogleAuthReturn } from "@/hooks/use-unified-google-auth";
 
 interface UnifiedGoogleConnectProps {
@@ -23,6 +25,7 @@ interface UnifiedGoogleConnectProps {
 export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleConnectProps) => {
   const {
     isLoading,
+    isAuthenticated,
     login,
     showClientIdDialog,
     setShowClientIdDialog,
@@ -31,9 +34,47 @@ export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleCo
     saveClientIdAndLogin,
   } = auth;
 
+  const [oauthStatus, setOauthStatus] = useState<'idle' | 'connecting' | 'success' | 'error'>('idle');
+  const [showOverlay, setShowOverlay] = useState(false);
+
+  // Track authentication state changes
+  useEffect(() => {
+    if (oauthStatus === 'connecting' && isAuthenticated) {
+      setOauthStatus('success');
+      // Auto-close after success
+      setTimeout(() => {
+        setShowOverlay(false);
+        setOauthStatus('idle');
+      }, 1500);
+    }
+  }, [isAuthenticated, oauthStatus]);
+
+  const handleLogin = async () => {
+    setOauthStatus('connecting');
+    setShowOverlay(true);
+    
+    try {
+      await login();
+    } catch {
+      setOauthStatus('error');
+    }
+  };
+
+  const handleOverlayClose = () => {
+    setShowOverlay(false);
+    setOauthStatus('idle');
+  };
+
   if (variant === "compact") {
     return (
       <>
+        <OAuthLoadingOverlay 
+          isVisible={showOverlay} 
+          status={oauthStatus === 'idle' ? 'connecting' : oauthStatus}
+          provider="Google"
+          onClose={handleOverlayClose}
+        />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -86,7 +127,7 @@ export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleCo
               </p>
 
               <Button
-                onClick={login}
+                onClick={handleLogin}
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-primary via-violet-500 to-cyan-500 hover:from-primary/90 hover:via-violet-500/90 hover:to-cyan-500/90 shadow-lg shadow-primary/25"
               >
@@ -127,6 +168,13 @@ export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleCo
   // Full variant
   return (
     <>
+      <OAuthLoadingOverlay 
+        isVisible={showOverlay} 
+        status={oauthStatus === 'idle' ? 'connecting' : oauthStatus}
+        provider="Google"
+        onClose={handleOverlayClose}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -218,7 +266,7 @@ export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleCo
               </div>
 
               <Button
-                onClick={login}
+                onClick={handleLogin}
                 disabled={isLoading}
                 size="lg"
                 className="bg-gradient-to-r from-primary via-violet-500 to-cyan-500 hover:from-primary/90 hover:via-violet-500/90 hover:to-cyan-500/90 shadow-lg shadow-primary/25 flex-shrink-0"
@@ -247,7 +295,7 @@ export const UnifiedGoogleConnect = ({ auth, variant = "full" }: UnifiedGoogleCo
   );
 };
 
-// Client ID Dialog component
+// Client ID Dialog component with enhanced styling
 const ClientIdDialog = ({
   open,
   onOpenChange,
@@ -262,55 +310,78 @@ const ClientIdDialog = ({
   onSave: () => void;
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="sm:max-w-lg">
-      <DialogHeader>
+    <DialogContent className="sm:max-w-lg overflow-hidden">
+      {/* Background effects */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: "20px 20px",
+        }}
+      />
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
+
+      <DialogHeader className="relative">
         <DialogTitle className="flex items-center gap-2">
-          <Key className="w-5 h-5 text-primary" />
-          Configure Google OAuth
+          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20">
+            <Key className="w-4 h-4 text-primary" />
+          </div>
+          <span className="bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
+            Configure Google OAuth
+          </span>
         </DialogTitle>
         <DialogDescription>
           Enter your Google Cloud OAuth Client ID for Analytics and Search Console access.
         </DialogDescription>
       </DialogHeader>
-      <div className="space-y-4 py-4">
+
+      <div className="relative space-y-4 py-4">
         <div className="space-y-2">
-          <Label>Google OAuth Client ID</Label>
+          <Label className="text-sm font-medium">Google OAuth Client ID</Label>
           <Input
             placeholder="123456789-abc.apps.googleusercontent.com"
             value={clientIdInput}
             onChange={(e) => setClientIdInput(e.target.value)}
+            className="bg-background/50 border-border/50 focus:border-primary/50"
           />
         </div>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm">
-          <p className="font-medium mb-2">Setup:</p>
-          <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-xs">
+        <div className="bg-muted/30 backdrop-blur-sm rounded-lg p-4 text-sm border border-border/30">
+          <p className="font-medium mb-2 text-foreground">Quick Setup Guide:</p>
+          <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground text-xs">
             <li>
               Go to{" "}
               <a
                 href="https://console.cloud.google.com/apis/credentials"
                 target="_blank"
                 rel="noreferrer"
-                className="text-primary hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 Google Cloud Console
               </a>
             </li>
-            <li>Create OAuth 2.0 Client ID</li>
+            <li>Create OAuth 2.0 Client ID (Web application)</li>
             <li>
               Add redirect URI:{" "}
-              <code className="bg-background px-1 rounded text-[10px]">
+              <code className="bg-background/80 px-1.5 py-0.5 rounded text-[10px] border border-border/50 text-primary">
                 {window.location.origin}/visitor-intelligence-dashboard
               </code>
             </li>
-            <li>Enable: Google Analytics Data API, Analytics Admin API, Search Console API</li>
+            <li>Enable: Analytics Data API, Analytics Admin API, Search Console API</li>
           </ol>
         </div>
       </div>
-      <DialogFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+
+      <DialogFooter className="relative gap-2">
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="border-border/50">
           Cancel
         </Button>
-        <Button onClick={onSave}>Save & Connect</Button>
+        <Button 
+          onClick={onSave}
+          className="bg-gradient-to-r from-primary via-violet-500 to-cyan-500 hover:from-primary/90 hover:via-violet-500/90 hover:to-cyan-500/90"
+        >
+          Save & Connect
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
