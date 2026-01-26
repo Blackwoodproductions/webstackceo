@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
   Award, Building, Sparkles, CheckCircle, Zap, Target,
-  LogIn, ArrowRight
+  LogIn, ArrowRight, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ const STORAGE_KEY = "bron_dashboard_auth";
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const popupRef = useRef<Window | null>(null);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -42,26 +43,81 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     setIsLoading(false);
   }, [onConnectionComplete]);
 
-  // Open dashboard in new tab and mark as connected
-  const handleOpenDashboard = () => {
-    window.open(BRON_DASHBOARD_URL, '_blank');
-    
-    // Mark as connected after opening dashboard
-    if (!isAuthenticated) {
-      const authData = {
-        authenticated: true,
-        expiry: Date.now() + 24 * 60 * 60 * 1000,
-        authenticatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-      setIsAuthenticated(true);
-      onConnectionComplete?.("bron");
-      
+  const persistAuth = () => {
+    const authData = {
+      authenticated: true,
+      expiry: Date.now() + 24 * 60 * 60 * 1000,
+      authenticatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+    setIsAuthenticated(true);
+    onConnectionComplete?.("bron");
+  };
+
+  // Popup-based login: keep auth in popup, render dashboard on this page via iframe
+  const handlePopupLogin = () => {
+    setIsLoading(true);
+    localStorage.removeItem(STORAGE_KEY);
+    setIsAuthenticated(false);
+
+    const width = 520;
+    const height = 720;
+    const left = (window.screenX ?? 0) + (window.outerWidth - width) / 2;
+    const top = (window.screenY ?? 0) + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      BRON_LOGIN_URL,
+      "bron_login",
+      `popup=yes,width=${width},height=${height},left=${Math.max(0, left)},top=${Math.max(0, top)},scrollbars=yes`
+    );
+
+    if (!popup) {
+      setIsLoading(false);
       toast({
-        title: "BRON Dashboard Opened",
-        description: "Dashboard opened in a new tab. You can access it anytime from here.",
+        title: "Popup Blocked",
+        description: "Please allow popups so you can login to BRON.",
+        variant: "destructive",
       });
+      return;
     }
+
+    popupRef.current = popup;
+
+    // We can't reliably read popup URL due to cross-origin; the most reliable signal is popup closure.
+    toast({
+      title: "Login in Popup",
+      description: "Complete login in the popup, then close it to load the dashboard here.",
+    });
+
+    const poll = window.setInterval(() => {
+      if (!popupRef.current || popupRef.current.closed) {
+        window.clearInterval(poll);
+        popupRef.current = null;
+        persistAuth();
+        setIsLoading(false);
+      }
+    }, 400);
+
+    // Safety timeout
+    window.setTimeout(() => {
+      window.clearInterval(poll);
+      if (popupRef.current && !popupRef.current.closed) {
+        // Don't force-close; just stop loading state.
+        setIsLoading(false);
+      }
+    }, 3 * 60 * 1000);
+  };
+
+  const handleManualContinue = () => {
+    // Use when popup can't be detected / user already logged in.
+    try {
+      popupRef.current?.close();
+    } catch {
+      // ignore
+    }
+    popupRef.current = null;
+    persistAuth();
+    setIsLoading(false);
   };
 
   const handleLogout = () => {
@@ -81,7 +137,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show connected state with features and external dashboard link
+  // Show connected state with embedded dashboard (iframe)
   if (isAuthenticated) {
     return (
       <motion.div
@@ -104,11 +160,25 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={handleOpenDashboard}
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const iframe = document.getElementById('bron-dashboard-iframe') as HTMLIFrameElement | null;
+                if (iframe) iframe.src = iframe.src;
+              }}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
               className="gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
             >
               <ExternalLink className="w-4 h-4" />
-              Open Dashboard
+              Open in New Tab
             </Button>
             <Button
               variant="outline"
@@ -119,6 +189,17 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Embedded BRON Dashboard */}
+        <div className="rounded-xl overflow-hidden border border-border shadow-lg bg-background">
+          <iframe
+            id="bron-dashboard-iframe"
+            src={BRON_DASHBOARD_URL}
+            className="w-full h-[720px] border-0"
+            title="BRON Dashboard"
+            allow="clipboard-write; clipboard-read"
+          />
         </div>
 
         {/* Quick Stats / Status */}
@@ -188,19 +269,28 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Primary: Open Dashboard */}
+          {/* Primary: Popup Login */}
           <Button
-            onClick={handleOpenDashboard}
+            onClick={handlePopupLogin}
             className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
           >
             <LogIn className="w-5 h-5 mr-2" />
-            Open BRON Dashboard
+            Login to BRON
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            Opens in a new tab. Log in there to manage your link building campaigns.
-          </p>
+          <div className="text-xs text-muted-foreground text-center space-y-2">
+            <p>Login happens in a popup. After you sign in, close the popup to load the dashboard here.</p>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleManualContinue}
+              className="w-full"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              I’m logged in — show dashboard
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
