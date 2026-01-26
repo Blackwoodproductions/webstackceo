@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -7,7 +7,6 @@ const BRON_STORAGE_KEY = "bron_dashboard_auth";
 
 const BronCallback = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [message, setMessage] = useState("Processing BRON authentication...");
 
@@ -24,15 +23,29 @@ const BronCallback = () => {
         if (error) {
           setStatus("error");
           setMessage(`Authentication failed: ${error}`);
+          // Try to notify opener and close after delay
           setTimeout(() => {
-            navigate("/visitor-intelligence-dashboard#bron");
-          }, 3000);
+            try {
+              if (window.opener) {
+                window.opener.postMessage({ type: "BRON_AUTH_ERROR", error }, window.location.origin);
+              }
+              window.close();
+            } catch {
+              // If can't close, just show error
+            }
+          }, 2000);
           return;
         }
 
-        // If we have a token, code, or success flag - consider authenticated
-        if (token || code || success === "true" || success === "1") {
-          // Store authentication data
+        // Check for any success indicators
+        const isSuccess = token || code || success === "true" || success === "1";
+        
+        // Also check referrer as fallback (BRON may redirect without params)
+        const referrer = document.referrer;
+        const isFromBRON = referrer.includes("dashdev.imagehosting.space") || referrer.includes("bron");
+
+        if (isSuccess || isFromBRON) {
+          // Store authentication data in localStorage (shared with opener)
           const authData = {
             authenticated: true,
             token: token || code || null,
@@ -45,54 +58,67 @@ const BronCallback = () => {
           setStatus("success");
           setMessage("Successfully authenticated with BRON!");
           
-          // Redirect back to dashboard
+          // Notify the opener window and close this popup
           setTimeout(() => {
-            navigate("/visitor-intelligence-dashboard#bron");
-          }, 1500);
+            try {
+              if (window.opener) {
+                // Post message to opener to trigger dashboard load
+                window.opener.postMessage({ 
+                  type: "BRON_AUTH_SUCCESS", 
+                  token: token || code || null 
+                }, window.location.origin);
+              }
+              window.close();
+            } catch (e) {
+              console.log("[BRON Callback] Could not close popup:", e);
+              // If we can't close (e.g., not a popup), redirect instead
+              window.location.href = "/visitor-intelligence-dashboard#bron";
+            }
+          }, 1000);
           return;
         }
 
-        // If no explicit token but we got redirected here, assume success
-        // (BRON may redirect without params if using cookie-based sessions)
-        const referrer = document.referrer;
-        if (referrer.includes("dashdev.imagehosting.space") || referrer.includes("bron")) {
-          const authData = {
-            authenticated: true,
-            token: null,
-            expiry: Date.now() + 24 * 60 * 60 * 1000,
-            authenticatedAt: new Date().toISOString(),
-          };
-          
-          localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
-          
-          setStatus("success");
-          setMessage("Successfully authenticated with BRON!");
-          
-          setTimeout(() => {
-            navigate("/visitor-intelligence-dashboard#bron");
-          }, 1500);
-          return;
-        }
-
-        // No auth params detected - might be direct access
-        setStatus("error");
-        setMessage("No authentication data received. Please try logging in again.");
+        // No auth params and not from BRON - assume it's a direct redirect from login success
+        // Many OAuth flows just redirect without explicit params when using cookies
+        const authData = {
+          authenticated: true,
+          token: null,
+          expiry: Date.now() + 24 * 60 * 60 * 1000,
+          authenticatedAt: new Date().toISOString(),
+        };
+        
+        localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
+        
+        setStatus("success");
+        setMessage("Successfully authenticated with BRON!");
+        
         setTimeout(() => {
-          navigate("/visitor-intelligence-dashboard#bron");
-        }, 3000);
+          try {
+            if (window.opener) {
+              window.opener.postMessage({ type: "BRON_AUTH_SUCCESS" }, window.location.origin);
+            }
+            window.close();
+          } catch {
+            window.location.href = "/visitor-intelligence-dashboard#bron";
+          }
+        }, 1000);
         
       } catch (err) {
         console.error("[BRON Callback] Error:", err);
         setStatus("error");
         setMessage("An error occurred during authentication.");
         setTimeout(() => {
-          navigate("/visitor-intelligence-dashboard#bron");
-        }, 3000);
+          try {
+            window.close();
+          } catch {
+            window.location.href = "/visitor-intelligence-dashboard#bron";
+          }
+        }, 2000);
       }
     };
 
     processCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -103,7 +129,7 @@ const BronCallback = () => {
       >
         {status === "processing" && (
           <>
-            <Loader2 className="w-16 h-16 mx-auto mb-4 text-cyan-500 animate-spin" />
+            <Loader2 className="w-16 h-16 mx-auto mb-4 text-emerald-500 animate-spin" />
             <h1 className="text-2xl font-bold mb-2">Connecting to BRON</h1>
           </>
         )}
@@ -123,16 +149,16 @@ const BronCallback = () => {
         
         {status === "error" && (
           <>
-            <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h1 className="text-2xl font-bold mb-2 text-red-500">Connection Failed</h1>
+            <XCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
+            <h1 className="text-2xl font-bold mb-2 text-destructive">Connection Failed</h1>
           </>
         )}
         
         <p className="text-muted-foreground">{message}</p>
         
-        {status !== "processing" && (
+        {status === "success" && (
           <p className="text-sm text-muted-foreground mt-4">
-            Redirecting to dashboard...
+            Closing window...
           </p>
         )}
       </motion.div>
