@@ -18,6 +18,7 @@ interface LiveVisitor {
   first_page: string | null;
   last_activity_at: string;
   started_at: string;
+  referrer: string | null;
 }
 
 // Extract domain from referrer URL
@@ -82,7 +83,7 @@ const LiveChatWidget = () => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data } = await supabase
       .from("visitor_sessions")
-      .select("session_id, first_page, last_activity_at, started_at")
+      .select("session_id, first_page, last_activity_at, started_at, referrer")
       .gte("last_activity_at", fiveMinutesAgo)
       .order("last_activity_at", { ascending: false })
       .limit(8);
@@ -327,36 +328,56 @@ const LiveChatWidget = () => {
         {!isOpen && (
           <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-2">
             {/* Live Visitor Icons - stacked above main button */}
-            {liveVisitors.slice(0, 5).map((visitor, index) => (
-              <Tooltip key={visitor.session_id}>
-                <TooltipTrigger asChild>
-                  <motion.button
-                    initial={{ scale: 0, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0, opacity: 0, y: 20 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
-                    onClick={() => handleEngageVisitor(visitor)}
-                    className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group`}
-                    aria-label={`Engage visitor`}
-                  >
-                    <User className="w-4 h-4" />
-                    {/* Live pulse indicator */}
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
-                      <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
-                    </span>
-                    {/* Connection line */}
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-px h-2 bg-gradient-to-b from-border/50 to-transparent" />
-                  </motion.button>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="bg-card border-border">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs">{visitor.first_page || '/'}</span>
-                    <span className="text-[10px] text-muted-foreground">• {getTimeSince(visitor.started_at)}</span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            ))}
+            {liveVisitors.slice(0, 5).map((visitor, index) => {
+              const visitorReferrerDomain = getReferrerDomain(visitor.referrer);
+              const visitorFaviconUrl = getFaviconUrl(visitorReferrerDomain);
+              
+              return (
+                <Tooltip key={visitor.session_id}>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0, y: 20 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0, opacity: 0, y: 20 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
+                      onClick={() => handleEngageVisitor(visitor)}
+                      className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden`}
+                      aria-label={`Engage visitor from ${visitorReferrerDomain || 'direct'}`}
+                    >
+                      {visitorFaviconUrl ? (
+                        <img
+                          src={visitorFaviconUrl}
+                          alt={`From ${visitorReferrerDomain}`}
+                          className="w-5 h-5 rounded-sm"
+                          onError={(e) => {
+                            // Replace with User icon on error
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <User className={`w-4 h-4 ${visitorFaviconUrl ? 'hidden' : ''}`} />
+                      {/* Live pulse indicator */}
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
+                        <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                      </span>
+                      {/* Connection line */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-px h-2 bg-gradient-to-b from-border/50 to-transparent" />
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-card border-border">
+                    <div className="flex items-center gap-2">
+                      {visitorFaviconUrl && (
+                        <img src={visitorFaviconUrl} alt="" className="w-3 h-3 rounded-sm" />
+                      )}
+                      {!visitorFaviconUrl && <Globe className="w-3 h-3 text-muted-foreground" />}
+                      <span className="text-xs">{visitorReferrerDomain || visitor.first_page || '/'}</span>
+                      <span className="text-[10px] text-muted-foreground">• {getTimeSince(visitor.started_at)}</span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
             
             {/* Main Chat Button */}
             <motion.button
