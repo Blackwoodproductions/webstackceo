@@ -20,7 +20,8 @@ serve(async (req) => {
     // Get the secret from body (user-provided), header, or environment
     const headerSecret = req.headers.get("x-cade-secret");
     const envSecret = Deno.env.get("CADE_API_SECRET") || Deno.env.get("CADE_API_KEY");
-    const cadeSecret = bodyApiKey || headerSecret || envSecret;
+    const cadeSecretRaw: unknown = bodyApiKey ?? headerSecret ?? envSecret;
+    const cadeSecret = (typeof cadeSecretRaw === "string" ? cadeSecretRaw : "").trim();
 
     if (!cadeSecret) {
       console.error("[cade-api] No CADE_API_SECRET configured");
@@ -31,16 +32,27 @@ serve(async (req) => {
     }
 
     console.log(`[cade-api] Action: ${action}, Domain: ${domain || "N/A"}`);
+    // Safe diagnostics to confirm we're actually sending a non-empty key (never log the key)
+    if (cadeSecret) {
+      const bytes = new TextEncoder().encode(cadeSecret);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const hashHex = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      console.log(
+        `[cade-api] Auth key diagnostics: len=${cadeSecret.length}, sha256_prefix=${hashHex.slice(0, 10)}`
+      );
+    }
 
     // Build headers for CADE API requests
-    // Try multiple auth header formats for maximum compatibility
+    // Per API docs "Authorize" modal: APIKeyHeader name is "X-API-Key"
     const cadeHeaders: Record<string, string> = {
-      "Accept": "application/json",
+      Accept: "application/json",
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${cadeSecret}`,
-      "x-api-key": cadeSecret,
-      "api-key": cadeSecret,
+      "X-API-Key": cadeSecret,
     };
+
+    console.log(`[cade-api] Upstream auth headers set: ${Object.keys(cadeHeaders).join(", ")}`);
 
     let endpoint: string;
     let method = "GET";
@@ -219,7 +231,19 @@ serve(async (req) => {
       console.log(`[cade-api] Request body: ${requestBody.substring(0, 200)}`);
     }
 
-    const response = await fetch(apiUrl, fetchOptions);
+    // Some upstreams respond with redirects (e.g., trailing-slash normalization).
+    // Certain runtimes may drop custom headers on redirects. We handle redirects manually
+    // to ensure the API key header is preserved.
+    let response = await fetch(apiUrl, { ...fetchOptions, redirect: "manual" });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      console.log(`[cade-api] Redirect ${response.status} -> ${location ?? "(no location)"}`);
+      if (location) {
+        const redirectedUrl = new URL(location, apiUrl).toString();
+        response = await fetch(redirectedUrl, fetchOptions);
+      }
+    }
+
     console.log(`[cade-api] Response status: ${response.status}`);
 
     const responseText = await response.text();
