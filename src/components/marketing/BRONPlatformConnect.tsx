@@ -7,10 +7,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { BronDashboard } from "./BronDashboard";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
-const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/";
+const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/dashboard";
+const BRON_DOMAIN_ID = "112619";
 
 interface BRONPlatformConnectProps {
   domain?: string;
@@ -138,13 +138,13 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   }, [isOpening, checkAuth, isConnected, onConnectionComplete]);
 
   const openLoginPopup = () => {
-    // Construct callback URL
+    // Construct the login URL with domain_id and tab
     const callbackUrl = `${window.location.origin}/bron-callback`;
-    const loginUrl = `${BRON_LOGIN_URL}?redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis&redirect_uri=${encodeURIComponent(callbackUrl)}`;
     
     // Popup dimensions
-    const popupWidth = 520;
-    const popupHeight = 720;
+    const popupWidth = 1200;
+    const popupHeight = 800;
     const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
     const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
 
@@ -188,12 +188,77 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Connected - show dashboard
+  // Connected - show iframe dashboard
   if (isConnected && domain) {
-    return <BronDashboard domain={domain} onLogout={handleLogout} />;
+    const iframeSrc = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-4"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <motion.div
+                className="absolute -inset-1 rounded-xl border border-emerald-400/50"
+                animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                BRON Dashboard
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Connected
+                </span>
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Viewing dashboard for <span className="text-emerald-400 font-medium">{domain}</span>
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(iframeSrc, "_blank")}
+              className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Open in New Tab
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              Disconnect
+            </Button>
+          </div>
+        </div>
+
+        {/* Iframe Container */}
+        <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 bg-background">
+          <iframe
+            src={iframeSrc}
+            className="w-full min-h-[700px] border-0"
+            title="BRON Dashboard"
+            allow="clipboard-write"
+          />
+        </div>
+      </motion.div>
+    );
   }
 
-  // Not connected - show login prompt
+  // Not connected - show login prompt with benefits
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -315,7 +380,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       <div className="text-center">
         <Button
           variant="link"
-          onClick={() => window.open(BRON_LOGIN_URL, "_blank")}
+          onClick={() => window.open(`${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`, "_blank")}
           className="text-muted-foreground hover:text-emerald-400"
         >
           <ExternalLink className="w-4 h-4 mr-1" />
