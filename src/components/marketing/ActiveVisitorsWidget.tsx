@@ -75,20 +75,29 @@ const ActiveVisitorsWidget = () => {
         return;
       }
 
-      // DEDUPLICATION: For authenticated users, keep only the most recent session per user_id
-      // For anonymous users, keep all sessions (they're already unique per tab via sessionStorage)
+      // DEDUPLICATION: 
+      // 1. Always deduplicate by session_id first (prevent same session appearing multiple times)
+      // 2. For authenticated users, keep only the most recent session per user_id
       const deduplicatedSessions: any[] = [];
+      const seenSessionIds = new Set<string>();
       const seenUserIds = new Set<string>();
       
       for (const session of sessions) {
+        // Skip if we've already seen this exact session_id
+        if (seenSessionIds.has(session.session_id)) {
+          continue;
+        }
+        
         if (session.user_id) {
           // Authenticated user - only keep their most recent session
           if (!seenUserIds.has(session.user_id)) {
             seenUserIds.add(session.user_id);
+            seenSessionIds.add(session.session_id);
             deduplicatedSessions.push(session);
           }
         } else {
-          // Anonymous user - keep the session
+          // Anonymous user - keep the session (already deduplicated by session_id above)
+          seenSessionIds.add(session.session_id);
           deduplicatedSessions.push(session);
         }
       }
