@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, Zap, Target, RefreshCw
+  Award, Building, Sparkles, Zap, Target, RefreshCw, LogIn
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +25,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [isWaitingForPopup, setIsWaitingForPopup] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
-
-  const hasTriggeredAutoLogin = useRef(false);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -104,7 +102,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
         setIsWaitingForPopup(false);
-        hasTriggeredAutoLogin.current = false; // Allow retry
       }
     }, 2000);
   };
@@ -141,17 +138,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     popupRef.current = popup;
     startLoginPolling();
   };
-
-  // Auto-trigger login popup when component mounts (if not authenticated and domain is set)
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && domain && !hasTriggeredAutoLogin.current && !isWaitingForPopup) {
-      hasTriggeredAutoLogin.current = true;
-      const timer = setTimeout(() => {
-        openLoginPopup();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, isAuthenticated, domain, isWaitingForPopup]);
 
   const handleCancelLogin = () => {
     if (pollRef.current) window.clearInterval(pollRef.current);
@@ -311,33 +297,37 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         ))}
       </div>
 
-      {/* Status Card - shows waiting or prompts domain selection */}
+      {/* Connect Card with Login Button */}
       <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
         <CardHeader className="text-center pb-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-            {domain ? (
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            ) : (
-              <TrendingUp className="w-8 h-8 text-white" />
-            )}
+            <TrendingUp className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-2xl">
-            {domain ? "Connecting to BRON..." : "Select a Domain"}
+            {domain ? "Connect to BRON" : "Select a Domain"}
           </CardTitle>
           <CardDescription>
             {domain 
-              ? "Please complete your login in the popup window. The dashboard will load automatically once connected."
+              ? "Click below to login and access the Diamond Flow link building platform."
               : "Select a domain from the dropdown above to connect to the BRON platform."
             }
           </CardDescription>
         </CardHeader>
-        {!domain && (
-          <CardContent className="text-center">
-            <p className="text-sm text-muted-foreground">
+        <CardContent className="space-y-4">
+          {domain ? (
+            <Button
+              onClick={openLoginPopup}
+              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              Login to BRON
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">
               Use the domain selector in the header to choose which domain to connect.
             </p>
-          </CardContent>
-        )}
+          )}
+        </CardContent>
       </Card>
 
       {/* Info about the integration */}
