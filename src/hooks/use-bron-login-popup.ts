@@ -2,29 +2,28 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type UseBronLoginPopupOptions = {
   loginUrl: string;
-  /** Called when the popup is detected as closed. */
-  onClosed?: () => void;
+  dashboardUrl: string;
+  /** Called when login is detected (popup URL changed from /login to dashboard) */
+  onLoggedIn: () => void;
   pollIntervalMs?: number;
 };
 
 /**
- * Opens a BRON login popup and tracks its lifecycle.
- *
- * IMPORTANT:
- * We intentionally do NOT attempt to auto-detect "logged in" status, because BRON
- * session cookies are cross-site relative to this app and cannot be reliably verified.
+ * Opens a BRON login popup and detects successful login by monitoring URL changes.
+ * When the popup navigates away from the login page to the dashboard, we consider login successful.
  */
 export function useBronLoginPopup({
   loginUrl,
-  onClosed,
+  dashboardUrl,
+  onLoggedIn,
   pollIntervalMs = 500,
 }: UseBronLoginPopupOptions) {
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
+  const hasTriggeredLogin = useRef(false);
 
   const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const [didClose, setDidClose] = useState(false);
 
   const closePopup = useCallback(() => {
     if (popupRef.current && !popupRef.current.closed) {
@@ -51,7 +50,7 @@ export function useBronLoginPopup({
 
   const openPopup = useCallback(() => {
     setPopupBlocked(false);
-    setDidClose(false);
+    hasTriggeredLogin.current = false;
 
     const popupWidth = 600;
     const popupHeight = 700;
@@ -78,20 +77,76 @@ export function useBronLoginPopup({
     return true;
   }, [closePopup, loginUrl]);
 
-  // Poll only for popup close.
+  // Poll for login success by checking popup URL
   useEffect(() => {
     if (!isWaitingForLogin) return;
 
-    pollRef.current = window.setInterval(() => {
+    const checkPopup = () => {
       const popup = popupRef.current;
-      if (!popup) return;
-      if (popup.closed) {
-        closePopup();
+      
+      // If popup was closed by user
+      if (!popup || popup.closed) {
         setIsWaitingForLogin(false);
-        setDidClose(true);
-        onClosed?.();
+        if (pollRef.current) {
+          window.clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+        return;
       }
-    }, pollIntervalMs);
+
+      // Try to detect URL change (login -> dashboard)
+      try {
+        const popupUrl = popup.location.href;
+        
+        // Check if we're no longer on the login page
+        // This indicates successful login and redirect to dashboard
+        if (popupUrl && !popupUrl.includes("/login") && popupUrl.includes("dashdev.imagehosting.space")) {
+          console.log("[BRON] Login detected, popup URL:", popupUrl);
+          
+          if (!hasTriggeredLogin.current) {
+            hasTriggeredLogin.current = true;
+            
+            // Small delay to ensure cookies are set
+            setTimeout(() => {
+              closePopup();
+              setIsWaitingForLogin(false);
+              onLoggedIn();
+            }, 500);
+          }
+          return;
+        }
+      } catch {
+        // Cross-origin error is expected before/during login
+        // We can't read the URL until same-origin or it redirects
+      }
+
+      // Also try to detect by checking if popup has dashboard content
+      try {
+        const popupDoc = popup.document;
+        // If we can access the document and it has dashboard elements
+        if (popupDoc) {
+          const dashboardIndicator = popupDoc.querySelector('.dashboard, .user-menu, .nav-profile, [data-logged-in]');
+          if (dashboardIndicator && !hasTriggeredLogin.current) {
+            console.log("[BRON] Login detected via DOM inspection");
+            hasTriggeredLogin.current = true;
+            
+            setTimeout(() => {
+              closePopup();
+              setIsWaitingForLogin(false);
+              onLoggedIn();
+            }, 500);
+            return;
+          }
+        }
+      } catch {
+        // Cross-origin DOM access blocked - expected
+      }
+    };
+
+    // Initial check
+    checkPopup();
+
+    pollRef.current = window.setInterval(checkPopup, pollIntervalMs);
 
     return () => {
       if (pollRef.current) {
@@ -99,7 +154,7 @@ export function useBronLoginPopup({
         pollRef.current = null;
       }
     };
-  }, [closePopup, isWaitingForLogin, onClosed, pollIntervalMs]);
+  }, [closePopup, dashboardUrl, isWaitingForLogin, onLoggedIn, pollIntervalMs]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -116,7 +171,6 @@ export function useBronLoginPopup({
     popupRef,
     isWaitingForLogin,
     popupBlocked,
-    didClose,
     openPopup,
     closePopup,
     focusPopup,
