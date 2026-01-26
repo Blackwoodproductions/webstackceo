@@ -211,17 +211,17 @@ export const FuturisticParticles = ({
 // Floating orbs with blur effect
 export const FloatingOrbs = ({ className = "" }: { className?: string }) => {
   const orbs = [
-    { size: 300, x: "10%", y: "20%", color: "primary", delay: 0 },
-    { size: 400, x: "80%", y: "60%", color: "violet", delay: 1 },
-    { size: 250, x: "60%", y: "10%", color: "cyan", delay: 2 },
-    { size: 350, x: "20%", y: "70%", color: "emerald", delay: 0.5 },
+    { size: 400, x: "75%", y: "-5%", color: "primary", delay: 0 },
+    { size: 500, x: "-10%", y: "70%", color: "violet", delay: 1 },
+    { size: 350, x: "85%", y: "80%", color: "cyan", delay: 2 },
+    { size: 300, x: "-5%", y: "10%", color: "emerald", delay: 0.5 },
   ];
 
   const colorMap: Record<string, string> = {
-    primary: "bg-primary/20",
-    violet: "bg-violet-500/20",
-    cyan: "bg-cyan-500/20",
-    emerald: "bg-emerald-500/20",
+    primary: "bg-primary/15",
+    violet: "bg-violet-500/15",
+    cyan: "bg-cyan-400/20",
+    emerald: "bg-emerald-500/10",
   };
 
   return (
@@ -237,19 +237,65 @@ export const FloatingOrbs = ({ className = "" }: { className?: string }) => {
             top: orb.y,
           }}
           animate={{
-            x: [0, 30, -20, 0],
-            y: [0, -40, 20, 0],
-            scale: [1, 1.1, 0.9, 1],
-            opacity: [0.3, 0.5, 0.3],
+            x: [0, 40, -30, 0],
+            y: [0, -50, 30, 0],
+            scale: [1, 1.15, 0.95, 1],
+            opacity: [0.4, 0.6, 0.4],
           }}
           transition={{
-            duration: 15 + i * 2,
+            duration: 12 + i * 3,
             repeat: Infinity,
             ease: "easeInOut",
             delay: orb.delay,
           }}
         />
       ))}
+    </div>
+  );
+};
+
+// Corner blobs like VI dashboard - large animated blurs in corners
+export const CornerBlobs = ({ className = "" }: { className?: string }) => {
+  return (
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+      {/* Top right blob */}
+      <motion.div
+        className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-cyan-400/20 rounded-full blur-3xl"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      {/* Bottom left blob */}
+      <motion.div
+        className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-violet-500/20 rounded-full blur-3xl"
+        animate={{ 
+          scale: [1.1, 1, 1.1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      />
+      
+      {/* Center top glow */}
+      <motion.div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-primary/10 via-violet-500/5 to-transparent"
+        animate={{ 
+          opacity: [0.4, 0.6, 0.4],
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      
+      {/* Bottom right accent */}
+      <motion.div
+        className="absolute -bottom-20 right-[20%] w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-3xl"
+        animate={{ 
+          x: [0, 20, 0],
+          opacity: [0.2, 0.4, 0.2],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+      />
     </div>
   );
 };

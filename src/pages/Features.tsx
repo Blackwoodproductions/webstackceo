@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
-import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay, CornerBlobs } from "@/components/ui/futuristic-particles";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import { HighTechBackground } from "@/components/ui/high-tech-background";
 
@@ -15,6 +15,7 @@ const Features = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Futuristic Background Effects */}
+      <CornerBlobs className="fixed inset-0 z-0" />
       <FloatingOrbs className="fixed inset-0 z-0" />
       <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
       <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
