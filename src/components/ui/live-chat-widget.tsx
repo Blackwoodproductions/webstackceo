@@ -29,7 +29,33 @@ const LiveChatWidget = () => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [selectedVisitor, setSelectedVisitor] = useState<LiveVisitor | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check for logged-in user
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || null);
+        setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
+      }
+    };
+    checkUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.user) {
+        setUserEmail(session.user.email || null);
+        setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
+      } else {
+        setUserEmail(null);
+        setUserName(null);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch live visitors (active in last 5 minutes)
   const fetchLiveVisitors = useCallback(async () => {
@@ -145,6 +171,8 @@ const LiveChatWidget = () => {
         session_id: sessionId,
         status: "active",
         current_page: currentPage,
+        visitor_email: userEmail,
+        visitor_name: userName,
       })
       .select("id")
       .single();
