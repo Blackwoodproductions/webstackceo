@@ -22,7 +22,9 @@ const STORAGE_KEY = "bron_dashboard_auth";
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWaitingForPopup, setIsWaitingForPopup] = useState(false);
   const popupRef = useRef<Window | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -51,14 +53,15 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
     setIsAuthenticated(true);
+    setIsWaitingForPopup(false);
     onConnectionComplete?.("bron");
   };
 
-  // Popup-based login: keep auth in popup, render dashboard on this page via iframe
+  // Popup-based login
   const handlePopupLogin = () => {
-    setIsLoading(true);
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
+    setIsWaitingForPopup(true);
 
     const width = 520;
     const height = 720;
@@ -72,7 +75,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
 
     if (!popup) {
-      setIsLoading(false);
+      setIsWaitingForPopup(false);
       toast({
         title: "Popup Blocked",
         description: "Please allow popups so you can login to BRON.",
@@ -83,33 +86,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // We can't reliably read popup URL due to cross-origin; the most reliable signal is popup closure.
-    toast({
-      title: "Login in Popup",
-      description: "Complete login in the popup, then close it to load the dashboard here.",
-    });
-
-    const poll = window.setInterval(() => {
+    // Poll for popup close
+    pollRef.current = window.setInterval(() => {
       if (!popupRef.current || popupRef.current.closed) {
-        window.clearInterval(poll);
+        if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
         persistAuth();
-        setIsLoading(false);
       }
     }, 400);
-
-    // Safety timeout
-    window.setTimeout(() => {
-      window.clearInterval(poll);
-      if (popupRef.current && !popupRef.current.closed) {
-        // Don't force-close; just stop loading state.
-        setIsLoading(false);
-      }
-    }, 3 * 60 * 1000);
   };
 
-  const handleManualContinue = () => {
-    // Use when popup can't be detected / user already logged in.
+  const handleContinueAfterLogin = () => {
+    // User clicked "I've logged in" - close popup if still open and continue
+    if (pollRef.current) window.clearInterval(pollRef.current);
     try {
       popupRef.current?.close();
     } catch {
@@ -117,7 +106,17 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
     popupRef.current = null;
     persistAuth();
-    setIsLoading(false);
+  };
+
+  const handleCancelLogin = () => {
+    if (pollRef.current) window.clearInterval(pollRef.current);
+    try {
+      popupRef.current?.close();
+    } catch {
+      // ignore
+    }
+    popupRef.current = null;
+    setIsWaitingForPopup(false);
   };
 
   const handleLogout = () => {
@@ -132,8 +131,57 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
       </div>
+    );
+  }
+
+  // Waiting for popup login state
+  if (isWaitingForPopup) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center py-16 px-8 space-y-6"
+      >
+        <div className="relative">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
+          </div>
+          <motion.div
+            className="absolute -inset-2 rounded-3xl border-2 border-emerald-400/50"
+            animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </div>
+        
+        <div className="text-center space-y-2">
+          <h3 className="text-xl font-bold">Waiting for BRON Login</h3>
+          <p className="text-muted-foreground max-w-md">
+            Complete your login in the popup window. Once you're logged in, 
+            <span className="font-semibold text-foreground"> close the popup </span> 
+            or click the button below.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          <Button
+            onClick={handleContinueAfterLogin}
+            size="lg"
+            className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
+          >
+            <CheckCircle className="w-5 h-5 mr-2" />
+            I've Logged In — Show Dashboard
+          </Button>
+          <Button
+            onClick={handleCancelLogin}
+            variant="ghost"
+            className="w-full text-muted-foreground"
+          >
+            Cancel
+          </Button>
+        </div>
+      </motion.div>
     );
   }
 
@@ -249,18 +297,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
 
-          <div className="text-xs text-muted-foreground text-center space-y-2">
-            <p>Login happens in a popup. After you sign in, close the popup to load the dashboard here.</p>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleManualContinue}
-              className="w-full"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              I’m logged in — show dashboard
-            </Button>
-          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Login happens in a popup. After you sign in, close the popup to load the dashboard here.
+          </p>
         </CardContent>
       </Card>
 
