@@ -2440,6 +2440,28 @@ const AuditResults = () => {
                       </motion.div>
                     )}
                     
+                    {/* Timer and Badges - below description, aligned left */}
+                    <motion.div 
+                      className="flex items-center gap-3 mt-4"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <NextReportCountdown />
+                      <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                        <Users className="w-5 h-5 text-cyan-500" />
+                        <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                        <Crown className="w-5 h-5 text-amber-500" />
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                        <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                        <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                      </div>
+                    </motion.div>
+                    
                     {/* Claimed Notification */}
                     {isClaimed && (
                       <motion.div
@@ -2473,84 +2495,32 @@ const AuditResults = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    {isCaseStudyMode ? (
-                      <div className="flex flex-col items-end gap-3">
-                        <NextReportCountdown />
-                        {/* Trust Badges - Square style */}
-                        <motion.div 
-                          className="flex items-center gap-2"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.5 }}
-                        >
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Users className="w-5 h-5 text-cyan-500" />
-                            <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Crown className="w-5 h-5 text-amber-500" />
-                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                            <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
-                          </div>
-                        </motion.div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-end gap-3">
-                        <div className="flex items-center gap-3">
-                          {!isClaimed && (
-                            <Button 
-                              variant="outline" 
-                              className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
-                              onClick={handleSaveClick}
-                            >
-                              <Gift className="w-4 h-4 text-primary" />
-                              Save & Get Free Backlink
-                            </Button>
-                          )}
-                          <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
-                            <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                              <Phone className="w-4 h-4" />
-                              Book a Call
-                            </a>
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
-                            asChild
-                          >
-                            <a href="/pricing">
-                              <Sparkles className="w-4 h-4" />
-                              Get Started
-                            </a>
-                          </Button>
-                        </div>
-                        {/* Timer Box */}
-                        <NextReportCountdown />
-                        {/* Trust Badges - under timer */}
-                        <motion.div 
-                          className="flex items-center gap-2"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.5 }}
-                        >
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Users className="w-5 h-5 text-cyan-500" />
-                            <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Crown className="w-5 h-5 text-amber-500" />
-                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                          </div>
-                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                            <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                            <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
-                          </div>
-                        </motion.div>
-                      </div>
+                    {!isClaimed && !isCaseStudyMode && (
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
+                        onClick={handleSaveClick}
+                      >
+                        <Gift className="w-4 h-4 text-primary" />
+                        Save & Get Free Backlink
+                      </Button>
                     )}
+                    <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
+                      <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                        <Phone className="w-4 h-4" />
+                        Book a Call
+                      </a>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                      asChild
+                    >
+                      <a href="/pricing">
+                        <Sparkles className="w-4 h-4" />
+                        Get Started
+                      </a>
+                    </Button>
                   </motion.div>
                 </div>
 
