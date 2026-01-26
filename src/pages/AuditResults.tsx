@@ -2426,13 +2426,13 @@ const AuditResults = () => {
                     {/* Website Description with Timer & Badges */}
                     {(websiteProfile?.summary || websiteProfile?.description) && (
                       <motion.div 
-                        className="flex items-start gap-6 mt-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-transparent border-l-2 border-primary/50"
+                        className="flex items-stretch gap-4 mt-4 rounded-xl bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 border border-border/30 overflow-hidden"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                       >
-                        {/* Description */}
-                        <div className="flex items-start gap-3 flex-1">
+                        {/* Description - takes ~60% */}
+                        <div className="flex items-start gap-3 p-4 flex-[3] border-l-2 border-primary/50">
                           <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
                             <Sparkles className="w-4 h-4 text-primary" />
                           </div>
@@ -2441,21 +2441,21 @@ const AuditResults = () => {
                           </p>
                         </div>
                         
-                        {/* Timer & Badges - aligned right */}
-                        <div className="shrink-0 flex flex-col items-end gap-2">
+                        {/* Timer & Badges - takes ~40% */}
+                        <div className="flex-[2] flex flex-col justify-center gap-2 p-4 bg-gradient-to-l from-primary/5 to-transparent">
                           <NextReportCountdown />
-                          <div className="flex items-center gap-2">
-                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                              <Users className="w-5 h-5 text-cyan-500" />
-                              <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-600/15 border border-cyan-500/30 hover:scale-105 transition-transform cursor-default">
+                              <Users className="w-4 h-4 text-cyan-500" />
+                              <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                              <Crown className="w-5 h-5 text-amber-500" />
-                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
+                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-amber-500/15 to-yellow-600/15 border border-amber-500/30 hover:scale-105 transition-transform cursor-default">
+                              <Crown className="w-4 h-4 text-amber-500" />
+                              <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                              <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                              <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-violet-500/15 to-purple-600/15 border border-violet-500/30 hover:scale-105 transition-transform cursor-default">
+                              <Bot className="w-4 h-4 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                              <span className="text-[8px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                             </div>
                           </div>
                         </div>
