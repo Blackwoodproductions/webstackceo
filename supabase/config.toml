@@ -51,8 +51,11 @@ verify_jwt = false
 [functions.bron-login-status]
 verify_jwt = false
 
-[functions.bron-feed]
+[functions.bron-api]
 verify_jwt = false
 
-[functions.bron-api]
+[functions.aggregate-changelog]
+verify_jwt = false
+
+[functions.pagespeed-insights]
 verify_jwt = false

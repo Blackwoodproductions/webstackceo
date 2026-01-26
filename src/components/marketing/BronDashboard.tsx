@@ -3,19 +3,15 @@ import {
   Link2, TrendingUp, Award, Zap, FileText, ExternalLink, 
   RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpRight,
   ArrowDownRight, Minus, Target, BarChart3, Globe, Sparkles,
-  Play, Settings, Database, Activity, Users, Search, Layers,
-  PieChart, BookOpen, Server, Cpu, HardDrive, Loader2
+  Activity, Users, Search, Layers, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBronApi } from "@/hooks/use-bron-api";
+import { useBronApi, BronBacklink, BronRanking, BronKeyword, BronArticle, BronDeepLink, BronCluster, BronStats } from "@/hooks/use-bron-api";
 import { format, formatDistanceToNow } from "date-fns";
-import { toast } from "@/hooks/use-toast";
 
 interface BronDashboardProps {
   domain: string;
@@ -31,20 +27,8 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
     refetch, 
     refetchAll, 
     lastUpdated,
-    triggerCrawl,
-    triggerCategorization,
-    generateContent,
-    generateFaq,
+    hasAnyData,
   } = useBronApi(domain);
-
-  const handleAction = async (action: () => Promise<boolean>, name: string) => {
-    const success = await action();
-    if (success) {
-      toast({ title: `${name} Started`, description: `${name} has been triggered for ${domain}` });
-    } else {
-      toast({ title: `${name} Failed`, description: `Failed to start ${name}`, variant: "destructive" });
-    }
-  };
 
   // Check if any endpoint has an error
   const hasAnyError = Object.values(errors).some(e => e !== null);
@@ -73,26 +57,25 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
             <p className="font-medium">Some data failed to load</p>
             <p className="text-sm mt-1 opacity-80">{firstError[0]}: {firstError[1]}</p>
           </div>
+          <Button variant="ghost" size="sm" onClick={refetchAll} className="text-rose-500">
+            <RefreshCw className="w-4 h-4 mr-1" />
+            Retry
+          </Button>
         </div>
       )}
 
-      {/* Authority & Stats Overview */}
-      <AuthoritySection authority={data.authority} isLoading={isLoading} />
+      {/* Stats Overview */}
+      <StatsSection stats={data.stats} authority={data.authority} isLoading={isLoading} />
 
-      {/* Quick Action Cards */}
-      <QuickActionsSection 
-        loadingStates={loadingStates}
-        onCrawl={() => handleAction(triggerCrawl, "Domain Crawl")}
-        onCategorize={() => handleAction(triggerCategorization, "Domain Categorization")}
-        onGenerateContent={() => handleAction(generateContent, "Content Generation")}
-        onGenerateFaq={() => handleAction(generateFaq, "FAQ Generation")}
-        subscription={data.subscription}
-        systemHealth={data.systemHealth}
-      />
+      {/* Authority & Profile Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AuthoritySection authority={data.authority} isLoading={isLoading} />
+        <ProfileSection profile={data.profile} isLoading={isLoading} />
+      </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="backlinks" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="backlinks" className="gap-1.5">
             <Link2 className="w-4 h-4" />
             Backlinks
@@ -104,6 +87,10 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
           <TabsTrigger value="keywords" className="gap-1.5">
             <Search className="w-4 h-4" />
             Keywords
+          </TabsTrigger>
+          <TabsTrigger value="clusters" className="gap-1.5">
+            <Target className="w-4 h-4" />
+            Clusters
           </TabsTrigger>
           <TabsTrigger value="articles" className="gap-1.5">
             <FileText className="w-4 h-4" />
@@ -139,6 +126,14 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
           />
         </TabsContent>
 
+        <TabsContent value="clusters">
+          <ClustersPanel 
+            clusters={data.clusters} 
+            isLoading={loadingStates.clusters}
+            onRefresh={() => refetch("clusters")}
+          />
+        </TabsContent>
+
         <TabsContent value="articles">
           <ArticlesPanel 
             articles={data.articles} 
@@ -156,11 +151,30 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Domain Profile & Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DomainProfileCard profile={data.domainProfile} isLoading={isLoading} />
-        <TasksCard tasks={data.tasks} isLoading={isLoading} />
-      </div>
+      {/* Campaigns */}
+      {data.campaigns.length > 0 && (
+        <CampaignsSection campaigns={data.campaigns} isLoading={isLoading} />
+      )}
+
+      {/* No Data State */}
+      {!isLoading && !hasAnyData && !hasAnyError && (
+        <Card className="border-dashed border-2 border-muted-foreground/20">
+          <CardContent className="py-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-green-500/20 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No BRON Data Yet</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              BRON is connected but no data is available for {domain} yet. 
+              Data will appear here once campaigns are active.
+            </p>
+            <Button onClick={refetchAll} className="mt-4" variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </motion.div>
   );
 }
@@ -216,12 +230,21 @@ function DashboardHeader({
         <Button
           variant="outline"
           size="sm"
+          onClick={() => window.open("https://dashdev.imagehosting.space/", "_blank")}
+          className="gap-1.5"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Open BRON
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onRefresh}
           disabled={isLoading}
           className="gap-1.5"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh All
+          Refresh
         </Button>
         <Button
           variant="ghost"
@@ -236,15 +259,15 @@ function DashboardHeader({
   );
 }
 
-// Authority Section with key metrics
-function AuthoritySection({ authority, isLoading }: { authority: any; isLoading: boolean }) {
+// Stats Overview Section
+function StatsSection({ stats, authority, isLoading }: { stats: BronStats | null; authority: any; isLoading: boolean }) {
   const metrics = [
-    { label: "Domain Authority", value: authority?.domainAuthority || 0, icon: Award, color: "from-amber-400 to-orange-500", bgColor: "from-amber-500/20 to-orange-500/10" },
-    { label: "Domain Rating", value: authority?.domainRating || 0, icon: TrendingUp, color: "from-violet-400 to-purple-500", bgColor: "from-violet-500/20 to-purple-500/10" },
-    { label: "Referring Domains", value: authority?.referringDomains || 0, icon: Users, color: "from-cyan-400 to-blue-500", bgColor: "from-cyan-500/20 to-blue-500/10" },
-    { label: "Total Backlinks", value: authority?.totalBacklinks || 0, icon: Link2, color: "from-emerald-400 to-green-500", bgColor: "from-emerald-500/20 to-green-500/10" },
-    { label: "Trust Flow", value: authority?.trustFlow || 0, icon: CheckCircle2, color: "from-teal-400 to-cyan-500", bgColor: "from-teal-500/20 to-cyan-500/10" },
-    { label: "Organic Keywords", value: authority?.organicKeywords || 0, icon: Search, color: "from-rose-400 to-pink-500", bgColor: "from-rose-500/20 to-pink-500/10" },
+    { label: "Total Articles", value: stats?.totalArticles || 0, icon: FileText, color: "from-blue-400 to-indigo-500" },
+    { label: "Published", value: stats?.publishedArticles || 0, icon: CheckCircle2, color: "from-emerald-400 to-green-500" },
+    { label: "Total Backlinks", value: stats?.totalBacklinks || authority?.totalBacklinks || 0, icon: Link2, color: "from-violet-400 to-purple-500" },
+    { label: "Active Backlinks", value: stats?.activeBacklinks || 0, icon: Activity, color: "from-cyan-400 to-blue-500" },
+    { label: "Keywords", value: stats?.totalKeywords || 0, icon: Search, color: "from-amber-400 to-orange-500" },
+    { label: "Avg DA/DR", value: `${stats?.avgDa || authority?.domainAuthority || 0}/${stats?.avgDr || authority?.domainRating || 0}`, icon: Award, color: "from-rose-400 to-pink-500" },
   ];
 
   return (
@@ -256,9 +279,8 @@ function AuthoritySection({ authority, isLoading }: { authority: any; isLoading:
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05 }}
         >
-          <Card className={`relative overflow-hidden border-0 bg-gradient-to-br ${metric.bgColor}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
-            <CardContent className="p-4 relative">
+          <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-secondary/20">
+            <CardContent className="p-4">
               {isLoading ? (
                 <>
                   <Skeleton className="h-4 w-16 mb-2" />
@@ -272,7 +294,9 @@ function AuthoritySection({ authority, isLoading }: { authority: any; isLoading:
                     </div>
                     <span className="text-xs text-muted-foreground font-medium truncate">{metric.label}</span>
                   </div>
-                  <div className="text-2xl font-bold">{metric.value.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    {typeof metric.value === "number" ? metric.value.toLocaleString() : metric.value}
+                  </div>
                 </>
               )}
             </CardContent>
@@ -283,123 +307,132 @@ function AuthoritySection({ authority, isLoading }: { authority: any; isLoading:
   );
 }
 
-// Quick Actions Section
-function QuickActionsSection({ 
-  loadingStates, 
-  onCrawl, 
-  onCategorize, 
-  onGenerateContent, 
-  onGenerateFaq,
-  subscription,
-  systemHealth,
-}: { 
-  loadingStates: Record<string, boolean>;
-  onCrawl: () => void;
-  onCategorize: () => void;
-  onGenerateContent: () => void;
-  onGenerateFaq: () => void;
-  subscription: any;
-  systemHealth: any;
-}) {
+// Authority Section
+function AuthoritySection({ authority, isLoading }: { authority: any; isLoading: boolean }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Crawl Domain */}
-      <Card className="border-border/50 bg-gradient-to-br from-background to-cyan-500/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-blue-500/20 flex items-center justify-center">
-              <Database className="w-5 h-5 text-cyan-500" />
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onCrawl}
-              disabled={loadingStates.crawl}
-              className="gap-1.5"
-            >
-              {loadingStates.crawl ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-              Crawl
-            </Button>
+    <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Award className="w-4 h-4 text-amber-500" />
+          Authority Metrics
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i}>
+                <Skeleton className="h-4 w-20 mb-1" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            ))}
           </div>
-          <h3 className="font-semibold text-sm">Crawl Domain</h3>
-          <p className="text-xs text-muted-foreground mt-1">Scan and index all pages</p>
-        </CardContent>
-      </Card>
+        ) : authority ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Domain Authority</p>
+              <p className="text-2xl font-bold text-amber-500">{authority.domainAuthority}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Domain Rating</p>
+              <p className="text-2xl font-bold text-violet-500">{authority.domainRating}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Referring Domains</p>
+              <p className="text-xl font-semibold">{authority.referringDomains?.toLocaleString() || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Total Backlinks</p>
+              <p className="text-xl font-semibold">{authority.totalBacklinks?.toLocaleString() || 0}</p>
+            </div>
+            {authority.trustFlow !== undefined && (
+              <div>
+                <p className="text-xs text-muted-foreground">Trust Flow</p>
+                <p className="text-xl font-semibold">{authority.trustFlow}</p>
+              </div>
+            )}
+            {authority.organicKeywords !== undefined && (
+              <div>
+                <p className="text-xs text-muted-foreground">Organic Keywords</p>
+                <p className="text-xl font-semibold">{authority.organicKeywords?.toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptyState message="No authority data available" />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Categorize Domain */}
-      <Card className="border-border/50 bg-gradient-to-br from-background to-violet-500/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400/20 to-purple-500/20 flex items-center justify-center">
-              <Settings className="w-5 h-5 text-violet-500" />
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onCategorize}
-              disabled={loadingStates.categorization}
-              className="gap-1.5"
-            >
-              {loadingStates.categorization ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-              Analyze
-            </Button>
+// Profile Section
+function ProfileSection({ profile, isLoading }: { profile: any; isLoading: boolean }) {
+  return (
+    <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Globe className="w-4 h-4 text-blue-500" />
+          Domain Profile
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
           </div>
-          <h3 className="font-semibold text-sm">Categorize Domain</h3>
-          <p className="text-xs text-muted-foreground mt-1">Analyze niche and category</p>
-        </CardContent>
-      </Card>
-
-      {/* Generate Content */}
-      <Card className="border-border/50 bg-gradient-to-br from-background to-emerald-500/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400/20 to-green-500/20 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-emerald-500" />
+        ) : profile ? (
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Domain</span>
+              <span className="font-medium">{profile.domain}</span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onGenerateContent}
-              disabled={loadingStates.content}
-              className="gap-1.5"
-            >
-              {loadingStates.content ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-              Generate
-            </Button>
+            {profile.category && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Category</span>
+                <Badge variant="secondary">{profile.category}</Badge>
+              </div>
+            )}
+            {profile.language && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Language</span>
+                <span>{profile.language}</span>
+              </div>
+            )}
+            {profile.country && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Country</span>
+                <span>{profile.country}</span>
+              </div>
+            )}
+            {profile.pagesIndexed !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Pages Indexed</span>
+                <span>{profile.pagesIndexed.toLocaleString()}</span>
+              </div>
+            )}
+            {profile.lastCrawled && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last Crawled</span>
+                <span>{formatDistanceToNow(new Date(profile.lastCrawled), { addSuffix: true })}</span>
+              </div>
+            )}
           </div>
-          <h3 className="font-semibold text-sm">Generate Content</h3>
-          <p className="text-xs text-muted-foreground mt-1">AI-powered article creation</p>
-        </CardContent>
-      </Card>
-
-      {/* Generate FAQ */}
-      <Card className="border-border/50 bg-gradient-to-br from-background to-amber-500/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-amber-500" />
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onGenerateFaq}
-              disabled={loadingStates.faq}
-              className="gap-1.5"
-            >
-              {loadingStates.faq ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-              Generate
-            </Button>
-          </div>
-          <h3 className="font-semibold text-sm">Generate FAQ</h3>
-          <p className="text-xs text-muted-foreground mt-1">Create FAQ sections</p>
-        </CardContent>
-      </Card>
-    </div>
+        ) : (
+          <EmptyState message="No domain profile available" />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
 // Backlinks Panel
-function BacklinksPanel({ backlinks, isLoading, onRefresh }: { backlinks: any[]; isLoading?: boolean; onRefresh: () => void }) {
+function BacklinksPanel({ backlinks, isLoading, onRefresh }: { backlinks: BronBacklink[]; isLoading?: boolean; onRefresh: () => void }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -443,33 +476,35 @@ function BacklinksPanel({ backlinks, isLoading, onRefresh }: { backlinks: any[];
                     </tr>
                   ))
                 ) : (
-                  backlinks.slice(0, 10).map((link, index) => (
+                  backlinks.slice(0, 15).map((link, index) => (
                     <motion.tr
                       key={link.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.02 }}
+                      transition={{ delay: index * 0.03 }}
                       className="border-b border-border/30 hover:bg-secondary/30 transition-colors"
                     >
                       <td className="py-3">
-                        <a href={link.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary truncate max-w-[200px] block">
-                          {link.sourceDomain}
+                        <a 
+                          href={link.sourceUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-foreground hover:text-emerald-500 transition-colors"
+                        >
+                          <span className="truncate max-w-[180px]">{link.sourceDomain}</span>
+                          <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
                         </a>
                       </td>
-                      <td className="py-3 text-muted-foreground">{link.anchorText}</td>
-                      <td className="py-3 text-center">
-                        <MetricBadge value={link.daScore} />
-                      </td>
-                      <td className="py-3 text-center">
-                        <MetricBadge value={link.drScore} />
-                      </td>
+                      <td className="py-3 max-w-[120px] truncate text-muted-foreground">{link.anchorText}</td>
+                      <td className="py-3 text-center"><MetricBadge value={link.daScore} /></td>
+                      <td className="py-3 text-center"><MetricBadge value={link.drScore} /></td>
                       <td className="py-3">
-                        <Badge variant="outline" className={link.dofollow ? "text-emerald-500 border-emerald-500/30" : "text-muted-foreground"}>
+                        <Badge variant={link.dofollow ? "default" : "secondary"} className="text-xs">
                           {link.dofollow ? "Dofollow" : "Nofollow"}
                         </Badge>
                       </td>
-                      <td className="py-3 text-right text-muted-foreground">
-                        {format(new Date(link.createdAt), "MMM d")}
+                      <td className="py-3 text-right text-muted-foreground text-xs">
+                        {format(new Date(link.createdAt), "MMM d, yyyy")}
                       </td>
                     </motion.tr>
                   ))
@@ -484,13 +519,13 @@ function BacklinksPanel({ backlinks, isLoading, onRefresh }: { backlinks: any[];
 }
 
 // Rankings Panel
-function RankingsPanel({ rankings, isLoading, onRefresh }: { rankings: any[]; isLoading?: boolean; onRefresh: () => void }) {
+function RankingsPanel({ rankings, isLoading, onRefresh }: { rankings: BronRanking[]; isLoading?: boolean; onRefresh: () => void }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-violet-500" />
+            <TrendingUp className="w-4 h-4 text-blue-500" />
             Keyword Rankings
           </CardTitle>
           <CardDescription>{rankings.length} tracked keywords</CardDescription>
@@ -503,19 +538,16 @@ function RankingsPanel({ rankings, isLoading, onRefresh }: { rankings: any[]; is
         {rankings.length === 0 && !isLoading ? (
           <EmptyState message="No ranking data available yet" />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30">
-                  <Skeleton className="h-10 w-10 rounded-lg" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-3 w-1/3" />
-                  </div>
+                <div key={i} className="p-3 rounded-lg bg-secondary/30">
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-3 w-32" />
                 </div>
               ))
             ) : (
-              rankings.slice(0, 10).map((rank, index) => {
+              rankings.slice(0, 15).map((rank, index) => {
                 const change = rank.previousPosition ? rank.previousPosition - rank.position : 0;
                 return (
                   <motion.div
@@ -523,25 +555,25 @@ function RankingsPanel({ rankings, isLoading, onRefresh }: { rankings: any[]; is
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                    className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors flex items-center justify-between"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center font-bold text-violet-500">
-                      #{rank.position}
-                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{rank.keyword}</div>
-                      <div className="text-xs text-muted-foreground truncate">{rank.url}</div>
+                      <p className="font-medium truncate">{rank.keyword}</p>
+                      <p className="text-xs text-muted-foreground truncate">{rank.url}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {change !== 0 && (
-                        <div className={`flex items-center gap-0.5 text-xs ${change > 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                          {change > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                          {Math.abs(change)}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-4">
                       {rank.searchVolume && (
-                        <Badge variant="secondary" className="text-xs">{rank.searchVolume.toLocaleString()} vol</Badge>
+                        <span className="text-xs text-muted-foreground">{rank.searchVolume.toLocaleString()} vol</span>
                       )}
+                      <div className="flex items-center gap-1">
+                        <span className="text-lg font-bold">#{rank.position}</span>
+                        {change !== 0 && (
+                          <span className={`flex items-center text-xs ${change > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                            {change > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                            {Math.abs(change)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -555,14 +587,14 @@ function RankingsPanel({ rankings, isLoading, onRefresh }: { rankings: any[]; is
 }
 
 // Keywords Panel
-function KeywordsPanel({ keywords, isLoading, onRefresh }: { keywords: any[]; isLoading?: boolean; onRefresh: () => void }) {
+function KeywordsPanel({ keywords, isLoading, onRefresh }: { keywords: BronKeyword[]; isLoading?: boolean; onRefresh: () => void }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
-            <Search className="w-4 h-4 text-cyan-500" />
-            Keyword Clusters
+            <Search className="w-4 h-4 text-amber-500" />
+            Keywords
           </CardTitle>
           <CardDescription>{keywords.length} keywords tracked</CardDescription>
         </div>
@@ -572,34 +604,30 @@ function KeywordsPanel({ keywords, isLoading, onRefresh }: { keywords: any[]; is
       </CardHeader>
       <CardContent>
         {keywords.length === 0 && !isLoading ? (
-          <EmptyState message="No keyword data available yet" />
+          <EmptyState message="No keywords data available yet" />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="p-3 rounded-lg bg-secondary/30">
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
               ))
             ) : (
-              keywords.slice(0, 10).map((kw, index) => (
+              keywords.slice(0, 20).map((kw, index) => (
                 <motion.div
                   key={kw.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.03 }}
+                  transition={{ delay: index * 0.02 }}
                   className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">{kw.keyword}</span>
-                    {kw.intent && (
-                      <Badge variant="outline" className="text-[10px]">{kw.intent}</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <p className="font-medium truncate">{kw.keyword}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                     {kw.volume && <span>{kw.volume.toLocaleString()} vol</span>}
                     {kw.difficulty && <span>KD: {kw.difficulty}</span>}
+                    {kw.cluster && <Badge variant="outline" className="text-[10px]">{kw.cluster}</Badge>}
                     <span>{kw.articles} articles</span>
                   </div>
                 </motion.div>
@@ -612,17 +640,85 @@ function KeywordsPanel({ keywords, isLoading, onRefresh }: { keywords: any[]; is
   );
 }
 
-// Articles Panel
-function ArticlesPanel({ articles, isLoading, onRefresh }: { articles: any[]; isLoading?: boolean; onRefresh: () => void }) {
+// Clusters Panel
+function ClustersPanel({ clusters, isLoading, onRefresh }: { clusters: BronCluster[]; isLoading?: boolean; onRefresh: () => void }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="w-4 h-4 text-emerald-500" />
-            Published Articles
+            <Target className="w-4 h-4 text-violet-500" />
+            Keyword Clusters
           </CardTitle>
-          <CardDescription>{articles.length} total articles</CardDescription>
+          <CardDescription>{clusters.length} clusters</CardDescription>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onRefresh} disabled={isLoading}>
+          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {clusters.length === 0 && !isLoading ? (
+          <EmptyState message="No keyword clusters available yet" />
+        ) : (
+          <div className="space-y-3">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-lg bg-secondary/30">
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              ))
+            ) : (
+              clusters.slice(0, 10).map((cluster, index) => (
+                <motion.div
+                  key={cluster.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold">{cluster.name}</h4>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">{cluster.articles} articles</span>
+                      {cluster.avgPosition && (
+                        <Badge variant="outline">Avg #{cluster.avgPosition}</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {cluster.keywords.slice(0, 8).map((kw, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">
+                        {kw}
+                      </Badge>
+                    ))}
+                    {cluster.keywords.length > 8 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{cluster.keywords.length - 8} more
+                      </Badge>
+                    )}
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Articles Panel
+function ArticlesPanel({ articles, isLoading, onRefresh }: { articles: BronArticle[]; isLoading?: boolean; onRefresh: () => void }) {
+  return (
+    <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="w-4 h-4 text-indigo-500" />
+            Articles
+          </CardTitle>
+          <CardDescription>{articles.length} articles created</CardDescription>
         </div>
         <Button variant="ghost" size="sm" onClick={onRefresh} disabled={isLoading}>
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -630,69 +726,54 @@ function ArticlesPanel({ articles, isLoading, onRefresh }: { articles: any[]; is
       </CardHeader>
       <CardContent>
         {articles.length === 0 && !isLoading ? (
-          <EmptyState message="No articles published yet. Use 'Generate Content' to create articles." />
+          <EmptyState message="No articles created yet" />
         ) : (
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-3 pr-4">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
-                    <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                articles.map((article, index) => (
-                  <motion.div
-                    key={article.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors group"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-emerald-500" />
-                    </div>
+          <div className="space-y-2">
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="p-3 rounded-lg bg-secondary/30">
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))
+            ) : (
+              articles.slice(0, 15).map((article, index) => (
+                <motion.div
+                  key={article.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium text-sm line-clamp-2">{article.title}</h4>
-                        <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${
-                          article.status === "published" ? "text-emerald-500 border-emerald-500/30" :
-                          article.status === "pending" ? "text-amber-500 border-amber-500/30" :
-                          "text-blue-500 border-blue-500/30"
-                        }`}>
-                          {article.status}
-                        </Badge>
-                      </div>
+                      <a 
+                        href={article.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="font-medium hover:text-emerald-500 transition-colors flex items-center gap-1"
+                      >
+                        <span className="truncate">{article.title}</span>
+                        <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
+                      </a>
                       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
+                        <span>{article.domain}</span>
+                        <span>•</span>
                         <span>{format(new Date(article.publishedAt), "MMM d, yyyy")}</span>
-                        {article.daScore && (
-                          <>
-                            <span className="text-muted-foreground/50">•</span>
-                            <span>DA: {article.daScore}</span>
-                          </>
-                        )}
+                        {article.daScore && <span>DA: {article.daScore}</span>}
                       </div>
                     </div>
-                    {article.url && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                        onClick={() => window.open(article.url, "_blank")}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
+                    <Badge 
+                      variant={article.status === "published" ? "default" : "secondary"}
+                      className="text-xs flex-shrink-0"
+                    >
+                      {article.status}
+                    </Badge>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -700,7 +781,7 @@ function ArticlesPanel({ articles, isLoading, onRefresh }: { articles: any[]; is
 }
 
 // Deep Links Panel
-function DeepLinksPanel({ deepLinks, isLoading, onRefresh }: { deepLinks: any[]; isLoading?: boolean; onRefresh: () => void }) {
+function DeepLinksPanel({ deepLinks, isLoading, onRefresh }: { deepLinks: BronDeepLink[]; isLoading?: boolean; onRefresh: () => void }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -728,7 +809,7 @@ function DeepLinksPanel({ deepLinks, isLoading, onRefresh }: { deepLinks: any[];
                 </div>
               ))
             ) : (
-              deepLinks.slice(0, 10).map((link, index) => (
+              deepLinks.slice(0, 15).map((link, index) => (
                 <motion.div
                   key={link.id}
                   initial={{ opacity: 0, x: -10 }}
@@ -737,9 +818,9 @@ function DeepLinksPanel({ deepLinks, isLoading, onRefresh }: { deepLinks: any[];
                   className="p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="truncate text-muted-foreground">{link.sourceUrl}</span>
+                    <span className="truncate text-muted-foreground max-w-[200px]">{link.sourceUrl}</span>
                     <ArrowUpRight className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-                    <span className="truncate font-medium">{link.targetUrl}</span>
+                    <span className="truncate font-medium max-w-[200px]">{link.targetUrl}</span>
                   </div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span>Anchor: "{link.anchorText}"</span>
@@ -755,112 +836,43 @@ function DeepLinksPanel({ deepLinks, isLoading, onRefresh }: { deepLinks: any[];
   );
 }
 
-// Domain Profile Card
-function DomainProfileCard({ profile, isLoading }: { profile: any; isLoading: boolean }) {
+// Campaigns Section
+function CampaignsSection({ campaigns, isLoading }: { campaigns: any[]; isLoading: boolean }) {
   return (
     <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Globe className="w-4 h-4 text-blue-500" />
-          Domain Profile
+          <Zap className="w-4 h-4 text-amber-500" />
+          Active Campaigns
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex justify-between">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-32" />
+        <div className="space-y-3">
+          {campaigns.map((campaign, index) => (
+            <motion.div
+              key={campaign.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="p-4 rounded-lg bg-secondary/30"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold">{campaign.name}</h4>
+                <Badge 
+                  variant={campaign.status === "active" ? "default" : "secondary"}
+                  className="text-xs"
+                >
+                  {campaign.status}
+                </Badge>
               </div>
-            ))}
-          </div>
-        ) : profile ? (
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Domain</span>
-              <span className="font-medium">{profile.domain}</span>
-            </div>
-            {profile.category && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Category</span>
-                <Badge variant="secondary">{profile.category}</Badge>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>{campaign.articlesCreated} articles</span>
+                <span>{campaign.backlinksBuilt} backlinks</span>
+                <span>Started {format(new Date(campaign.startDate), "MMM d, yyyy")}</span>
               </div>
-            )}
-            {profile.language && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Language</span>
-                <span>{profile.language}</span>
-              </div>
-            )}
-            {profile.pagesIndexed !== undefined && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Pages Indexed</span>
-                <span>{profile.pagesIndexed.toLocaleString()}</span>
-              </div>
-            )}
-            {profile.lastCrawled && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Crawled</span>
-                <span>{formatDistanceToNow(new Date(profile.lastCrawled), { addSuffix: true })}</span>
-              </div>
-            )}
-          </div>
-        ) : (
-          <EmptyState message="No domain profile available. Run a crawl to analyze." />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Tasks Card
-function TasksCard({ tasks, isLoading }: { tasks: any[]; isLoading: boolean }) {
-  return (
-    <Card className="border-border/50 bg-gradient-to-br from-background to-secondary/10">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Activity className="w-4 h-4 text-amber-500" />
-          Active Tasks
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="p-3 rounded-lg bg-secondary/30">
-                <Skeleton className="h-4 w-1/2 mb-2" />
-                <Skeleton className="h-2 w-full" />
-              </div>
-            ))}
-          </div>
-        ) : tasks.length === 0 ? (
-          <EmptyState message="No active tasks. Start a crawl or content generation." />
-        ) : (
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div key={task.id} className="p-3 rounded-lg bg-secondary/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm capitalize">{task.type}</span>
-                  <Badge variant="outline" className={`text-xs ${
-                    task.status === "completed" ? "text-emerald-500 border-emerald-500/30" :
-                    task.status === "running" ? "text-blue-500 border-blue-500/30" :
-                    task.status === "failed" ? "text-rose-500 border-rose-500/30" :
-                    "text-muted-foreground"
-                  }`}>
-                    {task.status}
-                  </Badge>
-                </div>
-                {task.progress !== undefined && (
-                  <Progress value={task.progress} className="h-1.5" />
-                )}
-                {task.error && (
-                  <p className="text-xs text-rose-500 mt-1">{task.error}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
