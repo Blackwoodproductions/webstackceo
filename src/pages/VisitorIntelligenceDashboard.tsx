@@ -1681,6 +1681,17 @@ const MarketingDashboard = () => {
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-2">
+            {/* Theme Toggle - always visible */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="w-9 h-9 p-0 hover:bg-primary/10"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            
+            {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary/50 hover:ring-primary transition-all duration-300 focus:outline-none">
@@ -1720,12 +1731,11 @@ const MarketingDashboard = () => {
                   </p>
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
-                <DropdownMenuItem 
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                <DropdownMenuItem asChild>
+                  <a href="/" className="flex items-center gap-2 cursor-pointer">
+                    <Globe className="w-4 h-4" />
+                    Home
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
