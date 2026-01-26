@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, Zap, Target,
-  LogIn, ArrowRight, RefreshCw
+  Award, Building, Sparkles, Zap, Target, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +26,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
 
+  const hasTriggeredAutoLogin = useRef(false);
+
   // Check for existing auth on mount
   useEffect(() => {
     const storedAuth = localStorage.getItem(STORAGE_KEY);
@@ -36,6 +37,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         if (authData.authenticated && authData.expiry > Date.now()) {
           setIsAuthenticated(true);
           onConnectionComplete?.("bron");
+          setIsLoading(false);
+          return;
         } else {
           localStorage.removeItem(STORAGE_KEY);
         }
@@ -79,17 +82,37 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
   };
 
-  // Popup-based login with automatic API detection + auto close
-  const handlePopupLogin = () => {
-    if (!domain) {
-      toast({
-        title: "Select a domain",
-        description: "Please select a domain before connecting BRON.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Start polling for login status
+  const startLoginPolling = () => {
+    pollRef.current = window.setInterval(async () => {
+      const popupClosed = !popupRef.current || popupRef.current.closed;
+      const isLoggedIn = await checkLoginStatus();
 
+      if (isLoggedIn) {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        try { popupRef.current?.close(); } catch { /* ignore */ }
+        popupRef.current = null;
+        persistAuth();
+        toast({
+          title: "Connected to BRON",
+          description: `Successfully connected ${domain} to the BRON platform.`,
+        });
+        return;
+      }
+
+      if (popupClosed) {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        popupRef.current = null;
+        setIsWaitingForPopup(false);
+        hasTriggeredAutoLogin.current = false; // Allow retry
+      }
+    }, 2000);
+  };
+
+  // Open popup and start polling
+  const openLoginPopup = () => {
+    if (!domain) return;
+    
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
     setIsWaitingForPopup(true);
@@ -109,43 +132,26 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       setIsWaitingForPopup(false);
       toast({
         title: "Popup Blocked",
-        description: "Please allow popups so you can login to BRON.",
+        description: "Please allow popups to login to BRON.",
         variant: "destructive",
       });
       return;
     }
 
     popupRef.current = popup;
-
-    // Poll API every 2 seconds to detect login; on success close popup + show dashboard
-    pollRef.current = window.setInterval(async () => {
-      // Check if popup was closed by user
-      const popupClosed = !popupRef.current || popupRef.current.closed;
-
-      // Check login status via API
-      const isLoggedIn = await checkLoginStatus();
-
-      if (isLoggedIn) {
-        // Login detected via API - close popup and show dashboard
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        try { popupRef.current?.close(); } catch { /* ignore */ }
-        popupRef.current = null;
-        persistAuth();
-        toast({
-          title: "Connected to BRON",
-          description: `Successfully connected ${domain} to the BRON platform.`,
-        });
-        return;
-      }
-
-      if (popupClosed) {
-        // Popup closed without login detected - stop polling
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        popupRef.current = null;
-        setIsWaitingForPopup(false);
-      }
-    }, 2000);
+    startLoginPolling();
   };
+
+  // Auto-trigger login popup when component mounts (if not authenticated and domain is set)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && domain && !hasTriggeredAutoLogin.current && !isWaitingForPopup) {
+      hasTriggeredAutoLogin.current = true;
+      const timer = setTimeout(() => {
+        openLoginPopup();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isAuthenticated, domain, isWaitingForPopup]);
 
   const handleCancelLogin = () => {
     if (pollRef.current) window.clearInterval(pollRef.current);
@@ -175,7 +181,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Waiting for popup login state
+  // Waiting for popup login state (auto-triggered)
   if (isWaitingForPopup) {
     return (
       <motion.div
@@ -195,22 +201,22 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         </div>
         
         <div className="text-center space-y-2">
-          <h3 className="text-xl font-bold">Waiting for BRON Login</h3>
+          <h3 className="text-xl font-bold">Connecting to BRON</h3>
           <p className="text-muted-foreground max-w-md">
-            Complete your login in the popup window. Once you're logged in, this window will close
-            automatically and the BRON dashboard will load here.
+            Complete your login in the popup window. Once authenticated, the dashboard will load automatically.
           </p>
+          {domain && (
+            <p className="text-sm text-emerald-500 font-medium">Domain: {domain}</p>
+          )}
         </div>
 
-        <div className="flex flex-col gap-3 w-full max-w-sm">
-          <Button
-            onClick={handleCancelLogin}
-            variant="ghost"
-            className="w-full text-muted-foreground"
-          >
-            Cancel
-          </Button>
-        </div>
+        <Button
+          onClick={handleCancelLogin}
+          variant="ghost"
+          className="text-muted-foreground"
+        >
+          Cancel
+        </Button>
       </motion.div>
     );
   }
@@ -278,7 +284,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Login prompt
+  // Auto-login in progress or waiting for domain selection
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -305,32 +311,33 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         ))}
       </div>
 
-      {/* Connect Card */}
+      {/* Status Card - shows waiting or prompts domain selection */}
       <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
         <CardHeader className="text-center pb-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-white" />
+            {domain ? (
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            ) : (
+              <TrendingUp className="w-8 h-8 text-white" />
+            )}
           </div>
-          <CardTitle className="text-2xl">Connect to BRON Dashboard</CardTitle>
+          <CardTitle className="text-2xl">
+            {domain ? "Connecting to BRON..." : "Select a Domain"}
+          </CardTitle>
           <CardDescription>
-            Access the Diamond Flow link building platform to boost your domain authority
+            {domain 
+              ? "Please complete your login in the popup window. The dashboard will load automatically once connected."
+              : "Select a domain from the dropdown above to connect to the BRON platform."
+            }
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Primary: Popup Login */}
-          <Button
-            onClick={handlePopupLogin}
-            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
-          >
-            <LogIn className="w-5 h-5 mr-2" />
-            Login to BRON
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-
-          <p className="text-xs text-muted-foreground text-center">
-            Login happens in a popup. After you sign in, close the popup to load the dashboard here.
-          </p>
-        </CardContent>
+        {!domain && (
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Use the domain selector in the header to choose which domain to connect.
+            </p>
+          </CardContent>
+        )}
       </Card>
 
       {/* Info about the integration */}
