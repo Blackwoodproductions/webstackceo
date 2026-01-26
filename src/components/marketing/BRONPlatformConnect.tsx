@@ -58,7 +58,28 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     onConnectionComplete?.("bron");
   };
 
-  // Popup-based login - detect when popup navigates to dashboard or closes
+  // Check login status via backend function (avoids browser CORS)
+  const checkLoginStatus = async (): Promise<boolean> => {
+    if (!domain) return false;
+    try {
+      const { data, error } = await supabase.functions.invoke("bron-login-status", {
+        body: { domain, feedit: "add" },
+      });
+
+      if (error) {
+        console.log("[BRON] login-status error:", error);
+        return false;
+      }
+
+      console.log("[BRON] login-status response:", data);
+      return !!(data as any)?.loggedIn;
+    } catch (err) {
+      console.log("[BRON] login-status exception:", err);
+      return false;
+    }
+  };
+
+  // Popup-based login with automatic API detection + auto close
   const handlePopupLogin = () => {
     if (!domain) {
       toast({
@@ -96,32 +117,34 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // Poll to detect: 1) popup closed, or 2) popup navigated to dashboard (login complete)
-    pollRef.current = window.setInterval(() => {
+    // Poll API every 2 seconds to detect login; on success close popup + show dashboard
+    pollRef.current = window.setInterval(async () => {
       // Check if popup was closed by user
-      if (!popupRef.current || popupRef.current.closed) {
+      const popupClosed = !popupRef.current || popupRef.current.closed;
+
+      // Check login status via API
+      const isLoggedIn = await checkLoginStatus();
+
+      if (isLoggedIn) {
+        // Login detected via API - close popup and show dashboard
         if (pollRef.current) window.clearInterval(pollRef.current);
+        try { popupRef.current?.close(); } catch { /* ignore */ }
         popupRef.current = null;
-        // Popup closed - assume user logged in and close the popup
         persistAuth();
+        toast({
+          title: "Connected to BRON",
+          description: `Successfully connected ${domain} to the BRON platform.`,
+        });
         return;
       }
 
-      // Try to detect if popup navigated to dashboard (cross-origin will throw)
-      try {
-        const popupUrl = popupRef.current.location.href;
-        // If we can read the URL and it's the dashboard (not login), user is logged in
-        if (popupUrl && !popupUrl.includes('/login')) {
-          if (pollRef.current) window.clearInterval(pollRef.current);
-          try { popupRef.current.close(); } catch { /* ignore */ }
-          popupRef.current = null;
-          persistAuth();
-        }
-      } catch {
-        // Cross-origin error - can't read URL, continue polling
-        // This is expected when on the BRON domain
+      if (popupClosed) {
+        // Popup closed without login detected - stop polling
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        popupRef.current = null;
+        setIsWaitingForPopup(false);
       }
-    }, 500);
+    }, 2000);
   };
 
   const handleCancelLogin = () => {
