@@ -53,27 +53,35 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     return Boolean(code && state && state === storedState);
   };
 
-  // Check for stored connection on mount
+  // Check for stored connection on mount - check BOTH unified auth (localStorage) and session tokens
   const getStoredConnection = () => {
-    const storedToken = localStorage.getItem('google_ads_access_token');
-    const storedCustomerId = localStorage.getItem('google_ads_customer_id');
-    const storedExpiry = localStorage.getItem('google_ads_token_expiry');
+    // First check for unified Google auth tokens (from main Google login)
+    const unifiedToken = localStorage.getItem('google_ads_access_token');
+    const unifiedExpiry = localStorage.getItem('google_ads_token_expiry');
     
-    // Check if token is still valid (with 5 min buffer)
-    if (storedToken && storedCustomerId && storedExpiry) {
-      const expiryTime = parseInt(storedExpiry, 10);
+    // Then check for dedicated Google Ads tokens
+    const storedCustomerId = localStorage.getItem('google_ads_customer_id');
+    
+    // Use unified token if available and valid
+    if (unifiedToken && unifiedExpiry) {
+      const expiryTime = parseInt(unifiedExpiry, 10);
       if (Date.now() < expiryTime - 300000) {
-        return { token: storedToken, customerId: storedCustomerId };
+        return { 
+          token: unifiedToken, 
+          customerId: storedCustomerId || 'unified-auth',
+          isUnifiedAuth: true 
+        };
       }
     }
+    
     return null;
   };
 
   const storedConnection = getStoredConnection();
   
   const [isConnected, setIsConnected] = useState(!!storedConnection);
-  // Auto-show wizard if returning from OAuth callback
-  const [showWizard, setShowWizard] = useState(hasOAuthCallback);
+  // Auto-show wizard if returning from OAuth callback (but NOT if we have unified auth)
+  const [showWizard, setShowWizard] = useState(hasOAuthCallback() && !storedConnection?.isUnifiedAuth);
   const [showCampaignSetup, setShowCampaignSetup] = useState(false);
   const [hasCampaigns, setHasCampaigns] = useState<boolean | null>(null);
   const [isFetchingKeywords, setIsFetchingKeywords] = useState(false);
@@ -84,6 +92,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [generatedPages, setGeneratedPages] = useState<any[]>([]);
   const [connectedCustomerId, setConnectedCustomerId] = useState<string | null>(storedConnection?.customerId || null);
   const [accessToken, setAccessToken] = useState<string | null>(storedConnection?.token || null);
+  const [isUnifiedAuth, setIsUnifiedAuth] = useState(storedConnection?.isUnifiedAuth || false);
 
   const GOOGLE_ADS_SCOPES = 'https://www.googleapis.com/auth/adwords';
 
@@ -91,6 +100,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   useEffect(() => {
     if (storedConnection && !hasOAuthCallback()) {
       // Auto-fetch keywords with stored credentials
+      setIsUnifiedAuth(storedConnection.isUnifiedAuth || false);
       handleFetchKeywordsWithToken(storedConnection.token, storedConnection.customerId);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -339,12 +349,16 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </div>
 
         <div className="hidden md:flex items-center gap-3 shrink-0">
-          {isConnected && connectedCustomerId ? (
+          {isConnected && (connectedCustomerId || isUnifiedAuth) ? (
             <>
               <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/5">
                 <GoogleAdsIcon />
                 <span className="ml-1.5">
-                  {connectedCustomerId.startsWith('demo') ? 'Demo Account' : `Account: ${connectedCustomerId}`}
+                  {isUnifiedAuth && !connectedCustomerId?.startsWith('demo') 
+                    ? 'Connected via Google' 
+                    : connectedCustomerId?.startsWith('demo') 
+                      ? 'Demo Account' 
+                      : `Account: ${connectedCustomerId}`}
                 </span>
               </Badge>
               <Button
@@ -413,100 +427,252 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           onSkip={handleSkipWizard}
         />
       ) : !isConnected ? (
-        <div className="space-y-6">
-          {/* Top row: Connect box + How It Works side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Connect Button - Left side */}
-            <div className="lg:col-span-4">
-              <div className="h-full p-6 rounded-xl border-2 border-dashed border-orange-500/30 bg-orange-500/5">
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center gap-2 mb-3">
-                    <GoogleAdsIcon />
-                    <h3 className="text-lg font-semibold">Connect Google Ads</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4 flex-1">
-                    Import your active PPC keywords and generate optimized landing pages automatically.
-                  </p>
+        <div className="space-y-8">
+          {/* Hero Section - Full Width Futuristic Design */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-yellow-500/10 border border-orange-500/20 p-8 lg:p-12">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {/* Glowing orbs */}
+              <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-orange-400/20 to-amber-500/10 blur-3xl animate-pulse" />
+              <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-gradient-to-br from-amber-400/15 to-yellow-500/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+              
+              {/* Grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.03]"
+                style={{
+                  backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--primary)) 1px, transparent 0)`,
+                  backgroundSize: '24px 24px',
+                }}
+              />
+              
+              {/* Scanning line effect */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-400/5 to-transparent"
+                style={{
+                  animation: 'scan 4s linear infinite',
+                }}
+              />
+            </div>
+            
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left side - Main CTA */}
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30">
+                  <Sparkles className="w-4 h-4 text-orange-400 animate-pulse" />
+                  <span className="text-sm font-medium text-orange-400">AI-Powered Landing Page Generator</span>
+                </div>
+                
+                <h3 className="text-3xl lg:text-4xl font-bold leading-tight">
+                  Transform Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Google Ads</span> Into High-Converting Pages
+                </h3>
+                
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Import your PPC keywords and let AI generate optimized landing pages with built-in A/B testing and heat tracking to maximize your Quality Score.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4">
                   <Button
                     onClick={handleStartConnection}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                    size="lg"
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-xl shadow-orange-500/25 hover:shadow-orange-500/40 transition-all duration-300 hover:scale-105"
                   >
                     <GoogleAdsIcon />
-                    <span className="ml-2">Connect Account</span>
+                    <span className="ml-2">Connect Google Ads</span>
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-3 text-center">
-                    Read-only keyword access
-                  </p>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleSkipWizard}
+                    className="border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Try Demo Mode
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-6 pt-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Read-only access</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>OAuth 2.0 secure</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>No credit card</span>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* How It Works - Right side */}
-            <div className="lg:col-span-8">
-              <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-                {[
-                  { 
-                    step: '1', 
-                    icon: Target,
-                    title: 'Connect Google Ads', 
-                    desc: 'Securely link your Google Ads account with read-only access to import your active campaigns and keywords.',
-                    highlight: 'OAuth 2.0 Secure'
-                  },
-                  { 
-                    step: '2', 
-                    icon: BarChart3,
-                    title: 'Import Keywords', 
-                    desc: 'Automatically pull your active PPC keywords along with Quality Scores, CPC data, and performance metrics.',
-                    highlight: 'Real-time Sync'
-                  },
-                  { 
-                    step: '3', 
-                    icon: Zap,
-                    title: 'Generate Pages', 
-                    desc: 'AI creates keyword-specific landing pages optimized for conversions with unique content for each target.',
-                    highlight: 'AI-Powered'
-                  },
-                  { 
-                    step: '4', 
-                    icon: FlaskConical,
-                    title: 'Track & Optimize', 
-                    desc: 'Built-in A/B testing and heat maps show exactly what works. Watch your Quality Score and conversions improve.',
-                    highlight: 'Heat Tracking'
-                  },
-                ].map((item) => (
-                  <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/10 border border-orange-500/20 flex flex-col min-h-[180px]">
-                    <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                      {item.step}
+              
+              {/* Right side - Feature Preview */}
+              <div className="relative">
+                {/* Mock dashboard preview */}
+                <div className="relative rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-6 shadow-2xl">
+                  {/* Mini header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                        <Target className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="font-semibold text-sm">Keyword Performance</span>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center mb-3 mt-1">
-                      <item.icon className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <p className="font-semibold text-sm mb-2">{item.title}</p>
-                    <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
-                    <Badge variant="outline" className="mt-3 w-fit text-[10px] text-orange-500 border-orange-500/30 bg-orange-500/5">
-                      {item.highlight}
-                    </Badge>
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Live</Badge>
                   </div>
-                ))}
+                  
+                  {/* Stats grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+                      <p className="text-2xl font-bold text-orange-400">247</p>
+                      <p className="text-xs text-muted-foreground">Keywords Imported</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+                      <p className="text-2xl font-bold text-amber-400">8.4</p>
+                      <p className="text-xs text-muted-foreground">Avg Quality Score</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+                      <p className="text-2xl font-bold text-green-400">$1.24</p>
+                      <p className="text-xs text-muted-foreground">Avg CPC Reduction</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+                      <p className="text-2xl font-bold text-cyan-400">156</p>
+                      <p className="text-xs text-muted-foreground">Pages Generated</p>
+                    </div>
+                  </div>
+                  
+                  {/* Mini progress bar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">A/B Test Progress</span>
+                      <span className="font-medium text-orange-400">73%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-[73%] rounded-full bg-gradient-to-r from-orange-500 to-amber-500" />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Floating elements */}
+                <div className="absolute -top-4 -right-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-xl animate-bounce" style={{ animationDuration: '3s' }}>
+                  <Flame className="w-8 h-8 text-white" />
+                </div>
+                <div className="absolute -bottom-4 -left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center shadow-xl animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
+                  <FlaskConical className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Bottom row: Feature cards in a horizontal row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          
+          {/* Process Steps - Full Width Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: FileText, label: 'Bulk Page Generation', desc: '1,000s of keyword-specific pages with unique content for each target keyword', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
-              { icon: FlaskConical, label: 'A/B Testing', desc: 'Test multiple headlines, CTAs, and layouts to maximize conversions', color: 'text-amber-500', bgColor: 'bg-amber-500/10' },
-              { icon: Flame, label: 'Heat Tracking', desc: 'Visualize user behavior with click and scroll analytics on every page', color: 'text-red-500', bgColor: 'bg-red-500/10' },
-            ].map((feature) => (
-              <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
-                <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
-                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
+              { 
+                step: '1', 
+                icon: Target,
+                title: 'Connect Google Ads', 
+                desc: 'Securely link your account with read-only access to import keywords.',
+                highlight: 'OAuth 2.0 Secure',
+                color: 'orange'
+              },
+              { 
+                step: '2', 
+                icon: BarChart3,
+                title: 'Import Keywords', 
+                desc: 'Pull active PPC keywords with Quality Scores and performance data.',
+                highlight: 'Real-time Sync',
+                color: 'amber'
+              },
+              { 
+                step: '3', 
+                icon: Zap,
+                title: 'Generate Pages', 
+                desc: 'AI creates keyword-specific landing pages optimized for conversions.',
+                highlight: 'AI-Powered',
+                color: 'yellow'
+              },
+              { 
+                step: '4', 
+                icon: FlaskConical,
+                title: 'Track & Optimize', 
+                desc: 'A/B testing and heat maps show exactly what works best.',
+                highlight: 'Heat Tracking',
+                color: 'red'
+              },
+            ].map((item, idx) => (
+              <div 
+                key={item.step} 
+                className={`group relative p-6 rounded-2xl bg-gradient-to-br from-${item.color}-500/5 to-${item.color}-500/10 border border-${item.color}-500/20 hover:border-${item.color}-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-${item.color}-500/10 hover:-translate-y-1`}
+              >
+                {/* Step number */}
+                <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-${item.color}-400 to-${item.color}-600 flex items-center justify-center text-white text-sm font-bold shadow-lg group-hover:scale-110 transition-transform`}>
+                  {item.step}
                 </div>
-                <div>
-                  <p className="font-medium text-sm mb-1">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                
+                {/* Connector line */}
+                {idx < 3 && (
+                  <div className="hidden lg:block absolute top-1/2 -right-2 w-4 h-0.5 bg-gradient-to-r from-border to-transparent" />
+                )}
+                
+                <div className={`w-12 h-12 rounded-xl bg-${item.color}-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <item.icon className={`w-6 h-6 text-${item.color}-500`} />
+                </div>
+                
+                <h4 className="font-semibold text-base mb-2">{item.title}</h4>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{item.desc}</p>
+                
+                <Badge variant="outline" className={`text-[10px] text-${item.color}-500 border-${item.color}-500/30 bg-${item.color}-500/5`}>
+                  {item.highlight}
+                </Badge>
+              </div>
+            ))}
+          </div>
+          
+          {/* Feature Cards - Full Width Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { 
+                icon: FileText, 
+                label: 'Bulk Page Generation', 
+                desc: 'Generate 1,000s of keyword-specific pages with unique, SEO-optimized content for each target keyword.', 
+                stat: '10x Faster',
+                color: 'orange'
+              },
+              { 
+                icon: FlaskConical, 
+                label: 'A/B Testing Suite', 
+                desc: 'Test multiple headlines, CTAs, images, and layouts to find the winning combination that maximizes conversions.', 
+                stat: '+45% CVR',
+                color: 'amber'
+              },
+              { 
+                icon: Flame, 
+                label: 'Heat Tracking Analytics', 
+                desc: 'Visualize user behavior with click maps, scroll depth, and engagement analytics on every generated page.', 
+                stat: 'Real-time',
+                color: 'red'
+              },
+            ].map((feature) => (
+              <div 
+                key={feature.label} 
+                className={`group relative p-6 rounded-2xl bg-gradient-to-br from-card to-${feature.color}-500/5 border border-border hover:border-${feature.color}-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-${feature.color}-500/10 hover:-translate-y-1 overflow-hidden`}
+              >
+                {/* Background glow on hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br from-${feature.color}-500/0 to-${feature.color}-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-14 h-14 rounded-2xl bg-${feature.color}-500/10 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <feature.icon className={`w-7 h-7 text-${feature.color}-500`} />
+                    </div>
+                    <Badge className={`bg-${feature.color}-500/20 text-${feature.color}-400 border-${feature.color}-500/30`}>
+                      {feature.stat}
+                    </Badge>
+                  </div>
+                  
+                  <h4 className="font-bold text-lg mb-2">{feature.label}</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
                 </div>
               </div>
             ))}
