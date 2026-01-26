@@ -50,6 +50,43 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     setIsLoading(false);
   }, [onConnectionComplete]);
 
+  // Listen for postMessage from popup callback
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from our own origin
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === "BRON_AUTH_SUCCESS") {
+        console.log("[BRON] Received auth success from popup");
+        // Stop polling
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        // Close popup if still open
+        try { popupRef.current?.close(); } catch { /* ignore */ }
+        popupRef.current = null;
+        
+        // Persist auth and show dashboard
+        persistAuth();
+        toast({
+          title: "Connected to BRON",
+          description: `Successfully connected ${domain} to the BRON platform.`,
+        });
+      } else if (event.data?.type === "BRON_AUTH_ERROR") {
+        console.log("[BRON] Received auth error from popup:", event.data.error);
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        popupRef.current = null;
+        setIsWaitingForPopup(false);
+        toast({
+          title: "Connection Failed",
+          description: event.data.error || "Failed to connect to BRON.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [domain]);
+
   const persistAuth = () => {
     const authData = {
       authenticated: true,
@@ -83,12 +120,42 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
   };
 
+  // Check if localStorage was updated by the popup
+  const checkLocalStorageAuth = (): boolean => {
+    const storedAuth = localStorage.getItem(STORAGE_KEY);
+    if (storedAuth) {
+      try {
+        const authData = JSON.parse(storedAuth);
+        if (authData.authenticated && authData.expiry > Date.now()) {
+          return true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return false;
+  };
+
   // Start polling for login status
   const startLoginPolling = () => {
     pollRef.current = window.setInterval(async () => {
       const popupClosed = !popupRef.current || popupRef.current.closed;
+      
+      // First check localStorage (fastest, set by popup callback)
+      if (checkLocalStorageAuth()) {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        try { popupRef.current?.close(); } catch { /* ignore */ }
+        popupRef.current = null;
+        persistAuth();
+        toast({
+          title: "Connected to BRON",
+          description: `Successfully connected ${domain} to the BRON platform.`,
+        });
+        return;
+      }
+      
+      // Fallback: check via backend API
       const isLoggedIn = await checkLoginStatus();
-
       if (isLoggedIn) {
         if (pollRef.current) window.clearInterval(pollRef.current);
         try { popupRef.current?.close(); } catch { /* ignore */ }
@@ -102,11 +169,23 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       }
 
       if (popupClosed) {
+        // Popup closed without auth - check one more time
+        if (checkLocalStorageAuth()) {
+          if (pollRef.current) window.clearInterval(pollRef.current);
+          popupRef.current = null;
+          persistAuth();
+          toast({
+            title: "Connected to BRON",
+            description: `Successfully connected ${domain} to the BRON platform.`,
+          });
+          return;
+        }
+        
         if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
         setIsWaitingForPopup(false);
       }
-    }, 2000);
+    }, 1500);
   };
 
   // Open popup and start polling
