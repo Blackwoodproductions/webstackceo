@@ -17,7 +17,6 @@ interface BRONPlatformConnectProps {
 
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
-const BRON_LOGOUT_URL = "https://dashdev.imagehosting.space/logout";
 const STORAGE_KEY = "bron_dashboard_auth";
 
 // Production callback URL - your self-hosted domain
@@ -77,7 +76,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Primary: Popup-based login - forces logout first to ensure login prompt
+  // Primary: Popup-based login
   const handlePopupLogin = () => {
     setIsLoading(true);
     
@@ -90,12 +89,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
     
-    // First logout to clear any existing session, then redirect to login
-    // Using logout URL with redirect back to login to force credential prompt
-    const logoutThenLoginUrl = `${BRON_LOGOUT_URL}?redirect=${encodeURIComponent(BRON_LOGIN_URL)}`;
-    
+    // Open login page - if already logged in, will redirect to dashboard (which we detect)
     const popup = window.open(
-      logoutThenLoginUrl,
+      BRON_LOGIN_URL,
       "bron_login",
       `width=${width},height=${height},left=${left},top=${top},popup=1`
     );
