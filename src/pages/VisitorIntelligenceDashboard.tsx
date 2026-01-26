@@ -236,6 +236,7 @@ const MarketingDashboard = () => {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
+  const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; }[]>([]);
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
@@ -628,6 +629,32 @@ const MarketingDashboard = () => {
       setSidebarChats(data);
     }
   };
+
+  // Fetch live visitors (active in last 5 minutes)
+  const fetchLiveVisitors = async () => {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('visitor_sessions')
+      .select('session_id, first_page, last_activity_at, started_at')
+      .gte('last_activity_at', fiveMinutesAgo)
+      .order('last_activity_at', { ascending: false })
+      .limit(10);
+    
+    if (data) {
+      // Filter out sessions that already have an active chat
+      const chatSessionIds = sidebarChats.map(c => c.session_id);
+      setLiveVisitors(data.filter(v => !chatSessionIds.includes(v.session_id)));
+    }
+  };
+
+  // Poll for live visitors every 30 seconds
+  useEffect(() => {
+    if (chatOnline) {
+      fetchLiveVisitors();
+      const interval = setInterval(fetchLiveVisitors, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [chatOnline, sidebarChats]);
 
   // Play notification sound for new chats
   const playNotificationSound = () => {
@@ -2490,52 +2517,129 @@ f.parentNode.insertBefore(j,f);
               
             {/* Chat List - only show when online */}
             {chatOnline && chatPanelOpen && (
-              <div className="flex-1 flex flex-col-reverse gap-1 p-2 overflow-auto">
-                {sidebarChats.length === 0 ? (
+              <div className="flex-1 flex flex-col gap-1 p-2 overflow-auto">
+                {/* Active Chats Section */}
+                {sidebarChats.length > 0 && (
+                  <>
+                    <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1">Active Chats</p>
+                    {sidebarChats.map((chat) => (
+                      <div
+                        key={chat.id}
+                        onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                          selectedChatId === chat.id 
+                            ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                            : 'hover:bg-secondary/50'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
+                          <UserIcon className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">
+                            {chat.visitor_name || 'Visitor'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {chat.current_page || 'Unknown page'}
+                          </p>
+                        </div>
+                        {chat.status === 'pending' && (
+                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Live Visitors Section */}
+                {liveVisitors.length > 0 && (
+                  <>
+                    <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1 mt-2 flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      Live Visitors
+                      <span className="ml-auto text-emerald-500">{liveVisitors.length}</span>
+                    </p>
+                    {liveVisitors.map((visitor) => {
+                      const colors = [
+                        'from-emerald-400 to-teal-500',
+                        'from-amber-400 to-orange-500',
+                        'from-rose-400 to-pink-500',
+                        'from-sky-400 to-blue-500',
+                        'from-lime-400 to-green-500',
+                        'from-violet-400 to-purple-500',
+                      ];
+                      const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                      const colorClass = colors[hash % colors.length];
+                      const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
+                      const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m ago` : `${Math.floor(timeSince / 60)}h ago`;
+                      
+                      return (
+                        <div
+                          key={visitor.session_id}
+                          onClick={async () => {
+                            const { data: newConv } = await supabase
+                              .from('chat_conversations')
+                              .insert({
+                                session_id: visitor.session_id,
+                                status: 'active',
+                                current_page: visitor.first_page,
+                              })
+                              .select('id')
+                              .single();
+                            
+                            if (newConv) {
+                              await supabase.from('chat_messages').insert({
+                                conversation_id: newConv.id,
+                                sender_type: 'system',
+                                message: `Chat initiated with visitor on ${visitor.first_page || 'homepage'}`,
+                              });
+                              setSelectedChatId(newConv.id);
+                              fetchSidebarChats();
+                              toast.success('Chat started with visitor');
+                            }
+                          }}
+                          className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-emerald-500/10 border border-dashed border-emerald-500/20"
+                        >
+                          <div className={`relative w-8 h-8 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
+                            <Eye className="w-4 h-4 text-white" />
+                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400">
+                              <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {visitor.first_page || '/'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {timeLabel} • Click to engage
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Empty state */}
+                {sidebarChats.length === 0 && liveVisitors.length === 0 && (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center py-8 animate-fade-in">
                       <div className="relative mx-auto w-12 h-12 mb-3">
                         <MessageCircle className="w-12 h-12 text-cyan-500/20 absolute inset-0 animate-ping" />
                         <MessageCircle className="w-12 h-12 text-cyan-500/40 relative" />
                       </div>
-                      <p className="text-xs text-muted-foreground">Waiting for chats...</p>
+                      <p className="text-xs text-muted-foreground">Waiting for visitors...</p>
                     </div>
                   </div>
-                ) : (
-                  sidebarChats.map((chat) => (
-                    <div
-                      key={chat.id}
-                      onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
-                      className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedChatId === chat.id 
-                          ? 'bg-cyan-500/20 border border-cyan-500/30' 
-                          : 'hover:bg-secondary/50'
-                      }`}
-                    >
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
-                        <UserIcon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">
-                          {chat.visitor_name || 'Visitor'}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground truncate">
-                          {chat.current_page || 'Unknown page'}
-                        </p>
-                      </div>
-                      {chat.status === 'pending' && (
-                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                      )}
-                    </div>
-                  ))
                 )}
               </div>
             )}
 
-            {/* Collapsed state - just show icons when online */}
-            {chatOnline && !chatPanelOpen && sidebarChats.length > 0 && (
+            {/* Collapsed state - show chats + live visitors when online */}
+            {chatOnline && !chatPanelOpen && (
               <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
-                {sidebarChats.slice(0, 8).map((chat) => (
+                {/* Active Chats */}
+                {sidebarChats.slice(0, 5).map((chat) => (
                   <div
                     key={chat.id}
                     onClick={() => {
@@ -2545,7 +2649,7 @@ f.parentNode.insertBefore(j,f);
                     className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
                       chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
                     }`}
-                    title={chat.visitor_name || 'Visitor'}
+                    title={chat.visitor_name || 'Active Chat'}
                   >
                     <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-white" />
@@ -2555,6 +2659,84 @@ f.parentNode.insertBefore(j,f);
                     )}
                   </div>
                 ))}
+
+                {/* Separator if both chats and visitors exist */}
+                {sidebarChats.length > 0 && liveVisitors.length > 0 && (
+                  <div className="w-6 h-px bg-border my-1" />
+                )}
+
+                {/* Live Visitors (not in chat yet) */}
+                {liveVisitors.slice(0, 8 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
+                  const colors = [
+                    'from-emerald-400 to-teal-500',
+                    'from-amber-400 to-orange-500',
+                    'from-rose-400 to-pink-500',
+                    'from-sky-400 to-blue-500',
+                    'from-lime-400 to-green-500',
+                    'from-violet-400 to-purple-500',
+                  ];
+                  const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                  const colorClass = colors[hash % colors.length];
+                  const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
+                  const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m` : `${Math.floor(timeSince / 60)}h`;
+                  
+                  return (
+                    <div
+                      key={visitor.session_id}
+                      onClick={async () => {
+                        // Create a new conversation and engage this visitor
+                        const { data: newConv } = await supabase
+                          .from('chat_conversations')
+                          .insert({
+                            session_id: visitor.session_id,
+                            status: 'active',
+                            current_page: visitor.first_page,
+                          })
+                          .select('id')
+                          .single();
+                        
+                        if (newConv) {
+                          // Add system message
+                          await supabase.from('chat_messages').insert({
+                            conversation_id: newConv.id,
+                            sender_type: 'system',
+                            message: `Chat initiated with visitor on ${visitor.first_page || 'homepage'}`,
+                          });
+                          setChatPanelOpen(true);
+                          setSelectedChatId(newConv.id);
+                          fetchSidebarChats();
+                          toast.success('Chat started with visitor');
+                        }
+                      }}
+                      className="relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 group"
+                      title={`${visitor.first_page || '/'} • ${timeLabel}`}
+                    >
+                      <div className={`w-full h-full rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center border-2 border-dashed border-white/30`}>
+                        <Eye className="w-4 h-4 text-white" />
+                      </div>
+                      {/* Live indicator */}
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
+                        <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                      </span>
+                      {/* Hover tooltip */}
+                      <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div className="bg-popover border border-border rounded-lg px-2 py-1 shadow-lg whitespace-nowrap">
+                          <p className="text-[10px] text-foreground font-medium">{visitor.first_page || '/'}</p>
+                          <p className="text-[9px] text-muted-foreground">Click to engage • {timeLabel}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Empty state when no chats and no visitors */}
+                {sidebarChats.length === 0 && liveVisitors.length === 0 && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center animate-fade-in">
+                      <Eye className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
