@@ -236,6 +236,7 @@ const MarketingDashboard = () => {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; full_name: string | null } | null>(null);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
   const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; page_count?: number; }[]>([]);
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
@@ -1290,6 +1291,15 @@ const MarketingDashboard = () => {
   };
 
   useEffect(() => {
+    const fetchUserProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data) setCurrentUserProfile(data);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -1298,9 +1308,11 @@ const MarketingDashboard = () => {
         if (session?.user) {
           setTimeout(() => {
             checkAdminRole(session.user.id);
+            fetchUserProfile(session.user.id);
           }, 0);
         } else {
           setIsLoading(false);
+          setCurrentUserProfile(null);
         }
       }
     );
@@ -1310,6 +1322,7 @@ const MarketingDashboard = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         checkAdminRole(session.user.id);
+        fetchUserProfile(session.user.id);
       } else {
         setIsLoading(false);
       }
@@ -2921,6 +2934,51 @@ f.parentNode.insertBefore(j,f);
                   <p className="text-xs text-muted-foreground">Chat is offline</p>
                   <p className="text-[10px] text-muted-foreground/70 mt-1">Turn on to receive chats</p>
                 </div>
+              </div>
+            )}
+
+            {/* Current User (You) - pinned to bottom */}
+            {user && (
+              <div className="mt-auto border-t border-border p-2">
+                {chatPanelOpen ? (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+                    {currentUserProfile?.avatar_url ? (
+                      <img 
+                        src={currentUserProfile.avatar_url} 
+                        alt={currentUserProfile.full_name || 'You'} 
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/50"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {currentUserProfile?.full_name || user.email?.split('@')[0] || 'You'}
+                      </p>
+                      <p className="text-[10px] text-primary truncate">Operator</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    {currentUserProfile?.avatar_url ? (
+                      <div className="relative">
+                        <img 
+                          src={currentUserProfile.avatar_url} 
+                          alt={currentUserProfile.full_name || 'You'} 
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/50"
+                          title={currentUserProfile.full_name || 'You (Operator)'}
+                        />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center ring-2 ring-primary/30" title="You (Operator)">
+                        <UserIcon className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
