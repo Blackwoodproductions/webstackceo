@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   Users, Clock, Eye, MousePointer, Mail, Phone, User, 
   Building, Activity, Wifi, WifiOff, Flame, TrendingUp,
-  Globe, MapPin, Monitor, Smartphone, ArrowRight, Zap, MessageCircle, Bell, Radio
+  Globe, Monitor, Smartphone, ArrowRight, Zap, Radio
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 
@@ -27,13 +25,6 @@ interface ActiveSession {
   recentPages: string[];
 }
 
-interface ChatConversation {
-  id: string;
-  session_id: string;
-  status: string;
-  last_message_at: string;
-}
-
 interface PageEngagement {
   page_path: string;
   views: number;
@@ -49,11 +40,10 @@ const VisitorEngagementPanel = () => {
   const [loading, setLoading] = useState(true);
   const [maxScore, setMaxScore] = useState(1);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
-      // Fetch all data in parallel
       const [sessionsRes, pageViewsRes, toolsRes, leadsRes, formSubmissionsRes] = await Promise.all([
         supabase
           .from('visitor_sessions')
@@ -69,7 +59,6 @@ const VisitorEngagementPanel = () => {
       const sessions = sessionsRes.data || [];
       const pageViews = pageViewsRes.data || [];
       const toolInteractions = toolsRes.data || [];
-      const leads = leadsRes.data || [];
       const formSubmissions = formSubmissionsRes.data || [];
 
       // Process page engagement heatmap
@@ -136,7 +125,6 @@ const VisitorEngagementPanel = () => {
           }
         });
 
-        // Build a map of session_id to lead data from form submissions
         const sessionLeadData: Record<string, { email: string | null; phone: string | null; fullName: string | null; companyEmployees: string | null }> = {};
         
         formSubmissions.forEach(fs => {
@@ -145,7 +133,6 @@ const VisitorEngagementPanel = () => {
             if (!sessionLeadData[fs.session_id]) {
               sessionLeadData[fs.session_id] = { email: null, phone: null, fullName: null, companyEmployees: null };
             }
-            // Merge data from form submissions
             if (data.email) sessionLeadData[fs.session_id].email = data.email;
             if (data.phone) sessionLeadData[fs.session_id].phone = data.phone;
             if (data.full_name || data.name) sessionLeadData[fs.session_id].fullName = data.full_name || data.name;
@@ -182,7 +169,7 @@ const VisitorEngagementPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -196,54 +183,54 @@ const VisitorEngagementPanel = () => {
 
     const interval = setInterval(fetchData, 30000);
     return () => { channel.unsubscribe(); clearInterval(interval); };
-  }, []);
+  }, [fetchData]);
 
-  const getTimeOnSite = (startedAt: string) => {
+  const getTimeOnSite = useCallback((startedAt: string) => {
     const seconds = differenceInSeconds(new Date(), new Date(startedAt));
     if (seconds < 60) return `${seconds}s`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
     return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-  };
+  }, []);
 
-  const getHeatColor = (score: number) => {
+  const getHeatColor = useCallback((score: number) => {
     const intensity = score / maxScore;
-    if (intensity > 0.8) return 'from-red-500 to-orange-500';
-    if (intensity > 0.6) return 'from-orange-500 to-amber-500';
-    if (intensity > 0.4) return 'from-amber-500 to-yellow-500';
-    if (intensity > 0.2) return 'from-yellow-500 to-lime-500';
-    return 'from-lime-500 to-green-500';
-  };
+    if (intensity > 0.8) return 'from-red-500/20 to-orange-500/20';
+    if (intensity > 0.6) return 'from-orange-500/20 to-amber-500/20';
+    if (intensity > 0.4) return 'from-amber-500/20 to-yellow-500/20';
+    if (intensity > 0.2) return 'from-yellow-500/20 to-lime-500/20';
+    return 'from-lime-500/20 to-green-500/20';
+  }, [maxScore]);
 
-  const getHeatTextColor = (score: number) => {
+  const getHeatBorder = useCallback((score: number) => {
     const intensity = score / maxScore;
-    if (intensity > 0.8) return 'text-red-400';
-    if (intensity > 0.6) return 'text-orange-400';
-    if (intensity > 0.4) return 'text-amber-400';
-    if (intensity > 0.2) return 'text-yellow-400';
-    return 'text-green-400';
-  };
+    if (intensity > 0.8) return 'border-red-500/40';
+    if (intensity > 0.6) return 'border-orange-500/40';
+    if (intensity > 0.4) return 'border-amber-500/40';
+    if (intensity > 0.2) return 'border-yellow-500/40';
+    return 'border-green-500/40';
+  }, [maxScore]);
 
-  const formatPageName = (path: string) => {
+  const formatPageName = useCallback((path: string) => {
     if (path === '/') return 'Home';
     return path.replace(/^\//, '').replace(/-/g, ' ').split('/')[0].slice(0, 12);
-  };
+  }, []);
 
-  const getEngagementLevel = (session: ActiveSession) => {
+  const getEngagementLevel = useCallback((session: ActiveSession) => {
     const score = session.pageViewCount + (session.toolsUsedCount * 2);
-    if (score >= 10) return { label: 'Hot', color: 'bg-red-500/20 text-red-400 border-red-500/30' };
-    if (score >= 5) return { label: 'Warm', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' };
-    if (score >= 2) return { label: 'Active', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' };
-    return { label: 'New', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
-  };
+    if (score >= 10) return { label: 'Hot', color: 'bg-red-500/20 text-red-400 border-red-500/30', cardStyle: 'border-red-500/40 bg-gradient-to-br from-red-500/10 to-orange-500/5' };
+    if (score >= 5) return { label: 'Warm', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', cardStyle: 'border-orange-500/40 bg-gradient-to-br from-orange-500/10 to-amber-500/5' };
+    if (score >= 2) return { label: 'Active', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', cardStyle: 'border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-yellow-500/5' };
+    return { label: 'New', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', cardStyle: 'border-primary/30 bg-gradient-to-br from-primary/10 to-violet-500/5' };
+  }, []);
 
-  const getDeviceType = (userAgent: string | null) => {
+  const getDeviceType = useCallback((userAgent: string | null) => {
     if (!userAgent) return 'desktop';
     const ua = userAgent.toLowerCase();
     if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) return 'mobile';
     return 'desktop';
-  };
+  }, []);
 
-  const getReferrerBadge = (referrer: string | null) => {
+  const getReferrerBadge = useCallback((referrer: string | null) => {
     if (!referrer) return { label: 'Direct', icon: Globe, color: 'text-blue-400' };
     try {
       const hostname = new URL(referrer).hostname;
@@ -254,23 +241,36 @@ const VisitorEngagementPanel = () => {
     } catch {
       return { label: 'Referral', icon: ArrowRight, color: 'text-violet-400' };
     }
-  };
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 p-6">
-        <div className="w-4 h-4 rounded-full bg-primary/30 animate-pulse" />
-        <span className="text-sm text-muted-foreground">Loading engagement data...</span>
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+        <span className="ml-3 text-sm text-muted-foreground">Loading engagement data...</span>
       </div>
     );
   }
 
   return (
     <div className="relative">
+      {/* Grid background */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+      
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20">
             <Activity className="w-5 h-5 text-primary" />
           </div>
           <div>
@@ -286,214 +286,150 @@ const VisitorEngagementPanel = () => {
         </div>
         <div className="flex items-center gap-2">
           {isConnected ? (
-            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 text-[10px]">
               <Wifi className="w-3 h-3 mr-1" />
-              Live
+              Connected
             </Badge>
           ) : (
-            <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
+            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]">
               <WifiOff className="w-3 h-3 mr-1" />
               Connecting
             </Badge>
           )}
-          <Badge className="bg-primary/20 text-primary border-primary/30">
+          <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px]">
             <Users className="w-3 h-3 mr-1" />
             {activeSessions.length} Online
           </Badge>
         </div>
       </div>
 
-      {/* Page Heatmap Strip - Full Width */}
-      <div className="mb-5 p-3 rounded-xl bg-secondary/30 border border-border/50">
+      {/* Page Heatmap Strip */}
+      <div className="mb-5 p-4 rounded-xl bg-gradient-to-br from-secondary/40 to-secondary/20 border border-border/50 relative z-10">
         <div className="flex items-center gap-2 mb-3">
-          <Flame className="w-4 h-4 text-orange-500" />
-          <span className="text-xs font-semibold text-foreground">Top Pages</span>
-          <div className="flex items-center gap-1 ml-auto text-[10px] text-muted-foreground">
-            <span className="w-2 h-2 rounded bg-gradient-to-r from-green-500 to-lime-500" />Cool
-            <span className="w-2 h-2 rounded bg-gradient-to-r from-red-500 to-orange-500 ml-1" />Hot
+          <div className="p-1.5 rounded-lg bg-orange-500/20">
+            <Flame className="w-4 h-4 text-orange-500" />
+          </div>
+          <span className="text-xs font-semibold text-foreground">Top Pages by Engagement</span>
+          <div className="flex items-center gap-1.5 ml-auto text-[10px] text-muted-foreground">
+            <span className="w-3 h-1.5 rounded-full bg-gradient-to-r from-green-500 to-lime-500" />
+            <span>Cool</span>
+            <span className="w-3 h-1.5 rounded-full bg-gradient-to-r from-red-500 to-orange-500 ml-2" />
+            <span>Hot</span>
           </div>
         </div>
-        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pageData.length || 1, 10)}, minmax(0, 1fr))` }}>
-          {pageData.map((page, i) => (
+        
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(pageData.length || 1, 5)}, minmax(0, 1fr))` }}>
+          {pageData.slice(0, 5).map((page, i) => (
             <div
               key={page.page_path}
-              className="relative group"
+              className={`relative p-3 rounded-lg bg-gradient-to-br ${getHeatColor(page.engagementScore)} border ${getHeatBorder(page.engagementScore)} transition-transform hover:scale-[1.02] cursor-pointer`}
             >
-              <div className={`px-3 py-3 rounded-lg bg-gradient-to-br ${getHeatColor(page.engagementScore)} bg-opacity-20 border border-white/10 hover:scale-[1.02] transition-transform cursor-pointer h-full`}>
-                <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold">
-                  {i + 1}
-                </div>
-                <p className="text-sm font-medium text-foreground truncate">{formatPageName(page.page_path)}</p>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Eye className="w-3 h-3" />{page.views}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MousePointer className="w-3 h-3" />{page.toolInteractions}
-                  </span>
-                </div>
+              <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center text-[10px] font-bold text-foreground">
+                {i + 1}
               </div>
-              <div className={`absolute bottom-0 left-0 right-0 h-1 rounded-full bg-gradient-to-r ${getHeatColor(page.engagementScore)}`} />
+              <p className="text-sm font-medium text-foreground truncate pl-2">{formatPageName(page.page_path)}</p>
+              <div className="flex items-center gap-3 mt-2 pl-2">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Eye className="w-3 h-3" />{page.views}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <MousePointer className="w-3 h-3" />{page.toolInteractions}
+                </span>
+              </div>
             </div>
           ))}
           {pageData.length === 0 && (
-            <span className="text-xs text-muted-foreground py-2 col-span-full">No page data yet</span>
+            <span className="text-xs text-muted-foreground py-2 col-span-full text-center">No page data yet</span>
           )}
         </div>
       </div>
 
       {/* Active Visitor Cards */}
       {activeSessions.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No active visitors in the last 5 minutes</p>
+        <div className="text-center py-12 relative z-10">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
+            <Users className="w-8 h-8 text-muted-foreground/50" />
+          </div>
+          <p className="text-sm text-muted-foreground">No active visitors in the last 5 minutes</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 relative z-10">
           {activeSessions.slice(0, 9).map((session, index) => {
-              const engagement = getEngagementLevel(session);
-              const device = getDeviceType(session.user_agent);
-              const referrer = getReferrerBadge(session.referrer);
-              const ReferrerIcon = referrer.icon;
-              const isHot = engagement.label === 'Hot';
-              const isWarm = engagement.label === 'Warm';
-              
-              return (
-                <div
-                  key={session.session_id}
-                  className={`relative p-4 rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group h-[220px] flex flex-col
-                    ${isHot 
-                      ? 'bg-gradient-to-br from-red-500/10 via-orange-500/5 to-amber-500/10 border-2 border-red-500/30 shadow-lg shadow-red-500/10' 
-                      : isWarm 
-                        ? 'bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-yellow-500/10 border border-orange-500/30 shadow-md shadow-orange-500/10'
-                        : 'bg-gradient-to-br from-primary/10 via-violet-500/5 to-cyan-500/10 border border-primary/20'
-                    }`}
-                >
-                  {/* Animated background glow for hot visitors */}
-                  {isHot && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-orange-500/10 to-red-500/0 animate-pulse" />
-                  )}
-                  
-                  {/* Top accent line */}
-                  <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${
-                    isHot ? 'from-red-500 via-orange-500 to-amber-500' 
-                    : isWarm ? 'from-orange-500 via-amber-500 to-yellow-500'
-                    : 'from-primary via-violet-500 to-cyan-500'
-                  }`} />
-                  
-                  {/* Engagement pulse indicator */}
-                  <div className={`absolute top-4 right-4 flex items-center gap-2`}>
-                    <div className={`w-2.5 h-2.5 rounded-full ${
-                      isHot ? 'bg-red-500 animate-ping' : isWarm ? 'bg-orange-500 animate-pulse' : 'bg-green-500'
-                    }`} />
-                    <div className={`w-2.5 h-2.5 rounded-full absolute ${
-                      isHot ? 'bg-red-500' : isWarm ? 'bg-orange-500' : 'bg-green-500'
-                    }`} />
-                  </div>
-                  
-                  {/* Header row */}
-                  <div className="flex items-start gap-3 mb-4 relative z-10">
-                    <div className="relative">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                        isHot 
-                          ? 'bg-gradient-to-br from-red-500/30 to-orange-500/30 border-2 border-red-500/40 shadow-lg shadow-red-500/20' 
-                          : isWarm 
-                            ? 'bg-gradient-to-br from-orange-500/30 to-amber-500/30 border border-orange-500/30'
-                            : 'bg-gradient-to-br from-primary/30 to-violet-500/30 border border-primary/30'
-                      }`}>
-                        {device === 'mobile' ? (
-                          <Smartphone className={`w-6 h-6 ${isHot ? 'text-red-400' : isWarm ? 'text-orange-400' : 'text-primary'}`} />
-                        ) : (
-                          <Monitor className={`w-6 h-6 ${isHot ? 'text-red-400' : isWarm ? 'text-orange-400' : 'text-primary'}`} />
-                        )}
-                      </div>
-                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                        isHot ? 'bg-red-500 text-white' : isWarm ? 'bg-orange-500 text-white' : 'bg-primary text-white'
-                      }`}>
-                        {index + 1}
-                      </div>
+            const engagement = getEngagementLevel(session);
+            const device = getDeviceType(session.user_agent);
+            const referrer = getReferrerBadge(session.referrer);
+            const ReferrerIcon = referrer.icon;
+            
+            return (
+              <div
+                key={session.session_id}
+                className={`relative p-4 rounded-xl overflow-hidden border ${engagement.cardStyle} transition-all duration-200 hover:shadow-lg cursor-pointer group`}
+              >
+                {/* Top accent */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-violet-500 to-cyan-500 opacity-60" />
+                
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20 flex items-center justify-center">
+                      {session.fullName || session.email ? (
+                        <User className="w-4 h-4 text-primary" />
+                      ) : (
+                        <span className="text-xs font-bold text-primary">
+                          {session.session_id.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      {/* Status dot */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
                     </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Badge className={`text-[10px] px-2 py-0.5 font-bold flex-shrink-0 ${
-                          isHot ? 'bg-red-500/20 text-red-400 border-red-500/40' 
-                          : isWarm ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                          : 'bg-primary/20 text-primary border-primary/40'
-                        }`}>
-                          <Zap className="w-3 h-3 mr-1" />
-                          {engagement.label}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-background/50 flex-shrink-0 max-w-[80px] truncate">
-                          <ReferrerIcon className={`w-3 h-3 mr-1 flex-shrink-0 ${referrer.color}`} />
-                          <span className="truncate">{referrer.label.slice(0, 8)}</span>
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        Entry: <span className="text-foreground font-medium truncate">{formatPageName(session.first_page || '/')}</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground truncate max-w-[140px]">
+                        {session.fullName || session.email?.split('@')[0] || `Visitor ${session.session_id.slice(0, 6)}`}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: true })}
                       </p>
                     </div>
                   </div>
-
-                  {/* Stats grid */}
-                  <div className="grid grid-cols-4 gap-2 mb-3 relative z-10 flex-shrink-0">
-                    {[
-                      { icon: Clock, value: getTimeOnSite(session.started_at), color: 'text-cyan-400', bg: 'from-cyan-500/20 to-cyan-500/5' },
-                      { icon: Eye, value: session.pageViewCount, color: 'text-violet-400', bg: 'from-violet-500/20 to-violet-500/5' },
-                      { icon: MousePointer, value: session.toolsUsedCount, color: 'text-amber-400', bg: 'from-amber-500/20 to-amber-500/5' },
-                      { icon: Activity, value: formatDistanceToNow(new Date(session.last_activity_at), { addSuffix: false }).replace(' minutes', 'm').replace(' seconds', 's').replace('less than a minute', '<1m').replace(' minute', 'm').replace(' second', 's').slice(0, 4), color: 'text-green-400', bg: 'from-green-500/20 to-green-500/5' },
-                    ].map((stat, i) => (
-                      <div key={i} className={`text-center p-2 rounded-xl bg-gradient-to-b ${stat.bg} border border-white/5 backdrop-blur-sm transition-transform hover:scale-105`}>
-                        <stat.icon className={`w-4 h-4 mx-auto mb-1 ${stat.color}`} />
-                        <span className="text-xs font-bold text-foreground truncate block">{stat.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Journey trail */}
-                  {session.recentPages.length > 0 && (
-                    <div className="flex items-center gap-1.5 mb-3 overflow-hidden relative z-10">
-                      <span className="text-[10px] text-muted-foreground flex-shrink-0 font-medium">Path:</span>
-                      {session.recentPages.slice(-3).map((page, i) => (
-                        <span key={i} className="flex items-center text-[10px]">
-                          {i > 0 && <ArrowRight className="w-3 h-3 mx-1 text-primary/50" />}
-                          <span className="px-2 py-1 rounded-lg bg-background/60 text-foreground font-medium truncate max-w-[70px] border border-border/30">
-                            {formatPageName(page)}
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Data indicators - only show if we have actual data */}
-                  {(session.email || session.phone || session.fullName || session.companyEmployees) && (
-                    <div className="flex items-center gap-2 pt-2 border-t border-border/30 relative z-10 mt-auto flex-shrink-0 overflow-hidden">
-                      <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">Captured:</span>
-                      <div className="flex gap-1 ml-auto overflow-hidden">
-                        {session.email && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/20 border border-blue-500/30 flex-shrink-0" title={session.email}>
-                            <Mail className="w-3 h-3 text-blue-400" />
-                          </div>
-                        )}
-                        {session.phone && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 flex-shrink-0" title={session.phone}>
-                            <Phone className="w-3 h-3 text-amber-400" />
-                          </div>
-                        )}
-                        {session.fullName && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-500/20 border border-orange-500/30 flex-shrink-0" title={session.fullName}>
-                            <User className="w-3 h-3 text-orange-400" />
-                          </div>
-                        )}
-                        {session.companyEmployees && (
-                          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/20 border border-green-500/30 flex-shrink-0" title={session.companyEmployees}>
-                            <Building className="w-3 h-3 text-green-400" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  <Badge variant="outline" className={`text-[9px] ${engagement.color}`}>
+                    {engagement.label}
+                  </Badge>
                 </div>
-              );
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="p-2 rounded-lg bg-secondary/40 text-center">
+                    <p className="text-lg font-bold text-foreground">{session.pageViewCount}</p>
+                    <p className="text-[9px] text-muted-foreground">Pages</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-secondary/40 text-center">
+                    <p className="text-lg font-bold text-foreground">{session.toolsUsedCount}</p>
+                    <p className="text-[9px] text-muted-foreground">Actions</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-secondary/40 text-center">
+                    <p className="text-lg font-bold text-foreground">{getTimeOnSite(session.started_at)}</p>
+                    <p className="text-[9px] text-muted-foreground">Time</p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                  <div className="flex items-center gap-1.5">
+                    <ReferrerIcon className={`w-3 h-3 ${referrer.color}`} />
+                    <span className="text-[10px] text-muted-foreground">{referrer.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {device === 'mobile' ? (
+                      <Smartphone className="w-3 h-3 text-muted-foreground" />
+                    ) : (
+                      <Monitor className="w-3 h-3 text-muted-foreground" />
+                    )}
+                    {session.email && <Mail className="w-3 h-3 text-green-400" />}
+                    {session.phone && <Phone className="w-3 h-3 text-blue-400" />}
+                  </div>
+                </div>
+              </div>
+            );
           })}
         </div>
       )}
