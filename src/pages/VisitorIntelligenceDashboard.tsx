@@ -2611,12 +2611,12 @@ f.parentNode.insertBefore(j,f);
                 )}
 
                 {/* Live Visitors Section */}
-                {liveVisitors.length > 0 && (
+                {activeVisitors > 0 && (
                   <>
                     <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1 mt-2 flex items-center gap-1">
                       <Eye className="w-3 h-3" />
                       Live Visitors
-                      <span className="ml-auto text-emerald-500">{liveVisitors.length}</span>
+                      <span className="ml-auto text-emerald-500">{activeVisitors}</span>
                     </p>
                     {liveVisitors.map((visitor) => {
                       // Bold, vibrant colors (no pastels)
