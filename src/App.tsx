@@ -21,6 +21,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Admin = lazy(() => import("./pages/Admin"));
 const VisitorIntelligenceDashboard = lazy(() => import("./pages/VisitorIntelligenceDashboard"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -130,6 +131,7 @@ const App = () => (
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/marketplace/:slug" element={<PartnerDetail />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
               <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
