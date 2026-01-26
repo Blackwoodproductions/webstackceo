@@ -303,14 +303,22 @@ const LiveChatWidget = () => {
   }, [fetchLiveVisitors]);
 
   // Get or create session ID and fetch referrer
+  // IMPORTANT: Use the same session key as VisitorTrackingProvider for consistency
   useEffect(() => {
-    const storedSessionId = sessionStorage.getItem("chat_session_id");
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
+    // First, try to use the visitor tracking session ID (webstack_session_id)
+    const visitorSessionId = sessionStorage.getItem("webstack_session_id");
+    if (visitorSessionId) {
+      setSessionId(visitorSessionId);
     } else {
-      const newSessionId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem("chat_session_id", newSessionId);
-      setSessionId(newSessionId);
+      // Fallback to chat-specific session (for cases where visitor tracking isn't active)
+      const storedSessionId = sessionStorage.getItem("chat_session_id");
+      if (storedSessionId) {
+        setSessionId(storedSessionId);
+      } else {
+        const newSessionId = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem("chat_session_id", newSessionId);
+        setSessionId(newSessionId);
+      }
     }
     
     // Get referrer from document or sessionStorage
