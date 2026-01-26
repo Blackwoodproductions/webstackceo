@@ -82,8 +82,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
     
-    const width = 520;
-    const height = 600;
+    const width = 480;
+    const height = 550;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
     
@@ -132,41 +132,74 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       
       toast({
         title: "Successfully Connected!",
-        description: "BRON dashboard content is now displayed on this page.",
+        description: "BRON dashboard is now displayed on this page.",
       });
     };
     
-    // Poll to detect successful login (redirect to /dashboard) or popup close
+    // Very fast polling - close popup as soon as we detect dashboard or any navigation
     const pollTimer = setInterval(() => {
-      // First check if popup was closed
+      // Check if popup was closed by user
       if (popup.closed) {
         clearInterval(pollTimer);
+        // User closed popup - assume they logged in successfully
         completeAuth();
         return;
       }
       
       try {
-        // Try to detect if popup navigated to dashboard (means login succeeded)
+        // Try to read popup URL - this will throw cross-origin error most of the time
         const href = popup.location?.href;
-        if (href && (href.includes('/dashboard') || href.includes('dashdev.imagehosting.space/dashboard'))) {
-          clearInterval(pollTimer);
-          completeAuth();
-          return;
+        if (href) {
+          // If we can read it and it's on the dashboard, close immediately
+          if (href.includes('/dashboard') || href.includes('dashdev.imagehosting.space/dashboard')) {
+            clearInterval(pollTimer);
+            completeAuth();
+            return;
+          }
         }
       } catch {
-        // Cross-origin error is expected - we can't read the location
-        // Continue polling until popup closes
+        // Cross-origin error is expected when popup is on external domain
+        // We'll rely on popup.closed detection or manual confirmation
       }
-    }, 300);
+    }, 100); // Poll every 100ms for faster detection
     
-    // Timeout after 5 minutes
+    // Also listen for when user returns focus to main window
+    const handleFocus = () => {
+      // When user clicks back to main window, check if popup is still open
+      setTimeout(() => {
+        if (popup && !popup.closed) {
+          // Popup still open - user might have logged in, close it
+          try {
+            // Try to read the URL one more time
+            const href = popup.location?.href;
+            if (href && href.includes('/dashboard')) {
+              clearInterval(pollTimer);
+              window.removeEventListener('focus', handleFocus);
+              completeAuth();
+            }
+          } catch {
+            // Can't read URL - that's ok
+          }
+        }
+      }, 200);
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    // Timeout after 3 minutes
     setTimeout(() => {
       clearInterval(pollTimer);
+      window.removeEventListener('focus', handleFocus);
       if (!authCompleted) {
         try { popup.close(); } catch {}
         setIsLoading(false);
+        toast({
+          title: "Login Timeout",
+          description: "Please try again or use 'Login in New Tab' option.",
+          variant: "destructive",
+        });
       }
-    }, 5 * 60 * 1000);
+    }, 3 * 60 * 1000);
   };
 
   // Open in new tab as alternative
