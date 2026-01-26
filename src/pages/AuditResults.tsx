@@ -2486,25 +2486,25 @@ const AuditResults = () => {
                     {isCaseStudyMode ? (
                       <div className="flex flex-col items-end gap-3">
                         <NextReportCountdown />
-                        {/* Trust badges and pills */}
+                        {/* Trust Badges - Square style */}
                         <motion.div 
-                          className="flex items-center gap-2 flex-wrap justify-end"
+                          className="flex items-center gap-2"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
                         >
-                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-medium flex items-center gap-1.5 border border-cyan-500/30">
-                            <Users className="w-3.5 h-3.5" />
-                            100+ Agencies
-                          </span>
-                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 font-medium flex items-center gap-1.5 border border-amber-500/30">
-                            <Crown className="w-3.5 h-3.5" />
-                            1,000+ CEOs
-                          </span>
-                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 font-medium flex items-center gap-1.5 border border-violet-500/30">
-                            <Bot className="w-3.5 h-3.5" />
-                            AI-Powered
-                          </span>
+                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                            <Users className="w-5 h-5 text-cyan-500" />
+                            <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                            <Crown className="w-5 h-5 text-amber-500" />
+                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
+                          </div>
+                          <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
+                            <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
+                            <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                          </div>
                         </motion.div>
                       </div>
                     ) : (
