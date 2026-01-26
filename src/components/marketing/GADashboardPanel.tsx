@@ -244,8 +244,22 @@ export const GADashboardPanel = ({
   // Check for stored token on mount - use localStorage for persistence
   useEffect(() => {
     const checkStoredToken = () => {
-      const storedToken = localStorage.getItem("ga_access_token");
-      const tokenExpiry = localStorage.getItem("ga_token_expiry");
+      // Check for GA-specific token first
+      let storedToken = localStorage.getItem("ga_access_token");
+      let tokenExpiry = localStorage.getItem("ga_token_expiry");
+      
+      // Fall back to unified Google token from auth callback
+      if (!storedToken || !tokenExpiry) {
+        storedToken = localStorage.getItem("unified_google_token");
+        tokenExpiry = localStorage.getItem("unified_google_expiry");
+        
+        // If unified token found, sync to GA keys
+        if (storedToken && tokenExpiry) {
+          console.log("[GA] Found unified token, syncing to GA keys");
+          localStorage.setItem("ga_access_token", storedToken);
+          localStorage.setItem("ga_token_expiry", tokenExpiry);
+        }
+      }
       
       if (storedToken && tokenExpiry) {
         const expiryTime = parseInt(tokenExpiry);
@@ -267,6 +281,8 @@ export const GADashboardPanel = ({
           console.log("[GA] Stored token has expired, clearing...");
           localStorage.removeItem("ga_access_token");
           localStorage.removeItem("ga_token_expiry");
+          localStorage.removeItem("unified_google_token");
+          localStorage.removeItem("unified_google_expiry");
         }
       }
       return false;

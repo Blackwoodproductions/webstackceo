@@ -271,8 +271,22 @@ export const GSCDashboardPanel = ({
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
     const checkStoredToken = () => {
-      const storedToken = localStorage.getItem("gsc_access_token");
-      const tokenExpiry = localStorage.getItem("gsc_token_expiry");
+      // Check for GSC-specific token first
+      let storedToken = localStorage.getItem("gsc_access_token");
+      let tokenExpiry = localStorage.getItem("gsc_token_expiry");
+      
+      // Fall back to unified Google token from auth callback
+      if (!storedToken || !tokenExpiry) {
+        storedToken = localStorage.getItem("unified_google_token");
+        tokenExpiry = localStorage.getItem("unified_google_expiry");
+        
+        // If unified token found, sync to GSC keys
+        if (storedToken && tokenExpiry) {
+          console.log("[GSC] Found unified token, syncing to GSC keys");
+          localStorage.setItem("gsc_access_token", storedToken);
+          localStorage.setItem("gsc_token_expiry", tokenExpiry);
+        }
+      }
       
       if (storedToken && tokenExpiry) {
         const expiryTime = parseInt(tokenExpiry);
@@ -294,6 +308,8 @@ export const GSCDashboardPanel = ({
           console.log("[GSC] Stored token has expired, clearing...");
           localStorage.removeItem("gsc_access_token");
           localStorage.removeItem("gsc_token_expiry");
+          localStorage.removeItem("unified_google_token");
+          localStorage.removeItem("unified_google_expiry");
           toast({
             title: "Session Expired",
             description: "Your Google Search Console session has expired. Please reconnect.",
