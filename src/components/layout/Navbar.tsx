@@ -723,7 +723,9 @@ const Navbar = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-white" />
+                      <span className="text-sm font-semibold text-white">
+                        {(userProfile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                      </span>
                     </div>
                   )}
                 </button>
@@ -1037,7 +1039,9 @@ const Navbar = () => {
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-                        <UserIcon className="w-5 h-5 text-white" />
+                        <span className="text-lg font-semibold text-white">
+                          {(userProfile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                        </span>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
