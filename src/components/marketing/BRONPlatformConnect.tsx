@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
-  ExternalLink, Loader2, Link2, TrendingUp, 
-  Award, Sparkles, Zap, Target, LogIn, RefreshCw
+  ExternalLink, Loader2, Sparkles, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
@@ -20,7 +18,7 @@ interface BRONPlatformConnectProps {
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOpening, setIsOpening] = useState(false);
+  const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const hasAutoOpened = useRef(false);
   const hasNotified = useRef(false);
@@ -41,6 +39,38 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       // Ignore parse errors
     }
     return false;
+  }, []);
+
+  const openLoginPopup = useCallback(() => {
+    // Construct the login URL with domain_id and tab
+    const callbackUrl = `${window.location.origin}/bron-callback`;
+    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis&redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    
+    // Popup dimensions
+    const popupWidth = 1200;
+    const popupHeight = 800;
+    const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
+    const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
+
+    setIsWaitingForLogin(true);
+
+    const popup = window.open(
+      loginUrl,
+      "bron_login_popup",
+      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+    );
+
+    if (!popup) {
+      setIsWaitingForLogin(false);
+      toast({
+        title: "Popup Blocked",
+        description: "Please allow popups for this site and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    popupRef.current = popup;
   }, []);
 
   // Initial auth check
@@ -64,7 +94,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       if (event.data?.type === "BRON_AUTH_SUCCESS") {
         console.log("[BRON] Auth success message received");
         setIsConnected(true);
-        setIsOpening(false);
+        setIsWaitingForLogin(false);
         
         // Close popup if still open
         if (popupRef.current && !popupRef.current.closed) {
@@ -83,7 +113,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         }
       } else if (event.data?.type === "BRON_AUTH_ERROR") {
         console.error("[BRON] Auth error:", event.data.error);
-        setIsOpening(false);
+        setIsWaitingForLogin(false);
         toast({
           title: "Connection Failed",
           description: event.data.error || "Could not connect to BRON.",
@@ -96,17 +126,14 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Auto-open login popup when component mounts and not connected
+  // Auto-open login popup immediately when not connected
   useEffect(() => {
     if (!isLoading && !isConnected && !hasAutoOpened.current && domain) {
       hasAutoOpened.current = true;
-      // Small delay to let the UI render first
-      const timer = setTimeout(() => {
-        openLoginPopup();
-      }, 500);
-      return () => clearTimeout(timer);
+      // Open popup immediately
+      openLoginPopup();
     }
-  }, [isLoading, isConnected, domain]);
+  }, [isLoading, isConnected, domain, openLoginPopup]);
 
   // Poll for popup closure
   useEffect(() => {
@@ -115,7 +142,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     const pollInterval = setInterval(() => {
       if (popupRef.current?.closed) {
         clearInterval(pollInterval);
-        setIsOpening(false);
+        setIsWaitingForLogin(false);
         
         // Check if auth was successful (localStorage updated by BronCallback)
         const isAuth = checkAuth();
@@ -135,39 +162,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }, 500);
 
     return () => clearInterval(pollInterval);
-  }, [isOpening, checkAuth, isConnected, onConnectionComplete]);
-
-  const openLoginPopup = () => {
-    // Construct the login URL with domain_id and tab
-    const callbackUrl = `${window.location.origin}/bron-callback`;
-    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis&redirect_uri=${encodeURIComponent(callbackUrl)}`;
-    
-    // Popup dimensions
-    const popupWidth = 1200;
-    const popupHeight = 800;
-    const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
-    const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
-
-    setIsOpening(true);
-
-    const popup = window.open(
-      loginUrl,
-      "bron_login_popup",
-      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
-    );
-
-    if (!popup) {
-      setIsOpening(false);
-      toast({
-        title: "Popup Blocked",
-        description: "Please allow popups for this site and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    popupRef.current = popup;
-  };
+  }, [isWaitingForLogin, checkAuth, isConnected, onConnectionComplete]);
 
   const handleLogout = () => {
     localStorage.removeItem(BRON_STORAGE_KEY);
@@ -180,6 +175,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     });
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -188,7 +184,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Connected - show iframe dashboard
+  // Connected - show iframe dashboard directly on this page
   if (isConnected && domain) {
     const iframeSrc = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
     
@@ -245,7 +241,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
         </div>
 
-        {/* Iframe Container */}
+        {/* Iframe Container - Full dashboard displayed here */}
         <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 bg-background">
           <iframe
             src={iframeSrc}
@@ -258,135 +254,58 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Not connected - show login prompt with benefits
+  // Not connected - show waiting for popup state (popup already opened automatically)
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="flex flex-col items-center justify-center py-16 space-y-6"
     >
-      {/* Feature Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { icon: Link2, title: "Keyword Clustering", desc: "AI-powered topical organization" },
-          { icon: TrendingUp, title: "Deep Linking", desc: "Strategic internal link building" },
-          { icon: Award, title: "Authority Growth", desc: "Increase domain authority metrics" },
-          { icon: Zap, title: "Autopilot Links", desc: "Automated inbound link acquisition" },
-        ].map((feature, index) => (
-          <Card key={index} className="bg-gradient-to-br from-background to-secondary/20 border-emerald-500/20">
-            <CardContent className="p-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400/20 to-green-500/20 flex items-center justify-center mb-3">
-                <feature.icon className="w-5 h-5 text-emerald-500" />
-              </div>
-              <h3 className="font-semibold text-sm mb-1">{feature.title}</h3>
-              <p className="text-xs text-muted-foreground">{feature.desc}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="relative">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+        </div>
+        <motion.div
+          className="absolute -inset-2 rounded-2xl border-2 border-emerald-400/50"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+      </div>
+      
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold">Connecting to BRON...</h2>
+        <p className="text-muted-foreground max-w-md">
+          {isWaitingForLogin 
+            ? "Complete the login in the popup window. The dashboard will appear here once authenticated."
+            : "Opening login popup..."
+          }
+        </p>
       </div>
 
-      {/* Login Card */}
-      <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
-        <CardHeader className="text-center pb-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-            <LogIn className="w-8 h-8 text-white" />
-          </div>
-          <CardTitle className="text-2xl">Connect to BRON</CardTitle>
-          <CardDescription>
-            {isOpening 
-              ? "Complete the login in the popup window..."
-              : "Sign in to your BRON account to access the dashboard."
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {isWaitingForLogin && (
+        <div className="flex items-center gap-3">
           <Button
-            onClick={openLoginPopup}
-            disabled={isOpening}
-            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (popupRef.current && !popupRef.current.closed) {
+                popupRef.current.focus();
+              } else {
+                openLoginPopup();
+              }
+            }}
+            className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
           >
-            {isOpening ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Waiting for login...
-              </>
-            ) : (
-              <>
-                <LogIn className="w-5 h-5 mr-2" />
-                Sign in with BRON
-              </>
-            )}
+            <RefreshCw className="w-4 h-4" />
+            Popup not visible? Click to reopen
           </Button>
-
-          {isOpening && (
-            <div className="text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (popupRef.current && !popupRef.current.closed) {
-                    popupRef.current.focus();
-                  } else {
-                    openLoginPopup();
-                  }
-                }}
-                className="text-emerald-400 hover:text-emerald-300"
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Popup not visible? Click to reopen
-              </Button>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
-            <span>Login opens in a popup window</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* No domain selected message */}
-      {!domain && (
-        <Card className="border-dashed border-2 border-muted-foreground/20">
-          <CardContent className="py-8 text-center">
-            <Target className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              Select a domain from the dropdown above to view your dashboard.
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
-      {/* Info about the integration */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-        <div className="p-4 rounded-lg bg-secondary/30">
-          <Sparkles className="w-6 h-6 mx-auto mb-2 text-emerald-400" />
-          <p className="text-sm font-medium">AI-Powered</p>
-          <p className="text-xs text-muted-foreground">Intelligent link strategies</p>
-        </div>
-        <div className="p-4 rounded-lg bg-secondary/30">
-          <Award className="w-6 h-6 mx-auto mb-2 text-green-400" />
-          <p className="text-sm font-medium">Real Websites</p>
-          <p className="text-xs text-muted-foreground">No PBNs, only quality sites</p>
-        </div>
-        <div className="p-4 rounded-lg bg-secondary/30">
-          <Target className="w-6 h-6 mx-auto mb-2 text-teal-400" />
-          <p className="text-sm font-medium">Targeted Links</p>
-          <p className="text-xs text-muted-foreground">Relevant niche placements</p>
-        </div>
-      </div>
-
-      {/* External link fallback */}
-      <div className="text-center">
-        <Button
-          variant="link"
-          onClick={() => window.open(`${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`, "_blank")}
-          className="text-muted-foreground hover:text-emerald-400"
-        >
-          <ExternalLink className="w-4 h-4 mr-1" />
-          Open BRON Dashboard in New Tab
-        </Button>
-      </div>
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <Sparkles className="w-3 h-3 text-emerald-400" />
+        Dashboard will load automatically after login
+      </p>
     </motion.div>
   );
 };
