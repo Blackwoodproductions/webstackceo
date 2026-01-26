@@ -968,9 +968,17 @@ const MarketingDashboard = () => {
 
   // GMB OAuth callback handler and token check on mount
   useEffect(() => {
-    // Check for existing GMB token
-    const storedToken = sessionStorage.getItem('gmb_access_token');
-    const storedExpiry = sessionStorage.getItem('gmb_token_expiry');
+    // Check for existing GMB token - check BOTH localStorage (unified auth) and sessionStorage
+    // Unified auth stores tokens in localStorage with 'gmb_access_token' key
+    const unifiedToken = localStorage.getItem('gmb_access_token');
+    const unifiedExpiry = localStorage.getItem('gmb_token_expiry');
+    const sessionToken = sessionStorage.getItem('gmb_access_token');
+    const sessionExpiry = sessionStorage.getItem('gmb_token_expiry');
+    
+    // Prefer unified auth token (localStorage), fallback to session token
+    const storedToken = unifiedToken || sessionToken;
+    const storedExpiry = unifiedExpiry || sessionExpiry;
+    
     if (storedToken && storedExpiry && Date.now() < Number(storedExpiry)) {
       // IMPORTANT: Don't just mark "authenticated"; also hydrate accounts + locations.
       const remainingSeconds = Math.max(
@@ -1354,6 +1362,8 @@ const MarketingDashboard = () => {
             fetchUserProfile(session.user.id);
           }, 0);
         } else {
+          // User logged out - ensure we redirect immediately
+          setIsAdmin(false);
           setIsLoading(false);
           setCurrentUserProfile(null);
         }
@@ -1509,6 +1519,13 @@ const MarketingDashboard = () => {
     };
   }, [pageFilter, leads, pageViews, toolInteractions, sessions]);
 
+  // Redirect to auth if not authenticated - using useEffect for proper navigation
+  useEffect(() => {
+    if (!isLoading && (!user || !session)) {
+      navigate('/auth?redirect=/visitor-intelligence-dashboard');
+    }
+  }, [isLoading, user, session, navigate]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1518,8 +1535,12 @@ const MarketingDashboard = () => {
   }
 
   if (!user || !session) {
-    navigate('/auth?redirect=/visitor-intelligence-dashboard');
-    return null;
+    // Return loading state while redirect happens
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (!isAdmin) {
