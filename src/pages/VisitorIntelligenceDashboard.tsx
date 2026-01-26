@@ -2600,7 +2600,7 @@ f.parentNode.insertBefore(j,f);
                           }}
                           className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors hover:bg-emerald-500/10 border border-dashed border-emerald-500/20"
                         >
-                          <div className={`relative w-8 h-8 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
+                          <div className={`relative w-8 h-8 rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center flex-shrink-0`}>
                             <Eye className="w-4 h-4 text-white" />
                             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400">
                               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
@@ -2708,10 +2708,10 @@ f.parentNode.insertBefore(j,f);
                           toast.success('Chat started with visitor');
                         }
                       }}
-                      className="relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 group"
+                      className="relative w-9 h-9 rounded-md cursor-pointer transition-all hover:scale-110 group"
                       title={`${visitor.first_page || '/'} • ${timeLabel}`}
                     >
-                      <div className={`w-full h-full rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center border-2 border-dashed border-white/30`}>
+                      <div className={`w-full h-full rounded-md bg-gradient-to-br ${colorClass} flex items-center justify-center border-2 border-dashed border-white/30`}>
                         <Eye className="w-4 h-4 text-white" />
                       </div>
                       {/* Live indicator */}
