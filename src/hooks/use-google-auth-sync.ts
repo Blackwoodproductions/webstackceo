@@ -111,20 +111,23 @@ export const useGoogleAuthSync = () => {
       const email = session.user.email;
 
       if (avatarUrl || fullName) {
+        // Use upsert instead of update to handle new users who don't have a profile yet
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            user_id: session.user.id,
             avatar_url: avatarUrl,
             full_name: fullName,
             email: email,
             updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', session.user.id);
+          }, {
+            onConflict: 'user_id'
+          });
 
         if (profileError) {
-          console.error('[GoogleAuthSync] Failed to update profile:', profileError);
+          console.error('[GoogleAuthSync] Failed to upsert profile:', profileError);
         } else {
-          console.log('[GoogleAuthSync] Profile updated with Google metadata');
+          console.log('[GoogleAuthSync] Profile synced with Google metadata');
         }
 
         // Store profile in localStorage for UI components
