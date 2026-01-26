@@ -192,106 +192,61 @@ const LiveChatWidget = () => {
       .order("last_activity_at", { ascending: false })
       .limit(8);
     
-    if (sessions) {
-      // DEDUPLICATION: 
-      // 1. Always deduplicate by session_id first (prevent same session appearing multiple times)
-      // 2. For authenticated users, keep only the most recent session per user_id
-      const deduplicatedSessions: any[] = [];
-      const seenSessionIds = new Set<string>();
-      const seenUserIds = new Set<string>();
-      
-      for (const session of sessions) {
-        // Skip if we've already seen this exact session_id
-        if (seenSessionIds.has(session.session_id)) {
-          continue;
-        }
-        
-        if (session.user_id) {
-          // Authenticated user - only keep their most recent session
-          if (!seenUserIds.has(session.user_id)) {
-            seenUserIds.add(session.user_id);
-            seenSessionIds.add(session.session_id);
-            deduplicatedSessions.push(session);
-          }
-        } else {
-          // Anonymous user - keep the session (already deduplicated by session_id above)
-          seenSessionIds.add(session.session_id);
-          deduplicatedSessions.push(session);
-        }
+    if (!sessions) return;
+
+    // Sort by activity first so the first time we see a key is the most-recent session for that key.
+    const sortedByActivity = [...sessions].sort(
+      (a: any, b: any) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
+    );
+
+    // DEDUPLICATION (authoritative):
+    // - If user_id exists: keep ONE row per user_id
+    // - Else: keep ONE row per session_id
+    // This guarantees we never show multiple entries for the same authenticated user.
+    const uniqueSessions: any[] = [];
+    const seenKeys = new Set<string>();
+    for (const s of sortedByActivity) {
+      const key = s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      uniqueSessions.push(s);
+    }
+
+    const userIds = uniqueSessions
+      .map((s: any) => s.user_id)
+      .filter((id: string | null | undefined): id is string => !!id);
+
+    // Fetch profiles for authenticated visitors
+    let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, avatar_url, full_name')
+        .in('user_id', userIds);
+
+      if (profiles) {
+        profilesMap = profiles.reduce((acc, p) => {
+          acc[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+          return acc;
+        }, {} as Record<string, { avatar_url: string | null; full_name: string | null }>);
       }
-      
-      // Get unique user_ids that are not null
-      const userIds = deduplicatedSessions
-        .map((s: any) => s.user_id)
-        .filter((id: string | null) => id !== null);
-      
-      // Fetch profiles for authenticated visitors
-      let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, avatar_url, full_name')
-          .in('user_id', userIds);
-        
-        if (profiles) {
-          profilesMap = profiles.reduce((acc, p) => {
-            acc[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
-            return acc;
-          }, {} as Record<string, { avatar_url: string | null; full_name: string | null }>);
-        }
-      }
-      
-      // Merge profile data with deduplicated sessions and identify current user
-      const visitorsWithProfiles: LiveVisitor[] = deduplicatedSessions
-        .map((v: any) => ({
-          ...v,
-          avatar_url: profilesMap[v.user_id]?.avatar_url || null,
-          display_name: profilesMap[v.user_id]?.full_name || null,
-          is_current_user: currentUserId ? v.user_id === currentUserId : v.session_id === sessionId,
-        }));
-      
-      // STRICT DEDUPLICATION: Ensure only ONE session per unique user
-      // For authenticated users: keep only the most recent session per user_id
-      // For the current user: keep exactly ONE session marked as "YOU"
-      const finalDeduplicatedVisitors: LiveVisitor[] = [];
-      const processedUserIds = new Set<string>();
-      let currentUserSession: LiveVisitor | null = null;
-      
-      // Sort by last activity (most recent first)
-      const sortedByActivity = [...visitorsWithProfiles].sort((a, b) => 
-        new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
-      );
-      
-      for (const visitor of sortedByActivity) {
-        // Handle current user specially - keep only one instance
-        if (visitor.is_current_user) {
-          if (!currentUserSession) {
-            currentUserSession = visitor;
-          }
-          // Skip all subsequent sessions of current user
-          continue;
-        }
-        
-        // For other authenticated users - deduplicate by user_id
-        if (visitor.user_id) {
-          if (!processedUserIds.has(visitor.user_id)) {
-            processedUserIds.add(visitor.user_id);
-            finalDeduplicatedVisitors.push(visitor);
-          }
-          // Skip duplicate sessions of same user
-          continue;
-        }
-        
-        // Anonymous visitors - include them (already deduplicated by session_id earlier)
-        finalDeduplicatedVisitors.push(visitor);
-      }
-      
-      // Final list: current user first (if exists), then other visitors sorted by activity
-      const finalVisitors = currentUserSession 
-        ? [currentUserSession, ...finalDeduplicatedVisitors]
-        : finalDeduplicatedVisitors;
-      
-      setLiveVisitors(finalVisitors);
+    }
+
+    const visitorsWithProfiles: LiveVisitor[] = uniqueSessions.map((v: any) => ({
+      ...v,
+      avatar_url: v.user_id ? profilesMap[v.user_id]?.avatar_url || null : null,
+      display_name: v.user_id ? profilesMap[v.user_id]?.full_name || null : null,
+      is_current_user: currentUserId ? v.user_id === currentUserId : v.session_id === sessionId,
+    }));
+
+    // Ensure current user (YOU) is first if present
+    const currentIdx = visitorsWithProfiles.findIndex((v) => v.is_current_user);
+    if (currentIdx > 0) {
+      const current = visitorsWithProfiles[currentIdx];
+      const rest = visitorsWithProfiles.filter((_, i) => i !== currentIdx);
+      setLiveVisitors([current, ...rest]);
+    } else {
+      setLiveVisitors(visitorsWithProfiles);
     }
   }, [sessionId, currentUserId]);
 
