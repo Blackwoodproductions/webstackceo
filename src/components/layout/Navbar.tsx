@@ -10,6 +10,7 @@ import {
   MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield,
   FileText, Target, Zap, LogOut, User as UserIcon, Settings
 } from "lucide-react";
+import GetStartedDialog from "@/components/GetStartedDialog";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,7 @@ const Navbar = () => {
   const [isMobileBlogOpen, setIsMobileBlogOpen] = useState(false);
   const [isSubmitSiteOpen, setIsSubmitSiteOpen] = useState(false);
   const [isMobileSubmitSiteOpen, setIsMobileSubmitSiteOpen] = useState(false);
+  const [isGetStartedOpen, setIsGetStartedOpen] = useState(false);
   const [isThemeMounted, setIsThemeMounted] = useState(false);
   const [isLogoGold, setIsLogoGold] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
@@ -199,6 +201,7 @@ const Navbar = () => {
   };
 
   return (
+    <>
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -761,8 +764,13 @@ const Navbar = () => {
               <Button variant="heroOutline" size="sm" asChild className="transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]">
                 <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
               </Button>
-              <Button variant="hero" size="sm" asChild className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]">
-                <a href="/pricing">Get Started</a>
+              <Button 
+                variant="hero" 
+                size="sm" 
+                onClick={() => setIsGetStartedOpen(true)}
+                className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]"
+              >
+                Get Started
               </Button>
             </>
           )}
@@ -1071,8 +1079,15 @@ const Navbar = () => {
                   <Button variant="heroOutline" className="w-full transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]" asChild>
                     <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
                   </Button>
-                  <Button variant="hero" className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]" asChild>
-                    <a href="/pricing">Get Started</a>
+                  <Button 
+                    variant="hero" 
+                    className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]" 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsGetStartedOpen(true);
+                    }}
+                  >
+                    Get Started
                   </Button>
                 </>
               )}
@@ -1081,6 +1096,9 @@ const Navbar = () => {
         </motion.div>
       )}
     </motion.header>
+    
+    <GetStartedDialog open={isGetStartedOpen} onOpenChange={setIsGetStartedOpen} />
+    </>
   );
 };
 
