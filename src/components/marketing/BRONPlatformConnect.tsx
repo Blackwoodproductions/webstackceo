@@ -77,7 +77,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Primary: Popup-based login
+  // Primary: Popup-based login - popup is ONLY for authentication, content shows on main page
   const handlePopupLogin = () => {
     setIsLoading(true);
     
@@ -85,16 +85,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
     
-    const width = 600;
-    const height = 700;
+    const width = 520;
+    const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
     
-    // Open login page - if already logged in, will redirect to dashboard (which we detect)
+    // Open login page - this is ONLY for authentication
     const popup = window.open(
       BRON_LOGIN_URL,
       "bron_login",
-      `width=${width},height=${height},left=${left},top=${top},popup=1`
+      `width=${width},height=${height},left=${left},top=${top},popup=1,scrollbars=yes`
     );
     
     if (!popup) {
@@ -106,64 +106,69 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       });
       return;
     }
-    
-    // Poll to check if popup closed AND if user navigated to dashboard (successful login)
-    const pollTimer = setInterval(() => {
+
+    // Track if we've completed auth to prevent duplicate handling
+    let authCompleted = false;
+
+    const completeAuth = () => {
+      if (authCompleted) return;
+      authCompleted = true;
+      
+      // Force close popup immediately - we don't want content shown there
       try {
-        // Check if popup navigated to dashboard (successful login)
-        if (popup.location?.href?.includes('/dashboard')) {
+        popup.close();
+      } catch {
+        // Popup might already be closed
+      }
+      
+      // Save auth and show dashboard on MAIN page (not popup)
+      const authData = {
+        authenticated: true,
+        token: null,
+        expiry: Date.now() + 24 * 60 * 60 * 1000,
+        authenticatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      onConnectionComplete?.("bron");
+      
+      toast({
+        title: "Successfully Connected!",
+        description: "BRON dashboard content is now displayed on this page.",
+      });
+    };
+    
+    // Poll to detect successful login (redirect to /dashboard) or popup close
+    const pollTimer = setInterval(() => {
+      // First check if popup was closed
+      if (popup.closed) {
+        clearInterval(pollTimer);
+        completeAuth();
+        return;
+      }
+      
+      try {
+        // Try to detect if popup navigated to dashboard (means login succeeded)
+        const href = popup.location?.href;
+        if (href && (href.includes('/dashboard') || href.includes('dashdev.imagehosting.space/dashboard'))) {
           clearInterval(pollTimer);
-          popup.close();
-          
-          // User successfully logged in - save auth and show iframe
-          const authData = {
-            authenticated: true,
-            token: null,
-            expiry: Date.now() + 24 * 60 * 60 * 1000,
-            authenticatedAt: new Date().toISOString(),
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-          setIsAuthenticated(true);
-          setIsLoading(false);
-          onConnectionComplete?.("bron");
-          
-          toast({
-            title: "Successfully Connected!",
-            description: "Your BRON dashboard is now displayed below.",
-          });
+          completeAuth();
           return;
         }
       } catch {
-        // Cross-origin error - can't read popup location, continue polling
+        // Cross-origin error is expected - we can't read the location
+        // Continue polling until popup closes
       }
-      
-      // Check if popup was closed manually
-      if (popup.closed) {
-        clearInterval(pollTimer);
-        setIsLoading(false);
-        
-        // Automatically show dashboard since user likely logged in
-        const authData = {
-          authenticated: true,
-          token: null,
-          expiry: Date.now() + 24 * 60 * 60 * 1000,
-          authenticatedAt: new Date().toISOString(),
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-        setIsAuthenticated(true);
-        onConnectionComplete?.("bron");
-        
-        toast({
-          title: "Dashboard Connected",
-          description: "Your BRON dashboard is now displayed below.",
-        });
-      }
-    }, 500);
+    }, 300);
     
     // Timeout after 5 minutes
     setTimeout(() => {
       clearInterval(pollTimer);
-      setIsLoading(false);
+      if (!authCompleted) {
+        try { popup.close(); } catch {}
+        setIsLoading(false);
+      }
     }, 5 * 60 * 1000);
   };
 
