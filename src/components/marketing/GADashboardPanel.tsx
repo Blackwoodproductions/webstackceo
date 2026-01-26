@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Users, Clock, Eye,
   BarChart3, RefreshCw, Loader2, ExternalLink, Key, 
@@ -1404,44 +1405,110 @@ export const GADashboardPanel = ({
 
   // Connected and domain matches - show comprehensive dashboard
   return (
-    <Card className="relative overflow-hidden group">
+    <Card className="relative overflow-hidden bg-gradient-to-br from-card via-card to-orange-500/5 border-orange-500/20 group">
       {/* High-tech background grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          opacity: 0.02,
+          opacity: 0.03,
           backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
-          backgroundSize: '28px 28px',
+          backgroundSize: '32px 32px',
         }}
       />
       
-      {/* Animated scanning line */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse"
-        style={{ animationDuration: '6s' }}
+      {/* Animated vertical scanning line */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/8 to-transparent pointer-events-none"
+        animate={{ y: ['-100%', '200%'] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
       />
       
-      {/* Corner accent glows */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-500/8 via-amber-500/4 to-transparent rounded-bl-[80px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-amber-500/8 to-transparent rounded-tr-[80px] pointer-events-none" />
+      {/* Animated horizontal scanning line */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent pointer-events-none"
+        animate={{ x: ['-100%', '200%'] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'linear', delay: 3 }}
+      />
       
-      {/* Floating particles */}
-      <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
-      <div className="absolute top-[35%] left-[5%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute bottom-[25%] right-[12%] w-1 h-1 rounded-full bg-orange-300/30 animate-pulse" style={{ animationDelay: '2s' }} />
+      {/* Corner accent glows - larger and more prominent */}
+      <motion.div 
+        className="absolute -top-10 -right-10 w-64 h-64 bg-gradient-to-bl from-orange-500/20 via-amber-500/10 to-transparent rounded-full blur-2xl pointer-events-none"
+        animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0.8, 0.6] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div 
+        className="absolute -bottom-10 -left-10 w-48 h-48 bg-gradient-to-tr from-amber-500/15 via-orange-500/8 to-transparent rounded-full blur-2xl pointer-events-none"
+        animate={{ scale: [1.05, 1, 1.05], opacity: [0.5, 0.7, 0.5] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      />
       
-      <CardHeader className="relative z-10 pb-4">
+      {/* Additional corner blob */}
+      <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-orange-400/10 to-transparent rounded-br-[60px] pointer-events-none" />
+      
+      {/* Edge glow lines */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+      <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-orange-500/20 to-transparent" />
+      <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-amber-500/20 to-transparent" />
+      
+      {/* Floating particles - animated */}
+      <motion.div 
+        className="absolute top-[12%] right-[8%] w-1.5 h-1.5 rounded-full bg-orange-400/70"
+        animate={{ y: [0, -10, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+      />
+      <motion.div 
+        className="absolute top-[28%] left-[6%] w-2 h-2 rounded-full bg-amber-400/60"
+        animate={{ y: [0, -8, 0], opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+      />
+      <motion.div 
+        className="absolute bottom-[22%] right-[15%] w-1 h-1 rounded-full bg-orange-300/50"
+        animate={{ y: [0, -12, 0], x: [0, 5, 0], opacity: [0.3, 0.7, 0.3] }}
+        transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+      />
+      <motion.div 
+        className="absolute top-[55%] left-[12%] w-1 h-1 rounded-full bg-amber-300/40"
+        animate={{ y: [0, -6, 0], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 3.5, repeat: Infinity, delay: 1.5 }}
+      />
+      <motion.div 
+        className="absolute bottom-[35%] left-[25%] w-1.5 h-1.5 rounded-full bg-orange-500/50"
+        animate={{ y: [0, -15, 0], opacity: [0.4, 0.9, 0.4], scale: [1, 1.3, 1] }}
+        transition={{ duration: 3.8, repeat: Infinity, delay: 0.8 }}
+      />
+      
+      <CardHeader className="relative z-10 py-3 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
+            {/* Enhanced icon container with glow */}
+            <motion.div 
+              className="relative"
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 blur-md opacity-50" />
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+            </motion.div>
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Google Analytics
-                <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
-              </CardTitle>
-              <CardDescription className="text-xs">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base bg-gradient-to-r from-orange-300 via-amber-300 to-orange-400 bg-clip-text text-transparent font-bold">
+                  Google Analytics
+                </CardTitle>
+                <motion.span
+                  className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30"
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-green-400" />
+                  </span>
+                  Connected
+                </motion.span>
+              </div>
+              <CardDescription className="text-xs text-muted-foreground">
                 {externalSelectedSite ? normalizeDomain(externalSelectedSite) : (properties.find(p => p.name === selectedProperty)?.displayName || "Traffic and engagement data")}
               </CardDescription>
             </div>
@@ -1451,202 +1518,377 @@ export const GADashboardPanel = ({
               <select 
                 value={selectedProperty} 
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="h-8 text-xs bg-secondary border border-border rounded-md px-2"
+                className="h-8 text-xs bg-secondary/50 border border-orange-500/20 rounded-lg px-2 backdrop-blur-sm"
               >
                 {properties.map(prop => (
                   <option key={prop.name} value={prop.name}>{prop.displayName}</option>
                 ))}
               </select>
             )}
-            <Button variant="ghost" size="sm" onClick={fetchAnalyticsData} disabled={isFetching} className="h-8">
+            <Button variant="ghost" size="sm" onClick={fetchAnalyticsData} disabled={isFetching} className="h-8 hover:bg-orange-500/10">
               <RefreshCw className={`w-3 h-3 mr-1 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
-              <X className="w-3 h-3 mr-1" />
-              Disconnect
+            <Button variant="ghost" size="sm" onClick={handleDisconnect} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
+              <X className="w-3 h-3" />
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="relative z-10 space-y-6">
+      <CardContent className="relative z-10 space-y-4 pt-0 px-4 pb-4">
 
-        {/* Key Metrics Grid - only show if domain matches or no external site */}
+        {/* Key Metrics Grid - Enhanced with glassmorphism */}
         {(isExternalSiteInGA || !externalSelectedSite) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Sessions */}
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-5 h-5 text-orange-500" />
-              {metrics && metrics.sessionsChange !== 0 && (
-                <Badge variant="secondary" className={`text-[10px] ${metrics.sessionsChange > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                  {metrics.sessionsChange > 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
-                  {Math.abs(metrics.sessionsChange).toFixed(1)}%
-                </Badge>
-              )}
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-orange-500/10 via-card to-card rounded-xl p-4 border border-orange-500/20 group/card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-orange-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/5 to-transparent opacity-0 group-hover/card:opacity-100 pointer-events-none"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="w-5 h-5 text-orange-400" />
+                {metrics && metrics.sessionsChange !== 0 && (
+                  <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${metrics.sessionsChange > 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                    {metrics.sessionsChange > 0 ? <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" /> : <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />}
+                    {Math.abs(metrics.sessionsChange).toFixed(0)}%
+                  </Badge>
+                )}
+              </div>
+              <motion.p 
+                className="text-2xl font-bold"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, type: 'spring' }}
+              >
+                {metrics ? formatNumber(metrics.sessions) : "—"}
+              </motion.p>
+              <p className="text-[10px] text-muted-foreground">Sessions</p>
             </div>
-            <p className="text-2xl font-bold">{metrics ? formatNumber(metrics.sessions) : "—"}</p>
-            <p className="text-xs text-muted-foreground">Sessions</p>
-          </div>
+          </motion.div>
 
           {/* Users */}
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-5 h-5 text-amber-500" />
-              {metrics && metrics.usersChange !== 0 && (
-                <Badge variant="secondary" className={`text-[10px] ${metrics.usersChange > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                  {metrics.usersChange > 0 ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
-                  {Math.abs(metrics.usersChange).toFixed(1)}%
-                </Badge>
-              )}
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-card to-card rounded-xl p-4 border border-amber-500/20 group/card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+          >
+            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-amber-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover/card:opacity-100 pointer-events-none"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="w-5 h-5 text-amber-400" />
+                {metrics && metrics.usersChange !== 0 && (
+                  <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${metrics.usersChange > 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                    {metrics.usersChange > 0 ? <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" /> : <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />}
+                    {Math.abs(metrics.usersChange).toFixed(0)}%
+                  </Badge>
+                )}
+              </div>
+              <motion.p 
+                className="text-2xl font-bold"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15, type: 'spring' }}
+              >
+                {metrics ? formatNumber(metrics.users) : "—"}
+              </motion.p>
+              <p className="text-[10px] text-muted-foreground">Users ({metrics ? formatNumber(metrics.newUsers) : "—"} new)</p>
             </div>
-            <p className="text-2xl font-bold">{metrics ? formatNumber(metrics.users) : "—"}</p>
-            <p className="text-xs text-muted-foreground">Users ({metrics ? formatNumber(metrics.newUsers) : "—"} new)</p>
-          </div>
+          </motion.div>
 
           {/* Page Views */}
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <Eye className="w-5 h-5 text-yellow-500" />
-              {metrics && (
-                <Badge variant="secondary" className="text-[10px] bg-secondary">
-                  {metrics.pagesPerSession.toFixed(1)}/session
-                </Badge>
-              )}
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-yellow-500/10 via-card to-card rounded-xl p-4 border border-yellow-500/20 group/card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+          >
+            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-yellow-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/5 to-transparent opacity-0 group-hover/card:opacity-100 pointer-events-none"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <Eye className="w-5 h-5 text-yellow-400" />
+                {metrics && (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-secondary/50 border-border/50">
+                    {metrics.pagesPerSession.toFixed(1)}/sess
+                  </Badge>
+                )}
+              </div>
+              <motion.p 
+                className="text-2xl font-bold"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring' }}
+              >
+                {metrics ? formatNumber(metrics.pageViews) : "—"}
+              </motion.p>
+              <p className="text-[10px] text-muted-foreground">Page Views</p>
             </div>
-            <p className="text-2xl font-bold">{metrics ? formatNumber(metrics.pageViews) : "—"}</p>
-            <p className="text-xs text-muted-foreground">Page Views</p>
-          </div>
+          </motion.div>
 
           {/* Avg Duration */}
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <Clock className="w-5 h-5 text-green-500" />
-              {metrics && (
-                <Badge variant="secondary" className="text-[10px] bg-secondary">
-                  {metrics.engagementRate.toFixed(0)}% engaged
-                </Badge>
-              )}
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-green-500/10 via-card to-card rounded-xl p-4 border border-green-500/20 group/card"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2, delay: 0.15 }}
+          >
+            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-green-500/15 to-transparent rounded-bl-[40px] pointer-events-none" />
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/5 to-transparent opacity-0 group-hover/card:opacity-100 pointer-events-none"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <Clock className="w-5 h-5 text-green-400" />
+                {metrics && (
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-secondary/50 border-border/50">
+                    {metrics.engagementRate.toFixed(0)}% engaged
+                  </Badge>
+                )}
+              </div>
+              <motion.p 
+                className="text-2xl font-bold"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.25, type: 'spring' }}
+              >
+                {metrics ? formatDuration(metrics.avgSessionDuration) : "—"}
+              </motion.p>
+              <p className="text-[10px] text-muted-foreground">Avg. Duration</p>
             </div>
-            <p className="text-2xl font-bold">{metrics ? formatDuration(metrics.avgSessionDuration) : "—"}</p>
-            <p className="text-xs text-muted-foreground">Avg. Duration</p>
-          </div>
+          </motion.div>
         </div>
         )}
 
-        {/* Engagement Metrics Bar - only show if domain matches */}
+        {/* Engagement Metrics Bar - Enhanced with glassmorphism */}
         {(isExternalSiteInGA || !externalSelectedSite) && (
-        <div className="bg-secondary/30 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary" />
-              Engagement Overview
-            </h4>
-          </div>
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Engagement Rate</span>
-                <span className="font-medium text-green-500">{metrics ? `${metrics.engagementRate.toFixed(1)}%` : "—"}</span>
-              </div>
-              <Progress value={metrics?.engagementRate || 0} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Bounce Rate</span>
-                <span className="font-medium text-amber-500">{metrics ? `${metrics.bounceRate.toFixed(1)}%` : "—"}</span>
-              </div>
-              <Progress value={metrics?.bounceRate || 0} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-muted-foreground">Pages/Session</span>
-                <span className="font-medium">{metrics ? metrics.pagesPerSession.toFixed(2) : "—"}</span>
-              </div>
-              <Progress value={Math.min((metrics?.pagesPerSession || 0) * 20, 100)} className="h-2" />
-            </div>
-          </div>
-        </div>
-        )}
-
-        {/* Sessions Chart */}
-        {(isExternalSiteInGA || !externalSelectedSite) && chartData.length > 0 && (
-          <div className="bg-secondary/20 rounded-xl p-4">
-            <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              Sessions & Users (Last 28 Days)
-            </h4>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={40} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }} 
-                  />
-                  <Area type="monotone" dataKey="sessions" stroke="#f97316" fill="url(#sessionsGradient)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="users" stroke="#eab308" fill="url(#usersGradient)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-center gap-6 mt-2">
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-muted-foreground">Sessions</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-muted-foreground">Users</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-        {/* Top Pages */}
-        {(isExternalSiteInGA || !externalSelectedSite) && topPages.length > 0 && (
-          <div className="bg-secondary/20 rounded-xl p-4">
-            <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
-              Top Pages
-            </h4>
-            <div className="space-y-2">
-              {topPages.map((page, i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs text-muted-foreground w-5">{i + 1}.</span>
-                    <span className="text-sm truncate max-w-[300px]">{page.path}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {formatNumber(page.views)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDuration(page.avgTime)}
-                    </span>
-                  </div>
+        <motion.div 
+          className="relative overflow-hidden bg-gradient-to-r from-orange-500/5 via-amber-500/5 to-yellow-500/5 rounded-xl p-4 border border-orange-500/10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          {/* Subtle grid pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.02] pointer-events-none"
+            style={{
+              backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
+            }}
+          />
+          {/* Shimmer effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/5 to-transparent pointer-events-none"
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-400/20 to-amber-400/20 flex items-center justify-center">
+                  <Zap className="w-3.5 h-3.5 text-orange-400" />
                 </div>
-              ))}
+                <span className="bg-gradient-to-r from-orange-300 to-amber-300 bg-clip-text text-transparent font-semibold">
+                  Engagement Overview
+                </span>
+              </h4>
+            </div>
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">Engagement Rate</span>
+                  <span className="font-semibold text-green-400">{metrics ? `${metrics.engagementRate.toFixed(1)}%` : "—"}</span>
+                </div>
+                <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${metrics?.engagementRate || 0}%` }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">Bounce Rate</span>
+                  <span className="font-semibold text-amber-400">{metrics ? `${metrics.bounceRate.toFixed(1)}%` : "—"}</span>
+                </div>
+                <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-orange-400 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${metrics?.bounceRate || 0}%` }}
+                    transition={{ duration: 1, delay: 0.6 }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">Pages/Session</span>
+                  <span className="font-semibold">{metrics ? metrics.pagesPerSession.toFixed(2) : "—"}</span>
+                </div>
+                <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-violet-400 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min((metrics?.pagesPerSession || 0) * 20, 100)}%` }}
+                    transition={{ duration: 1, delay: 0.7 }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
+        </motion.div>
+        )}
+
+        {/* Sessions Chart - Enhanced */}
+        {(isExternalSiteInGA || !externalSelectedSite) && chartData.length > 0 && (
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-orange-500/5 via-card to-amber-500/5 rounded-xl p-4 border border-orange-500/10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {/* Subtle grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.015] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+                backgroundSize: '24px 24px',
+              }}
+            />
+            <div className="relative z-10">
+              <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-orange-400/20 to-amber-400/20 flex items-center justify-center">
+                  <BarChart3 className="w-3.5 h-3.5 text-orange-400" />
+                </div>
+                <span className="bg-gradient-to-r from-orange-300 to-amber-300 bg-clip-text text-transparent font-semibold">
+                  Sessions & Users
+                </span>
+                <span className="text-[10px] text-muted-foreground font-normal">(Last 28 Days)</span>
+              </h4>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="usersGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#eab308" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} width={40} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(24 95% 53% / 0.3)',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        boxShadow: '0 4px 20px hsl(24 95% 53% / 0.15)'
+                      }} 
+                    />
+                    <Area type="monotone" dataKey="sessions" stroke="#f97316" fill="url(#sessionsGradient)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="users" stroke="#eab308" fill="url(#usersGradient)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-6 mt-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 shadow-sm shadow-orange-500/50" />
+                  <span className="text-muted-foreground">Sessions</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-yellow-500 to-amber-400 shadow-sm shadow-yellow-500/50" />
+                  <span className="text-muted-foreground">Users</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+
+        {/* Top Pages - Enhanced */}
+        {(isExternalSiteInGA || !externalSelectedSite) && topPages.length > 0 && (
+          <motion.div 
+            className="relative overflow-hidden bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 rounded-xl p-4 border border-amber-500/10"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            {/* Subtle grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.015] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+                backgroundSize: '24px 24px',
+              }}
+            />
+            <div className="relative z-10">
+              <h4 className="text-sm font-medium mb-4 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-400/20 flex items-center justify-center">
+                  <Target className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <span className="bg-gradient-to-r from-amber-300 to-orange-300 bg-clip-text text-transparent font-semibold">
+                  Top Pages
+                </span>
+              </h4>
+              <div className="space-y-1">
+                {topPages.map((page, i) => (
+                  <motion.div 
+                    key={i} 
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg border-b border-border/30 last:border-0 hover:bg-orange-500/5 transition-colors"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + i * 0.05 }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xs text-orange-400 font-medium w-5">{i + 1}.</span>
+                      <span className="text-sm truncate max-w-[300px]">{page.path}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5 bg-orange-500/10 px-2 py-1 rounded-md">
+                        <Eye className="w-3 h-3 text-orange-400" />
+                        <span className="text-orange-300 font-medium">{formatNumber(page.views)}</span>
+                      </span>
+                      <span className="flex items-center gap-1.5 bg-amber-500/10 px-2 py-1 rounded-md">
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        <span className="text-amber-300 font-medium">{formatDuration(page.avgTime)}</span>
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* Loading state overlay */}

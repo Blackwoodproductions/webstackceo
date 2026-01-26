@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Search, TrendingUp, MousePointer, Eye, Target,
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
@@ -1207,52 +1208,114 @@ export const GSCDashboardPanel = ({
   // Connected - show dashboard
   return (
     <>
-      <Card className="relative overflow-hidden bg-card border-border group">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-card via-card to-cyan-500/5 border-cyan-500/20 group">
         {/* VI Dashboard Effects - Grid pattern */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             opacity: 0.03,
             backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
+            backgroundSize: '32px 32px',
           }}
         />
         
-        {/* Corner gradient blobs - matching VI dashboard */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-bl from-cyan-500/15 via-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-gradient-to-tr from-violet-500/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+        {/* Animated vertical scanning line */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/8 to-transparent pointer-events-none"
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+        />
         
-        {/* Scanning lines */}
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
+        {/* Animated horizontal scanning line */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/5 to-transparent pointer-events-none"
+          animate={{ x: ['-100%', '200%'] }}
+          transition={{ duration: 11, repeat: Infinity, ease: 'linear', delay: 3 }}
+        />
         
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-primary/30 animate-pulse pointer-events-none"
-            style={{
-              top: `${15 + i * 12}%`,
-              left: `${5 + (i % 3) * 40}%`,
-              animationDelay: `${i * 0.5}s`,
-            }}
-          />
-        ))}
+        {/* Corner gradient blobs - larger and animated */}
+        <motion.div 
+          className="absolute -top-16 -right-16 w-72 h-72 bg-gradient-to-bl from-cyan-500/20 via-primary/10 to-transparent rounded-full blur-2xl pointer-events-none"
+          animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0.8, 0.6] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div 
+          className="absolute -bottom-12 -left-12 w-56 h-56 bg-gradient-to-tr from-violet-500/18 via-cyan-500/8 to-transparent rounded-full blur-2xl pointer-events-none"
+          animate={{ scale: [1.05, 1, 1.05], opacity: [0.5, 0.7, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        />
+        
+        {/* Additional corner blob */}
+        <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-cyan-400/10 to-transparent rounded-br-[60px] pointer-events-none" />
+        
+        {/* Edge glow lines */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
+        <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent" />
+        <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-violet-500/20 to-transparent" />
+        
+        {/* Floating particles - animated */}
+        <motion.div 
+          className="absolute top-[10%] right-[8%] w-1.5 h-1.5 rounded-full bg-cyan-400/70"
+          animate={{ y: [0, -10, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        <motion.div 
+          className="absolute top-[22%] left-[6%] w-2 h-2 rounded-full bg-violet-400/60"
+          animate={{ y: [0, -8, 0], opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div 
+          className="absolute bottom-[18%] right-[12%] w-1 h-1 rounded-full bg-cyan-300/50"
+          animate={{ y: [0, -12, 0], x: [0, 5, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div 
+          className="absolute top-[45%] left-[10%] w-1 h-1 rounded-full bg-violet-300/40"
+          animate={{ y: [0, -6, 0], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 3.5, repeat: Infinity, delay: 1.5 }}
+        />
+        <motion.div 
+          className="absolute bottom-[30%] left-[22%] w-1.5 h-1.5 rounded-full bg-cyan-500/50"
+          animate={{ y: [0, -15, 0], opacity: [0.4, 0.9, 0.4], scale: [1, 1.3, 1] }}
+          transition={{ duration: 3.8, repeat: Infinity, delay: 0.8 }}
+        />
+        <motion.div 
+          className="absolute top-[65%] right-[5%] w-1 h-1 rounded-full bg-primary/40"
+          animate={{ y: [0, -8, 0], x: [0, -4, 0], opacity: [0.25, 0.6, 0.25] }}
+          transition={{ duration: 4.2, repeat: Infinity, delay: 2 }}
+        />
         
         {/* Compact Header */}
         <CardHeader className="relative z-10 py-3 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-                <BarChart3 className="w-4 h-4 text-white" />
-              </div>
+            <div className="flex items-center gap-3">
+              {/* Enhanced icon container with glow */}
+              <motion.div 
+                className="relative"
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-md opacity-50" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <BarChart3 className="w-5 h-5 text-white" />
+                </div>
+              </motion.div>
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-base">Search Console</CardTitle>
-                  <span className="flex items-center gap-1 text-[7px] font-bold px-1 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                    <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                  <CardTitle className="text-base bg-gradient-to-r from-cyan-300 via-primary to-violet-400 bg-clip-text text-transparent font-bold">
+                    Search Console
+                  </CardTitle>
+                  <motion.span
+                    className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-cyan-400" />
+                    </span>
                     LIVE
-                  </span>
+                  </motion.span>
                 </div>
               </div>
             </div>
