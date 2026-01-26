@@ -480,102 +480,85 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       ) : showCampaignSetup && accessToken ? (
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
       ) : !accessToken ? (
-        /* Compact Connection Prompt */
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* Hero Card - Compact */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-orange-500/5 to-card border border-orange-500/20 p-6">
+        /* Ultra-Compact Connection Prompt */
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          {/* Compact Hero Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-orange-500/5 to-card border border-orange-500/20 p-5">
             <div className="absolute inset-0 bg-gradient-radial from-orange-500/5 via-transparent to-transparent opacity-50" />
             
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+            {/* Animated glow */}
+            <motion.div 
+              className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/20 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+            
+            <div className="relative z-10 flex items-center gap-6">
               {/* Left - CTA */}
-              <div className="lg:col-span-3 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30">
-                  <Zap className="w-3.5 h-3.5 text-orange-400" />
-                  <span className="text-xs font-medium text-orange-400">AI-Powered Landing Page Generator</span>
+              <div className="flex-1 space-y-3">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30">
+                  <Zap className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-medium text-orange-400">AI Landing Page Generator</span>
                 </div>
                 
-                <h3 className="text-2xl font-bold leading-tight">
+                <h3 className="text-lg font-bold leading-tight">
                   Transform <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Google Ads</span> Into High-Converting Pages
                 </h3>
                 
-                <p className="text-sm text-muted-foreground">Import PPC keywords and let AI generate optimized landing pages with built-in A/B testing and heat tracking.</p>
-                
-                <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleStartConnection} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25">
-                    <GoogleAdsIcon /><span className="ml-2">Connect Google Ads</span><ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={handleStartConnection} className="h-8 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25">
+                    <GoogleAdsIcon /><span className="ml-1.5 text-xs">Connect</span><ArrowRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
-                  <Button variant="outline" onClick={handleSkipWizard} className="border-orange-500/30 hover:bg-orange-500/10">
-                    <Eye className="w-4 h-4 mr-2" />Demo Mode
+                  <Button variant="outline" size="sm" onClick={handleSkipWizard} className="h-8 border-orange-500/30 hover:bg-orange-500/10">
+                    <Eye className="w-3.5 h-3.5 mr-1" /><span className="text-xs">Demo</span>
                   </Button>
                 </div>
                 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-green-500" />Read-only</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-green-500" />OAuth 2.0</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-green-500" />No credit card</span>
+                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Read-only</span>
+                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />OAuth 2.0</span>
+                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Free</span>
                 </div>
               </div>
               
-              {/* Right - Mini Stats Preview */}
-              <div className="lg:col-span-2">
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: '247', label: 'Keywords', color: 'orange' },
-                    { value: '8.4', label: 'Avg QS', color: 'amber' },
-                    { value: '$1.24', label: 'CPC Saved', color: 'green' },
-                    { value: '156', label: 'Pages', color: 'cyan' },
-                  ].map((stat) => (
-                    <div key={stat.label} className={`p-3 rounded-xl bg-${stat.color}-500/10 border border-${stat.color}-500/20 text-center`}>
-                      <p className={`text-lg font-bold text-${stat.color}-400`}>{stat.value}</p>
-                      <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
+              {/* Right - Mini Stats */}
+              <div className="hidden md:grid grid-cols-2 gap-1.5 w-40">
+                {[
+                  { value: '247', label: 'Keywords', color: 'text-orange-400' },
+                  { value: '8.4', label: 'Avg QS', color: 'text-amber-400' },
+                  { value: '$1.24', label: 'Saved', color: 'text-green-400' },
+                  { value: '156', label: 'Pages', color: 'text-cyan-400' },
+                ].map((stat) => (
+                  <div key={stat.label} className="p-2 rounded-lg bg-muted/30 border border-border/50 text-center">
+                    <p className={`text-sm font-bold ${stat.color}`}>{stat.value}</p>
+                    <p className="text-[8px] text-muted-foreground">{stat.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
           
-          {/* Process Steps - Compact Inline */}
+          {/* Process + Features - Combined Compact Row */}
           <div className="grid grid-cols-4 gap-2">
             {[
-              { step: '1', icon: Target, title: 'Connect', color: 'orange' },
-              { step: '2', icon: BarChart3, title: 'Import', color: 'amber' },
-              { step: '3', icon: Zap, title: 'Generate', color: 'yellow' },
-              { step: '4', icon: FlaskConical, title: 'Optimize', color: 'red' },
+              { icon: Target, title: 'Connect', desc: 'Link Google Ads', color: 'orange' },
+              { icon: BarChart3, title: 'Import', desc: 'Pull keywords', color: 'amber' },
+              { icon: Zap, title: 'Generate', desc: 'AI creates pages', color: 'yellow' },
+              { icon: FlaskConical, title: 'Optimize', desc: 'A/B test & track', color: 'red' },
             ].map((item, idx) => (
               <motion.div 
-                key={item.step}
+                key={item.title}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`relative p-3 rounded-xl bg-gradient-to-br from-${item.color}-500/5 to-${item.color}-500/10 border border-${item.color}-500/20 text-center group hover:border-${item.color}-500/40 transition-all`}
+                transition={{ delay: idx * 0.05 }}
+                className="group p-3 rounded-xl bg-gradient-to-br from-muted/30 to-muted/50 border border-border hover:border-orange-500/30 transition-all text-center"
               >
-                <div className={`absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-gradient-to-br from-${item.color}-400 to-${item.color}-600 flex items-center justify-center text-white text-[10px] font-bold`}>
-                  {item.step}
+                <div className="w-8 h-8 mx-auto mb-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <item.icon className="w-4 h-4 text-orange-500" />
                 </div>
-                <item.icon className={`w-5 h-5 mx-auto mt-2 mb-1 text-${item.color}-500 group-hover:scale-110 transition-transform`} />
-                <p className="text-xs font-medium">{item.title}</p>
+                <p className="text-xs font-semibold">{item.title}</p>
+                <p className="text-[9px] text-muted-foreground">{item.desc}</p>
               </motion.div>
-            ))}
-          </div>
-          
-          {/* Feature Cards - Compact 3-Column */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { icon: FileText, title: 'Bulk Generation', desc: '1,000s of keyword-specific pages', stat: '10x Faster', color: 'orange' },
-              { icon: FlaskConical, title: 'A/B Testing', desc: 'Test headlines, CTAs, layouts', stat: '+45% CVR', color: 'amber' },
-              { icon: Flame, title: 'Heat Tracking', desc: 'Click maps & scroll analytics', stat: 'Real-time', color: 'red' },
-            ].map((feature) => (
-              <div key={feature.title} className={`group p-4 rounded-xl bg-card/50 border border-border hover:border-${feature.color}-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-${feature.color}-500/5`}>
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`w-10 h-10 rounded-lg bg-${feature.color}-500/10 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <feature.icon className={`w-5 h-5 text-${feature.color}-500`} />
-                  </div>
-                  <Badge className={`text-[9px] bg-${feature.color}-500/20 text-${feature.color}-400 border-${feature.color}-500/30`}>{feature.stat}</Badge>
-                </div>
-                <h4 className="font-semibold text-sm mb-1">{feature.title}</h4>
-                <p className="text-xs text-muted-foreground">{feature.desc}</p>
-              </div>
             ))}
           </div>
         </motion.div>
