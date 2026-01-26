@@ -2229,189 +2229,395 @@ const AuditResults = () => {
             </Button>
           )}
 
-          {/* Combined Hero Section: Free Website Audit + Website Profile */}
+          {/* Combined Hero Section: Free Website Audit + Website Profile - High-Tech Design */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-10"
           >
-            <div className="p-6 rounded-2xl bg-card border border-border/50">
-              {/* Header Row */}
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    {websiteProfile?.favicon ? (
-                      <img 
-                        src={websiteProfile.favicon} 
-                        alt="" 
-                        className="w-10 h-10 rounded-lg object-contain bg-muted p-1"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <Globe className="w-10 h-10 text-primary" />
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {isSaved ? (
-                          <a 
-                            href={`https://${displayDomain}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-2xl md:text-3xl font-bold hover:text-primary transition-colors flex items-center gap-2 group"
-                          >
-                            {displayDomain}
-                            <ExternalLink className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </a>
+            {/* Outer Glow Container */}
+            <div className="relative group">
+              {/* Animated gradient glow background */}
+              <motion.div
+                className="absolute -inset-[2px] rounded-[26px] opacity-60 group-hover:opacity-90 transition-opacity duration-500 blur-md"
+                animate={{
+                  background: [
+                    "linear-gradient(0deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+                    "linear-gradient(90deg, rgba(139,92,246,0.4), rgba(251,191,36,0.3), rgba(34,211,238,0.4))",
+                    "linear-gradient(180deg, rgba(251,191,36,0.3), rgba(34,211,238,0.4), rgba(139,92,246,0.4))",
+                    "linear-gradient(270deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+                    "linear-gradient(360deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+                  ],
+                }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              />
+              
+              {/* Main Card */}
+              <div className="relative p-8 rounded-3xl bg-gradient-to-br from-card via-card/98 to-primary/5 border border-border/50 backdrop-blur-xl overflow-hidden">
+                {/* Animated scanning line */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none"
+                  animate={{ y: ["-100%", "200%"] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                />
+                
+                {/* Grid pattern overlay */}
+                <div 
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                    backgroundSize: '40px 40px',
+                  }}
+                />
+                
+                {/* Corner accents */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[100px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-cyan-500/10 via-primary/5 to-transparent rounded-tr-[80px] pointer-events-none" />
+                
+                {/* Floating particles */}
+                <motion.div
+                  className="absolute top-6 right-10 w-2 h-2 rounded-full bg-cyan-400/70"
+                  animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <motion.div
+                  className="absolute top-14 right-20 w-1.5 h-1.5 rounded-full bg-violet-400/70"
+                  animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
+                  transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+                />
+                <motion.div
+                  className="absolute top-10 right-32 w-1 h-1 rounded-full bg-amber-400/70"
+                  animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+                />
+                <motion.div
+                  className="absolute bottom-10 right-14 w-1.5 h-1.5 rounded-full bg-primary/70"
+                  animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
+                />
+
+                {/* Header Row */}
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-6 relative z-10">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      {/* Logo with animated ring */}
+                      <div className="relative">
+                        <motion.div
+                          className="absolute -inset-2 rounded-xl border border-primary/40"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                        />
+                        <motion.div
+                          className="absolute -inset-1.5 rounded-lg border border-cyan-400/20"
+                          animate={{ rotate: -360 }}
+                          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        />
+                        {websiteProfile?.favicon ? (
+                          <img 
+                            src={websiteProfile.favicon} 
+                            alt="" 
+                            className="w-14 h-14 rounded-xl object-contain bg-gradient-to-br from-muted to-muted/50 p-2 shadow-lg shadow-primary/10 border border-border/50"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
                         ) : (
-                          <h1 className="text-2xl md:text-3xl font-bold">{displayDomain}</h1>
-                        )}
-                        {isCaseStudyMode && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-semibold flex items-center gap-1">
-                            <BarChart3 className="w-3 h-3" />
-                            Case Study
-                          </span>
-                        )}
-                        {dashboardMetrics?.isReal && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary font-semibold flex items-center gap-1">
-                            <ExternalLink className="w-3 h-3" />
-                            Live Data
-                          </span>
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 via-violet-500/15 to-cyan-500/10 flex items-center justify-center shadow-lg shadow-primary/10 border border-primary/20">
+                            <Globe className="w-7 h-7 text-primary" />
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {isCaseStudyMode ? 'Monthly SEO Progress Tracking' : 'Free Website Audit Tool'}
-                        {dashboardMetrics?.ahrefsRank > 0 && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted">
-                            Ahrefs Rank: #{dashboardMetrics.ahrefsRank.toLocaleString()}
-                          </span>
-                        )}
-                      </p>
                       
-                      {/* Website Description - use summary if available, fallback to description */}
-                      {(websiteProfile?.summary || websiteProfile?.description) && (
-                        <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
+                      <div>
+                        {/* Domain Name with badges */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {isSaved ? (
+                            <motion.a 
+                              href={`https://${displayDomain}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-3xl md:text-4xl font-bold hover:text-primary transition-colors flex items-center gap-2 group/link"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 }}
+                            >
+                              {displayDomain}
+                              <ExternalLink className="w-5 h-5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                            </motion.a>
+                          ) : (
+                            <motion.h1 
+                              className="text-3xl md:text-4xl font-bold"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 }}
+                            >
+                              {displayDomain}
+                            </motion.h1>
+                          )}
+                          
+                          {/* Badges */}
+                          <div className="flex items-center gap-2">
+                            {isCaseStudyMode && (
+                              <motion.span 
+                                className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-semibold flex items-center gap-1.5 border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.2 }}
+                              >
+                                <BarChart3 className="w-3.5 h-3.5" />
+                                Case Study
+                              </motion.span>
+                            )}
+                            {dashboardMetrics?.isReal && (
+                              <motion.span 
+                                className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 font-semibold flex items-center gap-1.5 border border-emerald-500/30 shadow-lg shadow-emerald-500/10"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.25 }}
+                              >
+                                <motion.span
+                                  className="w-2 h-2 rounded-full bg-emerald-500"
+                                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                />
+                                Live Data
+                              </motion.span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Subtitle */}
+                        <motion.p 
+                          className="text-sm text-muted-foreground mt-1"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          {isCaseStudyMode ? 'Monthly SEO Progress Tracking' : 'Free Website Audit Tool'}
+                          {dashboardMetrics?.ahrefsRank > 0 && (
+                            <span className="ml-2 text-xs px-2.5 py-1 rounded-lg bg-gradient-to-r from-muted to-muted/50 border border-border/50 font-medium">
+                              Ahrefs Rank: <span className="text-primary">#{dashboardMetrics.ahrefsRank.toLocaleString()}</span>
+                            </span>
+                          )}
+                        </motion.p>
+                      </div>
+                    </div>
+                    
+                    {/* Website Description */}
+                    {(websiteProfile?.summary || websiteProfile?.description) && (
+                      <motion.div 
+                        className="flex items-start gap-3 mt-4 p-4 rounded-xl bg-gradient-to-r from-muted/30 to-transparent border-l-2 border-primary/50"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
                           {websiteProfile.summary || websiteProfile.description}
                         </p>
-                      )}
-                      
-                      {/* Claimed Notification - below subtitle, left-justified */}
-                      {isClaimed && (
+                      </motion.div>
+                    )}
+                    
+                    {/* Claimed Notification */}
+                    {isClaimed && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 mt-4 w-fit shadow-lg shadow-green-500/10"
+                      >
                         <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 mt-2 w-fit"
+                          animate={{ x: [0, 5, 0] }}
+                          transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                          className="text-green-500 shrink-0"
                         >
-                          <motion.div
-                            animate={{ x: [0, 5, 0] }}
-                            transition={{ duration: 0.7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                            className="text-green-500 shrink-0"
-                          >
-                            <ArrowRight className="w-3 h-3 rotate-[225deg]" />
-                          </motion.div>
-                          <Link2 className="w-3 h-3 text-green-400 shrink-0" />
-                          <span className="text-xs font-medium text-green-400">
-                            {justClaimed 
-                              ? "Your do-follow link is now active! Click the domain to visit."
-                              : "This website owner claimed their free do-follow link!"
-                            }
-                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 rotate-[225deg]" />
                         </motion.div>
-                      )}
-                    </div>
+                        <Link2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                        <span className="text-xs font-medium text-green-400">
+                          {justClaimed 
+                            ? "Your do-follow link is now active! Click the domain to visit."
+                            : "This website owner claimed their free do-follow link!"
+                          }
+                        </span>
+                      </motion.div>
+                    )}
                   </div>
 
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                  {!isClaimed && !isCaseStudyMode && (
-                    <Button 
-                      variant="outline" 
-                      className="gap-2 min-w-[160px] justify-center" 
-                      onClick={handleSaveClick}
-                    >
-                      <Gift className="w-4 h-4 text-primary" />
-                      Save & Get Free Backlink
-                    </Button>
-                  )}
-                  {isCaseStudyMode ? (
-                    <NextReportCountdown />
-                  ) : (
-                    <>
-                      <Button className="gap-2 min-w-[140px] justify-center" asChild>
-                        <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                          <Phone className="w-4 h-4" />
-                          Book a Call
-                        </a>
-                      </Button>
+                  {/* Action Buttons */}
+                  <motion.div 
+                    className="flex items-center gap-3 shrink-0 flex-wrap"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {!isClaimed && !isCaseStudyMode && (
                       <Button 
                         variant="outline" 
-                        className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
-                        asChild
+                        className="gap-2 min-w-[160px] justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
+                        onClick={handleSaveClick}
                       >
-                        <a href="/pricing">
-                          <Sparkles className="w-4 h-4" />
-                          Get Started
-                        </a>
+                        <Gift className="w-4 h-4 text-primary" />
+                        Save & Get Free Backlink
                       </Button>
-                    </>
-                  )}
+                    )}
+                    {isCaseStudyMode ? (
+                      <NextReportCountdown />
+                    ) : (
+                      <>
+                        <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
+                          <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                            <Phone className="w-4 h-4" />
+                            Book a Call
+                          </a>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                          asChild
+                        >
+                          <a href="/pricing">
+                            <Sparkles className="w-4 h-4" />
+                            Get Started
+                          </a>
+                        </Button>
+                      </>
+                    )}
+                  </motion.div>
                 </div>
-              </div>
 
-              {/* Social Links & Contact Row - Only show if there's content */}
-              {websiteProfile && (Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) || websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone) && (
-                <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-border/50">
-                  {/* Social Links */}
-                  {Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Social:</span>
-                      {websiteProfile.socialLinks?.facebook && (
-                        <a href={websiteProfile.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                        </a>
-                      )}
-                      {websiteProfile.socialLinks?.twitter && (
-                        <a href={websiteProfile.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                        </a>
-                      )}
-                      {websiteProfile.socialLinks?.linkedin && (
-                        <a href={websiteProfile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                        </a>
-                      )}
-                      {websiteProfile.socialLinks?.instagram && (
-                        <a href={websiteProfile.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                        </a>
-                      )}
-                      {websiteProfile.socialLinks?.youtube && (
-                        <a href={websiteProfile.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        </a>
-                      )}
-                      {websiteProfile.socialLinks?.tiktok && (
-                        <a href={websiteProfile.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-                        </a>
-                      )}
+                {/* Divider with animated gradient */}
+                {websiteProfile && (Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) || websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone) && (
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border/30" />
                     </div>
-                  )}
-                  
-                  {/* Contact Info */}
-                  {websiteProfile.contactInfo?.email && (
-                    <a href={`mailto:${websiteProfile.contactInfo.email}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                      {websiteProfile.contactInfo.email}
-                    </a>
-                  )}
-                  {websiteProfile.contactInfo?.phone && (
-                    <a href={`tel:${websiteProfile.contactInfo.phone}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                      {websiteProfile.contactInfo.phone}
-                    </a>
-                  )}
-                </div>
-              )}
+                    <motion.div 
+                      className="absolute inset-0 flex items-center"
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      <div className="w-full h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* Social Links & Contact Row */}
+                {websiteProfile && (Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) || websiteProfile.contactInfo?.email || websiteProfile.contactInfo?.phone) && (
+                  <motion.div 
+                    className="flex flex-wrap items-center gap-6 relative z-10"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    {/* Social Links */}
+                    {Object.entries(websiteProfile.socialLinks || {}).some(([_, v]) => v) && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Social</span>
+                        <div className="flex items-center gap-2">
+                          {websiteProfile.socialLinks?.facebook && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.facebook} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            </motion.a>
+                          )}
+                          {websiteProfile.socialLinks?.twitter && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.twitter} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            </motion.a>
+                          )}
+                          {websiteProfile.socialLinks?.linkedin && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.linkedin} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            </motion.a>
+                          )}
+                          {websiteProfile.socialLinks?.instagram && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.instagram} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                            </motion.a>
+                          )}
+                          {websiteProfile.socialLinks?.youtube && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.youtube} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                            </motion.a>
+                          )}
+                          {websiteProfile.socialLinks?.tiktok && (
+                            <motion.a 
+                              href={websiteProfile.socialLinks.tiktok} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="p-2 rounded-lg bg-muted/50 hover:bg-primary/20 border border-border/50 hover:border-primary/30 transition-all text-muted-foreground hover:text-primary"
+                              whileHover={{ scale: 1.1, y: -2 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                            </motion.a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Contact Info */}
+                    {websiteProfile.contactInfo?.email && (
+                      <motion.a 
+                        href={`mailto:${websiteProfile.contactInfo.email}`} 
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/30 hover:bg-primary/10 border border-border/50 hover:border-primary/30 transition-all text-sm text-muted-foreground hover:text-primary"
+                        whileHover={{ scale: 1.02, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Mail className="w-4 h-4" />
+                        {websiteProfile.contactInfo.email}
+                      </motion.a>
+                    )}
+                    {websiteProfile.contactInfo?.phone && (
+                      <motion.a 
+                        href={`tel:${websiteProfile.contactInfo.phone}`} 
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/30 hover:bg-primary/10 border border-border/50 hover:border-primary/30 transition-all text-sm text-muted-foreground hover:text-primary"
+                        whileHover={{ scale: 1.02, y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <Phone className="w-4 h-4" />
+                        {websiteProfile.contactInfo.phone}
+                      </motion.a>
+                    )}
+                  </motion.div>
+                )}
+              </div>
             </div>
           </motion.div>
 
