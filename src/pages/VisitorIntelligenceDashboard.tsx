@@ -3375,53 +3375,28 @@ f.parentNode.insertBefore(j,f);
                     <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                   </div>
                 </div>
-                {/* Feature Pills - Row 1 */}
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 hover:scale-105 transition-all duration-200 cursor-default">
-                    <Sparkles className="w-2.5 h-2.5 text-violet-500" />
-                    <span className="text-[9px] font-medium text-violet-600 dark:text-violet-400">7 Types</span>
-                  </div>
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 hover:bg-green-500/20 hover:scale-105 transition-all duration-200 cursor-default">
-                    <CheckCircle className="w-2.5 h-2.5 text-green-500" />
-                    <span className="text-[9px] font-medium text-green-600 dark:text-green-400">CSS Match</span>
-                  </div>
-                </div>
-                {/* Feature Pills - Row 2 */}
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 hover:scale-105 transition-all duration-200 cursor-default">
-                    <Network className="w-2.5 h-2.5 text-purple-500" />
-                    <span className="text-[9px] font-medium text-purple-600 dark:text-purple-400">Inner Links</span>
-                  </div>
-                </div>
               </div>
             </header>
 
-            {/* Top row: Header section + How It Works grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left - Connect section */}
-              <div className="lg:col-span-4">
-                <div className="h-full p-6 rounded-xl border-2 border-dashed border-violet-500/30 bg-violet-500/5">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-5 h-5 text-violet-500" />
-                      <h3 className="text-lg font-semibold">Connect Your Website</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4 flex-1">
-                      Connect your CMS to enable automated content generation that reverse-engineers competitor rankings.
-                    </p>
-                    <Badge variant="outline" className="w-fit text-amber-500 border-amber-500/30 bg-amber-500/10">
-                      Coming Soon
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-3">
-                      Content that inner-links directly into your most important pages.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            {/* CADE API Login & Dashboard - NOW AT THE TOP */}
+            <CADELoginBox domain={selectedTrackedDomain || selectedDomainKey} />
 
-              {/* Right - How It Works */}
-              <div className="lg:col-span-8">
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+            {/* Platform Connection Section */}
+            <CADEPlatformConnect 
+              domain={selectedTrackedDomain || selectedDomainKey} 
+              onConnectionComplete={(platform) => {
+                toast.success(`Successfully connected to ${platform}!`);
+              }}
+            />
+
+            {/* How It Works Section - Collapsible */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-primary transition-colors group w-full">
+                <ChevronRight className="w-5 h-5 transition-transform group-data-[state=open]:rotate-90" />
+                How CADE Works
+                <Badge variant="outline" className="ml-2 text-[10px] text-violet-500 border-violet-500/30">Learn More</Badge>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-6">
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
@@ -3468,37 +3443,27 @@ f.parentNode.insertBefore(j,f);
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
 
-            {/* Bottom row: Feature cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article capture rich snippets and answer boxes in search results', color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
-                { icon: Flame, label: 'Topical Authority', desc: 'Build content silos that establish expertise and dominate your niche verticals', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-                { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Systematically identifies and fills content gaps vs competitors automatically', color: 'text-fuchsia-500', bgColor: 'bg-fuchsia-500/10' },
-              ].map((feature) => (
-                <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
-                    <feature.icon className={`w-5 h-5 ${feature.color}`} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm mb-1">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                  </div>
+                {/* Feature cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { icon: HelpCircle, label: 'FAQ Optimization', desc: 'Multiple FAQ drops per article capture rich snippets and answer boxes in search results', color: 'text-violet-500', bgColor: 'bg-violet-500/10' },
+                    { icon: Flame, label: 'Topical Authority', desc: 'Build content silos that establish expertise and dominate your niche verticals', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+                    { icon: Crosshair, label: 'Keyword Gap Filling', desc: 'Systematically identifies and fills content gaps vs competitors automatically', color: 'text-fuchsia-500', bgColor: 'bg-fuchsia-500/10' },
+                  ].map((feature) => (
+                    <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
+                      <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
+                        <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm mb-1">{feature.label}</p>
+                        <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {/* Platform Connection Section */}
-            <CADEPlatformConnect 
-              domain={selectedTrackedDomain || selectedDomainKey} 
-              onConnectionComplete={(platform) => {
-                toast.success(`Successfully connected to ${platform}!`);
-              }}
-            />
-
-            {/* CADE API Login & Dashboard */}
-            <CADELoginBox domain={selectedTrackedDomain || selectedDomainKey} />
+              </CollapsibleContent>
+            </Collapsible>
           </div>
           </div>
         </div>
