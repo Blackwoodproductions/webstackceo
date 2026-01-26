@@ -857,13 +857,34 @@ const VisitorFlowDiagram = ({
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <GitBranch className="w-5 h-5 text-primary" />
+      <Card className="relative p-6 overflow-hidden bg-gradient-to-br from-card via-card/98 to-primary/5 border-border/50">
+        {/* High-tech grid pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            opacity: 0.02,
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        
+        {/* Animated scanning line */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent animate-pulse"
+          style={{ animationDuration: '2s' }}
+        />
+        
+        <div className="flex items-center gap-3 mb-4 relative z-10">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20">
+            <GitBranch className="w-5 h-5 text-primary" />
+          </div>
           <span className="font-bold">Site Architecture Flow</span>
         </div>
-        <div className="h-[600px] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+        <div className="h-[600px] flex items-center justify-center relative z-10">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+          </div>
         </div>
       </Card>
     );
@@ -1090,21 +1111,60 @@ const VisitorFlowDiagram = ({
   }
 
   return (
-    <Card className="p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+    <Card className="relative p-6 overflow-hidden bg-gradient-to-br from-card via-card/98 to-violet-500/5 border-border/50">
+      {/* High-tech background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.02,
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '32px 32px',
+        }}
+      />
+      
+      {/* Animated scanning line */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/3 to-transparent pointer-events-none animate-pulse"
+        style={{ animationDuration: '6s' }}
+      />
+      
+      {/* Floating particles */}
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-violet-400 animate-pulse pointer-events-none"
+          style={{
+            left: `${15 + i * 15}%`,
+            top: `${10 + (i % 3) * 30}%`,
+            opacity: 0.2 + (i % 3) * 0.1,
+            animationDelay: `${i * 0.5}s`,
+            animationDuration: `${3 + (i % 2)}s`,
+          }}
+        />
+      ))}
+      
+      <div className="relative z-10 flex items-center justify-between mb-6 flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 shadow-lg shadow-violet-500/10">
             <GitBranch className="w-5 h-5 text-violet-500" />
           </div>
           <div>
-            <h3 className="font-bold text-foreground">Site Traffic Flow</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-foreground">Site Traffic Flow</h3>
+              <span 
+                className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30 animate-pulse"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping" />
+                LIVE DATA
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground">
               {visitedCount} of {totalCount} pages visited
             </p>
           </div>
           {/* Live visitors indicator */}
           {liveVisitors.length > 0 && (
-            <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 animate-pulse">
+            <Badge className="ml-2 bg-green-500/20 text-green-400 border-green-500/30 animate-pulse shadow-lg shadow-green-500/10">
               <Zap className="w-3 h-3 mr-1" />
               {liveVisitors.length} live now
             </Badge>

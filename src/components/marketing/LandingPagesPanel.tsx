@@ -296,9 +296,22 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6 overflow-hidden">
+      {/* High-tech background grid for entire panel */}
+      <div
+        className="absolute inset-0 pointer-events-none -z-10"
+        style={{
+          opacity: 0.015,
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '32px 32px',
+        }}
+      />
+      
       {/* Header */}
-      <header className="flex items-start justify-between gap-4 relative overflow-hidden">
+      <header className="relative flex items-start justify-between gap-4 overflow-hidden">
+        {/* Animated gradient glow behind header */}
+        <div className="absolute -inset-4 bg-gradient-to-r from-orange-500/5 via-transparent to-amber-500/5 rounded-3xl blur-xl pointer-events-none" />
+        
         {/* Animated Target Rings - PPC */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute w-4 h-4 rounded-full border-2 border-orange-400/40 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] top-1 left-[12%]" />
@@ -307,8 +320,8 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           <div className="absolute w-3.5 h-3.5 rounded-full border-2 border-orange-300/40 animate-[ping_2.8s_cubic-bezier(0,0,0.2,1)_infinite_1.2s] top-4 left-[58%]" />
           <div className="absolute w-4 h-4 rounded-full border-2 border-amber-400/35 animate-[ping_2.4s_cubic-bezier(0,0,0.2,1)_infinite_1.6s] top-1 left-[72%]" />
         </div>
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0">
+        <div className="relative z-10 flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shrink-0 shadow-xl shadow-orange-500/25">
             <Target className="w-7 h-7 text-white" />
           </div>
           <div className="space-y-1">

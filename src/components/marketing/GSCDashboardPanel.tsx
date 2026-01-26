@@ -1097,15 +1097,37 @@ export const GSCDashboardPanel = ({
   // Connected - show dashboard
   return (
     <>
-      <Card>
-        <CardHeader className="pb-4">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-card via-card/98 to-cyan-500/5 border-border/50">
+        {/* High-tech background grid */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            opacity: 0.02,
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '28px 28px',
+          }}
+        />
+        
+        {/* Subtle scanning line */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/3 to-transparent pointer-events-none animate-pulse"
+          style={{ animationDuration: '6s' }}
+        />
+        
+        <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-lg">Search Console Analytics</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Search Console Analytics</CardTitle>
+                  <span className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                    LIVE
+                  </span>
+                </div>
                 <CardDescription className="text-xs">Performance data from Google</CardDescription>
               </div>
             </div>
@@ -1118,7 +1140,7 @@ export const GSCDashboardPanel = ({
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="relative z-10 space-y-4">
           {/* Domain Not in GSC Warning */}
           {isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
