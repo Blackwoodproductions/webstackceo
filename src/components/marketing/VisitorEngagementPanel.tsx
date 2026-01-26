@@ -258,113 +258,50 @@ const VisitorEngagementPanel = () => {
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="relative p-6 overflow-hidden">
-          {/* Animated gradient glow */}
-          <motion.div
-            className="absolute -inset-[1px] rounded-lg opacity-40 blur-sm"
-            animate={{
-              background: [
-                "linear-gradient(0deg, rgba(139,92,246,0.3), rgba(34,211,238,0.2))",
-                "linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.2))",
-              ],
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          />
-          
-          {/* Scanning line */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"
-            animate={{ y: ["-100%", "200%"] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          />
-          
-          <div className="flex items-center gap-3 relative z-10">
-            <motion.div 
-              className="w-4 h-4 rounded-full bg-primary/30"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-            <span className="text-sm text-muted-foreground">Loading engagement data...</span>
-          </div>
-        </Card>
-      </motion.div>
+      <div className="flex items-center gap-3 p-6">
+        <div className="w-4 h-4 rounded-full bg-primary/30 animate-pulse" />
+        <span className="text-sm text-muted-foreground">Loading engagement data...</span>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <Card className="relative p-6 overflow-hidden">
-        {/* Background grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px'
-          }}
-        />
-        
-        {/* Subtle scanning line */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/2 to-transparent pointer-events-none"
-          animate={{ y: ["-100%", "200%"] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-        />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5 relative z-10">
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20"
-              whileHover={{ scale: 1.05 }}
-            >
-              <Activity className="w-5 h-5 text-primary" />
-            </motion.div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-foreground">Live Visitor Engagement</h3>
-                <motion.span
-                  className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Radio className="w-2 h-2" />
-                  LIVE
-                </motion.span>
-              </div>
-              <p className="text-xs text-muted-foreground">Active sessions & page heatmap</p>
-            </div>
+    <div className="relative">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20">
+            <Activity className="w-5 h-5 text-primary" />
           </div>
-          <div className="flex items-center gap-2">
-            {isConnected ? (
-              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                <Wifi className="w-3 h-3 mr-1" />
-                Live
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
-                <WifiOff className="w-3 h-3 mr-1" />
-                Connecting
-              </Badge>
-            )}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
-            >
-              <Badge className="bg-primary/20 text-primary border-primary/30">
-                <Users className="w-3 h-3 mr-1" />
-                {activeSessions.length} Online
-              </Badge>
-            </motion.div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-foreground">Live Visitor Engagement</h3>
+              <span className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
+                <Radio className="w-2 h-2" />
+                LIVE
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">Active sessions & page heatmap</p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          {isConnected ? (
+            <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+              <Wifi className="w-3 h-3 mr-1" />
+              Live
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30">
+              <WifiOff className="w-3 h-3 mr-1" />
+              Connecting
+            </Badge>
+          )}
+          <Badge className="bg-primary/20 text-primary border-primary/30">
+            <Users className="w-3 h-3 mr-1" />
+            {activeSessions.length} Online
+          </Badge>
+        </div>
+      </div>
 
       {/* Page Heatmap Strip - Full Width */}
       <div className="mb-5 p-3 rounded-xl bg-secondary/30 border border-border/50">
@@ -560,8 +497,7 @@ const VisitorEngagementPanel = () => {
           })}
         </div>
       )}
-      </Card>
-    </motion.div>
+    </div>
   );
 };
 

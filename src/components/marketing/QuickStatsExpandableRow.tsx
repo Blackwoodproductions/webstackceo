@@ -310,25 +310,10 @@ export function QuickStatsExpandableRow({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="relative rounded-xl border border-border/50 bg-gradient-to-br from-card via-card/98 to-primary/5 p-4 overflow-hidden"
+          className="relative rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-primary/5 p-4 overflow-hidden"
         >
-          {/* Background grid pattern */}
-          <div 
-            className="absolute inset-0 opacity-[0.02]"
-            style={{
-              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-              backgroundSize: '24px 24px'
-            }}
-          />
           
-          {/* Scanning line */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none"
-            animate={{ y: ["-100%", "200%"] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-          />
-          
-          <div className="flex items-center justify-between gap-3 mb-3 relative z-10">
+          <div className="flex items-center justify-between gap-3 mb-3">
             <h3 className="text-sm font-semibold text-foreground">{panelTitle}</h3>
             <button
               type="button"
@@ -339,7 +324,7 @@ export function QuickStatsExpandableRow({
             </button>
           </div>
 
-          <div className="relative z-10">
+          <div>
             {expanded === "active" && <VisitorEngagementPanel />}
 
             {expanded === "today" && (
