@@ -214,6 +214,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   // Fetch keywords with specific token/customer
   const handleFetchKeywordsWithToken = useCallback(async (token: string, customerId: string) => {
     setIsFetchingKeywords(true);
+    setIsCheckingAccount(true);
     setHasCampaigns(null);
     
     try {
@@ -228,20 +229,31 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
       if (error) throw error;
 
-      setKeywords(data.keywords || []);
-      setSummary(data.summary || null);
-      setHasCampaigns(data.hasCampaigns !== false);
+      // Check if this is demo/sample data or actual campaigns
+      const isRealData = data.hasCampaigns === true && !data.isDemo;
       
-      // If no campaigns for this domain, show the campaign setup wizard
-      if (data.hasCampaigns === false || (data.keywords?.length === 0 && !data.isDemo)) {
+      if (isRealData) {
+        // Real campaigns found - show the dashboard
+        setKeywords(data.keywords || []);
+        setSummary(data.summary || null);
+        setHasCampaigns(true);
+        setShowCampaignSetup(false);
+      } else {
+        // No real campaigns for this domain - go DIRECTLY to campaign setup wizard
+        setKeywords([]);
+        setSummary(null);
+        setHasCampaigns(false);
         setShowCampaignSetup(true);
-        toast.info('No PPC campaigns found for this domain. Let\'s create one!');
+        // Don't show toast here, wizard will explain what to do
       }
     } catch (err) {
       console.error('Error fetching keywords:', err);
-      toast.error('Failed to fetch keywords');
+      // On error, also show setup wizard since we can't verify campaigns
+      setShowCampaignSetup(true);
+      setHasCampaigns(false);
     } finally {
       setIsFetchingKeywords(false);
+      setIsCheckingAccount(false);
     }
   }, [selectedDomain]);
 
@@ -466,8 +478,22 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </div>
       </header>
 
-      {/* Show Campaign Setup Wizard when connected but no campaigns for domain */}
-      {showCampaignSetup && accessToken ? (
+      {/* Show loading state while checking account */}
+      {isCheckingAccount && accessToken ? (
+        <div className="flex flex-col items-center justify-center py-24 space-y-6">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Target className="w-8 h-8 text-orange-500" />
+            </div>
+          </div>
+          <div className="text-center space-y-2">
+            <h3 className="text-xl font-semibold text-foreground">Checking Google Ads Account</h3>
+            <p className="text-muted-foreground">Looking for campaigns targeting {selectedDomain || 'your domain'}...</p>
+          </div>
+        </div>
+      ) : showCampaignSetup && accessToken ? (
+        /* Show Campaign Setup Wizard when connected but no campaigns for domain */
         <GoogleAdsCampaignSetupWizard
           domain={selectedDomain || ''}
           customerId={connectedCustomerId || 'unified-auth'}
