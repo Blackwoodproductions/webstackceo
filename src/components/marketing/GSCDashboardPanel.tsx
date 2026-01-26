@@ -1037,17 +1037,45 @@ export const GSCDashboardPanel = ({
   if (!isAuthenticated) {
     return (
       <>
-        <Card className="bg-card border-border h-full flex flex-col">
-          <CardContent className="py-8 flex-1 flex items-center justify-center">
+        <Card className="relative overflow-hidden bg-card border-border h-full flex flex-col group">
+          {/* High-tech background grid */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
+              backgroundSize: '24px 24px',
+            }}
+          />
+          
+          {/* Animated scanning line */}
+          <div 
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none animate-pulse"
+            style={{ animationDuration: '4s' }}
+          />
+          
+          {/* Corner accent glows */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 via-violet-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-violet-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+          
+          {/* Floating particles */}
+          <div className="absolute top-[20%] left-[10%] w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style={{ animationDelay: '0s' }} />
+          <div className="absolute top-[40%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-[30%] left-[20%] w-1 h-1 rounded-full bg-cyan-300/40 animate-pulse" style={{ animationDelay: '2s' }} />
+          
+          <CardContent className="relative z-10 py-10 flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="w-8 h-8 text-white" />
+              {/* Glowing icon container */}
+              <div className="relative w-20 h-20 mx-auto mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform duration-300">
+                  <BarChart3 className="w-9 h-9 text-white" />
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-2">Connect Google Search Console</h3>
+              <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">Connect Google Search Console</h3>
               <p className="text-muted-foreground text-sm mb-6">
                 Link your Search Console to see clicks, impressions, rankings, and sync with your visitor data.
               </p>
-              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600">
+              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-shadow">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -1097,22 +1125,31 @@ export const GSCDashboardPanel = ({
   // Connected - show dashboard
   return (
     <>
-      <Card className="relative overflow-hidden bg-card border-border">
+      <Card className="relative overflow-hidden bg-card border-border group">
         {/* High-tech background grid */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             opacity: 0.02,
-            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
             backgroundSize: '28px 28px',
           }}
         />
         
-        {/* Subtle scanning line */}
+        {/* Animated scanning line */}
         <div 
           className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/3 to-transparent pointer-events-none animate-pulse"
           style={{ animationDuration: '6s' }}
         />
+        
+        {/* Corner accent glows */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-cyan-500/8 via-violet-500/4 to-transparent rounded-bl-[80px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-violet-500/8 to-transparent rounded-tr-[80px] pointer-events-none" />
+        
+        {/* Floating particles */}
+        <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-cyan-400/50 animate-pulse" />
+        <div className="absolute top-[35%] left-[5%] w-1.5 h-1.5 rounded-full bg-violet-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-[25%] right-[12%] w-1 h-1 rounded-full bg-cyan-300/30 animate-pulse" style={{ animationDelay: '2s' }} />
         
         <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">

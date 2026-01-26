@@ -892,17 +892,45 @@ export const GADashboardPanel = ({
     
     return (
       <>
-        <Card className="bg-card border-border h-full flex flex-col">
-          <CardContent className="py-8 flex-1 flex items-center justify-center">
+        <Card className="relative overflow-hidden bg-card border-border h-full flex flex-col group">
+          {/* High-tech background grid */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+              backgroundSize: '24px 24px',
+            }}
+          />
+          
+          {/* Animated scanning line */}
+          <div 
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/5 to-transparent pointer-events-none animate-pulse"
+            style={{ animationDuration: '4s' }}
+          />
+          
+          {/* Corner accent glows */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+          
+          {/* Floating particles */}
+          <div className="absolute top-[20%] left-[10%] w-1 h-1 rounded-full bg-orange-400/60 animate-pulse" style={{ animationDelay: '0s' }} />
+          <div className="absolute top-[40%] right-[15%] w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-[30%] left-[20%] w-1 h-1 rounded-full bg-orange-300/40 animate-pulse" style={{ animationDelay: '2s' }} />
+          
+          <CardContent className="relative z-10 py-10 flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mx-auto mb-4">
-                <Activity className="w-8 h-8 text-white" />
+              {/* Glowing icon container */}
+              <div className="relative w-20 h-20 mx-auto mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/25 group-hover:scale-105 transition-transform duration-300">
+                  <Activity className="w-9 h-9 text-white" />
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-2">Connect Google Analytics</h3>
+              <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Connect Google Analytics</h3>
               <p className="text-muted-foreground text-sm mb-6">
                 Link your Analytics to see sessions, users, page views, and engagement metrics.
               </p>
-              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-shadow">
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -1227,8 +1255,33 @@ export const GADashboardPanel = ({
 
   // Connected and domain matches - show comprehensive dashboard
   return (
-    <Card>
-      <CardHeader className="pb-4">
+    <Card className="relative overflow-hidden group">
+      {/* High-tech background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.02,
+          backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+          backgroundSize: '28px 28px',
+        }}
+      />
+      
+      {/* Animated scanning line */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse"
+        style={{ animationDuration: '6s' }}
+      />
+      
+      {/* Corner accent glows */}
+      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-500/8 via-amber-500/4 to-transparent rounded-bl-[80px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-amber-500/8 to-transparent rounded-tr-[80px] pointer-events-none" />
+      
+      {/* Floating particles */}
+      <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
+      <div className="absolute top-[35%] left-[5%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute bottom-[25%] right-[12%] w-1 h-1 rounded-full bg-orange-300/30 animate-pulse" style={{ animationDelay: '2s' }} />
+      
+      <CardHeader className="relative z-10 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
@@ -1268,7 +1321,7 @@ export const GADashboardPanel = ({
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="relative z-10 space-y-6">
 
         {/* Key Metrics Grid - only show if domain matches or no external site */}
         {(isExternalSiteInGA || !externalSelectedSite) && (
