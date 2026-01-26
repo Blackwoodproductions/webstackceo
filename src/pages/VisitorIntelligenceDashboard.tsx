@@ -2520,7 +2520,7 @@ f.parentNode.insertBefore(j,f);
         </main>
 
         {/* Right Sidebar - Chat Panel */}
-        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-all duration-300 ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
+        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-300 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
           <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
