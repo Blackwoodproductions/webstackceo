@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   MessageCircle, Send, Bell, X, User, Clock, 
-  CheckCircle, AlertCircle
+  CheckCircle, AlertCircle, Radio
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -156,10 +157,46 @@ const ChatOperatorPanel = () => {
   const activeCount = conversations.filter(c => c.status === 'active').length;
 
   return (
-    <Card className="p-4 h-[400px] flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="relative p-4 h-[400px] flex flex-col overflow-hidden bg-gradient-to-br from-card via-card/98 to-violet-500/5 border-border/50">
+      {/* High-tech background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          opacity: 0.02,
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '20px 20px',
+        }}
+      />
+      
+      {/* Scanning line */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/5 to-transparent pointer-events-none"
+        animate={{ y: ['-100%', '200%'] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+      />
+
+      {/* Floating particles */}
+      {[...Array(4)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-violet-400 pointer-events-none"
+          style={{ left: `${20 + i * 20}%`, top: `${30 + (i % 3) * 20}%` }}
+          animate={{
+            y: [0, -15, 0],
+            opacity: [0.2, 0.5, 0.2],
+          }}
+          transition={{ duration: 3 + i * 0.5, repeat: Infinity, delay: i * 0.4 }}
+        />
+      ))}
+
+      <div className="relative z-10 flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <MessageCircle className="w-5 h-5 text-primary" />
+          <motion.div
+            className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+          >
+            <MessageCircle className="w-4 h-4 text-white" />
+          </motion.div>
           <h3 className="font-bold text-foreground">Live Chat</h3>
           {activeCount > 0 && (
             <Badge className="bg-red-500/20 text-red-400 border-red-500/30 animate-pulse">
@@ -168,11 +205,19 @@ const ChatOperatorPanel = () => {
             </Badge>
           )}
         </div>
+        <motion.span
+          className="flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30"
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Radio className="w-2.5 h-2.5" />
+          LIVE
+        </motion.span>
       </div>
 
-      <div className="flex-1 flex gap-3 overflow-hidden">
+      <div className="relative z-10 flex-1 flex gap-3 overflow-hidden">
         {/* Conversation List */}
-        <div className="w-1/3 border-r border-border pr-3">
+        <div className="w-1/3 border-r border-border/50 pr-3">
           <ScrollArea className="h-full">
             {conversations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -181,19 +226,24 @@ const ChatOperatorPanel = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {conversations.map((conv) => (
-                  <div
+                {conversations.map((conv, idx) => (
+                  <motion.div
                     key={conv.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
                     onClick={() => setSelectedConversation(conv.id)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    className={`p-3 rounded-lg cursor-pointer transition-all ${
                       selectedConversation === conv.id
-                        ? 'bg-primary/20 border border-primary/30'
-                        : 'bg-secondary/50 hover:bg-secondary'
+                        ? 'bg-gradient-to-r from-violet-500/20 to-purple-500/10 border border-violet-500/30 shadow-lg shadow-violet-500/10'
+                        : 'bg-secondary/30 hover:bg-secondary/50 border border-transparent'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
+                          <User className="w-3 h-3 text-white" />
+                        </div>
                         <span className="text-sm font-medium truncate max-w-[80px]">
                           {conv.visitor_name || 'Visitor'}
                         </span>
@@ -203,7 +253,7 @@ const ChatOperatorPanel = () => {
                           e.stopPropagation();
                           closeConversation(conv.id);
                         }}
-                        className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+                        className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -212,7 +262,7 @@ const ChatOperatorPanel = () => {
                       <Clock className="w-3 h-3" />
                       {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true })}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -225,23 +275,26 @@ const ChatOperatorPanel = () => {
             <>
               <ScrollArea className="flex-1 pr-2">
                 <div className="space-y-3">
-                  {messages.map((msg) => (
-                    <div
+                  {messages.map((msg, idx) => (
+                    <motion.div
                       key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.02 }}
                       className={`flex ${msg.sender_type === 'operator' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
                           msg.sender_type === 'operator'
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20'
                             : msg.sender_type === 'visitor'
-                            ? 'bg-secondary text-foreground'
-                            : 'bg-muted text-muted-foreground italic'
+                            ? 'bg-secondary/80 text-foreground border border-border/50'
+                            : 'bg-muted/50 text-muted-foreground italic'
                         }`}
                       >
                         {msg.message}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
@@ -252,26 +305,37 @@ const ChatOperatorPanel = () => {
                   e.preventDefault();
                   handleSendMessage();
                 }}
-                className="flex gap-2 mt-3 pt-3 border-t border-border"
+                className="flex gap-2 mt-3 pt-3 border-t border-border/50"
               >
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a reply..."
-                  className="flex-1"
+                  className="flex-1 bg-secondary/30 border-border/50"
                   disabled={sending}
                 />
-                <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
+                <Button 
+                  type="submit" 
+                  size="icon" 
+                  disabled={sending || !newMessage.trim()}
+                  className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25"
+                >
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <motion.div 
+                className="text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/10 border border-violet-500/20 flex items-center justify-center">
+                  <MessageCircle className="w-8 h-8 text-violet-400/50" />
+                </div>
                 <p className="text-sm">Select a conversation</p>
-              </div>
+              </motion.div>
             </div>
           )}
         </div>

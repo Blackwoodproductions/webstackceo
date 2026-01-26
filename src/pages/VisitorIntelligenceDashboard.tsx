@@ -1424,15 +1424,45 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16">
+    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
         canonical="/visitor-intelligence-dashboard"
       />
 
+      {/* High-tech background grid pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          opacity: 0.015,
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+        }}
+      />
+      
+      {/* Floating particles across the page */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-primary animate-pulse"
+            style={{
+              left: `${8 + (i * 8)}%`,
+              top: `${15 + ((i * 7) % 70)}%`,
+              opacity: 0.2 + (i % 3) * 0.1,
+              animationDelay: `${i * 0.4}s`,
+              animationDuration: `${3 + (i % 3)}s`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Subtle radial gradient glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-primary/5 via-transparent to-transparent pointer-events-none z-0" />
+
       {/* Header with integrated tabs - wrapped with glow effect, sticky */}
-      <header className="border border-border bg-card rounded-t-xl max-w-[1480px] mx-auto relative glow-primary sticky top-0 z-50">
+      <header className="border border-border bg-card/95 backdrop-blur-sm rounded-t-xl max-w-[1480px] mx-auto relative glow-primary sticky top-0 z-50 overflow-hidden">
         {/* Tabs - offset slightly right from center, floating at bottom of header */}
         <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
           {[
@@ -1469,7 +1499,13 @@ const MarketingDashboard = () => {
           ))}
         </div>
         
-        <div className="px-8 py-3 flex items-center justify-between">
+        {/* Header scanning line effect */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse pointer-events-none"
+          style={{ animationDuration: '4s' }}
+        />
+        
+        <div className="relative z-10 px-8 py-3 flex items-center justify-between">
           {/* Left: Logo */}
           <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group flex-shrink-0">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center relative group-hover:from-amber-400/20 group-hover:to-yellow-500/20 group-hover:shadow-[0_0_25px_rgba(251,191,36,0.5)] group-hover:scale-110 transition-all duration-700">
@@ -1491,7 +1527,7 @@ const MarketingDashboard = () => {
                 <img
                   src={gscProfile.picture}
                   alt={gscProfile.name ? `${gscProfile.name} profile photo` : 'Google profile photo'}
-                  className="w-7 h-7 rounded-full object-cover border border-border"
+                  className="w-7 h-7 rounded-full object-cover border border-border shadow-lg shadow-primary/10"
                   referrerPolicy="no-referrer"
                   loading="lazy"
                 />
@@ -1517,11 +1553,11 @@ const MarketingDashboard = () => {
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-9 h-9 p-0"
+              className="w-9 h-9 p-0 hover:bg-primary/10"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-red-500/10 hover:text-red-500">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
