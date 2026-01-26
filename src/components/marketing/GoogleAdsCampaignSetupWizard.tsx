@@ -734,7 +734,7 @@ export function GoogleAdsCampaignSetupWizard({
 
       {/* Footer */}
       {currentStep < 3 && (
-        <div className="relative px-4 pb-3 text-center">
+        <div className="relative px-4 pb-2 text-center">
           <button onClick={onCancel} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             Cancel
           </button>

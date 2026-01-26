@@ -4215,8 +4215,10 @@ f.parentNode.insertBefore(j,f);
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           
-          {/* Extended Content Section */}
-          <PPCLandingPagesExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
+          {/* Extended Content Section - Reduced top spacing */}
+          <div className="mt-2">
+            <PPCLandingPagesExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
+          </div>
         </div>
       )}
 
