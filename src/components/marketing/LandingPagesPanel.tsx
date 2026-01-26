@@ -279,35 +279,154 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const getQualityScoreBg = (score: number) => score >= 8 ? 'bg-green-500/20' : score >= 6 ? 'bg-amber-500/20' : 'bg-red-500/20';
 
   return (
-    <div className="relative space-y-6 overflow-hidden">
-      {/* VI Dashboard Effects - Background */}
+    <div className="relative space-y-6 overflow-hidden min-h-[600px]">
+      {/* VI Dashboard Effects - Full Background (matching VIDashboardEffects exactly) */}
       <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`, backgroundSize: '32px 32px' }} />
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
         
-        {/* Gradient blobs */}
+        {/* Corner gradient accents - large blobs */}
         <motion.div 
-          className="absolute -top-32 -right-32 w-96 h-96 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl"
-          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+          className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-orange-500/15 via-amber-500/10 to-transparent rounded-bl-[250px]"
+          animate={{ 
+            scale: [1, 1.05, 1],
+            opacity: [0.8, 1, 0.8],
+          }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
-          className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-to-tr from-amber-500/10 via-yellow-500/5 to-transparent rounded-full blur-3xl"
-          animate={{ scale: [1.1, 1, 1.1], opacity: [0.5, 0.8, 0.5] }}
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-amber-500/15 via-orange-500/8 to-transparent rounded-tr-[200px]"
+          animate={{ 
+            scale: [1.05, 1, 1.05],
+            opacity: [0.8, 1, 0.8],
+          }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         />
         
-        {/* Scanning line */}
+        {/* Additional corner blobs for richness */}
+        <motion.div 
+          className="absolute -top-20 -left-20 w-[350px] h-[350px] bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-transparent rounded-full blur-xl"
+          animate={{ 
+            x: [0, 30, 0],
+            y: [0, 20, 0],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-gradient-to-tl from-red-500/10 via-orange-500/5 to-transparent rounded-full blur-xl"
+          animate={{ 
+            x: [0, -20, 0],
+            y: [0, -30, 0],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        />
+        
+        {/* Animated vertical scanning line */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent"
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/5 to-transparent"
           animate={{ y: ['-100%', '200%'] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         />
         
-        {/* Floating particles */}
-        <motion.div className="absolute top-[15%] right-[10%] w-1.5 h-1.5 rounded-full bg-orange-400/60" animate={{ y: [0, -10, 0], opacity: [0.4, 0.8, 0.4] }} transition={{ duration: 3, repeat: Infinity }} />
-        <motion.div className="absolute top-[25%] right-[20%] w-1 h-1 rounded-full bg-amber-400/60" animate={{ y: [0, -8, 0], opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }} />
-        <motion.div className="absolute bottom-[20%] left-[15%] w-1.5 h-1.5 rounded-full bg-yellow-400/50" animate={{ y: [0, -12, 0], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3.5, repeat: Infinity, delay: 1 }} />
+        {/* Animated horizontal scanning line */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/3 to-transparent"
+          animate={{ x: ['-100%', '200%'] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'linear', delay: 4 }}
+        />
+        
+        {/* Floating particles - animated with framer-motion (exactly like VI dashboard) */}
+        <motion.div
+          className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-orange-400/70"
+          animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-amber-400/70"
+          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+        />
+        <motion.div
+          className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-yellow-400/70"
+          animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+        />
+        <motion.div
+          className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-orange-500/70"
+          animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-red-400/60"
+          animate={{ y: [0, -15, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.3, 1] }}
+          transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div
+          className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-amber-400/60"
+          animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0.8 }}
+        />
+        <motion.div
+          className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-orange-300/50"
+          animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
+        />
+        <motion.div
+          className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-yellow-300/50"
+          animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 3.2, repeat: Infinity, delay: 2 }}
+        />
+        
+        {/* Additional floating particles for PPC theme */}
+        <motion.div
+          className="absolute top-[5%] left-[40%] w-1 h-1 rounded-full bg-orange-500/60"
+          animate={{ y: [0, -18, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4.5, repeat: Infinity, delay: 0.2 }}
+        />
+        <motion.div
+          className="absolute bottom-[10%] right-[30%] w-2 h-2 rounded-full bg-amber-400/50"
+          animate={{ y: [0, -14, 0], x: [0, 6, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.15, 1] }}
+          transition={{ duration: 3.8, repeat: Infinity, delay: 1.2 }}
+        />
+        <motion.div
+          className="absolute top-[70%] left-[25%] w-1.5 h-1.5 rounded-full bg-yellow-300/50"
+          animate={{ y: [0, -10, 0], opacity: [0.25, 0.6, 0.25] }}
+          transition={{ duration: 4.2, repeat: Infinity, delay: 2.5 }}
+        />
+        <motion.div
+          className="absolute top-[35%] right-[35%] w-1 h-1 rounded-full bg-red-300/40"
+          animate={{ y: [0, -8, 0], x: [0, -4, 0], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1.8 }}
+        />
+        
+        {/* Radial glow from top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-orange-500/8 via-amber-500/3 to-transparent" />
+        
+        {/* Bottom radial glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-amber-500/5 via-orange-500/2 to-transparent" />
+        
+        {/* Vignette effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60" />
+        
+        {/* Side vignettes */}
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background/50 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background/50 to-transparent" />
+        
+        {/* Noise texture overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.012]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
       
       {/* Compact Header */}
