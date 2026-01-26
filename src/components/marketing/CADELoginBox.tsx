@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CADEMetricsBoxes } from "./CADEMetricsBoxes";
 
 interface SystemHealth {
   status?: string;
@@ -825,113 +826,33 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
         </div>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-green-500/5 border-emerald-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-emerald-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Status</span>
-            </div>
-            <p className="text-xl font-bold capitalize">{health?.status || "—"}</p>
-            <p className="text-xs text-muted-foreground mt-1">{health?.version || "Latest"}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <Cpu className="w-4 h-4 text-blue-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Workers</span>
-            </div>
-            <p className="text-xl font-bold">{health?.workers ?? "—"}</p>
-            <p className="text-xs text-muted-foreground mt-1">Active processors</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/5 border-violet-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-violet-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Plan</span>
-            </div>
-            <p className="text-xl font-bold">{subscription?.plan || "Pro"}</p>
-            <Badge className={`mt-1 ${getStatusColor(subscription?.status || "active")}`}>
-              {subscription?.status || "Active"}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-amber-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Articles</span>
-            </div>
-            <p className="text-xl font-bold">{subscription?.articles_generated ?? domainProfile?.content_count ?? "—"}</p>
-            <p className="text-xs text-muted-foreground mt-1">Generated</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-pink-500/10 to-rose-500/5 border-pink-500/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
-                <HelpCircle className="w-4 h-4 text-pink-400" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">FAQs</span>
-            </div>
-            <p className="text-xl font-bold">{subscription?.faqs_generated ?? faqs.length ?? "—"}</p>
-            <p className="text-xs text-muted-foreground mt-1">Created</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Usage Progress */}
-      {(subscription?.quota_limit || subscription?.domains_limit) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {subscription?.quota_limit && (
-            <Card className="border-violet-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Content Quota</span>
-                  <span className="text-sm text-muted-foreground">
-                    {subscription.quota_used ?? 0} / {subscription.quota_limit}
-                  </span>
-                </div>
-                <Progress 
-                  value={((subscription.quota_used ?? 0) / subscription.quota_limit) * 100} 
-                  className="h-2"
-                />
-              </CardContent>
-            </Card>
-          )}
-          {subscription?.domains_limit && (
-            <Card className="border-violet-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Domain Slots</span>
-                  <span className="text-sm text-muted-foreground">
-                    {subscription.domains_used ?? 0} / {subscription.domains_limit}
-                  </span>
-                </div>
-                <Progress 
-                  value={((subscription.domains_used ?? 0) / subscription.domains_limit) * 100} 
-                  className="h-2"
-                />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      {/* CADE Metrics Dashboard */}
+      <CADEMetricsBoxes
+        metrics={{
+          status: health?.status,
+          version: health?.version,
+          workers: health?.workers,
+          uptime: health?.uptime,
+          plan: subscription?.plan,
+          planStatus: subscription?.status,
+          articlesGenerated: subscription?.articles_generated,
+          faqsGenerated: subscription?.faqs_generated ?? faqs.length,
+          quotaUsed: subscription?.quota_used,
+          quotaLimit: subscription?.quota_limit,
+          domainsUsed: subscription?.domains_used,
+          domainsLimit: subscription?.domains_limit,
+          creditsRemaining: subscription?.credits_remaining,
+          crawledPages: domainProfile?.crawled_pages,
+          contentCount: domainProfile?.content_count,
+          keywordsTracked: domainProfile?.keywords_tracked,
+          cssAnalyzed: domainProfile?.css_analyzed,
+          lastCrawl: domainProfile?.last_crawl,
+          category: domainProfile?.category,
+          language: domainProfile?.language,
+        }}
+        domain={domain}
+        isConnected={isConnected}
+      />
 
       {/* Main Dashboard Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
