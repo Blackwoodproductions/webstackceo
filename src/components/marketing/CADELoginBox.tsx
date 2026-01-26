@@ -103,6 +103,8 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoadingKey, setIsLoadingKey] = useState(true);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -120,13 +122,58 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [generatingFaq, setGeneratingFaq] = useState(false);
   const [previousDomain, setPreviousDomain] = useState<string | undefined>(undefined);
 
-  // Check for stored connection on mount
+  // Get current user and load API key from database
   useEffect(() => {
-    const storedKey = localStorage.getItem("cade_api_key");
-    if (storedKey) {
-      setApiKey(storedKey);
-      setIsConnected(true);
-    }
+    const loadApiKey = async () => {
+      setIsLoadingKey(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          
+          // Try to load from database first
+          const { data: keyData } = await supabase
+            .from("user_api_keys")
+            .select("api_key_encrypted")
+            .eq("user_id", user.id)
+            .eq("service_name", "cade")
+            .maybeSingle();
+          
+          if (keyData?.api_key_encrypted) {
+            setApiKey(keyData.api_key_encrypted);
+            setIsConnected(true);
+            // Also update localStorage for quick access
+            localStorage.setItem("cade_api_key", keyData.api_key_encrypted);
+          } else {
+            // Fallback to localStorage for backwards compatibility
+            const storedKey = localStorage.getItem("cade_api_key");
+            if (storedKey) {
+              setApiKey(storedKey);
+              setIsConnected(true);
+            }
+          }
+        } else {
+          // Not logged in, use localStorage only
+          const storedKey = localStorage.getItem("cade_api_key");
+          if (storedKey) {
+            setApiKey(storedKey);
+            setIsConnected(true);
+          }
+        }
+      } catch (err) {
+        console.error("[CADE] Failed to load API key:", err);
+        // Fallback to localStorage
+        const storedKey = localStorage.getItem("cade_api_key");
+        if (storedKey) {
+          setApiKey(storedKey);
+          setIsConnected(true);
+        }
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    
+    loadApiKey();
   }, []);
 
   // Clear domain-specific data and refetch when domain changes
@@ -263,7 +310,29 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       const healthRes = await callCadeApi("health");
 
       if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
+        // Save to localStorage for quick access
         localStorage.setItem("cade_api_key", apiKey);
+        
+        // Save to database for long-term storage if user is logged in
+        if (userId) {
+          const { error: upsertError } = await supabase
+            .from("user_api_keys")
+            .upsert({
+              user_id: userId,
+              service_name: "cade",
+              api_key_encrypted: apiKey,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: "user_id,service_name"
+            });
+          
+          if (upsertError) {
+            console.error("[CADE] Failed to save API key to database:", upsertError);
+          } else {
+            console.log("[CADE] API key saved to database successfully");
+          }
+        }
+        
         setIsConnected(true);
         setHealth(healthRes.data || healthRes);
         toast.success("Successfully connected to CADE API!");
@@ -275,16 +344,19 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             setCrawling(true);
             try {
               const crawlRes = await callCadeApi("crawl-domain", { force: true });
-              if (crawlRes?.success || crawlRes?.task_id || crawlRes?.message) {
+              console.log("[CADE] Auto-crawl response:", crawlRes);
+              // Accept any non-error response as success
+              if (crawlRes && !crawlRes.error) {
                 toast.success(`Domain crawl initiated for ${domain}`);
               } else if (crawlRes?.error) {
-                console.log("[CADE] Crawl response:", crawlRes);
-                // Don't show error toast for non-critical issues
+                console.log("[CADE] Crawl response error:", crawlRes.error);
               }
             } catch (crawlErr) {
               console.log("[CADE] Auto-crawl error:", crawlErr);
             } finally {
               setCrawling(false);
+              // Refetch data after crawl starts
+              fetchAllData();
             }
           }, 1000);
         }
@@ -299,8 +371,19 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Remove from localStorage
     localStorage.removeItem("cade_api_key");
+    
+    // Remove from database if user is logged in
+    if (userId) {
+      await supabase
+        .from("user_api_keys")
+        .delete()
+        .eq("user_id", userId)
+        .eq("service_name", "cade");
+    }
+    
     setIsConnected(false);
     setApiKey("");
     setHealth(null);
@@ -328,13 +411,18 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     setCrawling(true);
     try {
       const res = await callCadeApi("crawl-domain", { force: true });
-      if (res?.success || res?.task_id) {
+      console.log("[CADE] Crawl response:", res);
+      
+      // Accept any non-error response as success (the API returns 200 for successful crawl starts)
+      if (res && !res.error) {
         toast.success(`Crawl started for ${domain}`);
-        fetchAllData();
+        // Wait a bit then refetch data
+        setTimeout(() => fetchAllData(), 2000);
       } else {
-        toast.error(res?.error || "Failed to start crawl");
+        toast.error(res?.error?.message || res?.error || "Failed to start crawl");
       }
     } catch (err) {
+      console.error("[CADE] Crawl error:", err);
       toast.error("Failed to start domain crawl");
     } finally {
       setCrawling(false);
@@ -411,6 +499,18 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     if (s === "error" || s === "failed") return <XCircle className="w-3.5 h-3.5" />;
     return <Activity className="w-3.5 h-3.5" />;
   };
+
+  // Loading state while checking for saved API key
+  if (isLoadingKey) {
+    return (
+      <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
+          <span className="text-muted-foreground">Loading CADE connection...</span>
+        </div>
+      </div>
+    );
+  }
 
   // Login Form View
   if (!isConnected) {
