@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cade-secret",
 };
 
-// CADE API Base URL
-const CADE_API_BASE = "https://logfire-us.pydantic.dev/rasenguy/cade-service-staging";
+// CADE API Base URL - Production SEO ACG API
+const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
