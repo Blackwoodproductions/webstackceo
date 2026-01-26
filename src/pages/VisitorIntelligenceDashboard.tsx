@@ -69,6 +69,7 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBOnboardingWizard } from '@/components/marketing/GMBOnboardingWizard';
 import { GMBPerformancePanel } from '@/components/marketing/GMBPerformancePanel';
+import { GMBConnectedDashboard } from '@/components/marketing/GMBConnectedDashboard';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
 
 interface Lead {
@@ -310,7 +311,42 @@ const MarketingDashboard = () => {
   const [gmbAuthenticated, setGmbAuthenticated] = useState<boolean>(false);
   const [gmbConnecting, setGmbConnecting] = useState(false);
   const [gmbAccounts, setGmbAccounts] = useState<{ name: string; accountName: string; type: string }[]>([]);
-  const [gmbLocations, setGmbLocations] = useState<{ name: string; title: string; websiteUri?: string; storefrontAddress?: { locality?: string; administrativeArea?: string } }[]>([]);
+  const [gmbLocations, setGmbLocations] = useState<{ 
+    name: string; 
+    title: string; 
+    websiteUri?: string; 
+    phoneNumbers?: { primaryPhone?: string };
+    storefrontAddress?: { 
+      locality?: string; 
+      administrativeArea?: string;
+      postalCode?: string;
+      addressLines?: string[];
+    };
+    regularHours?: {
+      periods: Array<{
+        openDay: string;
+        openTime: { hours: number; minutes?: number };
+        closeDay: string;
+        closeTime: { hours: number; minutes?: number };
+      }>;
+    };
+    categories?: {
+      primaryCategory?: { displayName?: string };
+      additionalCategories?: Array<{ displayName?: string }>;
+    };
+    reviews?: Array<{
+      name: string;
+      reviewId: string;
+      reviewer: { displayName: string; profilePhotoUrl?: string };
+      starRating: string;
+      comment?: string;
+      createTime: string;
+      updateTime?: string;
+      reviewReply?: { comment: string; updateTime: string };
+    }>;
+    averageRating?: number;
+    totalReviewCount?: number;
+  }[]>([]);
   const [selectedGmbAccount, setSelectedGmbAccount] = useState<string | null>(null);
   const [selectedGmbLocation, setSelectedGmbLocation] = useState<string | null>(null);
   const [gmbOnboardingStep, setGmbOnboardingStep] = useState<number>(0);
@@ -3737,8 +3773,35 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
             </div>
+          ) : selectedDomainInGmb ? (
+            /* Connected State - Domain has matching GMB listing */
+            <GMBConnectedDashboard
+              location={selectedDomainInGmb}
+              accessToken={sessionStorage.getItem('gmb_access_token') || ''}
+              onDisconnect={() => {
+                sessionStorage.removeItem('gmb_access_token');
+                sessionStorage.removeItem('gmb_cooldown_until');
+                sessionStorage.removeItem('gmb_token_expiry');
+                localStorage.removeItem('gmb_access_token');
+                localStorage.removeItem('gmb_token_expiry');
+                setGmbAuthenticated(false);
+                setGmbAccounts([]);
+                setGmbLocations([]);
+                setGmbOnboardingStep(0);
+                toast.success('Disconnected from Google Business Profile');
+              }}
+              onRefresh={async () => {
+                const token = sessionStorage.getItem('gmb_access_token') || localStorage.getItem('gmb_access_token');
+                if (token) {
+                  toast.info('Refreshing GMB data...');
+                  await applyGmbToken(token);
+                  toast.success('GMB data refreshed!');
+                }
+              }}
+              isRefreshing={gmbConnecting}
+            />
           ) : (
-            /* Connected State */
+            /* Authenticated but no domain match - show account linked state */
             <div className="space-y-6">
               {/* Compact Header Row */}
               <div className="flex items-center justify-between pb-4 border-b border-border">
@@ -3749,12 +3812,7 @@ f.parentNode.insertBefore(j,f);
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold">Google Business Profile</h2>
-                      {selectedDomainInGmb ? (
-                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full">
-                          <CheckCircle className="w-3 h-3" />
-                          Connected
-                        </span>
-                      ) : gmbAccounts.length > 0 ? (
+                      {gmbAccounts.length > 0 ? (
                         <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
                           <Globe className="w-3 h-3" />
                           Account Linked
@@ -4093,14 +4151,7 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </div>
 
-              {/* Performance Panel - Full Width Below Grid */}
-              {selectedDomainInGmb && (
-                <GMBPerformancePanel
-                  accessToken={sessionStorage.getItem('gmb_access_token') || ''}
-                  locationName={selectedDomainInGmb.name}
-                  locationTitle={selectedDomainInGmb.title}
-                />
-              )}
+              {/* Performance Panel moved to GMBConnectedDashboard */}
 
               {/* Onboarding Wizard */}
               {gmbOnboardingStep > 0 && (
