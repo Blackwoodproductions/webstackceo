@@ -137,26 +137,22 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show connected state with embedded dashboard (iframe)
+  // Show embedded dashboard when authenticated
   if (isAuthenticated) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        {/* Connection Header */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
-              <Shield className="w-5 h-5 text-white" />
+        {/* Simple header with logout */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <p className="font-semibold text-green-600 dark:text-green-400">BRON Dashboard Connected</p>
-              {domain && (
-                <p className="text-sm text-muted-foreground">Managing links for: {domain}</p>
-              )}
-            </div>
+            <span className="font-medium text-green-600 dark:text-green-400">BRON Dashboard</span>
+            {domain && <span className="text-sm text-muted-foreground">• {domain}</span>}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -166,27 +162,26 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 const iframe = document.getElementById('bron-dashboard-iframe') as HTMLIFrameElement | null;
                 if (iframe) iframe.src = iframe.src;
               }}
-              className="gap-2"
+              className="h-8 px-2"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
             </Button>
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
               onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+              className="h-8 px-2"
             >
               <ExternalLink className="w-4 h-4" />
-              Open in New Tab
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive hover:border-destructive/50"
+              className="h-8 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/50"
             >
               <LogOut className="w-4 h-4" />
+              Logout
             </Button>
           </div>
         </div>
@@ -196,36 +191,11 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           <iframe
             id="bron-dashboard-iframe"
             src={BRON_DASHBOARD_URL}
-            className="w-full h-[720px] border-0"
+            className="w-full h-[750px] border-0"
             title="BRON Dashboard"
             allow="clipboard-write; clipboard-read"
           />
         </div>
-
-        {/* Quick Stats / Status */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Status", value: "Active", icon: CheckCircle, color: "text-green-500" },
-            { label: "Platform", value: "Diamond Flow", icon: Zap, color: "text-emerald-500" },
-            { label: "Network", value: "12,500+", icon: Link2, color: "text-cyan-500" },
-            { label: "Quality", value: "DA 30+", icon: Award, color: "text-amber-500" },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="p-4 rounded-xl bg-secondary/30 border border-border text-center"
-            >
-              <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
-              <p className="text-lg font-bold">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Extended Section with features */}
-        <BRONExtendedSection domain={domain} />
       </motion.div>
     );
   }
