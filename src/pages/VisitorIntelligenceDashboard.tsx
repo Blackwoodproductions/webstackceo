@@ -452,6 +452,41 @@ const MarketingDashboard = () => {
       gmbSyncInFlightRef.current = false;
     }
   }, []);
+
+  // Function to refresh GMB accounts and return them (for wizard use)
+  const refreshGmbAccounts = useCallback(async (): Promise<{ name: string; accountName: string; type: string }[]> => {
+    const accessToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || sessionStorage.getItem('gmb_access_token');
+    if (!accessToken) {
+      return [];
+    }
+
+    try {
+      console.log('[GMB] Refreshing accounts for wizard...');
+      const { data, error } = await supabase.functions.invoke('gmb-sync', {
+        body: { accessToken },
+      });
+
+      if (error || data?.error) {
+        console.error('[GMB] Failed to refresh accounts:', error || data?.error);
+        return [];
+      }
+
+      const { accounts, locations } = data || {};
+      
+      if (accounts && Array.isArray(accounts) && accounts.length > 0) {
+        setGmbAccounts(accounts);
+        setGmbLocations(locations || []);
+        setGmbAuthenticated(true);
+        setGmbSyncError(null);
+        return accounts;
+      }
+      
+      return [];
+    } catch (err) {
+      console.error('[GMB] Error refreshing accounts:', err);
+      return [];
+    }
+  }, []);
   
   // SEO Audit state for selected domain
   const [savedAuditForDomain, setSavedAuditForDomain] = useState<{
@@ -3578,6 +3613,7 @@ f.parentNode.insertBefore(j,f);
                       onCancel={() => {
                         toast.info('You can add this domain to Google Business Profile at any time.');
                       }}
+                      onRefreshAccounts={refreshGmbAccounts}
                     />
                   </div>
                 )}
@@ -3658,6 +3694,7 @@ f.parentNode.insertBefore(j,f);
                   // Can't really cancel since there's no listing - just show a message
                   toast.info('You can add this domain to Google Business Profile at any time.');
                 }}
+                onRefreshAccounts={refreshGmbAccounts}
               />
             </div>
           ) : (
