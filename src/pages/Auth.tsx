@@ -77,13 +77,28 @@ const Auth = () => {
     checkAuth();
   }, [navigate, redirectTo]);
 
-  // Handle Google OAuth sign in
+  // Extended scopes for GA + GSC auto-connect
+  const EXTENDED_GOOGLE_SCOPES = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/analytics.readonly",
+    "https://www.googleapis.com/auth/webmasters.readonly",
+    "https://www.googleapis.com/auth/webmasters",
+  ].join(" ");
+
+  // Handle Google OAuth sign in with extended scopes for auto-connect
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}${redirectTo}`,
+        scopes: EXTENDED_GOOGLE_SCOPES,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
 

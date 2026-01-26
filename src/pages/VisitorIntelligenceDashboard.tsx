@@ -33,7 +33,7 @@ import SEO from '@/components/SEO';
 import { generateAPIDocs } from '@/lib/generateAPIDocs';
 import { InlineSEOReport } from '@/components/audit/InlineSEOReport';
 import { AnimatedTagline } from '@/components/ui/animated-tagline';
-
+import { useGoogleAuthSync } from '@/hooks/use-google-auth-sync';
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
@@ -201,6 +201,9 @@ const CaseStudyIframe = ({ domain }: { domain: string }) => {
 const MarketingDashboard = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  
+  // Sync Google OAuth tokens and profile for auto-connect
+  useGoogleAuthSync();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
