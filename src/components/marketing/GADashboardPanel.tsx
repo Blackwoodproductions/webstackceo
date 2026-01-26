@@ -829,7 +829,7 @@ export const GADashboardPanel = ({
     if (fullWidth) {
       return (
         <>
-          <Card className="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-yellow-500/10 border-orange-500/20">
+          <Card className="bg-card border-border">
             <CardContent className="py-6">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -892,7 +892,7 @@ export const GADashboardPanel = ({
     
     return (
       <>
-        <Card className="bg-gradient-to-br from-orange-500/5 to-amber-500/5 border-orange-500/20 h-full flex flex-col">
+        <Card className="bg-card border-border h-full flex flex-col">
           <CardContent className="py-8 flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mx-auto mb-4">
@@ -973,7 +973,7 @@ export const GADashboardPanel = ({
     if (is403) {
       // Show as friendly setup card, not an error
       return (
-        <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+        <Card className="border-border bg-card">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1058,7 +1058,7 @@ export const GADashboardPanel = ({
 
     // Non-403 errors: show as actual error
     return (
-      <Card className="border-destructive/30">
+      <Card className="border-border">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1114,7 +1114,7 @@ export const GADashboardPanel = ({
   // Connected but no properties found in account
   if (isAuthenticated && propertiesLoaded && properties.length === 0) {
     return (
-      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1189,7 +1189,7 @@ export const GADashboardPanel = ({
   // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
   if (isAuthenticated && externalSelectedSite && propertiesLoaded && streamsLoaded && !streamsError && !isExternalSiteInGA) {
     return (
-      <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
+      <Card className="border-border bg-card">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1274,7 +1274,7 @@ export const GADashboardPanel = ({
         {(isExternalSiteInGA || !externalSelectedSite) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Sessions */}
-          <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-xl p-4 border border-orange-500/20">
+          <div className="bg-card rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between mb-2">
               <Users className="w-5 h-5 text-orange-500" />
               {metrics && metrics.sessionsChange !== 0 && (
@@ -1289,7 +1289,7 @@ export const GADashboardPanel = ({
           </div>
 
           {/* Users */}
-          <div className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 rounded-xl p-4 border border-amber-500/20">
+          <div className="bg-card rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between mb-2">
               <Users className="w-5 h-5 text-amber-500" />
               {metrics && metrics.usersChange !== 0 && (
@@ -1304,7 +1304,7 @@ export const GADashboardPanel = ({
           </div>
 
           {/* Page Views */}
-          <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 rounded-xl p-4 border border-yellow-500/20">
+          <div className="bg-card rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between mb-2">
               <Eye className="w-5 h-5 text-yellow-500" />
               {metrics && (
@@ -1318,7 +1318,7 @@ export const GADashboardPanel = ({
           </div>
 
           {/* Avg Duration */}
-          <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl p-4 border border-green-500/20">
+          <div className="bg-card rounded-xl p-4 border border-border">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-5 h-5 text-green-500" />
               {metrics && (
