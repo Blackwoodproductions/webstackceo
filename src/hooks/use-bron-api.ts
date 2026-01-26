@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Types for all BRON API data
+// Types for BRON API data
 export interface BronArticle {
   id: string;
   title: string;
@@ -50,6 +50,14 @@ export interface BronKeyword {
   articles: number;
 }
 
+export interface BronCluster {
+  id: string;
+  name: string;
+  keywords: string[];
+  articles: number;
+  avgPosition?: number;
+}
+
 export interface BronDeepLink {
   id: string;
   sourceUrl: string;
@@ -71,7 +79,7 @@ export interface BronAuthority {
   updatedAt: string;
 }
 
-export interface BronDomainProfile {
+export interface BronProfile {
   domain: string;
   category?: string;
   language?: string;
@@ -79,34 +87,27 @@ export interface BronDomainProfile {
   description?: string;
   lastCrawled?: string;
   pagesIndexed?: number;
-  cssAnalyzed?: boolean;
 }
 
-export interface BronSubscription {
-  active: boolean;
-  plan?: string;
-  articlesUsed: number;
-  articlesLimit: number;
-  backlinksUsed: number;
-  backlinksLimit: number;
-  expiresAt?: string;
+export interface BronStats {
+  totalArticles: number;
+  publishedArticles: number;
+  pendingArticles: number;
+  totalBacklinks: number;
+  activeBacklinks: number;
+  totalKeywords: number;
+  avgDa: number;
+  avgDr: number;
 }
 
-export interface BronTaskStatus {
+export interface BronCampaign {
   id: string;
-  type: "crawl" | "categorization" | "content" | "faq";
-  status: "pending" | "running" | "completed" | "failed";
-  progress?: number;
-  startedAt?: string;
-  completedAt?: string;
-  error?: string;
-}
-
-export interface BronSystemHealth {
-  status: "healthy" | "degraded" | "down";
-  workers: number;
-  activeWorkers: number;
-  queuedJobs: number;
+  name: string;
+  status: "active" | "paused" | "completed";
+  startDate: string;
+  endDate?: string;
+  articlesCreated: number;
+  backlinksBuilt: number;
 }
 
 export interface BronDashboardData {
@@ -114,12 +115,12 @@ export interface BronDashboardData {
   backlinks: BronBacklink[];
   rankings: BronRanking[];
   keywords: BronKeyword[];
+  clusters: BronCluster[];
   deepLinks: BronDeepLink[];
   authority: BronAuthority | null;
-  domainProfile: BronDomainProfile | null;
-  subscription: BronSubscription | null;
-  tasks: BronTaskStatus[];
-  systemHealth: BronSystemHealth | null;
+  profile: BronProfile | null;
+  stats: BronStats | null;
+  campaigns: BronCampaign[];
 }
 
 interface UseBronApiResult {
@@ -130,11 +131,7 @@ interface UseBronApiResult {
   refetch: (endpoint?: string) => Promise<void>;
   refetchAll: () => Promise<void>;
   lastUpdated: Date | null;
-  // Action methods
-  triggerCrawl: () => Promise<boolean>;
-  triggerCategorization: () => Promise<boolean>;
-  generateContent: (options?: any) => Promise<boolean>;
-  generateFaq: (options?: any) => Promise<boolean>;
+  hasAnyData: boolean;
 }
 
 const initialData: BronDashboardData = {
@@ -142,12 +139,12 @@ const initialData: BronDashboardData = {
   backlinks: [],
   rankings: [],
   keywords: [],
+  clusters: [],
   deepLinks: [],
   authority: null,
-  domainProfile: null,
-  subscription: null,
-  tasks: [],
-  systemHealth: null,
+  profile: null,
+  stats: null,
+  campaigns: [],
 };
 
 export function useBronApi(domain: string | undefined): UseBronApiResult {
@@ -157,12 +154,12 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const callApi = useCallback(async (endpoint: string, method = "GET", body?: any) => {
+  const callApi = useCallback(async (endpoint: string) => {
     if (!domain) return null;
 
     try {
       const { data: response, error } = await supabase.functions.invoke("bron-api", {
-        body: { domain, endpoint, method, body },
+        body: { domain, endpoint },
       });
 
       if (error) throw new Error(error.message);
@@ -201,34 +198,23 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
           case "keywords":
             newData.keywords = processKeywords(result);
             break;
+          case "clusters":
+            newData.clusters = processClusters(result);
+            break;
           case "deeplinks":
             newData.deepLinks = processDeepLinks(result);
             break;
           case "authority":
             newData.authority = processAuthority(result);
             break;
-          case "domain-profile":
-            newData.domainProfile = processDomainProfile(result, domain);
+          case "profile":
+            newData.profile = processProfile(result, domain);
             break;
-          case "subscription":
-          case "subscription-detail":
-            newData.subscription = processSubscription(result);
+          case "stats":
+            newData.stats = processStats(result);
             break;
-          case "crawl-status":
-          case "categorization-status":
-            // Update or add task
-            const task = processTaskStatus(result, endpoint);
-            if (task) {
-              const existingIdx = newData.tasks.findIndex(t => t.type === task.type);
-              if (existingIdx >= 0) {
-                newData.tasks[existingIdx] = task;
-              } else {
-                newData.tasks.push(task);
-              }
-            }
-            break;
-          case "system-health":
-            newData.systemHealth = processSystemHealth(result);
+          case "campaigns":
+            newData.campaigns = processCampaigns(result);
             break;
         }
 
@@ -249,11 +235,11 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
 
     setIsLoading(true);
     
-    // Fetch all endpoints in parallel
+    // Fetch all BRON endpoints in parallel
     const endpoints = [
       "articles", "backlinks", "rankings", "keywords", 
-      "deeplinks", "authority", "domain-profile", 
-      "subscription-detail", "system-health"
+      "clusters", "deeplinks", "authority", "profile", 
+      "stats", "campaigns"
     ];
 
     await Promise.allSettled(endpoints.map(ep => fetchEndpoint(ep)));
@@ -271,61 +257,17 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
     }
   }, [domain, refetchAll]);
 
-  // Action methods
-  const triggerCrawl = useCallback(async () => {
-    try {
-      setLoadingStates(prev => ({ ...prev, crawl: true }));
-      await callApi("crawl-domain", "POST");
-      await fetchEndpoint("crawl-status");
-      return true;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, crawl: err instanceof Error ? err.message : "Crawl failed" }));
-      return false;
-    } finally {
-      setLoadingStates(prev => ({ ...prev, crawl: false }));
-    }
-  }, [callApi, fetchEndpoint]);
-
-  const triggerCategorization = useCallback(async () => {
-    try {
-      setLoadingStates(prev => ({ ...prev, categorization: true }));
-      await callApi("categorize-domain", "POST");
-      await fetchEndpoint("categorization-status");
-      return true;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, categorization: err instanceof Error ? err.message : "Categorization failed" }));
-      return false;
-    } finally {
-      setLoadingStates(prev => ({ ...prev, categorization: false }));
-    }
-  }, [callApi, fetchEndpoint]);
-
-  const generateContent = useCallback(async (options?: any) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, content: true }));
-      await callApi("generate-content", "POST", options);
-      await fetchEndpoint("articles");
-      return true;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, content: err instanceof Error ? err.message : "Content generation failed" }));
-      return false;
-    } finally {
-      setLoadingStates(prev => ({ ...prev, content: false }));
-    }
-  }, [callApi, fetchEndpoint]);
-
-  const generateFaq = useCallback(async (options?: any) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, faq: true }));
-      await callApi("generate-faq", "POST", options);
-      return true;
-    } catch (err) {
-      setErrors(prev => ({ ...prev, faq: err instanceof Error ? err.message : "FAQ generation failed" }));
-      return false;
-    } finally {
-      setLoadingStates(prev => ({ ...prev, faq: false }));
-    }
-  }, [callApi]);
+  // Check if we have any real data
+  const hasAnyData = 
+    data.articles.length > 0 ||
+    data.backlinks.length > 0 ||
+    data.rankings.length > 0 ||
+    data.keywords.length > 0 ||
+    data.clusters.length > 0 ||
+    data.deepLinks.length > 0 ||
+    data.campaigns.length > 0 ||
+    data.authority !== null ||
+    data.stats !== null;
 
   return {
     data,
@@ -335,152 +277,178 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
     refetch: fetchEndpoint,
     refetchAll,
     lastUpdated,
-    triggerCrawl,
-    triggerCategorization,
-    generateContent,
-    generateFaq,
+    hasAnyData,
   };
 }
 
-// Data processors
+// Data processors - map API responses to our interfaces
 function processArticles(data: any, domain: string): BronArticle[] {
-  if (!Array.isArray(data)) return [];
-  return data.map((item: any, i: number) => ({
-    id: item.id || `article-${i}`,
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.articles || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.article_id || `article-${i}`,
     title: item.title || item.name || `Article ${i + 1}`,
-    url: item.url || item.link || "",
-    domain: item.domain || domain,
-    publishedAt: item.published_at || item.created_at || new Date().toISOString(),
-    status: item.status || "published",
-    keywords: item.keywords || [],
+    url: item.url || item.link || item.article_url || "",
+    domain: item.domain || item.site_domain || domain,
+    publishedAt: item.published_at || item.created_at || item.date || new Date().toISOString(),
+    status: mapStatus(item.status),
+    keywords: parseKeywords(item.keywords),
     anchorText: item.anchor_text || item.anchor,
     targetUrl: item.target_url || item.target,
-    daScore: item.da || item.da_score,
-    drScore: item.dr || item.dr_score,
+    daScore: parseNumber(item.da || item.da_score || item.domain_authority),
+    drScore: parseNumber(item.dr || item.dr_score || item.domain_rating),
   }));
 }
 
 function processBacklinks(data: any): BronBacklink[] {
-  if (!Array.isArray(data)) return [];
-  return data.map((item: any, i: number) => ({
-    id: item.id || `bl-${i}`,
-    sourceUrl: item.source_url || item.source || "",
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.backlinks || data.links || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.backlink_id || `bl-${i}`,
+    sourceUrl: item.source_url || item.source || item.from_url || "",
     sourceDomain: item.source_domain || extractDomain(item.source_url || item.source),
-    targetUrl: item.target_url || item.target || "",
+    targetUrl: item.target_url || item.target || item.to_url || "",
     anchorText: item.anchor_text || item.anchor || "Link",
-    daScore: item.da || item.da_score || 0,
-    drScore: item.dr || item.dr_score || 0,
-    createdAt: item.created_at || item.date || new Date().toISOString(),
-    status: item.status || "active",
-    dofollow: item.dofollow !== false,
+    daScore: parseNumber(item.da || item.da_score || item.domain_authority) || 0,
+    drScore: parseNumber(item.dr || item.dr_score || item.domain_rating) || 0,
+    createdAt: item.created_at || item.date || item.discovered_at || new Date().toISOString(),
+    status: mapBacklinkStatus(item.status),
+    dofollow: item.dofollow !== false && item.nofollow !== true,
   }));
 }
 
 function processRankings(data: any): BronRanking[] {
-  if (!Array.isArray(data)) return [];
-  return data.map((item: any, i: number) => ({
-    id: item.id || `rank-${i}`,
-    keyword: item.keyword || item.query || "",
-    position: item.position || item.rank || 0,
-    previousPosition: item.previous_position || item.prev_rank,
-    url: item.url || item.page || "",
-    searchVolume: item.search_volume || item.volume,
-    difficulty: item.difficulty || item.kd,
-    updatedAt: item.updated_at || item.date || new Date().toISOString(),
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.rankings || data.positions || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.ranking_id || `rank-${i}`,
+    keyword: item.keyword || item.query || item.term || "",
+    position: parseNumber(item.position || item.rank) || 0,
+    previousPosition: parseNumber(item.previous_position || item.prev_rank || item.last_position),
+    url: item.url || item.page || item.landing_page || "",
+    searchVolume: parseNumber(item.search_volume || item.volume),
+    difficulty: parseNumber(item.difficulty || item.kd || item.keyword_difficulty),
+    updatedAt: item.updated_at || item.date || item.checked_at || new Date().toISOString(),
   }));
 }
 
 function processKeywords(data: any): BronKeyword[] {
-  if (!Array.isArray(data)) return [];
-  return data.map((item: any, i: number) => ({
-    id: item.id || `kw-${i}`,
-    keyword: item.keyword || item.term || "",
-    cluster: item.cluster || item.group,
-    volume: item.volume || item.search_volume,
-    difficulty: item.difficulty || item.kd,
-    intent: item.intent,
-    articles: item.articles || item.article_count || 0,
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.keywords || data.terms || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.keyword_id || `kw-${i}`,
+    keyword: item.keyword || item.term || item.query || "",
+    cluster: item.cluster || item.group || item.category,
+    volume: parseNumber(item.volume || item.search_volume),
+    difficulty: parseNumber(item.difficulty || item.kd),
+    intent: mapIntent(item.intent),
+    articles: parseNumber(item.articles || item.article_count) || 0,
+  }));
+}
+
+function processClusters(data: any): BronCluster[] {
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.clusters || data.groups || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.cluster_id || `cluster-${i}`,
+    name: item.name || item.cluster_name || item.title || `Cluster ${i + 1}`,
+    keywords: parseKeywords(item.keywords),
+    articles: parseNumber(item.articles || item.article_count) || 0,
+    avgPosition: parseNumber(item.avg_position || item.average_position),
   }));
 }
 
 function processDeepLinks(data: any): BronDeepLink[] {
-  if (!Array.isArray(data)) return [];
-  return data.map((item: any, i: number) => ({
-    id: item.id || `dl-${i}`,
-    sourceUrl: item.source_url || item.from || "",
-    targetUrl: item.target_url || item.to || "",
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.deeplinks || data.internal_links || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.link_id || `dl-${i}`,
+    sourceUrl: item.source_url || item.from || item.source || "",
+    targetUrl: item.target_url || item.to || item.target || "",
     anchorText: item.anchor_text || item.anchor || "Link",
-    createdAt: item.created_at || new Date().toISOString(),
-    clicks: item.clicks,
+    createdAt: item.created_at || item.date || new Date().toISOString(),
+    clicks: parseNumber(item.clicks),
   }));
 }
 
 function processAuthority(data: any): BronAuthority | null {
   if (!data || typeof data !== "object") return null;
+  // Handle both direct object and wrapped response
+  const auth = data.authority || data.metrics || data;
+  
   return {
-    domainAuthority: data.da || data.domain_authority || 0,
-    domainRating: data.dr || data.domain_rating || 0,
-    trustFlow: data.tf || data.trust_flow,
-    citationFlow: data.cf || data.citation_flow,
-    referringDomains: data.referring_domains || data.rd || 0,
-    totalBacklinks: data.total_backlinks || data.backlinks || 0,
-    organicKeywords: data.organic_keywords,
-    organicTraffic: data.organic_traffic,
-    updatedAt: data.updated_at || new Date().toISOString(),
+    domainAuthority: parseNumber(auth.da || auth.domain_authority) || 0,
+    domainRating: parseNumber(auth.dr || auth.domain_rating) || 0,
+    trustFlow: parseNumber(auth.tf || auth.trust_flow),
+    citationFlow: parseNumber(auth.cf || auth.citation_flow),
+    referringDomains: parseNumber(auth.referring_domains || auth.rd || auth.ref_domains) || 0,
+    totalBacklinks: parseNumber(auth.total_backlinks || auth.backlinks || auth.total_links) || 0,
+    organicKeywords: parseNumber(auth.organic_keywords || auth.keywords),
+    organicTraffic: parseNumber(auth.organic_traffic || auth.traffic),
+    updatedAt: auth.updated_at || auth.last_update || new Date().toISOString(),
   };
 }
 
-function processDomainProfile(data: any, domain: string): BronDomainProfile | null {
+function processProfile(data: any, domain: string): BronProfile | null {
   if (!data || typeof data !== "object") return null;
+  const profile = data.profile || data.domain || data;
+  
   return {
-    domain: data.domain || domain,
-    category: data.category,
-    language: data.language,
-    country: data.country,
-    description: data.description,
-    lastCrawled: data.last_crawled,
-    pagesIndexed: data.pages_indexed,
-    cssAnalyzed: data.css_analyzed,
+    domain: profile.domain || domain,
+    category: profile.category || profile.niche || profile.industry,
+    language: profile.language || profile.lang,
+    country: profile.country || profile.geo,
+    description: profile.description || profile.about,
+    lastCrawled: profile.last_crawled || profile.crawled_at,
+    pagesIndexed: parseNumber(profile.pages_indexed || profile.indexed_pages),
   };
 }
 
-function processSubscription(data: any): BronSubscription | null {
+function processStats(data: any): BronStats | null {
   if (!data || typeof data !== "object") return null;
+  const stats = data.stats || data.summary || data;
+  
   return {
-    active: data.active !== false,
-    plan: data.plan || data.tier,
-    articlesUsed: data.articles_used || 0,
-    articlesLimit: data.articles_limit || 0,
-    backlinksUsed: data.backlinks_used || 0,
-    backlinksLimit: data.backlinks_limit || 0,
-    expiresAt: data.expires_at,
+    totalArticles: parseNumber(stats.total_articles || stats.articles) || 0,
+    publishedArticles: parseNumber(stats.published_articles || stats.published) || 0,
+    pendingArticles: parseNumber(stats.pending_articles || stats.pending) || 0,
+    totalBacklinks: parseNumber(stats.total_backlinks || stats.backlinks) || 0,
+    activeBacklinks: parseNumber(stats.active_backlinks || stats.active) || 0,
+    totalKeywords: parseNumber(stats.total_keywords || stats.keywords) || 0,
+    avgDa: parseNumber(stats.avg_da || stats.average_da) || 0,
+    avgDr: parseNumber(stats.avg_dr || stats.average_dr) || 0,
   };
 }
 
-function processTaskStatus(data: any, endpoint: string): BronTaskStatus | null {
-  if (!data || typeof data !== "object") return null;
-  const type = endpoint.includes("crawl") ? "crawl" : "categorization";
-  return {
-    id: data.id || data.task_id || `task-${type}`,
-    type,
-    status: data.status || "pending",
-    progress: data.progress,
-    startedAt: data.started_at,
-    completedAt: data.completed_at,
-    error: data.error,
-  };
+function processCampaigns(data: any): BronCampaign[] {
+  if (!data) return [];
+  const arr = Array.isArray(data) ? data : (data.campaigns || data.data || []);
+  if (!Array.isArray(arr)) return [];
+  
+  return arr.map((item: any, i: number) => ({
+    id: item.id || item.campaign_id || `campaign-${i}`,
+    name: item.name || item.campaign_name || `Campaign ${i + 1}`,
+    status: mapCampaignStatus(item.status),
+    startDate: item.start_date || item.started_at || item.created_at || new Date().toISOString(),
+    endDate: item.end_date || item.ended_at,
+    articlesCreated: parseNumber(item.articles_created || item.articles) || 0,
+    backlinksBuilt: parseNumber(item.backlinks_built || item.backlinks) || 0,
+  }));
 }
 
-function processSystemHealth(data: any): BronSystemHealth | null {
-  if (!data || typeof data !== "object") return null;
-  return {
-    status: data.status || "healthy",
-    workers: data.workers || data.total_workers || 0,
-    activeWorkers: data.active_workers || 0,
-    queuedJobs: data.queued_jobs || data.queue_size || 0,
-  };
-}
-
+// Helper functions
 function extractDomain(url: string | undefined): string {
   if (!url) return "";
   try {
@@ -488,4 +456,48 @@ function extractDomain(url: string | undefined): string {
   } catch {
     return url.split("/")[2] || url;
   }
+}
+
+function parseNumber(val: any): number | undefined {
+  if (val === undefined || val === null) return undefined;
+  const num = Number(val);
+  return isNaN(num) ? undefined : num;
+}
+
+function parseKeywords(keywords: any): string[] {
+  if (!keywords) return [];
+  if (Array.isArray(keywords)) return keywords.map(String);
+  if (typeof keywords === "string") return keywords.split(",").map(k => k.trim()).filter(Boolean);
+  return [];
+}
+
+function mapStatus(status: any): "pending" | "published" | "scheduled" {
+  const s = String(status).toLowerCase();
+  if (s.includes("publish")) return "published";
+  if (s.includes("schedul")) return "scheduled";
+  return "pending";
+}
+
+function mapBacklinkStatus(status: any): "active" | "pending" | "lost" {
+  const s = String(status).toLowerCase();
+  if (s.includes("lost") || s.includes("dead") || s.includes("removed")) return "lost";
+  if (s.includes("pending") || s.includes("wait")) return "pending";
+  return "active";
+}
+
+function mapCampaignStatus(status: any): "active" | "paused" | "completed" {
+  const s = String(status).toLowerCase();
+  if (s.includes("complete") || s.includes("done") || s.includes("finish")) return "completed";
+  if (s.includes("pause") || s.includes("stop")) return "paused";
+  return "active";
+}
+
+function mapIntent(intent: any): "informational" | "transactional" | "navigational" | "commercial" | undefined {
+  if (!intent) return undefined;
+  const i = String(intent).toLowerCase();
+  if (i.includes("info")) return "informational";
+  if (i.includes("trans") || i.includes("buy")) return "transactional";
+  if (i.includes("nav")) return "navigational";
+  if (i.includes("comm")) return "commercial";
+  return undefined;
 }

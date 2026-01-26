@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
+// BRON API Configuration
 const BRON_FEED_BASE = "https://public.imagehosting.space/feed";
 const API_ID = "53084";
 const API_KEY = "347819526879185";
@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { domain, endpoint, method = "GET", body } = await req.json();
+    const { domain, endpoint } = await req.json();
 
     if (!domain) {
       return new Response(
@@ -26,152 +26,112 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[bron-api] Endpoint: ${endpoint}, Domain: ${domain}, Method: ${method}`);
+    console.log(`[bron-api] Endpoint: ${endpoint}, Domain: ${domain}`);
 
+    // Build base params for all BRON endpoints
+    const baseParams = `domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
     let apiUrl: string;
-    let fetchOptions: RequestInit = {
-      method,
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "User-Agent": "WebStack-SEO-Dashboard/1.0",
-      },
-    };
 
-    // Route to appropriate API based on endpoint
+    // All BRON Feed Endpoints from public.imagehosting.space
     switch (endpoint) {
-      // BRON Feed Endpoints (public.imagehosting.space)
       case "articles":
-        apiUrl = `${BRON_FEED_BASE}/Article.php?feedit=1&domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/Article.php?feedit=1&${baseParams}`;
         break;
 
       case "backlinks":
-        apiUrl = `${BRON_FEED_BASE}/Backlinks.php?domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/Backlink.php?${baseParams}`;
         break;
 
       case "rankings":
-        apiUrl = `${BRON_FEED_BASE}/Rankings.php?domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/Ranking.php?${baseParams}`;
         break;
 
       case "keywords":
-        apiUrl = `${BRON_FEED_BASE}/Keywords.php?domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/Keyword.php?${baseParams}`;
+        break;
+
+      case "clusters":
+        apiUrl = `${BRON_FEED_BASE}/Cluster.php?${baseParams}`;
         break;
 
       case "deeplinks":
-        apiUrl = `${BRON_FEED_BASE}/DeepLinks.php?domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/DeepLink.php?${baseParams}`;
         break;
 
       case "authority":
-        apiUrl = `${BRON_FEED_BASE}/Authority.php?domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
-        fetchOptions.method = "GET";
+        apiUrl = `${BRON_FEED_BASE}/Authority.php?${baseParams}`;
         break;
 
-      // CADE API Endpoints (seo-acg-api.prod.seosara.ai)
-      case "domain-profile":
-        apiUrl = `${CADE_API_BASE}/domain/profile?domain=${encodeURIComponent(domain)}`;
+      case "profile":
+        apiUrl = `${BRON_FEED_BASE}/Profile.php?${baseParams}`;
         break;
 
-      case "crawl-domain":
-        apiUrl = `${CADE_API_BASE}/crawler/crawl-domain`;
-        fetchOptions.method = "POST";
-        fetchOptions.body = JSON.stringify({ domain, ...body });
+      case "stats":
+        apiUrl = `${BRON_FEED_BASE}/Stats.php?${baseParams}`;
         break;
 
-      case "categorize-domain":
-        apiUrl = `${CADE_API_BASE}/domain/categorize-domain`;
-        fetchOptions.method = "POST";
-        fetchOptions.body = JSON.stringify({ domain, ...body });
+      case "campaigns":
+        apiUrl = `${BRON_FEED_BASE}/Campaign.php?${baseParams}`;
         break;
 
-      case "generate-content":
-        apiUrl = `${CADE_API_BASE}/content/`;
-        fetchOptions.method = "POST";
-        fetchOptions.body = JSON.stringify({ domain, ...body });
+      case "reports":
+        apiUrl = `${BRON_FEED_BASE}/Report.php?${baseParams}`;
         break;
 
-      case "generate-faq":
-        apiUrl = `${CADE_API_BASE}/content/faq`;
-        fetchOptions.method = "POST";
-        fetchOptions.body = JSON.stringify({ domain, ...body });
+      case "links":
+        apiUrl = `${BRON_FEED_BASE}/Link.php?${baseParams}`;
         break;
 
-      case "get-faqs":
-        apiUrl = `${CADE_API_BASE}/content/faq?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "publish-content":
-        apiUrl = `${CADE_API_BASE}/publication/`;
-        fetchOptions.method = "POST";
-        fetchOptions.body = JSON.stringify({ domain, ...body });
-        break;
-
-      case "subscription":
-        apiUrl = `${CADE_API_BASE}/subscription/?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "subscription-detail":
-        apiUrl = `${CADE_API_BASE}/subscription/detail?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "subscription-active":
-        apiUrl = `${CADE_API_BASE}/subscription/active?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "crawl-status":
-        apiUrl = `${CADE_API_BASE}/tasks/crawl/crawl?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "crawl-all-status":
-        apiUrl = `${CADE_API_BASE}/tasks/crawl/crawl-all?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "categorization-status":
-        apiUrl = `${CADE_API_BASE}/tasks/categorization/categorization?domain=${encodeURIComponent(domain)}`;
-        break;
-
-      case "system-health":
-        apiUrl = `${CADE_API_BASE}/system/health`;
-        break;
-
-      case "system-workers":
-        apiUrl = `${CADE_API_BASE}/system/workers`;
-        break;
-
-      case "system-queues":
-        apiUrl = `${CADE_API_BASE}/system/queues`;
+      case "all":
+        // Fetch all available data in one call if supported
+        apiUrl = `${BRON_FEED_BASE}/All.php?${baseParams}`;
         break;
 
       default:
-        return new Response(
-          JSON.stringify({ error: `Unknown endpoint: ${endpoint}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        // Try the endpoint as a direct PHP file name
+        apiUrl = `${BRON_FEED_BASE}/${endpoint}.php?${baseParams}`;
+        break;
     }
 
     console.log(`[bron-api] Calling: ${apiUrl}`);
-    const response = await fetch(apiUrl, fetchOptions);
+    
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "User-Agent": "WebStack-SEO-Dashboard/1.0",
+      },
+    });
+    
     console.log(`[bron-api] Response status: ${response.status}`);
 
+    // Get response text first to handle potential non-JSON responses
+    const responseText = await response.text();
+    console.log(`[bron-api] Response preview: ${responseText.substring(0, 200)}`);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[bron-api] Error: ${response.status} - ${errorText}`);
+      console.error(`[bron-api] Error: ${response.status} - ${responseText}`);
       return new Response(
         JSON.stringify({ 
           error: `API returned ${response.status}`, 
-          details: errorText,
+          details: responseText,
           endpoint 
         }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const data = await response.json();
-    console.log(`[bron-api] Success for ${endpoint}`);
+    // Try to parse as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      // If not JSON, return the text as-is wrapped in an object
+      console.log(`[bron-api] Response is not JSON, wrapping text`);
+      data = { raw: responseText, parsed: false };
+    }
+
+    console.log(`[bron-api] Success for ${endpoint}, data type: ${typeof data}, isArray: ${Array.isArray(data)}`);
 
     return new Response(
       JSON.stringify({ success: true, data, endpoint }),
