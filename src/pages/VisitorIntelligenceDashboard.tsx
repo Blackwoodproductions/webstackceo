@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -1431,79 +1432,146 @@ const MarketingDashboard = () => {
         canonical="/visitor-intelligence-dashboard"
       />
 
-      {/* High-tech background grid pattern */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          opacity: 0.015,
-          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }}
-      />
-      
-      {/* Floating particles across the page */}
+      {/* High-tech background effects - matching AuditResults page */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-primary animate-pulse"
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
+        
+        {/* Corner gradient accents */}
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[200px]" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-cyan-500/10 via-primary/5 to-transparent rounded-tr-[150px]" />
+        
+        {/* Animated scanning line */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
+        
+        {/* Floating particles - animated with framer-motion */}
+        <motion.div
+          className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/70"
+          animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/70"
+          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+        />
+        <motion.div
+          className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-amber-400/70"
+          animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+        />
+        <motion.div
+          className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-primary/70"
+          animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-emerald-400/60"
+          animate={{ y: [0, -15, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.3, 1] }}
+          transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div
+          className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-rose-400/60"
+          animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0.8 }}
+        />
+        <motion.div
+          className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-cyan-300/50"
+          animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
+        />
+        <motion.div
+          className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-violet-300/50"
+          animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 3.2, repeat: Infinity, delay: 2 }}
+        />
+        
+        {/* Radial glow from top center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-primary/8 via-violet-500/3 to-transparent" />
+      </div>
+
+      {/* Header with integrated tabs - wrapped with animated glow effect, sticky */}
+      <div className="relative max-w-[1480px] mx-auto sticky top-0 z-50 group">
+        {/* Animated gradient glow background - matching AuditResults */}
+        <motion.div
+          className="absolute -inset-[2px] rounded-t-[14px] opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-md"
+          animate={{
+            background: [
+              "linear-gradient(0deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+              "linear-gradient(90deg, rgba(139,92,246,0.4), rgba(251,191,36,0.3), rgba(34,211,238,0.4))",
+              "linear-gradient(180deg, rgba(251,191,36,0.3), rgba(34,211,238,0.4), rgba(139,92,246,0.4))",
+              "linear-gradient(270deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+              "linear-gradient(360deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+            ],
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <header className="relative border border-border bg-card/95 backdrop-blur-xl rounded-t-xl overflow-hidden">
+          {/* Grid pattern overlay on header */}
+          <div 
+            className="absolute inset-0 opacity-[0.02] pointer-events-none"
             style={{
-              left: `${8 + (i * 8)}%`,
-              top: `${15 + ((i * 7) % 70)}%`,
-              opacity: 0.2 + (i % 3) * 0.1,
-              animationDelay: `${i * 0.4}s`,
-              animationDuration: `${3 + (i % 3)}s`,
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: '30px 30px',
             }}
           />
-        ))}
-      </div>
-      
-      {/* Subtle radial gradient glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-radial from-primary/5 via-transparent to-transparent pointer-events-none z-0" />
-
-      {/* Header with integrated tabs - wrapped with glow effect, sticky */}
-      <header className="border border-border bg-card/95 backdrop-blur-sm rounded-t-xl max-w-[1480px] mx-auto relative glow-primary sticky top-0 z-50 overflow-hidden">
-        {/* Tabs - offset slightly right from center, floating at bottom of header */}
-        <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
-          {[
-            { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye, isPaid: false },
-            { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp, isPaid: true },
-            { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText, isPaid: true },
-            { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin, isPaid: true },
-            { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity, isPaid: true },
-            { id: 'on-page-seo' as DashboardTab, label: 'SEO', icon: FileSearch, isPaid: true },
-            { id: 'landing-pages' as DashboardTab, label: 'PPC', icon: Target, isPaid: true },
-          ].map((tab, index) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
-              className={`relative flex flex-col items-center justify-center w-16 h-11 transition-all rounded-t-lg border-t border-x gap-0.5 ${
-                activeTab === tab.id
-                  ? tab.isPaid 
-                    ? 'bg-gradient-to-b from-amber-500/10 to-background text-amber-500 border-amber-500/30'
-                    : 'bg-background text-primary border-border'
-                  : tab.isPaid
-                    ? 'bg-gradient-to-b from-amber-500/5 to-muted/30 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 border-transparent -ml-1 first:ml-0'
-                    : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
-              }`}
-              title={tab.isPaid ? `${tab.label} (Premium Add-on)` : tab.label}
-            >
-              <tab.icon className={`w-4 h-4 ${tab.isPaid && activeTab === tab.id ? 'text-amber-500' : ''}`} />
-              <span className="text-[9px] font-medium leading-none">{tab.label}</span>
-              {/* Active tab bottom cover */}
-              {activeTab === tab.id && (
-                <span className={`absolute -bottom-px left-0 right-0 h-px ${tab.isPaid ? 'bg-gradient-to-r from-amber-500/20 via-background to-amber-500/20' : 'bg-background'}`} />
-              )}
-            </button>
-          ))}
-        </div>
+          
+          {/* Animated scanning line effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent pointer-events-none"
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          />
+          
+          {/* Corner accent */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[50px] pointer-events-none" />
         
-        {/* Header scanning line effect */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse pointer-events-none"
-          style={{ animationDuration: '4s' }}
-        />
+          {/* Tabs - offset slightly right from center, floating at bottom of header */}
+          <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
+            {[
+              { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye, isPaid: false },
+              { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp, isPaid: true },
+              { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText, isPaid: true },
+              { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin, isPaid: true },
+              { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity, isPaid: true },
+              { id: 'on-page-seo' as DashboardTab, label: 'SEO', icon: FileSearch, isPaid: true },
+              { id: 'landing-pages' as DashboardTab, label: 'PPC', icon: Target, isPaid: true },
+            ].map((tab, index) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ zIndex: activeTab === tab.id ? 10 : 8 - index }}
+                className={`relative flex flex-col items-center justify-center w-16 h-11 transition-all rounded-t-lg border-t border-x gap-0.5 ${
+                  activeTab === tab.id
+                    ? tab.isPaid 
+                      ? 'bg-gradient-to-b from-amber-500/10 to-background text-amber-500 border-amber-500/30'
+                      : 'bg-background text-primary border-border'
+                    : tab.isPaid
+                      ? 'bg-gradient-to-b from-amber-500/5 to-muted/30 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 border-transparent -ml-1 first:ml-0'
+                      : 'bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent -ml-1 first:ml-0'
+                }`}
+                title={tab.isPaid ? `${tab.label} (Premium Add-on)` : tab.label}
+              >
+                <tab.icon className={`w-4 h-4 ${tab.isPaid && activeTab === tab.id ? 'text-amber-500' : ''}`} />
+                <span className="text-[9px] font-medium leading-none">{tab.label}</span>
+                {/* Active tab bottom cover */}
+                {activeTab === tab.id && (
+                  <span className={`absolute -bottom-px left-0 right-0 h-px ${tab.isPaid ? 'bg-gradient-to-r from-amber-500/20 via-background to-amber-500/20' : 'bg-background'}`} />
+                )}
+              </button>
+            ))}
+          </div>
         
         <div className="relative z-10 px-8 py-3 flex items-center justify-between">
           {/* Left: Logo */}
@@ -1562,7 +1630,8 @@ const MarketingDashboard = () => {
             </Button>
           </div>
         </div>
-      </header>
+        </header>
+      </div>
 
       {/* Domain Selector Bar - Show on all tabs */}
       <DomainSelectorBar
@@ -1678,7 +1747,20 @@ const MarketingDashboard = () => {
 
       {/* Main Layout - Only show for Visitor Intelligence tab */}
       {activeTab === 'visitor-intelligence' && (
-      <div className="flex min-h-[calc(100vh-180px)] max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border glow-primary">
+      <div className="relative max-w-[1480px] mx-auto group/main">
+        {/* Animated gradient glow for main container */}
+        <motion.div
+          className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/main:opacity-50 transition-opacity duration-500 blur-md -z-10"
+          animate={{
+            background: [
+              "linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3))",
+              "linear-gradient(270deg, rgba(139,92,246,0.3), rgba(34,211,238,0.3))",
+              "linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3))",
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        />
+        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl overflow-hidden">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
@@ -2464,20 +2546,74 @@ f.parentNode.insertBefore(j,f);
             )}
           </div>
         </div>
+        </div>
       </div>
       )}
 
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
-        <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
-          <BRONPlatformConnect />
+        <div className="relative max-w-[1480px] mx-auto group/bron">
+          <motion.div
+            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/bron:opacity-50 transition-opacity duration-500 blur-md -z-10"
+            animate={{
+              background: [
+                "linear-gradient(180deg, rgba(34,197,94,0.3), rgba(16,185,129,0.3))",
+                "linear-gradient(270deg, rgba(16,185,129,0.3), rgba(34,197,94,0.3))",
+                "linear-gradient(180deg, rgba(34,197,94,0.3), rgba(16,185,129,0.3))",
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-emerald-500/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl p-8 overflow-hidden">
+            {/* Grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.02] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(142 76% 36%) 1px, transparent 1px), linear-gradient(90deg, hsl(142 76% 36%) 1px, transparent 1px)`,
+                backgroundSize: '30px 30px',
+              }}
+            />
+            {/* Scanning line */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent pointer-events-none"
+              animate={{ y: ['-100%', '200%'] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            />
+            <BRONPlatformConnect />
+          </div>
         </div>
       )}
 
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
-        <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
+        <div className="relative max-w-[1480px] mx-auto group/cade">
+          <motion.div
+            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/cade:opacity-50 transition-opacity duration-500 blur-md -z-10"
+            animate={{
+              background: [
+                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(168,85,247,0.3))",
+                "linear-gradient(270deg, rgba(168,85,247,0.3), rgba(139,92,246,0.3))",
+                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(168,85,247,0.3))",
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-violet-500/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl p-8 overflow-hidden">
+            {/* Grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.02] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(280 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(280 80% 60%) 1px, transparent 1px)`,
+                backgroundSize: '30px 30px',
+              }}
+            />
+            {/* Scanning line */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/5 to-transparent pointer-events-none"
+              animate={{ y: ['-100%', '200%'] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            />
           <div className="space-y-6">
             {/* Title Header */}
             <header className="flex items-start justify-between gap-4 relative overflow-hidden">
@@ -2641,6 +2777,7 @@ f.parentNode.insertBefore(j,f);
                 toast.success(`Successfully connected to ${platform}!`);
               }}
             />
+          </div>
           </div>
         </div>
       )}
