@@ -221,125 +221,96 @@ export const GMBOnboardingWizard = ({
     }
   };
 
+  const stepLabels = ['Account', 'Info', 'Address', 'Hours', 'Review'];
+  const stepIndex = step - 1;
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-gradient-to-br from-background/80 via-background/60 to-background/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10"
+      className="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-card via-blue-500/5 to-card backdrop-blur-sm"
     >
-      {/* Background Effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Animated background glow - matching PPC style */}
+      <div className="absolute inset-0 pointer-events-none">
         <motion.div 
-          className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-blue-500/10 via-green-500/5 to-transparent rounded-bl-[150px]"
-          animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0.9, 0.6] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-gradient-to-tr from-green-500/10 via-blue-500/5 to-transparent rounded-tr-[100px]"
-          animate={{ scale: [1.05, 1, 1.05], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/3 to-transparent"
-          animate={{ y: ['-100%', '200%'] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-        />
-        {/* Floating particles */}
-        <motion.div
-          className="absolute top-[15%] right-[10%] w-1.5 h-1.5 rounded-full bg-blue-400/60"
-          animate={{ y: [0, -8, 0], opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 2.5, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute top-[25%] right-[20%] w-1 h-1 rounded-full bg-green-400/60"
-          animate={{ y: [0, -6, 0], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-        />
-        <motion.div
-          className="absolute bottom-[20%] left-[15%] w-1.5 h-1.5 rounded-full bg-teal-400/60"
-          animate={{ y: [0, -10, 0], opacity: [0.3, 0.8, 0.3] }}
-          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+          className="absolute -bottom-24 -left-24 w-48 h-48 bg-green-500/20 rounded-full blur-3xl"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, delay: 1 }}
         />
       </div>
-      
-      {/* Progress Header - High-end futuristic style */}
-      <div className="relative bg-gradient-to-r from-blue-500/15 via-transparent to-green-500/15 p-6 border-b border-blue-500/20 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-            <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-              Add Business to Google Maps
-            </span>
-          </h2>
-          <Badge variant="outline" className="text-xs border-blue-500/30 bg-blue-500/10 text-blue-400 font-medium px-3 py-1">
-            Step {Math.min(step, 5)} of {totalSteps}
-          </Badge>
+
+      {/* Compact Header - matching PPC Campaign Setup exactly */}
+      <div className="relative p-4 border-b border-blue-500/20 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <MapPin className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">Listing Setup</h3>
+            <p className="text-xs text-muted-foreground">{domain}</p>
+          </div>
         </div>
         
-        {/* Progress Bar - Animated gradient */}
-        <div className="flex gap-1.5">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <motion.div
-              key={i}
-              className={`h-2 flex-1 rounded-full transition-all duration-500 ${
-                step > i 
-                  ? 'bg-gradient-to-r from-blue-500 to-green-500 shadow-sm shadow-blue-500/50' 
-                  : 'bg-muted/50'
-              }`}
-              initial={false}
-              animate={step > i ? { opacity: [0.8, 1, 0.8] } : {}}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
+        {/* Compact Step Indicators - matching PPC exactly */}
+        <div className="flex items-center gap-1">
+          {stepLabels.map((label, idx) => (
+            <div key={label} className="flex items-center">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                idx < stepIndex ? 'bg-green-500 text-white' :
+                idx === stepIndex ? 'bg-gradient-to-r from-blue-500 to-green-500 text-white ring-2 ring-blue-500/30' :
+                'bg-muted text-muted-foreground'
+              }`}>
+                {idx < stepIndex ? <CheckCircle className="w-3.5 h-3.5" /> : idx + 1}
+              </div>
+              {idx < stepLabels.length - 1 && (
+                <div className={`w-4 h-0.5 mx-0.5 ${idx < stepIndex ? 'bg-green-500' : 'bg-muted'}`} />
+              )}
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Step Content */}
-      <div className="p-6">
+      {/* Content Area - Compact matching PPC */}
+      <div className="relative p-4">
         {/* Step 1: Select Account */}
         {step === 1 && (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mx-auto mb-4">
-                <Building className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Select Business Account</h3>
-              <p className="text-sm text-muted-foreground">
-                Choose the Google Business account to add your new location to
-              </p>
-            </div>
-
+          <motion.div
+            key="step-1"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-3"
+          >
             {accounts.length > 0 ? (
-              <div className="space-y-3 max-w-md mx-auto">
-                {accounts.map((account) => (
-                  <div
+              <div className="space-y-2">
+                {accounts.slice(0, 3).map((account) => (
+                  <button
                     key={account.name}
                     onClick={() => setSelectedAccountId(account.name)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                    className={`w-full p-3 rounded-xl border text-left transition-all flex items-center gap-3 ${
                       selectedAccountId === account.name
-                        ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-border hover:border-blue-500/50'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center">
-                          <Building className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{account.accountName}</p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {account.type.replace('_', ' ')}
-                          </p>
-                        </div>
-                      </div>
-                      {selectedAccountId === account.name && (
-                        <CheckCircle className="w-5 h-5 text-primary" />
-                      )}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      selectedAccountId === account.name ? 'bg-gradient-to-br from-blue-500 to-green-500' : 'bg-muted'
+                    }`}>
+                      <Building className={`w-4 h-4 ${selectedAccountId === account.name ? 'text-white' : 'text-muted-foreground'}`} />
                     </div>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{account.accountName}</p>
+                      <p className="text-[10px] text-muted-foreground capitalize">{account.type.replace('_', ' ')}</p>
+                    </div>
+                    {selectedAccountId === account.name && (
+                      <CheckCircle className="w-4 h-4 text-blue-500" />
+                    )}
+                  </button>
                 ))}
               </div>
             ) : (
@@ -392,7 +363,7 @@ export const GMBOnboardingWizard = ({
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Step 2: Business Info */}
@@ -802,48 +773,49 @@ export const GMBOnboardingWizard = ({
         )}
       </div>
 
-      {/* Navigation Footer - Hide when no accounts on step 1 */}
+      {/* Navigation Footer - Compact like PPC */}
       {step < 6 && !(step === 1 && accounts.length === 0) && (
-        <div className="border-t border-border p-4 bg-muted/20">
-          <div className="flex justify-between max-w-xl mx-auto">
-            <Button
-              variant="outline"
-              onClick={() => step === 1 ? onCancel() : setStep(step - 1)}
-              disabled={isSubmitting}
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              {step === 1 ? 'Cancel' : 'Back'}
-            </Button>
+        <div className="border-t border-blue-500/20 p-3 bg-muted/10 flex justify-between items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => step === 1 ? onCancel() : setStep(step - 1)}
+            disabled={isSubmitting}
+            className="h-8 px-3"
+          >
+            {step === 1 ? 'Cancel' : 'Back'}
+          </Button>
 
-            {step < 5 ? (
-              <Button
-                onClick={() => setStep(step + 1)}
-                disabled={!canProceed() || isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-              >
-                Continue
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Listing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Create Business Listing
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+          {step < 5 ? (
+            <Button
+              size="sm"
+              onClick={() => setStep(step + 1)}
+              disabled={!canProceed() || isSubmitting}
+              className="h-8 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600"
+            >
+              Continue
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="h-8 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                  Create Listing
+                </>
+              )}
+            </Button>
+          )}
         </div>
       )}
     </motion.div>
