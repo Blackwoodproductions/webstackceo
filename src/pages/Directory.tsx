@@ -20,6 +20,9 @@ import DirectoryListingDialog from "@/components/directory/DirectoryListingDialo
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import InteractiveGrid from "@/components/ui/interactive-grid";
+import { HighTechBackground } from "@/components/ui/high-tech-background";
 
 const iconMap: Record<string, any> = {
   UtensilsCrossed, ShoppingBag, Heart, Briefcase, Home, Car,
@@ -153,7 +156,14 @@ const Directory = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Futuristic Background Effects */}
+      <FloatingOrbs className="fixed inset-0 z-0" />
+      <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
+      <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
+      <CyberLines className="fixed inset-0 z-0" />
+      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
+      <HUDOverlay className="fixed inset-0 z-0" />
       <SEO
         title="Business Directory - Find Local Businesses"
         description="Browse our curated business directory. Find local businesses, read reviews, and connect with service providers in your area."
