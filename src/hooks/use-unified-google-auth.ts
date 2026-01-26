@@ -3,7 +3,7 @@ import { usePopupOAuth } from "./use-popup-oauth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
-// Combined scopes for GA + GSC in a single OAuth prompt with offline access for refresh tokens
+// Combined scopes for GA + GSC + Google Ads in a single OAuth prompt with offline access for refresh tokens
 const UNIFIED_GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -11,6 +11,7 @@ const UNIFIED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/analytics.readonly",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
+  "https://www.googleapis.com/auth/adwords",
 ].join(" ");
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -64,6 +65,7 @@ export interface UnifiedGoogleAuthState {
   profile: { name?: string; email?: string; picture?: string } | null;
   hasGAAccess: boolean;
   hasGSCAccess: boolean;
+  hasAdsAccess: boolean;
 }
 
 export interface UseUnifiedGoogleAuthReturn extends UnifiedGoogleAuthState {
@@ -91,6 +93,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
   const [profile, setProfile] = useState<{ name?: string; email?: string; picture?: string } | null>(null);
   const [hasGAAccess, setHasGAAccess] = useState(false);
   const [hasGSCAccess, setHasGSCAccess] = useState(false);
+  const [hasAdsAccess, setHasAdsAccess] = useState(false);
 
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
@@ -232,6 +235,11 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     localStorage.removeItem("gsc_token_expiry");
     localStorage.removeItem("gsc_code_verifier");
     localStorage.removeItem("gsc_google_profile");
+    // Clear Google Ads tokens
+    localStorage.removeItem("google_ads_access_token");
+    localStorage.removeItem("google_ads_token_expiry");
+    localStorage.removeItem("google_ads_customer_id");
+    localStorage.removeItem("google_ads_customer_name");
   }, []);
 
   const syncToLocalStorage = useCallback((token: string, expiryTime: number, scope: string, profileData?: any) => {
@@ -242,6 +250,12 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     localStorage.setItem("ga_token_expiry", expiryTime.toString());
     localStorage.setItem("gsc_access_token", token);
     localStorage.setItem("gsc_token_expiry", expiryTime.toString());
+    
+    // Sync Google Ads tokens if scope includes adwords
+    if (scope.includes("adwords")) {
+      localStorage.setItem("google_ads_access_token", token);
+      localStorage.setItem("google_ads_token_expiry", expiryTime.toString());
+    }
     
     if (profileData) {
       localStorage.setItem("unified_google_profile", JSON.stringify(profileData));
@@ -263,6 +277,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     setIsAuthenticated(true);
     setHasGAAccess(scope.includes("analytics"));
     setHasGSCAccess(scope.includes("webmasters"));
+    setHasAdsAccess(scope.includes("adwords"));
 
     // Fetch profile
     try {
@@ -309,6 +324,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
           setIsAuthenticated(true);
           setHasGAAccess(dbTokens.scope.includes("analytics"));
           setHasGSCAccess(dbTokens.scope.includes("webmasters"));
+          setHasAdsAccess(dbTokens.scope.includes("adwords"));
 
           // Load cached profile
           const storedProfile = localStorage.getItem("unified_google_profile");
@@ -332,6 +348,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
             setIsAuthenticated(true);
             setHasGAAccess(dbTokens.scope.includes("analytics"));
             setHasGSCAccess(dbTokens.scope.includes("webmasters"));
+            setHasAdsAccess(dbTokens.scope.includes("adwords"));
             setIsLoading(false);
             return;
           }
@@ -354,6 +371,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
           setIsAuthenticated(true);
           setHasGAAccess(storedScopes.includes("analytics"));
           setHasGSCAccess(storedScopes.includes("webmasters"));
+          setHasAdsAccess(storedScopes.includes("adwords"));
 
           if (storedProfile) {
             try {
@@ -533,6 +551,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     setProfile(null);
     setHasGAAccess(false);
     setHasGSCAccess(false);
+    setHasAdsAccess(false);
     window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: null } }));
   }, [clearAllTokens, deleteTokensFromDb]);
 
@@ -557,6 +576,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     profile,
     hasGAAccess,
     hasGSCAccess,
+    hasAdsAccess,
     login,
     disconnect,
     showClientIdDialog,
