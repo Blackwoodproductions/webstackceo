@@ -980,10 +980,14 @@ export const GADashboardPanel = ({
   // Connected but still loading properties (and no error)
   if (isAuthenticated && !propertiesLoaded && !propertiesError) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
+      <Card className="relative overflow-hidden bg-card border-border">
+        {/* High-tech background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <CardContent className="relative z-10 flex items-center justify-center py-12">
           <div className="text-center">
-            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Loading Google Analytics properties...</p>
           </div>
         </CardContent>
@@ -1001,16 +1005,23 @@ export const GADashboardPanel = ({
     if (is403) {
       // Show as friendly setup card, not an error
       return (
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-4">
+        <Card className="relative overflow-hidden border-border bg-card group">
+          {/* High-tech background grid */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+          <div className="absolute top-[20%] left-[8%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
+          <div className="absolute bottom-[30%] right-[10%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+          <CardHeader className="relative z-10 pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
                   <Activity className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    Google Analytics
+                    <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics</span>
                     <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-500">Setup Required</Badge>
                   </CardTitle>
                   <CardDescription className="text-xs">One more step to complete your connection</CardDescription>
@@ -1022,7 +1033,7 @@ export const GADashboardPanel = ({
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 <div className="flex-shrink-0">
@@ -1086,15 +1097,18 @@ export const GADashboardPanel = ({
 
     // Non-403 errors: show as actual error
     return (
-      <Card className="border-border">
-        <CardHeader className="pb-4">
+      <Card className="relative overflow-hidden border-border group">
+        {/* High-tech background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-lg">Google Analytics</CardTitle>
+                <CardTitle className="text-lg bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics</CardTitle>
                 <CardDescription className="text-xs text-destructive">Error loading properties</CardDescription>
               </div>
             </div>
@@ -1104,7 +1118,7 @@ export const GADashboardPanel = ({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-10">
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-center">
             <p className="text-sm text-destructive mb-3">{propertiesError}</p>
             <Button
@@ -1142,16 +1156,23 @@ export const GADashboardPanel = ({
   // Connected but no properties found in account
   if (isAuthenticated && propertiesLoaded && properties.length === 0) {
     return (
-      <Card className="border-border bg-card">
-        <CardHeader className="pb-4">
+      <Card className="relative overflow-hidden border-border bg-card group">
+        {/* High-tech background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+        <div className="absolute top-[25%] left-[6%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
+        <div className="absolute bottom-[20%] right-[8%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  Google Analytics
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics</span>
                   <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
                 </CardTitle>
                 <CardDescription className="text-xs">No properties found in your account</CardDescription>
@@ -1163,7 +1184,7 @@ export const GADashboardPanel = ({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative z-10">
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 text-center">
             <Activity className="w-12 h-12 text-amber-500 mx-auto mb-4" />
             <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
@@ -1201,10 +1222,13 @@ export const GADashboardPanel = ({
   // Properties are loaded but we're still verifying Web Data Streams for the selected domain
   if (isAuthenticated && externalSelectedSite && propertiesLoaded && !streamsLoaded && !streamsError) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
+      <Card className="relative overflow-hidden bg-card border-border">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <CardContent className="relative z-10 flex items-center justify-center py-12">
           <div className="text-center">
-            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Checking GA4 web data streams…</p>
           </div>
         </CardContent>
@@ -1217,16 +1241,23 @@ export const GADashboardPanel = ({
   // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
   if (isAuthenticated && externalSelectedSite && propertiesLoaded && streamsLoaded && !streamsError && !isExternalSiteInGA) {
     return (
-      <Card className="border-border bg-card">
-        <CardHeader className="pb-4">
+      <Card className="relative overflow-hidden border-border bg-card group">
+        {/* High-tech background grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+        <div className="absolute top-[15%] left-[5%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
+        <div className="absolute bottom-[25%] right-[7%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  Google Analytics Setup
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics Setup</span>
                   <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Account Connected</Badge>
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -1241,7 +1272,7 @@ export const GADashboardPanel = ({
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="relative z-10">
           <GAOnboardingWizard
             domain={externalSelectedSite}
             properties={properties}
