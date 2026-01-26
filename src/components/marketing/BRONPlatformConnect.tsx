@@ -218,73 +218,65 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show connected state - open in new tab since iframe doesn't share session cookies
+  // Show embedded dashboard when authenticated
   if (isAuthenticated) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        {/* Connected Status Card */}
-        <Card className="border-green-500/30 bg-gradient-to-br from-green-500/10 via-background to-emerald-500/5">
-          <CardHeader className="text-center pb-4">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Shield className="w-10 h-10 text-white" />
+        {/* Simple header with logout */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-white" />
             </div>
-            <CardTitle className="text-2xl text-green-600 dark:text-green-400">Connected to BRON</CardTitle>
-            <CardDescription>
-              Your session is active. Open the dashboard to manage your off-page SEO.
-            </CardDescription>
-            {domain && (
-              <p className="text-sm text-emerald-500 font-medium mt-2">Domain: {domain}</p>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <span className="font-medium text-green-600 dark:text-green-400">BRON Dashboard</span>
+            {domain && <span className="text-sm text-muted-foreground">• {domain}</span>}
+          </div>
+          <div className="flex items-center gap-2">
             <Button
-              onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
-              className="w-full h-14 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold text-lg shadow-lg"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const iframe = document.getElementById('bron-dashboard-iframe') as HTMLIFrameElement | null;
+                if (iframe) iframe.src = iframe.src;
+              }}
+              className="h-8 px-2"
             >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              Open BRON Dashboard
+              <RefreshCw className="w-4 h-4" />
             </Button>
-            
-            <div className="flex items-center justify-center gap-4 pt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4 mr-1.5" />
-                Disconnect
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Feature highlight cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { icon: Link2, title: "Keyword Clustering", desc: "AI-powered topical organization" },
-            { icon: TrendingUp, title: "Deep Linking", desc: "Strategic internal link building" },
-            { icon: Award, title: "DA & DR Growth", desc: "Increase domain authority metrics" },
-            { icon: Zap, title: "Autopilot Links", desc: "Automated inbound link acquisition" },
-          ].map((feature, index) => (
-            <Card key={index} className="bg-gradient-to-br from-background to-secondary/20 border-emerald-500/20">
-              <CardContent className="p-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400/20 to-green-500/20 flex items-center justify-center mb-3">
-                  <feature.icon className="w-5 h-5 text-emerald-500" />
-                </div>
-                <h3 className="font-semibold text-sm mb-1">{feature.title}</h3>
-                <p className="text-xs text-muted-foreground">{feature.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
+              className="h-8 px-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="h-8 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/50"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
-        {/* Show extended section */}
-        <BRONExtendedSection domain={domain} />
+        {/* Embedded BRON Dashboard */}
+        <div className="rounded-xl overflow-hidden border border-border shadow-lg bg-background">
+          <iframe
+            id="bron-dashboard-iframe"
+            src={BRON_DASHBOARD_URL}
+            className="w-full h-[750px] border-0"
+            title="BRON Dashboard"
+            allow="clipboard-write; clipboard-read"
+          />
+        </div>
       </motion.div>
     );
   }
