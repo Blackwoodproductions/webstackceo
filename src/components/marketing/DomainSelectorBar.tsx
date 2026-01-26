@@ -1,4 +1,5 @@
-import { Globe, Plus, CalendarIcon, Filter, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Globe, Plus, CalendarIcon, Filter, X, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,29 +18,20 @@ import { format } from 'date-fns';
 export type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
 
 interface DomainSelectorBarProps {
-  // Domain selection
   trackedDomains: string[];
   userAddedDomains: string[];
   selectedDomain: string;
   onDomainChange: (domain: string) => void;
   onAddDomainClick: () => void;
-  
-  // Time range (optional - only shown when showTimeRange is true)
   showTimeRange?: boolean;
   timeRange?: TimeRange;
   onTimeRangeChange?: (range: TimeRange) => void;
   customDateRange?: { from: Date | undefined; to: Date | undefined };
   onCustomDateRangeChange?: (range: { from: Date | undefined; to: Date | undefined }) => void;
-  
-  // Page filter (optional - only shown when showPageFilter is true)
   showPageFilter?: boolean;
   pageFilter?: string | null;
   onPageFilterClear?: () => void;
-  
-  // Center content slot (for tabs)
   centerContent?: React.ReactNode;
-  
-  // Right side content slot
   rightContent?: React.ReactNode;
 }
 
@@ -63,23 +55,48 @@ export function DomainSelectorBar({
   const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
   
   return (
-    <div className="border-x border-border bg-card sticky top-[60px] z-40 max-w-[1480px] mx-auto">
-      <div className="px-8 py-2 flex items-center justify-between">
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky top-[60px] z-40 max-w-[1480px] mx-auto overflow-hidden"
+    >
+      {/* Background grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+      
+      {/* Subtle scanning line */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent pointer-events-none"
+        animate={{ x: ["-100%", "200%"] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+      />
+      
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      
+      <div className="relative z-10 px-8 py-2 flex items-center justify-between">
         {/* Left: Domain Selector & Time Range */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Domain Selector */}
           {viDomains.length > 0 ? (
             <>
               <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-primary" />
-                <Select
-                  value={selectedDomain || ''} 
-                  onValueChange={onDomainChange}
+                <motion.div
+                  className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10"
+                  whileHover={{ scale: 1.05 }}
                 >
-                  <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border">
+                  <Globe className="w-4 h-4 text-primary" />
+                </motion.div>
+                <Select value={selectedDomain || ''} onValueChange={onDomainChange}>
+                  <SelectTrigger className="w-[180px] h-7 text-sm bg-background/80 border-border/50 backdrop-blur-sm">
                     <SelectValue placeholder="Select domain" />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border shadow-lg z-50 max-w-[400px]">
+                  <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50 max-w-[400px]">
                     {viDomains.map((domain) => {
                       const hasViTracking = trackedDomains.includes(domain);
                       return (
@@ -110,25 +127,37 @@ export function DomainSelectorBar({
                     </div>
                   </SelectContent>
                 </Select>
+                
+                {/* Live indicator */}
+                <motion.span
+                  className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Radio className="w-2 h-2" />
+                  LIVE
+                </motion.span>
               </div>
-              <div className="w-px h-5 bg-border" />
+              <div className="w-px h-5 bg-border/50" />
             </>
           ) : (
             <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 text-xs"
-                onClick={onAddDomainClick}
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Add Domain
-              </Button>
-              <div className="w-px h-5 bg-border" />
+              <motion.div whileHover={{ scale: 1.02 }}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-xs bg-background/80 border-dashed border-primary/30 hover:border-primary/50"
+                  onClick={onAddDomainClick}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Domain
+                </Button>
+              </motion.div>
+              <div className="w-px h-5 bg-border/50" />
             </>
           )}
           
-          {/* Time Range Selector - only show if enabled */}
+          {/* Time Range Selector */}
           {showTimeRange && onTimeRangeChange && (
             <>
               <div className="flex gap-1">
@@ -138,10 +167,10 @@ export function DomainSelectorBar({
                 </div>
                 <div className="flex flex-col gap-1">
                   <Select value={timeRange} onValueChange={(value: TimeRange) => onTimeRangeChange(value)}>
-                    <SelectTrigger className="w-[130px] h-7 text-sm bg-background border-border">
+                    <SelectTrigger className="w-[130px] h-7 text-sm bg-background/80 border-border/50 backdrop-blur-sm">
                       <SelectValue placeholder="Range" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border shadow-lg z-50">
+                    <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50">
                       <SelectItem value="live">Last 24h</SelectItem>
                       <SelectItem value="yesterday">Yesterday</SelectItem>
                       <SelectItem value="week">Week</SelectItem>
@@ -154,7 +183,7 @@ export function DomainSelectorBar({
                   {showPageFilter && pageFilter && onPageFilterClear && (
                     <Badge variant="secondary" className="flex items-center gap-2 px-2 py-0.5 h-7 bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
                       {pageFilter === '/' ? 'Homepage' : pageFilter}
-                      <button onClick={onPageFilterClear} className="ml-1 hover:bg-purple-500/30 rounded p-0.5">
+                      <button onClick={onPageFilterClear} className="ml-1 hover:bg-purple-500/30 rounded p-0.5 transition-colors">
                         <X className="w-3 h-3" />
                       </button>
                     </Badge>
@@ -167,11 +196,11 @@ export function DomainSelectorBar({
                 <div className="flex items-center gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !customDateRange?.from && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3 bg-background/80", !customDateRange?.from && "text-muted-foreground")}>
                         {customDateRange?.from ? format(customDateRange.from, "MMM d, yyyy") : "Start date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                    <PopoverContent className="w-auto p-0 bg-popover/95 backdrop-blur-sm border border-border z-50" align="start">
                       <Calendar 
                         mode="single" 
                         selected={customDateRange?.from} 
@@ -184,11 +213,11 @@ export function DomainSelectorBar({
                   <span className="text-sm text-muted-foreground">to</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3", !customDateRange?.to && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3 bg-background/80", !customDateRange?.to && "text-muted-foreground")}>
                         {customDateRange?.to ? format(customDateRange.to, "MMM d, yyyy") : "End date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-popover border border-border z-50" align="start">
+                    <PopoverContent className="w-auto p-0 bg-popover/95 backdrop-blur-sm border border-border z-50" align="start">
                       <Calendar 
                         mode="single" 
                         selected={customDateRange?.to} 
@@ -221,6 +250,9 @@ export function DomainSelectorBar({
           </div>
         )}
       </div>
-    </div>
+      
+      {/* Bottom accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+    </motion.div>
   );
 }
