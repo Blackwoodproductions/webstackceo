@@ -250,32 +250,46 @@ const LiveChatWidget = () => {
           is_current_user: currentUserId ? v.user_id === currentUserId : v.session_id === sessionId,
         }));
       
-      // CRITICAL FIX: Only keep ONE instance of the current user (marked as "YOU")
-      // Remove all other sessions belonging to the current user
+      // STRICT DEDUPLICATION: Ensure only ONE session per unique user
+      // For authenticated users: keep only the most recent session per user_id
+      // For the current user: keep exactly ONE session marked as "YOU"
+      const finalDeduplicatedVisitors: LiveVisitor[] = [];
+      const processedUserIds = new Set<string>();
       let currentUserSession: LiveVisitor | null = null;
-      const otherVisitors: LiveVisitor[] = [];
       
-      for (const visitor of visitorsWithProfiles) {
+      // Sort by last activity (most recent first)
+      const sortedByActivity = [...visitorsWithProfiles].sort((a, b) => 
+        new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
+      );
+      
+      for (const visitor of sortedByActivity) {
+        // Handle current user specially - keep only one instance
         if (visitor.is_current_user) {
-          // Keep only the first occurrence of current user (most recent due to ordering)
           if (!currentUserSession) {
             currentUserSession = visitor;
           }
-          // Skip all other sessions of current user
-        } else {
-          otherVisitors.push(visitor);
+          // Skip all subsequent sessions of current user
+          continue;
         }
+        
+        // For other authenticated users - deduplicate by user_id
+        if (visitor.user_id) {
+          if (!processedUserIds.has(visitor.user_id)) {
+            processedUserIds.add(visitor.user_id);
+            finalDeduplicatedVisitors.push(visitor);
+          }
+          // Skip duplicate sessions of same user
+          continue;
+        }
+        
+        // Anonymous visitors - include them (already deduplicated by session_id earlier)
+        finalDeduplicatedVisitors.push(visitor);
       }
       
-      // Sort other visitors by activity, then put current user first
-      const sortedVisitors = visitorsWithProfiles.sort((a: any, b: any) => {
-        return new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime();
-      });
-      
-      // Combine: current user first (if exists), then other visitors
+      // Final list: current user first (if exists), then other visitors sorted by activity
       const finalVisitors = currentUserSession 
-        ? [currentUserSession, ...otherVisitors]
-        : otherVisitors;
+        ? [currentUserSession, ...finalDeduplicatedVisitors]
+        : finalDeduplicatedVisitors;
       
       setLiveVisitors(finalVisitors);
     }
