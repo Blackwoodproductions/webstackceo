@@ -107,8 +107,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const [accounts, setAccounts] = useState<GmbAccount[]>([]);
   const [locations, setLocations] = useState<GmbLocation[]>([]);
   const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
-  const [hasListing, setHasListing] = useState<boolean | null>(null);
-  const [showCampaignSetup, setShowCampaignSetup] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -116,7 +114,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const syncGmbData = useCallback(async (token: string, expirySeconds = 3600) => {
     setIsCheckingAccount(true);
     setSyncError(null);
-    setHasListing(null);
     
     try {
       const { data, error } = await supabase.functions.invoke('gmb-sync', {
@@ -131,8 +128,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         } else {
           setSyncError(data.error);
         }
-        setShowCampaignSetup(true);
-        setHasListing(false);
         return;
       }
 
@@ -158,23 +153,13 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         
         if (match) {
           setMatchingLocation(match);
-          setHasListing(true);
-          setShowCampaignSetup(false);
         } else {
           setMatchingLocation(null);
-          setHasListing(false);
-          setShowCampaignSetup(true);
         }
-      } else {
-        // No domain selected - check if any locations exist
-        setHasListing(fetchedLocations.length > 0);
-        setShowCampaignSetup(fetchedLocations.length === 0);
       }
     } catch (err) {
       console.error('[GMBPanel] Sync error:', err);
       setSyncError(err instanceof Error ? err.message : 'Failed to sync GMB data');
-      setHasListing(false);
-      setShowCampaignSetup(true);
     } finally {
       setIsCheckingAccount(false);
     }
@@ -193,12 +178,10 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         : 3600;
       syncGmbData(connection.token, remainingSeconds);
     } else {
-      // No token but user is on this tab - show wizard after brief delay
+      // No token - finish checking after brief delay
       setTimeout(() => {
         setIsCheckingAccount(false);
-        setHasListing(false);
-        setShowCampaignSetup(true);
-      }, 1500);
+      }, 500);
     }
     
     // Listen for auth sync events
@@ -218,10 +201,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   useEffect(() => {
     if (!selectedDomain || locations.length === 0) {
       setMatchingLocation(null);
-      if (accessToken) {
-        setShowCampaignSetup(true);
-        setHasListing(false);
-      }
       return;
     }
     
@@ -233,16 +212,8 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
              normalizedSelected.includes(locDomain);
     });
     
-    if (match) {
-      setMatchingLocation(match);
-      setHasListing(true);
-      setShowCampaignSetup(false);
-    } else {
-      setMatchingLocation(null);
-      setHasListing(false);
-      setShowCampaignSetup(true);
-    }
-  }, [selectedDomain, locations, accessToken]);
+    setMatchingLocation(match || null);
+  }, [selectedDomain, locations]);
 
   const handleRefresh = useCallback(async () => {
     const token = getStoredConnection()?.token;
@@ -262,15 +233,11 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     setAccounts([]);
     setLocations([]);
     setMatchingLocation(null);
-    setHasListing(false);
-    setShowCampaignSetup(true);
     setSyncError(null);
     toast.info('Disconnected from Google Business Profile');
   }, []);
 
   const handleSetupComplete = useCallback(async () => {
-    setShowCampaignSetup(false);
-    setHasListing(true);
     const token = getStoredConnection()?.token;
     if (token) {
       toast.info('Refreshing business locations...');
@@ -443,31 +410,70 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         </div>
       </header>
 
-      {/* Loading State (matching PPC exactly) */}
+      {/* Loading State - Futuristic spinner matching VI dashboard */}
       {isCheckingAccount ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 space-y-4">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          className="flex flex-col items-center justify-center py-20 space-y-6"
+        >
+          {/* Animated spinner with multiple rings */}
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+            {/* Outer ring */}
+            <motion.div 
+              className="w-24 h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
+            {/* Middle ring */}
+            <motion.div 
+              className="absolute inset-2 rounded-full border-4 border-green-500/20 border-b-green-500"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
+            {/* Inner glow */}
+            <motion.div 
+              className="absolute inset-4 rounded-full bg-gradient-to-br from-blue-500/20 to-green-500/20"
+              animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Center icon */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-blue-500" />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <MapPin className="w-8 h-8 text-blue-500" />
+              </motion.div>
             </div>
           </div>
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Checking Google Business Profile</h3>
-            <p className="text-sm text-muted-foreground">Looking for listings matching {selectedDomain || 'your domain'}...</p>
+          
+          {/* Loading text with animation */}
+          <div className="text-center space-y-2">
+            <motion.h3 
+              className="text-xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Checking Google Business Profile
+            </motion.h3>
+            <p className="text-sm text-muted-foreground">
+              Looking for listings matching <span className="font-medium text-foreground">{selectedDomain || 'your domain'}</span>...
+            </p>
+          </div>
+          
+          {/* Animated dots */}
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-blue-500"
+                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
           </div>
         </motion.div>
-      ) : showCampaignSetup ? (
-        /* No listing found - Show Wizard (matching PPC pattern) */
-        <GMBOnboardingWizard
-          domain={selectedDomain || ''}
-          accessToken={accessToken || localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || ''}
-          accountId={accounts.length > 0 ? accounts[0].name : null}
-          accounts={accounts}
-          onComplete={handleSetupComplete}
-          onCancel={() => setShowCampaignSetup(false)}
-          onRefreshAccounts={refreshAccounts}
-        />
       ) : matchingLocation && accessToken ? (
         /* Connected State - Domain has matching GMB listing */
         <GMBConnectedDashboard
@@ -478,110 +484,48 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           isRefreshing={isRefreshing}
         />
       ) : (
-        /* Fallback - Show compact process steps (like PPC when not connected) */
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Compact Hero Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-blue-500/5 to-card border border-blue-500/20 p-5">
-            <div className="absolute inset-0 bg-gradient-radial from-blue-500/5 via-transparent to-transparent opacity-50" />
-            
-            {/* Animated glow */}
-            <motion.div 
-              className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
-            
-            <div className="relative z-10 flex items-center gap-6">
-              {/* Left - CTA */}
-              <div className="flex-1 space-y-3">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30">
-                  <MapPin className="w-3 h-3 text-blue-400" />
-                  <span className="text-[10px] font-medium text-blue-400">Local SEO Management</span>
-                </div>
-                
-                <h3 className="text-lg font-bold leading-tight">
-                  Dominate <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-green-500">Local Search</span> Results
-                </h3>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setShowCampaignSetup(true)} className="h-8 bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white shadow-lg shadow-blue-500/25">
-                    <GoogleBusinessIcon /><span className="ml-1.5 text-xs">Add Listing</span><ArrowRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleRefresh} className="h-8 border-blue-500/30 hover:bg-blue-500/10">
-                    <Eye className="w-3.5 h-3.5 mr-1" /><span className="text-xs">Refresh</span>
-                  </Button>
-                </div>
-                
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Read-only</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />OAuth 2.0</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Free</span>
-                </div>
-              </div>
-              
-              {/* Right - Mini Stats */}
-              <div className="hidden md:grid grid-cols-2 gap-1.5 w-40">
-                {[
-                  { value: '46%', label: 'Local Intent', color: 'text-blue-400' },
-                  { value: '88%', label: 'Visit Rate', color: 'text-green-400' },
-                  { value: '4.8★', label: 'Avg Rating', color: 'text-amber-400' },
-                  { value: '312%', label: 'Views↑', color: 'text-cyan-400' },
-                ].map((stat) => (
-                  <div key={stat.label} className="p-2 rounded-lg bg-muted/30 border border-border/50 text-center">
-                    <p className={`text-sm font-bold ${stat.color}`}>{stat.value}</p>
-                    <p className="text-[8px] text-muted-foreground">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* Process + Features - Combined Compact Row (matching PPC) */}
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { icon: Globe, title: 'Connect', desc: 'Link Google account', color: 'blue' },
-              { icon: MapPin, title: 'Verify', desc: 'Find or add listing', color: 'green' },
-              { icon: Star, title: 'Manage', desc: 'Reviews & posts', color: 'amber' },
-              { icon: BarChart3, title: 'Track', desc: 'Local performance', color: 'cyan' },
-            ].map((item, idx) => (
-              <motion.div 
-                key={item.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                className="p-3 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/5 border border-blue-500/20 text-center hover:border-blue-500/40 transition-all"
-              >
-                <item.icon className="w-5 h-5 mx-auto mb-1.5 text-blue-500" />
-                <p className="text-xs font-medium">{item.title}</p>
-                <p className="text-[9px] text-muted-foreground">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        /* No listing found - Show Wizard inline (matching PPC pattern exactly) */
+        <GMBOnboardingWizard
+          domain={selectedDomain || ''}
+          accessToken={accessToken || localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || ''}
+          accountId={accounts.length > 0 ? accounts[0].name : null}
+          accounts={accounts}
+          onComplete={handleSetupComplete}
+          onCancel={() => {
+            // User cancelled - trigger a refresh to check again
+            handleRefresh();
+          }}
+          onRefreshAccounts={refreshAccounts}
+        />
       )}
       
       {/* Sync Error Display */}
       {syncError && (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 backdrop-blur-sm"
+        >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Connection Issue</p>
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Connection Issue</p>
               <p className="text-xs text-muted-foreground mt-1">{syncError}</p>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleRefresh} 
-                className="mt-2 h-7 text-xs"
+                className="mt-3 h-8 text-xs border-amber-500/30 hover:bg-amber-500/10"
                 disabled={isRefreshing}
               >
-                <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Retry
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Retry Connection
               </Button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
