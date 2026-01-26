@@ -243,24 +243,43 @@ export const GADashboardPanel = ({
   
   // Check for stored token on mount - use localStorage for persistence
   useEffect(() => {
-    const storedToken = localStorage.getItem("ga_access_token");
-    const tokenExpiry = localStorage.getItem("ga_token_expiry");
-    
-    if (storedToken && tokenExpiry) {
-      const expiryTime = parseInt(tokenExpiry);
-      const timeRemaining = expiryTime - Date.now();
+    const checkStoredToken = () => {
+      const storedToken = localStorage.getItem("ga_access_token");
+      const tokenExpiry = localStorage.getItem("ga_token_expiry");
       
-      if (timeRemaining > 0) {
-        console.log("[GA] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
-        setAccessToken(storedToken);
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      } else {
-        console.log("[GA] Stored token has expired, clearing...");
-        localStorage.removeItem("ga_access_token");
-        localStorage.removeItem("ga_token_expiry");
+      if (storedToken && tokenExpiry) {
+        const expiryTime = parseInt(tokenExpiry);
+        const timeRemaining = expiryTime - Date.now();
+        
+        if (timeRemaining > 0) {
+          console.log("[GA] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
+          setAccessToken(storedToken);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return true;
+        } else {
+          console.log("[GA] Stored token has expired, clearing...");
+          localStorage.removeItem("ga_access_token");
+          localStorage.removeItem("ga_token_expiry");
+        }
       }
+      return false;
+    };
+    
+    // Listen for cross-panel auth sync
+    const handleAuthSync = (e: CustomEvent) => {
+      console.log("[GA] Received auth sync from GSC panel");
+      setAccessToken(e.detail.access_token);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    };
+    
+    window.addEventListener("google-auth-synced", handleAuthSync as EventListener);
+    
+    if (checkStoredToken()) {
+      return () => {
+        window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+      };
     }
     
     // Check for GA OAuth callback
@@ -306,6 +325,11 @@ export const GADashboardPanel = ({
             localStorage.setItem("gsc_token_expiry", expiryTime.toString());
             localStorage.removeItem("gsc_code_verifier");
             
+            // Dispatch event to notify GSC panel
+            window.dispatchEvent(new CustomEvent("google-auth-synced", { 
+              detail: { access_token, expiry: expiryTime } 
+            }));
+            
             setAccessToken(access_token);
             setIsAuthenticated(true);
             
@@ -330,11 +354,17 @@ export const GADashboardPanel = ({
             setIsLoading(false);
           }
         })();
-        return;
+        return () => {
+          window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+        };
       }
     }
     
     setIsLoading(false);
+    
+    return () => {
+      window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+    };
   }, [toast]);
 
   // Fetch GA4 properties when authenticated
@@ -692,6 +722,11 @@ export const GADashboardPanel = ({
       localStorage.setItem("gsc_access_token", access_token);
       localStorage.setItem("gsc_token_expiry", expiryTime.toString());
       localStorage.removeItem("gsc_code_verifier");
+      
+      // Dispatch event to notify GSC panel
+      window.dispatchEvent(new CustomEvent("google-auth-synced", { 
+        detail: { access_token, expiry: expiryTime } 
+      }));
       
       setAccessToken(access_token);
       setIsAuthenticated(true);
