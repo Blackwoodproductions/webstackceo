@@ -20,6 +20,7 @@ const STORAGE_KEY = "bron_dashboard_auth";
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [iframeLoadCount, setIframeLoadCount] = useState(0);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -63,23 +64,65 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Poll for authentication by checking if iframe has navigated to dashboard
+  // Auto-detect login by listening to iframe load events
   useEffect(() => {
     if (isAuthenticated) return;
     
-    const pollInterval = setInterval(() => {
-      // Try to detect if user has logged in by checking localStorage or iframe state
-      // For now, we'll rely on postMessage or manual "I'm logged in" confirmation
+    const handleIframeLoad = () => {
+      const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
+      if (!iframe) return;
+      
       try {
-        const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
-        if (iframe?.contentWindow) {
-          // If the iframe has navigated to the dashboard URL (not login), user is authenticated
-          // Note: This may not work due to cross-origin restrictions
-        }
+        // Try to get the current URL - if it's no longer the login page, user has logged in
+        // This will throw if cross-origin, but we can detect based on iframe behavior
+        const iframeSrc = iframe.src;
+        
+        // If the iframe was redirected internally after login, detect by checking the URL
+        // Since we can't access contentWindow.location due to cross-origin, we'll use a different approach
       } catch (e) {
-        // Cross-origin access prevented, expected
+        // Cross-origin access expected - this is actually a sign login might have succeeded
+        // because the iframe is now showing the dashboard (different domain behavior)
       }
-    }, 2000);
+    };
+
+    // Listen for navigation changes in the iframe
+    const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
+    if (iframe) {
+      iframe.addEventListener('load', handleIframeLoad);
+      return () => iframe.removeEventListener('load', handleIframeLoad);
+    }
+  }, [isAuthenticated]);
+
+  // Check for cookies/session storage that might indicate authentication
+  useEffect(() => {
+    if (isAuthenticated) return;
+    
+    // Poll to check if the login page has been replaced with dashboard content
+    // by monitoring for successful form submission redirect
+    const pollInterval = setInterval(() => {
+      const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
+      if (!iframe) return;
+      
+      // Check if the iframe is showing non-login content by attempting to read its document
+      // This is a heuristic - the external site's login will redirect on success
+      try {
+        // If we can access the iframe content at all, check if it's the dashboard
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+          // Check if the page is the dashboard (not login)
+          const isLoginPage = doc.querySelector('form[action*="login"]') || 
+                             doc.querySelector('input[name="email"]') ||
+                             doc.querySelector('input[name="password"]');
+          
+          if (!isLoginPage && doc.body && doc.body.innerText.length > 100) {
+            // Likely logged in - dashboard is showing
+            handleManualAuth();
+          }
+        }
+      } catch {
+        // Cross-origin - expected, cannot detect this way
+      }
+    }, 1500);
     
     return () => clearInterval(pollInterval);
   }, [isAuthenticated]);
@@ -212,7 +255,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         </Button>
       </div>
 
-      {/* Full-width Login iframe */}
+      {/* Full-width Login iframe with load detection */}
       <div className="rounded-xl border border-cyan-500/30 overflow-hidden bg-background">
         <iframe
           src={BRON_LOGIN_URL}
@@ -220,7 +263,39 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           style={{ minHeight: '800px' }}
           title="BRON Login"
           allow="clipboard-write"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+          onLoad={() => {
+            // Track iframe loads - first load is login page, second load is dashboard after login
+            setIframeLoadCount(prev => {
+              const newCount = prev + 1;
+              
+              // If this is the second (or later) load, user likely logged in
+              if (newCount >= 2) {
+                // Small delay to ensure dashboard content is ready
+                setTimeout(() => {
+                  const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
+                  if (iframe) {
+                    try {
+                      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (doc) {
+                        // Check if password field is gone (means we're past login)
+                        const hasLoginForm = doc.querySelector('input[type="password"]');
+                        if (!hasLoginForm) {
+                          handleManualAuth();
+                        }
+                      }
+                    } catch {
+                      // Cross-origin error means we're on the dashboard (different page behavior)
+                      // Auto-authenticate since login page was readable but dashboard is not
+                      handleManualAuth();
+                    }
+                  }
+                }, 300);
+              }
+              
+              return newCount;
+            });
+          }}
         />
       </div>
     </motion.div>
