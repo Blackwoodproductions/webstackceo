@@ -30,7 +30,6 @@ const getCallbackUrl = () => {
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -77,38 +76,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Redirect-based login - opens BRON login with callback
-  const handleRedirectLogin = () => {
-    setIsRedirecting(true);
-    
-    const callbackUrl = getCallbackUrl();
-    
-    // Build the login URL with redirect parameter
-    // BRON should redirect back to our callback after login
-    const loginUrl = new URL(BRON_LOGIN_URL);
-    loginUrl.searchParams.set("redirect_uri", callbackUrl);
-    loginUrl.searchParams.set("callback", callbackUrl);
-    loginUrl.searchParams.set("return_url", callbackUrl);
-    
-    // Store state to verify callback
-    const state = crypto.randomUUID();
-    sessionStorage.setItem("bron_auth_state", state);
-    loginUrl.searchParams.set("state", state);
-    
-    console.log("[BRON] Redirecting to login:", loginUrl.toString());
-    
-    // Redirect to BRON login
-    window.location.href = loginUrl.toString();
-  };
-
-  // Popup-based login as fallback
+  // Primary: Popup-based login - keeps user on site
   const handlePopupLogin = () => {
-    const callbackUrl = getCallbackUrl();
-    
-    const loginUrl = new URL(BRON_LOGIN_URL);
-    loginUrl.searchParams.set("redirect_uri", callbackUrl);
-    loginUrl.searchParams.set("callback", callbackUrl);
-    loginUrl.searchParams.set("return_url", callbackUrl);
+    setIsLoading(true);
     
     const width = 600;
     const height = 700;
@@ -116,15 +86,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     const top = window.screenY + (window.outerHeight - height) / 2;
     
     const popup = window.open(
-      loginUrl.toString(),
+      BRON_LOGIN_URL,
       "bron_login",
       `width=${width},height=${height},left=${left},top=${top},popup=1`
     );
     
     if (!popup) {
+      setIsLoading(false);
       toast({
         title: "Popup Blocked",
-        description: "Please allow popups or use the redirect login option.",
+        description: "Please allow popups for this site to login to BRON.",
         variant: "destructive",
       });
       return;
@@ -134,25 +105,30 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     const pollTimer = setInterval(() => {
       if (popup.closed) {
         clearInterval(pollTimer);
-        // Check if auth was stored
-        const storedAuth = localStorage.getItem(STORAGE_KEY);
-        if (storedAuth) {
-          try {
-            const authData = JSON.parse(storedAuth);
-            if (authData.authenticated) {
-              setIsAuthenticated(true);
-              onConnectionComplete?.("bron");
-              toast({
-                title: "Successfully Connected!",
-                description: "Your BRON dashboard is now linked.",
-              });
-            }
-          } catch {
-            // Ignore parse errors
-          }
-        }
+        setIsLoading(false);
+        
+        // Show confirmation dialog
+        toast({
+          title: "Login Complete?",
+          description: "If you've logged in successfully, click 'Show Dashboard' below.",
+        });
       }
     }, 500);
+    
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      clearInterval(pollTimer);
+      setIsLoading(false);
+    }, 5 * 60 * 1000);
+  };
+
+  // Open in new tab as alternative
+  const handleNewTabLogin = () => {
+    window.open(BRON_LOGIN_URL, '_blank');
+    toast({
+      title: "Login in New Tab",
+      description: "After logging in, return here and click 'Show Dashboard'.",
+    });
   };
 
   // Manual confirmation for when redirect doesn't work
@@ -295,16 +271,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Primary: Redirect Login */}
+          {/* Primary: Popup Login */}
           <Button
-            onClick={handleRedirectLogin}
-            disabled={isRedirecting}
+            onClick={handlePopupLogin}
+            disabled={isLoading}
             className="w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold"
           >
-            {isRedirecting ? (
+            {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Redirecting to BRON...
+                Waiting for login...
               </>
             ) : (
               <>
@@ -324,25 +300,15 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             </div>
           </div>
 
-          {/* Alternative: Popup Login */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handlePopupLogin}
-              variant="outline"
-              className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Login in Popup
-            </Button>
-            <Button
-              onClick={() => window.open(BRON_LOGIN_URL, '_blank')}
-              variant="outline"
-              className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open in New Tab
-            </Button>
-          </div>
+          {/* Alternative: New Tab Login */}
+          <Button
+            onClick={handleNewTabLogin}
+            variant="outline"
+            className="w-full border-cyan-500/30 hover:bg-cyan-500/10"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Login in New Tab
+          </Button>
 
           {/* Manual confirmation for edge cases */}
           <div className="pt-4 border-t border-border">
