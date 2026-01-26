@@ -1760,7 +1760,7 @@ const MarketingDashboard = () => {
           }}
           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
         />
-        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl overflow-hidden">
+        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl overflow-hidden">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
@@ -2565,7 +2565,7 @@ f.parentNode.insertBefore(j,f);
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
           />
-          <div className="relative bg-gradient-to-br from-card via-card/98 to-emerald-500/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl p-8 overflow-hidden">
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-emerald-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
             {/* Grid pattern */}
             <div 
               className="absolute inset-0 opacity-[0.02] pointer-events-none"
@@ -2599,7 +2599,7 @@ f.parentNode.insertBefore(j,f);
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
           />
-          <div className="relative bg-gradient-to-br from-card via-card/98 to-violet-500/5 rounded-b-xl border-x border-b border-border/50 backdrop-blur-xl p-8 overflow-hidden">
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-violet-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
             {/* Grid pattern */}
             <div 
               className="absolute inset-0 opacity-[0.02] pointer-events-none"
