@@ -822,20 +822,24 @@ export const GMBOnboardingWizard = ({
       )}
     </motion.div>
 
-    {/* Benefits Section */}
+    {/* Benefits Section - Futuristic VI Dashboard Style */}
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="mt-6"
+      className="mt-6 relative"
     >
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-foreground mb-2">
-          Why Connect Your <span className="bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">Google Business Profile?</span>
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Unlock powerful local SEO tools and streamline your review management
-        </p>
+      {/* Section header with gradient accent line */}
+      <div className="relative mb-8">
+        <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+        <div className="text-center pt-6">
+          <h3 className="text-xl font-bold text-foreground mb-2">
+            Why Connect Your <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Google Business Profile?</span>
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Unlock powerful local SEO tools and streamline your review management
+          </p>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -844,53 +848,68 @@ export const GMBOnboardingWizard = ({
             icon: Star,
             title: "Review Management",
             description: "Monitor, respond to, and generate more 5-star reviews from satisfied customers directly from your dashboard.",
-            gradient: "from-amber-500 to-orange-500"
+            color: "amber"
           },
           {
             icon: MessageSquare,
             title: "Q&A Automation",
             description: "Auto-respond to customer questions with AI-powered answers that match your brand voice.",
-            gradient: "from-blue-500 to-cyan-500"
+            color: "blue"
           },
           {
             icon: TrendingUp,
             title: "Local SEO Boost",
             description: "Improve your Map Pack rankings with optimized posts, photos, and regular activity updates.",
-            gradient: "from-green-500 to-emerald-500"
+            color: "emerald"
           },
           {
             icon: Users,
             title: "Customer Insights",
             description: "Track how customers find you, call patterns, and direction requests in real-time.",
-            gradient: "from-purple-500 to-pink-500"
+            color: "purple"
           },
           {
             icon: Shield,
             title: "Reputation Protection",
             description: "Get instant alerts for new reviews so you can address concerns before they escalate.",
-            gradient: "from-red-500 to-rose-500"
+            color: "rose"
           },
           {
             icon: Zap,
             title: "CADE Integration",
             description: "When CADE is active, automatically post new articles and FAQs to keep your listing fresh.",
-            gradient: "from-violet-500 to-indigo-500"
+            color: "violet"
           }
-        ].map((benefit, index) => (
-          <motion.div
-            key={benefit.title}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            className="group relative p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/20 transition-all duration-300"
-          >
-            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-              <benefit.icon className="w-5 h-5 text-white" />
-            </div>
-            <h4 className="font-semibold text-foreground mb-1">{benefit.title}</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">{benefit.description}</p>
-          </motion.div>
-        ))}
+        ].map((benefit, index) => {
+          const colorMap: Record<string, { bg: string; border: string; glow: string }> = {
+            amber: { bg: "bg-amber-500/20", border: "border-amber-500/30", glow: "shadow-amber-500/20" },
+            blue: { bg: "bg-blue-500/20", border: "border-blue-500/30", glow: "shadow-blue-500/20" },
+            emerald: { bg: "bg-emerald-500/20", border: "border-emerald-500/30", glow: "shadow-emerald-500/20" },
+            purple: { bg: "bg-purple-500/20", border: "border-purple-500/30", glow: "shadow-purple-500/20" },
+            rose: { bg: "bg-rose-500/20", border: "border-rose-500/30", glow: "shadow-rose-500/20" },
+            violet: { bg: "bg-violet-500/20", border: "border-violet-500/30", glow: "shadow-violet-500/20" },
+          };
+          const colors = colorMap[benefit.color] || colorMap.blue;
+          
+          return (
+            <motion.div
+              key={benefit.title}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + index * 0.08 }}
+              className={`group relative p-5 rounded-xl border ${colors.border} bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 shadow-lg ${colors.glow} hover:shadow-xl`}
+            >
+              {/* Subtle corner accent */}
+              <div className={`absolute top-0 right-0 w-16 h-16 ${colors.bg} rounded-bl-[40px] opacity-50`} />
+              
+              <div className={`relative w-11 h-11 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                <benefit.icon className="w-5 h-5 text-foreground" />
+              </div>
+              <h4 className="font-semibold text-foreground mb-2 relative">{benefit.title}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed relative">{benefit.description}</p>
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   </>
