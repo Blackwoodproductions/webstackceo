@@ -55,17 +55,37 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
   // Check for stored connection on mount - check BOTH unified auth (localStorage) and session tokens
   const getStoredConnection = () => {
-    // First check for unified Google auth tokens (from main Google login)
-    const unifiedToken = localStorage.getItem('google_ads_access_token');
-    const unifiedExpiry = localStorage.getItem('google_ads_token_expiry');
-    
-    // Then check for dedicated Google Ads tokens
+    // First check for dedicated Google Ads tokens
+    const adsToken = localStorage.getItem('google_ads_access_token');
+    const adsExpiry = localStorage.getItem('google_ads_token_expiry');
     const storedCustomerId = localStorage.getItem('google_ads_customer_id');
     
-    // Use unified token if available and valid
-    if (unifiedToken && unifiedExpiry) {
+    // Use dedicated Google Ads token if available and valid
+    if (adsToken && adsExpiry) {
+      const expiryTime = parseInt(adsExpiry, 10);
+      if (Date.now() < expiryTime - 300000) {
+        return { 
+          token: adsToken, 
+          customerId: storedCustomerId || 'unified-auth',
+          isUnifiedAuth: true 
+        };
+      }
+    }
+    
+    // Fall back to unified Google auth tokens (from GSC or GA login)
+    // These tokens may have Google Ads scope if user did unified login
+    const unifiedToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
+    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
+    const scopes = localStorage.getItem('unified_google_scopes') || '';
+    
+    // Only use unified token if it has adwords scope
+    if (unifiedToken && unifiedExpiry && scopes.includes('adwords')) {
       const expiryTime = parseInt(unifiedExpiry, 10);
       if (Date.now() < expiryTime - 300000) {
+        // Sync to Google Ads specific keys for consistency
+        localStorage.setItem('google_ads_access_token', unifiedToken);
+        localStorage.setItem('google_ads_token_expiry', unifiedExpiry);
+        
         return { 
           token: unifiedToken, 
           customerId: storedCustomerId || 'unified-auth',
@@ -98,11 +118,39 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
   // Restore connection and fetch keywords on mount if we have stored credentials
   useEffect(() => {
-    if (storedConnection && !hasOAuthCallback()) {
-      // Auto-fetch keywords with stored credentials
-      setIsUnifiedAuth(storedConnection.isUnifiedAuth || false);
-      handleFetchKeywordsWithToken(storedConnection.token, storedConnection.customerId);
-    }
+    // Check for stored connection
+    const checkAndRestore = () => {
+      const connection = getStoredConnection();
+      if (connection && !hasOAuthCallback()) {
+        // Auto-fetch keywords with stored credentials
+        setIsConnected(true);
+        setAccessToken(connection.token);
+        setConnectedCustomerId(connection.customerId);
+        setIsUnifiedAuth(connection.isUnifiedAuth || false);
+        handleFetchKeywordsWithToken(connection.token, connection.customerId);
+      }
+    };
+
+    checkAndRestore();
+    
+    // Listen for auth sync events from other panels
+    const handleAuthSync = (e: CustomEvent) => {
+      console.log("[PPC] Received auth sync event");
+      const newConnection = getStoredConnection();
+      if (newConnection) {
+        setIsConnected(true);
+        setAccessToken(newConnection.token);
+        setConnectedCustomerId(newConnection.customerId);
+        setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
+        handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
+      }
+    };
+    
+    window.addEventListener("google-auth-synced", handleAuthSync as EventListener);
+    
+    return () => {
+      window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle wizard completion - store credentials

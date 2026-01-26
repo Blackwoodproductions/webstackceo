@@ -256,6 +256,12 @@ export const GADashboardPanel = ({
           setAccessToken(storedToken);
           setIsAuthenticated(true);
           setIsLoading(false);
+          
+          // Dispatch sync event so other panels get notified
+          window.dispatchEvent(new CustomEvent("google-auth-synced", {
+            detail: { access_token: storedToken, expiry: expiryTime }
+          }));
+          
           return true;
         } else {
           console.log("[GA] Stored token has expired, clearing...");
