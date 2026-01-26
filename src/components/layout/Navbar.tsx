@@ -163,15 +163,69 @@ const Navbar = () => {
           prompt: 'consent select_account',
           include_granted_scopes: 'true',
         },
+        skipBrowserRedirect: true,
       }
     });
     
     if (error) {
       console.error('Google sign-in error:', error);
-    } else if (data?.url) {
-      // Redirect to Google consent screen
-      window.location.href = data.url;
+      return;
     }
+    
+    if (!data?.url) {
+      console.error('No OAuth URL returned');
+      return;
+    }
+
+    // Open Google auth in a popup window
+    const popupWidth = 520;
+    const popupHeight = 720;
+    const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
+    const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
+
+    const popup = window.open(
+      data.url,
+      "google_auth_popup",
+      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+    );
+
+    if (!popup) {
+      console.error('Popup was blocked');
+      // Fallback to redirect if popup blocked
+      window.location.href = data.url;
+      return;
+    }
+
+    // Poll for popup closure and check for session
+    const pollInterval = setInterval(async () => {
+      try {
+        if (popup.closed) {
+          clearInterval(pollInterval);
+          
+          // Check if we got a session
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setUser(session.user);
+            
+            // Fetch profile
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('avatar_url, full_name')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            if (profileData) {
+              setUserProfile(profileData);
+            }
+            
+            // Navigate to dashboard
+            window.location.href = '/visitor-intelligence-dashboard';
+          }
+        }
+      } catch {
+        // Ignore cross-origin errors while popup is on Google's domain
+      }
+    }, 500);
   };
 
   // next-themes can be undefined on first client render; avoid flicker.
