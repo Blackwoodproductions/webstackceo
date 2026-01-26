@@ -27,9 +27,10 @@ export const GAMetricsBoxes = ({ metrics }: GAMetricsBoxesProps) => {
       value: formatNumber(metrics.sessions),
       change: metrics.sessionsChange,
       icon: Users,
-      gradient: "from-orange-500/20 to-amber-500/10",
+      gradient: "from-orange-500/15 to-amber-500/8",
       iconColor: "text-orange-500",
       borderColor: "border-orange-500/30",
+      glowColor: "from-orange-500/20",
     },
     {
       label: "Users",
@@ -37,27 +38,30 @@ export const GAMetricsBoxes = ({ metrics }: GAMetricsBoxesProps) => {
       subValue: `${formatNumber(metrics.newUsers)} new`,
       change: metrics.usersChange,
       icon: Users,
-      gradient: "from-amber-500/20 to-yellow-500/10",
+      gradient: "from-amber-500/15 to-yellow-500/8",
       iconColor: "text-amber-500",
       borderColor: "border-amber-500/30",
+      glowColor: "from-amber-500/20",
     },
     {
       label: "Page Views",
       value: formatNumber(metrics.pageViews),
       badge: `${metrics.pagesPerSession.toFixed(1)}/sess`,
       icon: Eye,
-      gradient: "from-yellow-500/20 to-lime-500/10",
+      gradient: "from-yellow-500/15 to-lime-500/8",
       iconColor: "text-yellow-500",
       borderColor: "border-yellow-500/30",
+      glowColor: "from-yellow-500/20",
     },
     {
       label: "Avg. Duration",
       value: formatDuration(metrics.avgSessionDuration),
       badge: `${metrics.engagementRate.toFixed(0)}% engaged`,
       icon: Clock,
-      gradient: "from-green-500/20 to-emerald-500/10",
+      gradient: "from-green-500/15 to-emerald-500/8",
       iconColor: "text-green-500",
       borderColor: "border-green-500/30",
+      glowColor: "from-green-500/20",
     },
   ];
 
@@ -69,32 +73,36 @@ export const GAMetricsBoxes = ({ metrics }: GAMetricsBoxesProps) => {
         animate={{ opacity: 1, y: 0 }}
         className="col-span-2 md:col-span-4 lg:col-span-1"
       >
-        <Card className="relative p-3 bg-gradient-to-br from-orange-500/15 to-amber-500/10 border-orange-500/30 overflow-hidden group">
-          {/* Animated gradient glow */}
-          <motion.div
-            className="absolute -inset-[1px] rounded-lg opacity-0 group-hover:opacity-40 blur-sm transition-opacity"
-            animate={{
-              background: [
-                "linear-gradient(0deg, rgba(249,115,22,0.3), rgba(245,158,11,0.2))",
-                "linear-gradient(180deg, rgba(245,158,11,0.3), rgba(249,115,22,0.2))",
-              ],
+        <Card className="relative overflow-hidden p-3 bg-gradient-to-br from-orange-500/15 via-amber-500/10 to-primary/5 border-orange-500/30 group">
+          {/* Corner glows */}
+          <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-orange-500/20 to-transparent rounded-bl-[40px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[30px] pointer-events-none" />
+          
+          {/* Background grid */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+              backgroundSize: '16px 16px',
             }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
           />
           
           {/* Scanning line */}
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/10 to-transparent pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/8 to-transparent pointer-events-none"
             animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
           />
           
           <div className="relative z-10 flex items-center gap-3">
             <motion.div 
-              className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/25"
+              className="relative w-10 h-10 flex-shrink-0"
               whileHover={{ scale: 1.05, rotate: 5 }}
             >
-              <Activity className="w-5 h-5 text-white" />
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 blur-sm opacity-50" />
+              <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/25">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
             </motion.div>
             <div>
               <div className="flex items-center gap-2">
@@ -121,22 +129,26 @@ export const GAMetricsBoxes = ({ metrics }: GAMetricsBoxesProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
+          whileHover={{ scale: 1.02 }}
         >
-          <Card className={`relative p-3 bg-gradient-to-br ${card.gradient} ${card.borderColor} overflow-hidden group`}>
-            {/* Shimmer effect */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100"
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+          <Card className={`relative overflow-hidden p-3 bg-gradient-to-br ${card.gradient} ${card.borderColor} group`}>
+            {/* Corner glow */}
+            <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl ${card.glowColor} to-transparent rounded-bl-[30px] pointer-events-none`} />
             
             {/* Grid pattern */}
             <div 
-              className="absolute inset-0 opacity-[0.03]"
+              className="absolute inset-0 opacity-[0.02] pointer-events-none"
               style={{
                 backgroundImage: `linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)`,
                 backgroundSize: '16px 16px'
               }}
+            />
+            
+            {/* Shimmer effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
             />
             
             <div className="relative z-10">
