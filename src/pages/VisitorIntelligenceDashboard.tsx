@@ -1414,12 +1414,12 @@ const MarketingDashboard = () => {
 
   // Calculate funnel percentages
   const funnelSteps = [
-    { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600' },
-    { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600' },
-    { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600' },
-    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600' },
-    { label: 'Open', count: leads.filter(l => l.status === 'open').length, icon: FileText, color: 'from-slate-400 to-slate-600' },
-    { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600' },
+    { label: 'Visitors', count: funnelStats.visitors, icon: Eye, color: 'from-blue-400 to-blue-600', bgGradient: 'from-blue-500/15 to-blue-600/10', borderColor: 'border-blue-500/30', gridColor: 'hsl(217 91% 60%)' },
+    { label: 'Tool Users', count: filteredData.toolInteractions.length, icon: MousePointer, color: 'from-cyan-400 to-cyan-600', bgGradient: 'from-cyan-500/15 to-cyan-600/10', borderColor: 'border-cyan-500/30', gridColor: 'hsl(186 91% 50%)' },
+    { label: 'Leads', count: filteredData.leads.length || funnelStats.leads, icon: Mail, color: 'from-violet-400 to-violet-600', bgGradient: 'from-violet-500/15 to-violet-600/10', borderColor: 'border-violet-500/30', gridColor: 'hsl(262 83% 58%)' },
+    { label: 'Qualified', count: funnelStats.withCompanyInfo, icon: Target, color: 'from-orange-400 to-orange-600', bgGradient: 'from-orange-500/15 to-orange-600/10', borderColor: 'border-orange-500/30', gridColor: 'hsl(24 95% 53%)' },
+    { label: 'Open', count: leads.filter(l => l.status === 'open').length, icon: FileText, color: 'from-slate-400 to-slate-600', bgGradient: 'from-slate-500/15 to-slate-600/10', borderColor: 'border-slate-500/30', gridColor: 'hsl(215 16% 47%)' },
+    { label: 'Closed', count: funnelStats.closedLeads, icon: DollarSign, color: 'from-green-400 to-green-600', bgGradient: 'from-green-500/15 to-green-600/10', borderColor: 'border-green-500/30', gridColor: 'hsl(142 71% 45%)' },
   ];
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
@@ -2022,23 +2022,27 @@ f.parentNode.insertBefore(j,f);
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.02, y: -2 }}
                 >
-                  <Card className="relative overflow-hidden p-4 group border-border hover:shadow-lg transition-shadow">
-                    {/* Grid pattern */}
+                  <Card className={`relative overflow-hidden p-4 group ${step.borderColor} bg-gradient-to-br ${step.bgGradient} hover:shadow-lg transition-all`}>
+                    {/* Grid pattern with step-specific color */}
                     <div 
-                      className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                      className="absolute inset-0 opacity-[0.03] pointer-events-none"
                       style={{
-                        backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                        backgroundImage: `linear-gradient(${step.gridColor} 1px, transparent 1px), linear-gradient(90deg, ${step.gridColor} 1px, transparent 1px)`,
                         backgroundSize: '16px 16px'
                       }}
                     />
-                    {/* Corner glow */}
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-[40px] pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity" />
+                    {/* Corner glow with step color */}
+                    <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/20 to-transparent rounded-bl-[40px] pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
+                    {/* Bottom corner accent */}
+                    <div className={`absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-tr ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/15 to-transparent rounded-tr-[30px] pointer-events-none`} />
                     {/* Shimmer effect */}
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
                       animate={{ x: ["-100%", "200%"] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     />
+                    {/* Floating particle */}
+                    <div className={`absolute top-[20%] right-[12%] w-1 h-1 rounded-full bg-gradient-to-br ${step.color} opacity-50 animate-pulse pointer-events-none`} />
                     <div className="flex items-center gap-2 relative z-10">
                       <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0 shadow-lg`}>
                         <step.icon className="w-5 h-5 text-white" />
