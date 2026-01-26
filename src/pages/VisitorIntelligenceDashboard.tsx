@@ -248,7 +248,7 @@ const MarketingDashboard = () => {
   const [prevChatCount, setPrevChatCount] = useState(0);
   const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; full_name: string | null } | null>(null);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
-  const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; page_count?: number; }[]>([]);
+  const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; page_count?: number; user_id?: string | null; avatar_url?: string | null; display_name?: string | null; is_current_user?: boolean; }[]>([]);
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
@@ -661,10 +661,13 @@ const MarketingDashboard = () => {
 
   // Fetch live visitors (active in last 5 minutes) - ordered by time on site, then page count
   const fetchLiveVisitors = async () => {
+    // Get current user's session ID for marking
+    const currentSessionId = sessionStorage.getItem('webstack_session_id');
+    
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: sessions } = await supabase
       .from('visitor_sessions')
-      .select('session_id, first_page, last_activity_at, started_at')
+      .select('session_id, first_page, last_activity_at, started_at, user_id')
       .gte('last_activity_at', fiveMinutesAgo)
       .order('started_at', { ascending: true }) // Oldest first = most time on site
       .limit(20);
@@ -687,6 +690,23 @@ const MarketingDashboard = () => {
         pageCountMap[pv.session_id] = (pageCountMap[pv.session_id] || 0) + 1;
       });
       
+      // Fetch profiles for logged-in users
+      const userIds = filteredSessions.filter(s => s.user_id).map(s => s.user_id!);
+      let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url, full_name')
+          .in('user_id', userIds);
+        
+        if (profiles) {
+          profiles.forEach(p => {
+            profilesMap[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+          });
+        }
+      }
+      
       // Sort: time on site (descending), then page count (descending)
       const sorted = filteredSessions.sort((a, b) => {
         const timeA = Date.now() - new Date(a.started_at).getTime();
@@ -695,10 +715,23 @@ const MarketingDashboard = () => {
         return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0); // Most pages second
       });
       
-      setLiveVisitors(sorted.slice(0, 10).map(s => ({
+      // Map with profiles and current user flag
+      const visitorsWithProfiles = sorted.slice(0, 10).map(s => ({
         ...s,
-        page_count: pageCountMap[s.session_id] || 1
-      })));
+        page_count: pageCountMap[s.session_id] || 1,
+        avatar_url: s.user_id ? profilesMap[s.user_id]?.avatar_url : null,
+        display_name: s.user_id ? profilesMap[s.user_id]?.full_name : null,
+        is_current_user: s.session_id === currentSessionId,
+      }));
+      
+      // Sort to put current user first
+      const finalSorted = visitorsWithProfiles.sort((a, b) => {
+        if (a.is_current_user) return -1;
+        if (b.is_current_user) return 1;
+        return 0; // Maintain existing order otherwise
+      });
+      
+      setLiveVisitors(finalSorted);
     }
   };
 
@@ -2686,12 +2719,17 @@ f.parentNode.insertBefore(j,f);
                       const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
                       const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m ago` : `${Math.floor(timeSince / 60)}h ago`;
                       
+                      // Check if this visitor has an avatar (logged-in user)
+                      const hasAvatar = visitor.avatar_url;
+                      const isCurrentUser = visitor.is_current_user;
+                      
                       return (
                         <motion.div
                           key={visitor.session_id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           onClick={async () => {
+                            if (isCurrentUser) return; // Don't start chat with yourself
                             const { data: newConv } = await supabase
                               .from('chat_conversations')
                               .insert({
@@ -2713,63 +2751,108 @@ f.parentNode.insertBefore(j,f);
                               toast.success('Chat started with visitor');
                             }
                           }}
-                          className="group relative flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-300 hover:bg-primary/5 border border-primary/10 hover:border-primary/30 backdrop-blur-sm"
+                          className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all duration-300 border backdrop-blur-sm ${
+                            isCurrentUser 
+                              ? 'bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-cyan-500/40 cursor-default' 
+                              : 'hover:bg-primary/5 border-primary/10 hover:border-primary/30 cursor-pointer'
+                          }`}
                         >
                           {/* Glow effect on hover */}
-                          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {!isCurrentUser && (
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
                           
-                          {/* Futuristic icon container */}
+                          {/* Avatar or Icon container */}
                           <div className="relative flex-shrink-0">
-                            {/* Outer glow ring */}
-                            <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-30 blur-sm group-hover:opacity-50 transition-opacity`} />
-                            
-                            {/* Main square */}
-                            <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
-                              {/* Inner highlight */}
-                              <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
-                              
-                              {/* Scan line effect */}
-                              <motion.div 
-                                className="absolute inset-0 rounded-lg overflow-hidden"
-                                initial={false}
-                              >
-                                <motion.div 
-                                  className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                                  animate={{ y: [0, 36, 0] }}
-                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                />
-                              </motion.div>
-                              
-                              {/* Icon */}
-                              <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
-                              
-                              {/* Corner accents */}
-                              <div className="absolute top-0 left-0 w-1.5 h-1.5 border-l-2 border-t-2 border-white/40 rounded-tl-sm" />
-                              <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-r-2 border-b-2 border-white/40 rounded-br-sm" />
-                            </div>
+                            {hasAvatar ? (
+                              <>
+                                {/* Outer glow for avatar */}
+                                <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-40 blur-sm group-hover:opacity-60 transition-opacity`} />
+                                
+                                {/* Avatar image */}
+                                <div className={`relative w-9 h-9 rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/30'}`}>
+                                  <img 
+                                    src={visitor.avatar_url!} 
+                                    alt={visitor.display_name || 'User'} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                
+                                {/* YOU badge for current user */}
+                                {isCurrentUser && (
+                                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg">
+                                    YOU
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {/* Outer glow ring */}
+                                <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-30 blur-sm group-hover:opacity-50 transition-opacity`} />
+                                
+                                {/* Main square */}
+                                <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
+                                  {/* Inner highlight */}
+                                  <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
+                                  
+                                  {/* Scan line effect */}
+                                  <motion.div 
+                                    className="absolute inset-0 rounded-lg overflow-hidden"
+                                    initial={false}
+                                  >
+                                    <motion.div 
+                                      className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                                      animate={{ y: [0, 36, 0] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    />
+                                  </motion.div>
+                                  
+                                  {/* Icon */}
+                                  <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
+                                  
+                                  {/* Corner accents */}
+                                  <div className="absolute top-0 left-0 w-1.5 h-1.5 border-l-2 border-t-2 border-white/40 rounded-tl-sm" />
+                                  <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-r-2 border-b-2 border-white/40 rounded-br-sm" />
+                                </div>
+                              </>
+                            )}
                             
                             {/* Live indicator with pulse */}
-                            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/50">
-                              <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                            <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}>
+                              <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
                             </span>
                           </div>
                           
                           <div className="flex-1 min-w-0 relative z-10">
-                            <p className="text-xs font-medium text-foreground truncate">
-                              {visitor.first_page || '/'}
+                            <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
+                              {isCurrentUser ? (
+                                <>
+                                  <span className="text-cyan-500">You</span>
+                                  <Badge variant="outline" className="text-[8px] py-0 px-1 h-4 border-cyan-500/30 text-cyan-500">Online</Badge>
+                                </>
+                              ) : (
+                                <>
+                                  {visitor.display_name || visitor.first_page || '/'}
+                                  {visitor.user_id && (
+                                    <Badge variant="outline" className="text-[8px] py-0 px-1 h-4 border-emerald-500/30 text-emerald-500">Google</Badge>
+                                  )}
+                                </>
+                              )}
                             </p>
                             <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                              {timeLabel} • Click to engage
+                              <span className={`w-1 h-1 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                              {isCurrentUser ? 'Your session' : `${timeLabel} • Click to engage`}
                             </p>
                           </div>
                           
-                          {/* Shimmer effect on hover */}
-                          <motion.div 
-                            className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
-                            animate={{ x: ['-100%', '200%'] }}
-                            transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
-                          />
+                          {/* Shimmer effect on hover (not for current user) */}
+                          {!isCurrentUser && (
+                            <motion.div 
+                              className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+                              animate={{ x: ['-100%', '200%'] }}
+                              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                            />
+                          )}
                         </motion.div>
                       );
                     })}
@@ -2854,12 +2937,17 @@ f.parentNode.insertBefore(j,f);
                   const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
                   const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m` : `${Math.floor(timeSince / 60)}h`;
                   
+                  // Check if this visitor has an avatar (logged-in user)
+                  const hasAvatar = visitor.avatar_url;
+                  const isCurrentUser = visitor.is_current_user;
+                  
                   return (
                     <motion.div
                       key={visitor.session_id}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       onClick={async () => {
+                        if (isCurrentUser) return; // Don't start chat with yourself
                         const { data: newConv } = await supabase
                           .from('chat_conversations')
                           .insert({
@@ -2882,65 +2970,101 @@ f.parentNode.insertBefore(j,f);
                           toast.success('Chat started with visitor');
                         }
                       }}
-                      className="relative w-10 h-10 cursor-pointer group"
-                      title={`${visitor.first_page || '/'} • ${timeLabel}`}
-                      whileHover={{ scale: 1.15 }}
-                      whileTap={{ scale: 0.95 }}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer'}`}
+                      title={isCurrentUser ? 'You (Online)' : `${visitor.first_page || '/'} • ${timeLabel}`}
+                      whileHover={isCurrentUser ? {} : { scale: 1.15 }}
+                      whileTap={isCurrentUser ? {} : { scale: 0.95 }}
                     >
-                      {/* Outer glow */}
-                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-40 blur-md group-hover:opacity-70 transition-opacity`} />
-                      
-                      {/* Main container */}
-                      <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-xl overflow-hidden`}>
-                        {/* Inner highlight */}
-                        <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/25 to-transparent" />
-                        
-                        {/* Grid pattern overlay */}
-                        <div 
-                          className="absolute inset-0 opacity-20"
-                          style={{
-                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                            backgroundSize: '4px 4px'
-                          }}
-                        />
-                        
-                        {/* Scan line */}
-                        <motion.div 
-                          className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
-                          animate={{ y: [-20, 40] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                        />
-                        
-                        {/* Icon */}
-                        <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
-                        
-                        {/* Corner tech accents */}
-                        <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
-                        <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
-                        
-                        {/* Shimmer on hover */}
-                        <motion.div 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100"
-                          animate={{ x: ['-100%', '200%'] }}
-                          transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
-                        />
-                      </div>
-                      
-                      {/* Live indicator with enhanced glow */}
-                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/60">
-                        <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
-                      </span>
+                      {hasAvatar ? (
+                        <>
+                          {/* Outer glow for avatar */}
+                          <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-50 blur-md group-hover:opacity-70 transition-opacity`} />
+                          
+                          {/* Avatar image */}
+                          <div className={`relative w-full h-full rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/40'} shadow-xl`}>
+                            <img 
+                              src={visitor.avatar_url!} 
+                              alt={visitor.display_name || 'User'} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          
+                          {/* Live indicator */}
+                          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/60' : 'bg-emerald-400 shadow-emerald-400/60'}`}>
+                            <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                          </span>
+                          
+                          {/* YOU badge for current user */}
+                          {isCurrentUser && (
+                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                              YOU
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Outer glow */}
+                          <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-40 blur-md group-hover:opacity-70 transition-opacity`} />
+                          
+                          {/* Main container */}
+                          <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-xl overflow-hidden`}>
+                            {/* Inner highlight */}
+                            <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/25 to-transparent" />
+                            
+                            {/* Grid pattern overlay */}
+                            <div 
+                              className="absolute inset-0 opacity-20"
+                              style={{
+                                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                                backgroundSize: '4px 4px'
+                              }}
+                            />
+                            
+                            {/* Scan line */}
+                            <motion.div 
+                              className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                              animate={{ y: [-20, 40] }}
+                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                            />
+                            
+                            {/* Icon */}
+                            <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
+                            
+                            {/* Corner tech accents */}
+                            <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
+                            <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
+                            
+                            {/* Shimmer on hover */}
+                            <motion.div 
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100"
+                              animate={{ x: ['-100%', '200%'] }}
+                              transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
+                            />
+                          </div>
+                          
+                          {/* Live indicator with enhanced glow */}
+                          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/60">
+                            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                          </span>
+                        </>
+                      )}
                       
                       {/* Hover tooltip with glass effect */}
                       <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none scale-95 group-hover:scale-100">
                         <div className="bg-background/90 backdrop-blur-xl border border-primary/20 rounded-xl px-3 py-2 shadow-2xl shadow-primary/10 whitespace-nowrap">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className={`w-2 h-2 rounded-sm bg-gradient-to-br ${colorClass}`} />
-                            <p className="text-[11px] text-foreground font-semibold">{visitor.first_page || '/'}</p>
+                            {hasAvatar ? (
+                              <img src={visitor.avatar_url!} alt="" className="w-4 h-4 rounded-full object-cover" />
+                            ) : (
+                              <div className={`w-2 h-2 rounded-sm bg-gradient-to-br ${colorClass}`} />
+                            )}
+                            <p className="text-[11px] text-foreground font-semibold">
+                              {isCurrentUser ? 'You' : visitor.display_name || visitor.first_page || '/'}
+                            </p>
                           </div>
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            Click to engage • {timeLabel}
+                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                            {isCurrentUser ? 'Your session' : `Click to engage • ${timeLabel}`}
                           </p>
                         </div>
                       </div>
