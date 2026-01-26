@@ -1,12 +1,11 @@
 import { motion } from "framer-motion";
 import {
   Activity, Cpu, Sparkles, FileText, HelpCircle,
-  Globe, TrendingUp, Layers, Bot, Radio, Target,
-  Clock, CheckCircle, Zap, Link2, ArrowUpRight
+  Globe, TrendingUp, Layers, Target,
+  Clock, Zap, Link2, ArrowUpRight
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 
 interface CADEMetrics {
   status?: string;
@@ -144,98 +143,6 @@ export const CADEMetricsBoxes = ({ metrics, domain, isConnected }: CADEMetricsBo
 
   return (
     <div className="space-y-4">
-      {/* CADE Header Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="relative overflow-hidden p-4 bg-gradient-to-br from-violet-500/15 via-purple-500/10 to-fuchsia-500/8 border-violet-500/30 group">
-          {/* Corner glows */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-500/25 to-transparent rounded-bl-[60px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-fuchsia-500/15 to-transparent rounded-tr-[40px] pointer-events-none" />
-          
-          {/* Background grid */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.04]"
-            style={{
-              backgroundImage: `linear-gradient(hsl(270 70% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(270 70% 60%) 1px, transparent 1px)`,
-              backgroundSize: '20px 20px',
-            }}
-          />
-          
-          {/* Animated scanning line */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/10 to-transparent pointer-events-none"
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-          />
-          
-          <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <motion.div 
-                className="relative w-14 h-14 flex-shrink-0"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-              >
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 blur-md opacity-50" />
-                <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30">
-                  <Bot className="w-7 h-7 text-white" />
-                </div>
-                {isConnected && (
-                  <motion.div
-                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring" }}
-                  >
-                    <CheckCircle className="w-3 h-3 text-white" />
-                  </motion.div>
-                )}
-              </motion.div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-bold">CADE Engine</h3>
-                  <motion.span
-                    className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/25 text-violet-300 border border-violet-500/40"
-                    animate={{ opacity: [0.7, 1, 0.7] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Radio className="w-2.5 h-2.5" />
-                    {isConnected ? "CONNECTED" : "OFFLINE"}
-                  </motion.span>
-                </div>
-                <p className="text-sm text-muted-foreground">AI-Powered Content Automation</p>
-              </div>
-            </div>
-            
-            {/* Quick Stats Row */}
-            {isConnected && (
-              <div className="flex items-center gap-6">
-                {metrics.quotaLimit && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Usage</p>
-                    <div className="flex items-center gap-2">
-                      <Progress 
-                        value={((metrics.quotaUsed ?? 0) / metrics.quotaLimit) * 100} 
-                        className="w-20 h-1.5"
-                      />
-                      <span className="text-xs font-medium">
-                        {metrics.quotaUsed ?? 0}/{metrics.quotaLimit}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {metrics.creditsRemaining !== undefined && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Credits</p>
-                    <p className="text-sm font-bold text-violet-400">{formatNumber(metrics.creditsRemaining)}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </Card>
-      </motion.div>
-
       {/* Primary Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {metricCards.map((card, i) => (

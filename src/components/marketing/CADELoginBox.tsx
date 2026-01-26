@@ -791,10 +791,17 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             <div>
               <h3 className="text-xl font-bold flex items-center gap-3">
                 CADE Dashboard
-                <Badge className={getStatusColor(health?.status)}>
-                  {getStatusIcon(health?.status)}
-                  <span className="ml-1.5 capitalize">{health?.status || "Connecting..."}</span>
-                </Badge>
+                {isConnected ? (
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40">
+                    <CheckCircle className="w-3 h-3 mr-1.5" />
+                    Connected
+                  </Badge>
+                ) : (
+                  <Badge className={getStatusColor(health?.status)}>
+                    {getStatusIcon(health?.status)}
+                    <span className="ml-1.5 capitalize">{health?.status || "Connecting..."}</span>
+                  </Badge>
+                )}
               </h3>
               <p className="text-sm text-muted-foreground">
                 AI-Powered Content Automation Engine
