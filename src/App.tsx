@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SoundProvider } from "@/contexts/SoundContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import ScrollToTop from "@/components/ui/scroll-to-top";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Critical path - loaded immediately
 import Index from "./pages/Index";
@@ -108,94 +110,98 @@ import { VisitorTrackingProvider } from "@/components/VisitorTrackingProvider";
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <SoundProvider>
-        <TooltipProvider delayDuration={300}>
-          <Toaster />
-          <Sonner />
-        <BrowserRouter>
-          <VisitorTrackingProvider>
-            <ScrollToTop />
-            <Suspense fallback={null}>
-              <FloatingCodeBox />
-              <FloatingLiveStats />
-            </Suspense>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/marketplace" element={<Marketplace />} />
-              <Route path="/marketplace/:slug" element={<PartnerDetail />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
-              <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/cookies" element={<Cookies />} />
-              <Route path="/features/on-page-seo" element={<OnPageSEO />} />
-              <Route path="/features/off-page-seo" element={<OffPageSEO />} />
-              <Route path="/features/automated-blog" element={<AutomatedBlog />} />
-              <Route path="/features/faq-generation" element={<FAQGeneration />} />
-              <Route path="/features/traffic-de-anonymization" element={<TrafficDeAnonymization />} />
-              <Route path="/features/visitor-intelligence" element={<VisitorIntelligence />} />
-              <Route path="/features/ppc-landing-pages" element={<PPCLandingPages />} />
-              <Route path="/features/domain-authority" element={<DomainAuthority />} />
-              <Route path="/features/advanced-analytics" element={<AdvancedAnalytics />} />
-              <Route path="/features/gmb-optimization" element={<GMBOptimization />} />
-              <Route path="/features/uptime-monitoring" element={<UptimeMonitoring />} />
-              <Route path="/features/web-hosting" element={<WebHosting />} />
-              <Route path="/features/social-signals" element={<SocialSignals />} />
-              <Route path="/directory" element={<Directory />} />
-              <Route path="/directory/:slug" element={<DirectoryDetail />} />
-              <Route path="/integrations" element={<Integrations />} />
-              <Route path="/changelog" element={<Changelog />} />
-              <Route path="/learn" element={<Learn />} />
-              <Route path="/learn/on-page-seo-guide" element={<OnPageSEOGuide />} />
-              <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
-              <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
-              <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
-              <Route path="/learn/visitor-intelligence-guide" element={<VisitorIntelligenceGuide />} />
-              <Route path="/learn/gmb-optimization-guide" element={<GMBOptimizationGuide />} />
-              <Route path="/learn/automated-blogging-guide" element={<AutomatedBloggingGuide />} />
-              <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
-              <Route path="/learn/glossary" element={<GlossaryIndex />} />
-              <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
-              <Route path="/learn/technical-seo-guide" element={<TechnicalSEOGuide />} />
-              <Route path="/learn/traffic-deanonymization-guide" element={<TrafficDeanonymizationGuide />} />
-              <Route path="/learn/faq-generation-guide" element={<FAQGenerationGuide />} />
-              <Route path="/learn/social-signals-guide" element={<SocialSignalsGuide />} />
-              <Route path="/learn/local-seo-guide" element={<LocalSEOGuide />} />
-              <Route path="/learn/link-building-guide" element={<LinkBuildingGuide />} />
-              <Route path="/learn/web-hosting-guide" element={<WebHostingGuide />} />
-              <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
-              <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
-              <Route path="/learn/cro-guide" element={<CROGuide />} />
-              <Route path="/learn/keyword-research-guide" element={<KeywordResearchGuide />} />
-              <Route path="/learn/content-marketing-guide" element={<ContentMarketingGuide />} />
-              <Route path="/learn/mobile-seo-guide" element={<MobileSEOGuide />} />
-              <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
-              <Route path="/sitemap" element={<Sitemap />} />
-              <Route path="/tools" element={<Tools />} />
-              <Route path="/analytics" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
-              <Route path="/audits" element={<WebsiteAudits />} />
-              <Route path="/case-studies" element={<CaseStudies />} />
-              <Route path="/case-study/:domain" element={<AuditResults />} />
-              <Route path="/audit/:domain" element={<AuditResults />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          </VisitorTrackingProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-      </SoundProvider>
+      <AuthProvider>
+        <SoundProvider>
+          <TooltipProvider delayDuration={300}>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <VisitorTrackingProvider>
+                <ScrollToTop />
+                <Suspense fallback={null}>
+                  <FloatingCodeBox />
+                  <FloatingLiveStats />
+                </Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/careers" element={<Careers />} />
+                      <Route path="/features" element={<Features />} />
+                      <Route path="/pricing" element={<Pricing />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/marketplace" element={<Marketplace />} />
+                      <Route path="/marketplace/:slug" element={<PartnerDetail />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/auth/callback" element={<AuthCallback />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
+                      <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
+                      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/cookies" element={<Cookies />} />
+                      <Route path="/features/on-page-seo" element={<OnPageSEO />} />
+                      <Route path="/features/off-page-seo" element={<OffPageSEO />} />
+                      <Route path="/features/automated-blog" element={<AutomatedBlog />} />
+                      <Route path="/features/faq-generation" element={<FAQGeneration />} />
+                      <Route path="/features/traffic-de-anonymization" element={<TrafficDeAnonymization />} />
+                      <Route path="/features/visitor-intelligence" element={<VisitorIntelligence />} />
+                      <Route path="/features/ppc-landing-pages" element={<PPCLandingPages />} />
+                      <Route path="/features/domain-authority" element={<DomainAuthority />} />
+                      <Route path="/features/advanced-analytics" element={<AdvancedAnalytics />} />
+                      <Route path="/features/gmb-optimization" element={<GMBOptimization />} />
+                      <Route path="/features/uptime-monitoring" element={<UptimeMonitoring />} />
+                      <Route path="/features/web-hosting" element={<WebHosting />} />
+                      <Route path="/features/social-signals" element={<SocialSignals />} />
+                      <Route path="/directory" element={<Directory />} />
+                      <Route path="/directory/:slug" element={<DirectoryDetail />} />
+                      <Route path="/integrations" element={<Integrations />} />
+                      <Route path="/changelog" element={<Changelog />} />
+                      <Route path="/learn" element={<Learn />} />
+                      <Route path="/learn/on-page-seo-guide" element={<OnPageSEOGuide />} />
+                      <Route path="/learn/off-page-seo-guide" element={<OffPageSEOGuide />} />
+                      <Route path="/learn/analytics-guide" element={<AnalyticsGuide />} />
+                      <Route path="/learn/domain-authority-guide" element={<DomainAuthorityGuide />} />
+                      <Route path="/learn/visitor-intelligence-guide" element={<VisitorIntelligenceGuide />} />
+                      <Route path="/learn/gmb-optimization-guide" element={<GMBOptimizationGuide />} />
+                      <Route path="/learn/automated-blogging-guide" element={<AutomatedBloggingGuide />} />
+                      <Route path="/learn/uptime-monitoring-guide" element={<UptimeMonitoringGuide />} />
+                      <Route path="/learn/glossary" element={<GlossaryIndex />} />
+                      <Route path="/learn/glossary/:slug" element={<GlossaryTerm />} />
+                      <Route path="/learn/technical-seo-guide" element={<TechnicalSEOGuide />} />
+                      <Route path="/learn/traffic-deanonymization-guide" element={<TrafficDeanonymizationGuide />} />
+                      <Route path="/learn/faq-generation-guide" element={<FAQGenerationGuide />} />
+                      <Route path="/learn/social-signals-guide" element={<SocialSignalsGuide />} />
+                      <Route path="/learn/local-seo-guide" element={<LocalSEOGuide />} />
+                      <Route path="/learn/link-building-guide" element={<LinkBuildingGuide />} />
+                      <Route path="/learn/web-hosting-guide" element={<WebHostingGuide />} />
+                      <Route path="/learn/core-web-vitals-guide" element={<CoreWebVitalsGuide />} />
+                      <Route path="/learn/ppc-landing-pages-guide" element={<PPCLandingPagesGuide />} />
+                      <Route path="/learn/cro-guide" element={<CROGuide />} />
+                      <Route path="/learn/keyword-research-guide" element={<KeywordResearchGuide />} />
+                      <Route path="/learn/content-marketing-guide" element={<ContentMarketingGuide />} />
+                      <Route path="/learn/mobile-seo-guide" element={<MobileSEOGuide />} />
+                      <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
+                      <Route path="/sitemap" element={<Sitemap />} />
+                      <Route path="/tools" element={<Tools />} />
+                      <Route path="/analytics" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
+                      <Route path="/audits" element={<WebsiteAudits />} />
+                      <Route path="/case-studies" element={<CaseStudies />} />
+                      <Route path="/case-study/:domain" element={<AuditResults />} />
+                      <Route path="/audit/:domain" element={<AuditResults />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
+              </VisitorTrackingProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </SoundProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
