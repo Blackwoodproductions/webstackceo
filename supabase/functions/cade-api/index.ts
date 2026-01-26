@@ -23,6 +23,11 @@ serve(async (req) => {
     const cadeSecretRaw: unknown = bodyApiKey ?? headerSecret ?? envSecret;
     const cadeSecret = (typeof cadeSecretRaw === "string" ? cadeSecretRaw : "").trim();
 
+    // Debug: log character codes to detect invisible characters
+    const charCodes = cadeSecret.split('').map(c => c.charCodeAt(0));
+    console.log(`[cade-api] Key char codes (first 10): ${charCodes.slice(0, 10).join(',')}`);
+    console.log(`[cade-api] Key char codes (last 10): ${charCodes.slice(-10).join(',')}`);
+
     if (!cadeSecret) {
       console.error("[cade-api] No CADE_API_SECRET configured");
       return new Response(
@@ -45,14 +50,18 @@ serve(async (req) => {
     }
 
     // Build headers for CADE API requests
-    // Per API docs "Authorize" modal: APIKeyHeader name is "X-API-Key"
-    const cadeHeaders: Record<string, string> = {
-      Accept: "application/json",
+    // Per OpenAPI spec: securitySchemes -> APIKeyHeader -> name: "X-API-Key", in: "header"
+    // HTTP headers are case-insensitive per RFC 7230, but some servers are stricter
+    // Try both cases to maximize compatibility
+    const cadeHeaders = new Headers({
+      "Accept": "application/json",
       "Content-Type": "application/json",
-      "X-API-Key": cadeSecret,
-    };
+    });
+    // Set both cases - the last one may override depending on implementation
+    cadeHeaders.set("x-api-key", cadeSecret);
+    cadeHeaders.set("X-API-Key", cadeSecret);
 
-    console.log(`[cade-api] Upstream auth headers set: ${Object.keys(cadeHeaders).join(", ")}`);
+    console.log(`[cade-api] Upstream auth headers set, key len=${cadeSecret.length}`);
 
     let endpoint: string;
     let method = "GET";
