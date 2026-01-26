@@ -1064,6 +1064,7 @@ export type Database = {
           session_id: string
           started_at: string
           user_agent: string | null
+          user_id: string | null
         }
         Insert: {
           first_page?: string | null
@@ -1074,6 +1075,7 @@ export type Database = {
           session_id: string
           started_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
           first_page?: string | null
@@ -1084,6 +1086,7 @@ export type Database = {
           session_id?: string
           started_at?: string
           user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
