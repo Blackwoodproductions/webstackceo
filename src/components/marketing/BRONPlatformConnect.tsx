@@ -15,7 +15,7 @@ interface BRONPlatformConnectProps {
   onConnectionComplete?: (platform: string) => void;
 }
 
-const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space";
+const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
 
