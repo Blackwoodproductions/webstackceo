@@ -231,7 +231,8 @@ const MarketingDashboard = () => {
   const [flowSummary, setFlowSummary] = useState<VisitorFlowSummary | null>(null);
   const [diagramTimeRange, setDiagramTimeRange] = useState<TimeRange>('live');
   const [diagramCustomDateRange, setDiagramCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
-  const [sidebarChats, setSidebarChats] = useState<{ id: string; session_id: string; status: string; visitor_name: string | null; last_message_at: string; current_page: string | null; }[]>([]);
+  const [sidebarChats, setSidebarChats] = useState<{ id: string; session_id: string; status: string; visitor_name: string | null; visitor_email: string | null; last_message_at: string; current_page: string | null; }[]>([]);
+  const [chatProfileAvatars, setChatProfileAvatars] = useState<Record<string, string | null>>({});
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
@@ -621,12 +622,29 @@ const MarketingDashboard = () => {
   const fetchSidebarChats = async () => {
     const { data } = await supabase
       .from('chat_conversations')
-      .select('id, session_id, status, visitor_name, last_message_at, current_page')
+      .select('id, session_id, status, visitor_name, visitor_email, last_message_at, current_page')
       .in('status', ['active', 'pending'])
       .order('last_message_at', { ascending: false });
     
     if (data) {
       setSidebarChats(data);
+      
+      // Fetch profile avatars for chats with emails
+      const emailsToLookup = data.filter(c => c.visitor_email).map(c => c.visitor_email!);
+      if (emailsToLookup.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('email, avatar_url')
+          .in('email', emailsToLookup);
+        
+        if (profiles) {
+          const avatarMap: Record<string, string | null> = {};
+          profiles.forEach(p => {
+            if (p.email) avatarMap[p.email] = p.avatar_url;
+          });
+          setChatProfileAvatars(avatarMap);
+        }
+      }
     }
   };
 
@@ -2522,32 +2540,47 @@ f.parentNode.insertBefore(j,f);
                 {sidebarChats.length > 0 && (
                   <>
                     <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1">Active Chats</p>
-                    {sidebarChats.map((chat) => (
-                      <div
-                        key={chat.id}
-                        onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
-                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                          selectedChatId === chat.id 
-                            ? 'bg-cyan-500/20 border border-cyan-500/30' 
-                            : 'hover:bg-secondary/50'
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
-                          <UserIcon className="w-4 h-4 text-white" />
+                    {sidebarChats.map((chat) => {
+                      const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
+                      
+                      return (
+                        <div
+                          key={chat.id}
+                          onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                          className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedChatId === chat.id 
+                              ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                              : 'hover:bg-secondary/50'
+                          }`}
+                        >
+                          {avatarUrl ? (
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                              <img 
+                                src={avatarUrl} 
+                                alt={chat.visitor_name || 'Visitor'} 
+                                className="w-full h-full rounded-full object-cover ring-2 ring-cyan-500/30"
+                              />
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
+                              <UserIcon className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {chat.visitor_name || 'Visitor'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {chat.current_page || 'Unknown page'}
+                            </p>
+                          </div>
+                          {chat.status === 'pending' && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">
-                            {chat.visitor_name || 'Visitor'}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {chat.current_page || 'Unknown page'}
-                          </p>
-                        </div>
-                        {chat.status === 'pending' && (
-                          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </>
                 )}
 
@@ -2684,26 +2717,41 @@ f.parentNode.insertBefore(j,f);
             {chatOnline && !chatPanelOpen && (
               <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
                 {/* Active Chats */}
-                {sidebarChats.slice(0, 5).map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      setChatPanelOpen(true);
-                      setSelectedChatId(chat.id);
-                    }}
-                    className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
-                      chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
-                    }`}
-                    title={chat.visitor_name || 'Active Chat'}
-                  >
-                    <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-white" />
+                {sidebarChats.slice(0, 5).map((chat) => {
+                  const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
+                  
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        setChatPanelOpen(true);
+                        setSelectedChatId(chat.id);
+                      }}
+                      className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                        chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                      }`}
+                      title={chat.visitor_name || 'Active Chat'}
+                    >
+                      {avatarUrl ? (
+                        <>
+                          <img 
+                            src={avatarUrl} 
+                            alt={chat.visitor_name || 'Visitor'} 
+                            className="w-full h-full rounded-full object-cover ring-2 ring-cyan-500/50"
+                          />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+                        </>
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      {chat.status === 'pending' && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                      )}
                     </div>
-                    {chat.status === 'pending' && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Separator if both chats and visitors exist */}
                 {sidebarChats.length > 0 && liveVisitors.length > 0 && (
