@@ -2484,7 +2484,29 @@ const AuditResults = () => {
                       </Button>
                     )}
                     {isCaseStudyMode ? (
-                      <NextReportCountdown />
+                      <div className="flex flex-col items-end gap-3">
+                        <NextReportCountdown />
+                        {/* Trust badges and pills */}
+                        <motion.div 
+                          className="flex items-center gap-2 flex-wrap justify-end"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 font-medium flex items-center gap-1.5 border border-emerald-500/30">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            SSL Secure
+                          </span>
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 font-medium flex items-center gap-1.5 border border-cyan-500/30">
+                            <Zap className="w-3.5 h-3.5" />
+                            Real-Time Data
+                          </span>
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 font-medium flex items-center gap-1.5 border border-violet-500/30">
+                            <HeadphonesIcon className="w-3.5 h-3.5" />
+                            24/7 Support
+                          </span>
+                        </motion.div>
+                      </div>
                     ) : (
                       <>
                         <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
