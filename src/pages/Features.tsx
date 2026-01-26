@@ -7,21 +7,15 @@ import { motion } from "framer-motion";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
-import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay, CornerBlobs } from "@/components/ui/futuristic-particles";
+import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import InteractiveGrid from "@/components/ui/interactive-grid";
-import { HighTechBackground } from "@/components/ui/high-tech-background";
 
 const Features = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Futuristic Background Effects */}
-      <CornerBlobs className="fixed inset-0 z-0" />
-      <FloatingOrbs className="fixed inset-0 z-0" />
-      <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
-      <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
-      <CyberLines className="fixed inset-0 z-0" />
-      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
-      <HUDOverlay className="fixed inset-0 z-0" />
+      {/* VI Dashboard Background Effects - exact replica */}
+      <VIDashboardEffects />
+      <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
       <SEO
         title="Features - White-Label SEO Tools for Agencies"
         description="Explore Webstack.ceo's agency tools: automated niche linking, white-label dashboards, bulk client management, domain authority building, and more."

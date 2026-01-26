@@ -11,9 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import SEO from "@/components/SEO";
 import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
-import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay, CornerBlobs } from "@/components/ui/futuristic-particles";
+import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import InteractiveGrid from "@/components/ui/interactive-grid";
-import { HighTechBackground } from "@/components/ui/high-tech-background";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -24,14 +23,9 @@ const SectionDivider = () => (
 const About = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Futuristic Background Effects */}
-      <CornerBlobs className="fixed inset-0 z-0" />
-      <FloatingOrbs className="fixed inset-0 z-0" />
-      <FuturisticParticles className="fixed inset-0 z-0" particleCount={35} variant="subtle" />
-      <InteractiveGrid className="fixed inset-0 opacity-25 pointer-events-none z-0" glowRadius={100} glowIntensity={0.1} />
-      <CyberLines className="fixed inset-0 z-0" />
-      <HighTechBackground variant="subtle" showParticles={false} className="fixed inset-0 z-0" />
-      <HUDOverlay className="fixed inset-0 z-0" />
+      {/* VI Dashboard Background Effects - exact replica */}
+      <VIDashboardEffects />
+      <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
       <SEO
         title="About Us - 22 Years Powering SEO Agencies"
         description="Learn about Webstack.ceo - 22 years of experience building tools for SEO agencies and marketing companies. Our automated niche categorization powers link building at scale."
