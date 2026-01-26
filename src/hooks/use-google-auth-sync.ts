@@ -31,7 +31,7 @@ export const useGoogleAuthSync = () => {
 
       console.log('[GoogleAuthSync] Syncing Google OAuth token for user:', session.user.id);
 
-      // Determine scope from the session or use default extended scopes
+      // Determine scope from the session or use default extended scopes (includes all services)
       const scope = [
         'openid',
         'https://www.googleapis.com/auth/userinfo.email',
@@ -39,6 +39,8 @@ export const useGoogleAuthSync = () => {
         'https://www.googleapis.com/auth/analytics.readonly',
         'https://www.googleapis.com/auth/webmasters.readonly',
         'https://www.googleapis.com/auth/webmasters',
+        'https://www.googleapis.com/auth/adwords',
+        'https://www.googleapis.com/auth/business.manage',
       ].join(' ');
 
       // Calculate expiry - typically 1 hour for Google tokens
@@ -73,6 +75,19 @@ export const useGoogleAuthSync = () => {
         localStorage.setItem('ga_token_expiry', expiryTime.toString());
         localStorage.setItem('gsc_access_token', providerToken);
         localStorage.setItem('gsc_token_expiry', expiryTime.toString());
+        
+        // Sync Google Ads tokens
+        localStorage.setItem('google_ads_access_token', providerToken);
+        localStorage.setItem('google_ads_token_expiry', expiryTime.toString());
+        
+        // Sync GMB tokens
+        localStorage.setItem('gmb_access_token', providerToken);
+        localStorage.setItem('gmb_token_expiry', expiryTime.toString());
+        
+        // Dispatch sync event to notify all panels
+        window.dispatchEvent(new CustomEvent('google-auth-synced', {
+          detail: { access_token: providerToken, expiry: expiryTime }
+        }));
       }
 
       // Sync profile avatar if needed
