@@ -79,7 +79,8 @@ const Auth = () => {
           scopes: EXTENDED_GOOGLE_SCOPES,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'consent select_account',
+            include_granted_scopes: 'true',
           },
           skipBrowserRedirect: true,
         },
