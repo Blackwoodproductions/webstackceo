@@ -2020,34 +2020,17 @@ f.parentNode.insertBefore(j,f);
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="h-full"
                 >
-                  <Card className={`relative overflow-hidden p-4 group ${step.borderColor} bg-gradient-to-br ${step.bgGradient} hover:shadow-lg transition-all`}>
-                    {/* Grid pattern with step-specific color */}
-                    <div 
-                      className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                      style={{
-                        backgroundImage: `linear-gradient(${step.gridColor} 1px, transparent 1px), linear-gradient(90deg, ${step.gridColor} 1px, transparent 1px)`,
-                        backgroundSize: '16px 16px'
-                      }}
-                    />
-                    {/* Corner glow with step color */}
-                    <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/20 to-transparent rounded-bl-[40px] pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity`} />
-                    {/* Bottom corner accent */}
-                    <div className={`absolute bottom-0 left-0 w-12 h-12 bg-gradient-to-tr ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/15 to-transparent rounded-tr-[30px] pointer-events-none`} />
-                    {/* Shimmer effect */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
-                      animate={{ x: ["-100%", "200%"] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                    {/* Floating particle */}
-                    <div className={`absolute top-[20%] right-[12%] w-1 h-1 rounded-full bg-gradient-to-br ${step.color} opacity-50 animate-pulse pointer-events-none`} />
-                    <div className="flex items-center gap-2 relative z-10">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0 shadow-lg`}>
+                  <Card className={`relative overflow-hidden h-full min-h-[88px] p-4 group ${step.borderColor} bg-gradient-to-br ${step.bgGradient} hover:shadow-md transition-all`}>
+                    {/* Subtle corner glow only */}
+                    <div className={`absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl ${step.color.replace('from-', 'from-').replace('to-', 'via-')}/15 to-transparent rounded-bl-[30px] pointer-events-none`} />
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${step.color} flex-shrink-0 shadow-md`}>
                         <step.icon className="w-5 h-5 text-white" />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-2xl font-bold text-foreground leading-tight">{step.count.toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">{step.label}</p>
                       </div>
