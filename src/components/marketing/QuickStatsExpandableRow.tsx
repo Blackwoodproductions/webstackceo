@@ -244,23 +244,16 @@ export function QuickStatsExpandableRow({
                 c.borderColor,
                 isOpen ? "ring-2 ring-primary/30 shadow-lg" : "hover:shadow-md",
               )}
-            >
-              {/* Shimmer effect */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100"
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              
-              {/* Grid pattern */}
-              <div 
-                className="absolute inset-0 opacity-[0.03]"
-                style={{
-                  backgroundImage: `linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)`,
-                  backgroundSize: '16px 16px'
-                }}
-              />
-              
+              >
+                {/* Static grid pattern */}
+                <div 
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)`,
+                    backgroundSize: '16px 16px'
+                  }}
+                />
+                
               <div className="flex items-center gap-2 relative z-10">
                 <div className={cn("p-2 rounded-lg relative flex-shrink-0", c.iconBg)}>
                   <c.Icon className={cn("w-5 h-5", c.iconColor)} />
