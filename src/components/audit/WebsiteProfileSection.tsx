@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import { 
   Globe, 
   Facebook, 
@@ -14,10 +13,6 @@ import {
   Zap,
   TrendingUp,
   Shield,
-  Users,
-  Crown,
-  Bot,
-  Clock,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -93,44 +88,6 @@ const SocialIcon = ({ platform, url }: { platform: string; url: string }) => {
     >
       <Icon className="w-4 h-4 text-primary group-hover:text-primary transition-colors" />
     </motion.a>
-  );
-};
-
-// Compact countdown timer component
-const ProfileCountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const midnight = new Date();
-      midnight.setHours(24, 0, 0, 0);
-      const diff = midnight.getTime() - now.getTime();
-      
-      return {
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-      };
-    };
-
-    setTimeLeft(calculateTimeLeft());
-    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const pad = (n: number) => n.toString().padStart(2, '0');
-
-  return (
-    <div className="flex flex-col items-center justify-center px-4 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/20 border border-primary/40 shadow-sm">
-      <div className="flex items-center gap-1">
-        <Clock className="w-3.5 h-3.5 text-primary" />
-        <span className="text-[9px] font-bold text-primary uppercase tracking-wide">Next Report</span>
-      </div>
-      <div className="font-mono text-sm font-bold text-foreground">
-        {pad(timeLeft.hours)}:{pad(timeLeft.minutes)}:{pad(timeLeft.seconds)}
-      </div>
-    </div>
   );
 };
 
@@ -335,45 +292,17 @@ export const WebsiteProfileSection = ({ domain, profile, isLoading }: WebsitePro
                 <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
               </motion.a>
               
-              {/* Summary with Timer and Badges */}
-              <div className="flex items-end gap-6">
-                {/* Summary Text */}
-                {profile.summary && (
-                  <motion.p 
-                    className="text-base text-muted-foreground leading-relaxed flex-1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    {profile.summary}
-                  </motion.p>
-                )}
-                
-                {/* Timer Box and Badges */}
-                <motion.div 
-                  className="shrink-0 flex items-center gap-3"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
+              {/* Summary */}
+              {profile.summary && (
+                <motion.p 
+                  className="text-base text-muted-foreground leading-relaxed max-w-3xl"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
                 >
-                  {/* Countdown Timer */}
-                  <ProfileCountdownTimer />
-                  
-                  {/* Trust Badges */}
-                  <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Users className="w-5 h-5 text-cyan-500" />
-                    <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                    <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
-                  </div>
-                </motion.div>
-              </div>
+                  {profile.summary}
+                </motion.p>
+              )}
             </div>
           </div>
 
