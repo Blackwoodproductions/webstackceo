@@ -45,14 +45,15 @@ import {
   ComposedChart,
 } from "recharts";
 
-// Google OAuth Config
-const getGoogleClientId = () => localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Combined Google OAuth Config - includes both GSC and GA scopes for unified auth
+const getGoogleClientId = () => localStorage.getItem("google_client_id") || localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
+  "https://www.googleapis.com/auth/analytics.readonly", // Include GA scope for unified auth
 ].join(" ");
 
 type GoogleUserProfile = {
@@ -375,11 +376,17 @@ export const GSCDashboardPanel = ({
             const expiresIn = Number(tokenJson.expires_in ?? 3600);
             const expiry = Date.now() + expiresIn * 1000;
             
-            console.log("[GSC] Token received, storing in localStorage...", { expiresIn, expiry: new Date(expiry) });
+            console.log("[GSC] Token received, storing in localStorage (syncing to GA)...", { expiresIn, expiry: new Date(expiry) });
             
+            // Store for GSC
             localStorage.setItem("gsc_access_token", tokenJson.access_token);
             localStorage.setItem("gsc_token_expiry", expiry.toString());
             localStorage.removeItem("gsc_code_verifier");
+            
+            // Also sync to GA storage for unified auth experience
+            localStorage.setItem("ga_access_token", tokenJson.access_token);
+            localStorage.setItem("ga_token_expiry", expiry.toString());
+            localStorage.removeItem("ga_code_verifier");
             
             setAccessToken(tokenJson.access_token);
             setIsAuthenticated(true);
@@ -388,8 +395,8 @@ export const GSCDashboardPanel = ({
             void fetchAndStoreGoogleProfile(tokenJson.access_token);
             
             toast({
-              title: "Connected to Google Search Console",
-              description: "Successfully authenticated with Google",
+              title: "Google Connected",
+              description: "Successfully connected Analytics and Search Console",
             });
             
             // Clean URL after successful auth
@@ -566,10 +573,16 @@ export const GSCDashboardPanel = ({
 
       const expiryTime = Date.now() + (expires_in || 3600) * 1000;
       
-      console.log("[GSC] Token received via popup, storing in localStorage...");
+      console.log("[GSC] Token received via popup, storing in localStorage (syncing to GA)...");
+      // Store for GSC
       localStorage.setItem("gsc_access_token", access_token);
       localStorage.setItem("gsc_token_expiry", expiryTime.toString());
       localStorage.removeItem("gsc_code_verifier");
+      
+      // Sync to GA for unified auth
+      localStorage.setItem("ga_access_token", access_token);
+      localStorage.setItem("ga_token_expiry", expiryTime.toString());
+      localStorage.removeItem("ga_code_verifier");
 
       // Extract profile from id_token if available
       if (id_token) {
@@ -593,8 +606,8 @@ export const GSCDashboardPanel = ({
       setIsAuthenticated(true);
       
       toast({
-        title: "Google Search Console Connected",
-        description: "Successfully linked your Search Console account.",
+        title: "Google Connected",
+        description: "Successfully connected Analytics and Search Console.",
       });
     } catch (error: any) {
       console.error("[GSC] Token exchange error:", error);
@@ -1025,9 +1038,32 @@ export const GSCDashboardPanel = ({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <Card className="relative overflow-hidden bg-card border-border/60">
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        {/* Corner glows */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-cyan-500/15 via-violet-500/10 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-violet-500/10 to-transparent rounded-tr-[50px] pointer-events-none" />
+        {/* Scanning animation */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent animate-pulse" />
+        </div>
+        <CardContent className="relative z-10 flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="relative w-12 h-12 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-lg opacity-40 animate-pulse" />
+              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-white" />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">Connecting to Google...</p>
+          </div>
         </CardContent>
       </Card>
     );

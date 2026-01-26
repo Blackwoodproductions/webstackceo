@@ -32,13 +32,15 @@ import {
   Tooltip,
 } from "recharts";
 
-// Google OAuth Config for Analytics
-const getGoogleClientId = () => localStorage.getItem("ga_client_id") || localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Combined Google OAuth Config - includes both GA and GSC scopes for unified auth
+const getGoogleClientId = () => localStorage.getItem("google_client_id") || localStorage.getItem("ga_client_id") || localStorage.getItem("gsc_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const GOOGLE_GA_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/analytics.readonly",
+  "https://www.googleapis.com/auth/webmasters.readonly", // Include GSC scope for unified auth
+  "https://www.googleapis.com/auth/webmasters",
 ].join(" ");
 
 function getOAuthRedirectUri(): string {
@@ -293,10 +295,16 @@ export const GADashboardPanel = ({
             }
             const expiryTime = Date.now() + (expires_in || 3600) * 1000;
             
-            console.log("[GA] Token received, storing in localStorage...");
+            console.log("[GA] Token received, storing in localStorage (syncing to GSC)...");
+            // Store for GA
             localStorage.setItem("ga_access_token", access_token);
             localStorage.setItem("ga_token_expiry", expiryTime.toString());
             localStorage.removeItem("ga_code_verifier");
+            
+            // Sync to GSC for unified auth
+            localStorage.setItem("gsc_access_token", access_token);
+            localStorage.setItem("gsc_token_expiry", expiryTime.toString());
+            localStorage.removeItem("gsc_code_verifier");
             
             setAccessToken(access_token);
             setIsAuthenticated(true);
@@ -304,8 +312,8 @@ export const GADashboardPanel = ({
             window.history.replaceState({}, document.title, window.location.pathname);
             
             toast({
-              title: "Google Analytics Connected",
-              description: "Successfully linked your Analytics account.",
+              title: "Google Connected",
+              description: "Successfully connected Analytics and Search Console.",
             });
           } catch (error: any) {
             console.error("[GA] Token exchange error:", error);
@@ -674,17 +682,23 @@ export const GADashboardPanel = ({
 
       const expiryTime = Date.now() + (expires_in || 3600) * 1000;
       
-      console.log("[GA] Token received via popup, storing in localStorage...");
+      console.log("[GA] Token received via popup, storing in localStorage (syncing to GSC)...");
+      // Store for GA
       localStorage.setItem("ga_access_token", access_token);
       localStorage.setItem("ga_token_expiry", expiryTime.toString());
       localStorage.removeItem("ga_code_verifier");
+      
+      // Sync to GSC for unified auth
+      localStorage.setItem("gsc_access_token", access_token);
+      localStorage.setItem("gsc_token_expiry", expiryTime.toString());
+      localStorage.removeItem("gsc_code_verifier");
       
       setAccessToken(access_token);
       setIsAuthenticated(true);
       
       toast({
-        title: "Google Analytics Connected",
-        description: "Successfully linked your Analytics account.",
+        title: "Google Connected",
+        description: "Successfully connected Analytics and Search Console.",
       });
     } catch (error: any) {
       console.error("[GA] Token exchange error:", error);
@@ -816,34 +830,79 @@ export const GADashboardPanel = ({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <Card className="relative overflow-hidden bg-card border-border/60">
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        {/* Corner glows */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-500/15 via-amber-500/10 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[50px] pointer-events-none" />
+        {/* Scanning animation */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/40 to-transparent animate-pulse" />
+        </div>
+        <CardContent className="relative z-10 flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="relative w-12 h-12 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 blur-lg opacity-40 animate-pulse" />
+              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-white" />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">Connecting to Google...</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Not connected - show connect prompt
+  // Not connected - show unified connect prompt with Cyber-UI aesthetic
   if (!isAuthenticated) {
     if (fullWidth) {
       return (
         <>
-          <Card className="bg-card border-border">
-            <CardContent className="py-6">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
-                    <Activity className="w-6 h-6 text-white" />
+          <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-orange-500/5 group">
+            {/* Background effects */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.02]"
+              style={{
+                backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
+                backgroundSize: '24px 24px',
+              }}
+            />
+            {/* Corner glows */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-orange-500/15 via-amber-500/10 to-transparent rounded-bl-[80px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-amber-500/15 via-primary/5 to-transparent rounded-tr-[60px] pointer-events-none" />
+            {/* Scanning line */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/5 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '3s' }} />
+            {/* Floating particles */}
+            <div className="absolute top-[15%] left-[5%] w-1.5 h-1.5 rounded-full bg-orange-400/40 animate-pulse" />
+            <div className="absolute top-[40%] right-[8%] w-1 h-1 rounded-full bg-amber-400/50 animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute bottom-[25%] left-[15%] w-1 h-1 rounded-full bg-orange-300/40 animate-pulse" style={{ animationDelay: '0.5s' }} />
+            
+            <CardContent className="relative z-10 py-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  {/* Glowing icon */}
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform duration-300">
+                      <Activity className="w-7 h-7 text-white" />
+                    </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Connect Google Analytics</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Connect Google Analytics</h3>
+                    <p className="text-muted-foreground text-sm max-w-md">
                       Link your Analytics to see sessions, users, page views, and engagement metrics alongside your Search Console data.
                     </p>
                   </div>
                 </div>
-                <Button onClick={handleGoogleLogin} size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 flex-shrink-0">
+                <Button onClick={handleGoogleLogin} size="lg" className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-500/25 flex-shrink-0">
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                     <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -892,24 +951,18 @@ export const GADashboardPanel = ({
     
     return (
       <>
-        <Card className="relative overflow-hidden bg-card border-border h-full flex flex-col group">
-          {/* High-tech background grid */}
+        <Card className="relative overflow-hidden bg-card border-border/60 h-full flex flex-col group">
+          {/* Background grid */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            className="absolute inset-0 pointer-events-none opacity-[0.02]"
             style={{
               backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
               backgroundSize: '24px 24px',
             }}
           />
           
-          {/* Animated scanning line */}
-          <div 
-            className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/5 to-transparent pointer-events-none animate-pulse"
-            style={{ animationDuration: '4s' }}
-          />
-          
           {/* Corner accent glows */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/15 via-amber-500/10 to-transparent rounded-bl-[60px] pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
           
           {/* Floating particles */}
@@ -980,14 +1033,22 @@ export const GADashboardPanel = ({
   // Connected but still loading properties (and no error)
   if (isAuthenticated && !propertiesLoaded && !propertiesError) {
     return (
-      <Card className="relative overflow-hidden bg-card border-border">
-        {/* High-tech background grid */}
+      <Card className="relative overflow-hidden bg-card border-border/60">
+        {/* Background grid */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
+        {/* Corner glows */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/15 via-amber-500/10 to-transparent rounded-bl-[60px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[50px] pointer-events-none" />
+        {/* Scanning animation */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent animate-pulse" />
         <CardContent className="relative z-10 flex items-center justify-center py-12">
           <div className="text-center">
-            <Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto mb-2" />
+            <div className="relative w-10 h-10 mx-auto mb-3">
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 blur-md opacity-40 animate-pulse" />
+              <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground">Loading Google Analytics properties...</p>
           </div>
         </CardContent>
