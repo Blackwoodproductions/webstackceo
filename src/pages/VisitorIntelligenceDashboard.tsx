@@ -56,6 +56,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpandableRow';
@@ -1673,45 +1680,63 @@ const MarketingDashboard = () => {
           </a>
           
           {/* Right: User Controls */}
-          <div className="flex items-center gap-4">
-            {gscAuthenticated && gscProfile?.picture ? (
-              <div className="hidden md:flex items-center gap-2">
-                <img
-                  src={gscProfile.picture}
-                  alt={gscProfile.name ? `${gscProfile.name} profile photo` : 'Google profile photo'}
-                  className="w-7 h-7 rounded-full object-cover border border-border shadow-lg shadow-primary/10"
-                  referrerPolicy="no-referrer"
-                  loading="lazy"
-                />
-                <span className="text-sm text-muted-foreground">
-                  {gscProfile.name ||
-                    (user.email?.toLowerCase().includes('rob') ? 'CTO' :
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary/50 hover:ring-primary transition-all duration-300 focus:outline-none">
+                  {gscAuthenticated && gscProfile?.picture ? (
+                    <img
+                      src={gscProfile.picture}
+                      alt={gscProfile.name ? `${gscProfile.name} profile photo` : 'Google profile photo'}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                    />
+                  ) : currentUserProfile?.avatar_url ? (
+                    <img 
+                      src={currentUserProfile.avatar_url} 
+                      alt={currentUserProfile.full_name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-white">
+                        {(currentUserProfile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background border border-border z-50">
+                <div className="px-3 py-2 border-b border-border">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {gscProfile?.name || currentUserProfile?.full_name || user.email?.split('@')[0]}
+                  </p>
+                  <p className="text-xs text-primary font-medium">
+                    {user.email?.toLowerCase().includes('rob') ? 'CTO' :
                       user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
                       user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
-                      'Google User')}
-                </span>
-              </div>
-            ) : (
-              <span className="text-sm text-muted-foreground hidden md:block">
-                {
-                  user.email?.toLowerCase().includes('rob') ? 'CTO' :
-                  user.email?.toLowerCase() === 'eric@blackwoodproductions.com' ? 'COO' :
-                  user.email?.toLowerCase() === 'que@blackwoodproductions.com' ? 'CEO' :
-                  user.email
-                }
-              </span>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-9 h-9 p-0 hover:bg-primary/10"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="hover:bg-red-500/10 hover:text-red-500">
-              <LogOut className="w-4 h-4" />
-            </Button>
+                      'Team Member'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <DropdownMenuItem 
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         </header>
