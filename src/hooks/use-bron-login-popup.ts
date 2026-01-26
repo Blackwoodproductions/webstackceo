@@ -3,27 +3,54 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type UseBronLoginPopupOptions = {
   loginUrl: string;
   dashboardUrl: string;
-  /** Called when login is detected (popup URL changed from /login to dashboard) */
+  /** Called when login is detected */
   onLoggedIn: () => void;
   pollIntervalMs?: number;
 };
 
 /**
- * Opens a BRON login popup and detects successful login by monitoring URL changes.
- * When the popup navigates away from the login page to the dashboard, we consider login successful.
+ * Opens a BRON login popup and detects successful login.
+ * Uses multiple detection strategies since cross-origin restrictions prevent direct URL reading.
  */
 export function useBronLoginPopup({
   loginUrl,
   dashboardUrl,
   onLoggedIn,
-  pollIntervalMs = 500,
+  pollIntervalMs = 300,
 }: UseBronLoginPopupOptions) {
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
   const hasTriggeredLogin = useRef(false);
+  const loginStartTime = useRef<number>(0);
 
   const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
+
+  const triggerLoginSuccess = useCallback(() => {
+    if (hasTriggeredLogin.current) return;
+    hasTriggeredLogin.current = true;
+    
+    console.log("[BRON] Login success detected, closing popup");
+    
+    // Close the popup immediately
+    if (popupRef.current && !popupRef.current.closed) {
+      try {
+        popupRef.current.close();
+      } catch {
+        // ignore
+      }
+    }
+    popupRef.current = null;
+    
+    // Clear polling
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    
+    setIsWaitingForLogin(false);
+    onLoggedIn();
+  }, [onLoggedIn]);
 
   const closePopup = useCallback(() => {
     if (popupRef.current && !popupRef.current.closed) {
@@ -34,6 +61,10 @@ export function useBronLoginPopup({
       }
     }
     popupRef.current = null;
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   }, []);
 
   const focusPopup = useCallback(() => {
@@ -51,13 +82,13 @@ export function useBronLoginPopup({
   const openPopup = useCallback(() => {
     setPopupBlocked(false);
     hasTriggeredLogin.current = false;
+    loginStartTime.current = Date.now();
 
     const popupWidth = 600;
     const popupHeight = 700;
     const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
     const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
 
-    // Close any previous popup
     closePopup();
 
     const popup = window.open(
@@ -77,7 +108,7 @@ export function useBronLoginPopup({
     return true;
   }, [closePopup, loginUrl]);
 
-  // Poll for login success by checking popup URL
+  // Poll for login success
   useEffect(() => {
     if (!isWaitingForLogin) return;
 
@@ -86,6 +117,7 @@ export function useBronLoginPopup({
       
       // If popup was closed by user
       if (!popup || popup.closed) {
+        console.log("[BRON] Popup closed by user");
         setIsWaitingForLogin(false);
         if (pollRef.current) {
           window.clearInterval(pollRef.current);
@@ -94,59 +126,80 @@ export function useBronLoginPopup({
         return;
       }
 
-      // Try to detect URL change (login -> dashboard)
+      // Strategy 1: Try to read the popup URL directly
       try {
         const popupUrl = popup.location.href;
         
-        // Check if we're no longer on the login page
-        // This indicates successful login and redirect to dashboard
-        if (popupUrl && !popupUrl.includes("/login") && popupUrl.includes("dashdev.imagehosting.space")) {
-          console.log("[BRON] Login detected, popup URL:", popupUrl);
-          
-          if (!hasTriggeredLogin.current) {
-            hasTriggeredLogin.current = true;
-            
-            // Small delay to ensure cookies are set
-            setTimeout(() => {
-              closePopup();
-              setIsWaitingForLogin(false);
-              onLoggedIn();
-            }, 500);
-          }
+        // If URL is readable and we're on the dashboard (not login page)
+        if (popupUrl && 
+            popupUrl.includes("dashdev.imagehosting.space") && 
+            !popupUrl.includes("/login")) {
+          console.log("[BRON] Login detected via URL:", popupUrl);
+          triggerLoginSuccess();
           return;
         }
       } catch {
-        // Cross-origin error is expected before/during login
-        // We can't read the URL until same-origin or it redirects
+        // Cross-origin - expected, try other strategies
       }
 
-      // Also try to detect by checking if popup has dashboard content
+      // Strategy 2: Check if URL throws a different error pattern after redirect
+      // Some browsers allow checking if location exists even if not readable
       try {
-        const popupDoc = popup.document;
-        // If we can access the document and it has dashboard elements
-        if (popupDoc) {
-          const dashboardIndicator = popupDoc.querySelector('.dashboard, .user-menu, .nav-profile, [data-logged-in]');
-          if (dashboardIndicator && !hasTriggeredLogin.current) {
-            console.log("[BRON] Login detected via DOM inspection");
-            hasTriggeredLogin.current = true;
-            
-            setTimeout(() => {
-              closePopup();
-              setIsWaitingForLogin(false);
-              onLoggedIn();
-            }, 500);
+        // If we can access location.origin without error, check it
+        const origin = popup.location.origin;
+        if (origin && origin.includes("dashdev.imagehosting.space")) {
+          // We're on the right domain, try to check pathname
+          try {
+            const path = popup.location.pathname;
+            if (path && !path.includes("login")) {
+              console.log("[BRON] Login detected via origin+path check");
+              triggerLoginSuccess();
+              return;
+            }
+          } catch {
+            // pathname not accessible but origin was - might still be logged in
+            // After enough time, assume login worked if we're on the domain
+            const elapsed = Date.now() - loginStartTime.current;
+            if (elapsed > 5000) {
+              console.log("[BRON] Assuming login success after timeout on BRON domain");
+              triggerLoginSuccess();
+              return;
+            }
+          }
+        }
+      } catch {
+        // Still cross-origin or different domain
+      }
+
+      // Strategy 3: Try to access popup document (same-origin only)
+      try {
+        const doc = popup.document;
+        if (doc && doc.body) {
+          // If we can access the document, check for dashboard indicators
+          const body = doc.body;
+          const text = body.innerText || "";
+          const html = body.innerHTML || "";
+          
+          // Check for dashboard elements
+          if (html.includes("domain_id") || 
+              html.includes("Domain Options") ||
+              html.includes("dashboard") ||
+              text.includes("Domain Status")) {
+            console.log("[BRON] Login detected via DOM content");
+            triggerLoginSuccess();
             return;
           }
         }
       } catch {
-        // Cross-origin DOM access blocked - expected
+        // Cross-origin DOM access blocked
       }
     };
 
-    // Initial check
-    checkPopup();
-
+    // Start polling
     pollRef.current = window.setInterval(checkPopup, pollIntervalMs);
+
+    // Initial check after a brief delay
+    setTimeout(checkPopup, 100);
 
     return () => {
       if (pollRef.current) {
@@ -154,7 +207,22 @@ export function useBronLoginPopup({
         pollRef.current = null;
       }
     };
-  }, [closePopup, dashboardUrl, isWaitingForLogin, onLoggedIn, pollIntervalMs]);
+  }, [isWaitingForLogin, pollIntervalMs, triggerLoginSuccess]);
+
+  // Listen for postMessage from BRON (if they ever implement it)
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin.includes("dashdev.imagehosting.space")) {
+        if (event.data?.type === "BRON_LOGIN_SUCCESS" || event.data?.loggedIn) {
+          console.log("[BRON] Login detected via postMessage");
+          triggerLoginSuccess();
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [triggerLoginSuccess]);
 
   // Cleanup on unmount
   useEffect(() => {
