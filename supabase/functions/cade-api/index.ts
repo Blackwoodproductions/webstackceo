@@ -16,6 +16,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { action, domain, params, apiKey: bodyApiKey } = body;
+    const actionName = typeof action === "string" ? action.trim() : "";
 
     // Get the secret from body (user-provided), header, or environment
     const headerSecret = req.headers.get("x-cade-secret");
@@ -23,12 +24,14 @@ serve(async (req) => {
     const cadeSecretRaw: unknown = bodyApiKey ?? headerSecret ?? envSecret;
     const cadeSecret = (typeof cadeSecretRaw === "string" ? cadeSecretRaw : "").trim();
 
-    // Debug: log character codes to detect invisible characters
-    const charCodes = cadeSecret.split('').map(c => c.charCodeAt(0));
-    console.log(`[cade-api] Key char codes (first 10): ${charCodes.slice(0, 10).join(',')}`);
-    console.log(`[cade-api] Key char codes (last 10): ${charCodes.slice(-10).join(',')}`);
+    // Users sometimes paste the full header line (e.g. "X-API-Key: abc123") instead of the raw key.
+    // Normalize to raw key value.
+    let cadeKey = cadeSecret;
+    if (/^x-api-key\s*:/i.test(cadeKey)) {
+      cadeKey = cadeKey.split(":").slice(1).join(":").trim();
+    }
 
-    if (!cadeSecret) {
+    if (!cadeKey) {
       console.error("[cade-api] No CADE_API_SECRET configured");
       return new Response(
         JSON.stringify({ error: "CADE API secret not configured" }),
@@ -36,16 +39,18 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[cade-api] Action: ${action}, Domain: ${domain || "N/A"}`);
+    console.log(
+      `[cade-api] Action: ${JSON.stringify(actionName)} (len=${actionName.length}), Domain: ${domain || "N/A"}`
+    );
     // Safe diagnostics to confirm we're actually sending a non-empty key (never log the key)
-    if (cadeSecret) {
-      const bytes = new TextEncoder().encode(cadeSecret);
+    if (cadeKey) {
+      const bytes = new TextEncoder().encode(cadeKey);
       const digest = await crypto.subtle.digest("SHA-256", bytes);
       const hashHex = Array.from(new Uint8Array(digest))
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
       console.log(
-        `[cade-api] Auth key diagnostics: len=${cadeSecret.length}, sha256_prefix=${hashHex.slice(0, 10)}`
+        `[cade-api] Auth key diagnostics: len=${cadeKey.length}, sha256_prefix=${hashHex.slice(0, 10)}`
       );
     }
 
@@ -54,21 +59,24 @@ serve(async (req) => {
     // HTTP headers are case-insensitive per RFC 7230, but some servers are stricter
     // Try both cases to maximize compatibility
     const cadeHeaders = new Headers({
-      "Accept": "application/json",
+      Accept: "application/json",
       "Content-Type": "application/json",
+      // Some upstreams behave differently for non-browser clients; mimic Swagger UI.
+      Origin: "https://seo-acg-api.prod.seosara.ai",
+      Referer: "https://seo-acg-api.prod.seosara.ai/docs",
+      "User-Agent": "Mozilla/5.0 (compatible; Lovable-CADE-Proxy/1.0)",
     });
-    // Set both cases - the last one may override depending on implementation
-    cadeHeaders.set("x-api-key", cadeSecret);
-    cadeHeaders.set("X-API-Key", cadeSecret);
+    // HTTP header names are case-insensitive, but we keep the exact documented name.
+    cadeHeaders.set("X-API-Key", cadeKey);
 
-    console.log(`[cade-api] Upstream auth headers set, key len=${cadeSecret.length}`);
+    console.log(`[cade-api] Upstream auth headers set, key len=${cadeKey.length}`);
 
     let endpoint: string;
     let method = "GET";
     let requestBody: string | undefined;
 
     // Map actions to CADE API v1 endpoints
-    switch (action) {
+    switch (actionName) {
       // System endpoints
       case "health":
         endpoint = "/api/v1/system/health";
@@ -256,6 +264,7 @@ serve(async (req) => {
     console.log(`[cade-api] Response status: ${response.status}`);
 
     const responseText = await response.text();
+
     console.log(`[cade-api] Response preview: ${responseText.substring(0, 300)}`);
 
     if (!response.ok) {
@@ -279,10 +288,10 @@ serve(async (req) => {
       data = { raw: responseText, parsed: false };
     }
 
-    console.log(`[cade-api] Success for ${action}, data type: ${typeof data}, isArray: ${Array.isArray(data)}`);
+    console.log(`[cade-api] Success for ${actionName}, data type: ${typeof data}, isArray: ${Array.isArray(data)}`);
 
     return new Response(
-      JSON.stringify({ success: true, data, action }),
+      JSON.stringify({ success: true, data, action: actionName }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
