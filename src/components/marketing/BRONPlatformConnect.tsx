@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
-  ExternalLink, Loader2, Sparkles, RefreshCw, AlertTriangle
+  ExternalLink, Loader2, Sparkles, RefreshCw, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
-const BRON_SESSION_KEY = "bron_session_data";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/dashboard";
 const BRON_DOMAIN_ID = "112619";
 
@@ -20,13 +19,13 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
-  const [iframeKey, setIframeKey] = useState(0);
-  const [loginDetected, setLoginDetected] = useState(false);
+  const [dashboardWindow, setDashboardWindow] = useState<Window | null>(null);
   const popupRef = useRef<Window | null>(null);
-  const hasAutoOpened = useRef(false);
   const hasNotified = useRef(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const loginCheckRef = useRef<HTMLIFrameElement | null>(null);
+  const autoOpenAttempted = useRef(false);
+
+  // Dashboard URL
+  const dashboardUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
 
   // Check if already authenticated from localStorage
   const checkAuth = useCallback(() => {
@@ -38,7 +37,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           return true;
         }
         localStorage.removeItem(BRON_STORAGE_KEY);
-        localStorage.removeItem(BRON_SESSION_KEY);
       }
     } catch {
       // Ignore parse errors
@@ -46,7 +44,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return false;
   }, []);
 
-  // Mark as authenticated and close popup
+  // Mark as authenticated
   const setAuthenticated = useCallback(() => {
     console.log("[BRON] Setting authenticated state");
     
@@ -58,17 +56,13 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     };
     localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
     
-    // Close the popup if it's still open
-    if (popupRef.current && !popupRef.current.closed) {
-      console.log("[BRON] Closing popup window");
-      popupRef.current.close();
-    }
-    popupRef.current = null;
-    
     setIsConnected(true);
     setIsWaitingForLogin(false);
-    setLoginDetected(false);
-    setIframeKey(prev => prev + 1);
+    
+    // Keep the popup window reference as the dashboard window
+    if (popupRef.current && !popupRef.current.closed) {
+      setDashboardWindow(popupRef.current);
+    }
     
     if (!hasNotified.current) {
       hasNotified.current = true;
@@ -77,24 +71,21 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     
     toast({
       title: "Connected to BRON",
-      description: "Loading dashboard...",
+      description: "Dashboard is open in a separate window.",
     });
   }, [onConnectionComplete]);
 
-  const openLoginPopup = useCallback(() => {
-    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
-    
-    const popupWidth = 1200;
-    const popupHeight = 800;
+  const openDashboard = useCallback(() => {
+    const popupWidth = 1400;
+    const popupHeight = 900;
     const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
     const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
 
     setIsWaitingForLogin(true);
-    setLoginDetected(false);
 
     const popup = window.open(
-      loginUrl,
-      "bron_login_popup",
+      dashboardUrl,
+      "bron_dashboard",
       `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
     );
 
@@ -109,7 +100,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
 
     popupRef.current = popup;
-  }, []);
+    setDashboardWindow(popup);
+  }, [dashboardUrl]);
 
   // Initial auth check
   useEffect(() => {
@@ -123,138 +115,97 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
   }, [checkAuth, onConnectionComplete]);
 
-  // Listen for messages from popup
+  // Auto-open dashboard popup on first render when domain is present
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const allowedOrigins = [
-        window.location.origin,
-        "https://dashdev.imagehosting.space"
-      ];
+    if (!isLoading && domain && !autoOpenAttempted.current) {
+      autoOpenAttempted.current = true;
       
-      if (!allowedOrigins.includes(event.origin)) return;
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        console.log("[BRON] Auto-opening dashboard popup");
+        openDashboard();
+      }, 300);
       
-      console.log("[BRON] Message received:", event.data);
-      
-      if (event.data?.type === "BRON_AUTH_SUCCESS" || 
-          event.data?.type === "auth" || 
-          event.data?.authenticated ||
-          event.data?.type === "login_complete" || 
-          event.data?.loggedIn) {
-        setAuthenticated();
-      }
-    };
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, domain, openDashboard]);
 
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [setAuthenticated]);
-
-  // Aggressive login detection polling
+  // Poll for popup state
   useEffect(() => {
     if (!isWaitingForLogin || !popupRef.current) return;
     
-    let attempts = 0;
-    const maxAttempts = 120; // 2 minutes max
-    
     const pollInterval = setInterval(() => {
-      attempts++;
-      
       // Check if popup is closed
       if (!popupRef.current || popupRef.current.closed) {
-        console.log("[BRON] Popup closed - assuming login complete");
         clearInterval(pollInterval);
-        setAuthenticated();
+        popupRef.current = null;
+        setDashboardWindow(null);
+        
+        // Mark as authenticated since they used the dashboard
+        if (!isConnected) {
+          setAuthenticated();
+        }
+        setIsWaitingForLogin(false);
         return;
       }
       
-      // Try to detect if user has navigated to dashboard (logged in)
-      try {
-        // This will throw a security error if on cross-origin login page
-        // but might work if they navigate to a page we can access
-        const popupLocation = popupRef.current.location.href;
-        console.log("[BRON] Can read popup location:", popupLocation);
-        
-        // If we can read the URL and it contains dashboard indicators
-        if (popupLocation && popupLocation.includes('domain')) {
-          console.log("[BRON] Dashboard URL detected - login complete");
-          setLoginDetected(true);
-          // Give it a moment to fully load, then close
-          setTimeout(() => {
-            if (popupRef.current && !popupRef.current.closed) {
-              popupRef.current.close();
-            }
-            setAuthenticated();
-          }, 1500);
-          clearInterval(pollInterval);
-          return;
-        }
-      } catch {
-        // Expected cross-origin error - popup is still on BRON domain
-        // This is normal during the login process
-      }
-      
-      // Try to detect focus changes (user might have completed action)
-      try {
-        // Check if popup document is accessible (same-origin check)
-        const popupDoc = popupRef.current.document;
-        if (popupDoc) {
-          // If we can access the document, check for logged-in indicators
-          const hasProfile = popupDoc.querySelector('[class*="profile"], [class*="user"], [class*="avatar"]');
-          const hasDashboard = popupDoc.querySelector('[class*="dashboard"], [class*="domain"]');
-          
-          if (hasProfile || hasDashboard) {
-            console.log("[BRON] Login indicators found in popup DOM");
-            setLoginDetected(true);
-            setTimeout(() => {
-              if (popupRef.current && !popupRef.current.closed) {
-                popupRef.current.close();
-              }
-              setAuthenticated();
-            }, 1000);
-            clearInterval(pollInterval);
-            return;
-          }
-        }
-      } catch {
-        // Cross-origin access denied - expected
-      }
-      
-      // Timeout - stop polling after max attempts
-      if (attempts >= maxAttempts) {
-        console.log("[BRON] Max polling attempts reached");
-        clearInterval(pollInterval);
+      // If popup is still open after 3 seconds, assume they're logged in
+      // and mark as connected (they're using the dashboard)
+      if (!isConnected) {
+        setAuthenticated();
       }
     }, 1000);
 
-    return () => clearInterval(pollInterval);
-  }, [isWaitingForLogin, setAuthenticated]);
+    // Mark as connected after a short delay (popup is open = using dashboard)
+    const authTimer = setTimeout(() => {
+      if (!isConnected && popupRef.current && !popupRef.current.closed) {
+        setAuthenticated();
+      }
+    }, 3000);
 
-  // Auto-open login popup immediately when not connected
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(authTimer);
+    };
+  }, [isWaitingForLogin, isConnected, setAuthenticated]);
+
+  // Check if dashboard window is still open
   useEffect(() => {
-    if (!isLoading && !isConnected && !hasAutoOpened.current && domain) {
-      hasAutoOpened.current = true;
-      openLoginPopup();
-    }
-  }, [isLoading, isConnected, domain, openLoginPopup]);
+    if (!dashboardWindow) return;
+    
+    const checkInterval = setInterval(() => {
+      if (dashboardWindow.closed) {
+        setDashboardWindow(null);
+      }
+    }, 2000);
+    
+    return () => clearInterval(checkInterval);
+  }, [dashboardWindow]);
 
   const handleLogout = () => {
     localStorage.removeItem(BRON_STORAGE_KEY);
-    localStorage.removeItem(BRON_SESSION_KEY);
     setIsConnected(false);
     hasNotified.current = false;
-    hasAutoOpened.current = false;
-    setIframeKey(prev => prev + 1);
+    autoOpenAttempted.current = false;
+    
+    // Close dashboard window if open
+    if (dashboardWindow && !dashboardWindow.closed) {
+      dashboardWindow.close();
+    }
+    setDashboardWindow(null);
+    
     toast({
       title: "Disconnected",
       description: "You've been logged out of BRON.",
     });
   };
 
-  const refreshDashboard = () => {
-    setIframeKey(prev => prev + 1);
-    toast({
-      title: "Refreshing",
-      description: "Reloading BRON dashboard...",
-    });
+  const focusDashboard = () => {
+    if (dashboardWindow && !dashboardWindow.closed) {
+      dashboardWindow.focus();
+    } else {
+      openDashboard();
+    }
   };
 
   // Loading state
@@ -266,15 +217,15 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Connected - show iframe dashboard directly on this page
-  if (isConnected && domain) {
-    const iframeSrc = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
+  // Connected state - show status and controls
+  if (isConnected) {
+    const isDashboardOpen = dashboardWindow && !dashboardWindow.closed;
     
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-4"
+        className="space-y-6"
       >
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -297,29 +248,20 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
-                Viewing dashboard for <span className="text-emerald-400 font-medium">{domain}</span>
+                Managing <span className="text-emerald-400 font-medium">{domain}</span>
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={refreshDashboard}
-              className="gap-1.5 border-border text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(iframeSrc, "_blank")}
-              className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={focusDashboard}
+              className="gap-1.5 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
             >
               <ExternalLink className="w-4 h-4" />
-              Open in New Tab
+              {isDashboardOpen ? "Focus Dashboard" : "Open Dashboard"}
             </Button>
             <Button
               variant="ghost"
@@ -332,39 +274,63 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
         </div>
 
-        {/* Cookie/Session Notice */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          <p>
-            If the dashboard shows a login page, your browser may be blocking third-party cookies. 
-            <Button 
-              variant="link" 
-              size="sm" 
-              onClick={() => window.open(iframeSrc, "_blank")}
-              className="text-amber-400 hover:text-amber-300 px-1 h-auto"
+        {/* Status Card */}
+        <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-green-500/5 p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              {isDashboardOpen ? (
+                <Check className="w-7 h-7 text-emerald-400" />
+              ) : (
+                <ExternalLink className="w-7 h-7 text-emerald-400" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-emerald-400">
+                {isDashboardOpen ? "Dashboard is Open" : "Dashboard Ready"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isDashboardOpen 
+                  ? "The BRON dashboard is open in a separate window. Click 'Focus Dashboard' to bring it to front."
+                  : "Click 'Open Dashboard' to access your BRON dashboard in a new window."
+                }
+              </p>
+            </div>
+          </div>
+          
+          {!isDashboardOpen && (
+            <Button
+              onClick={focusDashboard}
+              className="mt-4 w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
             >
-              Open in a new tab
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open BRON Dashboard
             </Button>
-            for full functionality.
-          </p>
+          )}
         </div>
 
-        {/* Iframe Container */}
-        <div className="relative rounded-xl overflow-hidden border border-emerald-500/20 bg-background">
-          <iframe
-            key={iframeKey}
-            ref={iframeRef}
-            src={iframeSrc}
-            className="w-full min-h-[700px] border-0"
-            title="BRON Dashboard"
-            allow="clipboard-write"
-          />
+        {/* Info boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="p-4 rounded-lg bg-secondary/30 border border-emerald-500/10">
+            <Sparkles className="w-6 h-6 mx-auto mb-2 text-emerald-400" />
+            <p className="text-sm font-medium">AI-Powered</p>
+            <p className="text-xs text-muted-foreground">Intelligent link strategies</p>
+          </div>
+          <div className="p-4 rounded-lg bg-secondary/30 border border-emerald-500/10">
+            <Check className="w-6 h-6 mx-auto mb-2 text-green-400" />
+            <p className="text-sm font-medium">Real Websites</p>
+            <p className="text-xs text-muted-foreground">No PBNs, only quality sites</p>
+          </div>
+          <div className="p-4 rounded-lg bg-secondary/30 border border-emerald-500/10">
+            <ExternalLink className="w-6 h-6 mx-auto mb-2 text-teal-400" />
+            <p className="text-sm font-medium">Full Access</p>
+            <p className="text-xs text-muted-foreground">Opens in dedicated window</p>
+          </div>
         </div>
       </motion.div>
     );
   }
 
-  // Not connected - show waiting state (popup opened automatically)
+  // Not connected - show waiting state
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -383,40 +349,34 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       </div>
       
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">
-          {loginDetected ? "Login Detected!" : "Connecting to BRON..."}
-        </h2>
+        <h2 className="text-2xl font-bold">Opening BRON Dashboard...</h2>
         <p className="text-muted-foreground max-w-md">
-          {loginDetected 
-            ? "Closing popup and loading dashboard..."
-            : isWaitingForLogin 
-              ? "Complete the login in the popup window. It will close automatically once done."
-              : "Opening login popup..."
+          {isWaitingForLogin 
+            ? "Login in the popup window. The dashboard will stay open for you to use."
+            : "Opening dashboard window..."
           }
         </p>
       </div>
 
-      {isWaitingForLogin && !loginDetected && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (popupRef.current && !popupRef.current.closed) {
-              popupRef.current.focus();
-            } else {
-              openLoginPopup();
-            }
-          }}
-          className="gap-1.5 text-muted-foreground hover:text-emerald-400"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Popup not visible? Click to reopen
-        </Button>
-      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          if (popupRef.current && !popupRef.current.closed) {
+            popupRef.current.focus();
+          } else {
+            openDashboard();
+          }
+        }}
+        className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+      >
+        <RefreshCw className="w-4 h-4" />
+        {isWaitingForLogin ? "Focus Dashboard Window" : "Open Dashboard"}
+      </Button>
 
       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Sparkles className="w-3 h-3 text-emerald-400" />
-        {loginDetected ? "Preparing dashboard..." : "Popup will close automatically after login"}
+        Dashboard opens in a dedicated window for best experience
       </p>
     </motion.div>
   );
