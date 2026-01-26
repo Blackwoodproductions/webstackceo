@@ -301,20 +301,18 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
           const profile = profileRes.value?.data || profileRes.value;
-          setDomainProfile(profile);
-          
-          // Check if domain needs crawling
-          if (!profile?.last_crawl && !hasAutoCrawled) {
-            console.log("[CADE] Domain not crawled yet, triggering auto-crawl");
-            triggerAutoCrawl();
-          }
-        } else if (profileRes.status === "fulfilled" && profileRes.value?.error) {
-          // Domain not found in CADE, trigger crawl
-          console.log("[CADE] Domain not found, triggering crawl");
-          if (!hasAutoCrawled) {
-            triggerAutoCrawl();
+          // Only set profile if it's a valid object (not HTML/error response)
+          if (profile && typeof profile === "object" && !profile.raw) {
+            setDomainProfile(profile);
+            
+            // Check if domain needs crawling - only if we got a valid profile response
+            if (!profile?.last_crawl && !hasAutoCrawled) {
+              console.log("[CADE] Domain not crawled yet, triggering auto-crawl");
+              triggerAutoCrawl();
+            }
           }
         }
+        // Don't auto-crawl on errors - the API might not be set up yet
         
         if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
           const faqData = faqsRes.value?.data || faqsRes.value;
@@ -328,10 +326,11 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   }, [domain, callCadeApi, hasAutoCrawled]);
 
-  // Auto-crawl function
+  // Auto-crawl function - only runs once per domain
   const triggerAutoCrawl = useCallback(async () => {
     if (!domain || !apiKeyRef.current || hasAutoCrawled) return;
     
+    // Set flag FIRST to prevent any re-triggers
     setHasAutoCrawled(true);
     setCrawling(true);
     toast.info(`Starting automatic crawl for ${domain}...`);
@@ -342,19 +341,18 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       
       if (crawlRes && !crawlRes.error) {
         toast.success(`Domain crawl initiated for ${domain}`);
-        // Poll for updates
-        setTimeout(() => fetchAllData(), 5000);
+        // Do NOT auto-refresh - user can manually refresh when ready
       } else if (crawlRes?.error) {
         console.log("[CADE] Crawl error:", crawlRes.error);
-        toast.error(`Crawl failed: ${crawlRes.error.message || crawlRes.error}`);
+        // Don't show error toast for expected API issues during setup
       }
     } catch (crawlErr) {
       console.error("[CADE] Auto-crawl error:", crawlErr);
-      toast.error("Failed to start domain crawl");
+      // Silent fail - API may not be configured yet
     } finally {
       setCrawling(false);
     }
-  }, [domain, callCadeApi, hasAutoCrawled, fetchAllData]);
+  }, [domain, callCadeApi, hasAutoCrawled]);
 
   // Fetch data when connected or domain changes
   useEffect(() => {
