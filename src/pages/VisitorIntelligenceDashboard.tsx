@@ -1098,6 +1098,26 @@ const MarketingDashboard = () => {
       console.log('[GMB] Message listener removed');
     };
   }, [applyGmbToken]);
+
+  // Auto-connect GMB when tab becomes active and unified auth tokens are available
+  useEffect(() => {
+    if (activeTab !== 'gmb') return;
+    if (gmbAuthenticated) return; // Already connected
+    if (gmbConnecting) return; // Already in progress
+    
+    // Check for unified auth GMB tokens in localStorage
+    const unifiedToken = localStorage.getItem('gmb_access_token');
+    const unifiedExpiry = localStorage.getItem('gmb_token_expiry');
+    
+    if (unifiedToken && unifiedExpiry && Date.now() < Number(unifiedExpiry)) {
+      console.log('[GMB] Found unified auth tokens, auto-connecting...');
+      const remainingSeconds = Math.max(
+        60,
+        Math.floor((Number(unifiedExpiry) - Date.now()) / 1000)
+      );
+      void applyGmbToken(unifiedToken, remainingSeconds);
+    }
+  }, [activeTab, gmbAuthenticated, gmbConnecting, applyGmbToken]);
   
   // CRITICAL: Always keep gscDomainHasTracking TRUE when a tracked domain is selected
   // This prevents race conditions where GSC callbacks might incorrectly set it to false
