@@ -194,6 +194,7 @@ const App = () => (
                       <Route path="/case-study/:domain" element={<AuditResults />} />
                       <Route path="/audit/:domain" element={<AuditResults />} />
                       <Route path="/bron/callback" element={<BronCallback />} />
+                      <Route path="/bron-callback" element={<BronCallback />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
