@@ -2068,7 +2068,18 @@ f.parentNode.insertBefore(j,f);
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
             {/* Combined Tab Header with Lead Quality Stats - Full Width */}
-            <div className="flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border">
+            <div className="relative overflow-hidden flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border group">
+              {/* High-tech grid pattern */}
+              <div 
+                className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                style={{
+                  backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                  backgroundSize: '20px 20px'
+                }}
+              />
+              {/* Corner glows */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[50px] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[50px] pointer-events-none" />
               {/* Tabs - takes up left portion */}
               <TabsList className="flex-1 grid grid-cols-3 bg-background/40 p-1 h-auto gap-1 rounded-lg">
                 <TabsTrigger value="leads" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
@@ -2189,12 +2200,25 @@ f.parentNode.insertBefore(j,f);
               </div>
             )}
 
-              {/* Leads Tab */}
               <TabsContent value="leads" className="mt-0">
-                <Card className="p-0 overflow-hidden">
-                  <div className="max-h-[420px] overflow-auto">
+                <Card className="relative overflow-hidden p-0 border-border group">
+                  {/* High-tech grid pattern */}
+                  <div 
+                    className="absolute inset-0 opacity-[0.015] pointer-events-none"
+                    style={{
+                      backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                      backgroundSize: '24px 24px'
+                    }}
+                  />
+                  {/* Corner accent glow */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[60px] pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[60px] pointer-events-none" />
+                  {/* Floating particles */}
+                  <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-primary/40 animate-pulse pointer-events-none" />
+                  <div className="absolute bottom-[25%] left-[5%] w-1.5 h-1.5 rounded-full bg-primary/30 animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
+                  <div className="max-h-[420px] overflow-auto relative z-10">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
                         <TableRow>
                           <TableHead className="text-xs">Email</TableHead>
                           <TableHead className="text-xs">Name</TableHead>
@@ -2266,7 +2290,10 @@ f.parentNode.insertBefore(j,f);
               <TabsContent value="journey" className="mt-0">
                 <div className="grid grid-cols-2 gap-3">
                   {/* Top Entry Pages */}
-                  <Card className="p-4">
+                  <Card className="relative overflow-hidden p-4 border-border group">
+                    {/* Grid pattern */}
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(142 71% 45%) 1px, transparent 1px), linear-gradient(90deg, hsl(142 71% 45%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-green-500/10 to-transparent rounded-bl-[40px] pointer-events-none" />
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <Eye className="w-4 h-4 text-green-500" />
                       Top Entry Pages
@@ -2291,7 +2318,10 @@ f.parentNode.insertBefore(j,f);
                   </Card>
 
                   {/* Tool Usage by Type */}
-                  <Card className="p-4">
+                  <Card className="relative overflow-hidden p-4 border-border group">
+                    {/* Grid pattern */}
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(262 83% 58%) 1px, transparent 1px), linear-gradient(90deg, hsl(262 83% 58%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-[40px] pointer-events-none" />
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <MousePointer className="w-4 h-4 text-violet-500" />
                       Tool Usage
@@ -2316,7 +2346,10 @@ f.parentNode.insertBefore(j,f);
                   </Card>
 
                   {/* Recent Lead Sources */}
-                  <Card className="p-4 col-span-2">
+                  <Card className="relative overflow-hidden p-4 col-span-2 border-border group">
+                    {/* Grid pattern */}
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(330 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(330 80% 60%) 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-pink-500/10 to-transparent rounded-bl-[50px] pointer-events-none" />
                     <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2 text-sm">
                       <FileText className="w-4 h-4 text-pink-500" />
                       Lead Sources
@@ -2343,10 +2376,14 @@ f.parentNode.insertBefore(j,f);
 
               {/* Tool Usage Tab */}
               <TabsContent value="tools" className="mt-0">
-                <Card className="p-0 overflow-hidden">
-                  <div className="max-h-[420px] overflow-auto">
+                <Card className="relative overflow-hidden p-0 border-border group">
+                  {/* High-tech grid pattern */}
+                  <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 via-primary/4 to-transparent rounded-bl-[60px] pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-primary/6 to-transparent rounded-tr-[60px] pointer-events-none" />
+                  <div className="max-h-[420px] overflow-auto relative z-10">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-card z-10">
+                      <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
                         <TableRow>
                           <TableHead className="text-xs">Tool</TableHead>
                           <TableHead className="text-xs">Type</TableHead>
