@@ -101,16 +101,55 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       return;
     }
     
-    // Poll to check if popup closed (user completed login)
+    // Poll to check if popup closed AND if user navigated to dashboard (successful login)
     const pollTimer = setInterval(() => {
+      try {
+        // Check if popup navigated to dashboard (successful login)
+        if (popup.location?.href?.includes('/dashboard')) {
+          clearInterval(pollTimer);
+          popup.close();
+          
+          // User successfully logged in - save auth and show iframe
+          const authData = {
+            authenticated: true,
+            token: null,
+            expiry: Date.now() + 24 * 60 * 60 * 1000,
+            authenticatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          onConnectionComplete?.("bron");
+          
+          toast({
+            title: "Successfully Connected!",
+            description: "Your BRON dashboard is now displayed below.",
+          });
+          return;
+        }
+      } catch {
+        // Cross-origin error - can't read popup location, continue polling
+      }
+      
+      // Check if popup was closed manually
       if (popup.closed) {
         clearInterval(pollTimer);
         setIsLoading(false);
         
-        // Show confirmation dialog
+        // Automatically show dashboard since user likely logged in
+        const authData = {
+          authenticated: true,
+          token: null,
+          expiry: Date.now() + 24 * 60 * 60 * 1000,
+          authenticatedAt: new Date().toISOString(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
+        setIsAuthenticated(true);
+        onConnectionComplete?.("bron");
+        
         toast({
-          title: "Login Complete?",
-          description: "If you've logged in successfully, click 'Show Dashboard' below.",
+          title: "Dashboard Connected",
+          description: "Your BRON dashboard is now displayed below.",
         });
       }
     }, 500);
