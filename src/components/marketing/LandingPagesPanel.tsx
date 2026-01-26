@@ -64,6 +64,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     if (adsToken && adsExpiry) {
       const expiryTime = parseInt(adsExpiry, 10);
       if (Date.now() < expiryTime - 300000) {
+        console.log('[PPC] Found valid Google Ads token');
         return { 
           token: adsToken, 
           customerId: storedCustomerId || 'unified-auth',
@@ -73,15 +74,20 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     }
     
     // Fall back to unified Google auth tokens (from GSC or GA login)
-    // These tokens may have Google Ads scope if user did unified login
-    const unifiedToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
-    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
-    const scopes = localStorage.getItem('unified_google_scopes') || '';
+    // These tokens have Google Ads scope if user did unified login via Auth.tsx/AuthCallback
+    const unifiedToken = localStorage.getItem('unified_google_token') || 
+                         localStorage.getItem('gsc_access_token') || 
+                         localStorage.getItem('ga_access_token');
+    const unifiedExpiry = localStorage.getItem('unified_google_expiry') ||
+                          localStorage.getItem('gsc_token_expiry') || 
+                          localStorage.getItem('ga_token_expiry');
     
-    // Only use unified token if it has adwords scope
-    if (unifiedToken && unifiedExpiry && scopes.includes('adwords')) {
+    // Check if token exists and is valid
+    if (unifiedToken && unifiedExpiry) {
       const expiryTime = parseInt(unifiedExpiry, 10);
       if (Date.now() < expiryTime - 300000) {
+        console.log('[PPC] Using unified Google token for Ads');
+        
         // Sync to Google Ads specific keys for consistency
         localStorage.setItem('google_ads_access_token', unifiedToken);
         localStorage.setItem('google_ads_token_expiry', unifiedExpiry);
@@ -94,6 +100,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       }
     }
     
+    console.log('[PPC] No valid connection found');
     return null;
   };
 
