@@ -2527,9 +2527,15 @@ const AuditResults = () => {
                             </a>
                           </Button>
                         </div>
-                        {/* Timer and Badges below buttons */}
-                        <div className="flex items-center gap-2">
-                          <NextReportCountdown />
+                        {/* Timer Box */}
+                        <NextReportCountdown />
+                        {/* Trust Badges - under timer */}
+                        <motion.div 
+                          className="flex items-center gap-2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                        >
                           <div className="flex flex-col items-center justify-center px-3 h-14 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/40 shadow-sm hover:scale-105 hover:shadow-cyan-500/30 hover:shadow-md transition-all duration-300 cursor-default">
                             <Users className="w-5 h-5 text-cyan-500" />
                             <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
@@ -2542,7 +2548,7 @@ const AuditResults = () => {
                             <Bot className="w-5 h-5 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
                             <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
                           </div>
-                        </div>
+                        </motion.div>
                       </div>
                     )}
                   </motion.div>
