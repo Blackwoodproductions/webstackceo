@@ -63,7 +63,31 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     onConnectionComplete?.("bron");
   };
 
-  // Popup-based login - when popup closes, assume login succeeded
+  // Check login status via public API (keys are public routing identifiers)
+  const checkLoginStatus = async (): Promise<boolean> => {
+    if (!domain) return false;
+    
+    try {
+      const url = `${BRON_STATUS_API}?feedit=add&domain=${encodeURIComponent(domain)}&apiid=${BRON_API_ID}&apikey=${BRON_API_KEY}&kkyy=${BRON_KKYY}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) return false;
+      
+      const text = await response.text();
+      // API returns JSON array with domain data when logged in
+      // e.g. [{"domainid":"111073","status":"2",...}]
+      if (text.startsWith('[') && text.includes('"domainid"')) {
+        console.log("[BRON] Login detected via API");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.log("[BRON] API check error:", error);
+      return false;
+    }
+  };
+
+  // Popup-based login with API polling
   const handlePopupLogin = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
@@ -92,15 +116,29 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // Poll for popup close - when closed, user has completed login flow
-    pollRef.current = window.setInterval(() => {
-      if (!popupRef.current || popupRef.current.closed) {
+    // Poll API for login status every 2 seconds
+    pollRef.current = window.setInterval(async () => {
+      // Check if popup was closed
+      const popupClosed = !popupRef.current || popupRef.current.closed;
+      
+      // Check login status via API
+      const isLoggedIn = await checkLoginStatus();
+      
+      if (isLoggedIn) {
+        // Login detected - close popup and show dashboard
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        try { popupRef.current?.close(); } catch { /* ignore */ }
+        popupRef.current = null;
+        persistAuth();
+        return;
+      }
+      
+      if (popupClosed) {
+        // Popup closed without login detected - stop polling but stay in waiting state
         if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
-        // Don't auto-authenticate on close - user must click the button
-        // This prevents the redirect issue when dashboard loads in popup
       }
-    }, 400);
+    }, 2000);
   };
 
   const handleContinueAfterLogin = () => {
