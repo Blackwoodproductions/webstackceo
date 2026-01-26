@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, CheckCircle, Boxes, Zap, Target
+  Award, Building, Sparkles, CheckCircle, Boxes, Zap, Target,
+  LogIn, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 
 interface BRONPlatformConnectProps {
@@ -17,10 +19,16 @@ const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
 
+// Get the callback URL based on current environment
+const getCallbackUrl = () => {
+  const origin = window.location.origin;
+  return `${origin}/bron/callback`;
+};
+
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [iframeLoadCount, setIframeLoadCount] = useState(0);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Check for existing auth on mount
   useEffect(() => {
@@ -30,6 +38,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         const authData = JSON.parse(storedAuth);
         if (authData.authenticated && authData.expiry > Date.now()) {
           setIsAuthenticated(true);
+          onConnectionComplete?.("bron");
         } else {
           localStorage.removeItem(STORAGE_KEY);
         }
@@ -38,16 +47,18 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       }
     }
     setIsLoading(false);
-  }, []);
+  }, [onConnectionComplete]);
 
-  // Listen for auth confirmation from the dashboard (postMessage)
+  // Listen for postMessage from BRON (if they implement it)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin === "https://dashdev.imagehosting.space") {
         if (event.data?.type === "bron-auth-success") {
           const authData = {
             authenticated: true,
+            token: event.data?.token || null,
             expiry: Date.now() + 24 * 60 * 60 * 1000,
+            authenticatedAt: new Date().toISOString(),
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
           setIsAuthenticated(true);
@@ -64,74 +75,91 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return () => window.removeEventListener("message", handleMessage);
   }, [onConnectionComplete]);
 
-  // Auto-detect login by listening to iframe load events
-  useEffect(() => {
-    if (isAuthenticated) return;
+  // Redirect-based login - opens BRON login with callback
+  const handleRedirectLogin = () => {
+    setIsRedirecting(true);
     
-    const handleIframeLoad = () => {
-      const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
-      if (!iframe) return;
-      
-      try {
-        // Try to get the current URL - if it's no longer the login page, user has logged in
-        // This will throw if cross-origin, but we can detect based on iframe behavior
-        const iframeSrc = iframe.src;
-        
-        // If the iframe was redirected internally after login, detect by checking the URL
-        // Since we can't access contentWindow.location due to cross-origin, we'll use a different approach
-      } catch (e) {
-        // Cross-origin access expected - this is actually a sign login might have succeeded
-        // because the iframe is now showing the dashboard (different domain behavior)
-      }
-    };
+    const callbackUrl = getCallbackUrl();
+    
+    // Build the login URL with redirect parameter
+    // BRON should redirect back to our callback after login
+    const loginUrl = new URL(BRON_LOGIN_URL);
+    loginUrl.searchParams.set("redirect_uri", callbackUrl);
+    loginUrl.searchParams.set("callback", callbackUrl);
+    loginUrl.searchParams.set("return_url", callbackUrl);
+    
+    // Store state to verify callback
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("bron_auth_state", state);
+    loginUrl.searchParams.set("state", state);
+    
+    console.log("[BRON] Redirecting to login:", loginUrl.toString());
+    
+    // Redirect to BRON login
+    window.location.href = loginUrl.toString();
+  };
 
-    // Listen for navigation changes in the iframe
-    const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
-    if (iframe) {
-      iframe.addEventListener('load', handleIframeLoad);
-      return () => iframe.removeEventListener('load', handleIframeLoad);
+  // Popup-based login as fallback
+  const handlePopupLogin = () => {
+    const callbackUrl = getCallbackUrl();
+    
+    const loginUrl = new URL(BRON_LOGIN_URL);
+    loginUrl.searchParams.set("redirect_uri", callbackUrl);
+    loginUrl.searchParams.set("callback", callbackUrl);
+    loginUrl.searchParams.set("return_url", callbackUrl);
+    
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      loginUrl.toString(),
+      "bron_login",
+      `width=${width},height=${height},left=${left},top=${top},popup=1`
+    );
+    
+    if (!popup) {
+      toast({
+        title: "Popup Blocked",
+        description: "Please allow popups or use the redirect login option.",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [isAuthenticated]);
-
-  // Check for cookies/session storage that might indicate authentication
-  useEffect(() => {
-    if (isAuthenticated) return;
     
-    // Poll to check if the login page has been replaced with dashboard content
-    // by monitoring for successful form submission redirect
-    const pollInterval = setInterval(() => {
-      const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
-      if (!iframe) return;
-      
-      // Check if the iframe is showing non-login content by attempting to read its document
-      // This is a heuristic - the external site's login will redirect on success
-      try {
-        // If we can access the iframe content at all, check if it's the dashboard
-        const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (doc) {
-          // Check if the page is the dashboard (not login)
-          const isLoginPage = doc.querySelector('form[action*="login"]') || 
-                             doc.querySelector('input[name="email"]') ||
-                             doc.querySelector('input[name="password"]');
-          
-          if (!isLoginPage && doc.body && doc.body.innerText.length > 100) {
-            // Likely logged in - dashboard is showing
-            handleManualAuth();
+    // Poll to check if popup closed (user completed login)
+    const pollTimer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollTimer);
+        // Check if auth was stored
+        const storedAuth = localStorage.getItem(STORAGE_KEY);
+        if (storedAuth) {
+          try {
+            const authData = JSON.parse(storedAuth);
+            if (authData.authenticated) {
+              setIsAuthenticated(true);
+              onConnectionComplete?.("bron");
+              toast({
+                title: "Successfully Connected!",
+                description: "Your BRON dashboard is now linked.",
+              });
+            }
+          } catch {
+            // Ignore parse errors
           }
         }
-      } catch {
-        // Cross-origin - expected, cannot detect this way
       }
-    }, 1500);
-    
-    return () => clearInterval(pollInterval);
-  }, [isAuthenticated]);
-  
+    }, 500);
+  };
+
+  // Manual confirmation for when redirect doesn't work
   const handleManualAuth = () => {
-    // Allow manual confirmation if auto-detection doesn't work
     const authData = {
       authenticated: true,
+      token: null,
       expiry: Date.now() + 24 * 60 * 60 * 1000,
+      authenticatedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
     setIsAuthenticated(true);
@@ -206,7 +234,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
               <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              If the dashboard shows a 419 error, click "Open Dashboard" above to use it in a new tab while iframe permissions are being configured.
+              If the dashboard shows a 419 error, click "Open Dashboard" above to use it in a new tab.
             </p>
           </div>
         </div>
@@ -226,77 +254,128 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Login prompt - full-width layout with iframe
+  // Login prompt with redirect-based OAuth
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className="space-y-6"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">BRON Dashboard Login</h2>
-            <p className="text-sm text-muted-foreground">
-              Log in below to access the Diamond Flow link building platform
-            </p>
-          </div>
-        </div>
-        <Button
-          onClick={handleManualAuth}
-          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-        >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          I've Logged In - Show Dashboard
-        </Button>
+      {/* Feature Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { icon: Link2, title: "Keyword Clustering", desc: "AI-powered topical organization" },
+          { icon: TrendingUp, title: "Deep Linking", desc: "Strategic internal link building" },
+          { icon: Award, title: "DA & DR Growth", desc: "Increase domain authority metrics" },
+          { icon: Zap, title: "Autopilot Links", desc: "Automated inbound link acquisition" },
+        ].map((feature, index) => (
+          <Card key={index} className="bg-gradient-to-br from-background to-secondary/20 border-cyan-500/20">
+            <CardContent className="p-4">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-blue-500/20 flex items-center justify-center mb-3">
+                <feature.icon className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h3 className="font-semibold text-sm mb-1">{feature.title}</h3>
+              <p className="text-xs text-muted-foreground">{feature.desc}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Full-width Login iframe with load detection */}
-      <div className="rounded-xl border border-cyan-500/30 overflow-hidden bg-background">
-        <iframe
-          src={BRON_LOGIN_URL}
-          className="w-full border-0"
-          style={{ minHeight: '800px' }}
-          title="BRON Login"
-          allow="clipboard-write"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
-          onLoad={() => {
-            // Track iframe loads - first load is login page, second load is dashboard after login
-            setIframeLoadCount(prev => {
-              const newCount = prev + 1;
-              
-              // If this is the second (or later) load, user likely logged in
-              if (newCount >= 2) {
-                // Small delay to ensure dashboard content is ready
-                setTimeout(() => {
-                  const iframe = document.querySelector('iframe[title="BRON Login"]') as HTMLIFrameElement;
-                  if (iframe) {
-                    try {
-                      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-                      if (doc) {
-                        // Check if password field is gone (means we're past login)
-                        const hasLoginForm = doc.querySelector('input[type="password"]');
-                        if (!hasLoginForm) {
-                          handleManualAuth();
-                        }
-                      }
-                    } catch {
-                      // Cross-origin error means we're on the dashboard (different page behavior)
-                      // Auto-authenticate since login page was readable but dashboard is not
-                      handleManualAuth();
-                    }
-                  }
-                }, 300);
-              }
-              
-              return newCount;
-            });
-          }}
-        />
+      {/* Login Card */}
+      <Card className="border-cyan-500/30 bg-gradient-to-br from-background via-background to-cyan-500/5">
+        <CardHeader className="text-center pb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-8 h-8 text-white" />
+          </div>
+          <CardTitle className="text-2xl">Connect to BRON Dashboard</CardTitle>
+          <CardDescription>
+            Access the Diamond Flow link building platform to boost your domain authority
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Primary: Redirect Login */}
+          <Button
+            onClick={handleRedirectLogin}
+            disabled={isRedirecting}
+            className="w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold"
+          >
+            {isRedirecting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Redirecting to BRON...
+              </>
+            ) : (
+              <>
+                <LogIn className="w-5 h-5 mr-2" />
+                Login to BRON
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          {/* Alternative: Popup Login */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handlePopupLogin}
+              variant="outline"
+              className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Login in Popup
+            </Button>
+            <Button
+              onClick={() => window.open(BRON_LOGIN_URL, '_blank')}
+              variant="outline"
+              className="flex-1 border-cyan-500/30 hover:bg-cyan-500/10"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open in New Tab
+            </Button>
+          </div>
+
+          {/* Manual confirmation for edge cases */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center mb-3">
+              Already logged in to BRON in another tab?
+            </p>
+            <Button
+              onClick={handleManualAuth}
+              variant="ghost"
+              className="w-full text-sm text-muted-foreground hover:text-foreground"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              I've Logged In - Show Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Info about the integration */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <div className="p-4 rounded-lg bg-secondary/30">
+          <Sparkles className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
+          <p className="text-sm font-medium">AI-Powered</p>
+          <p className="text-xs text-muted-foreground">Intelligent link strategies</p>
+        </div>
+        <div className="p-4 rounded-lg bg-secondary/30">
+          <Building className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+          <p className="text-sm font-medium">Real Websites</p>
+          <p className="text-xs text-muted-foreground">No PBNs, only quality sites</p>
+        </div>
+        <div className="p-4 rounded-lg bg-secondary/30">
+          <Target className="w-6 h-6 mx-auto mb-2 text-violet-400" />
+          <p className="text-sm font-medium">Targeted Links</p>
+          <p className="text-xs text-muted-foreground">Relevant niche placements</p>
+        </div>
       </div>
     </motion.div>
   );

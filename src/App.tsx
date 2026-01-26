@@ -41,6 +41,7 @@ const WebsiteAudits = lazy(() => import("./pages/WebsiteAudits"));
 const CaseStudies = lazy(() => import("./pages/CaseStudies"));
 const Tools = lazy(() => import("./pages/Tools"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const BronCallback = lazy(() => import("./pages/BronCallback"));
 
 // Feature pages - lazy loaded
 const OnPageSEO = lazy(() => import("./pages/features/OnPageSEO"));
@@ -192,6 +193,7 @@ const App = () => (
                       <Route path="/case-studies" element={<CaseStudies />} />
                       <Route path="/case-study/:domain" element={<AuditResults />} />
                       <Route path="/audit/:domain" element={<AuditResults />} />
+                      <Route path="/bron/callback" element={<BronCallback />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
