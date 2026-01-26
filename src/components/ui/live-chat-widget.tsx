@@ -22,6 +22,7 @@ interface LiveVisitor {
   user_id?: string | null;
   avatar_url?: string | null;
   display_name?: string | null;
+  is_current_user?: boolean;
 }
 
 // Extract domain from referrer URL
@@ -164,16 +165,23 @@ const LiveChatWidget = () => {
         }
       }
       
-      // Merge profile data with sessions
+      // Merge profile data with sessions - include current user's session
       const visitorsWithProfiles = sessions
-        .filter((v: any) => v.session_id !== sessionId)
         .map((v: any) => ({
           ...v,
           avatar_url: profilesMap[v.user_id]?.avatar_url || null,
           display_name: profilesMap[v.user_id]?.full_name || null,
+          is_current_user: v.session_id === sessionId,
         }));
       
-      setLiveVisitors(visitorsWithProfiles);
+      // Sort to put current user first, then by activity
+      const sortedVisitors = visitorsWithProfiles.sort((a: any, b: any) => {
+        if (a.is_current_user) return -1;
+        if (b.is_current_user) return 1;
+        return new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime();
+      });
+      
+      setLiveVisitors(sortedVisitors);
     }
   }, [sessionId]);
 
@@ -412,10 +420,11 @@ const LiveChatWidget = () => {
         {!isOpen && (
           <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-2">
             {/* Live Visitor Icons - stacked above main button */}
-            {liveVisitors.slice(0, 5).map((visitor, index) => {
+            {liveVisitors.slice(0, 6).map((visitor, index) => {
               const visitorReferrerDomain = getReferrerDomain(visitor.referrer);
               const visitorFaviconUrl = getFaviconUrl(visitorReferrerDomain);
               const hasAvatar = !!visitor.avatar_url;
+              const isCurrentUser = visitor.is_current_user;
               
               return (
                 <Tooltip key={visitor.session_id}>
@@ -425,9 +434,9 @@ const LiveChatWidget = () => {
                       animate={{ scale: 1, opacity: 1, y: 0 }}
                       exit={{ scale: 0, opacity: 0, y: 20 }}
                       transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
-                      onClick={() => handleEngageVisitor(visitor)}
-                      className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden`}
-                      aria-label={`Engage visitor ${visitor.display_name || visitorReferrerDomain || 'direct'}`}
+                      onClick={() => !isCurrentUser && handleEngageVisitor(visitor)}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} rounded-full bg-gradient-to-br ${isCurrentUser ? 'from-cyan-400 to-violet-500 ring-2 ring-cyan-400/50' : getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden ${isCurrentUser ? 'cursor-default' : ''}`}
+                      aria-label={isCurrentUser ? 'You (online)' : `Engage visitor ${visitor.display_name || visitorReferrerDomain || 'direct'}`}
                     >
                       {/* Priority: 1. User avatar, 2. Referrer favicon, 3. User icon */}
                       {hasAvatar ? (
@@ -448,12 +457,20 @@ const LiveChatWidget = () => {
                         />
                       ) : null}
                       <User className={`w-4 h-4 ${hasAvatar || visitorFaviconUrl ? 'hidden' : ''}`} />
-                      {/* Live pulse indicator */}
-                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
-                        <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                      {/* Live pulse indicator - different color for current user */}
+                      <span className={`absolute -top-0.5 -right-0.5 ${isCurrentUser ? 'w-3 h-3' : 'w-2.5 h-2.5'} rounded-full ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'} border border-background`}>
+                        <span className={`absolute inset-0 rounded-full ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'} animate-ping opacity-75`} />
                       </span>
+                      {/* "YOU" badge for current user */}
+                      {isCurrentUser && (
+                        <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-cyan-500 text-[8px] font-bold rounded-full text-white shadow-lg">
+                          YOU
+                        </span>
+                      )}
                       {/* Connection line */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-px h-2 bg-gradient-to-b from-border/50 to-transparent" />
+                      {!isCurrentUser && (
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-px h-2 bg-gradient-to-b from-border/50 to-transparent" />
+                      )}
                     </motion.button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-card border-border">
@@ -465,8 +482,14 @@ const LiveChatWidget = () => {
                         <img src={visitorFaviconUrl} alt="" className="w-3 h-3 rounded-sm" />
                       )}
                       {!hasAvatar && !visitorFaviconUrl && <Globe className="w-3 h-3 text-muted-foreground" />}
-                      <span className="text-xs">{visitor.display_name || visitorReferrerDomain || visitor.first_page || '/'}</span>
-                      <span className="text-[10px] text-muted-foreground">• {getTimeSince(visitor.started_at)}</span>
+                      <span className="text-xs">
+                        {isCurrentUser ? 'You' : (visitor.display_name || visitorReferrerDomain || visitor.first_page || '/')}
+                      </span>
+                      {isCurrentUser ? (
+                        <span className="text-[10px] text-cyan-400 font-medium">• Online</span>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">• {getTimeSince(visitor.started_at)}</span>
+                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
