@@ -270,32 +270,48 @@ export const GSCDashboardPanel = ({
 
   // Check for stored token on mount and handle OAuth callback
   useEffect(() => {
-    // Use localStorage for persistent storage across browser sessions
-    const storedToken = localStorage.getItem("gsc_access_token");
-    const tokenExpiry = localStorage.getItem("gsc_token_expiry");
-    
-    // Check for valid stored token first
-    if (storedToken && tokenExpiry) {
-      const expiryTime = parseInt(tokenExpiry);
-      const timeRemaining = expiryTime - Date.now();
+    const checkStoredToken = () => {
+      const storedToken = localStorage.getItem("gsc_access_token");
+      const tokenExpiry = localStorage.getItem("gsc_token_expiry");
       
-      if (timeRemaining > 0) {
-        console.log("[GSC] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
-        setAccessToken(storedToken);
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      } else {
-        // Token expired - clear it and prompt reconnection
-        console.log("[GSC] Stored token has expired, clearing...");
-        localStorage.removeItem("gsc_access_token");
-        localStorage.removeItem("gsc_token_expiry");
-        toast({
-          title: "Session Expired",
-          description: "Your Google Search Console session has expired. Please reconnect.",
-          variant: "default",
-        });
+      if (storedToken && tokenExpiry) {
+        const expiryTime = parseInt(tokenExpiry);
+        const timeRemaining = expiryTime - Date.now();
+        
+        if (timeRemaining > 0) {
+          console.log("[GSC] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
+          setAccessToken(storedToken);
+          setIsAuthenticated(true);
+          setIsLoading(false);
+          return true;
+        } else {
+          console.log("[GSC] Stored token has expired, clearing...");
+          localStorage.removeItem("gsc_access_token");
+          localStorage.removeItem("gsc_token_expiry");
+          toast({
+            title: "Session Expired",
+            description: "Your Google Search Console session has expired. Please reconnect.",
+            variant: "default",
+          });
+        }
       }
+      return false;
+    };
+    
+    // Listen for cross-panel auth sync
+    const handleAuthSync = (e: CustomEvent) => {
+      console.log("[GSC] Received auth sync from GA panel");
+      setAccessToken(e.detail.access_token);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    };
+    
+    window.addEventListener("google-auth-synced", handleAuthSync as EventListener);
+    
+    if (checkStoredToken()) {
+      return () => {
+        window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+      };
     }
     
     // OAuth callback handling
@@ -420,6 +436,10 @@ export const GSCDashboardPanel = ({
     } else {
       setIsLoading(false);
     }
+    
+    return () => {
+      window.removeEventListener("google-auth-synced", handleAuthSync as EventListener);
+    };
   }, [toast]);
 
   // Fetch sites when authenticated
@@ -583,6 +603,11 @@ export const GSCDashboardPanel = ({
       localStorage.setItem("ga_access_token", access_token);
       localStorage.setItem("ga_token_expiry", expiryTime.toString());
       localStorage.removeItem("ga_code_verifier");
+      
+      // Dispatch event to notify GA panel
+      window.dispatchEvent(new CustomEvent("google-auth-synced", { 
+        detail: { access_token, expiry: expiryTime } 
+      }));
 
       // Extract profile from id_token if available
       if (id_token) {
