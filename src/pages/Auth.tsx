@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import InteractiveGrid from "@/components/ui/interactive-grid";
+
 
 const loginSchema = z.object({
   email: z
@@ -64,19 +65,6 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
-  // Check if already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate(redirectTo);
-      } else {
-        setIsCheckingAuth(false);
-      }
-    };
-    checkAuth();
-  }, [navigate, redirectTo]);
-
   // Extended scopes for GA + GSC auto-connect
   const EXTENDED_GOOGLE_SCOPES = [
     "openid",
@@ -87,30 +75,182 @@ const Auth = () => {
     "https://www.googleapis.com/auth/webmasters",
   ].join(" ");
 
-  // Handle Google OAuth sign in with extended scopes for auto-connect
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}${redirectTo}`,
-        scopes: EXTENDED_GOOGLE_SCOPES,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
+  // Check if already authenticated or handle OAuth callback
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Check for OAuth callback (popup will redirect here with code)
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
 
-    if (error) {
+      if (code && state === "auth_google") {
+        // Clear URL params immediately
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // This is the popup window - just close it after parent captures the code
+        // The popup polling in use-popup-oauth.ts will handle this
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate(redirectTo);
+      } else {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkAuth();
+  }, [navigate, redirectTo]);
+
+  // Handle popup window message for auth callback
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === 'supabase_auth_callback') {
+        // Auth was completed in popup, refresh session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            setIsGoogleLoading(false);
+            toast({
+              title: "Welcome!",
+              description: "Successfully signed in with Google.",
+            });
+            navigate(redirectTo);
+          }
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [navigate, redirectTo, toast]);
+
+  // Handle Google OAuth sign in via popup
+  const handleGoogleSignIn = useCallback(async () => {
+    setIsGoogleLoading(true);
+
+    try {
+      // Get the OAuth URL from Supabase with skipBrowserRedirect
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: EXTENDED_GOOGLE_SCOPES,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error || !data.url) {
+        throw new Error(error?.message || "Failed to start Google sign-in.");
+      }
+
+      // Open popup with the OAuth URL
+      const popupWidth = 520;
+      const popupHeight = 720;
+      const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
+      const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
+
+      const popup = window.open(
+        data.url,
+        "google_auth_popup",
+        `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+      );
+
+      if (!popup) {
+        setIsGoogleLoading(false);
+        toast({
+          title: "Popup blocked",
+          description: "Please allow popups for this site and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Poll for popup closure and auth completion
+      const pollInterval = setInterval(async () => {
+        try {
+          if (popup.closed) {
+            clearInterval(pollInterval);
+            
+            // Check if auth was successful
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              // Sync OAuth tokens for GA/GSC auto-connect
+              if (session.provider_token) {
+                const expiryTime = Date.now() + 3600 * 1000;
+                localStorage.setItem('unified_google_token', session.provider_token);
+                localStorage.setItem('unified_google_expiry', expiryTime.toString());
+                localStorage.setItem('unified_google_scopes', EXTENDED_GOOGLE_SCOPES);
+                localStorage.setItem('ga_access_token', session.provider_token);
+                localStorage.setItem('ga_token_expiry', expiryTime.toString());
+                localStorage.setItem('gsc_access_token', session.provider_token);
+                localStorage.setItem('gsc_token_expiry', expiryTime.toString());
+
+                // Store in database
+                const expiresAt = new Date(expiryTime).toISOString();
+                await supabase
+                  .from('oauth_tokens')
+                  .upsert({
+                    user_id: session.user.id,
+                    provider: 'google',
+                    access_token: session.provider_token,
+                    refresh_token: session.provider_refresh_token || null,
+                    scope: EXTENDED_GOOGLE_SCOPES,
+                    expires_at: expiresAt,
+                    updated_at: new Date().toISOString(),
+                  }, {
+                    onConflict: 'user_id,provider'
+                  });
+
+                // Update profile with Google avatar
+                const avatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+                const fullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+                
+                if (avatarUrl || fullName) {
+                  await supabase
+                    .from('profiles')
+                    .update({
+                      avatar_url: avatarUrl,
+                      full_name: fullName,
+                      email: session.user.email,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('user_id', session.user.id);
+
+                  // Store profile for navbar
+                  const profileData = { name: fullName, email: session.user.email, picture: avatarUrl };
+                  localStorage.setItem('unified_google_profile', JSON.stringify(profileData));
+                  localStorage.setItem('gsc_google_profile', JSON.stringify(profileData));
+                }
+              }
+
+              toast({
+                title: "Welcome!",
+                description: "Successfully signed in with Google.",
+              });
+              navigate(redirectTo);
+            } else {
+              setIsGoogleLoading(false);
+            }
+          }
+        } catch {
+          // Ignore cross-origin errors while popup is on Google's domain
+        }
+      }, 500);
+
+    } catch (error: any) {
       setIsGoogleLoading(false);
       toast({
-        title: "Google sign-in failed",
-        description: error.message,
+        title: "Sign-in failed",
+        description: error.message || "Failed to sign in with Google.",
         variant: "destructive",
       });
     }
-  };
+  }, [toast, navigate, redirectTo, EXTENDED_GOOGLE_SCOPES]);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

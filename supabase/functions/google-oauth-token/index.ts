@@ -83,13 +83,14 @@ serve(async (req) => {
       );
     }
 
-    console.log("[OAuth] Token exchange successful, has refresh_token:", !!tokenData.refresh_token);
+    console.log("[OAuth] Token exchange successful, has refresh_token:", !!tokenData.refresh_token, ", has id_token:", !!tokenData.id_token);
 
-    // Return the tokens (including refresh_token if present)
+    // Return the tokens (including refresh_token and id_token if present)
     return new Response(
       JSON.stringify({
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token || null,
+        id_token: tokenData.id_token || null,
         expires_in: tokenData.expires_in,
         token_type: tokenData.token_type,
         scope: tokenData.scope,
