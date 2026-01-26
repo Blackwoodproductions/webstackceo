@@ -233,23 +233,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error('Popup blocked. Please allow popups for this site.');
     }
 
-    // Poll for popup close
+    // Poll for popup close and wait for session
     return new Promise<void>((resolve, reject) => {
+      let resolved = false;
+      
       const pollInterval = setInterval(async () => {
         try {
-          if (popup.closed) {
+          if (popup.closed && !resolved) {
             clearInterval(pollInterval);
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-              resolve();
-            } else {
-              reject(new Error('Authentication cancelled'));
+            
+            // Wait a moment for the session to be established
+            await new Promise(r => setTimeout(r, 500));
+            
+            // Try multiple times to get the session
+            for (let attempt = 0; attempt < 5; attempt++) {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session) {
+                resolved = true;
+                resolve();
+                return;
+              }
+              // Wait between attempts
+              await new Promise(r => setTimeout(r, 300));
+            }
+            
+            // If we still don't have a session, the user likely cancelled
+            if (!resolved) {
+              reject(new Error('Authentication cancelled or timed out'));
             }
           }
         } catch {
           // Ignore cross-origin errors
         }
       }, 500);
+      
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        if (!resolved) {
+          clearInterval(pollInterval);
+          try { popup.close(); } catch {}
+          reject(new Error('Authentication timed out'));
+        }
+      }, 5 * 60 * 1000);
     });
   }, []);
 
