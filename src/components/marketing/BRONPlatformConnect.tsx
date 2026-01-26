@@ -2,15 +2,12 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, CheckCircle, Boxes, Zap, Target,
+  Award, Building, Sparkles, CheckCircle, Zap, Target,
   LogIn, ArrowRight, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { CADEApiDashboard } from "./CADEApiDashboard";
-
 interface BRONPlatformConnectProps {
   domain?: string;
   onConnectionComplete?: (platform: string) => void;
@@ -215,7 +212,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Show CADE API Dashboard when authenticated
+  // Show BRON Dashboard iframe when authenticated
   if (isAuthenticated) {
     return (
       <motion.div
@@ -238,13 +235,25 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
           <div className="flex items-center gap-2">
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const iframe = document.getElementById('bron-dashboard-iframe') as HTMLIFrameElement;
+                if (iframe) iframe.src = iframe.src;
+              }}
+              className="text-xs gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh
+            </Button>
+            <Button
               variant="default"
               size="sm"
               onClick={() => window.open(BRON_DASHBOARD_URL, '_blank')}
               className="text-xs gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Open External Dashboard
+              Open in New Tab
             </Button>
             <Button
               variant="outline"
@@ -258,8 +267,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </div>
         </div>
 
-        {/* CADE API Dashboard Content */}
-        <CADEApiDashboard domain={domain} />
+        {/* BRON Dashboard iframe */}
+        <div className="rounded-xl overflow-hidden border border-border shadow-lg bg-background">
+          <iframe
+            id="bron-dashboard-iframe"
+            src={BRON_DASHBOARD_URL}
+            className="w-full h-[700px] border-0"
+            title="BRON Dashboard"
+            allow="clipboard-write; clipboard-read"
+          />
+        </div>
       </motion.div>
     );
   }
