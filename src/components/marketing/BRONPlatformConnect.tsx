@@ -19,10 +19,12 @@ const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
 
-// Get the callback URL based on current environment
+// Production callback URL - your self-hosted domain
+const PRODUCTION_CALLBACK_URL = "https://webstack.ceo/bron/callback";
+
+// Get the callback URL - always use production domain
 const getCallbackUrl = () => {
-  const origin = window.location.origin;
-  return `${origin}/bron/callback`;
+  return PRODUCTION_CALLBACK_URL;
 };
 
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
