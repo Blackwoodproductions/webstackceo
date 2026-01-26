@@ -1004,16 +1004,20 @@ const MarketingDashboard = () => {
 
   // GMB OAuth callback handler and token check on mount
   useEffect(() => {
-    // Check for existing GMB token - check BOTH localStorage (unified auth) and sessionStorage
-    // Unified auth stores tokens in localStorage with 'gmb_access_token' key
-    const unifiedToken = localStorage.getItem('gmb_access_token');
-    const unifiedExpiry = localStorage.getItem('gmb_token_expiry');
+    // Check for existing GMB token - check multiple sources:
+    // 1. GMB-specific token (from GMB OAuth flow)
+    // 2. Unified Google auth token (from GA/GSC OAuth - stored as ga_access_token/gsc_access_token)
+    // 3. Session storage fallback
+    const gmbToken = localStorage.getItem('gmb_access_token');
+    const gmbExpiry = localStorage.getItem('gmb_token_expiry');
+    const unifiedToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
+    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
     const sessionToken = sessionStorage.getItem('gmb_access_token');
     const sessionExpiry = sessionStorage.getItem('gmb_token_expiry');
     
-    // Prefer unified auth token (localStorage), fallback to session token
-    const storedToken = unifiedToken || sessionToken;
-    const storedExpiry = unifiedExpiry || sessionExpiry;
+    // Prefer GMB-specific, then unified auth, then session
+    const storedToken = gmbToken || unifiedToken || sessionToken;
+    const storedExpiry = gmbExpiry || unifiedExpiry || sessionExpiry;
     
     if (storedToken && storedExpiry && Date.now() < Number(storedExpiry)) {
       // IMPORTANT: Don't just mark "authenticated"; also hydrate accounts + locations.
@@ -1021,6 +1025,7 @@ const MarketingDashboard = () => {
         60,
         Math.floor((Number(storedExpiry) - Date.now()) / 1000)
       );
+      console.log('[GMB] Using unified Google auth token for GMB sync');
       void applyGmbToken(storedToken, remainingSeconds);
     }
     
@@ -3536,254 +3541,64 @@ f.parentNode.insertBefore(j,f);
           </header>
 
           {!gmbAuthenticated ? (
-            /* Not Connected State */
+            /* Loading / Checking State - will auto-connect via unified Google auth */
             <div className="space-y-6">
-              {/* Top row: Connect panel + How It Works grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Left - Connect panel */}
-                <div className="lg:col-span-4">
-                  <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-green-500/15 border border-blue-500/20 h-full flex flex-col">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-4 shadow-lg">
-                      <Globe className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-bold mb-2">Connect Your Account</h3>
-                    <p className="text-muted-foreground text-sm flex-1">
-                      Link your Google Business Profile to manage listings and track performance.
-                    </p>
-                    <div className="mt-auto pt-4 border-t border-blue-500/20">
-                      <Button
-                        size="lg"
-                        onClick={async () => {
-                          setGmbConnecting(true);
-                          try {
-                            const scopes = [
-                              'https://www.googleapis.com/auth/business.manage',
-                              'openid',
-                              'profile',
-                              'email'
-                            ].join(' ');
-                            
-                            const codeVerifier = crypto.randomUUID() + crypto.randomUUID();
-                            const encoder = new TextEncoder();
-                            const data = encoder.encode(codeVerifier);
-                            const digest = await crypto.subtle.digest('SHA-256', data);
-                            const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-                              .replace(/\+/g, '-')
-                              .replace(/\//g, '_')
-                              .replace(/=+$/, '');
-                            
-                            sessionStorage.setItem('gmb_code_verifier', codeVerifier);
-                            sessionStorage.setItem('gmb_oauth_pending', 'true');
-                            localStorage.setItem('gmb_code_verifier', codeVerifier);
-                            localStorage.setItem('gmb_oauth_pending', 'true');
-                            
-                            const clientId = localStorage.getItem("gsc_client_id") || localStorage.getItem("ga_client_id") || import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-                            
-                            if (!clientId) {
-                              toast.error('Please connect Google Search Console first to configure your OAuth credentials');
-                              setGmbConnecting(false);
-                              return;
-                            }
-                            const redirectUri = `${window.location.origin}/visitor-intelligence-dashboard`;
-                            
-                            const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-                            authUrl.searchParams.set('client_id', clientId);
-                            authUrl.searchParams.set('redirect_uri', redirectUri);
-                            authUrl.searchParams.set('response_type', 'code');
-                            authUrl.searchParams.set('scope', scopes);
-                            authUrl.searchParams.set('code_challenge', base64);
-                            authUrl.searchParams.set('code_challenge_method', 'S256');
-                            authUrl.searchParams.set('access_type', 'offline');
-                            authUrl.searchParams.set('prompt', 'consent select_account');
-                            authUrl.searchParams.set('state', 'gmb');
-
-                            const popupWidth = 520;
-                            const popupHeight = 720;
-                            const left = (window.screenX ?? (window as any).screenLeft ?? 0) + (window.outerWidth - popupWidth) / 2;
-                            const top = (window.screenY ?? (window as any).screenTop ?? 0) + (window.outerHeight - popupHeight) / 2;
-                            const popup = window.open(
-                              authUrl.toString(),
-                              'gmb_oauth',
-                              `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
-                            );
-
-                            if (!popup) {
-                              window.location.href = authUrl.toString();
-                            }
-                          } catch (err) {
-                            console.error('GMB OAuth init error:', err);
-                            toast.error('Failed to start Google Business Profile connection');
-                            setGmbConnecting(false);
-                          }
-                        }}
-                        disabled={gmbConnecting}
-                        className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-bold"
-                      >
-                        {gmbConnecting ? (
-                          <span className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Connecting...
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                            </svg>
-                            Connect Account
-                          </span>
-                        )}
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-3 text-center">
-                        Requires access to a Business Profile
-                      </p>
-                    </div>
-                  </div>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  {gmbConnecting ? (
+                    <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <MapPin className="w-8 h-8 text-white" />
+                  )}
                 </div>
-
-                {/* Right - How It Works */}
-                <div className="lg:col-span-8">
-                  <h3 className="text-lg font-semibold mb-4">How It Works</h3>
-                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-                    {[
-                      { 
-                        step: '1', 
-                        icon: Globe,
-                        title: 'Connect Account', 
-                        desc: 'Securely link your Google Business Profile with OAuth authentication.',
-                        highlight: 'OAuth 2.0 Secure'
-                      },
-                      { 
-                        step: '2', 
-                        icon: MapPin,
-                        title: 'Manage Locations', 
-                        desc: 'Update hours, address, photos, and key info for each location.',
-                        highlight: 'Multi-Location'
-                      },
-                      { 
-                        step: '3', 
-                        icon: MessageCircle,
-                        title: 'Monitor Reviews', 
-                        desc: 'Track and respond to customer reviews. Build your reputation.',
-                        highlight: 'Real-Time Alerts'
-                      },
-                      { 
-                        step: '4', 
-                        icon: Newspaper,
-                        title: 'CADE Auto-Posts', 
-                        desc: 'Articles and FAQs are auto-shared to your GMB listing.',
-                        highlight: 'Powered by CADE'
-                      },
-                    ].map((item) => (
-                      <div key={item.step} className="relative p-5 rounded-xl bg-gradient-to-br from-blue-500/5 to-green-500/10 border border-blue-500/20 flex flex-col min-h-[180px]">
-                        <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                          {item.step}
-                        </div>
-                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3 mt-1">
-                          <item.icon className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <p className="font-semibold text-sm mb-2">{item.title}</p>
-                        <p className="text-xs text-muted-foreground flex-1 leading-relaxed">{item.desc}</p>
-                        <Badge variant="outline" className="mt-3 w-fit text-[10px] text-blue-500 border-blue-500/30 bg-blue-500/5">
-                          {item.highlight}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom row: Feature cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { icon: BarChart3, label: 'Performance Insights', desc: 'Track views, calls, direction requests, and website clicks for each location', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-                  { icon: Star, label: 'Review Management', desc: 'Monitor ratings, respond to reviews, and build your online reputation', color: 'text-green-500', bgColor: 'bg-green-500/10' },
-                  { icon: TrendingUp, label: 'Local SEO Boost', desc: 'Consistent GMB activity signals freshness to Google, boosting local rankings', color: 'text-teal-500', bgColor: 'bg-teal-500/10' },
-                ].map((feature) => (
-                  <div key={feature.label} className="p-5 rounded-xl bg-muted/30 border border-border flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center shrink-0`}>
-                      <feature.icon className={`w-5 h-5 ${feature.color}`} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm mb-1">{feature.label}</p>
-                      <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Local SEO Stats & Benefits Section */}
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/5 via-transparent to-green-500/5 border border-blue-500/10">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-green-500/20 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Why Google Business Profile Matters</h3>
-                    <p className="text-xs text-muted-foreground">Local search dominance starts here</p>
-                  </div>
-                </div>
+                <h3 className="text-lg font-bold mb-2">
+                  {gmbConnecting ? 'Checking Google Business Profile...' : 'No Business Profile Access'}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+                  {gmbConnecting 
+                    ? 'Syncing your Google Business Profile data. This may take a moment.' 
+                    : 'Your Google account doesn\'t have access to any Business Profile listings. You can create a new listing below.'}
+                </p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-                  {[
-                    { stat: '46%', label: 'of Google searches', sublabel: 'have local intent' },
-                    { stat: '88%', label: 'of mobile searches', sublabel: 'visit within 24hrs' },
-                    { stat: '76%', label: 'of local searches', sublabel: 'visit a business' },
-                    { stat: '28%', label: 'local searches', sublabel: 'result in purchase' },
-                  ].map((item, i) => (
-                    <div key={i} className="text-center p-4 rounded-xl bg-background/50 border border-border">
-                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">{item.stat}</p>
-                      <p className="text-xs text-foreground font-medium mt-1">{item.label}</p>
-                      <p className="text-[10px] text-muted-foreground">{item.sublabel}</p>
-                    </div>
-                  ))}
-                </div>
+                {!gmbConnecting && (selectedTrackedDomain || selectedDomainKey) && (
+                  <div className="max-w-2xl mx-auto">
+                    <GMBOnboardingWizard
+                      domain={selectedTrackedDomain || selectedDomainKey}
+                      accessToken={localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || ''}
+                      accountId={null}
+                      accounts={[]}
+                      onComplete={async () => {
+                        const accessToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
+                        if (accessToken) {
+                          toast.info('Refreshing business locations...');
+                          await applyGmbToken(accessToken);
+                          toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
+                        }
+                      }}
+                      onCancel={() => {
+                        toast.info('You can add this domain to Google Business Profile at any time.');
+                      }}
+                    />
+                  </div>
+                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Appear in the Local 3-Pack</p>
-                      <p className="text-xs text-muted-foreground">Active GMB listings rank higher in Google's coveted local map results</p>
-                    </div>
+                {gmbSyncError && (
+                  <div className="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 max-w-md mx-auto">
+                    <p className="text-sm text-amber-600 dark:text-amber-400">{gmbSyncError}</p>
                   </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Build Trust with Reviews</p>
-                      <p className="text-xs text-muted-foreground">Businesses with 40+ reviews earn 15% more customer trust than competitors</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Drive Foot Traffic & Calls</p>
-                      <p className="text-xs text-muted-foreground">Optimized profiles get 7x more clicks than incomplete listings</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-background/30">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">CADE-Powered Automation</p>
-                      <p className="text-xs text-muted-foreground">Automatic FAQ and article posts keep your listing fresh and engaging</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           ) : selectedDomainInGmb ? (
             /* Connected State - Domain has matching GMB listing */
             <GMBConnectedDashboard
               location={selectedDomainInGmb}
-              accessToken={sessionStorage.getItem('gmb_access_token') || ''}
+              accessToken={localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || sessionStorage.getItem('gmb_access_token') || ''}
               onDisconnect={() => {
+                // Note: We don't disconnect unified auth, just clear GMB-specific state
                 sessionStorage.removeItem('gmb_access_token');
                 sessionStorage.removeItem('gmb_cooldown_until');
                 sessionStorage.removeItem('gmb_token_expiry');
-                localStorage.removeItem('gmb_access_token');
-                localStorage.removeItem('gmb_token_expiry');
                 setGmbAuthenticated(false);
                 setGmbAccounts([]);
                 setGmbLocations([]);
@@ -3791,7 +3606,7 @@ f.parentNode.insertBefore(j,f);
                 toast.success('Disconnected from Google Business Profile');
               }}
               onRefresh={async () => {
-                const token = sessionStorage.getItem('gmb_access_token') || localStorage.getItem('gmb_access_token');
+                const token = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || sessionStorage.getItem('gmb_access_token');
                 if (token) {
                   toast.info('Refreshing GMB data...');
                   await applyGmbToken(token);
@@ -3800,8 +3615,53 @@ f.parentNode.insertBefore(j,f);
               }}
               isRefreshing={gmbConnecting}
             />
+          ) : (selectedTrackedDomain || selectedDomainKey) && !selectedDomainInGmb ? (
+            /* Authenticated but no domain match - show wizard directly */
+            <div className="space-y-6">
+              {/* Compact Header Row */}
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-bold">Google Business Profile</h2>
+                      <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        <AlertTriangle className="w-3 h-3" />
+                        No Listing Found
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{selectedTrackedDomain || selectedDomainKey}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Show Wizard Directly */}
+              <GMBOnboardingWizard
+                domain={selectedTrackedDomain || selectedDomainKey}
+                accessToken={localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || sessionStorage.getItem('gmb_access_token') || ''}
+                accountId={selectedGmbAccount}
+                accounts={gmbAccounts}
+                onComplete={async () => {
+                  setGmbOnboardingStep(0);
+                  const accessToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
+                  if (accessToken) {
+                    toast.info('Refreshing business locations...');
+                    await applyGmbToken(accessToken);
+                    toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
+                  } else {
+                    toast.success('Business listing process completed');
+                  }
+                }}
+                onCancel={() => {
+                  // Can't really cancel since there's no listing - just show a message
+                  toast.info('You can add this domain to Google Business Profile at any time.');
+                }}
+              />
+            </div>
           ) : (
-            /* Authenticated but no domain match - show account linked state */
+            /* Authenticated but no domain selected - show account overview */
             <div className="space-y-6">
               {/* Compact Header Row */}
               <div className="flex items-center justify-between pb-4 border-b border-border">
@@ -3813,447 +3673,64 @@ f.parentNode.insertBefore(j,f);
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-bold">Google Business Profile</h2>
                       {gmbAccounts.length > 0 ? (
-                        <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded-full">
-                          <Globe className="w-3 h-3" />
-                          Account Linked
+                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          Connected via Google
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                          <AlertTriangle className="w-3 h-3" />
-                          Setup Required
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          <Globe className="w-3 h-3" />
+                          No Accounts
                         </span>
                       )}
                     </div>
-                    {(selectedTrackedDomain || selectedDomainKey) && (
-                      <p className="text-sm text-muted-foreground">{selectedTrackedDomain || selectedDomainKey}</p>
-                    )}
+                    <p className="text-sm text-muted-foreground">Select a domain above to view or create a listing</p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-destructive"
-                  onClick={() => {
-                    sessionStorage.removeItem('gmb_access_token');
-                    sessionStorage.removeItem('gmb_cooldown_until');
-                    setGmbAuthenticated(false);
-                    setGmbAccounts([]);
-                    setGmbLocations([]);
-                    setGmbOnboardingStep(0);
-                    toast.success('Disconnected from Google Business Profile');
-                  }}
-                >
-                  Disconnect
-                </Button>
               </div>
-              
-              {/* Main Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column - Domain Status */}
-                <div className="flex flex-col">
-                  {/* Domain Not Found Card */}
-                  {(selectedTrackedDomain || selectedDomainKey) && !selectedDomainInGmb && gmbOnboardingStep === 0 && (
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden flex-1 flex flex-col">
-                      <div className="p-5">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-9 h-9 rounded-lg bg-amber-500/15 flex items-center justify-center">
-                            <AlertTriangle className="w-4.5 h-4.5 text-amber-500" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-base">Domain Not Linked</h3>
-                            <p className="text-xs text-muted-foreground">No matching Business Profile found</p>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          <span className="font-medium text-foreground">{selectedTrackedDomain || selectedDomainKey}</span> isn't connected to any of your Google Business Profile locations.
-                        </p>
-                        <Button
-                          onClick={() => setGmbOnboardingStep(1)}
-                          size="sm"
-                          className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Business to Google Maps
-                        </Button>
-                      </div>
-                      
-                      {/* Simulated Google Maps Listing Preview */}
-                      <div className="border-t border-amber-500/20 bg-background/40 p-4">
-                        <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3" />
-                          Preview of your listing on Google Maps
-                        </p>
-                        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-sm">
-                          {/* Map placeholder */}
-                          <div className="h-32 bg-gradient-to-br from-blue-100 to-green-50 dark:from-blue-950/30 dark:to-green-950/20 relative">
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              {/* Stylized map grid lines */}
-                              <div className="absolute inset-0 opacity-20">
-                                <div className="grid grid-cols-6 h-full">
-                                  {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="border-r border-muted-foreground/20" />
-                                  ))}
-                                </div>
-                                <div className="absolute inset-0 grid grid-rows-4">
-                                  {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="border-b border-muted-foreground/20" />
-                                  ))}
-                                </div>
-                              </div>
-                              {/* Center pin */}
-                              <div className="relative z-10">
-                                <div className="w-8 h-8 rounded-full bg-red-500 shadow-lg flex items-center justify-center animate-pulse">
-                                  <MapPin className="w-5 h-5 text-white" />
-                                </div>
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45" />
-                              </div>
-                            </div>
-                          </div>
-                          {/* Listing card */}
-                          <div className="p-3">
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
-                                <Building className="w-5 h-5 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm truncate">Your Business Name</p>
-                                <p className="text-xs text-muted-foreground">Business Category</p>
-                                <div className="flex items-center gap-1 mt-1">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                  ))}
-                                  <span className="text-xs text-muted-foreground ml-1">(0 reviews)</span>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                  <Globe className="w-3 h-3" />
-                                  {selectedTrackedDomain || selectedDomainKey}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                          This is a preview. Your actual listing will appear on Google Maps after verification.
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Domain Linked Success Card */}
-                  {selectedDomainInGmb && (
-                    <div className="rounded-xl border border-green-500/30 bg-gradient-to-br from-green-500/5 to-emerald-500/5 overflow-hidden">
-                      <div className="p-5">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-9 h-9 rounded-lg bg-green-500/15 flex items-center justify-center">
-                            <CheckCircle className="w-4.5 h-4.5 text-green-500" />
+              {/* All Locations Grid */}
+              {gmbLocations.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    All Business Locations ({gmbLocations.length})
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {gmbLocations.map((location) => (
+                      <div
+                        key={location.name}
+                        className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-green-500/20 flex items-center justify-center flex-shrink-0">
+                            <Building className="w-5 h-5 text-primary" />
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-base">Domain Linked</h3>
-                            <p className="text-xs text-muted-foreground">Business Profile found</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-background/60 rounded-lg border border-border">
-                          <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{selectedDomainInGmb.title}</p>
-                            {selectedDomainInGmb.storefrontAddress && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {selectedDomainInGmb.storefrontAddress.locality}, {selectedDomainInGmb.storefrontAddress.administrativeArea}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{location.title}</p>
+                            {location.storefrontAddress?.locality && (
+                              <p className="text-xs text-muted-foreground">
+                                {location.storefrontAddress.locality}, {location.storefrontAddress.administrativeArea}
+                              </p>
+                            )}
+                            {location.websiteUri && (
+                              <p className="text-xs text-primary truncate mt-1">
+                                {location.websiteUri.replace(/^https?:\/\/(www\.)?/, '')}
                               </p>
                             )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Business Accounts */}
-                  {gmbAccounts.length > 0 && gmbOnboardingStep === 0 && (
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                      <div className="px-5 py-3 border-b border-border bg-muted/30">
-                        <h3 className="text-sm font-medium">Your Business Accounts</h3>
-                      </div>
-                      <div className="p-3 space-y-2">
-                        {gmbAccounts.map((account) => (
-                          <div
-                            key={account.name}
-                            onClick={() => setSelectedGmbAccount(account.name)}
-                            className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                              selectedGmbAccount === account.name
-                                ? 'border-primary bg-primary/5'
-                                : 'border-transparent hover:border-border hover:bg-muted/30'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center">
-                                  <Building className="w-4 h-4 text-white" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">{account.accountName}</p>
-                                  <p className="text-xs text-muted-foreground capitalize">{account.type.replace('_', ' ')}</p>
-                                </div>
-                              </div>
-                              {selectedGmbAccount === account.name && (
-                                <CheckCircle className="w-4 h-4 text-primary" />
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column - API Status / Actions */}
-                <div className="flex flex-col">
-                  {/* Quota Error Card */}
-                  {gmbOnboardingStep === 0 && gmbAccounts.length === 0 && (gmbSyncError?.includes('429') || gmbSyncError?.includes('quota') || gmbSyncError?.includes('Quota')) && (
-                    <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5 overflow-hidden flex-1 flex flex-col">
-                      <div className="px-5 py-3 border-b border-amber-500/20 bg-amber-500/5">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
-                          <h3 className="font-semibold text-sm">API Access Required</h3>
-                        </div>
-                      </div>
-                      <div className="p-5 space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Your Google Cloud project needs API quota approval for Business Profile APIs.
-                        </p>
-                        
-                        <div className="bg-background/60 rounded-lg p-4 space-y-2 text-sm">
-                          <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-2">Setup Steps</p>
-                          <ol className="space-y-2 text-muted-foreground">
-                            <li className="flex gap-2">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                              <span>Open <a href="https://support.google.com/business/contact/business_profile_apis_contact_form" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">GBP API Contact Form</a></span>
-                            </li>
-                            <li className="flex gap-2">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                              <span>Select <strong className="text-foreground">"Quota Increase Request"</strong></span>
-                            </li>
-                            <li className="flex gap-2">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                              <span>Project #: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">1002415062213</code></span>
-                            </li>
-                            <li className="flex gap-2">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
-                              <span>Wait 24-48 hours for approval</span>
-                            </li>
-                          </ol>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            onClick={() => window.open('https://support.google.com/business/contact/business_profile_apis_contact_form', '_blank')}
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                          >
-                            Open GBP Form
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              sessionStorage.removeItem('gmb_cooldown_until');
-                              const token = sessionStorage.getItem('gmb_access_token');
-                              if (token) {
-                                toast.info('Retrying sync...');
-                                applyGmbToken(token);
-                              }
-                            }}
-                          >
-                            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                            Retry
-                          </Button>
-                        </div>
-                        
-                        {gmbLastSyncAt && (
-                          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                            Last attempt: {new Date(gmbLastSyncAt).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Accounts Found - Non-quota error */}
-                  {gmbOnboardingStep === 0 && gmbAccounts.length === 0 && !(gmbSyncError?.includes('429') || gmbSyncError?.includes('quota') || gmbSyncError?.includes('Quota')) && (
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                      <div className="p-8 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                          <Building className="w-7 h-7 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-medium mb-1">No Business Accounts Found</h3>
-                        <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">
-                          The connected Google account doesn't have access to any Business Profiles.
-                        </p>
-                        {gmbSyncError && (
-                          <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-left mb-4 max-w-sm mx-auto">
-                            <p className="text-xs font-medium text-foreground mb-1">Details</p>
-                            <p className="text-xs text-muted-foreground break-words">{gmbSyncError}</p>
-                          </div>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            sessionStorage.removeItem('gmb_access_token');
-                            sessionStorage.removeItem('gmb_token_expiry');
-                            sessionStorage.removeItem('gmb_cooldown_until');
-                            setGmbAuthenticated(false);
-                            setGmbAccounts([]);
-                            setGmbLocations([]);
-                            setGmbOnboardingStep(0);
-                            toast.message('Disconnected. Please reconnect with the correct Google account.');
-                          }}
-                        >
-                          Disconnect & Reconnect
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quick Actions when accounts exist */}
-                  {gmbAccounts.length > 0 && gmbOnboardingStep === 0 && !selectedDomainInGmb && (
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                      <div className="px-5 py-3 border-b border-border bg-muted/30">
-                        <h3 className="text-sm font-medium">Quick Actions</h3>
-                      </div>
-                      <div className="p-4 space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => setGmbOnboardingStep(1)}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add New Business Location
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start text-muted-foreground"
-                          onClick={() => {
-                            const token = sessionStorage.getItem('gmb_access_token');
-                            if (token) {
-                              toast.info('Refreshing...');
-                              applyGmbToken(token);
-                            }
-                          }}
-                        >
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Refresh Locations
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Performance Panel moved to GMBConnectedDashboard */}
-
-              {/* Onboarding Wizard */}
-              {gmbOnboardingStep > 0 && (
-                <GMBOnboardingWizard
-                  domain={selectedTrackedDomain || selectedDomainKey}
-                  accessToken={sessionStorage.getItem('gmb_access_token') || ''}
-                  accountId={selectedGmbAccount}
-                  accounts={gmbAccounts}
-                  onComplete={async () => {
-                    setGmbOnboardingStep(0);
-                    const accessToken = sessionStorage.getItem('gmb_access_token');
-                    if (accessToken) {
-                      toast.info('Refreshing business locations...');
-                      await applyGmbToken(accessToken);
-                      toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
-                    } else {
-                      toast.success('Business listing process completed');
-                    }
-                  }}
-                  onCancel={() => {
-                    setGmbOnboardingStep(0);
-                  }}
-                />
-              )}
-
-              {/* All Locations for Domain - Grid below main content */}
-              {gmbLocationsForSelectedDomain.length > 0 && gmbOnboardingStep === 0 && (
-                <div className="space-y-4 pt-4 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Locations for {selectedTrackedDomain || selectedDomainKey || 'selected domain'} ({gmbLocationsForSelectedDomain.length})
-                    </h3>
-                    <p className="text-xs text-muted-foreground">Click a location to view performance</p>
+                    ))}
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {gmbLocationsForSelectedDomain.map((location) => {
-                      const isMatchedToDomain = selectedDomainInGmb?.name === location.name;
-                      const isSelected = selectedGmbLocation === location.name;
-                      return (
-                        <div
-                          key={location.name}
-                          onClick={() => setSelectedGmbLocation(isSelected ? null : location.name)}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                              : isMatchedToDomain
-                              ? 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
-                              : 'border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/30'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <MapPin className={`w-5 h-5 mt-0.5 ${isSelected ? 'text-primary' : isMatchedToDomain ? 'text-green-500' : 'text-muted-foreground'}`} />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-medium">{location.title}</p>
-                                {isMatchedToDomain && (
-                                  <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
-                                    Matched to {selectedTrackedDomain || selectedDomainKey}
-                                  </Badge>
-                                )}
-                                {isSelected && (
-                                  <Badge variant="outline" className="text-xs">
-                                    Viewing
-                                  </Badge>
-                                )}
-                              </div>
-                              {location.storefrontAddress && (
-                                <p className="text-sm text-muted-foreground">
-                                  {location.storefrontAddress.locality}, {location.storefrontAddress.administrativeArea}
-                                </p>
-                              )}
-                              {location.websiteUri && (
-                                <p className="text-xs text-primary mt-1">{location.websiteUri}</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Performance Panel for Selected Location */}
-                  {selectedGmbLocation && (
-                    <div className="pt-4">
-                      <GMBPerformancePanel
-                        accessToken={sessionStorage.getItem('gmb_access_token') || ''}
-                        locationName={selectedGmbLocation}
-                        locationTitle={gmbLocations.find(l => l.name === selectedGmbLocation)?.title || 'Business Location'}
-                      />
-                    </div>
-                  )}
                 </div>
-              )}
-              
-              {/* Coming Soon Footer */}
-              {gmbOnboardingStep === 0 && (
-                <div className="pt-6 border-t border-border">
-                  <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-                    Full GMB Management Coming Soon
-                  </Badge>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Review responses, post updates, and analytics will be available in the next update.
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    <MapPin className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-medium mb-2">No Business Listings</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    Select a domain from the dropdown above to check if it has a Google Business Profile listing or to create a new one.
                   </p>
                 </div>
               )}
