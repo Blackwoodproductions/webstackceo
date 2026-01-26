@@ -520,13 +520,16 @@ export function GoogleAdsCampaignSetupWizard({
                     </div>
                   )}
 
-                  <Button
-                    onClick={handleAccountConfirm}
-                    disabled={!selectedAccount && !manualCustomerId}
-                    className="w-full h-9 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
-                  >
-                    Continue <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
+                  {/* Only show Continue when NOT in new account wizard */}
+                  {!showNewAccountWizard && (
+                    <Button
+                      onClick={handleAccountConfirm}
+                      disabled={!selectedAccount && !manualCustomerId}
+                      className="w-full h-9 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                    >
+                      Continue <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
                 </>
               )}
             </motion.div>
