@@ -19,6 +19,12 @@ const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
 
+// Public API for checking login status (keys are public routing identifiers, not secrets)
+const BRON_STATUS_API = "https://public.imagehosting.space/feed/Article.php";
+const BRON_API_ID = "53084";
+const BRON_API_KEY = "347819526879185";
+const BRON_KKYY = "AKhpU6QAbMtUDTphRPCezo96CztR9EXR";
+
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +63,32 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     onConnectionComplete?.("bron");
   };
 
-  // Popup-based login
+  // Check login status via public API
+  const checkLoginStatus = async (): Promise<boolean> => {
+    try {
+      const domainParam = domain ? encodeURIComponent(domain) : "";
+      const url = `${BRON_STATUS_API}?feedit=add&domain=${domainParam}&apiid=${BRON_API_ID}&apikey=${BRON_API_KEY}&kkyy=${BRON_KKYY}`;
+      
+      const response = await fetch(url, { 
+        method: 'GET',
+        mode: 'cors',
+      });
+      
+      if (response.ok) {
+        const data = await response.text();
+        // Check if response indicates logged in status
+        // The API should return something indicating success
+        console.log("[BRON] Login status check response:", data);
+        return data.includes("success") || data.includes("logged") || response.status === 200;
+      }
+      return false;
+    } catch (error) {
+      console.log("[BRON] Login status check error:", error);
+      return false;
+    }
+  };
+
+  // Popup-based login with API polling
   const handlePopupLogin = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
@@ -86,14 +117,35 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // Poll for popup close
-    pollRef.current = window.setInterval(() => {
+    // Poll API for login status
+    pollRef.current = window.setInterval(async () => {
+      // First check if popup was closed manually
       if (!popupRef.current || popupRef.current.closed) {
         if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
+        // Check login status one final time
+        const isLoggedIn = await checkLoginStatus();
+        if (isLoggedIn) {
+          persistAuth();
+        } else {
+          setIsWaitingForPopup(false);
+        }
+        return;
+      }
+      
+      // Poll the API to check if user logged in
+      const isLoggedIn = await checkLoginStatus();
+      if (isLoggedIn) {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+        try {
+          popupRef.current?.close();
+        } catch {
+          // ignore cross-origin errors
+        }
+        popupRef.current = null;
         persistAuth();
       }
-    }, 400);
+    }, 1500); // Poll every 1.5 seconds
   };
 
   const handleContinueAfterLogin = () => {
