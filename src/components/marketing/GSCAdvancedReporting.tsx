@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Search, Globe, FileCheck, FileX, AlertTriangle, CheckCircle,
   TrendingUp, RefreshCw, Loader2, ArrowUpRight, ArrowDownRight,
@@ -961,45 +962,121 @@ export const GSCAdvancedReporting = ({
   }, [selectedSite]);
 
   return (
-    <Card className="mt-4">
-      <CardHeader className="pb-3">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="relative mt-4 overflow-hidden rounded-xl border border-amber-500/20 bg-gradient-to-br from-card via-amber-500/3 to-card"
+    >
+      {/* Background Effects - Amber/Orange theme for GSC Advanced */}
+      <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(38 92% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(38 92% 50%) 1px, transparent 1px)`,
+            backgroundSize: '30px 30px',
+          }}
+        />
+        
+        {/* Animated corner gradient blobs */}
+        <motion.div 
+          className="absolute -top-20 -right-20 w-[300px] h-[300px] bg-gradient-to-bl from-amber-500/15 via-orange-500/10 to-transparent rounded-full blur-2xl"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute -bottom-20 -left-20 w-[250px] h-[250px] bg-gradient-to-tr from-violet-500/10 via-pink-500/5 to-transparent rounded-full blur-2xl"
+          animate={{ 
+            scale: [1.1, 1, 1.1],
+            opacity: [0.4, 0.7, 0.4],
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        
+        {/* Animated vertical scanning line */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/3 to-transparent"
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+        />
+        
+        {/* Floating particles */}
+        <motion.div
+          className="absolute top-[15%] right-[10%] w-1.5 h-1.5 rounded-full bg-amber-400/60"
+          animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-[25%] left-[8%] w-1 h-1 rounded-full bg-violet-400/60"
+          animate={{ y: [0, -6, 0], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-pink-400/60"
+          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.8, repeat: Infinity, delay: 1 }}
+        />
+        
+        {/* Radial glow from top */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-amber-500/5 via-transparent to-transparent" />
+      </div>
+      
+      {/* Header with glassmorphism */}
+      <div className="relative px-5 py-4 border-b border-amber-500/10 bg-gradient-to-r from-amber-500/5 via-transparent to-violet-500/5 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           {/* Left side: Domain with favicon */}
           <div className="flex items-center gap-3">
             {displayDomain ? (
               <>
-                <img 
-                  src={`https://www.google.com/s2/favicons?domain=${displayDomain}&sz=32`}
-                  alt=""
-                  className="w-6 h-6 rounded"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+                <motion.div 
+                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <img 
+                    src={`https://www.google.com/s2/favicons?domain=${displayDomain}&sz=32`}
+                    alt=""
+                    className="w-5 h-5 rounded"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </motion.div>
                 <div>
-                  <CardTitle className="text-base text-primary font-semibold">{displayDomain}</CardTitle>
-                  <CardDescription className="text-xs">Deep dive into keywords, countries & indexation</CardDescription>
+                  <h3 className="text-base font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">{displayDomain}</h3>
+                  <p className="text-xs text-muted-foreground">Deep dive into keywords, countries & indexation</p>
                 </div>
               </>
             ) : (
-              <div>
-                <CardTitle className="text-base text-muted-foreground">No site selected</CardTitle>
-                <CardDescription className="text-xs">Connect to Google Search Console above</CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-muted/30 border border-border flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-base font-medium text-muted-foreground">No site selected</h3>
+                  <p className="text-xs text-muted-foreground">Connect to Google Search Console above</p>
+                </div>
               </div>
             )}
           </div>
           
-          {/* Right side: Advanced Reporting label with icon */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-white" />
+          {/* Right side: Advanced Reporting label with animated badge */}
+          <motion.div 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/10 to-pink-500/10 border border-violet-500/20"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <BarChart3 className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Advanced Reporting</span>
-          </div>
+            <span className="text-sm font-medium bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">Advanced Reporting</span>
+          </motion.div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div className="p-5">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="h-9 grid grid-cols-3 w-full">
             <TabsTrigger value="keywords" className="text-xs">
@@ -1018,109 +1095,144 @@ export const GSCAdvancedReporting = ({
 
           {/* Keywords Tab */}
           <TabsContent value="keywords" className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 mb-3"
+            >
               <div className="relative flex-1">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Filter keywords..."
                   value={keywordFilter}
                   onChange={(e) => setKeywordFilter(e.target.value)}
-                  className="pl-8 h-9"
+                  className="pl-9 h-9 bg-background/50 border-amber-500/20 focus:border-amber-500/50"
                 />
               </div>
-              <Badge variant="secondary" className="text-xs">
+              <Badge className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30">
                 {queryData.length} keywords
               </Badge>
-            </div>
+            </motion.div>
 
             {/* Position Distribution Chart */}
             <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-secondary/20 border-0">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <PieChartIcon className="w-4 h-4 text-primary" />
-                    Position Distribution
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={keywordAnalytics.positionChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={70}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {keywordAnalytics.positionChartData.map((entry, index) => (
-                            <Cell key={index} fill={entry.fill} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--background))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                            fontSize: "12px",
-                          }}
-                          formatter={(value: number) => [`${value} keywords`, "Count"]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5 border border-amber-500/15 p-4"
+              >
+                {/* Subtle grid pattern */}
+                <div 
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(hsl(38 92% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(38 92% 50%) 1px, transparent 1px)`,
+                    backgroundSize: '20px 20px',
+                  }}
+                />
+                
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                    <PieChartIcon className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                    {keywordAnalytics.positionChartData.map((entry, i) => (
-                      <div key={i} className="flex items-center gap-1 text-xs">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.fill }} />
-                        <span className="text-muted-foreground">{entry.name}:</span>
-                        <span className="font-medium">{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  <h4 className="text-sm font-semibold">Position Distribution</h4>
+                </div>
+                
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={keywordAnalytics.positionChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {keywordAnalytics.positionChartData.map((entry, index) => (
+                          <Cell key={index} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                        }}
+                        formatter={(value: number) => [`${value} keywords`, "Count"]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                  {keywordAnalytics.positionChartData.map((entry, i) => (
+                    <div key={i} className="flex items-center gap-1 text-xs">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.fill }} />
+                      <span className="text-muted-foreground">{entry.name}:</span>
+                      <span className="font-medium">{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
 
               {/* CTR vs Position */}
-              <Card className="bg-secondary/20 border-0">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-cyan-500" />
-                    CTR by Position
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  <div className="h-[180px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={keywordAnalytics.ctrPositionData.slice(0, 20)} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                        <XAxis dataKey="position" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
-                        <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={30} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--background))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "8px",
-                            fontSize: "11px",
-                          }}
-                          formatter={(value: number, name: string) => [
-                            name === "ctr" ? `${value.toFixed(2)}%` : value,
-                            name === "ctr" ? "CTR" : name,
-                          ]}
-                        />
-                        <Bar dataKey="clicks" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} opacity={0.6} />
-                        <Line type="monotone" dataKey="ctr" stroke="#10b981" strokeWidth={2} dot={false} />
-                      </ComposedChart>
-                    </ResponsiveContainer>
+              <motion.div 
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/5 via-card to-violet-500/5 border border-cyan-500/15 p-4"
+              >
+                {/* Subtle grid pattern */}
+                <div 
+                  className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                  style={{
+                    backgroundImage: `linear-gradient(hsl(190 95% 40%) 1px, transparent 1px), linear-gradient(90deg, hsl(190 95% 40%) 1px, transparent 1px)`,
+                    backgroundSize: '20px 20px',
+                  }}
+                />
+                
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                    <TrendingUp className="w-3.5 h-3.5 text-white" />
                   </div>
-                </CardContent>
-              </Card>
+                  <h4 className="text-sm font-semibold">CTR by Position</h4>
+                </div>
+                
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={keywordAnalytics.ctrPositionData.slice(0, 20)} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="position" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickLine={false} axisLine={false} width={30} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "11px",
+                        }}
+                        formatter={(value: number, name: string) => [
+                          name === "ctr" ? `${value.toFixed(2)}%` : value,
+                          name === "ctr" ? "CTR" : name,
+                        ]}
+                      />
+                      <Bar dataKey="clicks" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} opacity={0.6} />
+                      <Line type="monotone" dataKey="ctr" stroke="#10b981" strokeWidth={2} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </motion.div>
             </div>
 
             {/* Top Keywords Table */}
-            <Card className="bg-secondary/20 border-0">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-card via-amber-500/3 to-card border border-amber-500/15"
+            >
               <CardHeader className="pb-2 pt-3 px-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm">Top Performing Keywords</CardTitle>
@@ -1234,7 +1346,7 @@ export const GSCAdvancedReporting = ({
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </motion.div>
 
             {/* Opportunities */}
             {keywordAnalytics.opportunities.length > 0 && (
@@ -1926,8 +2038,8 @@ export const GSCAdvancedReporting = ({
             </Card>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </motion.div>
   );
 };
 
