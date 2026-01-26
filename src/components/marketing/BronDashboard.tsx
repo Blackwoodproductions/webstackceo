@@ -128,9 +128,44 @@ export function BronDashboard({ domain, onLogout }: BronDashboardProps) {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>Using demo data. Live API returned: {error}</span>
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-4 flex items-start gap-3 text-rose-600 dark:text-rose-400">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium">Failed to load BRON data</p>
+            <p className="text-sm mt-1 opacity-80">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refetch}
+              className="mt-3 gap-1.5 border-rose-500/30 hover:bg-rose-500/10"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State - No articles yet */}
+      {!isLoading && !error && articles.length === 0 && (
+        <div className="bg-secondary/30 border border-border/50 rounded-lg p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-green-500/20 flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-emerald-500" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No articles yet</h3>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            Your BRON dashboard is connected but there are no articles for <strong>{domain}</strong> yet. 
+            Articles will appear here once content is published through the BRON platform.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refetch}
+            className="mt-4 gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Check Again
+          </Button>
         </div>
       )}
 

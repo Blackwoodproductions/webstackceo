@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.bron-login-status]
 verify_jwt = false
+
+[functions.bron-feed]
+verify_jwt = false
