@@ -16,7 +16,8 @@ interface BRONPlatformConnectProps {
 }
 
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/";
-const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
+// Redirect-based login: redirect_uri points back to our callback page
+const BRON_LOGIN_URL = `https://dashdev.imagehosting.space/login?redirect_uri=${encodeURIComponent(window.location.origin + '/bron-callback')}`;
 const STORAGE_KEY = "bron_dashboard_auth";
 
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
@@ -316,21 +317,46 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             </div>
             <CardTitle className="text-2xl text-amber-600 dark:text-amber-400">Popup Blocked</CardTitle>
             <CardDescription>
-              Your browser blocked the login popup. Please allow popups for this site to continue.
+              Your browser blocked the login popup. Please allow popups for webstack.ceo to continue.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Chrome Instructions */}
             <div className="bg-secondary/50 rounded-lg p-4 text-sm space-y-3">
-              <p className="font-semibold">How to allow popups:</p>
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                <div className="w-5 h-5 rounded bg-gradient-to-br from-red-500 via-yellow-500 to-green-500" />
+                <span>Google Chrome</span>
+              </div>
               <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li>Look for a <strong>blocked popup icon</strong> in your browser's address bar (usually on the right)</li>
-                <li>Click the icon and select <strong>"Always allow popups from this site"</strong></li>
-                <li>Alternatively, go to your browser settings → Privacy/Security → Popups → Add this site to allowed list</li>
+                <li>Click the <strong>three dots (⋮)</strong> in the top-right corner → <strong>Settings</strong></li>
+                <li>In the left menu, click <strong>"Privacy and security"</strong></li>
+                <li>Click <strong>"Site Settings"</strong></li>
+                <li>Under Content, find and click <strong>"Pop-ups and redirects"</strong></li>
+                <li>Click <strong>"Add"</strong> next to "Allowed to send pop-ups"</li>
+                <li>Enter <code className="bg-background px-1.5 py-0.5 rounded text-xs font-mono">[*.]webstack.ceo</code> and click <strong>Add</strong></li>
               </ol>
-              <p className="text-xs text-muted-foreground pt-2">
-                After allowing popups, click the button below to try again.
-              </p>
             </div>
+
+            {/* Firefox Instructions */}
+            <div className="bg-secondary/50 rounded-lg p-4 text-sm space-y-3">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                <div className="w-5 h-5 rounded bg-gradient-to-br from-orange-500 to-orange-600" />
+                <span>Mozilla Firefox</span>
+              </div>
+              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                <li>Click the <strong>three lines (☰)</strong> in the top-right corner → <strong>Settings</strong></li>
+                <li>In the left menu, click <strong>"Privacy & Security"</strong></li>
+                <li>Scroll down to the <strong>"Permissions"</strong> section</li>
+                <li>Find <strong>"Block pop-up windows"</strong> and click <strong>"Exceptions..."</strong></li>
+                <li>Enter <code className="bg-background px-1.5 py-0.5 rounded text-xs font-mono">webstack.ceo</code> in the address field</li>
+                <li>Click <strong>"Allow"</strong> then <strong>"Save Changes"</strong></li>
+              </ol>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              After allowing popups, click the button below to try again.
+            </p>
+            
             <Button
               onClick={() => {
                 setPopupBlocked(false);
