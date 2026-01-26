@@ -188,8 +188,35 @@ const LiveChatWidget = () => {
       .limit(8);
     
     if (sessions) {
+      // DEDUPLICATION: 
+      // 1. Always deduplicate by session_id first (prevent same session appearing multiple times)
+      // 2. For authenticated users, keep only the most recent session per user_id
+      const deduplicatedSessions: any[] = [];
+      const seenSessionIds = new Set<string>();
+      const seenUserIds = new Set<string>();
+      
+      for (const session of sessions) {
+        // Skip if we've already seen this exact session_id
+        if (seenSessionIds.has(session.session_id)) {
+          continue;
+        }
+        
+        if (session.user_id) {
+          // Authenticated user - only keep their most recent session
+          if (!seenUserIds.has(session.user_id)) {
+            seenUserIds.add(session.user_id);
+            seenSessionIds.add(session.session_id);
+            deduplicatedSessions.push(session);
+          }
+        } else {
+          // Anonymous user - keep the session (already deduplicated by session_id above)
+          seenSessionIds.add(session.session_id);
+          deduplicatedSessions.push(session);
+        }
+      }
+      
       // Get unique user_ids that are not null
-      const userIds = sessions
+      const userIds = deduplicatedSessions
         .map((s: any) => s.user_id)
         .filter((id: string | null) => id !== null);
       
@@ -209,8 +236,8 @@ const LiveChatWidget = () => {
         }
       }
       
-      // Merge profile data with sessions - include current user's session
-      const visitorsWithProfiles = sessions
+      // Merge profile data with deduplicated sessions
+      const visitorsWithProfiles = deduplicatedSessions
         .map((v: any) => ({
           ...v,
           avatar_url: profilesMap[v.user_id]?.avatar_url || null,
