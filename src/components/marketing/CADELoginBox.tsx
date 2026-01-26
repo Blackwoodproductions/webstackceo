@@ -246,11 +246,32 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     try {
       const healthRes = await callCadeApi("health");
 
-      if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy") {
+      if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
         localStorage.setItem("cade_api_key", apiKey);
         setIsConnected(true);
         setHealth(healthRes.data || healthRes);
         toast.success("Successfully connected to CADE API!");
+        
+        // Auto-initiate domain crawl after successful login
+        if (domain) {
+          setTimeout(async () => {
+            toast.info(`Starting automatic crawl for ${domain}...`);
+            setCrawling(true);
+            try {
+              const crawlRes = await callCadeApi("crawl-domain", { force: true });
+              if (crawlRes?.success || crawlRes?.task_id || crawlRes?.message) {
+                toast.success(`Domain crawl initiated for ${domain}`);
+              } else if (crawlRes?.error) {
+                console.log("[CADE] Crawl response:", crawlRes);
+                // Don't show error toast for non-critical issues
+              }
+            } catch (crawlErr) {
+              console.log("[CADE] Auto-crawl error:", crawlErr);
+            } finally {
+              setCrawling(false);
+            }
+          }, 1000);
+        }
       } else {
         setError("Unable to verify API connection. Please check your API key.");
       }
