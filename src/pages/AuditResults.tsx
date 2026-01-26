@@ -2423,70 +2423,47 @@ const AuditResults = () => {
                       </div>
                     </div>
                     
-                    {/* Website Description with Join WebStack CTA */}
+                    {/* Website Description with Join WebStack CTA - Compact 50/50 split */}
                     {(websiteProfile?.summary || websiteProfile?.description) && (
                       <motion.div 
-                        className="grid grid-cols-1 md:grid-cols-5 gap-0 mt-4 rounded-xl bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 border border-border/30 overflow-hidden"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-3 rounded-lg bg-muted/20 border border-border/30 overflow-hidden"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                       >
-                        {/* Description - 3 columns */}
-                        <div className="md:col-span-3 flex items-start gap-3 p-5 border-l-2 border-primary/50">
-                          <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
-                            <Sparkles className="w-4 h-4 text-primary" />
-                          </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
+                        {/* Description - Left half */}
+                        <div className="flex items-start gap-2.5 p-3 border-l-2 border-primary/50">
+                          <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
                             {websiteProfile.summary || websiteProfile.description}
                           </p>
                         </div>
                         
-                        {/* Join WebStack CTA - 2 columns */}
-                        <div className="md:col-span-2 flex flex-col gap-4 p-5 bg-gradient-to-l from-primary/10 to-transparent border-t md:border-t-0 md:border-l border-border/30">
-                          {/* Header with badges inline */}
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/30 to-violet-500/20 border border-primary/30">
-                                <Zap className="w-4 h-4 text-primary" />
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-bold text-foreground">Join WebStack</h4>
-                                <p className="text-[10px] text-muted-foreground">AI-Powered SEO Platform</p>
-                              </div>
+                        {/* Join WebStack CTA - Right half */}
+                        <div className="flex items-center gap-4 p-3 bg-gradient-to-l from-primary/10 to-transparent border-t md:border-t-0 md:border-l border-border/30">
+                          {/* Trust Badges */}
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+                              <Users className="w-3.5 h-3.5 text-cyan-500" />
+                              <span className="text-[7px] font-bold text-cyan-500 mt-0.5">100+ Agencies</span>
+                            </div>
+                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20">
+                              <Crown className="w-3.5 h-3.5 text-amber-500" />
+                              <span className="text-[7px] font-bold text-amber-500 mt-0.5">1,000+ CEOs</span>
+                            </div>
+                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+                              <Bot className="w-3.5 h-3.5 text-violet-500" />
+                              <span className="text-[7px] font-bold text-violet-500 mt-0.5">Agentic AI</span>
                             </div>
                           </div>
                           
-                          {/* Trust Badges Row */}
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="flex flex-col items-center justify-center px-2 py-2 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-600/15 border border-cyan-500/30">
-                              <Users className="w-4 h-4 text-cyan-500" />
-                              <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">100+ Agencies</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center px-2 py-2 rounded-lg bg-gradient-to-br from-amber-500/15 to-yellow-600/15 border border-amber-500/30">
-                              <Crown className="w-4 h-4 text-amber-500" />
-                              <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">1,000+ CEOs</span>
-                            </div>
-                            <div className="flex flex-col items-center justify-center px-2 py-2 rounded-lg bg-gradient-to-br from-violet-500/15 to-purple-600/15 border border-violet-500/30">
-                              <Bot className="w-4 h-4 text-violet-500" />
-                              <span className="text-[8px] font-bold text-violet-600 dark:text-violet-400 mt-0.5">Agentic AI</span>
-                            </div>
-                          </div>
-                          
-                          {/* Key Benefits */}
-                          <div className="grid grid-cols-1 gap-1">
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              <span>Automated content & link building</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              <span>Real-time analytics & reporting</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              <span>White-label agency solutions</span>
-                            </div>
-                          </div>
+                          {/* CTA */}
+                          <Button size="sm" className="h-8 text-xs gap-1.5 shrink-0" asChild>
+                            <a href="/pricing">
+                              <Zap className="w-3.5 h-3.5" />
+                              Get Started
+                            </a>
+                          </Button>
                         </div>
                       </motion.div>
                     )}
