@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Search, Calendar, MessageCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Search, Calendar, MessageCircle, ArrowRight, Sparkles, DollarSign } from "lucide-react";
 
 interface GetStartedDialogProps {
   open: boolean;
@@ -43,6 +42,15 @@ const options = [
     gradient: "from-amber-400 to-orange-500",
     glow: "rgba(251,191,36,0.4)",
     action: "openChat",
+  },
+  {
+    id: "see-pricing",
+    title: "SEE PRICING",
+    description: "View our plans and find the perfect fit for your business",
+    icon: DollarSign,
+    href: "/pricing",
+    gradient: "from-emerald-400 to-teal-500",
+    glow: "rgba(52,211,153,0.4)",
   },
 ];
 
