@@ -1064,30 +1064,27 @@ export const GSCDashboardPanel = ({
   if (isLoading) {
     return (
       <Card className="relative overflow-hidden bg-card border-border/60">
-        {/* Background grid */}
+        {/* VI Dashboard Effects */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.02]"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
+            opacity: 0.03,
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
           }}
         />
-        {/* Corner glows */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-cyan-500/15 via-violet-500/10 to-transparent rounded-bl-[60px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-violet-500/10 to-transparent rounded-tr-[50px] pointer-events-none" />
-        {/* Scanning animation */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent animate-pulse" />
-        </div>
-        <CardContent className="relative z-10 flex items-center justify-center py-12">
+        <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-bl from-cyan-500/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-gradient-to-tr from-violet-500/15 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+        <CardContent className="relative z-10 flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="relative w-12 h-12 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-lg opacity-40 animate-pulse" />
-              <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-white" />
+            <div className="relative w-10 h-10 mx-auto mb-3">
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 blur-md opacity-40 animate-pulse" />
+              <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-white" />
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">Connecting to Google...</p>
+            <p className="text-xs text-muted-foreground">Connecting...</p>
           </div>
         </CardContent>
       </Card>
@@ -1099,51 +1096,53 @@ export const GSCDashboardPanel = ({
     return (
       <>
         <Card className="relative overflow-hidden bg-card border-border h-full flex flex-col group">
-          {/* High-tech background grid */}
+          {/* VI Dashboard Effects - Grid pattern */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
-              backgroundSize: '24px 24px',
+              opacity: 0.03,
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
             }}
           />
           
-          {/* Animated scanning line */}
-          <div 
-            className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none animate-pulse"
-            style={{ animationDuration: '4s' }}
-          />
+          {/* Corner gradient blobs - matching VI dashboard */}
+          <div className="absolute -top-16 -right-16 w-48 h-48 bg-gradient-to-bl from-cyan-500/15 via-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-gradient-to-tr from-violet-500/15 to-transparent rounded-full blur-3xl pointer-events-none" />
           
-          {/* Corner accent glows */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 via-violet-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-violet-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
+          {/* Scanning lines */}
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
           
           {/* Floating particles */}
-          <div className="absolute top-[20%] left-[10%] w-1 h-1 rounded-full bg-cyan-400/60 animate-pulse" style={{ animationDelay: '0s' }} />
-          <div className="absolute top-[40%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/50 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-[30%] left-[20%] w-1 h-1 rounded-full bg-cyan-300/40 animate-pulse" style={{ animationDelay: '2s' }} />
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-primary/30 animate-pulse pointer-events-none"
+              style={{ top: `${20 + i * 15}%`, left: `${10 + (i % 2) * 75}%`, animationDelay: `${i * 0.5}s` }}
+            />
+          ))}
           
-          <CardContent className="relative z-10 py-10 flex-1 flex items-center justify-center">
-            <div className="text-center max-w-md mx-auto">
-              {/* Glowing icon container */}
-              <div className="relative w-20 h-20 mx-auto mb-6">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform duration-300">
-                  <BarChart3 className="w-9 h-9 text-white" />
+          <CardContent className="relative z-10 py-8 flex-1 flex items-center justify-center">
+            <div className="text-center max-w-sm mx-auto">
+              <div className="relative w-14 h-14 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 blur-lg opacity-40" />
+                <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                  <BarChart3 className="w-7 h-7 text-white" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">Connect Google Search Console</h3>
-              <p className="text-muted-foreground text-sm mb-6">
-                Link your Search Console to see clicks, impressions, rankings, and sync with your visitor data.
+              <h3 className="text-lg font-bold mb-2 bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">Connect Search Console</h3>
+              <p className="text-muted-foreground text-xs mb-4">
+                Link to see clicks, impressions, and rankings.
               </p>
-              <Button onClick={handleGoogleLogin} className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-shadow">
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+              <Button onClick={handleGoogleLogin} size="sm" className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 shadow-lg shadow-cyan-500/20">
+                <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                   <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                Connect Search Console
+                Connect
               </Button>
             </div>
           </CardContent>
@@ -1187,58 +1186,61 @@ export const GSCDashboardPanel = ({
   return (
     <>
       <Card className="relative overflow-hidden bg-card border-border group">
-        {/* High-tech background grid */}
+        {/* VI Dashboard Effects - Grid pattern */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            opacity: 0.02,
-            backgroundImage: `linear-gradient(hsl(199 89% 48%) 1px, transparent 1px), linear-gradient(90deg, hsl(199 89% 48%) 1px, transparent 1px)`,
-            backgroundSize: '28px 28px',
+            opacity: 0.03,
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
           }}
         />
         
-        {/* Animated scanning line */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/3 to-transparent pointer-events-none animate-pulse"
-          style={{ animationDuration: '6s' }}
-        />
+        {/* Corner gradient blobs - matching VI dashboard */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-bl from-cyan-500/15 via-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-gradient-to-tr from-violet-500/15 to-transparent rounded-full blur-3xl pointer-events-none" />
         
-        {/* Corner accent glows */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-cyan-500/8 via-violet-500/4 to-transparent rounded-bl-[80px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-violet-500/8 to-transparent rounded-tr-[80px] pointer-events-none" />
+        {/* Scanning lines */}
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
         
         {/* Floating particles */}
-        <div className="absolute top-[15%] right-[8%] w-1 h-1 rounded-full bg-cyan-400/50 animate-pulse" />
-        <div className="absolute top-[35%] left-[5%] w-1.5 h-1.5 rounded-full bg-violet-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-[25%] right-[12%] w-1 h-1 rounded-full bg-cyan-300/30 animate-pulse" style={{ animationDelay: '2s' }} />
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-primary/30 animate-pulse pointer-events-none"
+            style={{
+              top: `${15 + i * 12}%`,
+              left: `${5 + (i % 3) * 40}%`,
+              animationDelay: `${i * 0.5}s`,
+            }}
+          />
+        ))}
         
-        <CardHeader className="relative z-10 pb-4">
+        {/* Compact Header */}
+        <CardHeader className="relative z-10 py-3 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
-                <BarChart3 className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <BarChart3 className="w-4 h-4 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Search Console Analytics</CardTitle>
-                  <span className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <CardTitle className="text-base">Search Console</CardTitle>
+                  <span className="flex items-center gap-1 text-[7px] font-bold px-1 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
                     LIVE
                   </span>
                 </div>
-                <CardDescription className="text-xs">Performance data from Google</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                <X className="w-3 h-3 mr-1" />
-                Disconnect
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" onClick={handleDisconnect} className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive">
+              <X className="w-3 h-3" />
+            </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="relative z-10 space-y-4">
+        <CardContent className="relative z-10 space-y-3 pt-0 px-4 pb-4">
           {/* Domain Not in GSC Warning */}
           {isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
@@ -1345,521 +1347,211 @@ export const GSCDashboardPanel = ({
             </Button>
           </div>
 
-          {/* Dropdown Content Panels */}
+          {/* Compact Dropdown Panels */}
           {activeDropdown === 'queries' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Search className="w-4 h-4 text-primary" />
-                  Top Keywords
-                </h4>
+            <div className="bg-secondary/20 rounded-lg p-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-                    <Input placeholder="Filter..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-7 h-7 text-xs w-32" />
-                  </div>
-                  <Badge variant="secondary" className="text-[10px]">{queryData.length} total</Badge>
+                  <Search className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-medium">Top Keywords</span>
+                  <Badge variant="secondary" className="text-[9px] h-4">{queryData.length}</Badge>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground" />
+                  <Input placeholder="Filter..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} className="pl-6 h-6 text-[10px] w-24" />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
-                {filteredQueryData.map((row, i) => {
-                  const isTopPosition = row.position <= 3;
-                  const isGoodPosition = row.position <= 10;
-                  const ctrPercent = row.ctr * 100;
-                  const nodeSize = isTopPosition ? 28 : isGoodPosition ? 24 : 20;
-                  const nodeColor = isTopPosition ? '#22c55e' : isGoodPosition ? 'hsl(var(--primary))' : '#6b7280';
-                  
-                  return (
-                    <div 
-                      key={i} 
-                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
-                      style={{ width: '85px' }}
-                    >
-                      {/* Circular node like diagram */}
-                      <div className="relative mb-2">
-                        {/* Glow ring for top positions */}
-                        {isTopPosition && (
-                          <div 
-                            className="absolute inset-0 rounded-full animate-pulse"
-                            style={{
-                              width: nodeSize * 2 + 12,
-                              height: nodeSize * 2 + 12,
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              background: `radial-gradient(circle, ${nodeColor}20 0%, transparent 70%)`,
-                            }}
-                          />
-                        )}
-                        
-                        {/* Main circle */}
-                        <div 
-                          className="rounded-full flex items-center justify-center relative"
-                          style={{
-                            width: nodeSize * 2,
-                            height: nodeSize * 2,
-                            background: 'hsl(var(--background))',
-                            border: `${isTopPosition ? 3 : 2}px solid ${nodeColor}`,
-                            boxShadow: isTopPosition ? `0 0 12px ${nodeColor}40` : 'none',
-                          }}
-                        >
-                          {/* Click count inside */}
-                          <span 
-                            className="font-bold"
-                            style={{ 
-                              fontSize: row.clicks > 999 ? '11px' : '13px',
-                              color: nodeColor 
-                            }}
-                          >
-                            {row.clicks > 999 ? `${(row.clicks / 1000).toFixed(1)}k` : row.clicks}
-                          </span>
-                          
-                          {/* Position badge - top right */}
-                          <div 
-                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                            style={{ background: nodeColor }}
-                          >
-                            {row.position.toFixed(0)}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Keyword text */}
-                      <p className="text-[10px] font-medium text-center truncate w-full" title={row.keys[0]}>
-                        {row.keys[0].length > 12 ? row.keys[0].substring(0, 12) + '...' : row.keys[0]}
-                      </p>
-                      
-                      {/* Mini stats row */}
-                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
-                        <span>{row.impressions} imp</span>
-                        <span className="text-[6px]">•</span>
-                        <span className={ctrPercent > 5 ? 'text-green-500 font-medium' : ''}>
-                          {ctrPercent.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {filteredQueryData.length === 0 && (
-                  <div className="w-full text-center text-muted-foreground text-xs py-8">
-                    {isFetching ? "Loading..." : "No keywords found"}
-                  </div>
-                )}
+              <div className="max-h-[180px] overflow-y-auto">
+                <table className="w-full text-[10px]">
+                  <thead className="sticky top-0 bg-secondary/80">
+                    <tr className="text-muted-foreground">
+                      <th className="text-left py-1 px-2">#</th>
+                      <th className="text-left py-1 px-2">Keyword</th>
+                      <th className="text-right py-1 px-1">Clicks</th>
+                      <th className="text-right py-1 px-1">Imp</th>
+                      <th className="text-right py-1 px-1">Pos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredQueryData.slice(0, 15).map((row, i) => (
+                      <tr key={i} className="border-t border-border/30 hover:bg-secondary/30">
+                        <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                        <td className="py-1 px-2 truncate max-w-[150px]" title={row.keys[0]}>{row.keys[0]}</td>
+                        <td className="py-1 px-1 text-right font-medium text-primary">{formatNumber(row.clicks)}</td>
+                        <td className="py-1 px-1 text-right text-muted-foreground">{formatNumber(row.impressions)}</td>
+                        <td className={`py-1 px-1 text-right font-medium ${row.position <= 3 ? 'text-green-500' : row.position <= 10 ? 'text-amber-500' : ''}`}>{row.position.toFixed(1)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredQueryData.length === 0 && <p className="text-center py-4 text-muted-foreground text-xs">{isFetching ? "Loading..." : "No data"}</p>}
               </div>
             </div>
           )}
 
           {activeDropdown === 'pages' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-cyan-500" />
-                  Top Pages
-                </h4>
-                <Badge variant="secondary" className="text-[10px]">{pageData.length} total</Badge>
+            <div className="bg-secondary/20 rounded-lg p-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-cyan-500" />
+                  <span className="text-xs font-medium">Top Pages</span>
+                  <Badge variant="secondary" className="text-[9px] h-4">{pageData.length}</Badge>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
-                {pageData.slice(0, 25).map((row, i) => {
-                  let path = row.keys[0];
-                  try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
-                  
-                  const pageName = path === '/' ? 'Home' : path.split('/').filter(Boolean).pop() || path;
-                  const isTopPosition = row.position <= 3;
-                  const isGoodPosition = row.position <= 10;
-                  const nodeSize = isTopPosition ? 28 : isGoodPosition ? 24 : 20;
-                  const nodeColor = isTopPosition ? '#06b6d4' : isGoodPosition ? '#0891b2' : '#6b7280';
-                  
-                  // Page type icons - using Lucide-style approach
-                  const getPageIcon = () => {
-                    if (path === '/') return '🏠';
-                    if (path.includes('pricing')) return '💰';
-                    if (path.includes('feature')) return '✨';
-                    if (path.includes('contact')) return '📧';
-                    if (path.includes('about')) return '👥';
-                    if (path.includes('blog') || path.includes('learn')) return '📚';
-                    if (path.includes('faq')) return '❓';
-                    if (path.includes('tool')) return '🔧';
-                    if (path.includes('audit')) return '📊';
-                    if (path.includes('guide')) return '📖';
-                    if (path.includes('glossary')) return '📝';
-                    if (path.includes('directory')) return '📁';
-                    if (path.includes('marketplace')) return '🏪';
-                    return '📄';
-                  };
-                  
-                  return (
-                    <div 
-                      key={i} 
-                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
-                      style={{ width: '85px' }}
-                    >
-                      {/* Circular node like diagram */}
-                      <div className="relative mb-2">
-                        {/* Glow ring for top positions */}
-                        {isTopPosition && (
-                          <div 
-                            className="absolute inset-0 rounded-full animate-pulse"
-                            style={{
-                              width: nodeSize * 2 + 12,
-                              height: nodeSize * 2 + 12,
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              background: `radial-gradient(circle, ${nodeColor}20 0%, transparent 70%)`,
-                            }}
-                          />
-                        )}
-                        
-                        {/* Main circle */}
-                        <div 
-                          className="rounded-full flex items-center justify-center relative"
-                          style={{
-                            width: nodeSize * 2,
-                            height: nodeSize * 2,
-                            background: 'hsl(var(--background))',
-                            border: `${isTopPosition ? 3 : 2}px solid ${nodeColor}`,
-                            boxShadow: isTopPosition ? `0 0 12px ${nodeColor}40` : 'none',
-                          }}
-                        >
-                          {/* Page emoji inside */}
-                          <span style={{ fontSize: isTopPosition ? '20px' : '16px' }}>
-                            {getPageIcon()}
-                          </span>
-                          
-                          {/* Position badge - top right */}
-                          <div 
-                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                            style={{ background: nodeColor }}
-                          >
-                            {row.position.toFixed(0)}
-                          </div>
-                          
-                          {/* Clicks badge - bottom left */}
-                          <div 
-                            className="absolute -bottom-1 -left-1 px-1.5 py-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                            style={{ background: '#8b5cf6' }}
-                          >
-                            {row.clicks > 999 ? `${(row.clicks / 1000).toFixed(1)}k` : row.clicks}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Page name */}
-                      <p className="text-[10px] font-medium text-center truncate w-full capitalize" title={path}>
-                        {pageName.replace(/-/g, ' ').slice(0, 10)}
-                      </p>
-                      
-                      {/* Mini stats row */}
-                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
-                        <span>{row.impressions > 999 ? `${(row.impressions / 1000).toFixed(1)}k` : row.impressions}</span>
-                        <span className="text-[6px]">•</span>
-                        <span className={row.ctr > 0.05 ? 'text-cyan-500 font-medium' : ''}>
-                          {(row.ctr * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {pageData.length === 0 && (
-                  <div className="w-full text-center text-muted-foreground text-xs py-8">
-                    {isFetching ? "Loading..." : "No pages found"}
-                  </div>
-                )}
+              <div className="max-h-[180px] overflow-y-auto">
+                <table className="w-full text-[10px]">
+                  <thead className="sticky top-0 bg-secondary/80">
+                    <tr className="text-muted-foreground">
+                      <th className="text-left py-1 px-2">#</th>
+                      <th className="text-left py-1 px-2">Page</th>
+                      <th className="text-right py-1 px-1">Clicks</th>
+                      <th className="text-right py-1 px-1">Imp</th>
+                      <th className="text-right py-1 px-1">Pos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageData.slice(0, 15).map((row, i) => {
+                      let path = row.keys[0];
+                      try { path = new URL(row.keys[0]).pathname || "/"; } catch {}
+                      return (
+                        <tr key={i} className="border-t border-border/30 hover:bg-secondary/30">
+                          <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                          <td className="py-1 px-2 truncate max-w-[150px]" title={path}>{path}</td>
+                          <td className="py-1 px-1 text-right font-medium text-cyan-500">{formatNumber(row.clicks)}</td>
+                          <td className="py-1 px-1 text-right text-muted-foreground">{formatNumber(row.impressions)}</td>
+                          <td className={`py-1 px-1 text-right font-medium ${row.position <= 3 ? 'text-green-500' : row.position <= 10 ? 'text-amber-500' : ''}`}>{row.position.toFixed(1)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {pageData.length === 0 && <p className="text-center py-4 text-muted-foreground text-xs">{isFetching ? "Loading..." : "No data"}</p>}
               </div>
             </div>
           )}
 
           {activeDropdown === 'countries' && (
-            <div className="bg-secondary/20 rounded-xl p-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-violet-500" />
-                  Top Countries
-                </h4>
-                <Badge variant="secondary" className="text-[10px]">{countryData.length} total</Badge>
+            <div className="bg-secondary/20 rounded-lg p-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-3.5 h-3.5 text-violet-500" />
+                  <span className="text-xs font-medium">Top Countries</span>
+                  <Badge variant="secondary" className="text-[9px] h-4">{countryData.length}</Badge>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 max-h-[300px] overflow-y-auto pr-1 justify-center">
-                {countryData.slice(0, 25).map((row, i) => {
-                  const countryCode = row.keys[0].toLowerCase();
-                  const totalClicks = countryData.reduce((sum, c) => sum + c.clicks, 0);
-                  const percentage = totalClicks > 0 ? (row.clicks / totalClicks) * 100 : 0;
-                  const isTopCountry = i < 3;
-                  const nodeSize = isTopCountry ? 28 : 22;
-                  const nodeColor = isTopCountry ? '#8b5cf6' : '#6b7280';
-                  
-                  const getCountryName = (code: string) => {
-                    const names: Record<string, string> = {
-                      usa: 'USA', gbr: 'UK', can: 'Canada', aus: 'Australia', deu: 'Germany',
-                      fra: 'France', esp: 'Spain', ita: 'Italy', nld: 'Netherlands', bra: 'Brazil',
-                      mex: 'Mexico', ind: 'India', jpn: 'Japan', kor: 'S. Korea', chn: 'China',
-                      rus: 'Russia', pol: 'Poland', swe: 'Sweden', nor: 'Norway', dnk: 'Denmark',
-                      fin: 'Finland', che: 'Switzerland', aut: 'Austria', bel: 'Belgium', prt: 'Portugal',
-                      irl: 'Ireland', nzl: 'New Zealand', sgp: 'Singapore', hkg: 'Hong Kong', phl: 'Philippines',
-                      idn: 'Indonesia', tha: 'Thailand', mys: 'Malaysia', vnm: 'Vietnam', are: 'UAE',
-                      sau: 'Saudi Arabia', zaf: 'S. Africa', egy: 'Egypt', arg: 'Argentina', col: 'Colombia',
-                    };
-                    return names[code] || code.toUpperCase();
-                  };
-                  
-                  // Simplified country map SVG paths (silhouettes)
-                  const getCountryMapPath = (code: string) => {
-                    const maps: Record<string, string> = {
-                      usa: 'M2 8h3l1-2h2l1 1h3l1-1h2l1 2h2l-1 3-2 1-1 2h-2l-1-1-2 1-3-1-2 2-2-1v-3l-1-1z',
-                      gbr: 'M6 2l2 1v2l-1 2 1 2v2l-1 2-2-1-1 1-1-2 1-2-1-2v-2l2-2z',
-                      can: 'M1 6h2l1-2h2l1 1 2-1h3l1 2h2l1 1-1 2-2 1h-2l-1 1h-3l-2-1-1 1-2-1v-2z',
-                      aus: 'M3 4l3-1 4 1 2 2v3l-1 3-3 1-4-1-2-3 1-3z',
-                      deu: 'M5 2l3 1 1 2v3l-1 2-2 1-2-1-1-2v-3l2-3z',
-                      fra: 'M4 2l4 1 1 3-1 3-2 2-3-1-1-3 1-3z',
-                      esp: 'M3 4l5-1 2 2v3l-2 2-4 1-2-2v-3z',
-                      ita: 'M5 1l2 1 1 3-1 4-2 3-1-2 1-4v-3z',
-                      bra: 'M4 2l4 1 3 3v4l-2 3-4 1-3-2-1-4 1-4z',
-                      ind: 'M4 1l4 2 2 4-1 4-3 2-3-1-1-4 1-5z',
-                      jpn: 'M5 2c2 0 3 1 3 3s-1 4-2 5l-2-1c-1-2 0-5 1-7z',
-                      chn: 'M2 3l5-1 4 2 1 4-2 4-4 1-3-2-1-4z',
-                      mex: 'M2 4l3-2 4 1 2 3-1 4-3 2-4-1-1-4z',
-                      kor: 'M5 2l2 1 1 3-1 3-2 1-2-1v-4l2-3z',
-                      rus: 'M1 5l4-2h6l3 2v3l-2 2h-4l-3 1-3-1-1-3z',
-                      nld: 'M5 3l2 1v4l-2 2-2-1v-4z',
-                      pol: 'M4 3l4 1 1 3-2 2-3 1-2-2v-3z',
-                      swe: 'M5 1l2 2v5l-1 3-2-1-1-4v-4z',
-                      che: 'M4 4l4 1v3l-2 2-3-1v-3z',
-                      aut: 'M3 5l5-1 2 2-1 2-4 1-2-2z',
-                      bel: 'M4 4l3 1v3l-2 1-2-1v-2z',
-                      prt: 'M5 3l2 1v5l-2 2-1-3v-4z',
-                      irl: 'M4 3l3 1 1 3-2 2-3-1v-3z',
-                      nzl: 'M4 3l3 2v3l-2 2-2-1v-4z',
-                      arg: 'M5 1l2 2v6l-1 3-2-1v-7z',
-                      col: 'M4 3l3 1 1 3-2 3-3-1v-4z',
-                    };
-                    return maps[code] || 'M4 4a4 4 0 1 0 8 0a4 4 0 1 0-8 0'; // Circle fallback
-                  };
-                  
-                  return (
-                    <div 
-                      key={i} 
-                      className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105"
-                      style={{ width: '85px' }}
-                    >
-                      {/* Circular node with country map silhouette */}
-                      <div className="relative mb-2">
-                        {/* Glow ring for top countries */}
-                        {isTopCountry && (
-                          <div 
-                            className="absolute inset-0 rounded-full animate-pulse"
-                            style={{
-                              width: nodeSize * 2 + 12,
-                              height: nodeSize * 2 + 12,
-                              left: '50%',
-                              top: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              background: `radial-gradient(circle, ${nodeColor}25 0%, transparent 70%)`,
-                            }}
-                          />
-                        )}
-                        
-                        {/* Main circle with country map inside */}
-                        <div 
-                          className="rounded-full flex items-center justify-center relative overflow-hidden"
-                          style={{
-                            width: nodeSize * 2,
-                            height: nodeSize * 2,
-                            background: 'hsl(var(--background))',
-                            border: `${isTopCountry ? 3 : 2}px solid ${nodeColor}`,
-                            boxShadow: isTopCountry ? `0 0 12px ${nodeColor}40` : 'none',
-                          }}
-                        >
-                          {/* Country map silhouette */}
-                          <svg 
-                            viewBox="0 0 16 16" 
-                            className="w-full h-full p-1.5"
-                            style={{ fill: nodeColor }}
-                          >
-                            <path d={getCountryMapPath(countryCode)} />
-                          </svg>
-                          
-                          {/* Rank badge - top left */}
-                          <div 
-                            className="absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                            style={{ background: nodeColor }}
-                          >
-                            {i + 1}
-                          </div>
-                          
-                          {/* Percentage badge - bottom right */}
-                          <div 
-                            className="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                            style={{ background: '#06b6d4' }}
-                          >
-                            {percentage.toFixed(0)}%
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Country name */}
-                      <p className="text-[10px] font-medium text-center truncate w-full" title={getCountryName(countryCode)}>
-                        {getCountryName(countryCode)}
-                      </p>
-                      
-                      {/* Mini stats row */}
-                      <div className="flex items-center gap-1.5 mt-1 text-[9px] text-muted-foreground">
-                        <span className="font-medium text-violet-500">{row.clicks}</span>
-                        <span className="text-[6px]">•</span>
-                        <span>{row.impressions > 999 ? `${(row.impressions / 1000).toFixed(1)}k` : row.impressions}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {countryData.length === 0 && (
-                  <div className="w-full text-center text-muted-foreground text-xs py-8">
-                    {isFetching ? "Loading..." : "No country data found"}
-                  </div>
-                )}
+              <div className="max-h-[180px] overflow-y-auto">
+                <table className="w-full text-[10px]">
+                  <thead className="sticky top-0 bg-secondary/80">
+                    <tr className="text-muted-foreground">
+                      <th className="text-left py-1 px-2">#</th>
+                      <th className="text-left py-1 px-2">Country</th>
+                      <th className="text-right py-1 px-1">Clicks</th>
+                      <th className="text-right py-1 px-1">Imp</th>
+                      <th className="text-right py-1 px-1">%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {countryData.slice(0, 15).map((row, i) => {
+                      const code = row.keys[0].toLowerCase();
+                      const totalClicks = countryData.reduce((sum, c) => sum + c.clicks, 0);
+                      const pct = totalClicks > 0 ? (row.clicks / totalClicks) * 100 : 0;
+                      const names: Record<string, string> = { usa: 'USA', gbr: 'UK', can: 'Canada', aus: 'Australia', deu: 'Germany', fra: 'France', esp: 'Spain', ita: 'Italy', ind: 'India', jpn: 'Japan', bra: 'Brazil', mex: 'Mexico' };
+                      return (
+                        <tr key={i} className="border-t border-border/30 hover:bg-secondary/30">
+                          <td className="py-1 px-2 text-muted-foreground">{i + 1}</td>
+                          <td className="py-1 px-2">{names[code] || code.toUpperCase()}</td>
+                          <td className="py-1 px-1 text-right font-medium text-violet-500">{formatNumber(row.clicks)}</td>
+                          <td className="py-1 px-1 text-right text-muted-foreground">{formatNumber(row.impressions)}</td>
+                          <td className="py-1 px-1 text-right">{pct.toFixed(0)}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {countryData.length === 0 && <p className="text-center py-4 text-muted-foreground text-xs">{isFetching ? "Loading..." : "No data"}</p>}
               </div>
             </div>
           )}
 
-          {/* Device Breakdown - Always visible */}
-          <div className="bg-secondary/20 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Monitor className="w-4 h-4 text-amber-500" />
-                Device Breakdown
-              </h4>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {(() => {
-                // Always show all 3 device types, with data or zeros
-                const deviceTypes = ['DESKTOP', 'MOBILE', 'TABLET'] as const;
-                const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
-                
-                return deviceTypes.map((deviceType) => {
+          {/* Compact Combined Section: Devices + Sources */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Device Breakdown - Compact */}
+            <div className="bg-secondary/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Monitor className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs font-medium">Devices</span>
+              </div>
+              <div className="flex gap-2">
+                {(['DESKTOP', 'MOBILE', 'TABLET'] as const).map((deviceType) => {
                   const device = deviceData.find(d => d.keys[0] === deviceType);
                   const clicks = device?.clicks || 0;
-                  const impressions = device?.impressions || 0;
+                  const totalClicks = deviceData.reduce((sum, d) => sum + d.clicks, 0);
                   const pct = totalClicks > 0 ? (clicks / totalClicks) * 100 : 0;
                   const Icon = deviceType === 'DESKTOP' ? Monitor : deviceType === 'MOBILE' ? Smartphone : Tablet;
                   
                   return (
-                    <div key={deviceType} className="bg-secondary/30 rounded-lg p-4 text-center">
-                      <Icon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground capitalize mb-1">{deviceType.toLowerCase()}</p>
-                      <p className="text-2xl font-bold">{isFetching ? "—" : `${pct.toFixed(0)}%`}</p>
-                      <p className="text-xs text-muted-foreground">{isFetching ? "..." : `${clicks} clicks`}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{isFetching ? "..." : `${impressions} impressions`}</p>
+                    <div key={deviceType} className="flex-1 bg-secondary/30 rounded-lg p-2 text-center">
+                      <Icon className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-lg font-bold">{isFetching ? "—" : `${pct.toFixed(0)}%`}</p>
+                      <p className="text-[9px] text-muted-foreground capitalize">{deviceType.toLowerCase()}</p>
                     </div>
                   );
-                });
-              })()}
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Search Type Breakdown - Performance by Source (Large boxes at top) */}
-          <div className="bg-secondary/20 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-500" />
-                Performance by Source
-              </span>
-              {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
-            </div>
-            
-            <div className="grid grid-cols-5 gap-3">
-              {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
-                const data = allTypesData[type];
-                const config = SEARCH_TYPE_CONFIG[type];
-                const hasData = data.clicks > 0 || data.impressions > 0;
-                const isActive = searchType === type;
-                const totalClicks = Object.values(allTypesData).reduce((sum, d) => sum + d.clicks, 0);
-                const clickPct = totalClicks > 0 ? (data.clicks / totalClicks) * 100 : 0;
-                
-                return (
-                  <button
-                    key={type}
-                    onClick={() => {
-                      setSearchType(type);
-                      setShowSourceDetails(true);
-                    }}
-                    className={`relative flex flex-col items-center p-3 rounded-xl transition-all border ${
-                      isActive 
-                        ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50 shadow-lg shadow-primary/10' 
-                        : hasData 
-                          ? 'bg-secondary/50 hover:bg-secondary/80 border-border/50 cursor-pointer hover:border-primary/30' 
-                          : 'bg-secondary/20 border-transparent opacity-60'
-                    }`}
-                  >
-                    {/* Active indicator */}
-                    {isActive && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
-                    )}
-                    
-                    {/* Icon with colored background */}
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-2"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${config.color}20, ${config.color}10)`,
-                        border: `1px solid ${config.color}30`
-                      }}
+            {/* Performance by Source - Compact */}
+            <div className="bg-secondary/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                <span className="text-xs font-medium">Sources</span>
+                {isLoadingAllTypes && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground ml-auto" />}
+              </div>
+              <div className="flex gap-1.5">
+                {(['web', 'image', 'video', 'news', 'discover'] as SearchType[]).map((type) => {
+                  const data = allTypesData[type];
+                  const config = SEARCH_TYPE_CONFIG[type];
+                  const hasData = data.clicks > 0 || data.impressions > 0;
+                  const isActive = searchType === type;
+                  
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => { setSearchType(type); setShowSourceDetails(true); }}
+                      className={`flex-1 flex flex-col items-center p-1.5 rounded-lg transition-all ${
+                        isActive ? 'bg-primary/20 ring-1 ring-primary/50' : hasData ? 'bg-secondary/50 hover:bg-secondary/80' : 'opacity-40'
+                      }`}
                     >
-                      <div style={{ color: config.color }}>{config.icon}</div>
-                    </div>
-                    
-                    <span className="text-[11px] font-semibold mb-1" style={{ color: isActive ? config.color : undefined }}>
-                      {config.label}
-                    </span>
-                    
-                    {hasData ? (
-                      <>
-                        <span className="text-lg font-bold">{formatNumber(data.clicks)}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatNumber(data.impressions)} imp</span>
-                        {clickPct > 0 && (
-                          <div className="mt-1.5 w-full bg-secondary rounded-full h-1.5 overflow-hidden">
-                            <div 
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{ 
-                                width: `${Math.min(clickPct, 100)}%`,
-                                background: config.color 
-                              }}
-                            />
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-lg font-bold text-muted-foreground">—</span>
-                        <span className="text-[10px] text-muted-foreground">No data</span>
-                      </>
-                    )}
-                  </button>
-                );
-              })}
+                      <div className="w-6 h-6 rounded flex items-center justify-center mb-0.5" style={{ color: config.color }}>
+                        {config.icon}
+                      </div>
+                      <span className="text-xs font-bold">{hasData ? formatNumber(data.clicks) : '—'}</span>
+                      <span className="text-[8px] text-muted-foreground">{config.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Display Window - Chart and Current Type KPIs (middle section) */}
+          {/* Compact Display Window - Chart and KPIs */}
           {showSourceDetails && (
-            <div className="bg-secondary/10 rounded-lg p-4 animate-in fade-in duration-200">
-              {/* Current Type Header */}
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-secondary/10 rounded-lg p-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
+                  <div className="flex items-center gap-1 text-xs" style={{ color: SEARCH_TYPE_CONFIG[searchType].color }}>
                     {SEARCH_TYPE_CONFIG[searchType].icon}
-                    <span className="text-sm font-medium">{SEARCH_TYPE_CONFIG[searchType].label} Search</span>
+                    <span className="font-medium">{SEARCH_TYPE_CONFIG[searchType].label}</span>
                   </div>
-                  <Badge variant="secondary" className="text-[10px]">{dateRange} days</Badge>
+                  <Badge variant="secondary" className="text-[9px] h-4">{dateRange}d</Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSourceDetails(false)}
-                  className="h-6 px-2 text-xs"
-                >
-                  <ChevronUp className="w-3 h-3 mr-1" />
-                  Collapse
+                <Button variant="ghost" size="sm" onClick={() => setShowSourceDetails(false)} className="h-5 px-1.5 text-[10px]">
+                  <ChevronUp className="w-3 h-3" />
                 </Button>
               </div>
 
-              {/* Performance Chart */}
-              <div className="h-[150px] w-full mb-4">
+              {/* Compact Chart */}
+              <div className="h-[100px] w-full mb-2">
                 {isFetching && chartData.length === 0 ? (
                   <Skeleton className="h-full w-full" />
                 ) : (
@@ -1872,58 +1564,46 @@ export const GSCDashboardPanel = ({
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
-                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={35} />
-                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '12px' }} />
+                      <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })} interval="preserveStartEnd" />
+                      <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} width={30} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '6px', fontSize: '11px' }} />
                       <Area type="monotone" dataKey="clicks" stroke={SEARCH_TYPE_CONFIG[searchType].color} fill="url(#gscClicksGradient)" strokeWidth={2} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
-              {/* Combined KPI Row - All Search Types (Small boxes at bottom of display window) */}
-              <div className="grid grid-cols-4 gap-3">
+              {/* Compact KPI Row */}
+              <div className="grid grid-cols-4 gap-2">
                 {[
-                  { label: "Total Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "text-primary", subtitle: "All sources" },
-                  { label: "Total Impressions", value: formatNumber(combinedMetrics.impressions), icon: Eye, color: "text-cyan-500", subtitle: "All sources" },
-                  { label: "Avg CTR", value: (combinedMetrics.ctr * 100).toFixed(2) + "%", icon: Target, color: "text-violet-500", subtitle: "Combined" },
-                  { label: "Avg Position", value: combinedMetrics.position > 0 ? combinedMetrics.position.toFixed(1) : "—", icon: TrendingUp, color: "text-amber-500", subtitle: "Web only" },
+                  { label: "Clicks", value: formatNumber(combinedMetrics.clicks), icon: MousePointer, color: "text-primary" },
+                  { label: "Impressions", value: formatNumber(combinedMetrics.impressions), icon: Eye, color: "text-cyan-500" },
+                  { label: "CTR", value: (combinedMetrics.ctr * 100).toFixed(1) + "%", icon: Target, color: "text-violet-500" },
+                  { label: "Position", value: combinedMetrics.position > 0 ? combinedMetrics.position.toFixed(1) : "—", icon: TrendingUp, color: "text-amber-500" },
                 ].map((metric, i) => (
-                  <div key={i} className="bg-secondary/30 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <metric.icon className={`w-4 h-4 ${metric.color}`} />
-                      <span className="text-xs text-muted-foreground">{metric.label}</span>
-                    </div>
-                    <p className="text-xl font-bold mt-1">{isLoadingAllTypes ? <Skeleton className="h-6 w-16" /> : metric.value}</p>
-                    <p className="text-[10px] text-muted-foreground">{metric.subtitle}</p>
+                  <div key={i} className="bg-secondary/30 rounded-lg p-2 text-center">
+                    <metric.icon className={`w-3 h-3 mx-auto mb-0.5 ${metric.color}`} />
+                    <p className="text-sm font-bold">{isLoadingAllTypes ? <Skeleton className="h-4 w-10 mx-auto" /> : metric.value}</p>
+                    <p className="text-[8px] text-muted-foreground">{metric.label}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Advanced Reporting Toggle */}
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvancedReporting(!showAdvancedReporting)}
-              className="w-full justify-between h-10 text-sm font-medium"
-            >
-              <span className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-violet-500" />
-                Advanced Reporting
-                <Badge variant="secondary" className="text-[10px]">
-                  Keywords • Countries • Indexation
-                </Badge>
-              </span>
-              {showAdvancedReporting ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
+          {/* Advanced Reporting Toggle - Compact */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAdvancedReporting(!showAdvancedReporting)}
+            className="w-full justify-between h-8 text-xs mt-2 border-t border-border/30 rounded-none pt-3"
+          >
+            <span className="flex items-center gap-1.5">
+              <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
+              Advanced Reporting
+            </span>
+            {showAdvancedReporting ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </Button>
         </CardContent>
       </Card>
 
