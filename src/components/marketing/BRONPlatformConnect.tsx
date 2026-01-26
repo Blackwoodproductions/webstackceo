@@ -2,28 +2,23 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Building, Sparkles, CheckCircle, Zap, Target,
+  Award, Building, Sparkles, Zap, Target,
   LogIn, ArrowRight, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { BRONExtendedSection } from "./ServiceTabExtensions";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BRONPlatformConnectProps {
   domain?: string;
   onConnectionComplete?: (platform: string) => void;
 }
 
-const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
+const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const STORAGE_KEY = "bron_dashboard_auth";
-
-// Public API for checking login status (keys are public routing identifiers, not secrets)
-const BRON_STATUS_API = "https://public.imagehosting.space/feed/Article.php";
-const BRON_API_ID = "53084";
-const BRON_API_KEY = "347819526879185";
-const BRON_KKYY = "AKhpU6QAbMtUDTphRPCezo96CztR9EXR";
 
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,32 +58,33 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     onConnectionComplete?.("bron");
   };
 
-  // Check login status via public API (keys are public routing identifiers)
+  // Check login status via backend function (avoids browser CORS)
   const checkLoginStatus = async (): Promise<boolean> => {
     if (!domain) return false;
-    
-    try {
-      const url = `${BRON_STATUS_API}?feedit=add&domain=${encodeURIComponent(domain)}&apiid=${BRON_API_ID}&apikey=${BRON_API_KEY}&kkyy=${BRON_KKYY}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) return false;
-      
-      const text = await response.text();
-      // API returns JSON array with domain data when logged in
-      // e.g. [{"domainid":"111073","status":"2",...}]
-      if (text.startsWith('[') && text.includes('"domainid"')) {
-        console.log("[BRON] Login detected via API");
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.log("[BRON] API check error:", error);
+    const { data, error } = await supabase.functions.invoke("bron-login-status", {
+      body: { domain, feedit: "add" },
+    });
+
+    if (error) {
+      // Keep quiet (polling), but log for debugging
+      console.log("[BRON] login-status error:", error);
       return false;
     }
+
+    return !!(data as any)?.loggedIn;
   };
 
-  // Popup-based login with API polling
+  // Popup-based login with automatic detection + auto close
   const handlePopupLogin = () => {
+    if (!domain) {
+      toast({
+        title: "Select a domain",
+        description: "Please select a domain before connecting BRON.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     localStorage.removeItem(STORAGE_KEY);
     setIsAuthenticated(false);
     setIsWaitingForPopup(true);
@@ -116,7 +112,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // Poll API for login status every 2 seconds
+    // Poll login status every 2 seconds; on success close popup + show dashboard on this tab
     pollRef.current = window.setInterval(async () => {
       // Check if popup was closed
       const popupClosed = !popupRef.current || popupRef.current.closed;
@@ -137,20 +133,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         // Popup closed without login detected - stop polling but stay in waiting state
         if (pollRef.current) window.clearInterval(pollRef.current);
         popupRef.current = null;
+        setIsWaitingForPopup(false);
       }
     }, 2000);
-  };
-
-  const handleContinueAfterLogin = () => {
-    // User clicked "I've logged in" - close popup if still open and continue
-    if (pollRef.current) window.clearInterval(pollRef.current);
-    try {
-      popupRef.current?.close();
-    } catch {
-      // ignore
-    }
-    popupRef.current = null;
-    persistAuth();
   };
 
   const handleCancelLogin = () => {
@@ -203,21 +188,12 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         <div className="text-center space-y-2">
           <h3 className="text-xl font-bold">Waiting for BRON Login</h3>
           <p className="text-muted-foreground max-w-md">
-            Complete your login in the popup window. Once you're logged in, 
-            <span className="font-semibold text-foreground"> close the popup </span> 
-            or click the button below.
+            Complete your login in the popup window. Once you're logged in, this window will close
+            automatically and the BRON dashboard will load here.
           </p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-sm">
-          <Button
-            onClick={handleContinueAfterLogin}
-            size="lg"
-            className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
-          >
-            <CheckCircle className="w-5 h-5 mr-2" />
-            I've Logged In — Show Dashboard
-          </Button>
           <Button
             onClick={handleCancelLogin}
             variant="ghost"
