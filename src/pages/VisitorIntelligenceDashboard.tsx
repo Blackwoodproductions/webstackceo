@@ -4243,14 +4243,8 @@ f.parentNode.insertBefore(j,f);
         </DialogContent>
       </Dialog>
 
-      {/* Bottom-right title badge - outside main content */}
-      <div className="max-w-[1480px] mx-auto flex justify-end mt-4 pb-6">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30 border border-border text-muted-foreground">
-          <BarChart3 className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium">Visitor Intelligence</span>
-          <span className="text-xs hidden sm:inline">— Marketing Funnel Analytics</span>
-        </div>
-      </div>
+      {/* Spacer for bottom padding */}
+      <div className="h-6" />
     </div>
   );
 };
