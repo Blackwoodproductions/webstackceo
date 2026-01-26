@@ -2423,48 +2423,18 @@ const AuditResults = () => {
                       </div>
                     </div>
                     
-                    {/* Website Description with Join WebStack CTA - Compact 50/50 split */}
+                    {/* Website Description - Full width */}
                     {(websiteProfile?.summary || websiteProfile?.description) && (
                       <motion.div 
-                        className="grid grid-cols-1 md:grid-cols-2 gap-0 mt-3 rounded-lg bg-muted/20 border border-border/30 overflow-hidden"
+                        className="flex items-start gap-2.5 p-3 mt-3 rounded-lg bg-muted/20 border border-border/30 border-l-2 border-l-primary/50"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                       >
-                        {/* Description - Left half */}
-                        <div className="flex items-start gap-2.5 p-3 border-l-2 border-primary/50">
-                          <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                            {websiteProfile.summary || websiteProfile.description}
-                          </p>
-                        </div>
-                        
-                        {/* Join WebStack CTA - Right half */}
-                        <div className="flex items-center gap-4 p-3 bg-gradient-to-l from-primary/10 to-transparent border-t md:border-t-0 md:border-l border-border/30">
-                          {/* Trust Badges */}
-                          <div className="flex items-center gap-1.5">
-                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
-                              <Users className="w-3.5 h-3.5 text-cyan-500" />
-                              <span className="text-[7px] font-bold text-cyan-500 mt-0.5">100+ Agencies</span>
-                            </div>
-                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20">
-                              <Crown className="w-3.5 h-3.5 text-amber-500" />
-                              <span className="text-[7px] font-bold text-amber-500 mt-0.5">1,000+ CEOs</span>
-                            </div>
-                            <div className="flex flex-col items-center px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
-                              <Bot className="w-3.5 h-3.5 text-violet-500" />
-                              <span className="text-[7px] font-bold text-violet-500 mt-0.5">Agentic AI</span>
-                            </div>
-                          </div>
-                          
-                          {/* CTA */}
-                          <Button size="sm" className="h-8 text-xs gap-1.5 shrink-0" asChild>
-                            <a href="/pricing">
-                              <Zap className="w-3.5 h-3.5" />
-                              Get Started
-                            </a>
-                          </Button>
-                        </div>
+                        <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {websiteProfile.summary || websiteProfile.description}
+                        </p>
                       </motion.div>
                     )}
                     
@@ -2494,39 +2464,59 @@ const AuditResults = () => {
                     )}
                   </div>
 
-                  {/* Action Buttons */}
+                  {/* Action Buttons + Trust Badges - Right side */}
                   <motion.div 
-                    className="flex items-center gap-3 shrink-0"
+                    className="flex flex-col items-end gap-3 shrink-0"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    {!isClaimed && !isCaseStudyMode && (
+                    {/* Buttons Row */}
+                    <div className="flex items-center gap-3">
+                      {!isClaimed && !isCaseStudyMode && (
+                        <Button 
+                          variant="outline" 
+                          className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
+                          onClick={handleSaveClick}
+                        >
+                          <Gift className="w-4 h-4 text-primary" />
+                          Save & Get Free Backlink
+                        </Button>
+                      )}
+                      <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
+                        <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
+                          <Phone className="w-4 h-4" />
+                          Book a Call
+                        </a>
+                      </Button>
                       <Button 
                         variant="outline" 
-                        className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
-                        onClick={handleSaveClick}
+                        className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
+                        asChild
                       >
-                        <Gift className="w-4 h-4 text-primary" />
-                        Save & Get Free Backlink
+                        <a href="/pricing">
+                          <Sparkles className="w-4 h-4" />
+                          Get Started
+                        </a>
                       </Button>
-                    )}
-                    <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
-                      <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                        <Phone className="w-4 h-4" />
-                        Book a Call
-                      </a>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="gap-2 min-w-[140px] justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] hover:border-amber-400 hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300" 
-                      asChild
-                    >
-                      <a href="/pricing">
-                        <Sparkles className="w-4 h-4" />
-                        Get Started
-                      </a>
-                    </Button>
+                    </div>
+                    
+                    {/* Trust Badges Row - under buttons */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground mr-1">Trusted by:</span>
+                      <div className="flex flex-col items-center px-2.5 py-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+                        <Users className="w-3.5 h-3.5 text-cyan-500" />
+                        <span className="text-[7px] font-bold text-cyan-500 mt-0.5">100+ Agencies</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2.5 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20">
+                        <Crown className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-[7px] font-bold text-amber-500 mt-0.5">1,000+ CEOs</span>
+                      </div>
+                      <div className="flex flex-col items-center px-2.5 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+                        <Bot className="w-3.5 h-3.5 text-violet-500" />
+                        <span className="text-[7px] font-bold text-violet-500 mt-0.5">Agentic AI</span>
+                      </div>
+                    </div>
                   </motion.div>
                 </div>
 
