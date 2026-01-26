@@ -33,13 +33,11 @@ serve(async (req) => {
     console.log(`[cade-api] Action: ${action}, Domain: ${domain || "N/A"}`);
 
     // Build headers for CADE API requests
-    // Try multiple auth header formats for compatibility
+    // Use x-api-key header (lowercase) as per CADE API requirements
     const cadeHeaders: Record<string, string> = {
       "Accept": "application/json",
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${cadeSecret}`,
-      "X-API-Key": cadeSecret,
-      "api-key": cadeSecret,
+      "x-api-key": cadeSecret,
     };
 
     let endpoint: string;
