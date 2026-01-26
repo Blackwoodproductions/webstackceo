@@ -2044,7 +2044,7 @@ f.parentNode.insertBefore(j,f);
         <div className="mb-8">
           <Tabs defaultValue="leads" className="w-full">
             {/* Combined Tab Header with Lead Quality Stats - Full Width */}
-            <div className="flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border/50">
+            <div className="flex items-stretch gap-3 mb-4 p-2 rounded-xl bg-secondary/30 border border-border">
               {/* Tabs - takes up left portion */}
               <TabsList className="flex-1 grid grid-cols-3 bg-background/40 p-1 h-auto gap-1 rounded-lg">
                 <TabsTrigger value="leads" className="text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5">
@@ -2075,7 +2075,7 @@ f.parentNode.insertBefore(j,f);
                     className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all cursor-pointer ${
                       expandedStatFilter === item.label 
                         ? item.activeClass 
-                        : 'bg-background/60 border-border/30 hover:border-border/50'
+                        : 'bg-background/60 border-border/30 hover:border-border'
                     }`}
                   >
                     <div className={`w-2.5 h-2.5 rounded-full ${item.dotColor}`} />
@@ -2097,7 +2097,7 @@ f.parentNode.insertBefore(j,f);
 
             {/* Expanded Stat Filter Panel */}
             {expandedStatFilter && (
-              <div className="mb-4 p-4 rounded-xl bg-secondary/30 border border-border/50 animate-accordion-down">
+              <div className="mb-4 p-4 rounded-xl bg-secondary/30 border border-border animate-accordion-down">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     {expandedStatFilter === 'Open' && <Zap className="w-4 h-4 text-blue-500" />}
@@ -3053,7 +3053,7 @@ f.parentNode.insertBefore(j,f);
                     { stat: '76%', label: 'of local searches', sublabel: 'visit a business' },
                     { stat: '28%', label: 'local searches', sublabel: 'result in purchase' },
                   ].map((item, i) => (
-                    <div key={i} className="text-center p-4 rounded-xl bg-background/50 border border-border/50">
+                    <div key={i} className="text-center p-4 rounded-xl bg-background/50 border border-border">
                       <p className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-transparent">{item.stat}</p>
                       <p className="text-xs text-foreground font-medium mt-1">{item.label}</p>
                       <p className="text-[10px] text-muted-foreground">{item.sublabel}</p>
@@ -4245,7 +4245,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* Bottom-right title badge - outside main content */}
       <div className="max-w-[1480px] mx-auto flex justify-end mt-4 pb-6">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30 border border-border/50 text-muted-foreground">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/30 border border-border text-muted-foreground">
           <BarChart3 className="w-4 h-4 text-primary" />
           <span className="text-sm font-medium">Visitor Intelligence</span>
           <span className="text-xs hidden sm:inline">— Marketing Funnel Analytics</span>

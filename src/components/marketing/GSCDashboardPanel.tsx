@@ -1037,7 +1037,7 @@ export const GSCDashboardPanel = ({
   if (!isAuthenticated) {
     return (
       <>
-        <Card className="bg-gradient-to-br from-cyan-500/5 to-violet-500/5 border-cyan-500/20 h-full flex flex-col">
+        <Card className="bg-card border-border h-full flex flex-col">
           <CardContent className="py-8 flex-1 flex items-center justify-center">
             <div className="text-center max-w-md mx-auto">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center mx-auto mb-4">
@@ -1097,7 +1097,7 @@ export const GSCDashboardPanel = ({
   // Connected - show dashboard
   return (
     <>
-      <Card className="relative overflow-hidden bg-gradient-to-br from-card via-card/98 to-cyan-500/5 border-border/50">
+      <Card className="relative overflow-hidden bg-card border-border">
         {/* High-tech background grid */}
         <div
           className="absolute inset-0 pointer-events-none"
