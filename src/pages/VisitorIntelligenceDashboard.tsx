@@ -2786,7 +2786,7 @@ f.parentNode.insertBefore(j,f);
                 )}
 
                 {/* Live Visitors (not in chat yet) */}
-                {liveVisitors.slice(0, 8 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
+                {liveVisitors.slice(0, 10 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
                   // Bold, vibrant colors (no pastels)
                   const colors = [
                     'from-red-600 to-rose-700',
