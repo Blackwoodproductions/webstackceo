@@ -19,6 +19,9 @@ interface LiveVisitor {
   last_activity_at: string;
   started_at: string;
   referrer: string | null;
+  user_id?: string | null;
+  avatar_url?: string | null;
+  display_name?: string | null;
 }
 
 // Extract domain from referrer URL
@@ -50,17 +53,32 @@ const LiveChatWidget = () => {
   const [selectedVisitor, setSelectedVisitor] = useState<LiveVisitor | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [referrerDomain, setReferrerDomain] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check for logged-in user
+  // Check for logged-in user and fetch profile with avatar
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || null);
         setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
+        
+        // Fetch avatar from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url, full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profile?.avatar_url) {
+          setUserAvatar(profile.avatar_url);
+        } else {
+          // Fallback to user metadata
+          setUserAvatar(user.user_metadata?.avatar_url || user.user_metadata?.picture || null);
+        }
       }
     };
     checkUser();
@@ -69,27 +87,73 @@ const LiveChatWidget = () => {
       if (session?.user) {
         setUserEmail(session.user.email || null);
         setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
+        setUserAvatar(session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null);
+        
+        // Fetch from profiles for accurate avatar
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          if (profile?.avatar_url) {
+            setUserAvatar(profile.avatar_url);
+          }
+        }, 0);
       } else {
         setUserEmail(null);
         setUserName(null);
+        setUserAvatar(null);
       }
     });
     
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch live visitors (active in last 5 minutes)
+  // Fetch live visitors (active in last 5 minutes) with profile info for authenticated users
   const fetchLiveVisitors = useCallback(async () => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data } = await supabase
+    
+    // Fetch visitor sessions
+    const { data: sessions } = await (supabase
       .from("visitor_sessions")
-      .select("session_id, first_page, last_activity_at, started_at, referrer")
+      .select("session_id, first_page, last_activity_at, started_at, referrer, user_id") as any)
       .gte("last_activity_at", fiveMinutesAgo)
       .order("last_activity_at", { ascending: false })
       .limit(8);
     
-    if (data) {
-      setLiveVisitors(data.filter(v => v.session_id !== sessionId));
+    if (sessions) {
+      // Get unique user_ids that are not null
+      const userIds = sessions
+        .map((s: any) => s.user_id)
+        .filter((id: string | null) => id !== null);
+      
+      // Fetch profiles for authenticated visitors
+      let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url, full_name')
+          .in('user_id', userIds);
+        
+        if (profiles) {
+          profilesMap = profiles.reduce((acc, p) => {
+            acc[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+            return acc;
+          }, {} as Record<string, { avatar_url: string | null; full_name: string | null }>);
+        }
+      }
+      
+      // Merge profile data with sessions
+      const visitorsWithProfiles = sessions
+        .filter((v: any) => v.session_id !== sessionId)
+        .map((v: any) => ({
+          ...v,
+          avatar_url: profilesMap[v.user_id]?.avatar_url || null,
+          display_name: profilesMap[v.user_id]?.full_name || null,
+        }));
+      
+      setLiveVisitors(visitorsWithProfiles);
     }
   }, [sessionId]);
 
@@ -331,6 +395,7 @@ const LiveChatWidget = () => {
             {liveVisitors.slice(0, 5).map((visitor, index) => {
               const visitorReferrerDomain = getReferrerDomain(visitor.referrer);
               const visitorFaviconUrl = getFaviconUrl(visitorReferrerDomain);
+              const hasAvatar = !!visitor.avatar_url;
               
               return (
                 <Tooltip key={visitor.session_id}>
@@ -342,21 +407,27 @@ const LiveChatWidget = () => {
                       transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
                       onClick={() => handleEngageVisitor(visitor)}
                       className={`relative w-10 h-10 rounded-full bg-gradient-to-br ${getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden`}
-                      aria-label={`Engage visitor from ${visitorReferrerDomain || 'direct'}`}
+                      aria-label={`Engage visitor ${visitor.display_name || visitorReferrerDomain || 'direct'}`}
                     >
-                      {visitorFaviconUrl ? (
+                      {/* Priority: 1. User avatar, 2. Referrer favicon, 3. User icon */}
+                      {hasAvatar ? (
+                        <img
+                          src={visitor.avatar_url!}
+                          alt={visitor.display_name || 'User'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : visitorFaviconUrl ? (
                         <img
                           src={visitorFaviconUrl}
                           alt={`From ${visitorReferrerDomain}`}
                           className="w-5 h-5 rounded-sm"
                           onError={(e) => {
-                            // Replace with User icon on error
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
                           }}
                         />
                       ) : null}
-                      <User className={`w-4 h-4 ${visitorFaviconUrl ? 'hidden' : ''}`} />
+                      <User className={`w-4 h-4 ${hasAvatar || visitorFaviconUrl ? 'hidden' : ''}`} />
                       {/* Live pulse indicator */}
                       <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-background">
                         <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
@@ -367,11 +438,14 @@ const LiveChatWidget = () => {
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-card border-border">
                     <div className="flex items-center gap-2">
-                      {visitorFaviconUrl && (
+                      {hasAvatar && (
+                        <img src={visitor.avatar_url!} alt="" className="w-4 h-4 rounded-full" />
+                      )}
+                      {!hasAvatar && visitorFaviconUrl && (
                         <img src={visitorFaviconUrl} alt="" className="w-3 h-3 rounded-sm" />
                       )}
-                      {!visitorFaviconUrl && <Globe className="w-3 h-3 text-muted-foreground" />}
-                      <span className="text-xs">{visitorReferrerDomain || visitor.first_page || '/'}</span>
+                      {!hasAvatar && !visitorFaviconUrl && <Globe className="w-3 h-3 text-muted-foreground" />}
+                      <span className="text-xs">{visitor.display_name || visitorReferrerDomain || visitor.first_page || '/'}</span>
                       <span className="text-[10px] text-muted-foreground">• {getTimeSince(visitor.started_at)}</span>
                     </div>
                   </TooltipContent>
@@ -389,8 +463,14 @@ const LiveChatWidget = () => {
               className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group overflow-hidden"
               aria-label="Open chat"
             >
-              {/* Show referrer favicon or default MessageCircle icon */}
-              {referrerDomain && !faviconError ? (
+              {/* Show user avatar if logged in, else referrer favicon, else default icon */}
+              {userAvatar ? (
+                <img
+                  src={userAvatar}
+                  alt={userName || 'User'}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : referrerDomain && !faviconError ? (
                 <img
                   src={getFaviconUrl(referrerDomain)!}
                   alt={`Visitor from ${referrerDomain}`}
