@@ -125,17 +125,52 @@ const Navbar = () => {
     await supabase.auth.signOut();
     setUser(null);
     setUserProfile(null);
+    
+    // Clear all Google service tokens
+    localStorage.removeItem('unified_google_token');
+    localStorage.removeItem('unified_google_expiry');
+    localStorage.removeItem('unified_google_scopes');
+    localStorage.removeItem('ga_access_token');
+    localStorage.removeItem('ga_token_expiry');
+    localStorage.removeItem('gsc_access_token');
+    localStorage.removeItem('gsc_token_expiry');
+    localStorage.removeItem('google_ads_access_token');
+    localStorage.removeItem('google_ads_token_expiry');
+    localStorage.removeItem('gmb_access_token');
+    localStorage.removeItem('gmb_token_expiry');
   };
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    // Extended scopes for GA, GSC, Ads, GMB auto-connect
+    const EXTENDED_GOOGLE_SCOPES = [
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/analytics.readonly",
+      "https://www.googleapis.com/auth/webmasters.readonly",
+      "https://www.googleapis.com/auth/webmasters",
+      "https://www.googleapis.com/auth/adwords",
+      "https://www.googleapis.com/auth/business.manage",
+    ].join(" ");
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/visitor-intelligence-dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: EXTENDED_GOOGLE_SCOPES,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent select_account',
+          include_granted_scopes: 'true',
+        },
       }
     });
+    
     if (error) {
       console.error('Google sign-in error:', error);
+    } else if (data?.url) {
+      // Redirect to Google consent screen
+      window.location.href = data.url;
     }
   };
 
