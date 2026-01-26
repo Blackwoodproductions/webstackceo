@@ -200,13 +200,17 @@ const LiveChatWidget = () => {
     );
 
     // DEDUPLICATION (authoritative):
-    // - If user_id exists: keep ONE row per user_id
-    // - Else: keep ONE row per session_id
-    // This guarantees we never show multiple entries for the same authenticated user.
+    // - The CURRENT USER should never appear more than once (even if we have a mix of
+    //   anonymous + authenticated rows during the sign-in transition).
+    // - Everyone else: keep ONE row per user_id (if present) otherwise ONE per session_id.
     const uniqueSessions: any[] = [];
     const seenKeys = new Set<string>();
     for (const s of sortedByActivity) {
-      const key = s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
+      const isSelf =
+        (!!currentUserId && s.user_id === currentUserId) ||
+        (!!sessionId && s.session_id === sessionId);
+
+      const key = isSelf ? "self" : s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
       if (seenKeys.has(key)) continue;
       seenKeys.add(key);
       uniqueSessions.push(s);
@@ -232,12 +236,17 @@ const LiveChatWidget = () => {
       }
     }
 
-    const visitorsWithProfiles: LiveVisitor[] = uniqueSessions.map((v: any) => ({
-      ...v,
-      avatar_url: v.user_id ? profilesMap[v.user_id]?.avatar_url || null : null,
-      display_name: v.user_id ? profilesMap[v.user_id]?.full_name || null : null,
-      is_current_user: currentUserId ? v.user_id === currentUserId : v.session_id === sessionId,
-    }));
+    const visitorsWithProfiles: LiveVisitor[] = uniqueSessions.map((v: any) => {
+      const isSelf =
+        (!!currentUserId && v.user_id === currentUserId) ||
+        (!!sessionId && v.session_id === sessionId);
+      return {
+        ...v,
+        avatar_url: v.user_id ? profilesMap[v.user_id]?.avatar_url || null : null,
+        display_name: v.user_id ? profilesMap[v.user_id]?.full_name || null : null,
+        is_current_user: isSelf,
+      };
+    });
 
     // Ensure current user (YOU) is first if present
     const currentIdx = visitorsWithProfiles.findIndex((v) => v.is_current_user);
@@ -504,7 +513,7 @@ const LiveChatWidget = () => {
               const isCurrentUser = visitor.is_current_user;
               
               return (
-                <Tooltip key={visitor.session_id}>
+                <Tooltip key={visitor.user_id || visitor.session_id}>
                   <TooltipTrigger asChild>
                     <motion.button
                       initial={{ scale: 0, opacity: 0, y: 20 }}
