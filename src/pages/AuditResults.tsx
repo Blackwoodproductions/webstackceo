@@ -2503,11 +2503,13 @@ const AuditResults = () => {
                           </a>
                         </Button>
                       </div>
-                      {/* Timer Box */}
-                      <NextReportCountdown />
-                      {/* Trust Badges - under timer */}
+                      {/* Timer Box - offset down and left */}
+                      <div className="mt-20 -mr-24">
+                        <NextReportCountdown />
+                      </div>
+                      {/* Trust Badges - under timer, same offset */}
                       <motion.div 
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 -mr-24"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
