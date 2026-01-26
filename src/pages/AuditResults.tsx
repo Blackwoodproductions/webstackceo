@@ -2441,21 +2441,63 @@ const AuditResults = () => {
                           </p>
                         </div>
                         
-                        {/* Timer & Badges - takes ~40% */}
-                        <div className="flex-[2] flex flex-col justify-center gap-2 p-4 bg-gradient-to-l from-primary/5 to-transparent">
-                          <NextReportCountdown />
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-600/15 border border-cyan-500/30 hover:scale-105 transition-transform cursor-default">
+                        {/* Join WebStack CTA - takes ~40% */}
+                        <div className="flex-[2] flex flex-col justify-between gap-3 p-5 bg-gradient-to-l from-primary/8 via-violet-500/5 to-transparent border-l border-primary/20">
+                          {/* Header */}
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/30 to-violet-500/20 border border-primary/30">
+                              <Zap className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-foreground">Join WebStack</h4>
+                              <p className="text-[10px] text-muted-foreground">AI-Powered SEO for Modern Businesses</p>
+                            </div>
+                          </div>
+                          
+                          {/* Trust Badges Row */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-center justify-center px-3 py-2 rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-600/15 border border-cyan-500/30 hover:scale-105 transition-transform cursor-default flex-1">
                               <Users className="w-4 h-4 text-cyan-500" />
-                              <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
+                              <span className="text-[9px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 whitespace-nowrap">100+ Agencies</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-amber-500/15 to-yellow-600/15 border border-amber-500/30 hover:scale-105 transition-transform cursor-default">
+                            <div className="flex flex-col items-center justify-center px-3 py-2 rounded-lg bg-gradient-to-br from-amber-500/15 to-yellow-600/15 border border-amber-500/30 hover:scale-105 transition-transform cursor-default flex-1">
                               <Crown className="w-4 h-4 text-amber-500" />
-                              <span className="text-[8px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
+                              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center px-2.5 py-2 rounded-lg bg-gradient-to-br from-violet-500/15 to-purple-600/15 border border-violet-500/30 hover:scale-105 transition-transform cursor-default">
+                            <div className="flex flex-col items-center justify-center px-3 py-2 rounded-lg bg-gradient-to-br from-violet-500/15 to-purple-600/15 border border-violet-500/30 hover:scale-105 transition-transform cursor-default flex-1">
                               <Bot className="w-4 h-4 text-violet-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                              <span className="text-[8px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                              <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
+                            </div>
+                          </div>
+                          
+                          {/* Key Benefits */}
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <span>Automated content & link building</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <span>Real-time analytics & reporting</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <span>White-label agency solutions</span>
+                            </div>
+                          </div>
+                          
+                          {/* Countdown Timer */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-border/30">
+                            <Calendar className="w-4 h-4 text-primary shrink-0" />
+                            <div className="flex-1">
+                              <span className="text-[9px] text-muted-foreground">Case Studies on Autopilot</span>
+                              <div className="flex items-center gap-1 font-mono text-xs font-bold mt-0.5">
+                                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">28d</span>
+                                <span className="text-primary/40">:</span>
+                                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">00h</span>
+                                <span className="text-primary/40">:</span>
+                                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">00m</span>
+                              </div>
                             </div>
                           </div>
                         </div>
