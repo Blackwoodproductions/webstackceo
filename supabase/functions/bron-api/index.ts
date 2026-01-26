@@ -5,11 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// BRON API Configuration
-const BRON_FEED_BASE = "https://public.imagehosting.space/feed";
-const API_ID = "53084";
-const API_KEY = "347819526879185";
-const API_SECRET = "AKhpU6QAbMtUDTphRPCezo96CztR9EXR";
+// BRON API Configuration - New FRL API
+const BRON_API_BASE = "https://public6.freerelevantlinks.com/api";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,68 +25,63 @@ serve(async (req) => {
 
     console.log(`[bron-api] Endpoint: ${endpoint}, Domain: ${domain}`);
 
-    // Build base params for all BRON endpoints
-    const baseParams = `domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
     let apiUrl: string;
+    const baseParams = `domain=${encodeURIComponent(domain)}`;
 
-    // All BRON Feed Endpoints from public.imagehosting.space
+    // Map endpoints to FRL API request types
     switch (endpoint) {
       case "articles":
-        apiUrl = `${BRON_FEED_BASE}/Article.php?feedit=1&${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=articles&${baseParams}`;
         break;
 
       case "backlinks":
-        apiUrl = `${BRON_FEED_BASE}/Backlink.php?${baseParams}`;
+      case "links":
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=reportlinksout&${baseParams}`;
         break;
 
       case "rankings":
-        apiUrl = `${BRON_FEED_BASE}/Ranking.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=rankings&${baseParams}`;
         break;
 
       case "keywords":
-        apiUrl = `${BRON_FEED_BASE}/Keyword.php?${baseParams}`;
-        break;
-
-      case "clusters":
-        apiUrl = `${BRON_FEED_BASE}/Cluster.php?${baseParams}`;
-        break;
-
-      case "deeplinks":
-        apiUrl = `${BRON_FEED_BASE}/DeepLink.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=keywords&${baseParams}`;
         break;
 
       case "authority":
-        apiUrl = `${BRON_FEED_BASE}/Authority.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=authority&${baseParams}`;
         break;
 
       case "profile":
-        apiUrl = `${BRON_FEED_BASE}/Profile.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=profile&${baseParams}`;
         break;
 
       case "stats":
-        apiUrl = `${BRON_FEED_BASE}/Stats.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=stats&${baseParams}`;
         break;
 
       case "campaigns":
-        apiUrl = `${BRON_FEED_BASE}/Campaign.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=campaigns&${baseParams}`;
         break;
 
       case "reports":
-        apiUrl = `${BRON_FEED_BASE}/Report.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=reports&${baseParams}`;
         break;
 
-      case "links":
-        apiUrl = `${BRON_FEED_BASE}/Link.php?${baseParams}`;
+      case "clusters":
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=clusters&${baseParams}`;
+        break;
+
+      case "deeplinks":
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=deeplinks&${baseParams}`;
         break;
 
       case "all":
-        // Fetch all available data in one call if supported
-        apiUrl = `${BRON_FEED_BASE}/All.php?${baseParams}`;
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=all&${baseParams}`;
         break;
 
       default:
-        // Try the endpoint as a direct PHP file name
-        apiUrl = `${BRON_FEED_BASE}/${endpoint}.php?${baseParams}`;
+        // Try the endpoint as a direct request type
+        apiUrl = `${BRON_API_BASE}/samplecall.php?request=${encodeURIComponent(endpoint)}&${baseParams}`;
         break;
     }
 
@@ -124,9 +116,28 @@ serve(async (req) => {
     // Try to parse as JSON
     let data;
     try {
-      data = JSON.parse(responseText);
+      // The API might return PHP warnings before JSON, try to extract JSON
+      const jsonMatch = responseText.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+      if (jsonMatch) {
+        data = JSON.parse(jsonMatch[1]);
+      } else {
+        data = JSON.parse(responseText);
+      }
     } catch {
-      // If not JSON, return the text as-is wrapped in an object
+      // If not JSON, check for PHP errors and return meaningful error
+      if (responseText.includes("Warning:") || responseText.includes("Error:") || responseText.includes("SQL syntax")) {
+        console.log(`[bron-api] API returned PHP errors`);
+        return new Response(
+          JSON.stringify({ 
+            error: "API is experiencing issues", 
+            details: "The BRON API returned server-side errors. The domain may not be configured yet.",
+            endpoint,
+            raw: responseText.substring(0, 500)
+          }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      // Otherwise wrap as raw response
       console.log(`[bron-api] Response is not JSON, wrapping text`);
       data = { raw: responseText, parsed: false };
     }
