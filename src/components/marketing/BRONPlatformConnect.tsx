@@ -21,6 +21,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [iframeKey, setIframeKey] = useState(0);
+  const [iframeError, setIframeError] = useState(false);
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
 
@@ -47,6 +48,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   // Mark as authenticated and store in localStorage
   const setAuthenticated = useCallback(() => {
     console.log("[BRON] Setting authenticated state");
+    
+    // Reset any previous iframe error
+    setIframeError(false);
     
     // Store auth in localStorage (24 hour expiry)
     const authData = {
@@ -221,13 +225,32 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
         {/* Dashboard iframe */}
         <div className="rounded-xl border border-border/50 overflow-hidden bg-background">
-          <iframe
-            key={iframeKey}
-            src={iframeSrc}
-            className="w-full min-h-[700px] border-0"
-            title="BRON Dashboard"
-            allow="clipboard-write"
-          />
+          {iframeError ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <AlertTriangle className="w-12 h-12 text-amber-500 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Dashboard Loading Issue</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                The dashboard may have trouble loading due to browser cookie restrictions.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => window.open(iframeSrc, '_blank')}
+                className="gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open Dashboard in New Tab
+              </Button>
+            </div>
+          ) : (
+            <iframe
+              key={iframeKey}
+              src={iframeSrc}
+              className="w-full min-h-[700px] border-0"
+              title="BRON Dashboard"
+              allow="clipboard-write"
+              onError={() => setIframeError(true)}
+            />
+          )}
         </div>
       </motion.div>
     );
