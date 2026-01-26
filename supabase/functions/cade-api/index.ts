@@ -14,7 +14,15 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = "Pqfs5LDgua4K8BFy73mwAE";
+    const apiKey = Deno.env.get("CADE_API_KEY");
+    
+    if (!apiKey) {
+      console.error("[CADE API] Missing CADE_API_KEY environment variable");
+      return new Response(
+        JSON.stringify({ error: "CADE API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { action, domain, params } = await req.json();
     console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}`);
