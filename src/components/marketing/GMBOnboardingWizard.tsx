@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -221,27 +222,75 @@ export const GMBOnboardingWizard = ({
   };
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card">
-      {/* Progress Header */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-6 border-b border-border">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-gradient-to-br from-background/80 via-background/60 to-background/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10"
+    >
+      {/* Background Effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <motion.div 
+          className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-blue-500/10 via-green-500/5 to-transparent rounded-bl-[150px]"
+          animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0.9, 0.6] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-gradient-to-tr from-green-500/10 via-blue-500/5 to-transparent rounded-tr-[100px]"
+          animate={{ scale: [1.05, 1, 1.05], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/3 to-transparent"
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
+        {/* Floating particles */}
+        <motion.div
+          className="absolute top-[15%] right-[10%] w-1.5 h-1.5 rounded-full bg-blue-400/60"
+          animate={{ y: [0, -8, 0], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-[25%] right-[20%] w-1 h-1 rounded-full bg-green-400/60"
+          animate={{ y: [0, -6, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] left-[15%] w-1.5 h-1.5 rounded-full bg-teal-400/60"
+          animate={{ y: [0, -10, 0], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+        />
+      </div>
+      
+      {/* Progress Header - High-end futuristic style */}
+      <div className="relative bg-gradient-to-r from-blue-500/15 via-transparent to-green-500/15 p-6 border-b border-blue-500/20 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            Add Business to Google Maps
+          <h2 className="text-xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <MapPin className="w-5 h-5 text-white" />
+            </div>
+            <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+              Add Business to Google Maps
+            </span>
           </h2>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs border-blue-500/30 bg-blue-500/10 text-blue-400 font-medium px-3 py-1">
             Step {Math.min(step, 5)} of {totalSteps}
           </Badge>
         </div>
         
-        {/* Progress Bar */}
-        <div className="flex gap-1">
+        {/* Progress Bar - Animated gradient */}
+        <div className="flex gap-1.5">
           {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
+            <motion.div
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition-all ${
-                step > i ? 'bg-primary' : 'bg-muted'
+              className={`h-2 flex-1 rounded-full transition-all duration-500 ${
+                step > i 
+                  ? 'bg-gradient-to-r from-blue-500 to-green-500 shadow-sm shadow-blue-500/50' 
+                  : 'bg-muted/50'
               }`}
+              initial={false}
+              animate={step > i ? { opacity: [0.8, 1, 0.8] } : {}}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
           ))}
         </div>
@@ -797,6 +846,6 @@ export const GMBOnboardingWizard = ({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
