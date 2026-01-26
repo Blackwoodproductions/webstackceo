@@ -16,7 +16,7 @@ import {
   CheckCircle, ChevronLeft, ChevronRight, ArrowRight, MapPin, 
   Clock, Globe, Phone, Building, FileText, Loader2, AlertCircle,
   Store, Briefcase, Utensils, Wrench, Heart, Home, Car, Scissors,
-  Dumbbell, Laptop, GraduationCap, Camera
+  Dumbbell, Laptop, GraduationCap, Camera, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,8 +34,9 @@ interface GMBOnboardingWizardProps {
   accessToken: string;
   accountId: string | null;
   accounts: { name: string; accountName: string; type: string }[];
-  onComplete: () => void;
+  onComplete: (createdLocation?: any) => void;
   onCancel: () => void;
+  onRefreshAccounts?: () => Promise<{ name: string; accountName: string; type: string }[]>;
 }
 
 const BUSINESS_CATEGORIES = [
@@ -74,13 +75,17 @@ export const GMBOnboardingWizard = ({
   domain,
   accessToken,
   accountId,
-  accounts,
+  accounts: initialAccounts,
   onComplete,
   onCancel,
+  onRefreshAccounts,
 }: GMBOnboardingWizardProps) => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshingAccounts, setIsRefreshingAccounts] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState(initialAccounts);
+  const [createdLocation, setCreatedLocation] = useState<any>(null);
   
   // Form state
   const [selectedAccountId, setSelectedAccountId] = useState(accountId || '');
@@ -116,6 +121,29 @@ export const GMBOnboardingWizard = ({
       isClosed: h.day === 'SATURDAY' || h.day === 'SUNDAY' ? h.isClosed : source.isClosed,
     })));
     toast.success('Hours applied to weekdays');
+  };
+
+  const handleRefreshAccounts = async () => {
+    if (!onRefreshAccounts) {
+      toast.info('Please close this wizard and refresh the page to check for new accounts.');
+      return;
+    }
+    
+    setIsRefreshingAccounts(true);
+    try {
+      const refreshedAccounts = await onRefreshAccounts();
+      if (refreshedAccounts && refreshedAccounts.length > 0) {
+        setAccounts(refreshedAccounts);
+        toast.success(`Found ${refreshedAccounts.length} business account(s)!`);
+      } else {
+        toast.info('No business accounts found yet. It may take a few minutes after creating one.');
+      }
+    } catch (err) {
+      console.error('Error refreshing accounts:', err);
+      toast.error('Failed to refresh accounts. Please try again.');
+    } finally {
+      setIsRefreshingAccounts(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -156,6 +184,19 @@ export const GMBOnboardingWizard = ({
         throw new Error(data.error);
       }
 
+      // Store the created location for display
+      setCreatedLocation(data?.location || {
+        title: businessName,
+        websiteUri: domain,
+        storefrontAddress: {
+          addressLines: [streetAddress],
+          locality: city,
+          administrativeArea: state,
+          postalCode: postalCode,
+        },
+        status: 'PENDING_VERIFICATION',
+      });
+      
       toast.success('Business listing created successfully!');
       setStep(6); // Success step
     } catch (err) {
@@ -259,7 +300,7 @@ export const GMBOnboardingWizard = ({
                 </div>
                 <h4 className="font-bold text-lg mb-2">No Business Accounts Found</h4>
                 <p className="text-sm text-muted-foreground mb-6">
-                  You need a Google Business account to add a location. Create one first in Google Business Profile.
+                  You need a Google Business account to add a location. Create one in Google Business Profile, then check for accounts.
                 </p>
                 <div className="flex flex-col gap-3">
                   <Button
@@ -284,7 +325,19 @@ export const GMBOnboardingWizard = ({
                     </svg>
                     Create Business Account (popup)
                   </Button>
-                  <Button variant="outline" onClick={onCancel}>
+                  <Button 
+                    variant="outline"
+                    onClick={handleRefreshAccounts}
+                    disabled={isRefreshingAccounts}
+                  >
+                    {isRefreshingAccounts ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    {isRefreshingAccounts ? 'Checking...' : 'Check for Accounts'}
+                  </Button>
+                  <Button variant="ghost" onClick={onCancel} className="text-muted-foreground">
                     Cancel
                   </Button>
                 </div>
@@ -612,16 +665,51 @@ export const GMBOnboardingWizard = ({
           </div>
         )}
 
-        {/* Step 6: Success */}
+        {/* Step 6: Success - Show Pending Verification Listing */}
         {step === 6 && (
-          <div className="space-y-6 max-w-xl mx-auto text-center py-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <CheckCircle className="w-10 h-10 text-white" />
+          <div className="space-y-6 max-w-xl mx-auto py-6">
+            {/* Success Header */}
+            <div className="text-center">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold">Listing Created!</h3>
+              <p className="text-muted-foreground mt-2">
+                Pending verification from Google
+              </p>
             </div>
-            <h3 className="text-2xl font-bold">Business Created Successfully!</h3>
-            <p className="text-muted-foreground">
-              Your business listing for <span className="font-medium text-foreground">{businessName}</span> has been submitted to Google.
-            </p>
+
+            {/* Created Listing Card */}
+            <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-lg truncate">{businessName}</h4>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                      <Clock className="w-3 h-3" />
+                      Unverified
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{domain}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {streetAddress}, {city}, {state} {postalCode}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h5 className="text-sm font-medium mb-3">Verification Status</h5>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                    <div className="bg-amber-500 h-full w-1/4 rounded-full animate-pulse" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Awaiting Review</span>
+                </div>
+              </div>
+            </div>
             
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-left">
               <h4 className="font-medium text-amber-600 dark:text-amber-400 mb-2">Next Steps:</h4>
@@ -633,7 +721,7 @@ export const GMBOnboardingWizard = ({
               </ol>
             </div>
 
-            <div className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col gap-3 pt-2">
               <Button
                 size="lg"
                 onClick={() => {
@@ -655,9 +743,9 @@ export const GMBOnboardingWizard = ({
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                Manage in Google (popup)
+                Complete Verification in Google
               </Button>
-              <Button variant="outline" onClick={onComplete}>
+              <Button variant="outline" onClick={() => onComplete(createdLocation)}>
                 Return to Dashboard
               </Button>
             </div>
