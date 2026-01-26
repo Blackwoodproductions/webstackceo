@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Minimize2, User, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -506,6 +506,23 @@ const LiveChatWidget = () => {
   if (isLoading) return null;
   if (!isAdmin) return null;
 
+  // Final guardrail: regardless of any transient backend/session states,
+  // never render more than one "YOU" entry in the mini visitor stack.
+  const visitorsForStack = useMemo(() => {
+    const seen = new Set<string>();
+    const getKey = (v: LiveVisitor) => {
+      if (v.is_current_user) return "self";
+      return v.user_id ? `u:${v.user_id}` : `s:${v.session_id}`;
+    };
+
+    return liveVisitors.filter((v) => {
+      const k = getKey(v);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [liveVisitors]);
+
   return (
     <TooltipProvider>
       {/* Chat Button Stack */}
@@ -513,14 +530,19 @@ const LiveChatWidget = () => {
         {!isOpen && (
           <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-2">
             {/* Live Visitor Icons - stacked above main button */}
-            {liveVisitors.slice(0, 6).map((visitor, index) => {
+            {visitorsForStack.slice(0, 6).map((visitor, index) => {
               const visitorReferrerDomain = getReferrerDomain(visitor.referrer);
               const visitorFaviconUrl = getFaviconUrl(visitorReferrerDomain);
               const hasAvatar = !!visitor.avatar_url;
               const isCurrentUser = visitor.is_current_user;
+              const visitorKey = isCurrentUser
+                ? "self"
+                : visitor.user_id
+                  ? `u:${visitor.user_id}`
+                  : `s:${visitor.session_id}`;
               
               return (
-                <Tooltip key={visitor.user_id || visitor.session_id}>
+                <Tooltip key={visitorKey}>
                   <TooltipTrigger asChild>
                     <motion.button
                       initial={{ scale: 0, opacity: 0, y: 20 }}
