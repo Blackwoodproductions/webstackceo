@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Target, TrendingUp, Users, ExternalLink, Crown, Zap, Search, BarChart3, ArrowUpRight, Trophy, Flame, Sparkles } from "lucide-react";
+import { Target, TrendingUp, Users, ExternalLink, Crown, Zap, Search, BarChart3, ArrowUpRight, Trophy, Flame, Sparkles, Radio, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
@@ -79,16 +79,40 @@ export const CompetitorGapSection = ({
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="p-8 rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-border/50 shadow-xl">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+        <div className="relative p-8 rounded-3xl bg-gradient-to-br from-card via-card to-primary/5 border border-border/50 shadow-xl overflow-hidden">
+          {/* Animated gradient glow */}
+          <motion.div
+            className="absolute -inset-[1px] rounded-[24px] opacity-40 blur-sm"
+            animate={{
+              background: [
+                "linear-gradient(0deg, rgba(139,92,246,0.3), rgba(168,85,247,0.2), rgba(139,92,246,0.3))",
+                "linear-gradient(180deg, rgba(168,85,247,0.3), rgba(139,92,246,0.2), rgba(168,85,247,0.3))",
+              ],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          />
+          
+          {/* Scanning line */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/5 to-transparent"
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          />
+          
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 relative z-10">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <Target className="w-5 h-5 text-white" />
             </div>
             Competitor Gap Analysis
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-4 relative z-10">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-muted/50 animate-pulse rounded-2xl" />
+              <motion.div 
+                key={i} 
+                className="h-20 bg-muted/50 rounded-2xl"
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.15 }}
+              />
             ))}
           </div>
         </div>
@@ -108,220 +132,371 @@ export const CompetitorGapSection = ({
       animate={{ opacity: 1, y: 0 }}
       className="mb-8"
     >
-      <div className="rounded-3xl bg-gradient-to-br from-card via-card to-violet-500/5 border border-border/50 shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="p-6 pb-4 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border-b border-border/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Competitor Gap Analysis</h2>
-                <p className="text-sm text-muted-foreground">See how you stack up against top competitors</p>
-              </div>
-            </div>
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-green-500/10 border border-emerald-500/30"
-            >
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              <div>
-                <div className="text-xs text-emerald-400/80 font-medium">Traffic Opportunity</div>
-                <div className="text-xl font-bold text-emerald-400">+{metrics.trafficOpportunity.toLocaleString()}<span className="text-sm font-normal">/mo</span></div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+      <div className="relative group">
+        {/* Animated gradient glow background */}
+        <motion.div
+          className="absolute -inset-[1px] rounded-[24px] opacity-50 group-hover:opacity-70 blur-sm transition-opacity duration-500"
+          animate={{
+            background: [
+              "linear-gradient(0deg, rgba(139,92,246,0.3), rgba(168,85,247,0.2), rgba(139,92,246,0.3))",
+              "linear-gradient(120deg, rgba(168,85,247,0.3), rgba(139,92,246,0.2), rgba(168,85,247,0.3))",
+              "linear-gradient(240deg, rgba(139,92,246,0.3), rgba(168,85,247,0.2), rgba(139,92,246,0.3))",
+              "linear-gradient(360deg, rgba(168,85,247,0.3), rgba(139,92,246,0.2), rgba(168,85,247,0.3))",
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative rounded-3xl bg-gradient-to-br from-card via-card to-violet-500/5 border border-border/50 shadow-xl overflow-hidden">
+          {/* Background grid pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.015]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(262, 83%, 58%) 1px, transparent 1px), linear-gradient(90deg, hsl(262, 83%, 58%) 1px, transparent 1px)`,
+              backgroundSize: '32px 32px'
+            }}
+          />
+          
+          {/* Floating particles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-violet-500/30"
+              style={{
+                left: `${10 + i * 15}%`,
+                top: `${20 + (i % 3) * 30}%`,
+              }}
+              animate={{
+                y: [-10, 10, -10],
+                opacity: [0.2, 0.6, 0.2],
+              }}
+              transition={{
+                duration: 3 + i * 0.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            />
+          ))}
+          
+          {/* Scanning line */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/3 to-transparent pointer-events-none"
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+          />
 
-        {/* Competitor Comparison Cards */}
-        <div className="p-6">
-          <div className="grid gap-3">
-            {/* Your domain - highlighted */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="relative p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border-2 border-primary/30 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-              <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shadow-lg">
-                    <Crown className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">{currentDomain}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">YOUR SITE</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">Current benchmark position</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{currentDR}</div>
-                    <div className="text-xs text-muted-foreground">Domain Rating</div>
-                  </div>
-                  <div className="w-px h-10 bg-border/50" />
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{currentTraffic.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground">Monthly Traffic</div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-            
-            {/* Competitors */}
-            {metrics.competitors.map((comp, i) => {
-              const drDiff = comp.domainRating - currentDR;
-              const trafficProgress = (comp.organicTraffic / maxTraffic) * 100;
-              
-              return (
-                <motion.div
-                  key={comp.domain}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (i + 1) * 0.08 }}
-                  className="group relative p-5 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/50 hover:border-border transition-all duration-300"
+          {/* Header */}
+          <div className="relative p-6 pb-4 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <motion.div 
+                  className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25"
+                  whileHover={{ scale: 1.05, rotate: 5 }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
-                        i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' :
-                        i === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800' :
-                        i === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {i === 0 ? <Trophy className="w-5 h-5" /> : `#${i + 1}`}
+                  <Target className="w-6 h-6 text-white" />
+                </motion.div>
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    Competitor Gap Analysis
+                    <motion.span
+                      className="ml-2 flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30"
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Radio className="w-2.5 h-2.5" />
+                      LIVE
+                    </motion.span>
+                  </h2>
+                  <p className="text-sm text-muted-foreground">See how you stack up against top competitors</p>
+                </div>
+              </div>
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="relative flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-green-500/10 border border-emerald-500/30 overflow-hidden"
+              >
+                {/* Shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                />
+                <TrendingUp className="w-5 h-5 text-emerald-400 relative z-10" />
+                <div className="relative z-10">
+                  <div className="text-xs text-emerald-400/80 font-medium">Traffic Opportunity</div>
+                  <motion.div 
+                    className="text-xl font-bold text-emerald-400"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    +{metrics.trafficOpportunity.toLocaleString()}<span className="text-sm font-normal">/mo</span>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Competitor Comparison Cards */}
+          <div className="p-6 relative z-10">
+            <div className="grid gap-3">
+              {/* Your domain - highlighted */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.01 }}
+                className="relative p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border-2 border-primary/30 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+                {/* Shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                />
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <motion.div 
+                      className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center shadow-lg"
+                      animate={{ boxShadow: ["0 0 15px rgba(34,211,238,0.3)", "0 0 25px rgba(34,211,238,0.5)", "0 0 15px rgba(34,211,238,0.3)"] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Crown className="w-5 h-5 text-white" />
+                    </motion.div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-lg">{currentDomain}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">YOUR SITE</span>
                       </div>
-                      <div>
-                        <a 
-                          href={`https://${comp.domain}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="font-semibold text-lg hover:text-primary transition-colors flex items-center gap-2 group/link"
-                        >
-                          {comp.domain}
-                          <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity" />
-                        </a>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{comp.organicKeywords.toLocaleString()} keywords</span>
-                          <span>•</span>
-                          <span>{comp.backlinks.toLocaleString()} backlinks</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <span className={`text-2xl font-bold ${drDiff > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {comp.domainRating}
-                          </span>
-                          {drDiff !== 0 && (
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${drDiff > 0 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                              {drDiff > 0 ? `+${drDiff}` : drDiff}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">DR</div>
-                      </div>
-                      <div className="w-px h-10 bg-border/50" />
-                      <div className="text-center min-w-[100px]">
-                        <div className="text-2xl font-bold">{comp.organicTraffic.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">Traffic/mo</div>
-                        <Progress value={trafficProgress} className="h-1 mt-1.5 bg-muted" />
-                      </div>
+                      <div className="text-sm text-muted-foreground">Current benchmark position</div>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Keyword Opportunities */}
-        {metrics.keywordGaps.length > 0 && (
-          <div className="px-6 pb-6">
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent border border-cyan-500/20">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                  <Search className="w-4 h-4 text-white" />
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <motion.div 
+                        className="text-2xl font-bold text-primary"
+                        initial={{ scale: 0.5 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
+                      >
+                        {currentDR}
+                      </motion.div>
+                      <div className="text-xs text-muted-foreground">Domain Rating</div>
+                    </div>
+                    <div className="w-px h-10 bg-border/50" />
+                    <div className="text-center">
+                      <motion.div 
+                        className="text-2xl font-bold"
+                        initial={{ scale: 0.5 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, delay: 0.4 }}
+                      >
+                        {currentTraffic.toLocaleString()}
+                      </motion.div>
+                      <div className="text-xs text-muted-foreground">Monthly Traffic</div>
+                    </div>
+                  </div>
                 </div>
-                <span>Keyword Opportunities</span>
-                <span className="text-sm font-normal text-muted-foreground">
-                  {metrics.totalKeywordGap} gaps found
-                </span>
-              </h3>
-              <div className="grid gap-2">
-                {metrics.keywordGaps.slice(0, 5).map((gap, i) => {
-                  const config = getOpportunityConfig(gap.opportunity);
-                  const OpportunityIcon = config.icon;
-                  
-                  return (
+              </motion.div>
+              
+              {/* Competitors */}
+              {metrics.competitors.map((comp, i) => {
+                const drDiff = comp.domainRating - currentDR;
+                const trafficProgress = (comp.organicTraffic / maxTraffic) * 100;
+                
+                return (
+                  <motion.div
+                    key={comp.domain}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (i + 1) * 0.08 }}
+                    whileHover={{ scale: 1.01, x: 4 }}
+                    className="group/comp relative p-5 rounded-2xl bg-gradient-to-r from-muted/40 to-muted/20 border border-border/50 hover:border-border transition-all duration-300 overflow-hidden"
+                  >
+                    {/* Hover shimmer */}
                     <motion.div
-                      key={gap.keyword}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      className={`flex items-center gap-4 p-4 rounded-xl ${config.bg} ${config.border} border`}
-                    >
-                      <div className={`flex items-center gap-2 ${config.color}`}>
-                        <OpportunityIcon className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-wide">{gap.opportunity}</span>
-                      </div>
-                      <span className="font-semibold flex-1">{gap.keyword}</span>
-                      <div className="flex items-center gap-6 text-sm">
-                        <div className="text-center">
-                          <div className="font-semibold">{gap.volume.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Volume</div>
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover/comp:opacity-100"
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                          i === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' :
+                          i === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-800' :
+                          i === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {i === 0 ? <Trophy className="w-5 h-5" /> : `#${i + 1}`}
                         </div>
-                        <div className="text-center">
-                          <div className={`font-semibold ${gap.difficulty > 50 ? 'text-red-400' : gap.difficulty > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                            {gap.difficulty}
+                        <div>
+                          <a 
+                            href={`https://${comp.domain}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-semibold text-lg hover:text-primary transition-colors flex items-center gap-2 group/link"
+                          >
+                            {comp.domain}
+                            <ExternalLink className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                          </a>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>{comp.organicKeywords.toLocaleString()} keywords</span>
+                            <span>•</span>
+                            <span>{comp.backlinks.toLocaleString()} backlinks</span>
                           </div>
-                          <div className="text-xs text-muted-foreground">KD</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="font-semibold text-primary">#{gap.competitorRank}</div>
-                          <div className="text-xs text-muted-foreground">Competitor</div>
-                        </div>
-                        <div className="text-center min-w-[70px]">
-                          <div className={`font-semibold ${gap.yourRank ? '' : 'text-red-400'}`}>
-                            {gap.yourRank ? `#${gap.yourRank}` : 'Not ranking'}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Your Rank</div>
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span className={`text-2xl font-bold ${drDiff > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                              {comp.domainRating}
+                            </span>
+                            {drDiff !== 0 && (
+                              <motion.span 
+                                className={`text-xs px-1.5 py-0.5 rounded-full ${drDiff > 0 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.5 + i * 0.1 }}
+                              >
+                                {drDiff > 0 ? `+${drDiff}` : drDiff}
+                              </motion.span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">DR</div>
+                        </div>
+                        <div className="w-px h-10 bg-border/50" />
+                        <div className="text-center min-w-[100px]">
+                          <div className="text-2xl font-bold">{comp.organicTraffic.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Traffic/mo</div>
+                          <div className="h-1 mt-1.5 bg-muted rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${trafficProgress}%` }}
+                              transition={{ duration: 0.8, delay: 0.3 + i * 0.1 }}
+                              className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
-        )}
 
-
-        {/* CTA Footer */}
-        <div className="p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border-t border-border/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <div className="font-semibold">Ready to outrank your competitors?</div>
-                <div className="text-sm text-muted-foreground">Strategic link building and content optimization to close the gap</div>
+          {/* Keyword Opportunities */}
+          {metrics.keywordGaps.length > 0 && (
+            <div className="px-6 pb-6 relative z-10">
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent border border-cyan-500/20 relative overflow-hidden">
+                {/* Shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                />
+                
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-3 relative z-10">
+                  <motion.div 
+                    className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                  >
+                    <Search className="w-4 h-4 text-white" />
+                  </motion.div>
+                  <span>Keyword Opportunities</span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {metrics.totalKeywordGap} gaps found
+                  </span>
+                </h3>
+                <div className="grid gap-2 relative z-10">
+                  {metrics.keywordGaps.slice(0, 5).map((gap, i) => {
+                    const config = getOpportunityConfig(gap.opportunity);
+                    const OpportunityIcon = config.icon;
+                    
+                    return (
+                      <motion.div
+                        key={gap.keyword}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileHover={{ scale: 1.01, x: 4 }}
+                        className={`flex items-center gap-4 p-4 rounded-xl ${config.bg} ${config.border} border relative overflow-hidden`}
+                      >
+                        {/* Hover shimmer */}
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100"
+                          animate={{ x: ["-100%", "200%"] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
+                        
+                        <div className={`flex items-center gap-2 ${config.color} relative z-10`}>
+                          <OpportunityIcon className="w-4 h-4" />
+                          <span className="text-xs font-bold uppercase tracking-wide">{gap.opportunity}</span>
+                        </div>
+                        <span className="font-semibold flex-1 relative z-10">{gap.keyword}</span>
+                        <div className="flex items-center gap-6 text-sm relative z-10">
+                          <div className="text-center">
+                            <div className="font-semibold">{gap.volume.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Volume</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`font-semibold ${gap.difficulty > 50 ? 'text-red-400' : gap.difficulty > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                              {gap.difficulty}
+                            </div>
+                            <div className="text-xs text-muted-foreground">KD</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-semibold text-primary">#{gap.competitorRank}</div>
+                            <div className="text-xs text-muted-foreground">Competitor</div>
+                          </div>
+                          <div className="text-center min-w-[70px]">
+                            <div className={`font-semibold ${gap.yourRank ? '' : 'text-red-400'}`}>
+                              {gap.yourRank ? `#${gap.yourRank}` : 'Not ranking'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Your Rank</div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <Button size="lg" className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25" asChild>
-              <a href="/pricing">
-                <Zap className="w-4 h-4" />
-                Close the Gap
-                <ArrowUpRight className="w-4 h-4" />
-              </a>
-            </Button>
+          )}
+
+          {/* CTA Footer */}
+          <div className="relative p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border-t border-border/30">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/5 to-transparent"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-3">
+                <motion.div 
+                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/10 flex items-center justify-center"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                </motion.div>
+                <div>
+                  <div className="font-semibold">Ready to outrank your competitors?</div>
+                  <div className="text-sm text-muted-foreground">Strategic link building and content optimization to close the gap</div>
+                </div>
+              </div>
+              <Button size="lg" className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25" asChild>
+                <a href="/pricing">
+                  <Zap className="w-4 h-4" />
+                  Close the Gap
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

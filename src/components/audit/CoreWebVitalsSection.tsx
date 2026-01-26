@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Gauge, Clock, LayoutGrid, Smartphone, Monitor, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Gauge, Clock, LayoutGrid, Smartphone, Monitor, AlertTriangle, CheckCircle2, XCircle, Activity, Radio } from "lucide-react";
 
 interface CoreWebVitalsMetrics {
   lcp: { value: number; rating: "good" | "needs-improvement" | "poor"; element?: string };
@@ -36,11 +36,11 @@ const getRatingColor = (rating: "good" | "needs-improvement" | "poor") => {
   }
 };
 
-const getRatingBg = (rating: "good" | "needs-improvement" | "poor") => {
+const getRatingGlow = (rating: "good" | "needs-improvement" | "poor") => {
   switch (rating) {
-    case "good": return "bg-green-500/20";
-    case "needs-improvement": return "bg-amber-500/20";
-    case "poor": return "bg-red-500/20";
+    case "good": return "from-emerald-500/20 to-green-500/10";
+    case "needs-improvement": return "from-amber-500/20 to-orange-500/10";
+    case "poor": return "from-red-500/20 to-rose-500/10";
   }
 };
 
@@ -58,10 +58,10 @@ const getScoreColor = (score: number) => {
   return "text-red-500";
 };
 
-const getScoreBg = (score: number) => {
-  if (score >= 90) return "bg-green-500";
-  if (score >= 50) return "bg-amber-500";
-  return "bg-red-500";
+const getScoreGlow = (score: number) => {
+  if (score >= 90) return "from-emerald-500/30 to-green-500/20";
+  if (score >= 50) return "from-amber-500/30 to-orange-500/20";
+  return "from-red-500/30 to-rose-500/20";
 };
 
 export const CoreWebVitalsSection = ({ metrics, isLoading }: CoreWebVitalsSectionProps) => {
@@ -72,7 +72,19 @@ export const CoreWebVitalsSection = ({ metrics, isLoading }: CoreWebVitalsSectio
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="p-6 rounded-2xl bg-card border border-border/50 overflow-hidden relative">
+        <div className="relative p-6 rounded-2xl bg-card border border-border/50 overflow-hidden">
+          {/* Animated gradient glow */}
+          <motion.div
+            className="absolute -inset-[1px] rounded-[18px] opacity-40 blur-sm"
+            animate={{
+              background: [
+                "linear-gradient(0deg, rgba(34,211,238,0.3), rgba(139,92,246,0.2), rgba(34,211,238,0.3))",
+                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(34,211,238,0.2), rgba(139,92,246,0.3))",
+              ],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          />
+          
           {/* Scanning line animation */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-transparent"
@@ -247,131 +259,210 @@ export const CoreWebVitalsSection = ({ metrics, isLoading }: CoreWebVitalsSectio
       animate={{ opacity: 1, y: 0 }}
       className="mb-8"
     >
-      <div className="p-6 rounded-2xl bg-card border border-border/50">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-primary" />
-            Core Web Vitals Deep Dive
-          </h2>
-        </div>
-
-        {/* Mobile vs Desktop Comparison */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="p-4 rounded-xl bg-muted/30 border border-border/30"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-violet-500/20">
-                <Smartphone className="w-5 h-5 text-violet-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Mobile</h3>
-                <p className="text-xs text-muted-foreground">Performance score</p>
-              </div>
-              <div className={`ml-auto text-2xl font-bold ${getScoreColor(metrics.mobile.score)}`}>
-                {metrics.mobile.score}
-              </div>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${metrics.mobile.score}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`h-full ${getScoreBg(metrics.mobile.score)} rounded-full`}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-              <span>LCP: {metrics.mobile.lcp.toFixed(1)}s</span>
-              <span>CLS: {metrics.mobile.cls.toFixed(2)}</span>
-              <span>FID: {metrics.mobile.fid}ms</span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="p-4 rounded-xl bg-muted/30 border border-border/30"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-cyan-500/20">
-                <Monitor className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Desktop</h3>
-                <p className="text-xs text-muted-foreground">Performance score</p>
-              </div>
-              <div className={`ml-auto text-2xl font-bold ${getScoreColor(metrics.desktop.score)}`}>
-                {metrics.desktop.score}
-              </div>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${metrics.desktop.score}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`h-full ${getScoreBg(metrics.desktop.score)} rounded-full`}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-              <span>LCP: {metrics.desktop.lcp.toFixed(1)}s</span>
-              <span>CLS: {metrics.desktop.cls.toFixed(2)}</span>
-              <span>FID: {metrics.desktop.fid}ms</span>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Individual Vitals */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          {vitals.map((vital, i) => (
+      <div className="relative group">
+        {/* Animated gradient glow background */}
+        <motion.div
+          className="absolute -inset-[1px] rounded-[18px] opacity-40 group-hover:opacity-60 blur-sm transition-opacity duration-500"
+          animate={{
+            background: [
+              "linear-gradient(0deg, rgba(34,211,238,0.3), rgba(139,92,246,0.2), rgba(34,211,238,0.3))",
+              "linear-gradient(120deg, rgba(139,92,246,0.3), rgba(34,211,238,0.2), rgba(139,92,246,0.3))",
+              "linear-gradient(240deg, rgba(34,211,238,0.3), rgba(139,92,246,0.2), rgba(34,211,238,0.3))",
+              "linear-gradient(360deg, rgba(139,92,246,0.3), rgba(34,211,238,0.2), rgba(34,211,238,0.3))",
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        />
+        
+        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-card via-card/98 to-cyan-500/5 border border-border/50 overflow-hidden">
+          {/* Background grid pattern */}
+          <div 
+            className="absolute inset-0 opacity-[0.02]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: '28px 28px'
+            }}
+          />
+          
+          {/* Floating particles */}
+          {[...Array(5)].map((_, i) => (
             <motion.div
-              key={vital.name}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`p-4 rounded-xl border ${getRatingBg(vital.rating)} border-border/30`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold">{vital.name}</span>
-                  {getRatingIcon(vital.rating)}
-                </div>
-                <span className={`text-lg font-bold ${getRatingColor(vital.rating)}`}>
-                  {vital.value}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mb-1">{vital.fullName}</p>
-              <p className="text-xs text-muted-foreground/70">{vital.threshold}</p>
-              {vital.element && (
-                <p className="text-xs text-muted-foreground mt-2 truncate">
-                  Element: <code className="bg-muted px-1 rounded">{vital.element}</code>
-                </p>
-              )}
-            </motion.div>
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-cyan-500/40"
+              style={{
+                left: `${15 + i * 18}%`,
+                top: `${25 + (i % 3) * 25}%`,
+              }}
+              animate={{
+                y: [-8, 8, -8],
+                opacity: [0.3, 0.7, 0.3],
+              }}
+              transition={{
+                duration: 2.5 + i * 0.3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            />
           ))}
-        </div>
+          
+          {/* Scanning line */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/3 to-transparent pointer-events-none"
+            animate={{ y: ["-100%", "200%"] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+          />
 
-        {/* Recommendations */}
-        {metrics.recommendations.length > 0 && (
-          <div className="pt-4 border-t border-border/50">
-            <h3 className="text-sm font-semibold mb-3">Fix Recommendations</h3>
-            <ul className="space-y-2">
-              {metrics.recommendations.slice(0, 5).map((rec, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                >
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  {rec}
-                </motion.li>
-              ))}
-            </ul>
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <motion.div
+                className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/10"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Activity className="w-5 h-5 text-cyan-400" />
+              </motion.div>
+              Core Web Vitals Deep Dive
+              <motion.span
+                className="ml-2 flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Radio className="w-2.5 h-2.5" />
+                REAL DATA
+              </motion.span>
+            </h2>
           </div>
-        )}
+
+          {/* Mobile vs Desktop Comparison */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6 relative z-10">
+            {[
+              { type: "Mobile", icon: Smartphone, color: "violet", data: metrics.mobile },
+              { type: "Desktop", icon: Monitor, color: "cyan", data: metrics.desktop },
+            ].map((device, idx) => (
+              <motion.div
+                key={device.type}
+                initial={{ opacity: 0, x: idx === 0 ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.01, y: -2 }}
+                className={`relative p-4 rounded-xl bg-gradient-to-br ${
+                  device.color === "violet" ? "from-violet-500/15 to-purple-500/5" : "from-cyan-500/15 to-blue-500/5"
+                } border border-border/40 overflow-hidden group/device`}
+              >
+                {/* Shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover/device:opacity-100"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                
+                <div className="flex items-center gap-3 mb-3 relative z-10">
+                  <div className={`p-2 rounded-lg ${device.color === "violet" ? "bg-violet-500/20" : "bg-cyan-500/20"}`}>
+                    <device.icon className={`w-5 h-5 ${device.color === "violet" ? "text-violet-400" : "text-cyan-400"}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">{device.type}</h3>
+                    <p className="text-xs text-muted-foreground">Performance score</p>
+                  </div>
+                  <motion.div 
+                    className={`ml-auto text-2xl font-bold ${getScoreColor(device.data.score)} px-3 py-1 rounded-lg bg-gradient-to-r ${getScoreGlow(device.data.score)}`}
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, delay: 0.2 + idx * 0.1 }}
+                  >
+                    {device.data.score}
+                  </motion.div>
+                </div>
+                <div className="h-2 bg-muted/50 rounded-full overflow-hidden relative z-10">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${device.data.score}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                    className={`h-full ${device.data.score >= 90 ? "bg-gradient-to-r from-emerald-500 to-green-400" : device.data.score >= 50 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-red-500 to-rose-400"} rounded-full relative`}
+                  >
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    />
+                  </motion.div>
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground relative z-10">
+                  <span>LCP: {device.data.lcp.toFixed(1)}s</span>
+                  <span>CLS: {device.data.cls.toFixed(2)}</span>
+                  <span>FID: {device.data.fid}ms</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Individual Vitals */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 relative z-10">
+            {vitals.map((vital, i) => (
+              <motion.div
+                key={vital.name}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className={`relative p-4 rounded-xl bg-gradient-to-br ${getRatingGlow(vital.rating)} border border-border/40 overflow-hidden group/vital`}
+              >
+                {/* Shimmer */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover/vital:opacity-100"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                />
+                
+                <div className="flex items-center justify-between mb-2 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">{vital.name}</span>
+                    {getRatingIcon(vital.rating)}
+                  </div>
+                  <motion.span 
+                    className={`text-lg font-bold ${getRatingColor(vital.rating)}`}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + i * 0.05 }}
+                  >
+                    {vital.value}
+                  </motion.span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-1 relative z-10">{vital.fullName}</p>
+                <p className="text-xs text-muted-foreground/70 relative z-10">{vital.threshold}</p>
+                {vital.element && (
+                  <p className="text-xs text-muted-foreground mt-2 truncate relative z-10">
+                    Element: <code className="bg-muted/50 px-1 rounded">{vital.element}</code>
+                  </p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Recommendations */}
+          {metrics.recommendations.length > 0 && (
+            <div className="pt-4 border-t border-border/50 relative z-10">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                Fix Recommendations
+              </h3>
+              <ul className="space-y-2">
+                {metrics.recommendations.slice(0, 5).map((rec, i) => (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    whileHover={{ x: 4 }}
+                    className="flex items-start gap-2 text-sm text-muted-foreground p-2 rounded-lg bg-amber-500/5 border border-amber-500/20"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    {rec}
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
