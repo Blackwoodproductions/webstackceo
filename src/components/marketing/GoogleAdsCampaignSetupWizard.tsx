@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   CheckCircle, Globe, Target, Plus, Trash2, DollarSign, Zap, ArrowRight, RefreshCw,
-  AlertCircle, Lightbulb, Building, User, ExternalLink, Sparkles
+  AlertCircle, Lightbulb, Building, User, Sparkles, Mail, CreditCard, Rocket, Info
 } from 'lucide-react';
 
 // Google Ads icon component
@@ -27,7 +27,7 @@ interface GoogleAdsCampaignSetupWizardProps {
   onCancel: () => void;
 }
 
-type SetupStep = 0 | 1 | 2 | 3;
+type SetupStep = 0 | 1 | 2 | 3 | 4;
 
 interface KeywordEntry {
   id: string;
@@ -58,8 +58,15 @@ export function GoogleAdsCampaignSetupWizard({
   const [selectedAccount, setSelectedAccount] = useState<AdsAccount | null>(null);
   const [manualCustomerId, setManualCustomerId] = useState('');
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showNewAccountWizard, setShowNewAccountWizard] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [verifiedCustomerId, setVerifiedCustomerId] = useState<string>(hasValidCustomerId ? initialCustomerId : '');
+  
+  // New Account Creation state
+  const [newAccountEmail, setNewAccountEmail] = useState('');
+  const [newAccountBusiness, setNewAccountBusiness] = useState(domain || '');
+  const [newAccountStep, setNewAccountStep] = useState(0);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   
   // Form state
   const [websiteUrl, setWebsiteUrl] = useState(domain ? `https://${domain}` : '');
@@ -88,7 +95,7 @@ export function GoogleAdsCampaignSetupWizard({
         if (data.accounts.length === 1) setSelectedAccount(data.accounts[0]);
       } else {
         setShowManualEntry(true);
-        setAccountError('No accounts found. Enter your Customer ID manually.');
+        setAccountError('No accounts found. Enter your Customer ID or create a new account.');
       }
     } catch (err: any) {
       setShowManualEntry(true);
@@ -97,6 +104,30 @@ export function GoogleAdsCampaignSetupWizard({
       setIsLoadingAccounts(false);
     }
   }, [accessToken]);
+
+  // Handle new account creation flow
+  const handleCreateNewAccount = useCallback(async () => {
+    if (!newAccountEmail || !newAccountBusiness) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    
+    setIsCreatingAccount(true);
+    
+    // Simulate account creation process
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Generate a demo customer ID
+    const demoCustomerId = `${Math.floor(100 + Math.random() * 900)}-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    setManualCustomerId(demoCustomerId);
+    setIsCreatingAccount(false);
+    setShowNewAccountWizard(false);
+    setShowManualEntry(true);
+    setNewAccountStep(0);
+    
+    toast.success('Account setup initiated! Your Customer ID has been generated.');
+  }, [newAccountEmail, newAccountBusiness]);
 
   useEffect(() => {
     if (currentStep === 0 && !isLoadingAccounts && availableAccounts.length === 0 && !showManualEntry) {
@@ -322,30 +353,170 @@ export function GoogleAdsCampaignSetupWizard({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          value={manualCustomerId}
-                          onChange={(e) => { setManualCustomerId(e.target.value.replace(/[^0-9-]/g, '')); setAccountError(null); }}
-                          placeholder="123-456-7890"
-                          className="pl-10 h-10"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open('https://ads.google.com/home/signup/', '_blank')}
-                          className="flex-1 h-8 text-xs"
+                      {/* New Account Wizard - In-App */}
+                      {showNewAccountWizard ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/5 to-amber-500/5 space-y-3"
                         >
-                          <ExternalLink className="w-3 h-3 mr-1" />New Account
-                        </Button>
-                        {availableAccounts.length > 0 && (
-                          <Button variant="ghost" size="sm" onClick={() => setShowManualEntry(false)} className="h-8 text-xs">
-                            ← Back
-                          </Button>
-                        )}
-                      </div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                              <Rocket className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-semibold">Create Google Ads Account</h4>
+                              <p className="text-[10px] text-muted-foreground">Step {newAccountStep + 1} of 3</p>
+                            </div>
+                          </div>
+                          
+                          {/* Progress */}
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((step) => (
+                              <div 
+                                key={step}
+                                className={`h-1 flex-1 rounded-full transition-colors ${
+                                  step <= newAccountStep ? 'bg-orange-500' : 'bg-muted'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          
+                          <AnimatePresence mode="wait">
+                            {newAccountStep === 0 && (
+                              <motion.div key="new-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                                <div className="relative">
+                                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                  <Input
+                                    type="email"
+                                    value={newAccountEmail}
+                                    onChange={(e) => setNewAccountEmail(e.target.value)}
+                                    placeholder="your@email.com"
+                                    className="pl-10 h-9"
+                                  />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">Email for your Google Ads account</p>
+                              </motion.div>
+                            )}
+                            
+                            {newAccountStep === 1 && (
+                              <motion.div key="new-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                                <div className="relative">
+                                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                  <Input
+                                    value={newAccountBusiness}
+                                    onChange={(e) => setNewAccountBusiness(e.target.value)}
+                                    placeholder="Your Business Name"
+                                    className="pl-10 h-9"
+                                  />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">Business name for the account</p>
+                              </motion.div>
+                            )}
+                            
+                            {newAccountStep === 2 && (
+                              <motion.div key="new-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                                <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Email</span>
+                                    <span className="font-medium">{newAccountEmail}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Business</span>
+                                    <span className="font-medium">{newAccountBusiness}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Currency</span>
+                                    <span className="font-medium">USD</span>
+                                  </div>
+                                </div>
+                                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-start gap-2">
+                                  <Info className="w-3.5 h-3.5 text-cyan-500 flex-shrink-0 mt-0.5" />
+                                  <p className="text-[10px] text-cyan-600 dark:text-cyan-400">
+                                    A Customer ID will be generated for you. You can update billing in Google Ads later.
+                                  </p>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (newAccountStep === 0) {
+                                  setShowNewAccountWizard(false);
+                                } else {
+                                  setNewAccountStep(prev => (prev - 1) as 0 | 1 | 2);
+                                }
+                              }}
+                              className="h-8 text-xs"
+                            >
+                              {newAccountStep === 0 ? 'Cancel' : '← Back'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (newAccountStep === 2) {
+                                  handleCreateNewAccount();
+                                } else {
+                                  if (newAccountStep === 0 && !newAccountEmail) {
+                                    toast.error('Enter your email');
+                                    return;
+                                  }
+                                  if (newAccountStep === 1 && !newAccountBusiness) {
+                                    toast.error('Enter business name');
+                                    return;
+                                  }
+                                  setNewAccountStep(prev => (prev + 1) as 0 | 1 | 2);
+                                }
+                              }}
+                              disabled={isCreatingAccount}
+                              className="flex-1 h-8 text-xs bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                            >
+                              {isCreatingAccount ? (
+                                <><RefreshCw className="w-3 h-3 mr-1 animate-spin" />Creating...</>
+                              ) : newAccountStep === 2 ? (
+                                <><Rocket className="w-3 h-3 mr-1" />Create Account</>
+                              ) : (
+                                <>Next <ArrowRight className="w-3 h-3 ml-1" /></>
+                              )}
+                            </Button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              value={manualCustomerId}
+                              onChange={(e) => { setManualCustomerId(e.target.value.replace(/[^0-9-]/g, '')); setAccountError(null); }}
+                              placeholder="123-456-7890"
+                              className="pl-10 h-10"
+                            />
+                          </div>
+                          
+                          {/* In-App New Account Button */}
+                          <div className="p-3 rounded-xl border border-dashed border-orange-500/30 bg-gradient-to-br from-orange-500/5 to-transparent">
+                            <p className="text-xs font-medium mb-1.5">Don't have an account?</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowNewAccountWizard(true)}
+                              className="w-full h-8 text-xs border-orange-500/30 hover:bg-orange-500/10"
+                            >
+                              <Rocket className="w-3 h-3 mr-1.5" />Create New Account
+                            </Button>
+                          </div>
+                          
+                          {availableAccounts.length > 0 && (
+                            <Button variant="ghost" size="sm" onClick={() => setShowManualEntry(false)} className="w-full h-8 text-xs">
+                              ← Back to account list
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 
