@@ -17,7 +17,8 @@ import {
   CheckCircle, ChevronLeft, ChevronRight, ArrowRight, MapPin, 
   Clock, Globe, Phone, Building, FileText, Loader2, AlertCircle,
   Store, Briefcase, Utensils, Wrench, Heart, Home, Car, Scissors,
-  Dumbbell, Laptop, GraduationCap, Camera, RefreshCw
+  Dumbbell, Laptop, GraduationCap, Camera, RefreshCw, Star, MessageSquare,
+  TrendingUp, Users, Shield, Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,6 +226,7 @@ export const GMBOnboardingWizard = ({
   const stepIndex = step - 1;
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -819,5 +821,78 @@ export const GMBOnboardingWizard = ({
         </div>
       )}
     </motion.div>
+
+    {/* Benefits Section */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="mt-6"
+    >
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Why Connect Your <span className="bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">Google Business Profile?</span>
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Unlock powerful local SEO tools and streamline your review management
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          {
+            icon: Star,
+            title: "Review Management",
+            description: "Monitor, respond to, and generate more 5-star reviews from satisfied customers directly from your dashboard.",
+            gradient: "from-amber-500 to-orange-500"
+          },
+          {
+            icon: MessageSquare,
+            title: "Q&A Automation",
+            description: "Auto-respond to customer questions with AI-powered answers that match your brand voice.",
+            gradient: "from-blue-500 to-cyan-500"
+          },
+          {
+            icon: TrendingUp,
+            title: "Local SEO Boost",
+            description: "Improve your Map Pack rankings with optimized posts, photos, and regular activity updates.",
+            gradient: "from-green-500 to-emerald-500"
+          },
+          {
+            icon: Users,
+            title: "Customer Insights",
+            description: "Track how customers find you, call patterns, and direction requests in real-time.",
+            gradient: "from-purple-500 to-pink-500"
+          },
+          {
+            icon: Shield,
+            title: "Reputation Protection",
+            description: "Get instant alerts for new reviews so you can address concerns before they escalate.",
+            gradient: "from-red-500 to-rose-500"
+          },
+          {
+            icon: Zap,
+            title: "CADE Integration",
+            description: "When CADE is active, automatically post new articles and FAQs to keep your listing fresh.",
+            gradient: "from-violet-500 to-indigo-500"
+          }
+        ].map((benefit, index) => (
+          <motion.div
+            key={benefit.title}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.1 }}
+            className="group relative p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+          >
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+              <benefit.icon className="w-5 h-5 text-white" />
+            </div>
+            <h4 className="font-semibold text-foreground mb-1">{benefit.title}</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">{benefit.description}</p>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  </>
   );
 };
