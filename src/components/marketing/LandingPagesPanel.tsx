@@ -106,9 +106,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
 
   const storedConnection = getStoredConnection();
   
+  // If unified auth exists, always consider connected - skip the wizard entirely
   const [isConnected, setIsConnected] = useState(!!storedConnection);
-  // Auto-show wizard if returning from OAuth callback (but NOT if we have unified auth)
-  const [showWizard, setShowWizard] = useState(hasOAuthCallback() && !storedConnection?.isUnifiedAuth);
+  // Never show the connection wizard if unified auth is available - go straight to dashboard/campaign setup
+  const [showWizard, setShowWizard] = useState(false);
   const [showCampaignSetup, setShowCampaignSetup] = useState(false);
   const [hasCampaigns, setHasCampaigns] = useState<boolean | null>(null);
   const [isFetchingKeywords, setIsFetchingKeywords] = useState(false);
@@ -120,6 +121,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [connectedCustomerId, setConnectedCustomerId] = useState<string | null>(storedConnection?.customerId || null);
   const [accessToken, setAccessToken] = useState<string | null>(storedConnection?.token || null);
   const [isUnifiedAuth, setIsUnifiedAuth] = useState(storedConnection?.isUnifiedAuth || false);
+  const [isCheckingAccount, setIsCheckingAccount] = useState(false);
 
   const GOOGLE_ADS_SCOPES = 'https://www.googleapis.com/auth/adwords';
 
@@ -230,12 +232,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       setSummary(data.summary || null);
       setHasCampaigns(data.hasCampaigns !== false);
       
-      // If no campaigns, show the campaign setup wizard
-      if (data.hasCampaigns === false) {
+      // If no campaigns for this domain, show the campaign setup wizard
+      if (data.hasCampaigns === false || (data.keywords?.length === 0 && !data.isDemo)) {
         setShowCampaignSetup(true);
-        toast.info('No active campaigns found. Let\'s set one up!');
-      } else if (data.isDemo) {
-        toast.info('Demo mode - Google Ads API developer token required for live data');
+        toast.info('No PPC campaigns found for this domain. Let\'s create one!');
       }
     } catch (err) {
       console.error('Error fetching keywords:', err);
@@ -466,22 +466,17 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </div>
       </header>
 
-      {/* Show Campaign Setup Wizard when connected but no campaigns */}
-      {showCampaignSetup && isConnected && accessToken && connectedCustomerId ? (
+      {/* Show Campaign Setup Wizard when connected but no campaigns for domain */}
+      {showCampaignSetup && accessToken ? (
         <GoogleAdsCampaignSetupWizard
           domain={selectedDomain || ''}
-          customerId={connectedCustomerId}
+          customerId={connectedCustomerId || 'unified-auth'}
           accessToken={accessToken}
           onComplete={handleCampaignSetupComplete}
           onCancel={() => setShowCampaignSetup(false)}
         />
-      ) : showWizard ? (
-        <GoogleAdsOnboardingWizard
-          domain={selectedDomain || ''}
-          onComplete={handleWizardComplete}
-          onSkip={handleSkipWizard}
-        />
-      ) : !isConnected ? (
+      ) : !accessToken ? (
+        /* Only show connect prompt if user is NOT logged in with Google at all */
         <div className="space-y-8">
           {/* Hero Section - Full Width Futuristic Design */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-yellow-500/10 border border-orange-500/20 p-8 lg:p-12">
@@ -939,15 +934,17 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
               </div>
             )}
 
-            {/* Demo Notice */}
-            <div className="mt-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 text-center">
-              <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10 mb-2">
-                Demo Mode
-              </Badge>
-              <p className="text-xs text-muted-foreground">
-                Showing sample data. Full Google Ads API integration requires a developer token from Google.
-              </p>
-            </div>
+            {/* API Notice - only show if showing demo data */}
+            {hasCampaigns === null && keywords.length > 0 && (
+              <div className="mt-6 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 text-center">
+                <Badge variant="outline" className="text-cyan-500 border-cyan-500/30 bg-cyan-500/10 mb-2">
+                  Connected via Google
+                </Badge>
+                <p className="text-xs text-muted-foreground">
+                  Your Google Ads account is connected. Data shown may vary based on API access level.
+                </p>
+              </div>
+            )}
           </div>
         </>
       )}
