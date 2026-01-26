@@ -902,66 +902,6 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          {/* Domain Profile */}
-          {domain && (
-            <Card className="border-violet-500/20">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-violet-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{domain}</CardTitle>
-                      <CardDescription>Domain Profile</CardDescription>
-                    </div>
-                  </div>
-                  <Badge className={getStatusColor(domainProfile?.status)}>
-                    {domainProfile?.status || "Not crawled"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {domainProfile ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Category</p>
-                      <p className="font-medium">{domainProfile.category || "Unknown"}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Pages Crawled</p>
-                      <p className="font-medium">{domainProfile.crawled_pages ?? 0}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Content Generated</p>
-                      <p className="font-medium">{domainProfile.content_count ?? 0}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">CSS Analyzed</p>
-                      <p className="font-medium">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Globe className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground mb-4">Domain hasn't been crawled yet</p>
-                    <Button
-                      onClick={handleCrawlDomain}
-                      disabled={crawling}
-                      className="gap-2 bg-violet-500 hover:bg-violet-600"
-                    >
-                      {crawling ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Zap className="w-4 h-4" />
-                      )}
-                      Start Domain Crawl
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Quick Actions */}
           <Card className="border-violet-500/20">
