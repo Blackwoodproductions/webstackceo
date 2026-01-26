@@ -65,6 +65,7 @@ const LiveChatWidget = () => {
   useEffect(() => {
     const checkUser = async () => {
       setIsLoading(true);
+      setIsAdmin(false); // Reset admin status on each check
       
       // First check localStorage for cached profile (faster initial render)
       const cachedProfile = localStorage.getItem('unified_google_profile');
@@ -80,36 +81,45 @@ const LiveChatWidget = () => {
       }
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserEmail(user.email || null);
-        setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
-        
-        // Set from metadata first for immediate display
-        const metaAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-        if (metaAvatar) setUserAvatar(metaAvatar);
-        
-        // Check admin status using the has_role function
-        const { data: hasAdminRole } = await supabase.rpc('has_role', {
+      if (!user) {
+        // No user logged in - definitely not an admin
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
+      
+      setUserEmail(user.email || null);
+      setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
+      
+      // Set from metadata first for immediate display
+      const metaAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      if (metaAvatar) setUserAvatar(metaAvatar);
+      
+      // Check admin status using the has_role function
+      try {
+        const { data: hasAdminRole, error } = await supabase.rpc('has_role', {
           _user_id: user.id,
           _role: 'admin'
         });
-        setIsAdmin(hasAdminRole === true);
         
-        // Then fetch from profiles table for most accurate avatar
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('avatar_url, full_name')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        
-        if (profile?.avatar_url) {
-          setUserAvatar(profile.avatar_url);
-        }
-        if (profile?.full_name) {
-          setUserName(profile.full_name);
-        }
-      } else {
+        // Only set admin if explicitly true (not null, undefined, or error)
+        setIsAdmin(hasAdminRole === true && !error);
+      } catch {
         setIsAdmin(false);
+      }
+      
+      // Then fetch from profiles table for most accurate avatar
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profile?.avatar_url) {
+        setUserAvatar(profile.avatar_url);
+      }
+      if (profile?.full_name) {
+        setUserName(profile.full_name);
       }
       
       setIsLoading(false);
@@ -117,6 +127,15 @@ const LiveChatWidget = () => {
     checkUser();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        // Immediately clear all state on sign out
+        setUserEmail(null);
+        setUserName(null);
+        setUserAvatar(null);
+        setIsAdmin(false);
+        return;
+      }
+      
       if (session?.user) {
         setUserEmail(session.user.email || null);
         setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
@@ -124,12 +143,16 @@ const LiveChatWidget = () => {
         
         // Check admin status and fetch profile
         setTimeout(async () => {
-          // Check admin status
-          const { data: hasAdminRole } = await supabase.rpc('has_role', {
-            _user_id: session.user.id,
-            _role: 'admin'
-          });
-          setIsAdmin(hasAdminRole === true);
+          try {
+            // Check admin status
+            const { data: hasAdminRole, error } = await supabase.rpc('has_role', {
+              _user_id: session.user.id,
+              _role: 'admin'
+            });
+            setIsAdmin(hasAdminRole === true && !error);
+          } catch {
+            setIsAdmin(false);
+          }
           
           const { data: profile } = await supabase
             .from('profiles')
@@ -143,10 +166,8 @@ const LiveChatWidget = () => {
             setUserName(profile.full_name);
           }
         }, 0);
-      } else if (event === 'SIGNED_OUT') {
-        setUserEmail(null);
-        setUserName(null);
-        setUserAvatar(null);
+      } else {
+        // No session = not admin
         setIsAdmin(false);
       }
     });
