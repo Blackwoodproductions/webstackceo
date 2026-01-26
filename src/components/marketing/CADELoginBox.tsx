@@ -200,7 +200,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
   const callCadeApi = async (action: string, params?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("cade-api", {
-      body: { action, domain, params },
+      body: { action, domain, params, apiKey },
     });
 
     if (error) {

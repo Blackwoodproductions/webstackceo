@@ -14,18 +14,20 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("CADE_API_KEY");
+    const { action, domain, params, apiKey: userApiKey } = await req.json();
+    
+    // Use user-provided API key first, fall back to environment variable
+    const apiKey = userApiKey || Deno.env.get("CADE_API_KEY");
     
     if (!apiKey) {
-      console.error("[CADE API] Missing CADE_API_KEY environment variable");
+      console.error("[CADE API] No API key provided");
       return new Response(
-        JSON.stringify({ error: "CADE API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "CADE API key not provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { action, domain, params } = await req.json();
-    console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}`);
+    console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}, Using user key: ${!!userApiKey}`);
 
     let endpoint = "";
     let method = "GET";
