@@ -3,7 +3,7 @@ import { usePopupOAuth } from "./use-popup-oauth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
-// Combined scopes for GA + GSC in a single OAuth prompt
+// Combined scopes for GA + GSC in a single OAuth prompt with offline access for refresh tokens
 const UNIFIED_GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -12,6 +12,8 @@ const UNIFIED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
 ].join(" ");
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const getGoogleClientId = () =>
   localStorage.getItem("google_client_id") ||
@@ -76,11 +78,12 @@ export interface UseUnifiedGoogleAuthReturn extends UnifiedGoogleAuthState {
 
 /**
  * Unified Google OAuth hook that authenticates both GA and GSC with a single prompt.
- * Stores a shared token that can be used by both services.
+ * Stores tokens in database for 30-day persistence with refresh token support.
  */
 export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
   const { toast } = useToast();
   const { openOAuthPopup } = usePopupOAuth();
+  const hasCheckedDb = useRef(false);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,103 +95,136 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
 
-  // Check stored token on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("unified_google_token");
-    const tokenExpiry = localStorage.getItem("unified_google_expiry");
-    const storedScopes = localStorage.getItem("unified_google_scopes") || "";
-    const storedProfile = localStorage.getItem("unified_google_profile");
-
-    if (storedToken && tokenExpiry) {
-      const expiryTime = parseInt(tokenExpiry);
-      const timeRemaining = expiryTime - Date.now();
-
-      if (timeRemaining > 0) {
-        console.log("[UnifiedAuth] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
-        setAccessToken(storedToken);
-        setIsAuthenticated(true);
-        setHasGAAccess(storedScopes.includes("analytics"));
-        setHasGSCAccess(storedScopes.includes("webmasters"));
-
-        // Also sync to individual storage for backwards compatibility
-        localStorage.setItem("ga_access_token", storedToken);
-        localStorage.setItem("ga_token_expiry", tokenExpiry);
-        localStorage.setItem("gsc_access_token", storedToken);
-        localStorage.setItem("gsc_token_expiry", tokenExpiry);
-
-        if (storedProfile) {
-          try {
-            setProfile(JSON.parse(storedProfile));
-          } catch {
-            // ignore
-          }
-        }
-
-        setIsLoading(false);
-        return;
-      } else {
-        console.log("[UnifiedAuth] Stored token has expired, clearing...");
-        clearAllTokens();
+  // Store tokens in database
+  const storeTokensInDb = useCallback(async (
+    token: string, 
+    refreshToken: string | null, 
+    expiresIn: number, 
+    scope: string
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log("[UnifiedAuth] No authenticated user, storing in localStorage only");
+        return false;
       }
-    }
 
-    // Check for OAuth callback
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
+      // Calculate expiry - cap at 30 days
+      const expiryMs = Math.min(expiresIn * 1000, THIRTY_DAYS_MS);
+      const expiresAt = new Date(Date.now() + expiryMs).toISOString();
 
-    if (code && state === "unified_google") {
-      const verifier = localStorage.getItem("unified_google_verifier");
+      const { error } = await supabase
+        .from('oauth_tokens')
+        .upsert({
+          user_id: user.id,
+          provider: 'google',
+          access_token: token,
+          refresh_token: refreshToken,
+          scope: scope,
+          expires_at: expiresAt,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,provider'
+        });
 
-      if (verifier) {
-        setIsLoading(true);
-        (async () => {
-          try {
-            const redirectUri = getOAuthRedirectUri();
-            const tokenRes = await supabase.functions.invoke("google-oauth-token", {
-              body: { code, codeVerifier: verifier, redirectUri },
-            });
-
-            if (tokenRes.error || tokenRes.data?.error) {
-              throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
-            }
-
-            const { access_token, expires_in, scope } = tokenRes.data;
-            await storeTokens(access_token, expires_in || 3600, scope || "");
-
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            toast({
-              title: "Google Connected",
-              description: "Successfully linked your Google Analytics and Search Console.",
-            });
-          } catch (error: any) {
-            console.error("[UnifiedAuth] Token exchange error:", error);
-            toast({
-              title: "Connection Failed",
-              description: error.message || "Failed to connect to Google.",
-              variant: "destructive",
-            });
-            setAccessToken(null);
-            setIsAuthenticated(false);
-          } finally {
-            setIsLoading(false);
-          }
-        })();
-        return;
+      if (error) {
+        console.error("[UnifiedAuth] Failed to store tokens in DB:", error);
+        return false;
       }
+
+      console.log("[UnifiedAuth] Tokens stored in database, expires:", expiresAt);
+      return true;
+    } catch (error) {
+      console.error("[UnifiedAuth] Error storing tokens:", error);
+      return false;
     }
+  }, []);
 
-    setIsLoading(false);
-  }, [toast]);
+  // Retrieve tokens from database
+  const getTokensFromDb = useCallback(async (): Promise<{
+    accessToken: string;
+    refreshToken: string | null;
+    scope: string;
+    expiresAt: Date;
+  } | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return null;
+      }
 
-  const clearAllTokens = () => {
+      const { data, error } = await supabase
+        .from('oauth_tokens')
+        .select('access_token, refresh_token, scope, expires_at')
+        .eq('user_id', user.id)
+        .eq('provider', 'google')
+        .maybeSingle();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        scope: data.scope || '',
+        expiresAt: new Date(data.expires_at),
+      };
+    } catch (error) {
+      console.error("[UnifiedAuth] Error retrieving tokens:", error);
+      return null;
+    }
+  }, []);
+
+  // Refresh access token using refresh token
+  const refreshAccessToken = useCallback(async (refreshToken: string): Promise<string | null> => {
+    try {
+      const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+        body: { 
+          refreshToken,
+          grantType: 'refresh_token'
+        },
+      });
+
+      if (tokenRes.error || tokenRes.data?.error) {
+        console.error("[UnifiedAuth] Token refresh failed:", tokenRes.data?.error || tokenRes.error);
+        return null;
+      }
+
+      const { access_token, expires_in, scope } = tokenRes.data;
+      
+      // Update stored tokens
+      await storeTokensInDb(access_token, refreshToken, expires_in || 3600, scope || '');
+      
+      return access_token;
+    } catch (error) {
+      console.error("[UnifiedAuth] Error refreshing token:", error);
+      return null;
+    }
+  }, [storeTokensInDb]);
+
+  // Delete tokens from database
+  const deleteTokensFromDb = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('oauth_tokens')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('provider', 'google');
+    } catch (error) {
+      console.error("[UnifiedAuth] Error deleting tokens:", error);
+    }
+  }, []);
+
+  const clearAllTokens = useCallback(() => {
     localStorage.removeItem("unified_google_token");
     localStorage.removeItem("unified_google_expiry");
     localStorage.removeItem("unified_google_scopes");
     localStorage.removeItem("unified_google_verifier");
     localStorage.removeItem("unified_google_profile");
-    // Clear individual tokens too
     localStorage.removeItem("ga_access_token");
     localStorage.removeItem("ga_token_expiry");
     localStorage.removeItem("ga_code_verifier");
@@ -196,22 +232,32 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     localStorage.removeItem("gsc_token_expiry");
     localStorage.removeItem("gsc_code_verifier");
     localStorage.removeItem("gsc_google_profile");
-  };
+  }, []);
 
-  const storeTokens = async (token: string, expiresIn: number, scope: string) => {
-    const expiryTime = Date.now() + expiresIn * 1000;
-
-    // Store unified token
+  const syncToLocalStorage = useCallback((token: string, expiryTime: number, scope: string, profileData?: any) => {
     localStorage.setItem("unified_google_token", token);
     localStorage.setItem("unified_google_expiry", expiryTime.toString());
     localStorage.setItem("unified_google_scopes", scope);
-    localStorage.removeItem("unified_google_verifier");
-
-    // Sync to individual storage for backwards compatibility
     localStorage.setItem("ga_access_token", token);
     localStorage.setItem("ga_token_expiry", expiryTime.toString());
     localStorage.setItem("gsc_access_token", token);
     localStorage.setItem("gsc_token_expiry", expiryTime.toString());
+    
+    if (profileData) {
+      localStorage.setItem("unified_google_profile", JSON.stringify(profileData));
+      localStorage.setItem("gsc_google_profile", JSON.stringify(profileData));
+    }
+  }, []);
+
+  const storeTokens = useCallback(async (token: string, expiresIn: number, scope: string, refreshToken?: string | null) => {
+    const expiryTime = Date.now() + expiresIn * 1000;
+
+    // Store in localStorage for immediate use
+    syncToLocalStorage(token, expiryTime, scope);
+    localStorage.removeItem("unified_google_verifier");
+
+    // Store in database for persistence
+    await storeTokensInDb(token, refreshToken || null, expiresIn, scope);
 
     setAccessToken(token);
     setIsAuthenticated(true);
@@ -238,7 +284,143 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     } catch {
       // ignore
     }
-  };
+  }, [syncToLocalStorage, storeTokensInDb]);
+
+  // Check stored tokens on mount - prioritize database
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (hasCheckedDb.current) return;
+      hasCheckedDb.current = true;
+
+      // First check database for tokens
+      const dbTokens = await getTokensFromDb();
+      
+      if (dbTokens) {
+        const now = new Date();
+        const timeRemaining = dbTokens.expiresAt.getTime() - now.getTime();
+        const fiveMinBuffer = 5 * 60 * 1000;
+
+        if (timeRemaining > fiveMinBuffer) {
+          // Token is still valid
+          console.log("[UnifiedAuth] Valid token from DB, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
+          
+          syncToLocalStorage(dbTokens.accessToken, dbTokens.expiresAt.getTime(), dbTokens.scope);
+          setAccessToken(dbTokens.accessToken);
+          setIsAuthenticated(true);
+          setHasGAAccess(dbTokens.scope.includes("analytics"));
+          setHasGSCAccess(dbTokens.scope.includes("webmasters"));
+
+          // Load cached profile
+          const storedProfile = localStorage.getItem("unified_google_profile");
+          if (storedProfile) {
+            try {
+              setProfile(JSON.parse(storedProfile));
+            } catch {
+              // ignore
+            }
+          }
+
+          setIsLoading(false);
+          return;
+        } else if (dbTokens.refreshToken) {
+          // Token expired but we have refresh token
+          console.log("[UnifiedAuth] Token expired, attempting refresh...");
+          const newToken = await refreshAccessToken(dbTokens.refreshToken);
+          
+          if (newToken) {
+            setAccessToken(newToken);
+            setIsAuthenticated(true);
+            setHasGAAccess(dbTokens.scope.includes("analytics"));
+            setHasGSCAccess(dbTokens.scope.includes("webmasters"));
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fall back to localStorage check
+      const storedToken = localStorage.getItem("unified_google_token");
+      const tokenExpiry = localStorage.getItem("unified_google_expiry");
+      const storedScopes = localStorage.getItem("unified_google_scopes") || "";
+      const storedProfile = localStorage.getItem("unified_google_profile");
+
+      if (storedToken && tokenExpiry) {
+        const expiryTime = parseInt(tokenExpiry);
+        const timeRemaining = expiryTime - Date.now();
+
+        if (timeRemaining > 0) {
+          console.log("[UnifiedAuth] Found valid localStorage token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
+          setAccessToken(storedToken);
+          setIsAuthenticated(true);
+          setHasGAAccess(storedScopes.includes("analytics"));
+          setHasGSCAccess(storedScopes.includes("webmasters"));
+
+          if (storedProfile) {
+            try {
+              setProfile(JSON.parse(storedProfile));
+            } catch {
+              // ignore
+            }
+          }
+
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("[UnifiedAuth] Stored token has expired, clearing...");
+          clearAllTokens();
+        }
+      }
+
+      // Check for OAuth callback
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state");
+
+      if (code && state === "unified_google") {
+        const verifier = localStorage.getItem("unified_google_verifier");
+
+        if (verifier) {
+          setIsLoading(true);
+          try {
+            const redirectUri = getOAuthRedirectUri();
+            const tokenRes = await supabase.functions.invoke("google-oauth-token", {
+              body: { code, codeVerifier: verifier, redirectUri },
+            });
+
+            if (tokenRes.error || tokenRes.data?.error) {
+              throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
+            }
+
+            const { access_token, refresh_token, expires_in, scope } = tokenRes.data;
+            await storeTokens(access_token, expires_in || 3600, scope || "", refresh_token);
+
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            toast({
+              title: "Google Connected",
+              description: "Successfully linked your Google Analytics and Search Console.",
+            });
+          } catch (error: any) {
+            console.error("[UnifiedAuth] Token exchange error:", error);
+            toast({
+              title: "Connection Failed",
+              description: error.message || "Failed to connect to Google.",
+              variant: "destructive",
+            });
+            setAccessToken(null);
+            setIsAuthenticated(false);
+          } finally {
+            setIsLoading(false);
+          }
+          return;
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [toast, getTokensFromDb, refreshAccessToken, syncToLocalStorage, clearAllTokens, storeTokens]);
 
   const handleOAuthCodeExchange = useCallback(async (code: string) => {
     const verifier = localStorage.getItem("unified_google_verifier");
@@ -262,8 +444,8 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
         throw new Error(tokenRes.data?.error_description || tokenRes.error?.message || "Token exchange failed");
       }
 
-      const { access_token, expires_in, scope } = tokenRes.data;
-      await storeTokens(access_token, expires_in || 3600, scope || "");
+      const { access_token, refresh_token, expires_in, scope } = tokenRes.data;
+      await storeTokens(access_token, expires_in || 3600, scope || "", refresh_token);
 
       toast({
         title: "Google Connected",
@@ -281,7 +463,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, storeTokens]);
 
   const login = useCallback(async () => {
     const clientId = getGoogleClientId();
@@ -305,7 +487,7 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
       authUrl.searchParams.set("code_challenge", challenge);
       authUrl.searchParams.set("code_challenge_method", "S256");
       authUrl.searchParams.set("prompt", "consent");
-      authUrl.searchParams.set("access_type", "online");
+      authUrl.searchParams.set("access_type", "offline"); // Request refresh token
       authUrl.searchParams.set("state", "unified_google");
 
       const opened = openOAuthPopup({
@@ -343,15 +525,16 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
     }
   }, [openOAuthPopup, handleOAuthCodeExchange, toast]);
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
     clearAllTokens();
+    await deleteTokensFromDb();
     setAccessToken(null);
     setIsAuthenticated(false);
     setProfile(null);
     setHasGAAccess(false);
     setHasGSCAccess(false);
     window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile: null } }));
-  }, []);
+  }, [clearAllTokens, deleteTokensFromDb]);
 
   const saveClientIdAndLogin = useCallback(() => {
     if (!clientIdInput.trim()) {
