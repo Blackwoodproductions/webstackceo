@@ -2473,16 +2473,6 @@ const AuditResults = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    {!isClaimed && !isCaseStudyMode && (
-                      <Button 
-                        variant="outline" 
-                        className="gap-2 min-w-[160px] justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
-                        onClick={handleSaveClick}
-                      >
-                        <Gift className="w-4 h-4 text-primary" />
-                        Save & Get Free Backlink
-                      </Button>
-                    )}
                     {isCaseStudyMode ? (
                       <div className="flex flex-col items-end gap-3">
                         <NextReportCountdown />
@@ -2510,6 +2500,16 @@ const AuditResults = () => {
                     ) : (
                       <div className="flex flex-col items-end gap-3">
                         <div className="flex items-center gap-3">
+                          {!isClaimed && (
+                            <Button 
+                              variant="outline" 
+                              className="gap-2 justify-center border-primary/30 hover:border-primary/60 hover:bg-primary/10" 
+                              onClick={handleSaveClick}
+                            >
+                              <Gift className="w-4 h-4 text-primary" />
+                              Save & Get Free Backlink
+                            </Button>
+                          )}
                           <Button className="gap-2 min-w-[140px] justify-center bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 shadow-lg shadow-primary/20" asChild>
                             <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
                               <Phone className="w-4 h-4" />
