@@ -58,23 +58,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     onConnectionComplete?.("bron");
   };
 
-  // Check login status via backend function (avoids browser CORS)
-  const checkLoginStatus = async (): Promise<boolean> => {
-    if (!domain) return false;
-    const { data, error } = await supabase.functions.invoke("bron-login-status", {
-      body: { domain, feedit: "add" },
-    });
-
-    if (error) {
-      // Keep quiet (polling), but log for debugging
-      console.log("[BRON] login-status error:", error);
-      return false;
-    }
-
-    return !!(data as any)?.loggedIn;
-  };
-
-  // Popup-based login with automatic detection + auto close
+  // Popup-based login - detect when popup navigates to dashboard or closes
   const handlePopupLogin = () => {
     if (!domain) {
       toast({
@@ -112,30 +96,32 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     popupRef.current = popup;
 
-    // Poll login status every 2 seconds; on success close popup + show dashboard on this tab
-    pollRef.current = window.setInterval(async () => {
-      // Check if popup was closed
-      const popupClosed = !popupRef.current || popupRef.current.closed;
-      
-      // Check login status via API
-      const isLoggedIn = await checkLoginStatus();
-      
-      if (isLoggedIn) {
-        // Login detected - close popup and show dashboard
+    // Poll to detect: 1) popup closed, or 2) popup navigated to dashboard (login complete)
+    pollRef.current = window.setInterval(() => {
+      // Check if popup was closed by user
+      if (!popupRef.current || popupRef.current.closed) {
         if (pollRef.current) window.clearInterval(pollRef.current);
-        try { popupRef.current?.close(); } catch { /* ignore */ }
         popupRef.current = null;
+        // Popup closed - assume user logged in and close the popup
         persistAuth();
         return;
       }
-      
-      if (popupClosed) {
-        // Popup closed without login detected - stop polling but stay in waiting state
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        popupRef.current = null;
-        setIsWaitingForPopup(false);
+
+      // Try to detect if popup navigated to dashboard (cross-origin will throw)
+      try {
+        const popupUrl = popupRef.current.location.href;
+        // If we can read the URL and it's the dashboard (not login), user is logged in
+        if (popupUrl && !popupUrl.includes('/login')) {
+          if (pollRef.current) window.clearInterval(pollRef.current);
+          try { popupRef.current.close(); } catch { /* ignore */ }
+          popupRef.current = null;
+          persistAuth();
+        }
+      } catch {
+        // Cross-origin error - can't read URL, continue polling
+        // This is expected when on the BRON domain
       }
-    }, 2000);
+    }, 500);
   };
 
   const handleCancelLogin = () => {
