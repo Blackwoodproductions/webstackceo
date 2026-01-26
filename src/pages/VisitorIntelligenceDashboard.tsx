@@ -237,7 +237,7 @@ const MarketingDashboard = () => {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
-  const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; }[]>([]);
+  const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; page_count?: number; }[]>([]);
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
@@ -648,20 +648,46 @@ const MarketingDashboard = () => {
     }
   };
 
-  // Fetch live visitors (active in last 5 minutes)
+  // Fetch live visitors (active in last 5 minutes) - ordered by time on site, then page count
   const fetchLiveVisitors = async () => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data } = await supabase
+    const { data: sessions } = await supabase
       .from('visitor_sessions')
       .select('session_id, first_page, last_activity_at, started_at')
       .gte('last_activity_at', fiveMinutesAgo)
-      .order('last_activity_at', { ascending: false })
-      .limit(10);
+      .order('started_at', { ascending: true }) // Oldest first = most time on site
+      .limit(20);
     
-    if (data) {
+    if (sessions) {
       // Filter out sessions that already have an active chat
       const chatSessionIds = sidebarChats.map(c => c.session_id);
-      setLiveVisitors(data.filter(v => !chatSessionIds.includes(v.session_id)));
+      const filteredSessions = sessions.filter(v => !chatSessionIds.includes(v.session_id));
+      
+      // Fetch page view counts for each session
+      const sessionIds = filteredSessions.map(s => s.session_id);
+      const { data: pageViews } = await supabase
+        .from('page_views')
+        .select('session_id')
+        .in('session_id', sessionIds);
+      
+      // Count pages per session
+      const pageCountMap: Record<string, number> = {};
+      pageViews?.forEach(pv => {
+        pageCountMap[pv.session_id] = (pageCountMap[pv.session_id] || 0) + 1;
+      });
+      
+      // Sort: time on site (descending), then page count (descending)
+      const sorted = filteredSessions.sort((a, b) => {
+        const timeA = Date.now() - new Date(a.started_at).getTime();
+        const timeB = Date.now() - new Date(b.started_at).getTime();
+        if (timeB !== timeA) return timeB - timeA; // Most time first
+        return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0); // Most pages second
+      });
+      
+      setLiveVisitors(sorted.slice(0, 10).map(s => ({
+        ...s,
+        page_count: pageCountMap[s.session_id] || 1
+      })));
     }
   };
 
@@ -2593,13 +2619,14 @@ f.parentNode.insertBefore(j,f);
                       <span className="ml-auto text-emerald-500">{liveVisitors.length}</span>
                     </p>
                     {liveVisitors.map((visitor) => {
+                      // Bold, vibrant colors (no pastels)
                       const colors = [
-                        'from-emerald-400 to-teal-500',
-                        'from-amber-400 to-orange-500',
-                        'from-rose-400 to-pink-500',
-                        'from-sky-400 to-blue-500',
-                        'from-lime-400 to-green-500',
-                        'from-violet-400 to-purple-500',
+                        'from-red-600 to-rose-700',
+                        'from-orange-600 to-amber-700',
+                        'from-emerald-600 to-green-700',
+                        'from-blue-600 to-indigo-700',
+                        'from-purple-600 to-violet-700',
+                        'from-cyan-600 to-teal-700',
                       ];
                       const visitorIcons = [Eye, Zap, Flame, Star, Target, Crosshair, Sparkles, Activity];
                       const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -2760,13 +2787,14 @@ f.parentNode.insertBefore(j,f);
 
                 {/* Live Visitors (not in chat yet) */}
                 {liveVisitors.slice(0, 8 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
+                  // Bold, vibrant colors (no pastels)
                   const colors = [
-                    'from-emerald-400 to-teal-500',
-                    'from-amber-400 to-orange-500',
-                    'from-rose-400 to-pink-500',
-                    'from-sky-400 to-blue-500',
-                    'from-lime-400 to-green-500',
-                    'from-violet-400 to-purple-500',
+                    'from-red-600 to-rose-700',
+                    'from-orange-600 to-amber-700',
+                    'from-emerald-600 to-green-700',
+                    'from-blue-600 to-indigo-700',
+                    'from-purple-600 to-violet-700',
+                    'from-cyan-600 to-teal-700',
                   ];
                   const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
                   const colorClass = colors[hash % colors.length];
