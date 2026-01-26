@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.pagespeed-insights]
 verify_jwt = false
+
+[functions.cade-api]
+verify_jwt = false
