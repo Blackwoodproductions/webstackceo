@@ -11,6 +11,7 @@ import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 
 interface ActiveSession {
   session_id: string;
+  user_id: string | null;
   started_at: string;
   last_activity_at: string;
   first_page: string | null;
@@ -35,10 +36,30 @@ interface PageEngagement {
 
 const VisitorEngagementPanel = () => {
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [pageData, setPageData] = useState<PageEngagement[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [maxScore, setMaxScore] = useState(1);
+
+  // Get current user's ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUserId(null);
+      } else if (session?.user) {
+        setCurrentUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -47,7 +68,7 @@ const VisitorEngagementPanel = () => {
       const [sessionsRes, pageViewsRes, toolsRes, leadsRes, formSubmissionsRes] = await Promise.all([
         supabase
           .from('visitor_sessions')
-          .select('session_id, started_at, last_activity_at, first_page, referrer, user_agent')
+          .select('session_id, user_id, started_at, last_activity_at, first_page, referrer, user_agent')
           .gte('last_activity_at', fiveMinutesAgo)
           .order('last_activity_at', { ascending: false }),
         supabase.from('page_views').select('page_path, session_id, created_at'),
@@ -60,6 +81,33 @@ const VisitorEngagementPanel = () => {
       const pageViews = pageViewsRes.data || [];
       const toolInteractions = toolsRes.data || [];
       const formSubmissions = formSubmissionsRes.data || [];
+
+      // DEDUPLICATION: 
+      // 1. Always deduplicate by session_id first (prevent same session appearing multiple times)
+      // 2. For authenticated users, keep only the most recent session per user_id
+      const deduplicatedSessions: any[] = [];
+      const seenSessionIds = new Set<string>();
+      const seenUserIds = new Set<string>();
+      
+      for (const session of sessions) {
+        // Skip if we've already seen this exact session_id
+        if (seenSessionIds.has(session.session_id)) {
+          continue;
+        }
+        
+        if (session.user_id) {
+          // Authenticated user - only keep their most recent session
+          if (!seenUserIds.has(session.user_id)) {
+            seenUserIds.add(session.user_id);
+            seenSessionIds.add(session.session_id);
+            deduplicatedSessions.push(session);
+          }
+        } else {
+          // Anonymous user - keep the session (already deduplicated by session_id above)
+          seenSessionIds.add(session.session_id);
+          deduplicatedSessions.push(session);
+        }
+      }
 
       // Process page engagement heatmap
       const pageMap = new Map<string, { views: number; tools: number; sessions: Set<string>; }>();
@@ -104,8 +152,8 @@ const VisitorEngagementPanel = () => {
       setMaxScore(max);
 
       // Process active sessions
-      if (sessions.length > 0) {
-        const sessionIds = sessions.map(s => s.session_id);
+      if (deduplicatedSessions.length > 0) {
+        const sessionIds = deduplicatedSessions.map(s => s.session_id);
         
         const pageViewCounts: Record<string, number> = {};
         const recentPagesMap: Record<string, string[]> = {};
@@ -140,11 +188,12 @@ const VisitorEngagementPanel = () => {
           }
         });
 
-        const enrichedSessions: ActiveSession[] = sessions.map(session => {
+        const enrichedSessions: ActiveSession[] = deduplicatedSessions.map(session => {
           const leadData = sessionLeadData[session.session_id] || { email: null, phone: null, fullName: null, companyEmployees: null };
           
           return {
             session_id: session.session_id,
+            user_id: session.user_id,
             started_at: session.started_at,
             last_activity_at: session.last_activity_at,
             first_page: session.first_page,
@@ -160,7 +209,34 @@ const VisitorEngagementPanel = () => {
           };
         });
 
-        setActiveSessions(enrichedSessions);
+        // CRITICAL FIX: Only keep ONE instance of the current user
+        // Mark current user and filter out duplicates
+        const sessionId = sessionStorage.getItem("chat_session_id") || '';
+        const currentUserSessions: ActiveSession[] = [];
+        const otherSessions: ActiveSession[] = [];
+        
+        for (const session of enrichedSessions) {
+          const isCurrentUser = currentUserId 
+            ? session.user_id === currentUserId 
+            : session.session_id === sessionId;
+          
+          if (isCurrentUser) {
+            // Keep only the first occurrence of current user (most recent due to ordering)
+            if (currentUserSessions.length === 0) {
+              currentUserSessions.push(session);
+            }
+            // Skip all other sessions of current user
+          } else {
+            otherSessions.push(session);
+          }
+        }
+        
+        // Combine: current user first (if exists), then other sessions
+        const finalSessions = currentUserSessions.length > 0 
+          ? [...currentUserSessions, ...otherSessions]
+          : otherSessions;
+        
+        setActiveSessions(finalSessions);
       } else {
         setActiveSessions([]);
       }
@@ -169,7 +245,7 @@ const VisitorEngagementPanel = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     fetchData();
@@ -372,6 +448,11 @@ const VisitorEngagementPanel = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20 flex items-center justify-center">
+                      {currentUserId && session.user_id === currentUserId && (
+                        <Badge className="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 absolute -top-2 -right-2 z-10">
+                          YOU
+                        </Badge>
+                      )}
                       {session.fullName || session.email ? (
                         <User className="w-4 h-4 text-primary" />
                       ) : (

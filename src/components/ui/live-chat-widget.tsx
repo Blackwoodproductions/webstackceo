@@ -59,6 +59,7 @@ const LiveChatWidget = () => {
   const [faviconError, setFaviconError] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Check for logged-in user, admin status, and fetch profile with avatar
@@ -83,11 +84,13 @@ const LiveChatWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         // No user logged in - definitely not an admin
+        setCurrentUserId(null);
         setIsAdmin(false);
         setIsLoading(false);
         return;
       }
       
+      setCurrentUserId(user.id);
       setUserEmail(user.email || null);
       setUserName(user.user_metadata?.full_name || user.user_metadata?.name || null);
       
@@ -129,6 +132,7 @@ const LiveChatWidget = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         // Immediately clear all state on sign out
+        setCurrentUserId(null);
         setUserEmail(null);
         setUserName(null);
         setUserAvatar(null);
@@ -137,6 +141,7 @@ const LiveChatWidget = () => {
       }
       
       if (session?.user) {
+        setCurrentUserId(session.user.id);
         setUserEmail(session.user.email || null);
         setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
         setUserAvatar(session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null);
@@ -173,7 +178,7 @@ const LiveChatWidget = () => {
     });
     
     return () => subscription.unsubscribe();
-  }, []);
+  }, [currentUserId]);
 
   // Fetch live visitors (active in last 5 minutes) with profile info for authenticated users
   const fetchLiveVisitors = useCallback(async () => {
@@ -236,25 +241,45 @@ const LiveChatWidget = () => {
         }
       }
       
-      // Merge profile data with deduplicated sessions
-      const visitorsWithProfiles = deduplicatedSessions
+      // Merge profile data with deduplicated sessions and identify current user
+      const visitorsWithProfiles: LiveVisitor[] = deduplicatedSessions
         .map((v: any) => ({
           ...v,
           avatar_url: profilesMap[v.user_id]?.avatar_url || null,
           display_name: profilesMap[v.user_id]?.full_name || null,
-          is_current_user: v.session_id === sessionId,
+          is_current_user: currentUserId ? v.user_id === currentUserId : v.session_id === sessionId,
         }));
       
-      // Sort to put current user first, then by activity
+      // CRITICAL FIX: Only keep ONE instance of the current user (marked as "YOU")
+      // Remove all other sessions belonging to the current user
+      let currentUserSession: LiveVisitor | null = null;
+      const otherVisitors: LiveVisitor[] = [];
+      
+      for (const visitor of visitorsWithProfiles) {
+        if (visitor.is_current_user) {
+          // Keep only the first occurrence of current user (most recent due to ordering)
+          if (!currentUserSession) {
+            currentUserSession = visitor;
+          }
+          // Skip all other sessions of current user
+        } else {
+          otherVisitors.push(visitor);
+        }
+      }
+      
+      // Sort other visitors by activity, then put current user first
       const sortedVisitors = visitorsWithProfiles.sort((a: any, b: any) => {
-        if (a.is_current_user) return -1;
-        if (b.is_current_user) return 1;
         return new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime();
       });
       
-      setLiveVisitors(sortedVisitors);
+      // Combine: current user first (if exists), then other visitors
+      const finalVisitors = currentUserSession 
+        ? [currentUserSession, ...otherVisitors]
+        : otherVisitors;
+      
+      setLiveVisitors(finalVisitors);
     }
-  }, [sessionId]);
+  }, [sessionId, currentUserId]);
 
   // Poll for live visitors every 30 seconds
   useEffect(() => {

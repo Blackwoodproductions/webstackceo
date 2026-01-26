@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -42,8 +42,28 @@ interface ActiveSession {
 
 const ActiveVisitorsWidget = () => {
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Get current user's ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUserId(null);
+      } else if (session?.user) {
+        setCurrentUserId(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const parseGoogleScopes = (scopes: string | null): GoogleServices => {
     if (!scopes) {
@@ -58,7 +78,7 @@ const ActiveVisitorsWidget = () => {
     };
   };
 
-  const fetchActiveSessions = async () => {
+  const fetchActiveSessions = useCallback(async () => {
     try {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
@@ -179,13 +199,40 @@ const ActiveVisitorsWidget = () => {
         };
       });
 
-      setActiveSessions(enrichedSessions);
+      // CRITICAL FIX: Only keep ONE instance of the current user
+      // Filter to show only one session for the current user
+      const sessionId = sessionStorage.getItem("chat_session_id") || '';
+      const currentUserSessions: ActiveSession[] = [];
+      const otherSessions: ActiveSession[] = [];
+      
+      for (const session of enrichedSessions) {
+        const isCurrentUser = currentUserId 
+          ? session.user_id === currentUserId 
+          : false;
+        
+        if (isCurrentUser) {
+          // Keep only the first occurrence of current user (most recent due to ordering)
+          if (currentUserSessions.length === 0) {
+            currentUserSessions.push(session);
+          }
+          // Skip all other sessions of current user
+        } else {
+          otherSessions.push(session);
+        }
+      }
+      
+      // Combine: current user first (if exists), then other sessions
+      const finalSessions = currentUserSessions.length > 0 
+        ? [...currentUserSessions, ...otherSessions]
+        : otherSessions;
+      
+      setActiveSessions(finalSessions);
     } catch (error) {
       console.error('Error fetching active sessions:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUserId]);
 
   useEffect(() => {
     fetchActiveSessions();
@@ -315,6 +362,11 @@ const ActiveVisitorsWidget = () => {
               {session.full_name ? (
                 <p className="font-semibold text-foreground flex items-center gap-2">
                   {session.full_name}
+                  {currentUserId && session.user_id === currentUserId && (
+                    <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[9px] px-1.5 py-0">
+                      YOU
+                    </Badge>
+                  )}
                   {isAuthenticated && (
                     <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-1.5 py-0">
                       <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
