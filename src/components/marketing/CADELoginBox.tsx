@@ -74,6 +74,16 @@ interface TaskItem {
   progress?: number;
 }
 
+interface ContentTask {
+  task_id: string;
+  status: string;
+  status_url?: string;
+  content_type?: string;
+  domain?: string;
+  started_at?: string;
+  message?: string;
+}
+
 interface QueueInfo {
   name?: string;
   size?: number;
@@ -129,6 +139,10 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [crawling, setCrawling] = useState(false);
   const [generatingFaq, setGeneratingFaq] = useState(false);
   const [previousDomain, setPreviousDomain] = useState<string | undefined>(undefined);
+  
+  // Content Generation Task Tracking
+  const [contentTasks, setContentTasks] = useState<ContentTask[]>([]);
+  const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
 
   // Get current user and load API key from database
   useEffect(() => {
@@ -520,18 +534,94 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
         content_type: contentType,
         auto_publish: false 
       });
-      if (res?.success || res?.task_id || res?.content_id) {
+      
+      // Extract task data from response
+      const taskData = res?.data || res;
+      
+      if (taskData?.task_id) {
+        // Add the new task to our tracking list
+        const newTask: ContentTask = {
+          task_id: taskData.task_id,
+          status: taskData.status || "pending",
+          status_url: taskData.status_url,
+          content_type: contentType,
+          domain: domain,
+          started_at: new Date().toISOString(),
+          message: res?.message || taskData?.message,
+        };
+        
+        setContentTasks(prev => [newTask, ...prev]);
+        setPollingTaskId(taskData.task_id);
+        toast.success(`${contentType} generation started! Task ID: ${taskData.task_id.slice(0, 8)}...`);
+        
+        // Switch to content tab to show the task
+        setActiveTab("content");
+      } else if (res?.success || res?.content_id) {
         toast.success(`${contentType} generation started!`);
         fetchAllData();
       } else {
         toast.error(res?.error || "Failed to start content generation");
       }
     } catch (err) {
+      console.error("[CADE] Content generation error:", err);
       toast.error("Failed to generate content");
     } finally {
       setGeneratingContent(null);
     }
   };
+
+  // Poll for task status updates
+  const pollTaskStatus = useCallback(async (taskId: string) => {
+    try {
+      // Try to get task status from status URL or general endpoint
+      const res = await callCadeApi("crawl-tasks");
+      const allTasks = res?.data || res;
+      
+      if (Array.isArray(allTasks)) {
+        const task = allTasks.find((t: any) => t.id === taskId || t.task_id === taskId);
+        if (task) {
+          setContentTasks(prev => prev.map(t => 
+            t.task_id === taskId 
+              ? { ...t, status: task.status || t.status }
+              : t
+          ));
+          
+          // Stop polling if task is complete
+          if (task.status === "completed" || task.status === "failed") {
+            setPollingTaskId(null);
+            if (task.status === "completed") {
+              toast.success("Content generation completed!");
+              fetchAllData();
+            } else {
+              toast.error("Content generation failed");
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[CADE] Poll task status error:", err);
+    }
+  }, [callCadeApi, fetchAllData]);
+
+  // Auto-poll active task
+  useEffect(() => {
+    if (!pollingTaskId) return;
+    
+    const interval = setInterval(() => {
+      pollTaskStatus(pollingTaskId);
+    }, 5000); // Poll every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [pollingTaskId, pollTaskStatus]);
+
+  // Clear completed/failed tasks after 5 minutes
+  const clearOldTasks = useCallback(() => {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    setContentTasks(prev => prev.filter(t => 
+      t.status === "pending" || t.status === "processing" || 
+      (t.started_at && t.started_at > fiveMinutesAgo)
+    ));
+  }, []);
 
   const handleGenerateFaq = async () => {
     if (!domain) {
@@ -1002,6 +1092,107 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         {/* Content Generation Tab */}
         <TabsContent value="content" className="space-y-4">
+          {/* Active Content Tasks */}
+          {contentTasks.length > 0 && (
+            <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-green-500/10">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                    Active Content Tasks
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearOldTasks}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear Completed
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {contentTasks.map((task) => (
+                    <motion.div
+                      key={task.task_id}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-xl bg-background/50 border border-border/50"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            task.status === "completed" ? "bg-emerald-500/20" :
+                            task.status === "failed" ? "bg-red-500/20" :
+                            "bg-violet-500/20"
+                          }`}>
+                            {task.status === "completed" ? (
+                              <CheckCircle className="w-5 h-5 text-emerald-400" />
+                            ) : task.status === "failed" ? (
+                              <XCircle className="w-5 h-5 text-red-400" />
+                            ) : (
+                              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-sm capitalize">{task.content_type?.replace("-", " ") || "Content"}</span>
+                              <Badge className={getStatusColor(task.status)}>
+                                {task.status || "pending"}
+                              </Badge>
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
+                                  {task.task_id.slice(0, 12)}...
+                                </span>
+                                {task.domain && (
+                                  <span className="flex items-center gap-1">
+                                    <Globe className="w-3 h-3" />
+                                    {task.domain}
+                                  </span>
+                                )}
+                              </div>
+                              {task.message && (
+                                <p className="text-xs text-muted-foreground">{task.message}</p>
+                              )}
+                              {task.started_at && (
+                                <p className="text-[10px] text-muted-foreground/70">
+                                  Started: {new Date(task.started_at).toLocaleTimeString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {task.status_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(task.status_url, "_blank")}
+                            className="shrink-0 gap-1 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Status
+                          </Button>
+                        )}
+                      </div>
+                      {(task.status === "pending" || task.status === "processing") && (
+                        <div className="mt-3">
+                          <Progress 
+                            value={task.status === "processing" ? 50 : 10} 
+                            className="h-1.5 bg-muted/50"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Type Selection */}
           <Card className="border-violet-500/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
