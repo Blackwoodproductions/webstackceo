@@ -118,6 +118,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [generatingContent, setGeneratingContent] = useState<string | null>(null);
   const [crawling, setCrawling] = useState(false);
   const [generatingFaq, setGeneratingFaq] = useState(false);
+  const [previousDomain, setPreviousDomain] = useState<string | undefined>(undefined);
 
   // Check for stored connection on mount
   useEffect(() => {
@@ -128,7 +129,22 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   }, []);
 
-  // Fetch data when connected
+  // Clear domain-specific data and refetch when domain changes
+  useEffect(() => {
+    if (domain !== previousDomain) {
+      // Clear domain-specific data when domain changes
+      setDomainProfile(null);
+      setFaqs([]);
+      setPreviousDomain(domain);
+      
+      // Notify user of domain change
+      if (isConnected && previousDomain && domain) {
+        toast.info(`Switched to domain: ${domain}`);
+      }
+    }
+  }, [domain, previousDomain, isConnected]);
+
+  // Fetch data when connected or domain changes
   useEffect(() => {
     if (isConnected && apiKey) {
       fetchAllData();
@@ -517,6 +533,66 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      {/* Active Domain Banner */}
+      {domain ? (
+        <motion.div
+          key={domain}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-green-500/10 to-teal-500/15 border border-emerald-500/30 overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(16,185,129,0.1),transparent_70%)]" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Globe className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Active Domain</p>
+                <p className="text-lg font-bold text-foreground">{domain}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              {domainProfile?.last_crawl && (
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs text-muted-foreground">Last Crawl</p>
+                  <p className="text-sm font-medium">{new Date(domainProfile.last_crawl).toLocaleDateString()}</p>
+                </div>
+              )}
+              {domainProfile?.crawled_pages !== undefined && (
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs text-muted-foreground">Pages Crawled</p>
+                  <p className="text-sm font-medium">{domainProfile.crawled_pages.toLocaleString()}</p>
+                </div>
+              )}
+              <Button
+                size="sm"
+                onClick={handleCrawlDomain}
+                disabled={crawling}
+                className="gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30"
+              >
+                {crawling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                {crawling ? "Crawling..." : "Crawl Now"}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <div>
+              <p className="font-medium text-amber-400">No Domain Selected</p>
+              <p className="text-sm text-muted-foreground">Use the domain selector above to choose a domain to manage with CADE</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dashboard Header */}
       <div className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-violet-500/20 to-transparent rounded-full blur-3xl" />
@@ -527,7 +603,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
                 <Bot className="w-7 h-7 text-white" />
               </div>
-              {health?.status === "healthy" && (
+              {(health?.status === "healthy" || health?.status === "ok") && (
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
                   <CheckCircle className="w-3 h-3 text-white" />
                 </div>
@@ -542,7 +618,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                 </Badge>
               </h3>
               <p className="text-sm text-muted-foreground">
-                {domain ? `Managing: ${domain}` : "Select a domain to get started"}
+                AI-Powered Content Automation Engine
               </p>
             </div>
           </div>
