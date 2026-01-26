@@ -20,6 +20,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [iframeKey, setIframeKey] = useState(0);
+  const [readyToLoadAfterPopup, setReadyToLoadAfterPopup] = useState(false);
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
 
@@ -73,13 +74,12 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const {
     isWaitingForLogin,
     popupBlocked,
-    pollError,
+    didClose,
     openPopup,
     focusPopup,
   } = useBronLoginPopup({
-    domain,
     loginUrl: iframeSrc,
-    onLoggedIn: setAuthenticated,
+    onClosed: () => setReadyToLoadAfterPopup(true),
   });
 
   // Also accept explicit callback completion (if BRON redirects to /bron-callback).
@@ -99,6 +99,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     const isAuth = checkAuth();
     setIsConnected(isAuth);
     setIsLoading(false);
+    setReadyToLoadAfterPopup(false);
     
     if (isAuth && !hasNotified.current) {
       hasNotified.current = true;
@@ -110,6 +111,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   useEffect(() => {
     if (!isLoading && !isConnected && domain && !autoOpenAttempted.current) {
       autoOpenAttempted.current = true;
+      setReadyToLoadAfterPopup(false);
       
       // Small delay to ensure component is fully mounted
       const timer = setTimeout(() => {
@@ -133,6 +135,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     setIsConnected(false);
     hasNotified.current = false;
     autoOpenAttempted.current = false;
+    setReadyToLoadAfterPopup(false);
     
     toast({
       title: "Disconnected",
@@ -253,24 +256,57 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">
-          {isWaitingForLogin ? "Waiting for Login..." : "Opening Login..."}
+           {isWaitingForLogin
+             ? "Waiting for Login..."
+             : readyToLoadAfterPopup || didClose
+               ? "Login window closed"
+               : "Opening Login..."}
         </h2>
         <p className="text-muted-foreground max-w-md">
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
             : isWaitingForLogin
               ? "Please login in the popup window. It will close automatically once you're logged in."
-              : "Opening BRON login window..."}
+               : readyToLoadAfterPopup || didClose
+                 ? "If you completed the BRON login, click 'Load Dashboard' to continue. If not, reopen the login popup."
+                 : "Opening BRON login window..."}
         </p>
       </div>
 
-      {pollError && (
-        <p className="text-xs text-muted-foreground max-w-md text-center">
-          Status check error: {pollError}
-        </p>
-      )}
+       {(readyToLoadAfterPopup || didClose) && (
+         <div className="flex items-center gap-2">
+           <Button
+             size="sm"
+             onClick={() => {
+               // We can't reliably verify cross-site login state; this simply loads the embedded dashboard.
+               setAuthenticated();
+             }}
+             className="gap-1.5"
+           >
+             Load Dashboard
+           </Button>
+           <Button
+             variant="outline"
+             size="sm"
+             onClick={() => {
+               setReadyToLoadAfterPopup(false);
+               const opened = openPopup();
+               if (!opened) {
+                 toast({
+                   title: "Popup Blocked",
+                   description: "Please allow popups for this site and try again.",
+                   variant: "destructive",
+                 });
+               }
+             }}
+             className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+           >
+             Reopen Login
+           </Button>
+         </div>
+       )}
 
-      {(isWaitingForLogin || popupBlocked) && (
+       {(isWaitingForLogin || popupBlocked) && !(readyToLoadAfterPopup || didClose) && (
         <Button
           variant="outline"
           size="sm"
@@ -293,9 +329,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         </Button>
       )}
 
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Sparkles className="w-3 h-3 text-emerald-400" />
-        The popup will close automatically after login
+         Close the popup after you finish logging in, then load the dashboard here
       </p>
     </motion.div>
   );
