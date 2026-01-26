@@ -203,12 +203,19 @@ const LiveChatWidget = () => {
     // - The CURRENT USER should never appear more than once (even if we have a mix of
     //   anonymous + authenticated rows during the sign-in transition).
     // - Everyone else: keep ONE row per user_id (if present) otherwise ONE per session_id.
+    // - If logged in, SKIP any anonymous sessions that belong to the current user's session_id
     const uniqueSessions: any[] = [];
     const seenKeys = new Set<string>();
     for (const s of sortedByActivity) {
       const isSelf =
         (!!currentUserId && s.user_id === currentUserId) ||
         (!!sessionId && s.session_id === sessionId);
+
+      // If current user is logged in, skip anonymous entries from their session
+      // (they should only see their authenticated avatar, not an anonymous one)
+      if (currentUserId && !s.user_id && s.session_id === sessionId) {
+        continue;
+      }
 
       const key = isSelf ? "self" : s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
       if (seenKeys.has(key)) continue;
