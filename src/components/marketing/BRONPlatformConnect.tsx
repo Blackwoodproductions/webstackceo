@@ -22,6 +22,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const popupRef = useRef<Window | null>(null);
   const hasAutoOpened = useRef(false);
   const hasNotified = useRef(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if already authenticated from localStorage
   const checkAuth = useCallback(() => {
@@ -41,10 +42,39 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return false;
   }, []);
 
+  // Mark as authenticated
+  const setAuthenticated = useCallback(() => {
+    const authData = {
+      authenticated: true,
+      expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      authenticatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
+    setIsConnected(true);
+    setIsWaitingForLogin(false);
+    
+    if (!hasNotified.current) {
+      hasNotified.current = true;
+      onConnectionComplete?.("bron");
+    }
+    
+    toast({
+      title: "Connected to BRON",
+      description: "Successfully authenticated. Loading dashboard...",
+    });
+  }, [onConnectionComplete]);
+
+  // Cleanup polling
+  const cleanupPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, []);
+
   const openLoginPopup = useCallback(() => {
-    // Construct the login URL with domain_id and tab
-    const callbackUrl = `${window.location.origin}/bron-callback`;
-    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis&redirect_uri=${encodeURIComponent(callbackUrl)}`;
+    // Construct the login URL - point to their main dashboard page
+    const loginUrl = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
     
     // Popup dimensions
     const popupWidth = 1200;
@@ -71,7 +101,61 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
 
     popupRef.current = popup;
-  }, []);
+
+    // Poll to detect when user has logged in (URL changes to dashboard with domain)
+    // or when popup is closed
+    cleanupPolling();
+    
+    pollIntervalRef.current = setInterval(() => {
+      try {
+        // Check if popup is closed
+        if (!popupRef.current || popupRef.current.closed) {
+          cleanupPolling();
+          setIsWaitingForLogin(false);
+          popupRef.current = null;
+          return;
+        }
+
+        // Try to read the popup URL - this will work once they're on the dashboard
+        // (same-origin policy prevents reading cross-origin URLs during login)
+        try {
+          const popupUrl = popupRef.current.location.href;
+          
+          // If we can read the URL and it contains domain info, they're logged in
+          // The dashboard URL pattern is: /dashboard?domain_id=XXX or /domain/XXX
+          if (popupUrl && (
+            popupUrl.includes('/dashboard?domain_id=') ||
+            popupUrl.includes('/domain/') ||
+            popupUrl.includes('tab=analysis')
+          )) {
+            // User is logged in - check if we can see the dashboard content
+            // Look for indicators that login was successful
+            const doc = popupRef.current.document;
+            if (doc) {
+              // Check for logged-in indicators (profile elements, domain selectors, etc.)
+              const hasNavbar = doc.querySelector('.navbar, nav, [class*="header"]');
+              const hasDomainContent = doc.querySelector('[class*="domain"], [class*="dashboard"]');
+              
+              if (hasNavbar || hasDomainContent) {
+                console.log("[BRON] Login detected - closing popup");
+                cleanupPolling();
+                popupRef.current.close();
+                popupRef.current = null;
+                setAuthenticated();
+                return;
+              }
+            }
+          }
+        } catch {
+          // Cross-origin error - this is expected during login flow
+          // We'll keep polling until login completes
+        }
+      } catch {
+        // Ignore errors from checking popup
+      }
+    }, 1000);
+
+  }, [cleanupPolling, setAuthenticated]);
 
   // Initial auth check
   useEffect(() => {
@@ -85,34 +169,24 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     }
   }, [checkAuth, onConnectionComplete]);
 
-  // Listen for auth success message from popup
+  // Listen for auth success message from popup (in case BronCallback is used)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from our own origin
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        console.log("[BRON] Auth success message received");
-        setIsConnected(true);
-        setIsWaitingForLogin(false);
+        console.log("[BRON] Auth success message received from callback");
+        cleanupPolling();
         
-        // Close popup if still open
         if (popupRef.current && !popupRef.current.closed) {
           popupRef.current.close();
         }
         popupRef.current = null;
         
-        toast({
-          title: "Connected to BRON",
-          description: "Successfully authenticated. Loading dashboard...",
-        });
-        
-        if (!hasNotified.current) {
-          hasNotified.current = true;
-          onConnectionComplete?.("bron");
-        }
+        setAuthenticated();
       } else if (event.data?.type === "BRON_AUTH_ERROR") {
         console.error("[BRON] Auth error:", event.data.error);
+        cleanupPolling();
         setIsWaitingForLogin(false);
         toast({
           title: "Connection Failed",
@@ -124,45 +198,22 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [onConnectionComplete]);
+  }, [cleanupPolling, setAuthenticated]);
 
   // Auto-open login popup immediately when not connected
   useEffect(() => {
     if (!isLoading && !isConnected && !hasAutoOpened.current && domain) {
       hasAutoOpened.current = true;
-      // Open popup immediately
       openLoginPopup();
     }
   }, [isLoading, isConnected, domain, openLoginPopup]);
 
-  // Poll for popup closure
+  // Cleanup on unmount
   useEffect(() => {
-    if (!popupRef.current) return;
-    
-    const pollInterval = setInterval(() => {
-      if (popupRef.current?.closed) {
-        clearInterval(pollInterval);
-        setIsWaitingForLogin(false);
-        
-        // Check if auth was successful (localStorage updated by BronCallback)
-        const isAuth = checkAuth();
-        if (isAuth && !isConnected) {
-          setIsConnected(true);
-          if (!hasNotified.current) {
-            hasNotified.current = true;
-            onConnectionComplete?.("bron");
-          }
-          toast({
-            title: "Connected to BRON",
-            description: "Successfully authenticated. Loading dashboard...",
-          });
-        }
-        popupRef.current = null;
-      }
-    }, 500);
-
-    return () => clearInterval(pollInterval);
-  }, [isWaitingForLogin, checkAuth, isConnected, onConnectionComplete]);
+    return () => {
+      cleanupPolling();
+    };
+  }, [cleanupPolling]);
 
   const handleLogout = () => {
     localStorage.removeItem(BRON_STORAGE_KEY);
@@ -173,6 +224,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       title: "Disconnected",
       description: "You've been logged out of BRON.",
     });
+  };
+
+  // Manually confirm login (fallback button)
+  const confirmLogin = () => {
+    cleanupPolling();
+    if (popupRef.current && !popupRef.current.closed) {
+      popupRef.current.close();
+    }
+    popupRef.current = null;
+    setAuthenticated();
   };
 
   // Loading state
@@ -283,9 +344,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       </div>
 
       {isWaitingForLogin && (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-3">
           <Button
-            variant="outline"
+            variant="default"
+            size="lg"
+            onClick={confirmLogin}
+            className="gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+          >
+            <Sparkles className="w-4 h-4" />
+            I've Logged In - Show Dashboard
+          </Button>
+          
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => {
               if (popupRef.current && !popupRef.current.closed) {
@@ -294,7 +365,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 openLoginPopup();
               }
             }}
-            className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+            className="gap-1.5 text-muted-foreground hover:text-emerald-400"
           >
             <RefreshCw className="w-4 h-4" />
             Popup not visible? Click to reopen
@@ -304,7 +375,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Sparkles className="w-3 h-3 text-emerald-400" />
-        Dashboard will load automatically after login
+        Dashboard will load on this page after login
       </p>
     </motion.div>
   );
