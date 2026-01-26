@@ -279,7 +279,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const getQualityScoreBg = (score: number) => score >= 8 ? 'bg-green-500/20' : score >= 6 ? 'bg-amber-500/20' : 'bg-red-500/20';
 
   return (
-    <div className="relative space-y-6 overflow-hidden min-h-[600px]">
+    <div className="relative space-y-3 overflow-hidden min-h-[400px]">
       {/* VI Dashboard Effects - Full Background (matching VIDashboardEffects exactly) */}
       <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
         {/* Grid pattern overlay */}
