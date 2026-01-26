@@ -196,31 +196,42 @@ const Navbar = () => {
       return;
     }
 
-    // Poll for popup closure and check for session
+    // Poll for popup closure and check for session with retry logic
     const pollInterval = setInterval(async () => {
       try {
         if (popup.closed) {
           clearInterval(pollInterval);
           
-          // Check if we got a session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setUser(session.user);
-            
-            // Fetch profile
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('avatar_url, full_name')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            if (profileData) {
-              setUserProfile(profileData);
+          // Wait a moment for the session to be established
+          await new Promise(r => setTimeout(r, 500));
+          
+          // Try multiple times to get the session (auth state may not be immediate)
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              setUser(session.user);
+              
+              // Fetch profile
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('avatar_url, full_name')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+              
+              if (profileData) {
+                setUserProfile(profileData);
+              }
+              
+              // Navigate to dashboard
+              window.location.href = '/visitor-intelligence-dashboard';
+              return;
             }
-            
-            // Navigate to dashboard
-            window.location.href = '/visitor-intelligence-dashboard';
+            // Wait between attempts
+            await new Promise(r => setTimeout(r, 300));
           }
+          
+          // If we get here, auth might have been cancelled - don't show error, just silently return
+          console.log('[Navbar] Auth popup closed without session');
         }
       } catch {
         // Ignore cross-origin errors while popup is on Google's domain
