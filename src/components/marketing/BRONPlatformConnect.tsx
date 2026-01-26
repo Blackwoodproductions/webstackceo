@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { useBronLoginPopup } from "@/hooks/use-bron-login-popup";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
 const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/dashboard";
@@ -18,12 +19,9 @@ interface BRONPlatformConnectProps {
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const popupRef = useRef<Window | null>(null);
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Dashboard URL for iframe
   const iframeSrc = `${BRON_LOGIN_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
@@ -45,7 +43,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     return false;
   }, []);
 
-  // Mark as authenticated and close popup
+  // Mark as authenticated (session is set by browser cookies; we only persist state)
   const setAuthenticated = useCallback(() => {
     console.log("[BRON] Setting authenticated state");
     
@@ -58,20 +56,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     };
     localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
     
-    // Close the popup
-    if (popupRef.current && !popupRef.current.closed) {
-      popupRef.current.close();
-      popupRef.current = null;
-    }
-    
-    // Clear polling
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-    
     setIsConnected(true);
-    setIsWaitingForLogin(false);
     setIframeKey(prev => prev + 1); // Force iframe refresh
     
     if (!hasNotified.current) {
@@ -85,34 +70,29 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     });
   }, [onConnectionComplete]);
 
-  // Open login popup
-  const openLoginPopup = useCallback(() => {
-    const popupWidth = 600;
-    const popupHeight = 700;
-    const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
-    const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
+  const {
+    isWaitingForLogin,
+    popupBlocked,
+    pollError,
+    openPopup,
+    focusPopup,
+  } = useBronLoginPopup({
+    domain,
+    loginUrl: iframeSrc,
+    onLoggedIn: setAuthenticated,
+  });
 
-    setIsWaitingForLogin(true);
-
-    const popup = window.open(
-      iframeSrc,
-      "bron_login",
-      `popup=yes,width=${popupWidth},height=${popupHeight},left=${Math.max(0, left)},top=${Math.max(0, top)}`
-    );
-
-    if (!popup) {
-      setIsWaitingForLogin(false);
-      toast({
-        title: "Popup Blocked",
-        description: "Please allow popups for this site and try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    popupRef.current = popup;
-    console.log("[BRON] Login popup opened");
-  }, [iframeSrc]);
+  // Also accept explicit callback completion (if BRON redirects to /bron-callback).
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "BRON_AUTH_SUCCESS") {
+        setAuthenticated();
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [setAuthenticated]);
 
   // Initial auth check
   useEffect(() => {
@@ -134,85 +114,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       // Small delay to ensure component is fully mounted
       const timer = setTimeout(() => {
         console.log("[BRON] Auto-opening login popup");
-        openLoginPopup();
+        const opened = openPopup();
+        if (!opened) {
+          toast({
+            title: "Popup Blocked",
+            description: "Please allow popups for this site, then click 'Open Login'.",
+            variant: "destructive",
+          });
+        }
       }, 500);
       
       return () => clearTimeout(timer);
     }
-  }, [isLoading, isConnected, domain, openLoginPopup]);
-
-  // Poll popup to detect login completion
-  useEffect(() => {
-    if (!isWaitingForLogin || !popupRef.current) return;
-    
-    let loginDetected = false;
-    
-    pollIntervalRef.current = setInterval(() => {
-      const popup = popupRef.current;
-      
-      // If popup was closed by user
-      if (!popup || popup.closed) {
-        console.log("[BRON] Popup closed");
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        
-        // Assume they logged in if popup was open for a while
-        if (!loginDetected) {
-          setAuthenticated();
-        }
-        return;
-      }
-      
-      // Try to detect if they're logged in by checking the URL
-      try {
-        const popupLocation = popup.location.href;
-        
-        // If URL contains dashboard indicators, they're logged in
-        if (popupLocation && (
-          popupLocation.includes('domain_id=') ||
-          popupLocation.includes('/dashboard') ||
-          popupLocation.includes('tab=')
-        )) {
-          // Check if we can detect logged-in state from DOM
-          try {
-            const doc = popup.document;
-            // Look for elements that indicate logged-in state
-            const profileElement = doc.querySelector('.user-profile, .avatar, [class*="profile"], [class*="user"]');
-            const dashboardContent = doc.querySelector('[class*="dashboard"], [class*="content"], .main-content');
-            
-            if (profileElement || dashboardContent) {
-              console.log("[BRON] Login detected via DOM");
-              loginDetected = true;
-              setAuthenticated();
-              return;
-            }
-          } catch {
-            // Cross-origin DOM access blocked - that's fine
-          }
-          
-          // After 5 seconds with the popup open on dashboard URL, assume logged in
-          setTimeout(() => {
-            if (!loginDetected && popupRef.current && !popupRef.current.closed) {
-              console.log("[BRON] Login assumed after timeout");
-              loginDetected = true;
-              setAuthenticated();
-            }
-          }, 5000);
-        }
-      } catch {
-        // Cross-origin URL access blocked during navigation - that's expected
-      }
-    }, 1000);
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [isWaitingForLogin, setAuthenticated]);
+  }, [domain, isConnected, isLoading, openPopup]);
 
   const handleLogout = () => {
     localStorage.removeItem(BRON_STORAGE_KEY);
@@ -342,27 +256,40 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           {isWaitingForLogin ? "Waiting for Login..." : "Opening Login..."}
         </h2>
         <p className="text-muted-foreground max-w-md">
-          {isWaitingForLogin 
-            ? "Please login in the popup window. It will close automatically once you're logged in."
-            : "Opening BRON login window..."
-          }
+          {popupBlocked
+            ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
+            : isWaitingForLogin
+              ? "Please login in the popup window. It will close automatically once you're logged in."
+              : "Opening BRON login window..."}
         </p>
       </div>
 
-      {isWaitingForLogin && (
+      {pollError && (
+        <p className="text-xs text-muted-foreground max-w-md text-center">
+          Status check error: {pollError}
+        </p>
+      )}
+
+      {(isWaitingForLogin || popupBlocked) && (
         <Button
           variant="outline"
           size="sm"
           onClick={() => {
-            if (popupRef.current && !popupRef.current.closed) {
-              popupRef.current.focus();
-            } else {
-              openLoginPopup();
+            const focused = focusPopup();
+            if (!focused) {
+              const opened = openPopup();
+              if (!opened) {
+                toast({
+                  title: "Popup Blocked",
+                  description: "Please allow popups for this site and try again.",
+                  variant: "destructive",
+                });
+              }
             }
           }}
           className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
         >
-          {popupRef.current && !popupRef.current.closed ? "Focus Login Window" : "Reopen Login Window"}
+          {isWaitingForLogin ? "Focus Login Window" : "Open Login"}
         </Button>
       )}
 
