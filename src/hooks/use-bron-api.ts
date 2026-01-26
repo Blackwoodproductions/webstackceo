@@ -1,10 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-
-// BRON API configuration
-const BRON_API_BASE = "https://public.imagehosting.space/feed";
-const API_ID = "53084";
-const API_KEY = "347819526879185";
-const API_SECRET = "AKhpU6QAbMtUDTphRPCezo96CztR9EXR";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface BronArticle {
   id: string;
@@ -86,6 +81,7 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
   const fetchBronData = useCallback(async () => {
     if (!domain) {
       setIsLoading(false);
+      setError("No domain specified");
       return;
     }
 
@@ -93,83 +89,151 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
     setError(null);
 
     try {
-      // Construct the API URL
-      const apiUrl = `${BRON_API_BASE}/Article.php?feedit=1&domain=${encodeURIComponent(domain)}&apiid=${API_ID}&apikey=${API_KEY}&kkyy=${API_SECRET}`;
+      console.log("[BRON API] Fetching data for domain:", domain);
       
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-        },
+      // Call the edge function to proxy the BRON API request
+      const { data: response, error: invokeError } = await supabase.functions.invoke("bron-feed", {
+        body: { domain },
       });
 
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
+      if (invokeError) {
+        console.error("[BRON API] Edge function error:", invokeError);
+        throw new Error(invokeError.message || "Failed to fetch BRON data");
       }
 
-      const data = await response.json();
-      
-      // Process the API response
-      if (Array.isArray(data) && data.length > 0) {
-        const processedArticles: BronArticle[] = data.map((item: any, index: number) => ({
-          id: item.id || `article-${index}`,
-          title: item.title || item.name || `Article ${index + 1}`,
-          url: item.url || item.link || "",
-          domain: item.domain || domain,
-          publishedAt: item.published_at || item.created_at || new Date().toISOString(),
-          status: item.status || "published",
-          keywords: item.keywords || [],
-          anchorText: item.anchor_text || item.anchor,
-          targetUrl: item.target_url || item.target,
-          daScore: item.da || item.da_score,
-          drScore: item.dr || item.dr_score,
-        }));
+      if (!response?.success) {
+        console.error("[BRON API] API error:", response?.error);
+        throw new Error(response?.error || "BRON API returned an error");
+      }
 
-        setArticles(processedArticles);
-        
-        // Calculate stats from real data
-        const published = processedArticles.filter(a => a.status === "published").length;
-        const pending = processedArticles.filter(a => a.status === "pending").length;
-        const scheduled = processedArticles.filter(a => a.status === "scheduled").length;
-        
+      const data = response.data;
+      console.log("[BRON API] Received data:", data);
+
+      // Check if we have valid data
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid data format received from BRON API");
+      }
+
+      if (data.length === 0) {
+        // API returned empty array - this is valid but means no articles yet
+        setArticles([]);
         setStats({
-          totalArticles: processedArticles.length,
-          publishedArticles: published,
-          pendingArticles: pending,
-          scheduledArticles: scheduled,
-          totalBacklinks: processedArticles.filter(a => a.targetUrl).length,
-          averageDA: Math.round(processedArticles.reduce((acc, a) => acc + (a.daScore || 0), 0) / processedArticles.length) || 0,
-          averageDR: Math.round(processedArticles.reduce((acc, a) => acc + (a.drScore || 0), 0) / processedArticles.length) || 0,
-          keywordClusters: Math.ceil(processedArticles.length / 5),
-          deepLinks: processedArticles.filter(a => a.anchorText).length,
+          totalArticles: 0,
+          publishedArticles: 0,
+          pendingArticles: 0,
+          scheduledArticles: 0,
+          totalBacklinks: 0,
+          averageDA: 0,
+          averageDR: 0,
+          keywordClusters: 0,
+          deepLinks: 0,
         });
-      } else {
-        // No data returned - show demo/placeholder data for the domain
-        setArticles(generateDemoArticles(domain));
-        setStats(generateDemoStats());
-        setKeywordClusters(generateDemoKeywordClusters());
-        setBacklinks(generateDemoBacklinks(domain));
+        setKeywordClusters([]);
+        setBacklinks([]);
+        setLastUpdated(new Date());
+        setError(null);
+        return;
       }
 
-      // Generate keyword clusters and backlinks from articles
-      if (keywordClusters.length === 0) {
-        setKeywordClusters(generateDemoKeywordClusters());
-      }
-      if (backlinks.length === 0) {
-        setBacklinks(generateDemoBacklinks(domain));
-      }
+      // Process the API response
+      const processedArticles: BronArticle[] = data.map((item: any, index: number) => ({
+        id: item.id || `article-${index}`,
+        title: item.title || item.name || `Article ${index + 1}`,
+        url: item.url || item.link || "",
+        domain: item.domain || domain,
+        publishedAt: item.published_at || item.created_at || new Date().toISOString(),
+        status: item.status || "published",
+        keywords: item.keywords || [],
+        anchorText: item.anchor_text || item.anchor,
+        targetUrl: item.target_url || item.target,
+        daScore: item.da || item.da_score,
+        drScore: item.dr || item.dr_score,
+      }));
+
+      setArticles(processedArticles);
+
+      // Calculate stats from real data
+      const published = processedArticles.filter((a) => a.status === "published").length;
+      const pending = processedArticles.filter((a) => a.status === "pending").length;
+      const scheduled = processedArticles.filter((a) => a.status === "scheduled").length;
+      const articlesWithDA = processedArticles.filter((a) => a.daScore);
+      const articlesWithDR = processedArticles.filter((a) => a.drScore);
+
+      setStats({
+        totalArticles: processedArticles.length,
+        publishedArticles: published,
+        pendingArticles: pending,
+        scheduledArticles: scheduled,
+        totalBacklinks: processedArticles.filter((a) => a.targetUrl).length,
+        averageDA: articlesWithDA.length > 0
+          ? Math.round(articlesWithDA.reduce((acc, a) => acc + (a.daScore || 0), 0) / articlesWithDA.length)
+          : 0,
+        averageDR: articlesWithDR.length > 0
+          ? Math.round(articlesWithDR.reduce((acc, a) => acc + (a.drScore || 0), 0) / articlesWithDR.length)
+          : 0,
+        keywordClusters: Math.ceil(processedArticles.length / 5),
+        deepLinks: processedArticles.filter((a) => a.anchorText).length,
+      });
+
+      // Extract keyword clusters from articles
+      const keywordMap = new Map<string, string[]>();
+      processedArticles.forEach((article) => {
+        article.keywords.forEach((kw) => {
+          const existing = keywordMap.get(kw) || [];
+          existing.push(article.id);
+          keywordMap.set(kw, existing);
+        });
+      });
+
+      const clusters: BronKeywordCluster[] = Array.from(keywordMap.entries())
+        .slice(0, 5)
+        .map(([keyword, articleIds], index) => ({
+          id: `cluster-${index}`,
+          name: keyword,
+          keywords: [keyword],
+          articleCount: articleIds.length,
+          avgPosition: Math.floor(Math.random() * 50) + 1,
+          trend: (["up", "down", "stable"] as const)[index % 3],
+        }));
+      setKeywordClusters(clusters);
+
+      // Extract backlinks from articles
+      const extractedBacklinks: BronBacklink[] = processedArticles
+        .filter((a) => a.targetUrl)
+        .map((article, index) => ({
+          id: `backlink-${index}`,
+          sourceUrl: article.url,
+          sourceDomain: new URL(article.url || `https://${domain}`).hostname,
+          targetUrl: article.targetUrl || "",
+          anchorText: article.anchorText || "Read more",
+          daScore: article.daScore || 0,
+          drScore: article.drScore || 0,
+          createdAt: article.publishedAt,
+          status: "active" as const,
+        }));
+      setBacklinks(extractedBacklinks);
 
       setLastUpdated(new Date());
+      setError(null);
     } catch (err) {
       console.error("[BRON API] Error fetching data:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch BRON data");
-      
-      // Use demo data on error
-      setArticles(generateDemoArticles(domain));
-      setStats(generateDemoStats());
-      setKeywordClusters(generateDemoKeywordClusters());
-      setBacklinks(generateDemoBacklinks(domain));
-      setLastUpdated(new Date());
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch BRON data";
+      setError(errorMessage);
+      // Clear all data on error - no fallback to demo
+      setArticles([]);
+      setStats({
+        totalArticles: 0,
+        publishedArticles: 0,
+        pendingArticles: 0,
+        scheduledArticles: 0,
+        totalBacklinks: 0,
+        averageDA: 0,
+        averageDR: 0,
+        keywordClusters: 0,
+        deepLinks: 0,
+      });
+      setKeywordClusters([]);
+      setBacklinks([]);
     } finally {
       setIsLoading(false);
     }
@@ -189,80 +253,4 @@ export function useBronApi(domain: string | undefined): UseBronApiResult {
     refetch: fetchBronData,
     lastUpdated,
   };
-}
-
-// Demo data generators for when API returns empty or errors
-function generateDemoArticles(domain: string): BronArticle[] {
-  const titles = [
-    "Comprehensive SEO Strategy Guide for 2026",
-    "Understanding Domain Authority and How to Improve It",
-    "Technical SEO Best Practices for Modern Websites",
-    "Link Building Strategies That Actually Work",
-    "Content Marketing Automation with AI",
-    "Local SEO Optimization for Business Growth",
-    "E-commerce SEO: Complete Optimization Guide",
-    "Core Web Vitals and Their Impact on Rankings",
-  ];
-
-  return titles.map((title, index) => ({
-    id: `demo-${index}`,
-    title,
-    url: `https://${domain}/blog/${title.toLowerCase().replace(/\s+/g, "-").slice(0, 30)}`,
-    domain,
-    publishedAt: new Date(Date.now() - index * 24 * 60 * 60 * 1000).toISOString(),
-    status: index < 5 ? "published" : index < 7 ? "pending" : "scheduled",
-    keywords: ["SEO", "optimization", "marketing"].slice(0, Math.floor(Math.random() * 3) + 1),
-    anchorText: index % 2 === 0 ? "Learn more" : "Read full guide",
-    targetUrl: `https://${domain}/`,
-    daScore: Math.floor(Math.random() * 30) + 20,
-    drScore: Math.floor(Math.random() * 25) + 25,
-  }));
-}
-
-function generateDemoStats(): BronStats {
-  return {
-    totalArticles: 47,
-    publishedArticles: 38,
-    pendingArticles: 6,
-    scheduledArticles: 3,
-    totalBacklinks: 156,
-    averageDA: 42,
-    averageDR: 38,
-    keywordClusters: 12,
-    deepLinks: 89,
-  };
-}
-
-function generateDemoKeywordClusters(): BronKeywordCluster[] {
-  return [
-    { id: "kc-1", name: "SEO Services", keywords: ["seo agency", "seo company", "seo experts"], articleCount: 8, avgPosition: 12.4, trend: "up" },
-    { id: "kc-2", name: "Web Development", keywords: ["web design", "website builder", "custom sites"], articleCount: 6, avgPosition: 18.2, trend: "stable" },
-    { id: "kc-3", name: "Digital Marketing", keywords: ["online marketing", "digital ads", "ppc"], articleCount: 5, avgPosition: 24.6, trend: "up" },
-    { id: "kc-4", name: "Content Strategy", keywords: ["content marketing", "blog writing", "copywriting"], articleCount: 7, avgPosition: 15.8, trend: "down" },
-    { id: "kc-5", name: "Analytics & Data", keywords: ["google analytics", "data tracking", "conversion"], articleCount: 4, avgPosition: 21.3, trend: "up" },
-  ];
-}
-
-function generateDemoBacklinks(domain: string): BronBacklink[] {
-  const sources = [
-    { domain: "techcrunch.com", da: 94, dr: 91 },
-    { domain: "forbes.com", da: 95, dr: 93 },
-    { domain: "entrepreneur.com", da: 92, dr: 89 },
-    { domain: "inc.com", da: 93, dr: 90 },
-    { domain: "businessinsider.com", da: 94, dr: 92 },
-    { domain: "medium.com", da: 96, dr: 94 },
-    { domain: "hubspot.com", da: 93, dr: 91 },
-  ];
-
-  return sources.map((source, index) => ({
-    id: `bl-${index}`,
-    sourceUrl: `https://${source.domain}/article-${index + 1}`,
-    sourceDomain: source.domain,
-    targetUrl: `https://${domain}/`,
-    anchorText: ["Learn more", "Visit website", "Read guide", "Check it out", "Discover", "Explore", "Get started"][index],
-    daScore: source.da,
-    drScore: source.dr,
-    createdAt: new Date(Date.now() - index * 3 * 24 * 60 * 60 * 1000).toISOString(),
-    status: index < 5 ? "active" : index < 6 ? "pending" : "lost",
-  }));
 }
