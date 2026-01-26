@@ -25,11 +25,18 @@ export const useGoogleAuthSync = () => {
       const providerRefreshToken = session.provider_refresh_token;
       
       if (!providerToken) {
-        console.log('[GoogleAuthSync] No provider token available');
+        console.warn('[GoogleAuthSync] No provider token available - scopes may not have been granted');
+        console.log('[GoogleAuthSync] Session:', { 
+          user_id: session.user.id, 
+          provider: session.user?.app_metadata?.provider,
+          has_provider_token: !!session.provider_token,
+          has_provider_refresh_token: !!session.provider_refresh_token
+        });
         return;
       }
 
       console.log('[GoogleAuthSync] Syncing Google OAuth token for user:', session.user.id);
+      console.log('[GoogleAuthSync] Token length:', providerToken.length);
 
       // Determine scope from the session or use default extended scopes (includes all services)
       const scope = [
@@ -65,6 +72,12 @@ export const useGoogleAuthSync = () => {
         console.error('[GoogleAuthSync] Failed to store OAuth token:', tokenError);
       } else {
         console.log('[GoogleAuthSync] OAuth token stored successfully');
+        console.log('[GoogleAuthSync] Stored in localStorage:', {
+          ga_access_token: !!localStorage.getItem('ga_access_token'),
+          gsc_access_token: !!localStorage.getItem('gsc_access_token'),
+          google_ads_access_token: !!localStorage.getItem('google_ads_access_token'),
+          gmb_access_token: !!localStorage.getItem('gmb_access_token'),
+        });
         
         // Also sync to localStorage for immediate use by unified auth hook
         const expiryTime = Date.now() + 3600 * 1000;
