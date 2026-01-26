@@ -28,14 +28,57 @@ interface GmbAccount {
   type: string;
 }
 
+interface GmbReview {
+  name: string;
+  reviewId: string;
+  reviewer: {
+    displayName: string;
+    profilePhotoUrl?: string;
+  };
+  starRating: string;
+  comment?: string;
+  createTime: string;
+  updateTime?: string;
+  reviewReply?: {
+    comment: string;
+    updateTime: string;
+  };
+}
+
 interface GmbLocation {
   name: string;
   title: string;
   websiteUri?: string;
+  phoneNumbers?: {
+    primaryPhone?: string;
+  };
   storefrontAddress?: {
     locality?: string;
     administrativeArea?: string;
+    postalCode?: string;
+    addressLines?: string[];
   };
+  regularHours?: {
+    periods: Array<{
+      openDay: string;
+      openTime: { hours: number; minutes?: number };
+      closeDay: string;
+      closeTime: { hours: number; minutes?: number };
+    }>;
+  };
+  categories?: {
+    primaryCategory?: {
+      displayName?: string;
+    };
+    additionalCategories?: Array<{ displayName?: string }>;
+  };
+  metadata?: {
+    hasGoogleUpdated?: boolean;
+    hasPendingEdits?: boolean;
+  };
+  reviews?: GmbReview[];
+  averageRating?: number;
+  totalReviewCount?: number;
 }
 
 serve(async (req: Request) => {
@@ -45,7 +88,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { accessToken } = await req.json();
+    const { accessToken, targetDomain } = await req.json();
 
     if (!accessToken) {
       return new Response(
@@ -55,7 +98,7 @@ serve(async (req: Request) => {
     }
 
     // Create cache key from token hash (just use first/last chars for privacy)
-    const cacheKey = `gmb_${accessToken.slice(0, 8)}_${accessToken.slice(-8)}`;
+    const cacheKey = `gmb_${accessToken.slice(0, 8)}_${accessToken.slice(-8)}_${targetDomain || 'all'}`;
     
     // Check cache first
     const cached = getCached(cacheKey);
@@ -122,7 +165,7 @@ serve(async (req: Request) => {
         }
 
         const locationsRes = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,websiteUri,storefrontAddress`,
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,websiteUri,storefrontAddress,phoneNumbers,regularHours,categories,metadata`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
@@ -130,12 +173,58 @@ serve(async (req: Request) => {
           const locData = await locationsRes.json();
           if (locData.locations && Array.isArray(locData.locations)) {
             for (const loc of locData.locations) {
-              allLocations.push({
+              const location: GmbLocation = {
                 name: loc.name,
                 title: loc.title || "Untitled Location",
                 websiteUri: loc.websiteUri,
+                phoneNumbers: loc.phoneNumbers,
                 storefrontAddress: loc.storefrontAddress,
-              });
+                regularHours: loc.regularHours,
+                categories: loc.categories,
+                metadata: loc.metadata,
+                reviews: [],
+                averageRating: 0,
+                totalReviewCount: 0,
+              };
+              
+              // Fetch reviews for each location
+              try {
+                await new Promise(r => setTimeout(r, 150)); // Small delay
+                
+                const reviewsRes = await fetch(
+                  `https://mybusiness.googleapis.com/v4/${loc.name}/reviews?pageSize=10`,
+                  { headers: { Authorization: `Bearer ${accessToken}` } }
+                );
+                
+                if (reviewsRes.ok) {
+                  const reviewsData = await reviewsRes.json();
+                  if (reviewsData.reviews && Array.isArray(reviewsData.reviews)) {
+                    location.reviews = reviewsData.reviews.map((r: any) => ({
+                      name: r.name,
+                      reviewId: r.reviewId,
+                      reviewer: {
+                        displayName: r.reviewer?.displayName || "Anonymous",
+                        profilePhotoUrl: r.reviewer?.profilePhotoUrl,
+                      },
+                      starRating: r.starRating || "STAR_RATING_UNSPECIFIED",
+                      comment: r.comment,
+                      createTime: r.createTime,
+                      updateTime: r.updateTime,
+                      reviewReply: r.reviewReply,
+                    }));
+                  }
+                  location.averageRating = reviewsData.averageRating || 0;
+                  location.totalReviewCount = reviewsData.totalReviewCount || 0;
+                } else if (reviewsRes.status === 429) {
+                  console.warn(`[gmb-sync] Hit 429 on reviews for ${loc.name}`);
+                } else {
+                  console.warn(`[gmb-sync] Failed to fetch reviews for ${loc.name}: ${reviewsRes.status}`);
+                }
+              } catch (reviewErr) {
+                console.error(`[gmb-sync] Error fetching reviews for ${loc.name}:`, reviewErr);
+              }
+              
+              allLocations.push(location);
             }
           }
         } else if (locationsRes.status === 429) {
@@ -150,7 +239,7 @@ serve(async (req: Request) => {
       }
     }
 
-    console.log(`[gmb-sync] Found ${allLocations.length} total locations`);
+    console.log(`[gmb-sync] Found ${allLocations.length} total locations with reviews`);
 
     const result = {
       accounts,
