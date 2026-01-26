@@ -14,14 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("CADE_API_KEY");
-    if (!apiKey) {
-      console.error("[CADE API] Missing CADE_API_KEY secret");
-      return new Response(
-        JSON.stringify({ error: "API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const apiKey = "Pqfs5LDgua4K8BFy73mwAE";
 
     const { action, domain, params } = await req.json();
     console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}`);
@@ -129,10 +122,9 @@ serve(async (req) => {
     const url = `${CADE_API_BASE}${endpoint}`;
     console.log(`[CADE API] Fetching: ${method} ${url}`);
 
-    // Try multiple auth methods - the API may use X-API-Key header
     const headers: Record<string, string> = {
-      "Authorization": `Bearer ${apiKey}`,
       "X-API-Key": apiKey,
+      "x-api-key": apiKey,
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
