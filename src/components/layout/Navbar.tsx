@@ -8,10 +8,19 @@ import {
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
   Search, Link2, PenTool, HelpCircle, Headset, UserCheck, Eye,
   MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield,
-  FileText, Target, Zap
+  FileText, Target, Zap, LogOut, User as UserIcon, Settings
 } from "lucide-react";
 import { useSoundContext } from "@/contexts/SoundContext";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const includedFeatures = [
   { icon: Link2, name: "Niche Link Building", href: "/features/off-page-seo" },
@@ -66,6 +75,55 @@ const Navbar = () => {
   const [isLogoHovered, setIsLogoHovered] = useState(false);
   const { soundEnabled, toggleSound } = useSoundContext();
   const { playSound } = useSoundEffects();
+  
+  // Auth state
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<{ avatar_url: string | null; full_name: string | null } | null>(null);
+
+  // Check auth state on mount
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      
+      // Fetch profile after auth state change
+      if (session?.user) {
+        setTimeout(() => {
+          supabase
+            .from('profiles')
+            .select('avatar_url, full_name')
+            .eq('user_id', session.user.id)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) setUserProfile(data);
+            });
+        }, 0);
+      } else {
+        setUserProfile(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('avatar_url, full_name')
+          .eq('user_id', session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) setUserProfile(data);
+          });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setUserProfile(null);
+  };
 
   // next-themes can be undefined on first client render; avoid flicker.
   useEffect(() => {
@@ -651,12 +709,61 @@ const Navbar = () => {
               <Moon className="w-5 h-5 text-foreground" />
             )}
           </button>
-          <Button variant="heroOutline" size="sm" asChild className="transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-            <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
-          </Button>
-          <Button variant="hero" size="sm" asChild className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]">
-            <a href="/pricing">Get Started</a>
-          </Button>
+          
+          {/* Auth Section */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-primary/50 hover:ring-primary transition-all duration-300 focus:outline-none">
+                  {userProfile?.avatar_url ? (
+                    <img 
+                      src={userProfile.avatar_url} 
+                      alt={userProfile.full_name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                      <UserIcon className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background border border-border z-50">
+                <div className="px-3 py-2 border-b border-border">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {userProfile?.full_name || user.email?.split('@')[0]}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <DropdownMenuItem asChild>
+                  <a href="/visitor-intelligence-dashboard" className="flex items-center gap-2 cursor-pointer">
+                    <BarChart3 className="w-4 h-4" />
+                    Dashboard
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/visitor-intelligence-dashboard#settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 cursor-pointer">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="heroOutline" size="sm" asChild className="transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]">
+                <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
+              </Button>
+              <Button variant="hero" size="sm" asChild className="transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]">
+                <a href="/pricing">Get Started</a>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -919,12 +1026,52 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
-              <Button variant="heroOutline" className="w-full transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]" asChild>
-                <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
-              </Button>
-              <Button variant="hero" className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]" asChild>
-                <a href="/pricing">Get Started</a>
-              </Button>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 pb-3 border-b border-border">
+                    {userProfile?.avatar_url ? (
+                      <img 
+                        src={userProfile.avatar_url} 
+                        alt={userProfile.full_name || 'Profile'} 
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/50"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {userProfile?.full_name || user.email?.split('@')[0]}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <Button variant="heroOutline" className="w-full" asChild>
+                    <a href="/visitor-intelligence-dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </a>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full text-red-500 hover:text-red-500 hover:bg-red-500/10" 
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Log out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="heroOutline" className="w-full transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 hover:shadow-[0_0_20px_rgba(251,191,36,0.3)]" asChild>
+                    <a href="/auth?redirect=/visitor-intelligence-dashboard">Login</a>
+                  </Button>
+                  <Button variant="hero" className="w-full transition-all duration-300 hover:from-amber-400 hover:to-yellow-500 hover:shadow-[0_0_25px_rgba(251,191,36,0.5)]" asChild>
+                    <a href="/pricing">Get Started</a>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </motion.div>
