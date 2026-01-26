@@ -57,11 +57,15 @@ const LiveChatWidget = () => {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [referrerDomain, setReferrerDomain] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check for logged-in user and fetch profile with avatar
+  // Check for logged-in user, admin status, and fetch profile with avatar
   useEffect(() => {
     const checkUser = async () => {
+      setIsLoading(true);
+      
       // First check localStorage for cached profile (faster initial render)
       const cachedProfile = localStorage.getItem('unified_google_profile');
       if (cachedProfile) {
@@ -84,6 +88,13 @@ const LiveChatWidget = () => {
         const metaAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
         if (metaAvatar) setUserAvatar(metaAvatar);
         
+        // Check admin status using the has_role function
+        const { data: hasAdminRole } = await supabase.rpc('has_role', {
+          _user_id: user.id,
+          _role: 'admin'
+        });
+        setIsAdmin(hasAdminRole === true);
+        
         // Then fetch from profiles table for most accurate avatar
         const { data: profile } = await supabase
           .from('profiles')
@@ -97,7 +108,11 @@ const LiveChatWidget = () => {
         if (profile?.full_name) {
           setUserName(profile.full_name);
         }
+      } else {
+        setIsAdmin(false);
       }
+      
+      setIsLoading(false);
     };
     checkUser();
     
@@ -107,8 +122,15 @@ const LiveChatWidget = () => {
         setUserName(session.user.user_metadata?.full_name || session.user.user_metadata?.name || null);
         setUserAvatar(session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null);
         
-        // Fetch from profiles for accurate avatar
+        // Check admin status and fetch profile
         setTimeout(async () => {
+          // Check admin status
+          const { data: hasAdminRole } = await supabase.rpc('has_role', {
+            _user_id: session.user.id,
+            _role: 'admin'
+          });
+          setIsAdmin(hasAdminRole === true);
+          
           const { data: profile } = await supabase
             .from('profiles')
             .select('avatar_url, full_name')
@@ -125,6 +147,7 @@ const LiveChatWidget = () => {
         setUserEmail(null);
         setUserName(null);
         setUserAvatar(null);
+        setIsAdmin(false);
       }
     });
     
@@ -412,6 +435,10 @@ const LiveChatWidget = () => {
       }
     }
   };
+
+  // Only show widget to admins - hide for regular visitors
+  if (isLoading) return null;
+  if (!isAdmin) return null;
 
   return (
     <TooltipProvider>
