@@ -15,12 +15,12 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, domain, params } = body;
+    const { action, domain, params, apiKey: bodyApiKey } = body;
 
-    // Get the secret from header or environment
+    // Get the secret from body (user-provided), header, or environment
     const headerSecret = req.headers.get("x-cade-secret");
-    const envSecret = Deno.env.get("CADE_API_SECRET");
-    const cadeSecret = headerSecret || envSecret;
+    const envSecret = Deno.env.get("CADE_API_SECRET") || Deno.env.get("CADE_API_KEY");
+    const cadeSecret = bodyApiKey || headerSecret || envSecret;
 
     if (!cadeSecret) {
       console.error("[cade-api] No CADE_API_SECRET configured");
@@ -33,35 +33,48 @@ serve(async (req) => {
     console.log(`[cade-api] Action: ${action}, Domain: ${domain || "N/A"}`);
 
     // Build headers for CADE API requests
+    // Try multiple auth header formats for compatibility
     const cadeHeaders: Record<string, string> = {
       "Accept": "application/json",
       "Content-Type": "application/json",
       "Authorization": `Bearer ${cadeSecret}`,
-      "X-CADE-Secret": cadeSecret,
+      "X-API-Key": cadeSecret,
+      "api-key": cadeSecret,
     };
 
     let endpoint: string;
     let method = "GET";
     let requestBody: string | undefined;
 
-    // Map actions to CADE API endpoints
+    // Map actions to CADE API v1 endpoints
     switch (action) {
+      // System endpoints
       case "health":
-        endpoint = "/health";
-        break;
-
-      case "subscription":
-        endpoint = "/api/subscription";
+        endpoint = "/api/v1/system/health";
         break;
 
       case "workers":
-        endpoint = "/api/workers";
+        endpoint = "/api/v1/system/workers";
         break;
 
       case "queues":
-        endpoint = "/api/queues";
+        endpoint = "/api/v1/system/queues";
         break;
 
+      // Subscription endpoints
+      case "subscription":
+        endpoint = "/api/v1/subscription/";
+        break;
+
+      case "subscription-detail":
+        endpoint = "/api/v1/subscription/detail";
+        break;
+
+      case "subscription-active":
+        endpoint = "/api/v1/subscription/active";
+        break;
+
+      // Domain endpoints
       case "domain-profile":
         if (!domain) {
           return new Response(
@@ -69,9 +82,48 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/profile`;
+        endpoint = `/api/v1/domain/profile?domain=${encodeURIComponent(domain)}`;
         break;
 
+      case "categorize-domain":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for categorize-domain" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = "/api/v1/domain/categorize-domain";
+        method = "POST";
+        requestBody = JSON.stringify({ domain, ...params });
+        break;
+
+      case "analyze-css":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for analyze-css" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = "/api/v1/domain/analyze-css";
+        method = "POST";
+        requestBody = JSON.stringify({ domain, ...params });
+        break;
+
+      // Crawler endpoints
+      case "crawl-domain":
+      case "start-crawl":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for crawl-domain" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = "/api/v1/crawler/crawl-domain";
+        method = "POST";
+        requestBody = JSON.stringify({ domain, ...params });
+        break;
+
+      // Content endpoints
       case "get-faqs":
         if (!domain) {
           return new Response(
@@ -79,47 +131,17 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/faqs`;
+        endpoint = `/api/v1/content/faq?domain=${encodeURIComponent(domain)}`;
         break;
 
-      case "get-articles":
+      case "generate-faq":
         if (!domain) {
           return new Response(
-            JSON.stringify({ error: "Domain is required for get-articles" }),
+            JSON.stringify({ error: "Domain is required for generate-faq" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/articles`;
-        break;
-
-      case "get-content":
-        if (!domain) {
-          return new Response(
-            JSON.stringify({ error: "Domain is required for get-content" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/content`;
-        break;
-
-      case "get-tasks":
-        if (!domain) {
-          return new Response(
-            JSON.stringify({ error: "Domain is required for get-tasks" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/tasks`;
-        break;
-
-      case "start-crawl":
-        if (!domain) {
-          return new Response(
-            JSON.stringify({ error: "Domain is required for start-crawl" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/crawl`;
+        endpoint = "/api/v1/content/faq";
         method = "POST";
         requestBody = JSON.stringify({ domain, ...params });
         break;
@@ -131,32 +153,55 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/api/domains/${encodeURIComponent(domain)}/generate`;
+        endpoint = "/api/v1/content/";
         method = "POST";
         requestBody = JSON.stringify({ domain, ...params });
         break;
 
-      case "login":
-        // OAuth-style redirect login
-        endpoint = `/auth/login`;
+      case "generate-knowledge-base":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for generate-knowledge-base" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = "/api/v1/content/knowledge-base";
         method = "POST";
-        requestBody = JSON.stringify({
-          redirect_uri: params?.redirect_uri,
-          domain,
-        });
+        requestBody = JSON.stringify({ domain, ...params });
         break;
 
-      case "verify-session":
-        endpoint = `/auth/verify`;
+      // Publication endpoints
+      case "publish-content":
+        endpoint = "/api/v1/publication/";
         method = "POST";
-        requestBody = JSON.stringify({ token: params?.token });
+        requestBody = JSON.stringify({ domain, ...params });
+        break;
+
+      // Task endpoints
+      case "crawl-tasks":
+        endpoint = domain 
+          ? `/api/v1/tasks/crawl/crawl?domain=${encodeURIComponent(domain)}`
+          : "/api/v1/tasks/crawl/crawl-all";
+        break;
+
+      case "categorization-tasks":
+        endpoint = domain
+          ? `/api/v1/tasks/categorization/categorization?domain=${encodeURIComponent(domain)}`
+          : "/api/v1/tasks/categorization/categorization-all";
+        break;
+
+      case "terminate-task":
+        endpoint = "/api/v1/tasks/content/termination";
+        method = "POST";
+        requestBody = JSON.stringify({ ...params });
         break;
 
       default:
-        // Try the action as a direct endpoint path
-        endpoint = `/api/${action}`;
-        if (domain) {
-          endpoint = `/api/domains/${encodeURIComponent(domain)}/${action}`;
+        // Try the action as a direct endpoint path under /api/v1/
+        endpoint = `/api/v1/${action}`;
+        if (params?.method === "POST") {
+          method = "POST";
+          requestBody = JSON.stringify({ domain, ...params });
         }
         break;
     }
@@ -171,6 +216,7 @@ serve(async (req) => {
 
     if (requestBody && method !== "GET") {
       fetchOptions.body = requestBody;
+      console.log(`[cade-api] Request body: ${requestBody.substring(0, 200)}`);
     }
 
     const response = await fetch(apiUrl, fetchOptions);
