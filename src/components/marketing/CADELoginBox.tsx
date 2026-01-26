@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CADEMetricsBoxes } from "./CADEMetricsBoxes";
+import { useUnifiedApiKey } from "@/hooks/use-unified-api-key";
 
 interface SystemHealth {
   status?: string;
@@ -108,21 +109,29 @@ const CONTENT_TYPES = [
 ];
 
 export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
-  const [apiKey, setApiKey] = useState("");
+  // Use unified API key (shared with BRON)
+  const { apiKey: unifiedKey, isLoading: isLoadingUnifiedKey, isConnected: hasUnifiedKey, setApiKey: saveUnifiedKey } = useUnifiedApiKey();
+  
+  const [inputKey, setInputKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [hasAutoCrawled, setHasAutoCrawled] = useState(false);
 
-  // Use ref to always have current API key value in callbacks
-  const apiKeyRef = useRef(apiKey);
+  // Sync with unified key
   useEffect(() => {
-    apiKeyRef.current = apiKey;
-  }, [apiKey]);
+    if (hasUnifiedKey && unifiedKey) {
+      setIsConnected(true);
+    }
+  }, [hasUnifiedKey, unifiedKey]);
+
+  // Use ref to always have current API key value in callbacks
+  const apiKeyRef = useRef(unifiedKey || "");
+  useEffect(() => {
+    apiKeyRef.current = unifiedKey || "";
+  }, [unifiedKey]);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -144,59 +153,6 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [contentTasks, setContentTasks] = useState<ContentTask[]>([]);
   const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
 
-  // Get current user and load API key from database
-  useEffect(() => {
-    const loadApiKey = async () => {
-      setIsLoadingKey(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserId(user.id);
-          
-          // Try to load from database first
-          const { data: keyData } = await supabase
-            .from("user_api_keys")
-            .select("api_key_encrypted")
-            .eq("user_id", user.id)
-            .eq("service_name", "cade")
-            .maybeSingle();
-          
-          if (keyData?.api_key_encrypted) {
-            setApiKey(keyData.api_key_encrypted);
-            setIsConnected(true);
-            // Also update localStorage for quick access
-            localStorage.setItem("cade_api_key", keyData.api_key_encrypted);
-          } else {
-            // Fallback to localStorage for backwards compatibility
-            const storedKey = localStorage.getItem("cade_api_key");
-            if (storedKey) {
-              setApiKey(storedKey);
-              setIsConnected(true);
-            }
-          }
-        } else {
-          // Not logged in, use localStorage only
-          const storedKey = localStorage.getItem("cade_api_key");
-          if (storedKey) {
-            setApiKey(storedKey);
-            setIsConnected(true);
-          }
-        }
-      } catch (err) {
-        console.error("[CADE] Failed to load API key:", err);
-        // Fallback to localStorage
-        const storedKey = localStorage.getItem("cade_api_key");
-        if (storedKey) {
-          setApiKey(storedKey);
-          setIsConnected(true);
-        }
-      } finally {
-        setIsLoadingKey(false);
-      }
-    };
-    
-    loadApiKey();
-  }, []);
 
   // Clear domain-specific data and refetch when domain changes
   useEffect(() => {
@@ -371,10 +327,10 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
   // Fetch data when connected or domain changes
   useEffect(() => {
-    if (isConnected && apiKey) {
+    if (isConnected && unifiedKey) {
       fetchAllData();
     }
-  }, [isConnected, apiKey, domain, fetchAllData]);
+  }, [isConnected, unifiedKey, domain, fetchAllData]);
 
   // Reset auto-crawl flag when domain changes
   useEffect(() => {
@@ -391,7 +347,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   }, [domain, previousDomain, isConnected]);
 
   const handleLogin = async () => {
-    if (!apiKey.trim()) {
+    if (!inputKey.trim()) {
       setError("Please enter your CADE API key");
       return;
     }
@@ -400,31 +356,13 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     setError(null);
 
     try {
+      // Temporarily set the key for the health check
+      apiKeyRef.current = inputKey.trim();
       const healthRes = await callCadeApi("health");
 
       if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
-        // Save to localStorage for quick access
-        localStorage.setItem("cade_api_key", apiKey);
-        
-        // Save to database for long-term storage if user is logged in
-        if (userId) {
-          const { error: upsertError } = await supabase
-            .from("user_api_keys")
-            .upsert({
-              user_id: userId,
-              service_name: "cade",
-              api_key_encrypted: apiKey,
-              updated_at: new Date().toISOString()
-            }, {
-              onConflict: "user_id,service_name"
-            });
-          
-          if (upsertError) {
-            console.error("[CADE] Failed to save API key to database:", upsertError);
-          } else {
-            console.log("[CADE] API key saved to database successfully");
-          }
-        }
+        // Save using unified key system (persists permanently)
+        await saveUnifiedKey(inputKey.trim());
         
         setIsConnected(true);
         setHealth(healthRes.data || healthRes);
@@ -438,17 +376,13 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             try {
               const crawlRes = await callCadeApi("crawl-domain", { force: true });
               console.log("[CADE] Auto-crawl response:", crawlRes);
-              // Accept any non-error response as success
               if (crawlRes && !crawlRes.error) {
                 toast.success(`Domain crawl initiated for ${domain}`);
-              } else if (crawlRes?.error) {
-                console.log("[CADE] Crawl response error:", crawlRes.error);
               }
             } catch (crawlErr) {
               console.log("[CADE] Auto-crawl error:", crawlErr);
             } finally {
               setCrawling(false);
-              // Refetch data after crawl starts
               fetchAllData();
             }
           }, 1000);
@@ -464,21 +398,11 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   };
 
+  // Logout is hidden since key persists forever, but keeping for edge cases
   const handleLogout = async () => {
-    // Remove from localStorage
-    localStorage.removeItem("cade_api_key");
-    
-    // Remove from database if user is logged in
-    if (userId) {
-      await supabase
-        .from("user_api_keys")
-        .delete()
-        .eq("user_id", userId)
-        .eq("service_name", "cade");
-    }
-    
+    // This effectively does nothing now since we persist keys forever
+    // But keeping for any future disconnect needs
     setIsConnected(false);
-    setApiKey("");
     setHealth(null);
     setSubscription(null);
     setDomainProfile(null);
@@ -670,7 +594,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   };
 
   // Loading state while checking for saved API key
-  if (isLoadingKey) {
+  if (isLoadingUnifiedKey) {
     return (
       <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
         <div className="flex items-center gap-3">
@@ -740,9 +664,9 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type={showKey ? "text" : "password"}
-                  placeholder="Enter your CADE API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter your API key (shared with BRON)"
+                  value={inputKey}
+                  onChange={(e) => setInputKey(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="pl-12 pr-12 h-14 text-base bg-background/50 border-violet-500/30 focus:border-violet-500 rounded-xl"
                 />
@@ -771,7 +695,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
               <Button
                 onClick={handleLogin}
-                disabled={isLoading || !apiKey.trim()}
+                disabled={isLoading || !inputKey.trim()}
                 className="w-full h-14 text-base bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-xl shadow-violet-500/30 gap-3 rounded-xl"
               >
                 {isLoading ? (

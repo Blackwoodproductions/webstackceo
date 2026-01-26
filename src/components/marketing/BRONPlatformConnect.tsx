@@ -1,252 +1,63 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  ExternalLink, Shield, LogOut, Loader2, Link2, TrendingUp, 
-  Award, Sparkles, Zap, Target, RefreshCw, LogIn
+  ExternalLink, Loader2, Link2, TrendingUp, 
+  Award, Sparkles, Zap, Target, Key, Eye, EyeOff, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { BRONExtendedSection } from "./ServiceTabExtensions";
-import { supabase } from "@/integrations/supabase/client";
 import { BronDashboard } from "./BronDashboard";
+import { useUnifiedApiKey } from "@/hooks/use-unified-api-key";
+
 interface BRONPlatformConnectProps {
   domain?: string;
   onConnectionComplete?: (platform: string) => void;
 }
 
-const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/";
-// Redirect-based login: redirect_uri points back to our callback page
-const BRON_LOGIN_URL = `https://dashdev.imagehosting.space/login?redirect_uri=${encodeURIComponent(window.location.origin + '/bron-callback')}`;
-const STORAGE_KEY = "bron_dashboard_auth";
-
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isWaitingForPopup, setIsWaitingForPopup] = useState(false);
-  const popupRef = useRef<Window | null>(null);
-  const pollRef = useRef<number | null>(null);
-  const hasTriggeredAutoLogin = useRef(false);
-  const [popupBlocked, setPopupBlocked] = useState(false);
+  const { apiKey, isLoading, isConnected, setApiKey } = useUnifiedApiKey();
+  const [inputKey, setInputKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const hasNotified = useRef(false);
 
-  // Check for existing auth on mount
+  // Notify parent when connected
   useEffect(() => {
-    const storedAuth = localStorage.getItem(STORAGE_KEY);
-    if (storedAuth) {
-      try {
-        const authData = JSON.parse(storedAuth);
-        if (authData.authenticated && authData.expiry > Date.now()) {
-          setIsAuthenticated(true);
-          onConnectionComplete?.("bron");
-          setIsLoading(false);
-          return;
-        } else {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    if (isConnected && !hasNotified.current) {
+      hasNotified.current = true;
+      onConnectionComplete?.("bron");
     }
-    setIsLoading(false);
-  }, [onConnectionComplete]);
+  }, [isConnected, onConnectionComplete]);
 
-  // Listen for postMessage from popup callback
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from our own origin
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        console.log("[BRON] Received auth success from popup");
-        // Stop polling
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        // Close popup if still open
-        try { popupRef.current?.close(); } catch { /* ignore */ }
-        popupRef.current = null;
-        
-        // Persist auth and show dashboard
-        persistAuth();
-        toast({
-          title: "Connected to BRON",
-          description: `Successfully connected ${domain} to the BRON platform.`,
-        });
-      } else if (event.data?.type === "BRON_AUTH_ERROR") {
-        console.log("[BRON] Received auth error from popup:", event.data.error);
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        popupRef.current = null;
-        setIsWaitingForPopup(false);
-        toast({
-          title: "Connection Failed",
-          description: event.data.error || "Failed to connect to BRON.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [domain]);
-
-  const persistAuth = () => {
-    const authData = {
-      authenticated: true,
-      expiry: Date.now() + 24 * 60 * 60 * 1000,
-      authenticatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authData));
-    setIsAuthenticated(true);
-    setIsWaitingForPopup(false);
-    onConnectionComplete?.("bron");
-  };
-
-  // Check login status via backend function (avoids browser CORS)
-  const checkLoginStatus = async (): Promise<boolean> => {
-    if (!domain) return false;
-    try {
-      const { data, error } = await supabase.functions.invoke("bron-login-status", {
-        body: { domain, feedit: "add" },
+  const handleSaveKey = async () => {
+    if (!inputKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your API key to continue.",
+        variant: "destructive",
       });
-
-      if (error) {
-        console.log("[BRON] login-status error:", error);
-        return false;
-      }
-
-      console.log("[BRON] login-status response:", data);
-      return !!(data as any)?.loggedIn;
-    } catch (err) {
-      console.log("[BRON] login-status exception:", err);
-      return false;
-    }
-  };
-
-  // Check if localStorage was updated by the popup
-  const checkLocalStorageAuth = (): boolean => {
-    const storedAuth = localStorage.getItem(STORAGE_KEY);
-    if (storedAuth) {
-      try {
-        const authData = JSON.parse(storedAuth);
-        if (authData.authenticated && authData.expiry > Date.now()) {
-          return true;
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return false;
-  };
-
-  // Start polling for login status
-  const startLoginPolling = () => {
-    pollRef.current = window.setInterval(async () => {
-      const popupClosed = !popupRef.current || popupRef.current.closed;
-      
-      // First check localStorage (fastest, set by popup callback)
-      if (checkLocalStorageAuth()) {
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        try { popupRef.current?.close(); } catch { /* ignore */ }
-        popupRef.current = null;
-        persistAuth();
-        toast({
-          title: "Connected to BRON",
-          description: `Successfully connected ${domain} to the BRON platform.`,
-        });
-        return;
-      }
-      
-      // Fallback: check via backend API
-      const isLoggedIn = await checkLoginStatus();
-      if (isLoggedIn) {
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        try { popupRef.current?.close(); } catch { /* ignore */ }
-        popupRef.current = null;
-        persistAuth();
-        toast({
-          title: "Connected to BRON",
-          description: `Successfully connected ${domain} to the BRON platform.`,
-        });
-        return;
-      }
-
-      if (popupClosed) {
-        // Popup closed without auth - check one more time
-        if (checkLocalStorageAuth()) {
-          if (pollRef.current) window.clearInterval(pollRef.current);
-          popupRef.current = null;
-          persistAuth();
-          toast({
-            title: "Connected to BRON",
-            description: `Successfully connected ${domain} to the BRON platform.`,
-          });
-          return;
-        }
-        
-        if (pollRef.current) window.clearInterval(pollRef.current);
-        popupRef.current = null;
-        setIsWaitingForPopup(false);
-      }
-    }, 1500);
-  };
-
-  // Open popup and start polling
-  const openLoginPopup = () => {
-    if (!domain) return;
-    
-    localStorage.removeItem(STORAGE_KEY);
-    setIsAuthenticated(false);
-    setPopupBlocked(false);
-    setIsWaitingForPopup(true);
-
-    const width = 520;
-    const height = 720;
-    const left = (window.screenX ?? 0) + (window.outerWidth - width) / 2;
-    const top = (window.screenY ?? 0) + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      BRON_LOGIN_URL,
-      "bron_login",
-      `popup=yes,width=${width},height=${height},left=${Math.max(0, left)},top=${Math.max(0, top)},scrollbars=yes`
-    );
-
-    if (!popup) {
-      setIsWaitingForPopup(false);
-      setPopupBlocked(true);
       return;
     }
 
-    popupRef.current = popup;
-    startLoginPolling();
-  };
-
-  // Auto-trigger login popup when component mounts (if not authenticated and domain is set)
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && domain && !hasTriggeredAutoLogin.current && !isWaitingForPopup && !popupBlocked) {
-      hasTriggeredAutoLogin.current = true;
-      const timer = setTimeout(() => {
-        openLoginPopup();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, isAuthenticated, domain, isWaitingForPopup, popupBlocked]);
-
-  const handleCancelLogin = () => {
-    if (pollRef.current) window.clearInterval(pollRef.current);
+    setIsSaving(true);
     try {
-      popupRef.current?.close();
-    } catch {
-      // ignore
+      await setApiKey(inputKey.trim());
+      toast({
+        title: "Connected Successfully",
+        description: "Your API key has been saved. You won't need to enter it again.",
+      });
+      onConnectionComplete?.("bron");
+    } catch (err) {
+      toast({
+        title: "Failed to Save",
+        description: "Could not save your API key. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
-    popupRef.current = null;
-    setIsWaitingForPopup(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setIsAuthenticated(false);
-    toast({
-      title: "Disconnected",
-      description: "You have been disconnected from BRON.",
-    });
   };
 
   if (isLoading) {
@@ -257,52 +68,12 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Waiting for popup login state (auto-triggered)
-  if (isWaitingForPopup) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-16 px-8 space-y-6"
-      >
-        <div className="relative">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-white animate-spin" />
-          </div>
-          <motion.div
-            className="absolute -inset-2 rounded-3xl border-2 border-emerald-400/50"
-            animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        </div>
-        
-        <div className="text-center space-y-2">
-          <h3 className="text-xl font-bold">Connecting to BRON</h3>
-          <p className="text-muted-foreground max-w-md">
-            Complete your login in the popup window. Once authenticated, the dashboard will load automatically.
-          </p>
-          {domain && (
-            <p className="text-sm text-emerald-500 font-medium">Domain: {domain}</p>
-          )}
-        </div>
-
-        <Button
-          onClick={handleCancelLogin}
-          variant="ghost"
-          className="text-muted-foreground"
-        >
-          Cancel
-        </Button>
-      </motion.div>
-    );
+  // Connected - show dashboard directly (never show login box again)
+  if (isConnected && domain) {
+    return <BronDashboard domain={domain} onLogout={() => {}} />;
   }
 
-  // Show custom-built BRON dashboard when authenticated (no iframe!)
-  if (isAuthenticated && domain) {
-    return <BronDashboard domain={domain} onLogout={handleLogout} />;
-  }
-
-  // Auto-login in progress or waiting for domain selection
+  // Not connected - show API key input (one-time only)
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -314,7 +85,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         {[
           { icon: Link2, title: "Keyword Clustering", desc: "AI-powered topical organization" },
           { icon: TrendingUp, title: "Deep Linking", desc: "Strategic internal link building" },
-          { icon: Award, title: "DA & DR Growth", desc: "Increase domain authority metrics" },
+          { icon: Award, title: "Authority Growth", desc: "Increase domain authority metrics" },
           { icon: Zap, title: "Autopilot Links", desc: "Automated inbound link acquisition" },
         ].map((feature, index) => (
           <Card key={index} className="bg-gradient-to-br from-background to-secondary/20 border-emerald-500/20">
@@ -329,98 +100,73 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         ))}
       </div>
 
-      {/* Popup Blocked Instructions */}
-      {popupBlocked && (
-        <Card className="border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-background to-amber-500/5">
-          <CardHeader className="text-center pb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle className="text-2xl text-amber-600 dark:text-amber-400">Popup Blocked</CardTitle>
-            <CardDescription>
-              Your browser blocked the login popup. Please allow popups for webstack.ceo to continue.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Chrome Instructions */}
-            <div className="bg-secondary/50 rounded-lg p-4 text-sm space-y-3">
-              <div className="flex items-center gap-2 font-semibold text-foreground">
-                <div className="w-5 h-5 rounded bg-gradient-to-br from-red-500 via-yellow-500 to-green-500" />
-                <span>Google Chrome</span>
-              </div>
-              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li>Click the <strong>three dots (⋮)</strong> in the top-right corner → <strong>Settings</strong></li>
-                <li>In the left menu, click <strong>"Privacy and security"</strong></li>
-                <li>Click <strong>"Site Settings"</strong></li>
-                <li>Under Content, find and click <strong>"Pop-ups and redirects"</strong></li>
-                <li>Click <strong>"Add"</strong> next to "Allowed to send pop-ups"</li>
-                <li>Enter <code className="bg-background px-1.5 py-0.5 rounded text-xs font-mono">[*.]webstack.ceo</code> and click <strong>Add</strong></li>
-              </ol>
-            </div>
-
-            {/* Firefox Instructions */}
-            <div className="bg-secondary/50 rounded-lg p-4 text-sm space-y-3">
-              <div className="flex items-center gap-2 font-semibold text-foreground">
-                <div className="w-5 h-5 rounded bg-gradient-to-br from-orange-500 to-orange-600" />
-                <span>Mozilla Firefox</span>
-              </div>
-              <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                <li>Click the <strong>three lines (☰)</strong> in the top-right corner → <strong>Settings</strong></li>
-                <li>In the left menu, click <strong>"Privacy & Security"</strong></li>
-                <li>Scroll down to the <strong>"Permissions"</strong> section</li>
-                <li>Find <strong>"Block pop-up windows"</strong> and click <strong>"Exceptions..."</strong></li>
-                <li>Enter <code className="bg-background px-1.5 py-0.5 rounded text-xs font-mono">webstack.ceo</code> in the address field</li>
-                <li>Click <strong>"Allow"</strong> then <strong>"Save Changes"</strong></li>
-              </ol>
-            </div>
-
-            <p className="text-xs text-muted-foreground text-center">
-              After allowing popups, click the button below to try again.
-            </p>
-            
+      {/* API Key Input Card */}
+      <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
+        <CardHeader className="text-center pb-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
+            <Key className="w-8 h-8 text-white" />
+          </div>
+          <CardTitle className="text-2xl">Connect to BRON & CADE</CardTitle>
+          <CardDescription>
+            Enter your API key once to connect both BRON and CADE dashboards. 
+            This key will be saved permanently.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Input
+              type={showKey ? "text" : "password"}
+              value={inputKey}
+              onChange={(e) => setInputKey(e.target.value)}
+              placeholder="Enter your API key..."
+              className="pr-10 bg-secondary/30 border-emerald-500/20 focus:border-emerald-500/50"
+              onKeyDown={(e) => e.key === "Enter" && handleSaveKey()}
+            />
             <Button
-              onClick={() => {
-                setPopupBlocked(false);
-                hasTriggeredAutoLogin.current = false;
-                openLoginPopup();
-              }}
-              className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold"
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+              onClick={() => setShowKey(!showKey)}
             >
-              <LogIn className="w-5 h-5 mr-2" />
-              Try Again
+              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Connect Card - shows when waiting for domain or ready to connect */}
-      {!popupBlocked && (
-        <Card className="border-emerald-500/30 bg-gradient-to-br from-background via-background to-emerald-500/5">
-          <CardHeader className="text-center pb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mx-auto mb-4">
-              {domain ? (
-                <Loader2 className="w-8 h-8 text-white animate-spin" />
-              ) : (
-                <TrendingUp className="w-8 h-8 text-white" />
-              )}
-            </div>
-            <CardTitle className="text-2xl">
-              {domain ? "Connecting to BRON..." : "Select a Domain"}
-            </CardTitle>
-            <CardDescription>
-              {domain 
-                ? "Opening login popup... Once you sign in, the dashboard will load automatically."
-                : "Select a domain from the dropdown above to connect to the BRON platform."
-              }
-            </CardDescription>
-          </CardHeader>
-          {!domain && (
-            <CardContent className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Use the domain selector in the header to choose which domain to connect.
-              </p>
-            </CardContent>
-          )}
+          <Button
+            onClick={handleSaveKey}
+            disabled={isSaving || !inputKey.trim()}
+            className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white font-semibold"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+                Connect Dashboards
+              </>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
+            <Sparkles className="w-3 h-3 text-emerald-400" />
+            <span>One key powers both BRON and CADE integrations</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* No domain selected message */}
+      {!domain && (
+        <Card className="border-dashed border-2 border-muted-foreground/20">
+          <CardContent className="py-8 text-center">
+            <Target className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">
+              Select a domain from the dropdown above to view your dashboard.
+            </p>
+          </CardContent>
         </Card>
       )}
 
@@ -443,8 +189,17 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         </div>
       </div>
 
-      {/* Show extended section preview */}
-      <BRONExtendedSection domain={domain} />
+      {/* External link to BRON dashboard */}
+      <div className="text-center">
+        <Button
+          variant="link"
+          onClick={() => window.open("https://dashdev.imagehosting.space/", "_blank")}
+          className="text-muted-foreground hover:text-emerald-400"
+        >
+          <ExternalLink className="w-4 h-4 mr-1" />
+          Open BRON Dashboard in New Tab
+        </Button>
+      </div>
     </motion.div>
   );
 };
