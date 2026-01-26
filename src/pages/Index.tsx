@@ -16,7 +16,7 @@ import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
 import LiveChatWidget from "@/components/ui/live-chat-widget";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import FloatingAIShield from "@/components/ui/floating-ai-shield";
-import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay } from "@/components/ui/futuristic-particles";
+import { FuturisticParticles, FloatingOrbs, CyberLines, HUDOverlay, CornerBlobs } from "@/components/ui/futuristic-particles";
 import { HighTechBackground } from "@/components/ui/high-tech-background";
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation";
 import SEO from "@/components/SEO";
@@ -35,6 +35,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Futuristic Background Effects */}
+      <CornerBlobs className="fixed inset-0 z-0" />
       <FloatingOrbs className="fixed inset-0 z-0" />
       <FuturisticParticles className="fixed inset-0 z-0" particleCount={40} variant="default" />
       <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
