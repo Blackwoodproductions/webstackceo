@@ -568,106 +568,108 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         )}
       </motion.div>
 
-      {/* Connect Accounts Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/5 via-rose-500/5 to-purple-500/5 backdrop-blur-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
-                <Link2 className="w-5 h-5 text-white" />
-              </div>
-              Connect Your Accounts
-            </CardTitle>
-            <CardDescription>
-              Grant read & write access to enable automated posting powered by CADE
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              {(['facebook', 'twitter', 'linkedin'] as const).map((platform) => {
-                const config = platformConfig[platform];
-                const IconComponent = config.icon;
-                const connection = connections[platform];
-                const isConnected = connection.connected;
-                const isPlatformConnecting = isConnecting === platform;
-                const profile = profiles.find(p => p.platform === platform);
-                
-                return (
-                  <motion.div
-                    key={platform}
-                    whileHover={{ scale: 1.02 }}
-                    className={`p-4 rounded-xl border ${isConnected ? 'border-emerald-500/30 bg-emerald-500/5' : config.borderColor + ' ' + config.bgColor}`}
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
-                        <IconComponent className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{config.name}</p>
-                        {isConnected && connection.profile ? (
-                          <p className="text-xs text-emerald-500 truncate">
-                            {connection.profile.name || connection.profile.email}
-                          </p>
-                        ) : profile?.detected ? (
-                          <p className="text-xs text-muted-foreground">Detected on site</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Not detected</p>
+      {/* Connect Accounts Section - Only show when CADE subscription is active */}
+      {hasCadeSubscription && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/5 via-rose-500/5 to-purple-500/5 backdrop-blur-sm overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
+                  <Link2 className="w-5 h-5 text-white" />
+                </div>
+                Connect Your Accounts
+              </CardTitle>
+              <CardDescription>
+                Grant read & write access to enable automated posting powered by CADE
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                {(['facebook', 'twitter', 'linkedin'] as const).map((platform) => {
+                  const config = platformConfig[platform];
+                  const IconComponent = config.icon;
+                  const connection = connections[platform];
+                  const isConnected = connection.connected;
+                  const isPlatformConnecting = isConnecting === platform;
+                  const profile = profiles.find(p => p.platform === platform);
+                  
+                  return (
+                    <motion.div
+                      key={platform}
+                      whileHover={{ scale: 1.02 }}
+                      className={`p-4 rounded-xl border ${isConnected ? 'border-emerald-500/30 bg-emerald-500/5' : config.borderColor + ' ' + config.bgColor}`}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
+                          <IconComponent className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{config.name}</p>
+                          {isConnected && connection.profile ? (
+                            <p className="text-xs text-emerald-500 truncate">
+                              {connection.profile.name || connection.profile.email}
+                            </p>
+                          ) : profile?.detected ? (
+                            <p className="text-xs text-muted-foreground">Detected on site</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Not detected</p>
+                          )}
+                        </div>
+                        {isConnected && connection.profile?.picture && (
+                          <img 
+                            src={connection.profile.picture} 
+                            alt={connection.profile.name || 'Profile'} 
+                            className="w-8 h-8 rounded-full border-2 border-emerald-500/30"
+                          />
                         )}
                       </div>
-                      {isConnected && connection.profile?.picture && (
-                        <img 
-                          src={connection.profile.picture} 
-                          alt={connection.profile.name || 'Profile'} 
-                          className="w-8 h-8 rounded-full border-2 border-emerald-500/30"
-                        />
-                      )}
-                    </div>
-                    
-                    {isConnected ? (
-                      <div className="flex gap-2">
-                        <Badge variant="outline" className="flex-1 justify-center text-emerald-500 border-emerald-500/30">
-                          <CheckCircle className="w-3 h-3 mr-1" />Read & Write
-                        </Badge>
+                      
+                      {isConnected ? (
+                        <div className="flex gap-2">
+                          <Badge variant="outline" className="flex-1 justify-center text-emerald-500 border-emerald-500/30">
+                            <CheckCircle className="w-3 h-3 mr-1" />Read & Write
+                          </Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => disconnect(platform)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            Disconnect
+                          </Button>
+                        </div>
+                      ) : (
                         <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => disconnect(platform)}
-                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => connect(platform)}
+                          disabled={isPlatformConnecting}
+                          className={`w-full bg-gradient-to-r ${config.color} hover:opacity-90`}
                         >
-                          Disconnect
+                          {isPlatformConnecting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            <>
+                              <IconComponent className="w-4 h-4 mr-2" />
+                              Connect {config.name}
+                            </>
+                          )}
                         </Button>
-                      </div>
-                    ) : (
-                      <Button 
-                        onClick={() => connect(platform)}
-                        disabled={isPlatformConnecting}
-                        className={`w-full bg-gradient-to-r ${config.color} hover:opacity-90`}
-                      >
-                        {isPlatformConnecting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          <>
-                            <IconComponent className="w-4 h-4 mr-2" />
-                            Connect {config.name}
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* CADE Integration Section */}
       <AnimatePresence mode="wait">
