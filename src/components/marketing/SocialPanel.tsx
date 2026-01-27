@@ -269,6 +269,74 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         </div>
       </div>
 
+      {/* CADE Subscription Check - Loading State */}
+      <AnimatePresence>
+        {isCheckingCade && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+          >
+            {/* Animated background effects */}
+            <div className="absolute inset-0 overflow-hidden">
+              <motion.div
+                className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
+                animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+            
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              {/* Animated icon */}
+              <div className="relative">
+                <motion.div
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles className="w-7 h-7 text-white" />
+                </motion.div>
+                <motion.div
+                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <Loader2 className="w-3 h-3 text-white animate-spin" />
+                </motion.div>
+              </div>
+              
+              {/* Text content */}
+              <div className="text-center">
+                <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                  Verifying CADE Subscription
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Checking access for <span className="font-medium text-foreground">{selectedDomain}</span>
+                </p>
+              </div>
+              
+              {/* Progress dots */}
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Detected Social Profiles Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -446,70 +514,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
 
       {/* CADE Integration Section */}
       <AnimatePresence mode="wait">
-        {isCheckingCade ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
-          >
-            {/* Animated background effects */}
-            <div className="absolute inset-0 overflow-hidden">
-              <motion.div
-                className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
-                animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              {/* Animated icon */}
-              <div className="relative">
-                <motion.div
-                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Sparkles className="w-8 h-8 text-white" />
-                </motion.div>
-                <motion.div
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                >
-                  <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
-                </motion.div>
-              </div>
-              
-              {/* Text content */}
-              <div className="text-center">
-                <p className="text-lg font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-                  Verifying CADE Subscription
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Checking access for <span className="font-medium text-foreground">{selectedDomain}</span>
-                </p>
-              </div>
-              
-              {/* Progress dots */}
-              <div className="flex items-center gap-2">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2 h-2 rounded-full bg-violet-400"
-                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        ) : hasCadeSubscription ? (
+        {hasCadeSubscription ? (
           /* Active CADE Dashboard */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
