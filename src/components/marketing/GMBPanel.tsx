@@ -24,6 +24,7 @@ import { GMBBusinessInfoEditor } from './GMBBusinessInfoEditor';
 import { GMBPostCreator } from './GMBPostCreator';
 import { GMBPhotoManager } from './GMBPhotoManager';
 import { GMBClaimListingFlow } from './GMBClaimListingFlow';
+import { GMBCreateListingWizard } from './GMBCreateListingWizard';
 import { useGmbApi } from '@/hooks/use-gmb-api';
 
 interface GmbReview {
@@ -136,6 +137,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [showClaimFlow, setShowClaimFlow] = useState(false);
+  const [showCreateFlow, setShowCreateFlow] = useState(false);
   const [replyText, setReplyText] = useState("");
 
   // Use the GMB API hook for all read/write operations
@@ -953,6 +955,18 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           }}
           onCancel={() => setShowClaimFlow(false)}
         />
+      ) : showCreateFlow ? (
+        /* Create Listing Flow */
+        <GMBCreateListingWizard
+          domain={selectedDomain || ''}
+          accessToken={accessToken}
+          accountId={accounts[0]?.name || null}
+          onComplete={() => {
+            setShowCreateFlow(false);
+            handleRefresh();
+          }}
+          onCancel={() => setShowCreateFlow(false)}
+        />
       ) : (
         /* No Listing Found - Inline Onboarding Wizard Style */
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -978,15 +992,13 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 Get your business visible in local search results:
               </p>
 
-              {/* Option 1: Add to Google Maps */}
+              {/* Option 1: Create New Listing - Now uses inline flow */}
               <button
-                onClick={openGmbPopup}
+                onClick={() => setShowCreateFlow(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all text-left group"
               >
                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-                    <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="#4285F4"/>
-                  </svg>
+                  <Plus className="w-4 h-4 text-blue-400" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
