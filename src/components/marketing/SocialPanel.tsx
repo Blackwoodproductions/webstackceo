@@ -238,7 +238,16 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           </div>
           
           <div className="flex items-center gap-3">
-            {isScanning ? (
+            {/* Hide profiles badge while checking CADE, show subscription status instead */}
+            {isCheckingCade ? (
+              <Badge variant="outline" className="text-violet-400 border-violet-500/30 bg-violet-500/10">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Verifying CADE...
+              </Badge>
+            ) : !hasCadeSubscription && !isCheckingCade ? (
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                <AlertCircle className="w-3 h-3 mr-1" />No CADE Subscription
+              </Badge>
+            ) : isScanning ? (
               <Badge variant="outline" className="text-pink-400 border-pink-500/30 bg-pink-500/10">
                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />Scanning...
               </Badge>
