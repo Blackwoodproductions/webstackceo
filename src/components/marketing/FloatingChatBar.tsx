@@ -353,11 +353,14 @@ const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChat
             {minimizedChats.map((chat, index) => (
               <motion.div
                 key={chat.conversation.id}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ type: 'spring', damping: 20, stiffness: 300, delay: index * 0.05 }}
+                 // Performance: avoid transform-based animations on this dashboard
+                 // (scale/translate updates can cause visible jitter when other panels animate).
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 1 }}
+                 exit={{ opacity: 0 }}
+                 transition={{ duration: 0.12, ease: 'easeOut', delay: index * 0.03 }}
                 className="bg-card border border-border rounded-lg shadow-lg overflow-hidden w-56 h-12 cursor-pointer hover:shadow-xl transition-shadow"
+                 style={{ contain: 'layout paint', willChange: 'opacity' }}
                 onClick={() => toggleMinimize(chat.conversation.id)}
               >
                 <div 
@@ -404,11 +407,13 @@ const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChat
         {expandedChat && (
           <motion.div
             key={expandedChat.conversation.id}
-            initial={{ opacity: 0, y: 100, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.8 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+           // Performance: opacity-only transitions prevent "glitching" on heavy UI pages.
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           transition={{ duration: 0.12, ease: 'easeOut' }}
             className="bg-card border border-border rounded-t-xl shadow-2xl overflow-hidden flex flex-col w-80 h-96"
+           style={{ contain: 'layout paint', willChange: 'opacity' }}
           >
             {/* Header */}
             <div 
