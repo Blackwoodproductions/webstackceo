@@ -2,12 +2,14 @@ import { memo, useState, useEffect, useRef, forwardRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Users, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const EXCLUDED_ROUTES = ['/admin', '/auth', '/visitor-intelligence-dashboard'];
 
 const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveStats(_, forwardedRef) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const { isLoading: authLoading } = useAuth();
   const isEmbedMode = searchParams.get('embed') === 'true';
   const [isVisible, setIsVisible] = useState(false);
   const [liveCount, setLiveCount] = useState(0);
@@ -19,12 +21,12 @@ const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveS
   // Check if current route should show stats (hide in embed mode or excluded routes)
   const shouldShow = !isEmbedMode && !EXCLUDED_ROUTES.some(route => location.pathname.startsWith(route));
 
-  // Delay render to not block initial page paint
+  // Delay render until auth is stable and page has painted
   useEffect(() => {
-    if (!shouldShow) return;
-    const timer = setTimeout(() => setIsVisible(true), 100);
+    if (!shouldShow || authLoading) return;
+    const timer = setTimeout(() => setIsVisible(true), 150);
     return () => clearTimeout(timer);
-  }, [shouldShow]);
+  }, [shouldShow, authLoading]);
 
   // Position relative to AI shield - always stay above it
   useEffect(() => {
@@ -86,9 +88,9 @@ const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveS
     window.addEventListener('scroll', handlePosition, { passive: true });
     window.addEventListener('resize', handlePosition, { passive: true });
     
-    // Run frequently to stay synchronized
-    const interval = setInterval(handlePosition, 100);
-    setTimeout(handlePosition, 300);
+    // Run periodically to stay synchronized (throttled to reduce CPU)
+    const interval = setInterval(handlePosition, 500);
+    setTimeout(handlePosition, 200);
     
     return () => {
       window.removeEventListener('scroll', handlePosition);

@@ -1,7 +1,9 @@
 import { memo, useState, useEffect, forwardRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox(_, ref) {
+  const { isLoading: authLoading } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [topPosition, setTopPosition] = useState('8rem');
   const [isGold, setIsGold] = useState(false);
@@ -10,18 +12,20 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
   const isEmbedMode = searchParams.get('embed') === 'true';
 
   // Hide on admin/dashboard pages and in embed mode
-  const hiddenPaths = ['/visitor-intelligence-dashboard', '/admin'];
+  const hiddenPaths = ['/visitor-intelligence-dashboard', '/admin', '/auth'];
   const shouldHide = isEmbedMode || hiddenPaths.some(path => location.pathname.startsWith(path));
 
-  // Delay render to not block initial page paint
+  // Delay render until auth is stable to prevent crashes during auth state changes
   useEffect(() => {
+    if (authLoading) return;
+    
     let handle: number;
     const hasIdle = typeof window !== "undefined" && "requestIdleCallback" in window;
 
     if (hasIdle) {
       handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(() => setIsVisible(true), { timeout: 1000 });
     } else {
-      handle = setTimeout(() => setIsVisible(true), 1) as unknown as number;
+      handle = setTimeout(() => setIsVisible(true), 150) as unknown as number;
     }
 
     return () => {
@@ -31,7 +35,7 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
         clearTimeout(handle);
       }
     };
-  }, []);
+  }, [authLoading]);
 
   // Listen for logo gold state changes from Navbar
   useEffect(() => {
