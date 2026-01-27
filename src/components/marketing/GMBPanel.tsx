@@ -167,13 +167,23 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
 
       if (error) throw new Error(error.message);
       
+      // Handle quota errors gracefully - don't block UI, just show no listings
       if (data?.error) {
         if (data.isQuotaError) {
-          setSyncError('API quota exceeded. Please try again in a minute.');
+          // Quota exceeded - still allow access to onboarding, just show a toast
+          console.warn('[GMBPanel] API quota exceeded, showing onboarding option');
+          toast.warning('GMB API quota exceeded. You can still add a new listing.');
+          // Don't set syncError - let the UI flow to "no listing found" state
+          setAccounts([]);
+          setLocations([]);
+          setMatchingLocation(null);
+          localStorage.setItem('gmb_access_token', token);
+          localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
+          return;
         } else {
           setSyncError(data.error);
+          return;
         }
-        return;
       }
 
       const fetchedAccounts = data?.accounts || [];
@@ -860,21 +870,21 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           {/* Benefits Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { icon: MapPin, title: 'Map Pack Visibility', desc: 'Appear in Google Maps search results for local queries', color: 'blue' },
-              { icon: Star, title: 'Customer Reviews', desc: 'Collect and respond to reviews to build trust', color: 'amber' },
-              { icon: TrendingUp, title: 'Performance Insights', desc: 'Track views, clicks, and customer actions', color: 'green' },
-              { icon: Phone, title: 'Direct Contact', desc: 'Let customers call or message you directly', color: 'violet' },
-              { icon: Globe, title: 'Business Info', desc: 'Display hours, services, and photos', color: 'pink' },
-              { icon: Users, title: 'Local SEO', desc: 'Improve rankings for local search queries', color: 'cyan' },
+              { icon: MapPin, title: 'Map Pack Visibility', desc: 'Appear in Google Maps search results for local queries', borderClass: 'border-blue-500/20', bgClass: 'from-blue-500/5', iconClass: 'text-blue-500' },
+              { icon: Star, title: 'Customer Reviews', desc: 'Collect and respond to reviews to build trust', borderClass: 'border-amber-500/20', bgClass: 'from-amber-500/5', iconClass: 'text-amber-500' },
+              { icon: TrendingUp, title: 'Performance Insights', desc: 'Track views, clicks, and customer actions', borderClass: 'border-green-500/20', bgClass: 'from-green-500/5', iconClass: 'text-green-500' },
+              { icon: Phone, title: 'Direct Contact', desc: 'Let customers call or message you directly', borderClass: 'border-violet-500/20', bgClass: 'from-violet-500/5', iconClass: 'text-violet-500' },
+              { icon: Globe, title: 'Business Info', desc: 'Display hours, services, and photos', borderClass: 'border-pink-500/20', bgClass: 'from-pink-500/5', iconClass: 'text-pink-500' },
+              { icon: Users, title: 'Local SEO', desc: 'Improve rankings for local search queries', borderClass: 'border-cyan-500/20', bgClass: 'from-cyan-500/5', iconClass: 'text-cyan-500' },
             ].map((benefit, i) => (
               <motion.div
                 key={benefit.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className={`p-4 rounded-xl border border-${benefit.color}-500/20 bg-gradient-to-br from-${benefit.color}-500/5 to-transparent`}
+                className={`p-4 rounded-xl border ${benefit.borderClass} bg-gradient-to-br ${benefit.bgClass} to-transparent`}
               >
-                <benefit.icon className={`w-6 h-6 text-${benefit.color}-500 mb-2`} />
+                <benefit.icon className={`w-6 h-6 ${benefit.iconClass} mb-2`} />
                 <h4 className="font-semibold text-sm mb-1">{benefit.title}</h4>
                 <p className="text-xs text-muted-foreground">{benefit.desc}</p>
               </motion.div>
