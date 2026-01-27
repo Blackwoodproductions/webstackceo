@@ -478,98 +478,15 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <p className="text-sm text-muted-foreground">Looking for campaigns targeting {selectedDomain || 'your domain'}...</p>
           </div>
         </motion.div>
-      ) : showWizard && !accessToken ? (
-        /* Google Ads Connection Wizard */
+      ) : showCampaignSetup && accessToken ? (
+        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
+      ) : !accessToken ? (
+        /* Google Ads Onboarding Wizard - Show by default when not connected */
         <GoogleAdsOnboardingWizard 
           domain={selectedDomain || ''} 
           onComplete={handleWizardComplete} 
           onSkip={handleSkipWizard} 
         />
-      ) : showCampaignSetup && accessToken ? (
-        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
-      ) : !accessToken ? (
-        /* Ultra-Compact Connection Prompt */
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Compact Hero Card */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card via-orange-500/5 to-card border border-orange-500/20 p-5">
-            <div className="absolute inset-0 bg-gradient-radial from-orange-500/5 via-transparent to-transparent opacity-50" />
-            
-            {/* Animated glow */}
-            <motion.div 
-              className="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/20 rounded-full blur-3xl"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            />
-            
-            <div className="relative z-10 flex items-center gap-6">
-              {/* Left - CTA */}
-              <div className="flex-1 space-y-3">
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/30">
-                  <Zap className="w-3 h-3 text-orange-400" />
-                  <span className="text-[10px] font-medium text-orange-400">AI Landing Page Generator</span>
-                </div>
-                
-                <h3 className="text-lg font-bold leading-tight">
-                  Transform <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">Google Ads</span> Into High-Converting Pages
-                </h3>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={handleStartConnection} className="h-8 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25">
-                    <GoogleAdsIcon /><span className="ml-1.5 text-xs">Connect</span><ArrowRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleSkipWizard} className="h-8 border-orange-500/30 hover:bg-orange-500/10">
-                    <Eye className="w-3.5 h-3.5 mr-1" /><span className="text-xs">Demo</span>
-                  </Button>
-                </div>
-                
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Read-only</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />OAuth 2.0</span>
-                  <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" />Free</span>
-                </div>
-              </div>
-              
-              {/* Right - Mini Stats */}
-              <div className="hidden md:grid grid-cols-2 gap-1.5 w-40">
-                {[
-                  { value: '247', label: 'Keywords', color: 'text-orange-400' },
-                  { value: '8.4', label: 'Avg QS', color: 'text-amber-400' },
-                  { value: '$1.24', label: 'Saved', color: 'text-green-400' },
-                  { value: '156', label: 'Pages', color: 'text-cyan-400' },
-                ].map((stat) => (
-                  <div key={stat.label} className="p-2 rounded-lg bg-muted/30 border border-border/50 text-center">
-                    <p className={`text-sm font-bold ${stat.color}`}>{stat.value}</p>
-                    <p className="text-[8px] text-muted-foreground">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          
-          {/* Process + Features - Combined Compact Row */}
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { icon: Target, title: 'Connect', desc: 'Link Google Ads', color: 'orange' },
-              { icon: BarChart3, title: 'Import', desc: 'Pull keywords', color: 'amber' },
-              { icon: Zap, title: 'Generate', desc: 'AI creates pages', color: 'yellow' },
-              { icon: FlaskConical, title: 'Optimize', desc: 'A/B test & track', color: 'red' },
-            ].map((item, idx) => (
-              <motion.div 
-                key={item.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="group p-3 rounded-xl bg-gradient-to-br from-muted/30 to-muted/50 border border-border hover:border-orange-500/30 transition-all text-center"
-              >
-                <div className="w-8 h-8 mx-auto mb-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <item.icon className="w-4 h-4 text-orange-500" />
-                </div>
-                <p className="text-xs font-semibold">{item.title}</p>
-                <p className="text-[9px] text-muted-foreground">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       ) : (
         /* Connected State - Keywords Dashboard */
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
