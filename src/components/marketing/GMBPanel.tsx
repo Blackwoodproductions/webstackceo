@@ -1097,46 +1097,105 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
             </div>
           </div>
 
-          {/* Compact Benefits Grid - 2 rows of 3, smaller cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {/* Enhanced Benefits Grid - Larger cards with more info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: MapPin, title: 'Map Pack', desc: 'Local search visibility', color: 'blue' },
-              { icon: Star, title: 'Reviews', desc: 'Build customer trust', color: 'amber' },
-              { icon: TrendingUp, title: 'Insights', desc: 'Track performance', color: 'green' },
-              { icon: Phone, title: 'Contact', desc: 'Direct calls & messages', color: 'violet' },
-              { icon: Globe, title: 'Business Info', desc: 'Hours & services', color: 'pink' },
-              { icon: Users, title: 'Local SEO', desc: 'Rank higher locally', color: 'cyan' },
+              { 
+                icon: MapPin, 
+                title: 'Map Pack Rankings', 
+                desc: 'Appear in Google\'s local 3-pack results when customers search for businesses like yours nearby.', 
+                stats: 'Top 3 positions get 70% of clicks',
+                color: 'blue' 
+              },
+              { 
+                icon: Star, 
+                title: 'Review Management', 
+                desc: 'Collect and respond to customer reviews to build trust and improve your local ranking signals.', 
+                stats: 'Avg. 4.5+ stars = 25% more clicks',
+                color: 'amber' 
+              },
+              { 
+                icon: TrendingUp, 
+                title: 'Performance Insights', 
+                desc: 'Track how customers find you, what actions they take, and where your traffic comes from.', 
+                stats: 'Monitor calls, directions & website visits',
+                color: 'green' 
+              },
+              { 
+                icon: Phone, 
+                title: 'Direct Contact', 
+                desc: 'Enable click-to-call, messaging, and appointment booking directly from your listing.', 
+                stats: 'Mobile users call within 24 hours',
+                color: 'violet' 
+              },
+              { 
+                icon: Globe, 
+                title: 'Business Profile', 
+                desc: 'Showcase your hours, services, photos, and special attributes to stand out from competitors.', 
+                stats: 'Complete profiles get 7x more clicks',
+                color: 'pink' 
+              },
+              { 
+                icon: Users, 
+                title: 'Local SEO Boost', 
+                desc: 'GMB signals account for 25% of local pack ranking factors. A verified listing is essential.', 
+                stats: 'Required for local search visibility',
+                color: 'cyan' 
+              },
             ].map((benefit, i) => {
-              const colorMap: Record<string, { border: string; bg: string; text: string; glow: string }> = {
-                blue: { border: 'border-blue-500/30', bg: 'from-blue-500/10', text: 'text-blue-500', glow: 'shadow-blue-500/20' },
-                amber: { border: 'border-amber-500/30', bg: 'from-amber-500/10', text: 'text-amber-500', glow: 'shadow-amber-500/20' },
-                green: { border: 'border-green-500/30', bg: 'from-green-500/10', text: 'text-green-500', glow: 'shadow-green-500/20' },
-                violet: { border: 'border-violet-500/30', bg: 'from-violet-500/10', text: 'text-violet-500', glow: 'shadow-violet-500/20' },
-                pink: { border: 'border-pink-500/30', bg: 'from-pink-500/10', text: 'text-pink-500', glow: 'shadow-pink-500/20' },
-                cyan: { border: 'border-cyan-500/30', bg: 'from-cyan-500/10', text: 'text-cyan-500', glow: 'shadow-cyan-500/20' },
+              const colorMap: Record<string, { border: string; bg: string; text: string; glow: string; badge: string }> = {
+                blue: { border: 'border-blue-500/30', bg: 'from-blue-500/10', text: 'text-blue-400', glow: 'shadow-blue-500/20', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                amber: { border: 'border-amber-500/30', bg: 'from-amber-500/10', text: 'text-amber-400', glow: 'shadow-amber-500/20', badge: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+                green: { border: 'border-green-500/30', bg: 'from-green-500/10', text: 'text-green-400', glow: 'shadow-green-500/20', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
+                violet: { border: 'border-violet-500/30', bg: 'from-violet-500/10', text: 'text-violet-400', glow: 'shadow-violet-500/20', badge: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
+                pink: { border: 'border-pink-500/30', bg: 'from-pink-500/10', text: 'text-pink-400', glow: 'shadow-pink-500/20', badge: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
+                cyan: { border: 'border-cyan-500/30', bg: 'from-cyan-500/10', text: 'text-cyan-400', glow: 'shadow-cyan-500/20', badge: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
               };
               const colors = colorMap[benefit.color];
               
               return (
                 <motion.div
                   key={benefit.title}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  className={`relative p-3 rounded-xl border ${colors.border} bg-gradient-to-br ${colors.bg} to-transparent backdrop-blur-sm hover:shadow-lg ${colors.glow} transition-all cursor-default group`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  whileHover={{ scale: 1.02, y: -4 }}
+                  className={`relative p-5 rounded-2xl border ${colors.border} bg-gradient-to-br ${colors.bg} via-card/50 to-transparent backdrop-blur-sm hover:shadow-xl ${colors.glow} transition-all cursor-default group overflow-hidden`}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
-                      <benefit.icon className={`w-4 h-4 ${colors.text}`} />
+                  {/* Animated background glow */}
+                  <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-bl ${colors.bg} to-transparent rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity`} />
+                  
+                  {/* Subtle grid pattern */}
+                  <div 
+                    className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                    style={{
+                      backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+                      backgroundSize: '16px 16px',
+                    }}
+                  />
+                  
+                  <div className="relative z-10">
+                    {/* Icon and title row */}
+                    <div className="flex items-start gap-4 mb-3">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0 shadow-lg ${colors.glow}`}>
+                        <benefit.icon className={`w-6 h-6 ${colors.text}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-foreground mb-1">{benefit.title}</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{benefit.desc}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="font-semibold text-xs truncate">{benefit.title}</h4>
-                      <p className="text-[10px] text-muted-foreground truncate">{benefit.desc}</p>
+                    
+                    {/* Stats badge */}
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium border ${colors.badge}`}>
+                      <BarChart3 className="w-3 h-3" />
+                      {benefit.stats}
                     </div>
                   </div>
-                  {/* Subtle corner accent */}
-                  <div className={`absolute bottom-1 right-1 w-1 h-1 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                  
+                  {/* Corner accent dots */}
+                  <div className={`absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-40 group-hover:opacity-100 transition-opacity`} />
+                  <div className={`absolute bottom-2 right-5 w-1 h-1 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-20 group-hover:opacity-60 transition-opacity`} />
                 </motion.div>
               );
             })}
