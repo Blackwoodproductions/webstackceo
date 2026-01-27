@@ -215,12 +215,12 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
 
   // Fetch live visitors with profile info and page counts
   const fetchLiveVisitors = useCallback(async () => {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     
     const { data: sessions } = await supabase
       .from('visitor_sessions')
       .select('session_id, first_page, last_activity_at, started_at, referrer, user_id, user_agent')
-      .gte('last_activity_at', fiveMinutesAgo)
+      .gte('last_activity_at', tenMinutesAgo)
       .order('last_activity_at', { ascending: false })
       .limit(20);
     
