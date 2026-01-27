@@ -875,7 +875,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
+    const { url, includeRawHtml, checkGACode } = await req.json();
 
     if (!url) {
       return new Response(
@@ -965,8 +965,30 @@ Deno.serve(async (req) => {
     console.log(`Links: ${internalLinkingMetrics.totalInternalLinks} internal, ${internalLinkingMetrics.totalExternalLinks} external`);
     console.log(`Local SEO: Address=${localSEOSignals.hasAddress}, Phone=${localSEOSignals.hasPhone}, GMB=${localSEOSignals.hasGMBLink}`);
 
+    // Check for GA code if requested
+    let gaCodeCheck = null;
+    if (checkGACode) {
+      const hasGtagScript = html.includes("googletagmanager.com/gtag/js");
+      const measurementIdMatch = html.match(/gtag\s*\(\s*['"]config['"]\s*,\s*['"]([^'"]+)['"]/);
+      gaCodeCheck = {
+        hasGoogleAnalytics: hasGtagScript,
+        measurementId: measurementIdMatch ? measurementIdMatch[1] : null,
+        hasGTM: html.includes("googletagmanager.com/gtm.js"),
+      };
+    }
+
+    const responseData: Record<string, unknown> = { success: true, profile };
+    
+    if (includeRawHtml) {
+      responseData.html = html;
+    }
+    
+    if (gaCodeCheck) {
+      responseData.gaCodeCheck = gaCodeCheck;
+    }
+
     return new Response(
-      JSON.stringify({ success: true, profile }),
+      JSON.stringify(responseData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
