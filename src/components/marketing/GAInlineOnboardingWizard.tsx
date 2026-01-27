@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Copy, RefreshCw, Loader2, Globe, 
   BarChart3, Link2, ChevronRight, Sparkles, Radio,
-  FileText, Code, ExternalLink
+  FileText, Code, ExternalLink, Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GAProperty {
   name: string;
@@ -20,6 +21,13 @@ interface GAInlineOnboardingWizardProps {
   properties: GAProperty[];
   onRefresh: () => Promise<void>;
   isRefreshing?: boolean;
+}
+
+interface DataStreamResult {
+  measurementId: string;
+  displayName: string;
+  defaultUri: string;
+  existing: boolean;
 }
 
 export const GAInlineOnboardingWizard = ({
@@ -36,6 +44,11 @@ export const GAInlineOnboardingWizard = ({
   const [showGSCSetup, setShowGSCSetup] = useState(false);
   const [copiedMeta, setCopiedMeta] = useState(false);
   const [copiedDNS, setCopiedDNS] = useState(false);
+  
+  // New states for data stream creation
+  const [isCreating, setIsCreating] = useState(false);
+  const [dataStream, setDataStream] = useState<DataStreamResult | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const normalizeDomain = (d: string) =>
     d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "").toLowerCase();
@@ -62,7 +75,8 @@ export const GAInlineOnboardingWizard = ({
   };
 
   const copyTrackingCode = async () => {
-    await navigator.clipboard.writeText(getTrackingCode());
+    const measurementId = dataStream?.measurementId || "G-XXXXXXXXXX";
+    await navigator.clipboard.writeText(getTrackingCode(measurementId));
     setCopiedCode(true);
     toast({ title: "Copied!", description: "Tracking code copied to clipboard" });
     setTimeout(() => setCopiedCode(false), 2000);
@@ -91,6 +105,55 @@ export const GAInlineOnboardingWizard = ({
     setCopiedDNS(true);
     toast({ title: "Copied!", description: "DNS record copied - replace YOUR_VERIFICATION_CODE with your actual code from GSC" });
     setTimeout(() => setCopiedDNS(false), 2000);
+  };
+
+  // Create data stream via API
+  const handleCreateDataStream = async () => {
+    if (!selectedProperty) return;
+    
+    setIsCreating(true);
+    setCreateError(null);
+    
+    try {
+      const propertyId = selectedProperty.replace("properties/", "");
+      
+      const { data, error } = await supabase.functions.invoke("ga-create-datastream", {
+        body: { propertyId, domain: normalizedDomain },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to create data stream");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.success && data?.dataStream) {
+        setDataStream({
+          measurementId: data.dataStream.measurementId,
+          displayName: data.dataStream.displayName,
+          defaultUri: data.dataStream.defaultUri,
+          existing: data.existing,
+        });
+        setShowTrackingCode(true);
+        
+        toast({
+          title: data.existing ? "Data Stream Found!" : "Data Stream Created!",
+          description: `Measurement ID: ${data.dataStream.measurementId}`,
+        });
+      }
+    } catch (err) {
+      console.error("[GA Wizard] Create data stream error:", err);
+      setCreateError(err instanceof Error ? err.message : "Failed to create data stream");
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to create data stream",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
   return (
     <motion.div
@@ -207,87 +270,117 @@ export const GAInlineOnboardingWizard = ({
                   className="overflow-hidden"
                 >
                   <div className="p-3 rounded-lg bg-secondary/40 border border-border/30 space-y-3">
-                    {/* Domain URL to add */}
-                    <div className="flex items-center gap-2">
-                      <Link2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                      <span className="text-[10px] text-muted-foreground">Add this URL as a Web Data Stream:</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/30">
-                      <code className="flex-1 text-xs font-mono text-amber-400 truncate">
-                        https://{normalizedDomain}
-                      </code>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 hover:bg-amber-500/10"
-                        onClick={copyUrl}
+                    {/* Success State - Show Tracking Code */}
+                    {dataStream ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-3"
                       >
-                        {copiedUrl ? (
-                          <CheckCircle2 className="w-3 h-3 text-green-400" />
-                        ) : (
-                          <Copy className="w-3 h-3 text-muted-foreground" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* Show Tracking Code Toggle */}
-                    <button
-                      onClick={() => setShowTrackingCode(!showTrackingCode)}
-                      className="flex items-center gap-2 text-[10px] text-amber-500 hover:text-amber-400 transition-colors"
-                    >
-                      <ChevronRight className={`w-3 h-3 transition-transform ${showTrackingCode ? 'rotate-90' : ''}`} />
-                      {showTrackingCode ? 'Hide' : 'Show'} tracking code snippet
-                    </button>
-
-                    {/* Tracking Code */}
-                    <AnimatePresence>
-                      {showTrackingCode && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                        >
-                          <div className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
-                            <div className="flex items-center justify-between px-2 py-1.5 bg-zinc-800/50 border-b border-zinc-700">
-                              <span className="text-[9px] text-zinc-400 font-medium">gtag.js</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-5 px-2 text-zinc-400 hover:text-white hover:bg-zinc-700"
-                                onClick={copyTrackingCode}
-                              >
-                                {copiedCode ? (
-                                  <CheckCircle2 className="w-3 h-3 text-green-400" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                                <span className="ml-1 text-[9px]">{copiedCode ? 'Copied' : 'Copy'}</span>
-                              </Button>
-                            </div>
-                            <pre className="p-2 text-[9px] text-green-400 font-mono overflow-x-auto max-h-20 scrollbar-hide leading-relaxed">
-                              {getTrackingCode()}
-                            </pre>
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-green-400">
+                              {dataStream.existing ? "Data Stream Found!" : "Data Stream Created!"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Measurement ID: <span className="text-green-400 font-mono">{dataStream.measurementId}</span>
+                            </p>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                        </div>
 
-                    {/* Verify Button */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex-1"
-                        onClick={onRefresh}
-                        disabled={isRefreshing}
-                      >
-                        {isRefreshing ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <Radio className="w-3.5 h-3.5 mr-1.5" />
+                        {/* Tracking Code - Always visible after creation */}
+                        <div className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
+                          <div className="flex items-center justify-between px-3 py-2 bg-zinc-800/50 border-b border-zinc-700">
+                            <div className="flex items-center gap-2">
+                              <Code className="w-3.5 h-3.5 text-green-400" />
+                              <span className="text-xs text-zinc-300 font-medium">Add to your website's &lt;head&gt;</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                              onClick={copyTrackingCode}
+                            >
+                              {copiedCode ? (
+                                <CheckCircle2 className="w-3 h-3 text-green-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                              <span className="ml-1 text-[9px]">{copiedCode ? 'Copied!' : 'Copy'}</span>
+                            </Button>
+                          </div>
+                          <pre className="p-3 text-[10px] text-green-400 font-mono overflow-x-auto max-h-32 scrollbar-hide leading-relaxed">
+                            {getTrackingCode(dataStream.measurementId)}
+                          </pre>
+                        </div>
+
+                        {/* Verify Connection Button */}
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white w-full"
+                          onClick={onRefresh}
+                          disabled={isRefreshing}
+                        >
+                          {isRefreshing ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : (
+                            <Radio className="w-3.5 h-3.5 mr-1.5" />
+                          )}
+                          Verify Tracking is Active
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      /* Pre-creation state */
+                      <>
+                        {/* Domain URL to add */}
+                        <div className="flex items-center gap-2">
+                          <Link2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                          <span className="text-[10px] text-muted-foreground">Will create Web Data Stream for:</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/30">
+                          <code className="flex-1 text-xs font-mono text-amber-400 truncate">
+                            https://{normalizedDomain}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 hover:bg-amber-500/10"
+                            onClick={copyUrl}
+                          >
+                            {copiedUrl ? (
+                              <CheckCircle2 className="w-3 h-3 text-green-400" />
+                            ) : (
+                              <Copy className="w-3 h-3 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Error State */}
+                        {createError && (
+                          <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30">
+                            <p className="text-[10px] text-red-400">{createError}</p>
+                          </div>
                         )}
-                        Verify Connection
-                      </Button>
-                    </div>
+
+                        {/* Create Data Stream Button */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex-1"
+                            onClick={handleCreateDataStream}
+                            disabled={isCreating}
+                          >
+                            {isCreating ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            ) : (
+                              <Rocket className="w-3.5 h-3.5 mr-1.5" />
+                            )}
+                            {isCreating ? "Creating Data Stream..." : "Add Domain to Google Analytics"}
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               )}
