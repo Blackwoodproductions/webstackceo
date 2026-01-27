@@ -2729,7 +2729,10 @@ f.parentNode.insertBefore(j,f);
         </main>
 
         {/* Right Sidebar - Chat Panel */}
-        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-300 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
+        <div
+          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          style={{ contain: 'layout paint' }}
+        >
           <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
@@ -2849,10 +2852,8 @@ f.parentNode.insertBefore(j,f);
                       const isCurrentUser = visitor.is_current_user;
                       
                       return (
-                        <motion.div
+                        <div
                           key={visitor.session_id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
                           onClick={async () => {
                             if (isCurrentUser) return; // Don't start chat with yourself
                             const { data: newConv } = await supabase
@@ -2876,11 +2877,12 @@ f.parentNode.insertBefore(j,f);
                               toast.success('Chat started with visitor');
                             }
                           }}
-                          className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all duration-300 border backdrop-blur-sm ${
+                          className={`group relative flex items-center gap-3 p-2 rounded-lg border backdrop-blur-sm ${
                             isCurrentUser 
                               ? 'bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-cyan-500/40 cursor-default' 
                               : 'hover:bg-primary/5 border-primary/10 hover:border-primary/30 cursor-pointer'
                           }`}
+                          style={{ contain: 'layout paint', willChange: 'opacity' }}
                         >
                           {/* Glow effect on hover */}
                           {!isCurrentUser && (
@@ -2920,17 +2922,8 @@ f.parentNode.insertBefore(j,f);
                                   {/* Inner highlight */}
                                   <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
                                   
-                                  {/* Scan line effect */}
-                                  <motion.div 
-                                    className="absolute inset-0 rounded-lg overflow-hidden"
-                                    initial={false}
-                                  >
-                                    <motion.div 
-                                      className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                                      animate={{ y: [0, 36, 0] }}
-                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                    />
-                                  </motion.div>
+                                  {/* Scan line effect (static to prevent animation jank) */}
+                                  <div className="absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                                   
                                   {/* Icon */}
                                   <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
@@ -2970,15 +2963,11 @@ f.parentNode.insertBefore(j,f);
                             </p>
                           </div>
                           
-                          {/* Shimmer effect on hover (not for current user) */}
+                          {/* Hover shimmer (opacity-only) */}
                           {!isCurrentUser && (
-                            <motion.div 
-                              className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
-                              animate={{ x: ['-100%', '200%'] }}
-                              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
-                            />
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                           )}
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </>
@@ -3045,7 +3034,7 @@ f.parentNode.insertBefore(j,f);
                 )}
 
                 {/* Live Visitors (not in chat yet) */}
-                {liveVisitors.slice(0, 10 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
+                {liveVisitors.slice(0, 10 - Math.min(sidebarChats.length, 5)).map((visitor) => {
                   // Bold, vibrant colors (no pastels)
                   const colors = [
                     'from-red-600 to-rose-700',
@@ -3067,10 +3056,8 @@ f.parentNode.insertBefore(j,f);
                   const isCurrentUser = visitor.is_current_user;
                   
                   return (
-                    <motion.div
+                    <div
                       key={visitor.session_id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
                       onClick={async () => {
                         if (isCurrentUser) return; // Don't start chat with yourself
                         const { data: newConv } = await supabase
@@ -3095,10 +3082,9 @@ f.parentNode.insertBefore(j,f);
                           toast.success('Chat started with visitor');
                         }
                       }}
-                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer'}`}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer'} animate-fade-in`}
                       title={isCurrentUser ? 'You (Online)' : `${visitor.first_page || '/'} • ${timeLabel}`}
-                      whileHover={isCurrentUser ? {} : { scale: 1.15 }}
-                      whileTap={isCurrentUser ? {} : { scale: 0.95 }}
+                      style={{ contain: 'layout paint', willChange: 'opacity' }}
                     >
                       {hasAvatar ? (
                         <>
@@ -3145,12 +3131,8 @@ f.parentNode.insertBefore(j,f);
                               }}
                             />
                             
-                            {/* Scan line */}
-                            <motion.div 
-                              className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
-                              animate={{ y: [-20, 40] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                            />
+                            {/* Scan line (static to prevent animation jank) */}
+                            <div className="absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
                             
                             {/* Icon */}
                             <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
@@ -3159,12 +3141,8 @@ f.parentNode.insertBefore(j,f);
                             <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
                             <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
                             
-                            {/* Shimmer on hover */}
-                            <motion.div 
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100"
-                              animate={{ x: ['-100%', '200%'] }}
-                              transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
-                            />
+                            {/* Shimmer on hover (opacity-only) */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                           
                           {/* Live indicator with enhanced glow */}
@@ -3193,7 +3171,7 @@ f.parentNode.insertBefore(j,f);
                           </p>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
 
