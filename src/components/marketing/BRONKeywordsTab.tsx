@@ -494,8 +494,8 @@ export const BRONKeywordsTab = ({
 
       {/* Keywords Table */}
       <Card className="border-border/50 bg-card/50 overflow-hidden">
-        {/* Table Header */}
-        <div className="flex items-center gap-4 py-3 px-4 bg-muted/30 border-b border-border font-medium text-sm text-muted-foreground">
+        {/* Table Header - Sticky */}
+        <div className="flex items-center gap-4 py-3 px-4 bg-muted/80 backdrop-blur-sm border-b border-border font-medium text-sm text-muted-foreground sticky top-0 z-10">
           <div className="w-6 flex-shrink-0" />
           <div className="flex-1">Keyword</div>
           <div className="w-32 flex-shrink-0">Keywords Status</div>
