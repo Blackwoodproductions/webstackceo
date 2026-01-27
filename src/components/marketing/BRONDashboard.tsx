@@ -1,17 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Globe, Key, FileText, BarChart3, Link2, ArrowUpRight, 
-  ArrowDownLeft, RefreshCw, Plus, Search, Check, X, Edit2, Trash2,
-  RotateCcw, ExternalLink, TrendingUp, Zap
+  ArrowDownLeft, RefreshCw, ExternalLink, TrendingUp, ChevronDown,
+  MapPin, Phone, Calendar, Package, Tag, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useBronApi, BronKeyword, BronDomain } from "@/hooks/use-bron-api";
+import { useBronApi, BronDomain } from "@/hooks/use-bron-api";
 import { BRONKeywordsTab } from "./BRONKeywordsTab";
 import { BRONDomainsTab } from "./BRONDomainsTab";
 import { BRONLinksTab } from "./BRONLinksTab";
@@ -24,9 +22,10 @@ interface BRONDashboardProps {
 
 export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const bronApi = useBronApi();
-  const [activeTab, setActiveTab] = useState("domains");
+  const [activeTab, setActiveTab] = useState("keywords");
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
 
   // Verify authentication on mount
   useEffect(() => {
@@ -57,14 +56,17 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   // Load domain-specific data when domain changes
   useEffect(() => {
     let cancelled = false;
-
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
 
-      // BRON API rate-limits to ~1 request / 200ms per API ID.
-      // Fetch core panels sequentially to avoid "slow down" responses.
+      // Fetch domain info first
+      const info = await bronApi.fetchDomain(selectedDomain);
+      if (!cancelled && info) setDomainInfo(info);
+
+      await sleep(260);
+      if (cancelled) return;
       await bronApi.fetchKeywords(selectedDomain);
       await sleep(260);
       if (cancelled) return;
@@ -81,8 +83,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain]);
 
-  // Lazy-load link reports only when the Links tab is opened (avoids rate-limit + backend 500s
-  // blocking the rest of the dashboard).
+  // Lazy-load link reports only when the Links tab is opened
   useEffect(() => {
     let cancelled = false;
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -145,48 +146,142 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Selected Domain Indicator */}
+      {/* Domain Profile Section */}
       {selectedDomain && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30"
-        >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-blue-500/30 flex items-center justify-center">
-            <Globe className="w-4 h-4 text-cyan-400" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Domain Preview & Info Card */}
+          <Card className="lg:col-span-2 overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row">
+                {/* Website Preview */}
+                <div className="w-full md:w-64 flex-shrink-0 p-4">
+                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+                    <img 
+                      src={`https://image.thum.io/get/width/400/crop/300/${selectedDomain}`}
+                      alt={`${selectedDomain} preview`}
+                      className="w-full h-full object-cover object-top"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
+                        e.currentTarget.className = "w-16 h-16 object-contain mx-auto mt-8";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="w-full text-xs bg-primary/90 hover:bg-primary text-primary-foreground"
+                        onClick={() => window.open(`https://${selectedDomain}`, '_blank')}
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Visit Site
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Domain Info */}
+                <div className="flex-1 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=32`}
+                      alt="favicon"
+                      className="w-5 h-5"
+                    />
+                    <h3 className="font-semibold text-lg">{selectedDomain}</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Domain Status:</span>
+                      <Badge variant={domainInfo?.status === 'active' || !domainInfo?.deleted ? 'default' : 'secondary'} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        LIVE
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Keywords:</span>
+                      <span className="font-medium">{bronApi.keywords.length}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Content Pages:</span>
+                      <span className="font-medium">{bronApi.pages.length}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">SERP Reports:</span>
+                      <span className="font-medium">{bronApi.serpReports.length}</span>
+                    </div>
+
+                    {domainInfo?.created_at && (
+                      <div className="flex items-center gap-2 col-span-full">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Added:</span>
+                        <span className="font-medium">{new Date(domainInfo.created_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard 
+              icon={Key} 
+              label="Keywords"
+              value={bronApi.keywords.length}
+              color="violet"
+            />
+            <StatCard 
+              icon={FileText} 
+              label="Pages"
+              value={bronApi.pages.length}
+              color="blue"
+            />
+            <StatCard 
+              icon={ArrowDownLeft} 
+              label="Inbound"
+              value={bronApi.linksIn.length}
+              color="emerald"
+            />
+            <StatCard 
+              icon={ArrowUpRight} 
+              label="Outbound"
+              value={bronApi.linksOut.length}
+              color="amber"
+            />
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-foreground">Viewing data for: <span className="text-cyan-400">{selectedDomain}</span></p>
-            <p className="text-xs text-muted-foreground">Keywords, content, and links filtered by this domain</p>
-          </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Header Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard 
-          icon={Globe} 
-          label="Domains" 
-          value={bronApi.domains.length}
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <ActionCard
+          icon={BarChart3}
+          title="Keyword Content"
+          description="Manage your target keywords and edit content to optimize search visibility."
           color="cyan"
+          onClick={() => setActiveTab("keywords")}
+          active={activeTab === "keywords"}
         />
-        <StatCard 
-          icon={Key} 
-          label={selectedDomain ? `Keywords (${selectedDomain})` : "Keywords"}
-          value={bronApi.keywords.length}
+        <ActionCard
+          icon={Link2}
+          title="Citation Links"
+          description="Build quality backlinks and manage citations to boost your site's authority."
           color="violet"
+          onClick={() => setActiveTab("links")}
+          active={activeTab === "links"}
         />
-        <StatCard 
-          icon={ArrowDownLeft} 
-          label="Inbound Links" 
-          value={bronApi.linksIn.length}
-          color="emerald"
-        />
-        <StatCard 
-          icon={ArrowUpRight} 
-          label="Outbound Links" 
-          value={bronApi.linksOut.length}
-          color="amber"
+        <ActionCard
+          icon={TrendingUp}
+          title="Ranking/Analytics"
+          description="Track search engine rankings and monitor your campaign progress."
+          color="primary"
+          onClick={() => setActiveTab("serp")}
+          active={activeTab === "serp"}
         />
       </div>
 
@@ -279,34 +374,88 @@ interface StatCardProps {
   icon: React.ElementType;
   label: string;
   value: number;
-  color: "cyan" | "violet" | "emerald" | "amber";
+  color: "cyan" | "violet" | "emerald" | "amber" | "blue" | "primary";
 }
 
 const StatCard = ({ icon: Icon, label, value, color }: StatCardProps) => {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     cyan: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30 text-cyan-400",
     violet: "from-violet-500/20 to-violet-600/10 border-violet-500/30 text-violet-400",
     emerald: "from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400",
     amber: "from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400",
+    blue: "from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-400",
+    primary: "from-primary/20 to-primary/10 border-primary/30 text-primary",
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 ${colorClasses[color]}`}
+      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-3 ${colorClasses[color]}`}
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-          <p className="text-2xl font-bold mt-1">{value.toLocaleString()}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
+          <p className="text-xl font-bold mt-0.5">{value.toLocaleString()}</p>
         </div>
-        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center`}>
-          <Icon className="w-5 h-5" />
+        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center`}>
+          <Icon className="w-4 h-4" />
         </div>
       </div>
-      {/* Decorative glow */}
-      <div className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br ${colorClasses[color]} blur-2xl opacity-50`} />
+    </motion.div>
+  );
+};
+
+// Action Card Component
+interface ActionCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  color: "cyan" | "violet" | "primary";
+  onClick: () => void;
+  active?: boolean;
+}
+
+const ActionCard = ({ icon: Icon, title, description, color, onClick, active }: ActionCardProps) => {
+  const colorClasses: Record<string, { border: string; icon: string; glow: string }> = {
+    cyan: { 
+      border: active ? "border-cyan-500" : "border-cyan-500/30 hover:border-cyan-500/60", 
+      icon: "from-cyan-500/30 to-cyan-600/20 text-cyan-400",
+      glow: "bg-cyan-500/20"
+    },
+    violet: { 
+      border: active ? "border-violet-500" : "border-violet-500/30 hover:border-violet-500/60", 
+      icon: "from-violet-500/30 to-violet-600/20 text-violet-400",
+      glow: "bg-violet-500/20"
+    },
+    primary: { 
+      border: active ? "border-primary" : "border-primary/30 hover:border-primary/60", 
+      icon: "from-primary/30 to-primary/20 text-primary",
+      glow: "bg-primary/20"
+    },
+  };
+
+  const styles = colorClasses[color];
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`relative cursor-pointer rounded-xl border-2 ${styles.border} bg-card/50 backdrop-blur-sm p-4 transition-all duration-200`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${styles.icon} flex items-center justify-center flex-shrink-0`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm mb-1">{title}</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+        </div>
+      </div>
+      {active && (
+        <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1/3 h-1 rounded-full ${styles.glow}`} />
+      )}
     </motion.div>
   );
 };
