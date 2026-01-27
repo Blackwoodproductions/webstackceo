@@ -70,6 +70,7 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBPanel } from '@/components/marketing/GMBPanel';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
+import { SEODashboard } from '@/components/marketing/SEODashboard';
 
 interface Lead {
   id: string;
@@ -255,10 +256,11 @@ const MarketingDashboard = () => {
   const [chatSidebarExpanded, setChatSidebarExpanded] = useState(false);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'seo' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
+    'seo',
     'bron',
     'cade',
     'gmb',
@@ -1800,11 +1802,12 @@ const MarketingDashboard = () => {
           <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye, isPaid: false },
+              { id: 'seo' as DashboardTab, label: 'SEO', icon: BarChart3, isPaid: true },
               { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp, isPaid: true },
               { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText, isPaid: true },
               { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin, isPaid: true },
               { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity, isPaid: true },
-              { id: 'on-page-seo' as DashboardTab, label: 'SEO', icon: FileSearch, isPaid: true },
+              { id: 'on-page-seo' as DashboardTab, label: 'On-Page', icon: FileSearch, isPaid: true },
               { id: 'landing-pages' as DashboardTab, label: 'PPC', icon: Target, isPaid: true },
             ].map((tab, index) => (
               <button
@@ -2740,6 +2743,40 @@ f.parentNode.insertBefore(j,f);
       </div>
       )}
 
+
+      {/* SEO Intelligence Tab Content - DataForSEO Powered */}
+      {activeTab === 'seo' && (
+        <div className="relative max-w-[1480px] mx-auto group/seo">
+          <motion.div
+            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/seo:opacity-50 transition-opacity duration-500 blur-md -z-10"
+            animate={{
+              background: [
+                "linear-gradient(180deg, rgba(6,182,212,0.3), rgba(59,130,246,0.3))",
+                "linear-gradient(270deg, rgba(59,130,246,0.3), rgba(99,102,241,0.3))",
+                "linear-gradient(180deg, rgba(99,102,241,0.3), rgba(6,182,212,0.3))",
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-cyan-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
+            {/* Grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.02] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(192 91% 43%) 1px, transparent 1px), linear-gradient(90deg, hsl(192 91% 43%) 1px, transparent 1px)`,
+                backgroundSize: '30px 30px',
+              }}
+            />
+            {/* Scanning line */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none"
+              animate={{ y: ['-100%', '200%'] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            />
+            <SEODashboard domain={selectedTrackedDomain || selectedDomainKey} />
+          </div>
+        </div>
+      )}
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
