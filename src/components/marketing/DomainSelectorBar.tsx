@@ -52,7 +52,17 @@ export function DomainSelectorBar({
   centerContent,
   rightContent,
 }: DomainSelectorBarProps) {
-  const viDomains = [...new Set([...trackedDomains, ...userAddedDomains])];
+  const normalizeDomainKey = (input: string) =>
+    input
+      .toLowerCase()
+      .trim()
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .split('/')[0];
+
+  const trackedSet = new Set(trackedDomains.map(normalizeDomainKey));
+  const userAddedSet = new Set(userAddedDomains.map(normalizeDomainKey));
+  const viDomains = [...new Set([...trackedSet, ...userAddedSet])].filter(Boolean);
+  const selectedValue = selectedDomain ? normalizeDomainKey(selectedDomain) : '';
   
   return (
     <motion.div 
@@ -83,79 +93,71 @@ export function DomainSelectorBar({
         {/* Left: Domain Selector & Time Range */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Domain Selector */}
-          {viDomains.length > 0 ? (
-            <>
-              <div className="flex items-center gap-2">
-                <motion.div
-                  className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <Globe className="w-4 h-4 text-primary" />
-                </motion.div>
-                <Select value={selectedDomain || ''} onValueChange={onDomainChange}>
-                  <SelectTrigger className="w-[180px] h-7 text-sm bg-background/80 border-border/50 backdrop-blur-sm">
-                    <SelectValue placeholder="Select domain" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50 max-w-[400px]">
-                    {viDomains.map((domain) => {
-                      const hasViTracking = trackedDomains.includes(domain);
-                      return (
-                        <SelectItem
-                          key={domain}
-                          value={domain}
-                          className="text-xs"
-                          indicator={hasViTracking ? (
-                            <Globe className="w-3.5 h-3.5 text-primary" />
-                          ) : undefined}
-                        >
-                          <span className="truncate max-w-[300px]" title={domain}>
-                            {domain}
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                    <SelectSeparator />
-                    <div 
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddDomainClick();
-                      }}
-                    >
-                      <Plus className="w-3 h-3" />
-                      Add domain
-                    </div>
-                  </SelectContent>
-                </Select>
-                
-                {/* Live indicator */}
-                <motion.span
-                  className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Radio className="w-2 h-2" />
-                  LIVE
-                </motion.span>
-              </div>
-              <div className="w-px h-5 bg-border/50" />
-            </>
-          ) : (
-            <>
-              <motion.div whileHover={{ scale: 1.02 }}>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-7 text-xs bg-background/80 border-dashed border-primary/30 hover:border-primary/50"
-                  onClick={onAddDomainClick}
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Domain
-                </Button>
+          <>
+            <div className="flex items-center gap-2">
+              <motion.div
+                className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Globe className="w-4 h-4 text-primary" />
               </motion.div>
-              <div className="w-px h-5 bg-border/50" />
-            </>
-          )}
+
+              <Select value={selectedValue} onValueChange={onDomainChange}>
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background/80 border-border/50 backdrop-blur-sm">
+                  <SelectValue placeholder="Select domain" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50 max-w-[400px]">
+                  {viDomains.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No domains yet
+                    </div>
+                  )}
+
+                  {viDomains.map((domain) => {
+                    const hasViTracking = trackedSet.has(domain);
+                    return (
+                      <SelectItem
+                        key={domain}
+                        value={domain}
+                        className="text-xs"
+                        indicator={hasViTracking ? (
+                          <Globe className="w-3.5 h-3.5 text-primary" />
+                        ) : undefined}
+                      >
+                        <span className="truncate max-w-[300px]" title={domain}>
+                          {domain}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+
+                  <SelectSeparator />
+                  <div 
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddDomainClick();
+                    }}
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add domain
+                  </div>
+                </SelectContent>
+              </Select>
+              
+              {/* Live indicator */}
+              <motion.span
+                className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Radio className="w-2 h-2" />
+                LIVE
+              </motion.span>
+            </div>
+
+            <div className="w-px h-5 bg-border/50" />
+          </>
           
           {/* Time Range Selector */}
           {showTimeRange && onTimeRangeChange && (

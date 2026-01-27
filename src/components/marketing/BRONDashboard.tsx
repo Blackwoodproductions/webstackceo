@@ -56,14 +56,52 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
   // Load domain-specific data when domain changes
   useEffect(() => {
-    if (bronApi.isAuthenticated && selectedDomain) {
-      bronApi.fetchKeywords(selectedDomain);
-      bronApi.fetchPages(selectedDomain);
-      bronApi.fetchSerpReport(selectedDomain);
-      bronApi.fetchLinksIn(selectedDomain);
-      bronApi.fetchLinksOut(selectedDomain);
-    }
+    let cancelled = false;
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const loadCore = async () => {
+      if (!bronApi.isAuthenticated || !selectedDomain) return;
+
+      // BRON API rate-limits to ~1 request / 200ms per API ID.
+      // Fetch core panels sequentially to avoid "slow down" responses.
+      await bronApi.fetchKeywords(selectedDomain);
+      await sleep(260);
+      if (cancelled) return;
+      await bronApi.fetchPages(selectedDomain);
+      await sleep(260);
+      if (cancelled) return;
+      await bronApi.fetchSerpReport(selectedDomain);
+    };
+
+    loadCore();
+
+    return () => {
+      cancelled = true;
+    };
   }, [bronApi.isAuthenticated, selectedDomain]);
+
+  // Lazy-load link reports only when the Links tab is opened (avoids rate-limit + backend 500s
+  // blocking the rest of the dashboard).
+  useEffect(() => {
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const loadLinks = async () => {
+      if (!bronApi.isAuthenticated || !selectedDomain) return;
+      if (activeTab !== "links") return;
+
+      await bronApi.fetchLinksIn(selectedDomain);
+      await sleep(260);
+      if (cancelled) return;
+      await bronApi.fetchLinksOut(selectedDomain);
+    };
+
+    loadLinks();
+    return () => {
+      cancelled = true;
+    };
+  }, [bronApi.isAuthenticated, selectedDomain, activeTab]);
 
   if (isAuthenticating) {
     return (

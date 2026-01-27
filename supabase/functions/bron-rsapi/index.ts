@@ -17,6 +17,18 @@ interface BronRequest {
   include_deleted?: boolean;
 }
 
+async function readResponseBody(res: Response): Promise<unknown> {
+  // Some BRON endpoints return plain-text (e.g. rate limit: "slow down"),
+  // so we must not assume JSON.
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 // Helper to make authenticated requests to BRON API
 // Endpoints that require form-urlencoded data
 const FORM_ENCODED_ENDPOINTS = [
@@ -104,13 +116,13 @@ serve(async (req) => {
       // ========== AUTHENTICATION ==========
       case "ping": {
         response = await bronApiRequest("/ping", "GET");
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
       case "verifyAuth": {
         response = await bronApiRequest("/auth/verify", "GET");
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -121,7 +133,7 @@ serve(async (req) => {
           limit: limit || 50,
           include_deleted: include_deleted || false,
         });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -133,7 +145,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}`, "GET");
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -145,7 +157,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}`, "PATCH", data);
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -157,7 +169,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}`, "DELETE", data || {});
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -169,7 +181,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}/restore`, "POST", {});
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -181,7 +193,7 @@ serve(async (req) => {
           limit: limit || 100,
           include_deleted: include_deleted || false,
         });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -193,7 +205,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/keywords/${keyword_id}`, "GET");
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -205,7 +217,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/keywords", "PUT", data);
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -217,7 +229,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/keywords/${keyword_id}`, "PATCH", data);
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -229,7 +241,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/keywords/${keyword_id}`, "DELETE", data || {});
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -241,7 +253,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/keywords/${keyword_id}/restore`, "POST", {});
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -254,7 +266,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/pages", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -266,7 +278,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/footer", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -279,7 +291,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/serp-report", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -291,7 +303,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/serp-list", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -303,7 +315,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/serp-detail", "POST", { domain, report_id: data.report_id });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -316,7 +328,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/links-in", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -328,7 +340,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/links-out", "POST", { domain });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -338,7 +350,7 @@ serve(async (req) => {
           page: page || 1,
           limit: limit || 50,
         });
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -350,7 +362,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest(`/users/${data.user_id}`, "GET");
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 
@@ -362,7 +374,7 @@ serve(async (req) => {
           );
         }
         response = await bronApiRequest("/users", "PUT", data);
-        result = await response.json();
+        result = await readResponseBody(response);
         break;
       }
 

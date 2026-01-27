@@ -3275,7 +3275,7 @@ f.parentNode.insertBefore(j,f);
               animate={{ y: ['-100%', '200%'] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
-            <BRONPlatformConnect domain={selectedTrackedDomain || selectedDomainKey} />
+            <BRONPlatformConnect domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} />
           </div>
         </div>
       )}
