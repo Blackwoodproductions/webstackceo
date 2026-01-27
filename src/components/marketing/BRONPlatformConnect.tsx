@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useBronApiAuth } from "@/hooks/use-bron-api-auth";
-import { useBronTokenAuth } from "@/hooks/use-bron-token-auth";
+import { useBronTokenAuth, BronSession } from "@/hooks/use-bron-token-auth";
 
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
 
@@ -19,7 +19,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const [iframeKey, setIframeKey] = useState(0);
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
-  const [domainId, setDomainId] = useState<string>("");
 
   // Token-based authentication
   const {
@@ -30,9 +29,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     logout,
   } = useBronTokenAuth({
     domain: domain || "",
-    onAuthenticated: (sess) => {
-      console.log("[BRON] Token auth successful, domainId:", sess.domainId);
-      setDomainId(sess.domainId);
+    onAuthenticated: (sess: BronSession) => {
+      console.log("[BRON] Token auth successful, domainId:", sess.domainId, "embedToken:", !!sess.embedToken);
       setIframeKey(prev => prev + 1);
       
       if (!hasNotified.current) {
@@ -51,7 +49,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     },
   });
 
-  // Popup-based login flow
+  // Popup-based login flow - now receives token from callback
   const {
     isWaitingForLogin,
     popupBlocked,
@@ -59,10 +57,10 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     focusPopup,
   } = useBronApiAuth({
     domain: domain || "",
-    onLoggedIn: async () => {
-      // After popup login confirmed, create a token session
-      console.log("[BRON] Popup login completed, creating token session...");
-      const success = await createSession();
+    onLoggedIn: async (bronToken?: string | null) => {
+      // After popup login, create a token session with the BRON token
+      console.log("[BRON] Popup login completed, creating token session with bronToken:", !!bronToken);
+      const success = await createSession(bronToken);
       if (!success) {
         toast({
           title: "Session Error",
@@ -102,10 +100,26 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     });
   };
 
-  // Build iframe URL with token and domain ID
-  const iframeSrc = session?.domainId 
-    ? `${BRON_DASHBOARD_URL}?domain_id=${session.domainId}&tab=analysis`
-    : `${BRON_DASHBOARD_URL}?tab=analysis`;
+  // Build iframe URL with token parameters for BRON authentication
+  const buildIframeSrc = useCallback(() => {
+    const params = new URLSearchParams();
+    params.set("tab", "analysis");
+    
+    if (session?.domainId) {
+      params.set("domain_id", session.domainId);
+    }
+    if (session?.userId) {
+      params.set("user_id", session.userId);
+    }
+    // Pass embed token for authentication within BRON's dashboard
+    if (session?.embedToken) {
+      params.set("token", session.embedToken);
+      params.set("auth_token", session.embedToken);
+      params.set("embed_token", session.embedToken);
+    }
+    
+    return `${BRON_DASHBOARD_URL}?${params.toString()}`;
+  }, [session]);
 
   // Loading state
   if (isTokenLoading) {
@@ -118,6 +132,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
 
   // Authenticated state - show iframe dashboard
   if (isAuthenticated && session) {
+    const iframeSrc = buildIframeSrc();
+    
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -142,7 +158,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 BRON Dashboard
                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   <Check className="w-3 h-3 inline mr-1" />
-                  Token Authenticated
+                  {session.embedToken ? "Token Auth" : "Session Active"}
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -170,7 +186,9 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
         <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
           <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div className="text-muted-foreground">
-            <span className="text-emerald-400 font-medium">Token-based session active.</span>{" "}
+            <span className="text-emerald-400 font-medium">
+              {session.embedToken ? "Token-based authentication active." : "Session active."}
+            </span>{" "}
             Expires: {new Date(session.expiresAt).toLocaleString()}
           </div>
         </div>
@@ -215,7 +233,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
             : isWaitingForLogin
-              ? "Please complete the login in the popup window. A secure token session will be created automatically."
+              ? "Please complete the login in the popup window. Your session token will be used to authenticate the dashboard."
               : "Opening BRON login window..."}
         </p>
       </div>

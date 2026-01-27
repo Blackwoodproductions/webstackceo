@@ -4,13 +4,13 @@ const BRON_STORAGE_KEY = "bron_dashboard_auth";
 
 type UseBronApiAuthOptions = {
   domain: string;
-  /** Called when login is detected */
-  onLoggedIn: () => void;
+  /** Called when login is detected, with optional token from callback */
+  onLoggedIn: (bronToken?: string | null) => void;
 };
 
 /**
  * Opens a popup for BRON login and waits for the callback redirect.
- * Does NOT use API polling since the API returns domain data regardless of session state.
+ * Passes any received token back to the caller for embed purposes.
  */
 export function useBronApiAuth({
   domain,
@@ -23,12 +23,12 @@ export function useBronApiAuth({
   const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
 
-  // Trigger login success
-  const triggerLoginSuccess = useCallback(() => {
+  // Trigger login success with optional token
+  const triggerLoginSuccess = useCallback((bronToken?: string | null) => {
     if (hasTriggeredLogin.current) return;
     hasTriggeredLogin.current = true;
 
-    console.log("[BRON Auth] Login confirmed");
+    console.log("[BRON Auth] Login confirmed, token received:", !!bronToken);
 
     // Close popup if still open
     if (popupRef.current && !popupRef.current.closed) {
@@ -47,7 +47,7 @@ export function useBronApiAuth({
     }
 
     setIsWaitingForLogin(false);
-    onLoggedIn();
+    onLoggedIn(bronToken);
   }, [onLoggedIn]);
 
   // Close popup helper
@@ -121,14 +121,14 @@ export function useBronApiAuth({
     };
   }, [isWaitingForLogin]);
 
-  // Listen for postMessage from callback page
+  // Listen for postMessage from callback page with token
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        console.log("[BRON Auth] Received auth success from callback page");
-        triggerLoginSuccess();
+        console.log("[BRON Auth] Received auth success, token:", !!event.data?.token);
+        triggerLoginSuccess(event.data?.token);
       }
     };
 
