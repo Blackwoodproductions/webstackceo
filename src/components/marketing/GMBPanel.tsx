@@ -439,6 +439,12 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 <LogOut className="w-3.5 h-3.5" />
               </Button>
             </>
+          ) : accessToken && isCheckingAccount ? (
+            <>
+              <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Checking...
+              </Badge>
+            </>
           ) : accessToken ? (
             <>
               <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
