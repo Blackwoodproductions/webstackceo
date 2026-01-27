@@ -78,8 +78,8 @@ export function useBronApiAuth({
     setPopupBlocked(false);
     hasTriggeredLogin.current = false;
 
-    const popupWidth = 1480;
-    const popupHeight = 900;
+    const popupWidth = 520;
+    const popupHeight = 650;
     const left = (window.screenX ?? 0) + (window.outerWidth - popupWidth) / 2;
     const top = (window.screenY ?? 0) + (window.outerHeight - popupHeight) / 2;
 
