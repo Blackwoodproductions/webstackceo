@@ -2727,10 +2727,10 @@ f.parentNode.insertBefore(j,f);
 
         {/* Right Sidebar - Chat Panel (in-layout, no overlay) */}
         <div
-          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
-          style={{ contain: 'layout paint' }}
+          className={`flex-shrink-0 flex-grow-0 border-l border-border bg-card/50 overflow-hidden transition-[width] duration-150 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          style={{ contain: 'layout paint', maxWidth: chatPanelOpen ? '256px' : '56px' }}
         >
-          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col overflow-hidden">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
@@ -3196,7 +3196,7 @@ f.parentNode.insertBefore(j,f);
             )}
           </div>
         </div>
-        </div>
+      </div>
       </div>
       )}
 
