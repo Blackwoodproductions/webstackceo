@@ -252,6 +252,7 @@ const MarketingDashboard = () => {
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
+  const [chatSidebarExpanded, setChatSidebarExpanded] = useState(false);
   
   // Dashboard main tabs
   type DashboardTab = 'visitor-intelligence' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
@@ -1694,11 +1695,15 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
+    <div 
+      className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden transition-[padding] duration-300 ease-out"
+      style={{ paddingRight: chatSidebarExpanded ? 'calc(320px + 1.5rem)' : undefined }}
+    >
       {/* Chat Sidebar */}
       <ChatSidebar 
         isOnline={chatOnline} 
-        onNewChat={() => setHasNewMessage(true)} 
+        onNewChat={() => setHasNewMessage(true)}
+        onExpandChange={setChatSidebarExpanded}
       />
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"

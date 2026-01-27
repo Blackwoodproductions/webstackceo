@@ -47,6 +47,7 @@ interface LiveVisitor {
 interface ChatSidebarProps {
   isOnline: boolean;
   onNewChat?: () => void;
+  onExpandChange?: (expanded: boolean) => void;
 }
 
 // Visitor badge colors for anonymous users
@@ -117,8 +118,13 @@ const playNotificationSound = () => {
   }
 };
 
-export const ChatSidebar = memo(({ isOnline, onNewChat }: ChatSidebarProps) => {
+export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSidebarProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Notify parent of expansion state changes
+  useEffect(() => {
+    onExpandChange?.(isExpanded);
+  }, [isExpanded, onExpandChange]);
   const [activeTab, setActiveTab] = useState<'visitors' | 'chats'>('visitors');
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
