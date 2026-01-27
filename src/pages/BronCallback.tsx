@@ -13,11 +13,29 @@ const BronCallback = () => {
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // Get any params from the URL
+        // Get any params from the URL - BRON may pass tokens via various param names
         const token = searchParams.get("token");
         const code = searchParams.get("code");
+        const accessToken = searchParams.get("access_token");
+        const sessionToken = searchParams.get("session_token");
+        const embedToken = searchParams.get("embed_token");
+        const authToken = searchParams.get("auth_token");
         const success = searchParams.get("success");
         const error = searchParams.get("error");
+
+        // Get the best available token
+        const bronToken = token || code || accessToken || sessionToken || embedToken || authToken;
+
+        console.log("[BRON Callback] URL params:", {
+          token: !!token,
+          code: !!code,
+          accessToken: !!accessToken,
+          sessionToken: !!sessionToken,
+          embedToken: !!embedToken,
+          authToken: !!authToken,
+          success,
+          error,
+        });
 
         // Handle explicit error
         if (error) {
@@ -30,7 +48,6 @@ const BronCallback = () => {
               }
               window.close();
             } catch {
-              // If can't close, redirect to dashboard
               window.location.href = "/visitor-intelligence-dashboard#bron";
             }
           }, 2000);
@@ -38,13 +55,12 @@ const BronCallback = () => {
         }
 
         // If we reached this callback page, BRON has redirected us here after login
-        // This means login was successful (OAuth/SSO redirect pattern)
-        console.log("[BRON Callback] Reached callback - login successful");
+        console.log("[BRON Callback] Reached callback - login successful, token:", !!bronToken);
 
         // Store authentication data in localStorage
         const authData = {
           authenticated: true,
-          token: token || code || null,
+          token: bronToken,
           expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
           authenticatedAt: new Date().toISOString(),
         };
@@ -54,14 +70,14 @@ const BronCallback = () => {
         setStatus("success");
         setMessage("Successfully authenticated with BRON!");
         
-        // Notify the opener window and close this popup
+        // Notify the opener window with the token and close this popup
         setTimeout(() => {
           try {
             if (window.opener) {
-              // Post message to opener to trigger dashboard load
+              // Post message to opener with the BRON token for embedding
               window.opener.postMessage({ 
                 type: "BRON_AUTH_SUCCESS", 
-                token: token || code || null 
+                token: bronToken,
               }, window.location.origin);
               window.close();
             } else {

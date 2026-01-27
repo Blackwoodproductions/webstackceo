@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 const BRON_TOKEN_KEY = "bron_auth_token";
 const BRON_SESSION_KEY = "bron_session_data";
 
-interface BronSession {
+export interface BronSession {
   token: string;
   domain: string;
   domainId: string;
+  userId: string;
+  embedToken: string | null; // Token for embedding BRON dashboard
   expiresAt: number;
 }
 
@@ -19,7 +21,7 @@ interface UseBronTokenAuthOptions {
 
 /**
  * Token-based authentication for BRON.
- * Creates server-side sessions and validates tokens.
+ * Creates server-side sessions and manages embed tokens.
  */
 export function useBronTokenAuth({
   domain,
@@ -73,10 +75,18 @@ export function useBronTokenAuth({
           return;
         }
 
-        console.log("[BRON Token] Session valid");
-        setSession(parsedSession);
+        // Update session with any new embed token from server
+        const updatedSession: BronSession = {
+          ...parsedSession,
+          embedToken: data.embedToken || parsedSession.embedToken,
+        };
+
+        console.log("[BRON Token] Session valid, embedToken:", !!updatedSession.embedToken);
+        localStorage.setItem(BRON_SESSION_KEY, JSON.stringify(updatedSession));
+        
+        setSession(updatedSession);
         setIsAuthenticated(true);
-        onAuthenticated(parsedSession);
+        onAuthenticated(updatedSession);
       } catch (err) {
         console.error("[BRON Token] Init error:", err);
       } finally {
@@ -87,8 +97,8 @@ export function useBronTokenAuth({
     initSession();
   }, [onAuthenticated]);
 
-  // Create a new session after login
-  const createSession = useCallback(async (): Promise<boolean> => {
+  // Create a new session after popup login
+  const createSession = useCallback(async (bronCallbackToken?: string | null): Promise<boolean> => {
     if (!domain) {
       setError("Domain is required");
       return false;
@@ -98,10 +108,14 @@ export function useBronTokenAuth({
     setError(null);
 
     try {
-      console.log("[BRON Token] Creating session for domain:", domain);
+      console.log("[BRON Token] Creating session for domain:", domain, "Callback token:", !!bronCallbackToken);
       
       const { data, error: invokeError } = await supabase.functions.invoke("bron-auth", {
-        body: { action: "create-session", domain },
+        body: { 
+          action: "create-session", 
+          domain,
+          bronToken: bronCallbackToken, // Pass any token from callback
+        },
       });
 
       if (invokeError) {
@@ -122,6 +136,8 @@ export function useBronTokenAuth({
         token: data.token,
         domain,
         domainId: data.domainId,
+        userId: data.userId || "",
+        embedToken: data.embedToken || bronCallbackToken || null,
         expiresAt: data.expiresAt,
       };
 
@@ -133,7 +149,7 @@ export function useBronTokenAuth({
       setIsAuthenticated(true);
       setIsLoading(false);
 
-      console.log("[BRON Token] Session created successfully");
+      console.log("[BRON Token] Session created, embedToken:", !!newSession.embedToken);
       onAuthenticated(newSession);
 
       return true;
