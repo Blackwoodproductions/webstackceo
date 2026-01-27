@@ -503,12 +503,10 @@ const LiveChatWidget = () => {
     }
   };
 
-  // Only show widget to admins - hide for regular visitors
-  if (isLoading) return null;
-  if (!isAdmin) return null;
-
   // Final guardrail: regardless of any transient backend/session states,
   // never render more than one "YOU" entry in the mini visitor stack.
+  // IMPORTANT: This hook MUST run on every render (even when we return null below)
+  // to avoid React error #310 (hooks order mismatch).
   const visitorsForStack = useMemo(() => {
     const seen = new Set<string>();
     const getKey = (v: LiveVisitor) => {
@@ -523,6 +521,10 @@ const LiveChatWidget = () => {
       return true;
     });
   }, [liveVisitors]);
+
+  // Only show widget to admins - hide for regular visitors
+  if (isLoading) return null;
+  if (!isAdmin) return null;
 
   return (
     <TooltipProvider>
