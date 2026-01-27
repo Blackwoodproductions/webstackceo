@@ -23,6 +23,8 @@ export function useBronApiAuth({
   const popupRef = useRef<Window | null>(null);
   const pollRef = useRef<number | null>(null);
   const hasTriggeredLogin = useRef(false);
+  const popupOpenedAt = useRef<number>(0);
+  const initialStatusChecked = useRef(false);
 
   const [isPolling, setIsPolling] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -94,6 +96,8 @@ export function useBronApiAuth({
   const openPopup = useCallback(() => {
     setPopupBlocked(false);
     hasTriggeredLogin.current = false;
+    initialStatusChecked.current = false;
+    popupOpenedAt.current = Date.now();
 
     const popupWidth = 600;
     const popupHeight = 700;
@@ -129,11 +133,15 @@ export function useBronApiAuth({
     if (!isPolling || !domain) return;
 
     let isActive = true;
+    let wasLoggedInInitially = false;
 
     const poll = async () => {
-      // Check if popup was closed
+      // Check if popup was closed by user
       if (popupRef.current?.closed) {
-        console.log("[BRON API Auth] Popup closed, checking final status...");
+        console.log("[BRON API Auth] Popup closed by user");
+        
+        // Give a moment for any redirect/postMessage to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Do one final check
         const loggedIn = await checkLoginStatus();
@@ -154,15 +162,43 @@ export function useBronApiAuth({
       const loggedIn = await checkLoginStatus();
       setLastCheckResult(loggedIn);
       
+      // Track initial status - if already logged in when popup opened, 
+      // don't auto-close until we see a state change or user closes popup
+      if (!initialStatusChecked.current) {
+        initialStatusChecked.current = true;
+        wasLoggedInInitially = loggedIn;
+        console.log("[BRON API Auth] Initial status:", loggedIn ? "already logged in" : "not logged in");
+        
+        // If already logged in initially, don't auto-close - let user interact
+        if (loggedIn) {
+          console.log("[BRON API Auth] Already logged in - waiting for user to close popup or navigate");
+          return;
+        }
+      }
+      
+      // Only trigger login success if:
+      // 1. User was NOT logged in initially and now IS logged in (fresh login)
+      // 2. OR enough time has passed (user had chance to interact)
+      const timeSinceOpen = Date.now() - popupOpenedAt.current;
+      const minInteractionTime = 5000; // 5 seconds minimum
+      
       if (loggedIn && isActive) {
-        triggerLoginSuccess();
+        if (!wasLoggedInInitially) {
+          // Fresh login detected
+          console.log("[BRON API Auth] Fresh login detected");
+          triggerLoginSuccess();
+        } else if (timeSinceOpen > minInteractionTime) {
+          // Was already logged in but user has had time to interact
+          console.log("[BRON API Auth] User confirmed existing session");
+          triggerLoginSuccess();
+        }
       }
     };
 
-    // Initial check after a short delay
-    const initialTimer = setTimeout(poll, 1000);
+    // Start polling after a delay to let popup load
+    const initialTimer = setTimeout(poll, 2000);
 
-    // Start interval polling
+    // Continue polling
     pollRef.current = window.setInterval(poll, pollIntervalMs);
 
     return () => {
