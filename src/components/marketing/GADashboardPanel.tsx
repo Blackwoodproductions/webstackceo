@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { usePopupOAuth } from "@/hooks/use-popup-oauth";
 import { GAOnboardingWizard } from "./GAOnboardingWizard";
+import { GAInlineOnboardingWizard } from "./GAInlineOnboardingWizard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1538,8 +1539,18 @@ export const GADashboardPanel = ({
       
       <CardContent className="relative z-10 space-y-4 pt-0 px-4 pb-4">
 
+        {/* Show inline onboarding wizard when metrics are null/empty but domain should be tracked */}
+        {externalSelectedSite && (isExternalSiteInGA || !streamsLoaded) && !metrics && !isFetching && (
+          <GAInlineOnboardingWizard
+            domain={externalSelectedSite}
+            properties={properties}
+            onRefresh={handleWizardRefresh}
+            isRefreshing={isWizardRefreshing}
+          />
+        )}
+
         {/* Key Metrics Grid - Enhanced with glassmorphism */}
-        {(isExternalSiteInGA || !externalSelectedSite) && (
+        {(isExternalSiteInGA || !externalSelectedSite) && metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Sessions */}
           <motion.div 
@@ -1686,7 +1697,7 @@ export const GADashboardPanel = ({
         )}
 
         {/* Engagement Metrics Bar - Static for performance */}
-        {(isExternalSiteInGA || !externalSelectedSite) && (
+        {(isExternalSiteInGA || !externalSelectedSite) && metrics && (
         <div 
           className="relative overflow-hidden bg-gradient-to-r from-orange-500/5 via-amber-500/5 to-yellow-500/5 rounded-xl p-4 border border-orange-500/10"
           style={{ contain: "layout" }}
