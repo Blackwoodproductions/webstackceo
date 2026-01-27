@@ -705,8 +705,8 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               </CardContent>
             </Card>
           </motion.div>
-        ) : (
-          /* CADE Sales Pitch */
+        ) : !hasCadeSubscription ? (
+          /* CADE Sales Pitch - Only show when no subscription */
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -871,7 +871,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               </CardContent>
             </Card>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
       {/* Social Presence Overview (if profiles detected) */}
