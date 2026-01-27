@@ -278,10 +278,11 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         </div>
       </div>
 
-      {/* CADE Subscription Check - Loading State */}
-      <AnimatePresence>
-        {isCheckingCade && (
+      {/* CADE Subscription Check / No Subscription Sales Pitch */}
+      <AnimatePresence mode="wait">
+        {isCheckingCade ? (
           <motion.div
+            key="checking"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -302,7 +303,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
             </div>
             
             <div className="relative z-10 flex flex-col items-center gap-3">
-              {/* Animated icon */}
               <div className="relative">
                 <motion.div
                   className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
@@ -320,7 +320,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                 </motion.div>
               </div>
               
-              {/* Text content */}
               <div className="text-center">
                 <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
                   Verifying CADE Subscription
@@ -330,7 +329,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                 </p>
               </div>
               
-              {/* Progress dots */}
               <div className="flex items-center gap-1.5">
                 {[0, 1, 2].map((i) => (
                   <motion.div
@@ -343,7 +341,157 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               </div>
             </div>
           </motion.div>
-        )}
+        ) : !hasCadeSubscription ? (
+          /* CADE Sales Pitch - No Subscription */
+          <motion.div
+            key="sales"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Card className="border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <motion.div 
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+              </div>
+              
+              <CardHeader className="relative z-10">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <motion.div
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
+                    >
+                      <Sparkles className="w-7 h-7 text-white" />
+                    </motion.div>
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        Automate Your Social Signals with CADE
+                        <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
+                          AI-Powered
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="mt-1 max-w-xl">
+                        When you subscribe to CADE, every new article and FAQ is automatically shared across your connected social platforms—building consistent brand presence and driving traffic on autopilot.
+                      </CardDescription>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center p-4 rounded-xl bg-background/50 border border-violet-500/20 min-w-[200px]">
+                    <p className="text-sm text-muted-foreground">Starting at</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold text-violet-500">$99</span>
+                      <span className="text-sm text-muted-foreground">/month</span>
+                    </div>
+                    <Badge variant="outline" className="mt-2 text-violet-500 border-violet-500/30">
+                      Includes Social Signals
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="relative z-10 space-y-6">
+                <div>
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-violet-500" />
+                    How CADE Automates Social Signals
+                  </h4>
+                  
+                  <div className="grid md:grid-cols-5 gap-3">
+                    {[
+                      { step: '1', title: 'Article Published', desc: 'CADE creates optimized content', icon: FileText },
+                      { step: '2', title: 'AI Adapts Copy', desc: 'Platform-specific versions', icon: Sparkles },
+                      { step: '3', title: 'Hashtags Added', desc: 'Trending tags automatically', icon: Hash },
+                      { step: '4', title: 'Scheduled', desc: 'Optimal posting times', icon: Clock },
+                      { step: '5', title: 'Published', desc: 'Simultaneous release', icon: Rocket },
+                    ].map((item, i) => (
+                      <motion.div
+                        key={item.step}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="relative p-4 rounded-xl bg-background/30 border border-violet-500/10"
+                      >
+                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                          {item.step}
+                        </div>
+                        <item.icon className="w-5 h-5 text-violet-500 mb-2" />
+                        <p className="font-medium text-sm">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                        
+                        {i < 4 && (
+                          <motion.div
+                            className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2"
+                            animate={{ x: [0, 4, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <ChevronRight className="w-4 h-4 text-violet-400" />
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[
+                    { platform: 'twitter' as const, preview: '🚀 New guide: How to boost your local SEO rankings in 2025!\n\nKey takeaways inside 👇\n\n#SEO #LocalBusiness #Marketing', stats: '280 chars max' },
+                    { platform: 'linkedin' as const, preview: 'Excited to share our latest comprehensive guide on local SEO strategies.\n\n✅ Google Business optimization\n✅ Review generation\n✅ Local citations', stats: 'Professional tone' },
+                    { platform: 'facebook' as const, preview: '📍 Want to rank higher in local searches? We just published a complete guide covering everything!', stats: 'Casual & engaging' },
+                  ].map((item, i) => {
+                    const config = platformConfig[item.platform];
+                    const IconComponent = config.icon;
+                    return (
+                      <motion.div
+                        key={item.platform}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 + i * 0.1 }}
+                        className={`p-4 rounded-xl ${config.bgColor} border ${config.borderColor}`}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
+                            <IconComponent className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="font-medium text-sm">{config.name}</span>
+                          <Badge variant="outline" className="ml-auto text-[10px]">{item.stats}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground whitespace-pre-line">{item.preview}</p>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { icon: Zap, title: 'Zero Manual Work', desc: 'CADE handles everything' },
+                    { icon: Target, title: 'Platform Optimized', desc: 'Tailored for each network' },
+                    { icon: TrendingUp, title: 'Consistent Presence', desc: 'Never miss a post' },
+                    { icon: Sparkles, title: 'AI-Powered Copy', desc: 'Compelling content' },
+                  ].map((benefit, i) => (
+                    <motion.div
+                      key={benefit.title}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5 + i * 0.1 }}
+                      className="p-4 rounded-xl bg-background/30 border border-violet-500/10 text-center"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mx-auto mb-2">
+                        <benefit.icon className="w-5 h-5 text-pink-500" />
+                      </div>
+                      <h4 className="font-semibold text-sm">{benefit.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">{benefit.desc}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : null}
       </AnimatePresence>
 
       {/* Detected Social Profiles Grid */}
@@ -715,172 +863,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                       </div>
                     ))}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ) : !hasCadeSubscription ? (
-          /* CADE Sales Pitch - Only show when no subscription */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <Card className="border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
-              {/* Animated background glow */}
-              <div className="absolute inset-0 pointer-events-none">
-                <motion.div 
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
-              </div>
-              
-              <CardHeader className="relative z-10">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <motion.div
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
-                    >
-                      <Sparkles className="w-7 h-7 text-white" />
-                    </motion.div>
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        Automate Your Social Signals with CADE
-                        <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
-                          AI-Powered
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription className="mt-1 max-w-xl">
-                        When you subscribe to CADE, every new article and FAQ is automatically shared across your connected social platforms—building consistent brand presence and driving traffic on autopilot.
-                      </CardDescription>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center p-4 rounded-xl bg-background/50 border border-violet-500/20 min-w-[200px]">
-                    <p className="text-sm text-muted-foreground">Starting at</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-violet-500">$99</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
-                    </div>
-                    <Badge variant="outline" className="mt-2 text-violet-500 border-violet-500/30">
-                      Includes Social Signals
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="relative z-10 space-y-6">
-                {/* How it works */}
-                <div>
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-violet-500" />
-                    How CADE Automates Social Signals
-                  </h4>
-                  
-                  <div className="grid md:grid-cols-5 gap-3">
-                    {[
-                      { step: '1', title: 'Article Published', desc: 'CADE creates optimized content', icon: FileText },
-                      { step: '2', title: 'AI Adapts Copy', desc: 'Platform-specific versions', icon: Sparkles },
-                      { step: '3', title: 'Hashtags Added', desc: 'Trending tags automatically', icon: Hash },
-                      { step: '4', title: 'Scheduled', desc: 'Optimal posting times', icon: Clock },
-                      { step: '5', title: 'Published', desc: 'Simultaneous release', icon: Rocket },
-                    ].map((item, i) => (
-                      <motion.div
-                        key={item.step}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="relative p-4 rounded-xl bg-background/30 border border-violet-500/10"
-                      >
-                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-                          {item.step}
-                        </div>
-                        <item.icon className="w-5 h-5 text-violet-500 mb-2" />
-                        <p className="font-medium text-sm">{item.title}</p>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        
-                        {i < 4 && (
-                          <motion.div
-                            className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2"
-                            animate={{ x: [0, 4, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          >
-                            <ChevronRight className="w-4 h-4 text-violet-400" />
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Platform previews */}
-                <div className="grid md:grid-cols-3 gap-4">
-                  {[
-                    { 
-                      platform: 'twitter' as const, 
-                      preview: '🚀 New guide: How to boost your local SEO rankings in 2025!\n\nKey takeaways inside 👇\n\n#SEO #LocalBusiness #Marketing',
-                      stats: '280 chars max'
-                    },
-                    { 
-                      platform: 'linkedin' as const, 
-                      preview: 'Excited to share our latest comprehensive guide on local SEO strategies.\n\n✅ Google Business optimization\n✅ Review generation\n✅ Local citations',
-                      stats: 'Professional tone'
-                    },
-                    { 
-                      platform: 'facebook' as const, 
-                      preview: '📍 Want to rank higher in local searches? We just published a complete guide covering everything!',
-                      stats: 'Casual & engaging'
-                    },
-                  ].map((item, i) => {
-                    const config = platformConfig[item.platform];
-                    const IconComponent = config.icon;
-                    
-                    return (
-                      <motion.div
-                        key={item.platform}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + i * 0.1 }}
-                        className={`p-4 rounded-xl ${config.bgColor} border ${config.borderColor}`}
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
-                            <IconComponent className="w-4 h-4 text-white" />
-                          </div>
-                          <span className="font-medium text-sm">{config.name}</span>
-                          <Badge variant="outline" className="ml-auto text-[10px]">{item.stats}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line">{item.preview}</p>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* Benefits */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { icon: Zap, title: 'Zero Manual Work', desc: 'CADE handles everything' },
-                    { icon: Target, title: 'Platform Optimized', desc: 'Tailored for each network' },
-                    { icon: TrendingUp, title: 'Consistent Presence', desc: 'Never miss a post' },
-                    { icon: Sparkles, title: 'AI-Powered Copy', desc: 'Compelling content' },
-                  ].map((benefit, i) => (
-                    <motion.div
-                      key={benefit.title}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + i * 0.1 }}
-                      className="p-4 rounded-xl bg-background/30 border border-violet-500/10 text-center"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mx-auto mb-2">
-                        <benefit.icon className="w-5 h-5 text-pink-500" />
-                      </div>
-                      <h4 className="font-semibold text-sm">{benefit.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{benefit.desc}</p>
-                    </motion.div>
-                  ))}
                 </div>
               </CardContent>
             </Card>
