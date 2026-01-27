@@ -2752,9 +2752,16 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Right Sidebar - Chat Panel */}
-        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-300 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
-          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+        {/* Right Sidebar - Chat Panel - GPU accelerated to prevent layout thrashing */}
+        <div 
+          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          style={{ 
+            contain: 'layout style paint',
+            willChange: chatPanelOpen ? 'auto' : 'width',
+            transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+        >
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col" style={{ contain: 'layout' }}>
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
@@ -2764,17 +2771,18 @@ f.parentNode.insertBefore(j,f);
                 }}
                 className="flex items-center justify-center gap-2 p-3 cursor-pointer"
               >
-                <div className={`relative ${hasNewMessage ? 'animate-ring-bell' : ''}`}>
+                <div className="relative">
                   {chatOnline ? (
                     <>
-                      <MessageCircle className={`w-5 h-5 absolute inset-0 ${hasNewMessage ? 'text-amber-500/50 animate-ping' : 'text-cyan-500/30 animate-ping'}`} />
+                      {/* Static glow instead of animate-ping to reduce layout thrashing */}
+                      <MessageCircle className={`w-5 h-5 absolute inset-0 ${hasNewMessage ? 'text-amber-500/30' : 'text-cyan-500/20'}`} style={{ transform: 'scale(1.3)', opacity: 0.5 }} />
                       <MessageCircle className={`w-5 h-5 relative ${hasNewMessage ? 'text-amber-500' : 'text-cyan-500'}`} />
                     </>
                   ) : (
                     <MessageCircle className="w-5 h-5 text-muted-foreground" />
                   )}
                   {chatOnline && sidebarChats.length > 0 && (
-                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500 animate-bounce' : 'bg-red-500 animate-pulse'}`}>
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500' : 'bg-red-500'}`}>
                       {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
                     </span>
                   )}
