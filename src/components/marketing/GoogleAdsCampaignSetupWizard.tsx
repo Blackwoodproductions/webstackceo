@@ -56,10 +56,15 @@ export function GoogleAdsCampaignSetupWizard({
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
   const [availableAccounts, setAvailableAccounts] = useState<AdsAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<AdsAccount | null>(null);
-  const [manualCustomerId, setManualCustomerId] = useState('');
-  const [showManualEntry, setShowManualEntry] = useState(false);
+  // Auto-populate Customer ID from localStorage if available
+  const storedCustomerId = localStorage.getItem('google_ads_customer_id') || '';
+  const formattedStoredId = storedCustomerId.length === 10 
+    ? `${storedCustomerId.slice(0, 3)}-${storedCustomerId.slice(3, 6)}-${storedCustomerId.slice(6)}`
+    : storedCustomerId;
+  const [manualCustomerId, setManualCustomerId] = useState(formattedStoredId);
+  const [showManualEntry, setShowManualEntry] = useState(!!formattedStoredId);
   const [accountError, setAccountError] = useState<string | null>(null);
-  const [verifiedCustomerId, setVerifiedCustomerId] = useState<string>(hasValidCustomerId ? initialCustomerId : '');
+  const [verifiedCustomerId, setVerifiedCustomerId] = useState<string>(hasValidCustomerId ? initialCustomerId : storedCustomerId);
   
   // Form state
   const [websiteUrl, setWebsiteUrl] = useState(domain ? `https://${domain}` : '');
@@ -99,7 +104,8 @@ export function GoogleAdsCampaignSetupWizard({
   }, [accessToken]);
 
   useEffect(() => {
-    if (currentStep === 0 && !isLoadingAccounts && availableAccounts.length === 0 && !showManualEntry) {
+    // Only fetch accounts if we don't already have a stored customer ID
+    if (currentStep === 0 && !isLoadingAccounts && availableAccounts.length === 0 && !showManualEntry && !formattedStoredId) {
       fetchAdsAccounts();
     }
   }, [currentStep]); // eslint-disable-line react-hooks/exhaustive-deps
