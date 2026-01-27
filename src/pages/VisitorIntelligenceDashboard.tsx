@@ -2026,7 +2026,7 @@ const MarketingDashboard = () => {
           <>
             {/* Collapsed Sidebar (thin bar when diagram is closed) */}
             {!siteArchOpen && (
-              <div className="w-12 flex-shrink-0 border-r border-border bg-card/50">
+              <div className="w-12 flex-shrink-0 border-r border-border bg-card/50" style={{ contain: 'layout paint' }}>
                 <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
                   {/* Expand button */}
                   <button 
@@ -2058,10 +2058,7 @@ const MarketingDashboard = () => {
                             {/* External referrer starburst */}
                             {hasExternalReferrer && (
                               <>
-                                <circle cx={18} cy={18} r={16} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.7}>
-                                  <animate attributeName="r" values="14;17;14" dur="2s" repeatCount="indefinite" />
-                                  <animate attributeName="opacity" values="0.7;0.3;0.7" dur="2s" repeatCount="indefinite" />
-                                </circle>
+                                <circle cx={18} cy={18} r={16} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" opacity={0.55} />
                                 {[0, 60, 120, 180, 240, 300].map((angle) => {
                                   const rad = (angle * Math.PI) / 180;
                                   const x1 = 18 + Math.cos(rad) * 11;
@@ -2069,9 +2066,7 @@ const MarketingDashboard = () => {
                                   const x2 = 18 + Math.cos(rad) * 15;
                                   const y2 = 18 + Math.sin(rad) * 15;
                                   return (
-                                    <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f97316" strokeWidth={1.5} strokeLinecap="round" opacity={0.7}>
-                                      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" begin={`${angle / 360}s`} repeatCount="indefinite" />
-                                    </line>
+                                    <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f97316" strokeWidth={1.5} strokeLinecap="round" opacity={0.55} />
                                   );
                                 })}
                               </>
@@ -2710,7 +2705,8 @@ f.parentNode.insertBefore(j,f);
 
         {/* Right Sidebar - Chat Panel */}
         <div 
-          className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-200 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          style={{ contain: 'layout paint', willChange: 'width' }}
         >
           <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col overflow-hidden">
             {/* Header with animated icon */}
@@ -2832,10 +2828,8 @@ f.parentNode.insertBefore(j,f);
                       const isCurrentUser = visitor.is_current_user;
                       
                       return (
-                        <motion.div
+                        <div
                           key={visitor.session_id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
                           onClick={async () => {
                             if (isCurrentUser) return; // Don't start chat with yourself
                             const { data: newConv } = await supabase
@@ -2903,17 +2897,7 @@ f.parentNode.insertBefore(j,f);
                                   {/* Inner highlight */}
                                   <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
                                   
-                                  {/* Scan line effect */}
-                                  <motion.div 
-                                    className="absolute inset-0 rounded-lg overflow-hidden"
-                                    initial={false}
-                                  >
-                                    <motion.div 
-                                      className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                                      animate={{ y: [0, 36, 0] }}
-                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                    />
-                                  </motion.div>
+                                  {/* Scan line removed (was infinite animation) */}
                                   
                                   {/* Icon */}
                                   <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
@@ -2951,7 +2935,7 @@ f.parentNode.insertBefore(j,f);
                             </p>
                           </div>
                           
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </>
