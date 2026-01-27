@@ -3,7 +3,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, MousePointerClick, 
   Eye, Target, Percent, Zap, BarChart3, PieChart,
   CalendarDays, Settings, RefreshCw, Filter, Download,
-  ArrowUpRight, ArrowDownRight, ChevronRight
+  ArrowUpRight, ArrowDownRight, ChevronRight, ArrowLeft
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,8 @@ interface GoogleAdsMetricsDashboardProps {
   isLoading?: boolean;
   onRefresh?: () => void;
   selectedDomain?: string;
+  customerId?: string;
+  onBackToSetup?: () => void;
 }
 
 const formatNumber = (num: number): string => {
@@ -114,11 +116,13 @@ export function GoogleAdsMetricsDashboard({
   campaigns = [], 
   isLoading = false, 
   onRefresh,
-  selectedDomain 
+  selectedDomain,
+  customerId,
+  onBackToSetup
 }: GoogleAdsMetricsDashboardProps) {
-  // Use demo data if no campaigns provided
-  const displayCampaigns = campaigns.length > 0 ? campaigns : generateDemoData();
-  const isDemo = campaigns.length === 0;
+  // Use provided campaigns - no demo data
+  const displayCampaigns = campaigns;
+  const hasCampaigns = campaigns.length > 0;
   
   // Calculate aggregate metrics
   const totalSpent = displayCampaigns.reduce((sum, c) => sum + c.spent, 0);
@@ -211,6 +215,21 @@ export function GoogleAdsMetricsDashboard({
       {/* Header Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* Back to Setup Button with Customer ID */}
+          {onBackToSetup && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onBackToSetup}
+              className="h-8 text-xs gap-1.5 bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20 hover:text-orange-300"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {customerId && customerId !== 'unified-auth' 
+                ? `Account: ${customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}`
+                : 'Campaign Setup'
+              }
+            </Button>
+          )}
           <Select defaultValue="7d">
             <SelectTrigger className="w-[130px] h-8 text-xs bg-muted/30 border-border">
               <CalendarDays className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
@@ -223,11 +242,6 @@ export function GoogleAdsMetricsDashboard({
               <SelectItem value="90d">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
-          {isDemo && (
-            <Badge variant="outline" className="text-[9px] bg-amber-500/10 text-amber-400 border-amber-500/30">
-              Demo Data
-            </Badge>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5">
@@ -250,6 +264,41 @@ export function GoogleAdsMetricsDashboard({
           </Button>
         </div>
       </div>
+
+      {/* Empty state when no campaigns */}
+      {!hasCampaigns && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-12 space-y-4"
+        >
+          <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/30">
+            <Target className="w-8 h-8 text-orange-400" />
+          </div>
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold">No Campaigns Found</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              {customerId && customerId !== 'unified-auth' 
+                ? `No active campaigns for account ${customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}`
+                : 'Connect your Google Ads account and create a campaign to see metrics here.'
+              }
+            </p>
+          </div>
+          {onBackToSetup && (
+            <Button 
+              variant="outline" 
+              onClick={onBackToSetup}
+              className="mt-2 bg-orange-500/10 border-orange-500/30 text-orange-400 hover:bg-orange-500/20"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Create New Campaign
+            </Button>
+          )}
+        </motion.div>
+      )}
+
+      {hasCampaigns && (
+        <>
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -416,6 +465,8 @@ export function GoogleAdsMetricsDashboard({
           </table>
         </div>
       </Card>
+      </>
+      )}
     </motion.div>
   );
 }
