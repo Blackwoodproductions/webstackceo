@@ -119,7 +119,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(null);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>('connecting');
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -163,83 +163,87 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     return data;
   }, [domain]);
 
-  // Check system connection on mount
+  // Optimized: Parallel connection + subscription check
   useEffect(() => {
-    const checkConnection = async () => {
+    const initializeConnection = async () => {
       setIsLoading(true);
+      setLoadingPhase('connecting');
+      setError(null);
+
       try {
-        const healthRes = await callCadeApi("health");
-        if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
-          setIsConnected(true);
-          setHealth(healthRes.data || healthRes);
+        // Run health check and subscription check in parallel
+        const [healthResult, subscriptionResult] = await Promise.allSettled([
+          callCadeApi("health"),
+          domain ? callCadeApi("subscription-active") : Promise.resolve(null),
+        ]);
+
+        // Process health check
+        if (healthResult.status === 'fulfilled') {
+          const healthRes = healthResult.value;
+          if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
+            setIsConnected(true);
+            setHealth(healthRes.data || healthRes);
+          } else {
+            setError("CADE API is not responding properly");
+            setIsLoading(false);
+            setLoadingPhase(null);
+            return;
+          }
         } else {
-          setError("CADE API is not responding properly");
-        }
-      } catch (err) {
-        console.error("[CADE] Connection check failed:", err);
-        setError("Failed to connect to CADE API");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkConnection();
-  }, [callCadeApi]);
-
-  // Check if selected domain has a subscription
-  useEffect(() => {
-    const checkDomainSubscription = async () => {
-      if (!domain || !isConnected) {
-        setDomainHasSubscription(null);
-        return;
-      }
-
-      setCheckingSubscription(true);
-      try {
-        // Fetch subscription info
-        const subRes = await callCadeApi("subscription-active");
-        const subData = subRes?.data || subRes;
-        
-        // Check if subscription is active
-        if (!subData?.status || subData.status === "inactive" || subData.status === "expired") {
-          setDomainHasSubscription(false);
-          setSubscription(subData);
+          console.error("[CADE] Connection check failed:", healthResult.reason);
+          setError("Failed to connect to CADE API");
+          setIsLoading(false);
+          setLoadingPhase(null);
           return;
         }
 
-        // Check if domain is in the subscription's domain list (if available)
-        const subscribedDomains = subData?.domains || [];
-        if (subscribedDomains.length > 0) {
-          const domainLower = domain.toLowerCase().replace(/^www\./, '');
-          const isSubscribed = subscribedDomains.some((d: string) => 
-            d.toLowerCase().replace(/^www\./, '') === domainLower
-          );
-          setDomainHasSubscription(isSubscribed);
-        } else {
-          // If no domain list, assume subscription covers all domains
-          setDomainHasSubscription(subData?.status === "active");
-        }
-        
-        setSubscription(subData);
-      } catch (err) {
-        console.error("[CADE] Subscription check error:", err);
-        // On error, try to get domain profile - if it exists, likely has access
-        try {
-          const profileRes = await callCadeApi("domain-profile");
-          if (profileRes && !profileRes.error) {
-            setDomainHasSubscription(true);
+        // Process subscription check if domain exists
+        if (domain && subscriptionResult.status === 'fulfilled' && subscriptionResult.value) {
+          setLoadingPhase('subscription');
+          const subRes = subscriptionResult.value;
+          const subData = subRes?.data || subRes;
+          
+          // Check if subscription is active
+          if (!subData?.status || subData.status === "inactive" || subData.status === "expired") {
+            setDomainHasSubscription(false);
+            setSubscription(subData);
           } else {
+            // Check if domain is in the subscription's domain list (if available)
+            const subscribedDomains = subData?.domains || [];
+            if (subscribedDomains.length > 0) {
+              const domainLower = domain.toLowerCase().replace(/^www\./, '');
+              const isSubscribed = subscribedDomains.some((d: string) => 
+                d.toLowerCase().replace(/^www\./, '') === domainLower
+              );
+              setDomainHasSubscription(isSubscribed);
+            } else {
+              // If no domain list, assume subscription covers all domains
+              setDomainHasSubscription(subData?.status === "active");
+            }
+            setSubscription(subData);
+          }
+        } else if (domain && subscriptionResult.status === 'rejected') {
+          // On subscription error, try domain profile as fallback
+          try {
+            const profileRes = await callCadeApi("domain-profile");
+            setDomainHasSubscription(profileRes && !profileRes.error);
+          } catch {
             setDomainHasSubscription(false);
           }
-        } catch {
-          setDomainHasSubscription(false);
+        } else if (!domain) {
+          setDomainHasSubscription(null);
         }
+      } catch (err) {
+        console.error("[CADE] Initialization error:", err);
+        setError("Failed to connect to CADE API");
       } finally {
-        setCheckingSubscription(false);
+        setIsLoading(false);
+        setLoadingPhase(null);
       }
     };
 
-    checkDomainSubscription();
-  }, [domain, isConnected, callCadeApi]);
+    initializeConnection();
+  }, [domain, callCadeApi]);
 
   // Fetch all data when connected and domain has subscription
   const fetchAllData = useCallback(async () => {
@@ -523,7 +527,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     return <Activity className="w-3.5 h-3.5" />;
   };
 
-  // Loading state - connecting to CADE
+  // Unified loading state - shows current phase
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
@@ -537,8 +541,24 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-lg font-semibold">Connecting to CADE</p>
-            <p className="text-sm text-muted-foreground">AI Content Automation Engine</p>
+            <p className="text-lg font-semibold">
+              {loadingPhase === 'subscription' ? 'Verifying Access' : 'Connecting to CADE'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {loadingPhase === 'subscription' 
+                ? `Checking subscription for ${domain}...` 
+                : 'AI Content Automation Engine'}
+            </p>
+          </div>
+          {/* Progress indicator */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className={loadingPhase === 'connecting' ? 'text-violet-400 font-medium' : 'text-green-400'}>
+              {loadingPhase === 'connecting' ? '● Connecting' : '✓ Connected'}
+            </span>
+            <span className="text-muted-foreground/50">→</span>
+            <span className={loadingPhase === 'subscription' ? 'text-violet-400 font-medium' : 'text-muted-foreground/50'}>
+              {loadingPhase === 'subscription' ? '● Verifying' : '○ Access'}
+            </span>
           </div>
         </div>
       </div>
@@ -562,21 +582,6 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
           <RefreshCw className="w-4 h-4" />
           Retry Connection
         </Button>
-      </div>
-    );
-  }
-
-  // Checking subscription state
-  if (checkingSubscription) {
-    return (
-      <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
-          <div className="text-center">
-            <p className="text-lg font-semibold">Checking Subscription</p>
-            <p className="text-sm text-muted-foreground">Verifying access for {domain}...</p>
-          </div>
-        </div>
       </div>
     );
   }
