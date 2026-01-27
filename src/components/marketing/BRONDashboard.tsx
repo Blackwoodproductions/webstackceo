@@ -285,30 +285,8 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
         />
       </div>
 
-      {/* Main Dashboard Tabs */}
+      {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 gap-2 bg-secondary/30 p-1">
-          <TabsTrigger value="domains" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-            <Globe className="w-4 h-4 mr-2" />
-            Domains
-          </TabsTrigger>
-          <TabsTrigger value="keywords" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
-            <Key className="w-4 h-4 mr-2" />
-            Keywords
-          </TabsTrigger>
-          <TabsTrigger value="content" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
-            <FileText className="w-4 h-4 mr-2" />
-            Content
-          </TabsTrigger>
-          <TabsTrigger value="serp" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            SERP
-          </TabsTrigger>
-          <TabsTrigger value="links" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400">
-            <Link2 className="w-4 h-4 mr-2" />
-            Links
-          </TabsTrigger>
-        </TabsList>
 
         <AnimatePresence mode="wait">
           <TabsContent value="domains" className="mt-0">
