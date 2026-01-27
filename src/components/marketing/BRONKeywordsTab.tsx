@@ -3,7 +3,7 @@ import {
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save,
   Eye, ChevronUp, FileText, Link2, Hash, 
-  Sparkles
+  Sparkles, Maximize2, Minimize2, X, PanelLeftClose, PanelLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -181,6 +181,7 @@ export const BRONKeywordsTab = ({
   // Inline editor state - stores form data per keyword id
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
+  const [focusModeId, setFocusModeId] = useState<number | string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
   // Filter keywords
@@ -450,170 +451,294 @@ export const BRONKeywordsTab = ({
               style={{ contain: 'layout paint' }}
             >
               <div className="p-6">
-                {/* Minimize Header */}
+                {/* Header with mode toggle */}
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Edit2 className="w-4 h-4 text-primary" />
-                    Edit Keyword Content
+                    {focusModeId === kw.id ? (
+                      <>
+                        <Eye className="w-4 h-4 text-primary" />
+                        Article Editor
+                      </>
+                    ) : (
+                      <>
+                        <Edit2 className="w-4 h-4 text-primary" />
+                        Edit Keyword Content
+                      </>
+                    )}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandKeyword(kw);
-                    }}
-                  >
-                    <ChevronUp className="w-3.5 h-3.5 mr-1" />
-                    Collapse
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {focusModeId === kw.id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFocusModeId(null);
+                        }}
+                      >
+                        <PanelLeft className="w-3.5 h-3.5 mr-1" />
+                        Show Settings
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFocusModeId(null);
+                        expandKeyword(kw);
+                      }}
+                    >
+                      <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                      Collapse
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Two Column Layout: Editor + Preview */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left: Form Fields */}
-                  <div className="space-y-4">
-                    {/* Keyword Info Section */}
-                    <div className="p-3 rounded-lg bg-card border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Keyword Title</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.keywordtitle || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
-                            placeholder="Primary keyword..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">ID:</span>{' '}
-                            <span className="font-mono">{kw.id}</span>
+                {/* Content area - conditionally show left panel */}
+                <div className={`grid gap-6 ${focusModeId === kw.id ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+                  
+                  {/* Left: Form Fields - hidden in focus mode */}
+                  {focusModeId !== kw.id && (
+                    <div className="space-y-4">
+                      {/* Keyword Info Section */}
+                      <div className="p-3 rounded-lg bg-card border border-border/50">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Keyword Title</Label>
+                            <Input
+                              value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                              placeholder="Primary keyword..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Domain ID:</span>{' '}
-                            <span className="font-mono">{kw.domainid}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Status:</span>{' '}
-                            <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
-                              {active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Created:</span>{' '}
-                            <span>{formatDate(kw.createdDate)}</span>
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">ID:</span>{' '}
+                              <span className="font-mono">{kw.id}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Domain ID:</span>{' '}
+                              <span className="font-mono">{kw.domainid}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Status:</span>{' '}
+                              <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
+                                {active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Created:</span>{' '}
+                              <span>{formatDate(kw.createdDate)}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
+
+                      {/* SEO Meta Section */}
+                      <div className="p-3 rounded-lg bg-card border border-border/50">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Meta Title</Label>
+                            <Input
+                              value={inlineEditForms[kw.id]?.metatitle || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                              placeholder="Page title for search engines..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Meta Description</Label>
+                            <Textarea
+                              value={inlineEditForms[kw.id]?.metadescription || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                              placeholder="Page description for search results..."
+                              rows={3}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Links & Resources Section */}
+                      <div className="p-3 rounded-lg bg-card border border-border/50">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Target URL (Link Out)</Label>
+                            <Input
+                              value={inlineEditForms[kw.id]?.linkouturl || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                              placeholder="https://example.com/page"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Resource Address</Label>
+                            <Input
+                              value={inlineEditForms[kw.id]?.resaddress || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                              placeholder="Physical address or location..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Facebook Page URL</Label>
+                            <Input
+                              value={inlineEditForms[kw.id]?.resfb || ''}
+                              onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                              placeholder="https://facebook.com/..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content HTML Section */}
+                      <div className="p-3 rounded-lg bg-card border border-border/50">
+                        <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
+                        <Textarea
+                          value={inlineEditForms[kw.id]?.resfeedtext || ''}
+                          onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
+                          placeholder="HTML content for this keyword page..."
+                          rows={8}
+                          className="font-mono text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Right: Article Editor / Live Preview */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        {focusModeId === kw.id ? 'Full Article Editor' : 'Live Preview'}
+                      </Label>
+                      {focusModeId !== kw.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFocusModeId(kw.id);
+                          }}
+                        >
+                          <Maximize2 className="w-3 h-3 mr-1" />
+                          Focus Mode
+                        </Button>
+                      )}
                     </div>
 
-                    {/* SEO Meta Section */}
-                    <div className="p-3 rounded-lg bg-card border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Meta Title</Label>
+                    {/* Editable article view when in focus mode, read-only preview otherwise */}
+                    {focusModeId === kw.id ? (
+                      <div className="space-y-4">
+                        {/* Editable Title */}
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Article Title (Meta Title)</Label>
                           <Input
                             value={inlineEditForms[kw.id]?.metatitle || ''}
                             onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
-                            placeholder="Page title for search engines..."
+                            className="text-xl font-bold h-auto py-3 bg-white text-black border-primary/30"
+                            placeholder="Enter article title..."
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Meta Description</Label>
+
+                        {/* Editable Description */}
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Article Summary (Meta Description)</Label>
                           <Textarea
                             value={inlineEditForms[kw.id]?.metadescription || ''}
                             onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
-                            placeholder="Page description for search results..."
-                            rows={3}
+                            className="bg-white text-gray-600 italic border-primary/30"
+                            rows={2}
+                            placeholder="Enter article summary..."
                             onClick={(e) => e.stopPropagation()}
                           />
-                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
+                        </div>
+
+                        {/* Full Content Editor */}
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Article Content (HTML)</Label>
+                          <Textarea
+                            value={inlineEditForms[kw.id]?.resfeedtext || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
+                            className="min-h-[400px] font-mono text-sm bg-white text-black border-primary/30"
+                            placeholder="Enter your article HTML content here..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+
+                        {/* Live Preview in focus mode */}
+                        <div className="space-y-2 pt-4 border-t border-border/30">
+                          <Label className="text-xs text-muted-foreground">Rendered Preview</Label>
+                          <div 
+                            className="p-6 rounded-lg border border-border bg-white text-black"
+                            style={{ fontFamily: 'Georgia, serif' }}
+                          >
+                            <div className="mb-4 pb-4 border-b border-gray-200">
+                              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                                {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
+                              </h1>
+                              <p className="text-sm text-gray-600 italic">
+                                {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
+                              </p>
+                            </div>
+                            <div 
+                              className="prose prose-lg max-w-none"
+                              dangerouslySetInnerHTML={{ 
+                                __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Links & Resources Section */}
-                    <div className="p-3 rounded-lg bg-card border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Target URL (Link Out)</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.linkouturl || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
-                            placeholder="https://example.com/page"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Resource Address</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resaddress || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
-                            placeholder="Physical address or location..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Facebook Page URL</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resfb || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
-                            placeholder="https://facebook.com/..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content HTML Section */}
-                    <div className="p-3 rounded-lg bg-card border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
-                      <Textarea
-                        value={inlineEditForms[kw.id]?.resfeedtext || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
-                        placeholder="HTML content for this keyword page..."
-                        rows={8}
-                        className="font-mono text-xs"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right: Live Preview */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Eye className="w-4 h-4" />
-                      Live Preview
-                    </Label>
-                    <div 
-                      className="p-4 rounded-lg border border-border bg-white text-black"
-                      style={{ fontFamily: 'Georgia, serif' }}
-                    >
-                      {/* Preview Header */}
-                      <div className="mb-4 pb-4 border-b border-gray-200">
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                          {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
-                        </h1>
-                        <p className="text-sm text-gray-600 italic">
-                          {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
-                        </p>
-                      </div>
-                      
-                      {/* Preview Content */}
+                    ) : (
                       <div 
-                        className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                        className="p-4 rounded-lg border border-border bg-white text-black cursor-pointer hover:border-primary/50 hover:ring-1 hover:ring-primary/20 transition-all"
+                        style={{ fontFamily: 'Georgia, serif' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFocusModeId(kw.id);
                         }}
-                      />
-                    </div>
+                        title="Click to expand into full article editor"
+                      >
+                        {/* Expand hint overlay */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-xs text-muted-foreground bg-background/90 px-2 py-1 rounded">
+                            Click to expand
+                          </span>
+                        </div>
+                        
+                        {/* Preview Header */}
+                        <div className="mb-4 pb-4 border-b border-gray-200">
+                          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                            {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
+                          </h1>
+                          <p className="text-sm text-gray-600 italic">
+                            {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
+                          </p>
+                        </div>
+                        
+                        {/* Preview Content */}
+                        <div 
+                          className="prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ 
+                            __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -625,6 +750,7 @@ export const BRONKeywordsTab = ({
                     className="h-8 px-3 text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setFocusModeId(null);
                       expandKeyword(kw);
                     }}
                   >
