@@ -566,8 +566,10 @@ export const BRONKeywordsTab = ({
                 </div>
 
                 {/* Content area - conditionally show left panel */}
-                <div className={`grid gap-6 ${focusModeId === kw.id ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                  
+                <div 
+                  className={`grid gap-6 ${focusModeId === kw.id ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}
+                  style={{ contain: 'layout' }}
+                >
                   {/* Left: Form Fields - hidden in focus mode */}
                   {focusModeId !== kw.id && (
                     <div className="space-y-4">
@@ -685,7 +687,7 @@ export const BRONKeywordsTab = ({
                   )}
 
                   {/* Right: Article Editor / Live Preview */}
-                  <div className="space-y-2">
+                  <div className="space-y-2" style={{ contain: 'layout' }}>
                     <div className="flex items-center justify-between">
                       <Label className="flex items-center gap-2">
                         <Eye className="w-4 h-4" />
@@ -709,7 +711,7 @@ export const BRONKeywordsTab = ({
 
                     {/* Editable article view when in focus mode, read-only preview otherwise */}
                     {focusModeId === kw.id ? (
-                      <div className="space-y-4">
+                      <div className="space-y-4" style={{ contain: 'layout' }}>
                         {/* Editable Title */}
                         <div className="space-y-2">
                           <Label className="text-xs text-muted-foreground">Article Title (Meta Title)</Label>
@@ -773,8 +775,8 @@ export const BRONKeywordsTab = ({
                       </div>
                     ) : (
                       <div 
-                        className="p-4 rounded-lg border border-border bg-white text-black cursor-pointer hover:border-primary/50 hover:ring-1 hover:ring-primary/20 transition-all"
-                        style={{ fontFamily: 'Georgia, serif' }}
+                        className="p-4 rounded-lg border border-border bg-white text-black cursor-pointer hover:border-primary/50"
+                        style={{ fontFamily: 'Georgia, serif', contain: 'layout paint' }}
                         onClick={(e) => {
                           e.stopPropagation();
                           setFocusModeId(kw.id);
