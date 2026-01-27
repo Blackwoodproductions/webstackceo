@@ -495,6 +495,22 @@ export const GAInlineOnboardingWizard = ({
   const normalizedDomain = normalizeDomain(domain);
   const siteUrl = `https://${normalizedDomain}/`;
 
+  // Reset state when domain changes
+  useEffect(() => {
+    setSelectedProperty(null);
+    setShowTrackingCode(false);
+    setDataStream(null);
+    setCreateError(null);
+    setVerificationResult(null);
+    setGscState({
+      step: 'choose-method',
+      selectedMethod: null,
+      token: null,
+      error: null,
+      isLoading: false,
+    });
+  }, [normalizedDomain]);
+
   // Filter properties to only show ones matching the selected domain
   const matchingProperties = properties.filter((prop) => {
     const propName = prop.displayName.toLowerCase();
