@@ -348,9 +348,24 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
     if (trimmed && !seedKeywords.includes(trimmed)) { setSeedKeywords(prev => [...prev, trimmed]); setSeedKeyword(''); }
   };
 
+  // Reset state when domain changes
   useEffect(() => {
-    if (cleanDomain !== lastDomain) { setHasLoaded(false); setKeywords([]); setOnpageData(null); setSerpData(null); setResearchKeywords([]); setSeedKeywords([]); }
+    if (cleanDomain !== lastDomain) { 
+      setHasLoaded(false); 
+      setKeywords([]); 
+      setOnpageData(null); 
+      setSerpData(null); 
+      setResearchKeywords([]); 
+      setSeedKeywords([]); 
+    }
   }, [cleanDomain, lastDomain]);
+
+  // Auto-run analysis when component mounts with a valid domain
+  useEffect(() => {
+    if (cleanDomain && !hasLoaded && !isLoading && cleanDomain !== lastDomain) {
+      loadAllData();
+    }
+  }, [cleanDomain, hasLoaded, isLoading, lastDomain, loadAllData]);
 
   const metrics = useMemo(() => {
     const totalSearchVolume = keywords.reduce((sum, k) => sum + (k.search_volume || 0), 0);
