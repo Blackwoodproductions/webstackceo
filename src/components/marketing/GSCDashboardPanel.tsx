@@ -54,7 +54,8 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
-  "https://www.googleapis.com/auth/analytics.readonly", // Include GA scope for unified auth
+  "https://www.googleapis.com/auth/siteverification",
+  "https://www.googleapis.com/auth/analytics.readonly",
 ].join(" ");
 
 type GoogleUserProfile = {

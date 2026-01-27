@@ -41,8 +41,9 @@ const GOOGLE_GA_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/analytics.readonly",
-  "https://www.googleapis.com/auth/webmasters.readonly", // Include GSC scope for unified auth
+  "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
+  "https://www.googleapis.com/auth/siteverification",
 ].join(" ");
 
 function getOAuthRedirectUri(): string {

@@ -141,7 +141,7 @@ const Navbar = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    // Extended scopes for GA, GSC, Ads, GMB auto-connect
+    // Extended scopes for GA, GSC, Ads, GMB, Site Verification auto-connect
     const EXTENDED_GOOGLE_SCOPES = [
       "openid",
       "https://www.googleapis.com/auth/userinfo.email",
@@ -149,6 +149,7 @@ const Navbar = () => {
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/webmasters.readonly",
       "https://www.googleapis.com/auth/webmasters",
+      "https://www.googleapis.com/auth/siteverification",
       "https://www.googleapis.com/auth/adwords",
       "https://www.googleapis.com/auth/business.manage",
     ].join(" ");
