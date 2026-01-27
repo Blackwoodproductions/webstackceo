@@ -246,12 +246,12 @@ export const BRONKeywordsTab = ({
         animate={{ opacity: 1 }}
         className={deleted ? 'opacity-50' : ''}
       >
-        {/* Main Row */}
+        {/* Main Row - Sticky when expanded */}
         <div 
           className={`
             flex items-center gap-4 py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer
             ${isChild ? 'pl-12' : ''}
-            ${expanded ? 'bg-primary/5' : ''}
+            ${expanded ? 'bg-card/95 backdrop-blur-sm sticky top-[41px] z-[5]' : ''}
           `}
           onClick={() => toggleExpand(kw.id)}
         >
