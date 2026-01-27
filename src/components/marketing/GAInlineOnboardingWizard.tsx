@@ -730,25 +730,27 @@ export const GAInlineOnboardingWizard = ({
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            {/* Collapse/Expand Toggle */}
-            <button
-              onClick={handleTogglePanelCollapse}
-              className="p-2 rounded-lg hover:bg-amber-500/20 transition-colors"
-              aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
-              title={isPanelCollapsed ? "Expand" : "Collapse"}
-            >
-              {isPanelCollapsed ? (
-                <Maximize2 className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-amber-400" />
-              )}
-            </button>
+            {/* Collapse/Expand Toggle - Only show when domain is NOT found (needs GSC verification) */}
+            {!hasMatchingProperty && (
+              <button
+                onClick={handleTogglePanelCollapse}
+                className="p-2 rounded-lg hover:bg-amber-500/20 transition-colors"
+                aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+                title={isPanelCollapsed ? "Expand" : "Collapse"}
+              >
+                {isPanelCollapsed ? (
+                  <Maximize2 className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-amber-400" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Collapsible Content */}
+        {/* Content - Always show if domain is found, otherwise respect collapse state */}
         <AnimatePresence mode="wait">
-          {isPanelCollapsed ? null : (
+          {(hasMatchingProperty || !isPanelCollapsed) ? (
             <motion.div
               key="expanded"
               initial={{ opacity: 0, height: 0 }}
@@ -999,7 +1001,7 @@ export const GAInlineOnboardingWizard = ({
           />
         )}
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
       </div>
     </motion.div>
