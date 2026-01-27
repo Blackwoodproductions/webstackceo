@@ -8,8 +8,9 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, ArrowRight,
-  ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock, Minimize2, Maximize2
+  ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock, Minimize2, Maximize2, LogIn
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
 import { GoogleAdsMetricsDashboard } from './GoogleAdsMetricsDashboard';
 
@@ -44,6 +45,8 @@ const GoogleAdsIcon = () => (
 );
 
 export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
+  const { signInWithGoogle } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const hasOAuthCallback = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -619,21 +622,59 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         /* Has unified auth but no campaigns - go directly to campaign setup */
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={handleCampaignSetupCancel} />
       ) : !accessToken && !isAutoConnecting ? (
-        /* No auth available - show message to login via dashboard */
+        /* No auth available - show login popup button */
         <motion.div 
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="flex flex-col items-center justify-center py-16 space-y-4"
+          className="flex flex-col items-center justify-center py-16 space-y-6"
         >
-          <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/30">
-            <Target className="w-8 h-8 text-orange-400" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center border border-orange-500/30 shadow-lg shadow-orange-500/10">
+            <Target className="w-10 h-10 text-orange-400" />
           </div>
           <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold">Sign in to Access Google Ads</h3>
+            <h3 className="text-xl font-bold">Connect Google Ads</h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              Sign in with Google from the main dashboard to connect your Google Ads account and import keywords.
+              Sign in with your Google account to access Google Ads, import keywords, and generate optimized landing pages.
             </p>
           </div>
+          <Button
+            size="lg"
+            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-8 py-3 shadow-lg shadow-orange-500/25"
+            onClick={async () => {
+              setIsSigningIn(true);
+              try {
+                await signInWithGoogle();
+                // After login, check for token again
+                setTimeout(() => {
+                  const newConnection = getStoredConnection();
+                  if (newConnection) {
+                    setIsConnected(true);
+                    setAccessToken(newConnection.token);
+                    setConnectedCustomerId(newConnection.customerId);
+                    setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
+                    handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
+                  }
+                  setIsSigningIn(false);
+                }, 1500);
+              } catch (err) {
+                console.error('Google sign-in failed:', err);
+                setIsSigningIn(false);
+              }
+            }}
+            disabled={isSigningIn}
+          >
+            {isSigningIn ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign in with Google
+              </>
+            )}
+          </Button>
         </motion.div>
       ) : (
         /* Connected State - Google Ads Dashboard */
