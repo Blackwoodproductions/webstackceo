@@ -715,7 +715,7 @@ export const GAInlineOnboardingWizard = ({
                 </Badge>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                {hasMatchingProperty ? "Select a property to connect" : "Domain not found in GA4"}
+                {hasMatchingProperty ? "Select a property to connect" : "Domain not found in Google Search Console"}
               </p>
             </div>
           </div>
