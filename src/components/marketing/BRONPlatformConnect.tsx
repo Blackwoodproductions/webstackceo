@@ -5,10 +5,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { useBronLoginPopup } from "@/hooks/use-bron-login-popup";
+import { useBronApiAuth } from "@/hooks/use-bron-api-auth";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
-const BRON_LOGIN_URL = "https://dashdev.imagehosting.space/login";
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
 const BRON_DOMAIN_ID = "112619";
 
@@ -25,7 +24,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
 
-  // Dashboard URL for iframe (with domain_id and tab)
+  // Dashboard URL for iframe
   const iframeSrc = `${BRON_DASHBOARD_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
 
   // Check if already authenticated from localStorage
@@ -49,10 +48,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
   const setAuthenticated = useCallback(() => {
     console.log("[BRON] Setting authenticated state");
     
-    // Reset any previous iframe error
     setIframeError(false);
     
-    // Store auth in localStorage (24 hour expiry)
     const authData = {
       authenticated: true,
       expiry: Date.now() + 24 * 60 * 60 * 1000,
@@ -62,7 +59,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
     
     setIsConnected(true);
-    setIframeKey(prev => prev + 1); // Force iframe refresh
+    setIframeKey(prev => prev + 1);
     
     if (!hasNotified.current) {
       hasNotified.current = true;
@@ -75,18 +72,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     });
   }, [onConnectionComplete]);
 
+  // Use API-based auth detection
   const {
-    isWaitingForLogin,
+    isPolling,
     popupBlocked,
     openPopup,
     focusPopup,
-  } = useBronLoginPopup({
-    loginUrl: BRON_LOGIN_URL,
-    dashboardUrl: BRON_DASHBOARD_URL,
+  } = useBronApiAuth({
+    domain: domain || "",
     onLoggedIn: setAuthenticated,
+    pollIntervalMs: 2000,
   });
 
-  // Also accept explicit callback completion (if BRON redirects to /bron-callback).
+  // Listen for callback page postMessage
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -115,7 +113,6 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     if (!isLoading && !isConnected && domain && !autoOpenAttempted.current) {
       autoOpenAttempted.current = true;
       
-      // Small delay to ensure component is fully mounted
       const timer = setTimeout(() => {
         console.log("[BRON] Auto-opening login popup");
         const opened = openPopup();
@@ -256,7 +253,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Not connected - show waiting for login state
+  // Not connected - show waiting for login with API polling
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -276,61 +273,47 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">
-          {isWaitingForLogin ? "Waiting for Login..." : "Opening Login..."}
+          {isPolling ? "Checking Login Status..." : "Opening Login..."}
         </h2>
         <p className="text-muted-foreground max-w-md">
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
-            : isWaitingForLogin
-              ? "Please complete the login in the popup window. Once logged in, click 'I'm Logged In' or close the popup."
+            : isPolling
+              ? "Please complete the login in the popup window. We're automatically detecting when you log in."
               : "Opening BRON login window..."}
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
-        {(isWaitingForLogin || popupBlocked) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const focused = focusPopup();
-              if (!focused) {
-                const opened = openPopup();
-                if (!opened) {
-                  toast({
-                    title: "Popup Blocked",
-                    description: "Please allow popups for this site and try again.",
-                    variant: "destructive",
-                  });
-                }
+      {/* Only show Open Login button if popup blocked or not polling */}
+      {(popupBlocked || !isPolling) && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const focused = focusPopup();
+            if (!focused) {
+              const opened = openPopup();
+              if (!opened) {
+                toast({
+                  title: "Popup Blocked",
+                  description: "Please allow popups for this site and try again.",
+                  variant: "destructive",
+                });
               }
-            }}
-            className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-          >
-            {isWaitingForLogin ? "Focus Login Window" : "Open Login"}
-          </Button>
-        )}
-        
-        {isWaitingForLogin && (
-          <Button
-            size="sm"
-            onClick={() => {
-              // User manually confirms login - close popup and proceed
-              console.log("[BRON] User manually confirmed login");
-              setAuthenticated();
-            }}
-            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <Check className="w-4 h-4" />
-            I'm Logged In
-          </Button>
-        )}
-      </div>
+            }
+          }}
+          className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+        >
+          {isPolling ? "Focus Login Window" : "Open Login"}
+        </Button>
+      )}
 
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-        <Sparkles className="w-3 h-3 text-emerald-400" />
-        Click "I'm Logged In" after completing login in the popup
-      </p>
+      {isPolling && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Sparkles className="w-3 h-3 text-emerald-400" />
+          Auto-detecting login via BRON API...
+        </p>
+      )}
     </motion.div>
   );
 };
