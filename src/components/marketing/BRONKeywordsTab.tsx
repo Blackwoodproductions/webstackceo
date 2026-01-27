@@ -1,13 +1,15 @@
 import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, X, 
+  Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronDown, ChevronRight, Save,
-  Eye, Minimize2, ChevronUp
+  Eye, Minimize2, ChevronUp, FileText, Link2, Hash, 
+  Sparkles, Layers, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { HighTechCardWrapper, PulsingDot } from "@/components/ui/high-tech-background";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,6 +137,31 @@ function decodeHtmlContent(html: string): string {
 
 function stripHtmlTags(html: string): string {
   return decodeHtmlContent(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Get word count from HTML content
+function getWordCount(html: string): number {
+  const text = stripHtmlTags(html);
+  if (!text) return 0;
+  return text.split(/\s+/).filter(w => w.length > 0).length;
+}
+
+// Get meta title quality score
+function getMetaTitleQuality(title: string): { score: 'good' | 'warning' | 'poor'; label: string } {
+  const len = title?.length || 0;
+  if (len === 0) return { score: 'poor', label: 'Missing' };
+  if (len >= 30 && len <= 60) return { score: 'good', label: `${len}/60` };
+  if (len < 30) return { score: 'warning', label: `${len}/60 (short)` };
+  return { score: 'warning', label: `${len}/60 (long)` };
+}
+
+// Get meta description quality score
+function getMetaDescQuality(desc: string): { score: 'good' | 'warning' | 'poor'; label: string } {
+  const len = desc?.length || 0;
+  if (len === 0) return { score: 'poor', label: 'Missing' };
+  if (len >= 120 && len <= 160) return { score: 'good', label: `${len}/160` };
+  if (len < 120) return { score: 'warning', label: `${len}/160 (short)` };
+  return { score: 'warning', label: `${len}/160 (long)` };
 }
 
 export const BRONKeywordsTab = ({
@@ -266,329 +293,429 @@ export const BRONKeywordsTab = ({
     onRefresh();
   };
 
-  // Render a keyword row
-  const renderKeywordRow = (kw: BronKeyword, isChild = false) => {
+  // Render a keyword card
+  const renderKeywordCard = (kw: BronKeyword, isChild = false) => {
     const expanded = expandedIds.has(kw.id);
     const deleted = isDeleted(kw);
     const active = isActive(kw);
+    
+    // Content preview stats
+    const wordCount = getWordCount(kw.resfeedtext || '');
+    const metaTitleQuality = getMetaTitleQuality(kw.metatitle || '');
+    const metaDescQuality = getMetaDescQuality(kw.metadescription || '');
+    const hasLinks = !!(kw.linkouturl);
+
+    const scoreColor = (score: 'good' | 'warning' | 'poor') => ({
+      good: 'text-emerald-400',
+      warning: 'text-amber-400',
+      poor: 'text-red-400',
+    }[score]);
+
+    const scoreBg = (score: 'good' | 'warning' | 'poor') => ({
+      good: 'bg-emerald-500/10 border-emerald-500/20',
+      warning: 'bg-amber-500/10 border-amber-500/20',
+      poor: 'bg-red-500/10 border-red-500/20',
+    }[score]);
 
     return (
       <motion.div
         key={kw.id}
-        initial={{ opacity: 0, y: -5 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.15 }}
-        className={deleted ? 'opacity-50' : ''}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className={`${deleted ? 'opacity-50' : ''} ${isChild ? 'ml-8' : ''}`}
       >
-        {/* Main Row */}
-        <div 
-          className={`
-            flex items-center py-4 px-6 transition-colors cursor-pointer group
-            ${isChild 
-              ? 'pl-16 bg-card/30 border-l-2 border-l-border/30 hover:border-l-primary/30' 
-              : 'bg-card/60 hover:bg-card/80'
-            }
-            ${expanded ? 'bg-primary/5 border-l-primary' : ''}
-            border-b border-border/30
-          `}
-          onClick={() => expandKeyword(kw)}
+        <HighTechCardWrapper 
+          glowColor={active ? 'primary' : 'amber'} 
+          showGlow={!isChild}
+          showShimmer={expanded}
         >
-          {/* Expand icon */}
-          <div className="w-8 flex-shrink-0">
-            <ChevronRight 
-              className={`w-5 h-5 transition-transform duration-200 ${
-                expanded ? 'rotate-90 text-primary' : 'text-muted-foreground group-hover:text-foreground'
-              }`}
-            />
-          </div>
-
-          {/* Keyword Name */}
-          <div className="flex-1 min-w-0">
-            <span className={`
+          <div 
+            className={`
+              relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer
               ${isChild 
-                ? 'text-[15px] text-muted-foreground group-hover:text-foreground transition-colors' 
-                : 'text-base font-medium text-foreground'
+                ? 'border-border/30 bg-card/40 hover:bg-card/60 border-l-2 border-l-primary/40' 
+                : 'border-border/50 bg-gradient-to-br from-card/80 via-card/60 to-card/40 hover:from-card/90 hover:via-card/70 hover:to-card/50'
               }
-            `}>
-              {getKeywordDisplayText(kw)}
-            </span>
-          </div>
-
-          {/* Status - only show for parent rows or on hover for children */}
-          <div className={`w-24 flex-shrink-0 ${isChild ? 'opacity-0 group-hover:opacity-100 transition-opacity' : ''}`}>
+              ${expanded ? 'ring-1 ring-primary/30 border-primary/40' : 'hover:border-primary/30'}
+            `}
+            onClick={() => expandKeyword(kw)}
+          >
+            {/* Subtle grid pattern overlay */}
             {!isChild && (
-              <Badge 
-                className={`
-                  text-xs px-3 py-1 rounded-full
-                  ${active 
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                    : 'bg-muted/50 text-muted-foreground border border-border/50'
-                  }
-                `}
-              >
-                {deleted ? 'Deleted' : active ? 'Good' : 'Inactive'}
-              </Badge>
-            )}
-          </div>
-
-          {/* Last Edited - only show for parent rows */}
-          <div className={`w-28 flex-shrink-0 text-sm text-muted-foreground ${isChild ? 'hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity' : ''}`}>
-            {!isChild && formatDate(kw.createdDate)}
-          </div>
-
-          {/* Action */}
-          <div className="w-16 flex-shrink-0 flex justify-end">
-            {!deleted && (
-              <span className={`
-                text-sm flex items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors
-                ${isChild ? 'opacity-0 group-hover:opacity-100' : ''}
-              `}>
-                <Edit2 className="w-4 h-4" />
-                {!isChild && 'Edit'}
-              </span>
-            )}
-            {deleted && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-emerald-400 hover:text-emerald-300"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRestore(String(kw.id));
+              <div 
+                className="absolute inset-0 opacity-[0.02] pointer-events-none"
+                style={{
+                  backgroundImage: 'linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
                 }}
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Restore
-              </Button>
+              />
             )}
-          </div>
-        </div>
 
-        {/* Expanded Content */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className={`py-6 px-4 bg-card/50 border-b border-border/50 ${isChild ? 'pl-12' : ''}`}>
-                {/* Minimize Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-foreground">Edit Keyword Content</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandKeyword(kw);
-                    }}
-                  >
-                    <ChevronUp className="w-3.5 h-3.5 mr-1" />
-                    Minimize
-                  </Button>
+            {/* Main content */}
+            <div className="relative p-4">
+              {/* Header row */}
+              <div className="flex items-start gap-3">
+                {/* Icon */}
+                <div className={`
+                  flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center
+                  ${isChild 
+                    ? 'bg-muted/50' 
+                    : 'bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20'
+                  }
+                `}>
+                  {isChild ? (
+                    <Layers className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <Key className="w-5 h-5 text-primary" />
+                  )}
                 </div>
 
-                {/* Two Column Layout: Editor + Preview */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left: Form Fields */}
-                  <div className="space-y-4">
-                    {/* Keyword Info Section */}
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Keyword Title</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.keywordtitle || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
-                            placeholder="Primary keyword..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">ID:</span>{' '}
-                            <span className="font-mono">{kw.id}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Domain ID:</span>{' '}
-                            <span className="font-mono">{kw.domainid}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Status:</span>{' '}
-                            <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
-                              {active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Created:</span>{' '}
-                            <span>{formatDate(kw.createdDate)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* SEO Meta Section */}
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Meta Title</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.metatitle || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
-                            placeholder="Page title for search engines..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Meta Description</Label>
-                          <Textarea
-                            value={inlineEditForms[kw.id]?.metadescription || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
-                            placeholder="Page description for search results..."
-                            rows={3}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Links & Resources Section */}
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Target URL (Link Out)</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.linkouturl || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
-                            placeholder="https://example.com/page"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Resource Address</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resaddress || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
-                            placeholder="Physical address or location..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-xs">Facebook Page URL</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resfb || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
-                            placeholder="https://facebook.com/..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Content HTML Section */}
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
-                      <Textarea
-                        value={inlineEditForms[kw.id]?.resfeedtext || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
-                        placeholder="HTML content for this keyword page..."
-                        rows={8}
-                        className="font-mono text-xs"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right: Live Preview */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Eye className="w-4 h-4" />
-                      Live Preview
-                    </Label>
-                    <div 
-                      className="p-4 rounded-lg border border-border bg-white text-black"
-                      style={{ fontFamily: 'Georgia, serif' }}
-                    >
-                      {/* Preview Header */}
-                      <div className="mb-4 pb-4 border-b border-gray-200">
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                          {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
-                        </h1>
-                        <p className="text-sm text-gray-600 italic">
-                          {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
-                        </p>
-                      </div>
-                      
-                      {/* Preview Content */}
-                      <div 
-                        className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandKeyword(kw);
-                    }}
-                  >
-                    <Minimize2 className="w-4 h-4 mr-1" />
-                    Collapse
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {!deleted && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm(String(kw.id));
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </Button>
+                {/* Title & Meta */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className={`
+                      font-medium truncate
+                      ${isChild ? 'text-sm text-muted-foreground' : 'text-base text-foreground'}
+                    `}>
+                      {getKeywordDisplayText(kw)}
+                    </h3>
+                    {!isChild && active && (
+                      <PulsingDot color="emerald" size="xs" />
                     )}
-                    <Button
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        saveInlineChanges(kw);
-                      }}
-                      disabled={savingIds.has(kw.id)}
-                    >
-                      {savingIds.has(kw.id) ? (
-                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4 mr-1" />
-                      )}
-                      Save Changes
-                    </Button>
                   </div>
+                  
+                  {/* Meta description preview */}
+                  {!isChild && kw.metadescription && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 max-w-md">
+                      {kw.metadescription}
+                    </p>
+                  )}
+                </div>
+
+                {/* Status & Expand */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  {!isChild && (
+                    <Badge 
+                      className={`
+                        text-[10px] px-2.5 py-0.5 rounded-full font-medium
+                        ${active 
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                          : deleted 
+                            ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                            : 'bg-muted/50 text-muted-foreground border border-border/50'
+                        }
+                      `}
+                    >
+                      {deleted ? 'Deleted' : active ? 'Active' : 'Draft'}
+                    </Badge>
+                  )}
+                  <motion.div
+                    animate={{ rotate: expanded ? 90 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronRight className={`w-5 h-5 ${expanded ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </motion.div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+              {/* Stats preview row - only for parent keywords */}
+              {!isChild && !expanded && (
+                <motion.div 
+                  className="flex items-center gap-3 mt-3 pt-3 border-t border-border/30"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {/* Word count */}
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className={wordCount > 0 ? 'text-foreground' : 'text-muted-foreground'}>
+                      {wordCount > 0 ? `${wordCount} words` : 'No content'}
+                    </span>
+                  </div>
+
+                  <div className="w-px h-3 bg-border/50" />
+
+                  {/* Meta title */}
+                  <div className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${scoreBg(metaTitleQuality.score)}`}>
+                    <Hash className={`w-3 h-3 ${scoreColor(metaTitleQuality.score)}`} />
+                    <span className={scoreColor(metaTitleQuality.score)}>Title: {metaTitleQuality.label}</span>
+                  </div>
+
+                  {/* Meta desc */}
+                  <div className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${scoreBg(metaDescQuality.score)}`}>
+                    <Sparkles className={`w-3 h-3 ${scoreColor(metaDescQuality.score)}`} />
+                    <span className={scoreColor(metaDescQuality.score)}>Desc: {metaDescQuality.label}</span>
+                  </div>
+
+                  {/* Links indicator */}
+                  {hasLinks && (
+                    <>
+                      <div className="w-px h-3 bg-border/50" />
+                      <div className="flex items-center gap-1 text-xs text-cyan-400">
+                        <Link2 className="w-3 h-3" />
+                        <span>Links</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Last edited - pushed right */}
+                  <div className="ml-auto text-[11px] text-muted-foreground">
+                    {formatDate(kw.createdDate)}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Deleted restore button */}
+              {deleted && (
+                <div className="mt-3 pt-3 border-t border-border/30">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRestore(String(kw.id));
+                    }}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                    Restore Keyword
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Expanded Content */}
+            <AnimatePresence>
+              {expanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden border-t border-border/30"
+                >
+                  <div className="p-6 bg-gradient-to-b from-card/80 to-card/40">
+                    {/* Minimize Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Edit2 className="w-4 h-4 text-primary" />
+                        Edit Keyword Content
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          expandKeyword(kw);
+                        }}
+                      >
+                        <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                        Minimize
+                      </Button>
+                    </div>
+
+                    {/* Two Column Layout: Editor + Preview */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Left: Form Fields */}
+                      <div className="space-y-4">
+                        {/* Keyword Info Section */}
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Keyword Title</Label>
+                              <Input
+                                value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                                placeholder="Primary keyword..."
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div>
+                                <span className="text-muted-foreground">ID:</span>{' '}
+                                <span className="font-mono">{kw.id}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Domain ID:</span>{' '}
+                                <span className="font-mono">{kw.domainid}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Status:</span>{' '}
+                                <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
+                                  {active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Created:</span>{' '}
+                                <span>{formatDate(kw.createdDate)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* SEO Meta Section */}
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Meta Title</Label>
+                              <Input
+                                value={inlineEditForms[kw.id]?.metatitle || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                                placeholder="Page title for search engines..."
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Meta Description</Label>
+                              <Textarea
+                                value={inlineEditForms[kw.id]?.metadescription || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                                placeholder="Page description for search results..."
+                                rows={3}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Links & Resources Section */}
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Target URL (Link Out)</Label>
+                              <Input
+                                value={inlineEditForms[kw.id]?.linkouturl || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                                placeholder="https://example.com/page"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Resource Address</Label>
+                              <Input
+                                value={inlineEditForms[kw.id]?.resaddress || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                                placeholder="Physical address or location..."
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Facebook Page URL</Label>
+                              <Input
+                                value={inlineEditForms[kw.id]?.resfb || ''}
+                                onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                                placeholder="https://facebook.com/..."
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Content HTML Section */}
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                          <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
+                          <Textarea
+                            value={inlineEditForms[kw.id]?.resfeedtext || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
+                            placeholder="HTML content for this keyword page..."
+                            rows={8}
+                            className="font-mono text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right: Live Preview */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Eye className="w-4 h-4" />
+                          Live Preview
+                        </Label>
+                        <div 
+                          className="p-4 rounded-lg border border-border bg-white text-black"
+                          style={{ fontFamily: 'Georgia, serif' }}
+                        >
+                          {/* Preview Header */}
+                          <div className="mb-4 pb-4 border-b border-gray-200">
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                              {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
+                            </h1>
+                            <p className="text-sm text-gray-600 italic">
+                              {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
+                            </p>
+                          </div>
+                          
+                          {/* Preview Content */}
+                          <div 
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ 
+                              __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          expandKeyword(kw);
+                        }}
+                      >
+                        <Minimize2 className="w-4 h-4 mr-1" />
+                        Collapse
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        {!deleted && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirm(String(kw.id));
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveInlineChanges(kw);
+                          }}
+                          disabled={savingIds.has(kw.id)}
+                        >
+                          {savingIds.has(kw.id) ? (
+                            <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4 mr-1" />
+                          )}
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </HighTechCardWrapper>
       </motion.div>
     );
   };
@@ -598,7 +725,7 @@ export const BRONKeywordsTab = ({
       <Card className="border-border/50 bg-card/50">
         <CardContent className="p-6 space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Skeleton key={i} className="h-20 w-full rounded-xl" />
           ))}
         </CardContent>
       </Card>
@@ -665,40 +792,30 @@ export const BRONKeywordsTab = ({
         </CardHeader>
       </Card>
 
-      {/* Keywords Table */}
-      <Card className="border-border/50 bg-card/30 overflow-hidden rounded-xl">
-        {/* Table Header */}
-        <div className="flex items-center py-4 px-6 bg-muted/50 border-b border-border/50 font-medium text-sm text-muted-foreground sticky top-0 z-10">
-          <div className="w-8 flex-shrink-0" />
-          <div className="flex-1">Keyword</div>
-          <div className="w-24 flex-shrink-0 hidden sm:block">Status</div>
-          <div className="w-28 flex-shrink-0 hidden lg:block">Last Edited</div>
-          <div className="w-16 flex-shrink-0 text-right">Action</div>
-        </div>
-
-        {/* Keywords List */}
-        <div>
-          {groupedKeywords.length === 0 ? (
+      {/* Keywords List */}
+      <div className="space-y-3">
+        {groupedKeywords.length === 0 ? (
+          <Card className="border-border/50 bg-card/30">
             <div className="p-12 text-center text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p className="text-lg">
                 {searchQuery ? 'No keywords match your search.' : 'No keywords found for this domain.'}
               </p>
             </div>
-          ) : (
-            groupedKeywords.map(({ parent, children }) => (
-              <div key={parent.id} className="group/parent">
-                {renderKeywordRow(parent, false)}
-                {children.length > 0 && (
-                  <div className="bg-card/20">
-                    {children.map(child => renderKeywordRow(child, true))}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+          </Card>
+        ) : (
+          groupedKeywords.map(({ parent, children }) => (
+            <div key={parent.id} className="space-y-2">
+              {renderKeywordCard(parent, false)}
+              {children.length > 0 && (
+                <div className="space-y-2 pl-4">
+                  {children.map(child => renderKeywordCard(child, true))}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
 
       {/* Add Keyword Dialog */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
