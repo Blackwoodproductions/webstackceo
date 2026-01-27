@@ -953,32 +953,32 @@ export const BRONKeywordsTab = ({
             {/* Editor Content */}
             {articleEditorId && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Title & Description Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Article Title (Meta Title)</Label>
-                    <Input
-                      value={inlineEditForms[articleEditorId]?.metatitle || ''}
-                      onChange={(e) => updateInlineForm(articleEditorId, 'metatitle', e.target.value)}
-                      className="text-lg font-semibold"
-                      placeholder="Enter article title..."
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {(inlineEditForms[articleEditorId]?.metatitle || '').length}/60 characters
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Article Summary (Meta Description)</Label>
-                    <Textarea
-                      value={inlineEditForms[articleEditorId]?.metadescription || ''}
-                      onChange={(e) => updateInlineForm(articleEditorId, 'metadescription', e.target.value)}
-                      rows={2}
-                      placeholder="Enter article summary..."
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {(inlineEditForms[articleEditorId]?.metadescription || '').length}/160 characters
-                    </p>
-                  </div>
+                {/* Title Field */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Article Title (Meta Title)</Label>
+                  <Input
+                    value={inlineEditForms[articleEditorId]?.metatitle || ''}
+                    onChange={(e) => updateInlineForm(articleEditorId, 'metatitle', e.target.value)}
+                    className="text-lg font-semibold"
+                    placeholder="Enter article title..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {(inlineEditForms[articleEditorId]?.metatitle || '').length}/60 characters
+                  </p>
+                </div>
+
+                {/* Summary/Description Field */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Article Summary (Meta Description)</Label>
+                  <Textarea
+                    value={inlineEditForms[articleEditorId]?.metadescription || ''}
+                    onChange={(e) => updateInlineForm(articleEditorId, 'metadescription', e.target.value)}
+                    rows={2}
+                    placeholder="Enter article summary..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {(inlineEditForms[articleEditorId]?.metadescription || '').length}/160 characters
+                  </p>
                 </div>
 
                 {/* Content Editor */}
@@ -987,35 +987,55 @@ export const BRONKeywordsTab = ({
                   <Textarea
                     value={inlineEditForms[articleEditorId]?.resfeedtext || ''}
                     onChange={(e) => updateInlineForm(articleEditorId, 'resfeedtext', e.target.value)}
-                    className="min-h-[300px] font-mono text-sm"
+                    className="min-h-[200px] font-mono text-sm"
                     placeholder="Enter your article HTML content here..."
                   />
                 </div>
 
-                {/* Live Preview */}
-                <div className="space-y-2">
+                {/* Rendered Article Preview */}
+                <div className="space-y-3 pt-4 border-t border-border">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Eye className="w-4 h-4" />
-                    Live Preview
+                    Rendered Article Preview
                   </Label>
-                  <div 
-                    className="p-6 rounded-lg border border-border bg-white text-black"
-                    style={{ fontFamily: 'Georgia, serif' }}
-                  >
-                    <div className="mb-4 pb-4 border-b border-gray-200">
-                      <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                        {inlineEditForms[articleEditorId]?.metatitle || 'Page Title'}
-                      </h1>
-                      <p className="text-sm text-gray-600 italic">
-                        {inlineEditForms[articleEditorId]?.metadescription || 'Meta description will appear here...'}
-                      </p>
+                  <div className="rounded-lg border border-border overflow-hidden shadow-lg">
+                    {/* Browser Chrome */}
+                    <div className="bg-muted/80 px-4 py-2 flex items-center gap-2 border-b border-border">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                        <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                      </div>
+                      <div className="flex-1 mx-4">
+                        <div className="bg-background/60 rounded-md px-3 py-1 text-xs text-muted-foreground truncate">
+                          {selectedDomain || 'example.com'}/{inlineEditForms[articleEditorId]?.metatitle?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 50) || 'article'}
+                        </div>
+                      </div>
                     </div>
+                    {/* Article Content */}
                     <div 
-                      className="prose prose-lg max-w-none"
-                      dangerouslySetInnerHTML={{ 
-                        __html: inlineEditForms[articleEditorId]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
-                      }}
-                    />
+                      className="p-8 bg-white text-black min-h-[300px]"
+                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                    >
+                      <article className="max-w-3xl mx-auto">
+                        {/* Article Header */}
+                        <header className="mb-8 pb-6 border-b border-gray-200">
+                          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                            {inlineEditForms[articleEditorId]?.metatitle || 'Your Article Title'}
+                          </h1>
+                          <p className="text-lg text-gray-600 italic leading-relaxed">
+                            {inlineEditForms[articleEditorId]?.metadescription || 'Article summary and description will appear here...'}
+                          </p>
+                        </header>
+                        {/* Article Body */}
+                        <div 
+                          className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-ul:text-gray-700 prose-ol:text-gray-700"
+                          dangerouslySetInnerHTML={{ 
+                            __html: inlineEditForms[articleEditorId]?.resfeedtext || '<p class="text-gray-400 italic">Your article content will be rendered here as it would appear on your website...</p>' 
+                          }}
+                        />
+                      </article>
+                    </div>
                   </div>
                 </div>
               </div>
