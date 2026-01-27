@@ -730,22 +730,54 @@ const MarketingDashboard = () => {
   };
 
   // Fetch live visitors (active in last 5 minutes) - ordered by time on site, then page count
+  // DEDUPLICATION: Show only ONE entry per user_id (most recent session), preventing duplicate avatars
   const fetchLiveVisitors = async () => {
-    // Get current user's session ID for marking
+    // Get current user's session ID and user ID for marking
     const currentSessionId = sessionStorage.getItem('webstack_session_id');
+    const currentUserId = user?.id || null;
     
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: sessions } = await supabase
       .from('visitor_sessions')
       .select('session_id, first_page, last_activity_at, started_at, user_id')
       .gte('last_activity_at', fiveMinutesAgo)
-      .order('started_at', { ascending: true }) // Oldest first = most time on site
-      .limit(20);
+      .order('last_activity_at', { ascending: false }) // Most recent first for dedup priority
+      .limit(50);
     
     if (sessions) {
+      // ========== DEDUPLICATION LOGIC ==========
+      // Sort by activity first so first occurrence per key is most recent
+      const sortedByActivity = [...sessions].sort(
+        (a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
+      );
+      
+      // Dedupe rules:
+      // - Current user: only ONE entry (even if multiple sessions exist)
+      // - Other users: ONE entry per user_id (if present) otherwise ONE per session_id
+      // - Skip anonymous sessions belonging to current user if logged in
+      const uniqueSessions: typeof sessions = [];
+      const seenKeys = new Set<string>();
+      
+      for (const s of sortedByActivity) {
+        const isSelf =
+          (!!currentUserId && s.user_id === currentUserId) ||
+          (!!currentSessionId && s.session_id === currentSessionId);
+        
+        // If current user is logged in, skip their anonymous sessions
+        if (currentUserId && !s.user_id && s.session_id === currentSessionId) {
+          continue;
+        }
+        
+        // Generate unique key for deduplication
+        const key = isSelf ? 'self' : s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
+        if (seenKeys.has(key)) continue;
+        seenKeys.add(key);
+        uniqueSessions.push(s);
+      }
+      
       // Filter out sessions that already have an active chat
       const chatSessionIds = sidebarChats.map(c => c.session_id);
-      const filteredSessions = sessions.filter(v => !chatSessionIds.includes(v.session_id));
+      const filteredSessions = uniqueSessions.filter(v => !chatSessionIds.includes(v.session_id));
       
       // Fetch page view counts for each session
       const sessionIds = filteredSessions.map(s => s.session_id);
@@ -791,7 +823,7 @@ const MarketingDashboard = () => {
         page_count: pageCountMap[s.session_id] || 1,
         avatar_url: s.user_id ? profilesMap[s.user_id]?.avatar_url : null,
         display_name: s.user_id ? profilesMap[s.user_id]?.full_name : null,
-        is_current_user: s.session_id === currentSessionId,
+        is_current_user: s.session_id === currentSessionId || (!!currentUserId && s.user_id === currentUserId),
       }));
       
       // Sort to put current user first
