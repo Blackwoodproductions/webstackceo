@@ -35,32 +35,40 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
 
   // Listen for logo gold state changes from Navbar
   useEffect(() => {
-    const handleLogoGoldChange = (e: CustomEvent<{ isGold: boolean }>) => {
-      setIsGold(e.detail.isGold);
+    const handleLogoGoldChange = (e: Event) => {
+      // Defensive: in case a non-CustomEvent (or missing detail) is dispatched
+      const custom = e as CustomEvent<{ isGold?: unknown }>;
+      const next = custom?.detail?.isGold;
+      if (typeof next === 'boolean') setIsGold(next);
     };
-    window.addEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
-    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
+    window.addEventListener('logoGoldChange', handleLogoGoldChange);
+    return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange);
   }, []);
 
   // Handle scroll to stop above footer
   useEffect(() => {
     const handleScroll = () => {
-      const footer = document.querySelector('footer');
-      if (!footer) return;
+      try {
+        const footer = document.querySelector('footer');
+        if (!footer) return;
 
-      const footerRect = footer.getBoundingClientRect();
-      const elementHeight = 80; // 20 * 4 = h-20
-      const buffer = 40; // Space above footer
-      const defaultTop = 128; // 8rem = 128px
-      
-      // Calculate max position (above footer)
-      const maxTop = footerRect.top - elementHeight - buffer;
-      
-      if (defaultTop > maxTop) {
-        // Element would overlap footer, cap it
-        setTopPosition(`${maxTop}px`);
-      } else {
-        setTopPosition('8rem');
+        const footerRect = footer.getBoundingClientRect();
+        const elementHeight = 80; // 20 * 4 = h-20
+        const buffer = 40; // Space above footer
+        const defaultTop = 128; // 8rem = 128px
+
+        // Calculate max position (above footer)
+        const maxTop = footerRect.top - elementHeight - buffer;
+        if (!Number.isFinite(maxTop)) return;
+
+        if (defaultTop > maxTop) {
+          // Element would overlap footer, cap it
+          setTopPosition(`${maxTop}px`);
+        } else {
+          setTopPosition('8rem');
+        }
+      } catch {
+        // Never allow this non-critical widget to crash the page.
       }
     };
 
@@ -146,8 +154,6 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
     </div>
   );
 }));
-
-FloatingCodeBox.displayName = "FloatingCodeBox";
 
 FloatingCodeBox.displayName = "FloatingCodeBox";
 
