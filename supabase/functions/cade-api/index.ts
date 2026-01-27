@@ -242,7 +242,27 @@ serve(async (req) => {
       console.log(`[CADE API] Request body: ${postBody.substring(0, 200)}`);
     }
 
-    const response = await fetch(url, fetchOptions);
+    // Add timeout for faster failure (8 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    fetchOptions.signal = controller.signal;
+
+    let response: Response;
+    try {
+      response = await fetch(url, fetchOptions);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error("[CADE API] Request timed out");
+        return new Response(
+          JSON.stringify({ error: "Request timed out - CADE API is slow or unreachable" }),
+          { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw fetchError;
+    }
+    clearTimeout(timeoutId);
+    
     const responseText = await response.text();
 
     console.log(`[CADE API] Response status: ${response.status}`);

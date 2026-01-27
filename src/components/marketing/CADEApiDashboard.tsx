@@ -101,61 +101,57 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     setError(null);
     
     try {
-      // Fetch system health first (publicly accessible)
-      const healthRes = await callCadeApi("health");
-      if (healthRes) {
-        setHealth(healthRes?.data || healthRes);
-        // Extract workers and queues from health response if available
-        if (healthRes?.data?.workers !== undefined) {
-          // Health endpoint returns worker count, not list
-          setWorkers(Array(healthRes.data.workers || 0).fill({ name: "Worker", status: "running" }));
+      // Parallelize ALL initial calls for maximum speed
+      const [healthRes, subscriptionRes, workersRes, queuesRes] = await Promise.allSettled([
+        callCadeApi("health"),
+        callCadeApi("subscription"),
+        callCadeApi("workers"),
+        callCadeApi("queues"),
+      ]);
+
+      // Process health
+      if (healthRes.status === "fulfilled" && healthRes.value) {
+        const healthData = healthRes.value?.data || healthRes.value;
+        setHealth(healthData);
+        if (healthData?.workers !== undefined) {
+          setWorkers(Array(healthData.workers || 0).fill({ name: "Worker", status: "running" }));
         }
-        if (healthRes?.data?.queues) {
-          const qData = healthRes.data.queues;
+        if (healthData?.queues) {
+          const qData = healthData.queues;
           setQueues(Array.isArray(qData) ? qData : []);
         }
       }
 
-      // Try to fetch authenticated endpoints - these may fail if API key is not valid
-      try {
-        const [subscriptionRes, workersRes, queuesRes] = await Promise.allSettled([
-          callCadeApi("subscription"),
-          callCadeApi("workers"),
-          callCadeApi("queues"),
-        ]);
-
-        if (subscriptionRes.status === "fulfilled" && !subscriptionRes.value?.error) {
-          setSubscription(subscriptionRes.value?.data || subscriptionRes.value);
-        }
-        if (workersRes.status === "fulfilled" && !workersRes.value?.error) {
-          const workersData = workersRes.value?.data || workersRes.value;
-          if (Array.isArray(workersData)) setWorkers(workersData);
-        }
-        if (queuesRes.status === "fulfilled" && !queuesRes.value?.error) {
-          const queuesData = queuesRes.value?.data || queuesRes.value;
-          if (Array.isArray(queuesData)) setQueues(queuesData);
-        }
-      } catch (authErr) {
-        console.log("[CADE] Auth endpoints failed (expected if API key not set):", authErr);
+      // Process subscription
+      if (subscriptionRes.status === "fulfilled" && !subscriptionRes.value?.error) {
+        setSubscription(subscriptionRes.value?.data || subscriptionRes.value);
+      }
+      
+      // Process workers
+      if (workersRes.status === "fulfilled" && !workersRes.value?.error) {
+        const workersData = workersRes.value?.data || workersRes.value;
+        if (Array.isArray(workersData)) setWorkers(workersData);
+      }
+      
+      // Process queues
+      if (queuesRes.status === "fulfilled" && !queuesRes.value?.error) {
+        const queuesData = queuesRes.value?.data || queuesRes.value;
+        if (Array.isArray(queuesData)) setQueues(queuesData);
       }
 
-      // Fetch domain-specific data if domain is provided
+      // Fetch domain-specific data in parallel if domain is provided
       if (domain) {
-        try {
-          const [profileRes, faqsRes] = await Promise.allSettled([
-            callCadeApi("domain-profile"),
-            callCadeApi("get-faqs"),
-          ]);
+        const [profileRes, faqsRes] = await Promise.allSettled([
+          callCadeApi("domain-profile"),
+          callCadeApi("get-faqs"),
+        ]);
 
-          if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
-            setDomainProfile(profileRes.value?.data || profileRes.value);
-          }
-          if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
-            const faqData = faqsRes.value?.data || faqsRes.value;
-            setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
-          }
-        } catch (domainErr) {
-          console.log("[CADE] Domain endpoints failed:", domainErr);
+        if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
+          setDomainProfile(profileRes.value?.data || profileRes.value);
+        }
+        if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
+          const faqData = faqsRes.value?.data || faqsRes.value;
+          setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
         }
       }
     } catch (err) {
