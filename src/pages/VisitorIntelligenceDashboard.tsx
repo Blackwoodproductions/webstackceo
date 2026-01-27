@@ -1910,10 +1910,7 @@ const MarketingDashboard = () => {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    handleLogout();
-                  }}
+                  onClick={handleLogout}
                   className="flex items-center gap-2 cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
                 >
                   <LogOut className="w-4 h-4" />

@@ -1,63 +1,27 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { 
-  TrendingUp, Search, Target, Users, BarChart3, 
-  Globe, ArrowUpRight, ArrowDownRight, RefreshCw,
-  Zap, ExternalLink, ChevronRight, ChevronDown,
+  Link2, TrendingUp, Search, Target, Users, BarChart3, 
+  Globe, ArrowUpRight, ArrowDownRight, Minus, RefreshCw,
+  Award, Zap, ExternalLink, Filter, ChevronDown, ChevronRight,
   Activity, Loader2, AlertCircle, CheckCircle2, Eye, DollarSign,
-  Hash, FileText, Sparkles, Shield, Clock, Gauge, 
-  LineChart, PieChart, AlertTriangle, CheckCircle, XCircle,
-  Smartphone, Monitor, Wifi, WifiOff, Code, Image,
-  Layout, Type, Link2, FileWarning, Layers, Settings2,
-  Lightbulb, Plus, X, Wand2, Brain, Flame, Snowflake,
-  Radar, CircleDot, Network, Award, TrendingDown, Scan
+  Hash, FileText, Sparkles, Network, Shield
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
-import { supabase } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useDataForSEO, BacklinksSummary, RankedKeyword, Competitor, BacklinkItem, AnchorData } from '@/hooks/use-dataforseo';
 import { toast } from 'sonner';
 
 interface SEODashboardProps {
   domain: string;
 }
 
-interface KeywordData {
-  keyword: string;
-  search_volume: number;
-  cpc: number | null;
-  competition: string;
-  competition_index: number;
-  monthly_searches: Array<{ month: number; year: number; search_volume: number }>;
-}
-
-interface OnPageCheckItem {
-  url: string;
-  meta: { title: string; description: string; h1: string[] };
-  page_timing: { time_to_interactive: number; dom_complete: number; largest_contentful_paint: number };
-  onpage_score: number;
-  checks: Record<string, boolean>;
-  content_size: number;
-  total_dom_size: number;
-  internal_links_count: number;
-  external_links_count: number;
-  images_count: number;
-  duplicate_title: boolean;
-  duplicate_description: boolean;
-  duplicate_content: boolean;
-}
-
-interface SERPItem {
-  type: string;
-  rank_group: number;
-  title: string;
-  description: string;
-  url: string;
-  domain: string;
-}
-
+// Helper to format large numbers
 const formatNumber = (num: number | undefined | null): string => {
   if (num === undefined || num === null) return '0';
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -65,609 +29,705 @@ const formatNumber = (num: number | undefined | null): string => {
   return num.toLocaleString();
 };
 
+// Helper to format currency
 const formatCurrency = (num: number | undefined | null): string => {
-  if (num === undefined || num === null || num === 0) return '-';
-  return `$${num.toFixed(2)}`;
+  if (num === undefined || num === null) return '$0';
+  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+  return `$${num.toFixed(0)}`;
 };
 
-// Elegant Score Ring with glassmorphism
-const ScoreRing = ({ value, max = 100, label, color, size = 120 }: { value: number; max?: number; label: string; color: string; size?: number }) => {
-  const percentage = Math.min(100, (value / max) * 100);
-  const radius = (size - 16) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-  
+// Position change indicator
+const PositionChange = ({ current, previous }: { current: number; previous: number | null }) => {
+  if (previous === null) return <Badge variant="outline" className="text-[10px]">New</Badge>;
+  const diff = previous - current;
+  if (diff > 0) return <span className="flex items-center text-green-500 text-xs"><ArrowUpRight className="w-3 h-3" />{diff}</span>;
+  if (diff < 0) return <span className="flex items-center text-red-500 text-xs"><ArrowDownRight className="w-3 h-3" />{Math.abs(diff)}</span>;
+  return <Minus className="w-3 h-3 text-muted-foreground" />;
+};
+
+// Intent badge
+const IntentBadge = ({ intent }: { intent: string[] }) => {
+  const colors: Record<string, string> = {
+    informational: 'bg-blue-500/20 text-blue-500 border-blue-500/30',
+    commercial: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
+    transactional: 'bg-green-500/20 text-green-500 border-green-500/30',
+    navigational: 'bg-purple-500/20 text-purple-500 border-purple-500/30',
+  };
+  const primary = intent[0] || 'informational';
   return (
-    <div className="relative flex flex-col items-center">
-      <svg width={size} height={size} className="transform -rotate-90 drop-shadow-lg">
-        <defs>
-          <linearGradient id={`ring-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-            <stop offset="100%" stopColor={color} />
-          </linearGradient>
-        </defs>
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth="8" fill="none" className="text-white/5" />
-        <motion.circle cx={size / 2} cy={size / 2} r={radius} stroke={`url(#ring-${label})`} strokeWidth="8" fill="none" strokeLinecap="round"
-          initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset }} transition={{ duration: 1.2, ease: "easeOut" }} style={{ strokeDasharray: circumference }} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <motion.span className="text-3xl font-bold" style={{ color }} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}>
-          {Math.round(value)}
-        </motion.span>
-        <span className="text-[10px] text-muted-foreground/80">{label}</span>
-      </div>
-    </div>
+    <Badge variant="outline" className={`text-[10px] ${colors[primary] || colors.informational}`}>
+      {primary.charAt(0).toUpperCase()}
+    </Badge>
   );
-};
-
-// Compact Metric Card
-const MetricCard = ({ icon: Icon, label, value, subValue, color, isLoading }: { icon: any; label: string; value: string | number; subValue?: string; color: string; isLoading?: boolean }) => (
-  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-    className="relative p-4 rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/[0.05] overflow-hidden group hover:bg-white/[0.04] transition-all hover:border-white/10">
-    <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${color}08 0%, transparent 60%)` }} />
-    <div className="relative flex items-start justify-between">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className="w-4 h-4" style={{ color }} />
-          <span className="text-xs text-muted-foreground">{label}</span>
-        </div>
-        {isLoading ? <div className="h-7 w-16 bg-white/5 rounded animate-pulse" /> : (
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-semibold" style={{ color }}>{value}</span>
-            {subValue && <span className="text-[10px] text-muted-foreground">{subValue}</span>}
-          </div>
-        )}
-      </div>
-    </div>
-  </motion.div>
-);
-
-// Performance Dial
-const PerformanceDial = ({ value, label, unit, thresholds }: { value: number; label: string; unit: string; thresholds: { good: number; warn: number } }) => {
-  const getColor = () => { if (value <= thresholds.good) return '#22c55e'; if (value <= thresholds.warn) return '#eab308'; return '#ef4444'; };
-  const percentage = Math.min(100, (value / (thresholds.warn * 1.5)) * 100);
-  return (
-    <div className="flex flex-col items-center p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-      <div className="relative w-16 h-8 mb-1">
-        <svg viewBox="0 0 100 50" className="w-full h-full">
-          <path d="M 5 45 A 40 40 0 0 1 95 45" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/5" strokeLinecap="round" />
-          <motion.path d="M 5 45 A 40 40 0 0 1 95 45" fill="none" stroke={getColor()} strokeWidth="8" strokeLinecap="round" strokeDasharray="141"
-            initial={{ strokeDashoffset: 141 }} animate={{ strokeDashoffset: 141 - (percentage / 100) * 141 }} transition={{ duration: 1, ease: "easeOut" }} />
-        </svg>
-        <div className="absolute inset-0 flex items-end justify-center pb-0.5">
-          <span className="text-sm font-bold" style={{ color: getColor() }}>{value.toFixed(1)}</span>
-        </div>
-      </div>
-      <span className="text-[10px] text-muted-foreground">{label}</span>
-      <span className="text-[9px] text-muted-foreground/60">{unit}</span>
-    </div>
-  );
-};
-
-// Check Status Row
-const CheckRow = ({ passed, label }: { passed: boolean; label: string }) => (
-  <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md ${passed ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
-    {passed ? <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" /> : <XCircle className="w-3 h-3 text-rose-400 shrink-0" />}
-    <span className={`text-xs ${passed ? 'text-emerald-400' : 'text-rose-400'}`}>{label}</span>
-  </div>
-);
-
-// Competition Pill
-const CompPill = ({ level }: { level: string }) => {
-  const cfg = { LOW: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' }, MEDIUM: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' }, HIGH: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/30' } };
-  const c = cfg[level as keyof typeof cfg] || cfg.LOW;
-  return <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${c.bg} ${c.text} border ${c.border}`}>{level}</span>;
 };
 
 export const SEODashboard = ({ domain }: SEODashboardProps) => {
+  const {
+    loading,
+    error,
+    getBacklinksSummary,
+    getBacklinks,
+    getAnchors,
+    getReferringDomains,
+    getDomainRankOverview,
+    getRankedKeywords,
+    getCompetitors,
+  } = useDataForSEO();
+
+  // State for all data
+  const [backlinksSummary, setBacklinksSummary] = useState<BacklinksSummary | null>(null);
+  const [domainOverview, setDomainOverview] = useState<any>(null);
+  const [rankedKeywords, setRankedKeywords] = useState<RankedKeyword[]>([]);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
+  const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
+  const [anchors, setAnchors] = useState<AnchorData[]>([]);
+  const [referringDomains, setReferringDomains] = useState<any[]>([]);
+  
   const [isLoading, setIsLoading] = useState(false);
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [lastDomain, setLastDomain] = useState<string | null>(null);
-  
-  const [keywords, setKeywords] = useState<KeywordData[]>([]);
-  const [onpageData, setOnpageData] = useState<OnPageCheckItem | null>(null);
-  const [serpData, setSerpData] = useState<{ organic: SERPItem[]; paa: any[]; related: any[]; aiOverview: string | null } | null>(null);
-  
-  const [seedKeyword, setSeedKeyword] = useState('');
-  const [seedKeywords, setSeedKeywords] = useState<string[]>([]);
-  const [researchKeywords, setResearchKeywords] = useState<KeywordData[]>([]);
-  const [isResearching, setIsResearching] = useState(false);
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapedKeywords, setScrapedKeywords] = useState<string[]>([]);
-  
-  const hasAutoScraped = useRef(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
+  // Clean domain for API
   const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
 
-  const callAPI = async (action: string, data: any) => {
-    const { data: response, error } = await supabase.functions.invoke('dataforseo-api', { body: { action, data } });
-    if (error) throw new Error(error.message);
-    return response;
-  };
-
-  // Scrape homepage for keywords
-  const scrapeHomepageKeywords = useCallback(async () => {
-    if (!cleanDomain || isScraping) return [];
-    setIsScraping(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('scrape-website', {
-        body: { url: `https://${cleanDomain}` }
-      });
-      
-      if (error) throw error;
-      
-      // Extract top keywords from scraped content
-      const keywordDensity = data?.contentMetrics?.keywordDensity || [];
-      const h1Text = data?.technicalSEO?.h1Text || [];
-      const title = data?.title || '';
-      const description = data?.description || '';
-      
-      // Combine sources for keyword extraction
-      const allText = [title, description, ...h1Text].join(' ').toLowerCase();
-      const words = allText.split(/\s+/).filter(w => w.length > 3);
-      
-      // Get top density keywords (filter out common words)
-      const stopWords = new Set(['that', 'this', 'with', 'from', 'your', 'have', 'more', 'will', 'about', 'their', 'what', 'which', 'when', 'were', 'been', 'also', 'other']);
-      const topDensityKeywords = keywordDensity
-        .filter((k: any) => k.keyword.length > 3 && !stopWords.has(k.keyword))
-        .slice(0, 5)
-        .map((k: any) => k.keyword);
-      
-      // Extract meaningful phrases from title and H1
-      const phrases: string[] = [];
-      if (title) {
-        const titleWords = title.toLowerCase().split(/[|\-–—:]/)[0].trim();
-        if (titleWords.length > 3) phrases.push(titleWords);
-      }
-      h1Text.slice(0, 2).forEach((h1: string) => {
-        const cleaned = h1.toLowerCase().trim();
-        if (cleaned.length > 3 && cleaned.length < 50) phrases.push(cleaned);
-      });
-      
-      // Combine and dedupe
-      const combined = [...new Set([...phrases, ...topDensityKeywords])].slice(0, 3);
-      setScrapedKeywords(combined);
-      
-      return combined;
-    } catch (err) {
-      console.error('[SEO] Scrape error:', err);
-      return [];
-    } finally {
-      setIsScraping(false);
-    }
-  }, [cleanDomain, isScraping]);
-
-  // Run keyword research
-  const runKeywordResearch = useCallback(async (keywordsToUse?: string[]) => {
-    const kws = keywordsToUse || seedKeywords;
-    if (kws.length === 0) { toast.error('Add at least one seed keyword'); return; }
-    setIsResearching(true);
-    try {
-      const response = await callAPI('keywords_for_keywords', [{ keywords: kws, location_code: 2840, language_code: 'en', limit: 100 }]);
-      if (response?.tasks?.[0]?.result) {
-        setResearchKeywords(response.tasks[0].result);
-        toast.success(`Found ${response.tasks[0].result.length} keyword ideas!`);
-      }
-    } catch (err) { toast.error('Failed to research keywords'); }
-    finally { setIsResearching(false); }
-  }, [seedKeywords]);
-
+  // Load all data
   const loadAllData = useCallback(async () => {
     if (!cleanDomain || isLoading) return;
+    
     setIsLoading(true);
     setHasLoaded(true);
-    setLastDomain(cleanDomain);
+    toast.info(`Analyzing ${cleanDomain}...`);
 
     try {
-      // First, scrape homepage for keywords and auto-run research
-      if (!hasAutoScraped.current) {
-        hasAutoScraped.current = true;
-        setLoadingSection('scraping homepage');
-        const extractedKeywords = await scrapeHomepageKeywords();
-        if (extractedKeywords.length > 0) {
-          setSeedKeywords(extractedKeywords);
-          setLoadingSection('keyword research');
-          await runKeywordResearch(extractedKeywords);
-        }
-      }
+      // Load overview data in parallel
+      setLoadingSection('overview');
+      const [blSummary, domainRank] = await Promise.all([
+        getBacklinksSummary(cleanDomain),
+        getDomainRankOverview(cleanDomain),
+      ]);
+      
+      setBacklinksSummary(blSummary);
+      setDomainOverview(domainRank);
 
+      // Load keywords
       setLoadingSection('keywords');
-      const kwResponse = await callAPI('keywords_for_site', [{ target: cleanDomain, location_code: 2840, language_code: 'en', limit: 50 }]);
-      if (kwResponse?.tasks?.[0]?.result) setKeywords(kwResponse.tasks[0].result);
+      const keywords = await getRankedKeywords(cleanDomain, 100);
+      setRankedKeywords(keywords);
 
-      setLoadingSection('technical');
-      const onpageResponse = await callAPI('onpage_instant_pages', [{ url: `https://${cleanDomain}`, enable_javascript: true }]);
-      if (onpageResponse?.tasks?.[0]?.result?.[0]?.items?.[0]) setOnpageData(onpageResponse.tasks[0].result[0].items[0]);
+      // Load backlinks data
+      setLoadingSection('backlinks');
+      const [blList, anchorList, refDomains] = await Promise.all([
+        getBacklinks(cleanDomain, 50),
+        getAnchors(cleanDomain, 30),
+        getReferringDomains(cleanDomain, 50),
+      ]);
+      setBacklinks(blList);
+      setAnchors(anchorList);
+      setReferringDomains(refDomains);
 
-      setLoadingSection('serp');
-      const serpResponse = await callAPI('serp_google_organic', [{ keyword: cleanDomain.split('.')[0], location_code: 2840, language_code: 'en' }]);
-      if (serpResponse?.tasks?.[0]?.result?.[0]) {
-        const result = serpResponse.tasks[0].result[0];
-        const items = result.items || [];
-        setSerpData({
-          organic: items.filter((i: any) => i.type === 'organic').slice(0, 10),
-          paa: items.filter((i: any) => i.type === 'people_also_ask'),
-          related: items.filter((i: any) => i.type === 'related_searches'),
-          aiOverview: items.find((i: any) => i.type === 'ai_overview')?.items?.[0]?.text || null
-        });
-      }
-      toast.success('Analysis complete!');
+      // Load competitors
+      setLoadingSection('competitors');
+      const compList = await getCompetitors(cleanDomain, 15);
+      setCompetitors(compList);
+
+      toast.success('SEO analysis complete!');
     } catch (err) {
-      console.error('[SEO Dashboard] Error:', err);
-      toast.error('Failed to load some data');
+      toast.error('Failed to load SEO data');
+      console.error(err);
     } finally {
       setIsLoading(false);
       setLoadingSection(null);
     }
-  }, [cleanDomain, isLoading, scrapeHomepageKeywords, runKeywordResearch]);
+  }, [cleanDomain, getBacklinksSummary, getDomainRankOverview, getRankedKeywords, getBacklinks, getAnchors, getReferringDomains, getCompetitors, isLoading]);
 
-  const addSeedKeyword = () => {
-    const trimmed = seedKeyword.trim().toLowerCase();
-    if (trimmed && !seedKeywords.includes(trimmed)) { setSeedKeywords(prev => [...prev, trimmed]); setSeedKeyword(''); }
-  };
-
-  // Reset state when domain changes
+  // Auto-load when domain changes
   useEffect(() => {
-    if (cleanDomain !== lastDomain) { 
-      setHasLoaded(false); 
-      setKeywords([]); 
-      setOnpageData(null); 
-      setSerpData(null); 
-      setResearchKeywords([]); 
-      setSeedKeywords([]);
-      setScrapedKeywords([]);
-      hasAutoScraped.current = false;
+    if (cleanDomain && !hasLoaded) {
+      // Delay initial load slightly
+      const timer = setTimeout(() => loadAllData(), 500);
+      return () => clearTimeout(timer);
     }
-  }, [cleanDomain, lastDomain]);
+  }, [cleanDomain]);
 
-  // Auto-run analysis when component mounts with a valid domain
-  useEffect(() => {
-    if (cleanDomain && !hasLoaded && !isLoading && cleanDomain !== lastDomain) {
-      loadAllData();
-    }
-  }, [cleanDomain, hasLoaded, isLoading, lastDomain, loadAllData]);
-
-  const metrics = useMemo(() => {
-    const totalSearchVolume = keywords.reduce((sum, k) => sum + (k.search_volume || 0), 0);
-    const avgCPC = keywords.length > 0 ? keywords.reduce((sum, k) => sum + (k.cpc || 0), 0) / keywords.filter(k => k.cpc).length : 0;
-    const trafficValue = keywords.reduce((sum, k) => sum + ((k.search_volume || 0) * (k.cpc || 0) * 0.03), 0);
-    const checks = onpageData?.checks || {};
-    const passedChecks = Object.values(checks).filter(v => v === true).length;
-    const failedChecks = Object.values(checks).filter(v => v === false).length;
-    const totalChecks = passedChecks + failedChecks;
-    const seoScore = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
-    return {
-      totalKeywords: keywords.length, totalSearchVolume, avgCPC: avgCPC || 0, trafficValue, seoScore, passedChecks, failedChecks,
-      lcp: (onpageData?.page_timing?.largest_contentful_paint || 0) / 1000,
-      tti: (onpageData?.page_timing?.time_to_interactive || 0) / 1000,
-      dom: (onpageData?.page_timing?.dom_complete || 0) / 1000,
-    };
-  }, [keywords, onpageData]);
-
-  const checkCategories = useMemo(() => {
-    if (!onpageData?.checks) return { content: [], technical: [], seo: [] };
-    const c = onpageData.checks;
-    return {
-      content: [{ key: 'title', label: 'Title Tag', passed: !c.no_title }, { key: 'desc', label: 'Meta Description', passed: !c.no_description }, { key: 'h1', label: 'H1 Tag', passed: !c.no_h1_tag }],
-      technical: [{ key: 'https', label: 'HTTPS', passed: c.is_https }, { key: 'load', label: 'Fast Loading', passed: !c.high_loading_time }, { key: 'favicon', label: 'Favicon', passed: !c.no_favicon }],
-      seo: [{ key: 'url', label: 'SEO URL', passed: c.seo_friendly_url }, { key: 'canonical', label: 'Canonical', passed: c.canonical }, { key: 'alt', label: 'Image Alts', passed: !c.no_image_alt }]
-    };
-  }, [onpageData]);
-
-  const topKeywords = useMemo(() => [...keywords].sort((a, b) => b.search_volume - a.search_volume).slice(0, 6), [keywords]);
-  const opportunities = useMemo(() => keywords.filter(k => k.competition === 'LOW' && k.search_volume >= 100).slice(0, 5), [keywords]);
+  // Calculate domain score (DR-like metric)
+  const domainScore = backlinksSummary?.rank 
+    ? Math.min(100, Math.max(0, Math.round(Math.log10(backlinksSummary.rank + 1) * 15)))
+    : 0;
 
   return (
-    <div className="relative space-y-6 min-h-[600px]">
-      <VIDashboardEffects />
-      
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-6">
+      {/* Header with Domain & Refresh */}
+      <header className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <motion.div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30"
-            animate={{ boxShadow: ['0 8px 30px rgba(139,92,246,0.25)', '0 8px 40px rgba(6,182,212,0.35)', '0 8px 30px rgba(139,92,246,0.25)'] }}
-            transition={{ duration: 4, repeat: Infinity }}>
-            <BarChart3 className="w-6 h-6 text-white" />
+          <motion.div 
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/30"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <BarChart3 className="w-7 h-7 text-white" />
           </motion.div>
           <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">SEO Intelligence</h2>
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Globe className="w-3 h-3" />{cleanDomain || 'Select a domain'}</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold">SEO Intelligence</h2>
+              <Badge variant="outline" className="text-cyan-500 border-cyan-500/30 bg-cyan-500/10">
+                <Sparkles className="w-3 h-3 mr-1" />
+                DataForSEO
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              {cleanDomain || 'Select a domain to analyze'}
+            </p>
           </div>
         </div>
         
-        <Button onClick={loadAllData} disabled={isLoading || !cleanDomain} className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:opacity-90 shadow-lg shadow-cyan-500/20">
-          {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{loadingSection || 'Analyzing'}...</> : <><Zap className="w-4 h-4 mr-2" />Analyze</>}
+        <Button
+          onClick={loadAllData}
+          disabled={isLoading || !cleanDomain}
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {loadingSection ? `Loading ${loadingSection}...` : 'Analyzing...'}
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Analyze Domain
+            </>
+          )}
         </Button>
       </header>
 
-      {/* Empty State */}
-      {!hasLoaded && !isLoading && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="border border-dashed border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 backdrop-blur-sm">
-            <CardContent className="py-16 text-center">
-              <motion.div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/20 to-violet-500/20 flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 3, repeat: Infinity }}>
-                <Radar className="w-8 h-8 text-cyan-400" />
-              </motion.div>
-              <h3 className="text-lg font-semibold mb-1">{cleanDomain ? 'Ready to Analyze' : 'Select a Domain'}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{cleanDomain ? `Comprehensive SEO analysis for ${cleanDomain}` : 'Choose a domain from the selector above'}</p>
-              {cleanDomain && <Button onClick={loadAllData} className="bg-gradient-to-r from-cyan-500 to-violet-500"><Zap className="w-4 h-4 mr-2" />Start Analysis</Button>}
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* No domain selected state */}
+      {!cleanDomain && (
+        <Card className="border-dashed border-2 border-cyan-500/30 bg-cyan-500/5">
+          <CardContent className="py-12 text-center">
+            <Globe className="w-12 h-12 mx-auto mb-4 text-cyan-500/50" />
+            <h3 className="text-lg font-semibold mb-2">Select a Domain</h3>
+            <p className="text-sm text-muted-foreground">
+              Choose a domain from the selector above to view comprehensive SEO analytics
+            </p>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Dashboard Grid */}
+      {/* Loading state before first load */}
+      {cleanDomain && !hasLoaded && !isLoading && (
+        <Card className="border-dashed border-2 border-cyan-500/30 bg-cyan-500/5">
+          <CardContent className="py-12 text-center">
+            <Search className="w-12 h-12 mx-auto mb-4 text-cyan-500/50" />
+            <h3 className="text-lg font-semibold mb-2">Ready to Analyze</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Click "Analyze Domain" to fetch SEO data for {cleanDomain}
+            </p>
+            <Button onClick={loadAllData} className="bg-gradient-to-r from-cyan-500 to-blue-500">
+              <Zap className="w-4 h-4 mr-2" />
+              Start Analysis
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Dashboard Content */}
       {(hasLoaded || isLoading) && cleanDomain && (
-        <div className="space-y-4">
-          
-          {/* KEYWORD RESEARCH - NOW AT TOP */}
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="relative">
-            <Card className="border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/5 via-transparent to-violet-500/5 backdrop-blur-sm overflow-hidden">
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500" />
-              <CardHeader className="pb-3 pt-5 px-5">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
-                      <Wand2 className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <span className="text-lg font-semibold bg-gradient-to-r from-fuchsia-400 to-violet-400 bg-clip-text text-transparent">Keyword Research</span>
-                      <p className="text-xs text-muted-foreground">Auto-extracted from homepage content</p>
-                    </div>
-                  </div>
-                  {isScraping && (
-                    <Badge className="bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30">
-                      <Scan className="w-3 h-3 mr-1 animate-pulse" />Scraping...
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 pb-5">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left: Seed Keywords Input */}
-                  <div className="space-y-4">
-                    <div className="flex gap-2">
-                      <Input value={seedKeyword} onChange={e => setSeedKeyword(e.target.value)} placeholder="Add seed keyword..." 
-                        className="h-10 bg-white/[0.02] border-white/[0.1] text-sm" onKeyDown={e => e.key === 'Enter' && addSeedKeyword()} />
-                      <Button onClick={addSeedKeyword} size="sm" variant="outline" className="shrink-0 border-fuchsia-500/30 hover:bg-fuchsia-500/10 h-10 px-4">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    {/* Seed Keywords Tags */}
-                    <div className="min-h-[40px]">
-                      {seedKeywords.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {seedKeywords.map((kw, i) => (
-                            <motion.div key={kw} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
-                              <Badge className="bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-fuchsia-300 border-fuchsia-500/30 px-3 py-1.5 text-sm">
-                                {kw}
-                                <button onClick={() => setSeedKeywords(prev => prev.filter(k => k !== kw))} className="ml-2 hover:text-white transition-colors">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </Badge>
-                            </motion.div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground/50 italic">Keywords will be auto-extracted from your homepage...</p>
-                      )}
-                    </div>
-                    
-                    <Button onClick={() => runKeywordResearch()} disabled={isResearching || seedKeywords.length === 0} 
-                      className="w-full h-11 bg-gradient-to-r from-fuchsia-500 to-violet-500 hover:opacity-90 shadow-lg shadow-fuchsia-500/20 text-base">
-                      {isResearching ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Researching...</> : <><Search className="w-4 h-4 mr-2" />Research Keywords</>}
-                    </Button>
-                  </div>
-                  
-                  {/* Right: Research Results */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Research Results</span>
-                      {researchKeywords.length > 0 && (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-xs">
-                          {researchKeywords.length} keywords found
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="max-h-[180px] overflow-y-auto space-y-2 pr-2">
-                      {isResearching ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Loader2 className="w-6 h-6 animate-spin text-fuchsia-400" />
-                        </div>
-                      ) : researchKeywords.length > 0 ? (
-                        researchKeywords.slice(0, 10).map((kw, i) => (
-                          <motion.div key={kw.keyword} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-colors">
-                            <span className="text-sm truncate mr-3">{kw.keyword}</span>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs text-cyan-400 font-medium">{formatNumber(kw.search_volume)}</span>
-                              <CompPill level={kw.competition} />
-                            </div>
-                          </motion.div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground/50">
-                          <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                          <p className="text-sm">Keywords will appear here</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+        <>
+          {/* Overview Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {/* Domain Rank */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                  <Award className="w-4 h-4 text-cyan-500" />
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Row 2: Score + Performance + Quick Stats */}
-          <div className="grid grid-cols-12 gap-4">
-            {/* SEO Score Ring */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="col-span-12 sm:col-span-6 lg:col-span-3">
-              <Card className="h-full border-white/[0.05] bg-white/[0.02] backdrop-blur-sm overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-                <CardContent className="p-6 flex flex-col items-center justify-center min-h-[200px]">
-                  {isLoading && !onpageData ? <Loader2 className="w-10 h-10 animate-spin text-cyan-400" /> : (
-                    <>
-                      <ScoreRing value={metrics.seoScore} label="SEO Score" color={metrics.seoScore >= 75 ? '#22c55e' : metrics.seoScore >= 50 ? '#eab308' : '#ef4444'} />
-                      <div className="flex gap-4 mt-3 text-[11px]">
-                        <span className="flex items-center gap-1 text-emerald-400"><CheckCircle className="w-3 h-3" />{metrics.passedChecks} passed</span>
-                        <span className="flex items-center gap-1 text-rose-400"><XCircle className="w-3 h-3" />{metrics.failedChecks} failed</span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Core Web Vitals */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="col-span-12 sm:col-span-6 lg:col-span-4">
-              <Card className="h-full border-white/[0.05] bg-white/[0.02] backdrop-blur-sm">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Gauge className="w-4 h-4 text-violet-400" />Core Web Vitals</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  {isLoading && !onpageData ? <div className="h-24 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-violet-400" /></div> : (
-                    <div className="grid grid-cols-3 gap-2">
-                      <PerformanceDial value={metrics.lcp} label="LCP" unit="sec" thresholds={{ good: 2.5, warn: 4 }} />
-                      <PerformanceDial value={metrics.tti} label="TTI" unit="sec" thresholds={{ good: 3.8, warn: 7.3 }} />
-                      <PerformanceDial value={metrics.dom} label="DOM" unit="sec" thresholds={{ good: 3, warn: 6 }} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Quick Metrics */}
-            <motion.div initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="col-span-12 lg:col-span-5">
-              <div className="grid grid-cols-2 gap-3 h-full">
-                <MetricCard icon={Hash} label="Keywords" value={metrics.totalKeywords} color="#06b6d4" isLoading={isLoading && !keywords.length} />
-                <MetricCard icon={TrendingUp} label="Search Volume" value={formatNumber(metrics.totalSearchVolume)} color="#8b5cf6" isLoading={isLoading && !keywords.length} />
-                <MetricCard icon={DollarSign} label="Avg CPC" value={formatCurrency(metrics.avgCPC)} color="#22c55e" isLoading={isLoading && !keywords.length} />
-                <MetricCard icon={Sparkles} label="Traffic Value" value={formatCurrency(metrics.trafficValue)} subValue="/mo" color="#f59e0b" isLoading={isLoading && !keywords.length} />
+                <span className="text-xs text-muted-foreground">Domain Rank</span>
               </div>
+              {isLoading && !backlinksSummary ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-cyan-500">{formatNumber(backlinksSummary?.rank)}</p>
+              )}
+            </motion.div>
+
+            {/* Backlinks */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Backlinks</span>
+              </div>
+              {isLoading && !backlinksSummary ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-blue-500">{formatNumber(backlinksSummary?.backlinks)}</p>
+                  {(backlinksSummary?.backlinks_new ?? 0) > 0 && (
+                    <span className="text-[10px] text-green-500 flex items-center gap-0.5">
+                      <ArrowUpRight className="w-3 h-3" /> +{formatNumber(backlinksSummary?.backlinks_new)} new
+                    </span>
+                  )}
+                </>
+              )}
+            </motion.div>
+
+            {/* Referring Domains */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                  <Network className="w-4 h-4 text-violet-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Ref. Domains</span>
+              </div>
+              {isLoading && !backlinksSummary ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-violet-500">{formatNumber(backlinksSummary?.referring_domains)}</p>
+              )}
+            </motion.div>
+
+            {/* Organic Keywords */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/5 border border-emerald-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Hash className="w-4 h-4 text-emerald-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Keywords</span>
+              </div>
+              {isLoading && !rankedKeywords.length ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-emerald-500">{formatNumber(rankedKeywords.length)}</p>
+              )}
+            </motion.div>
+
+            {/* Organic Traffic */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-amber-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Est. Traffic</span>
+              </div>
+              {isLoading && !domainOverview ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-amber-500">
+                  {formatNumber(domainOverview?.organic_traffic || rankedKeywords.reduce((sum, k) => sum + k.traffic, 0))}
+                </p>
+              )}
+            </motion.div>
+
+            {/* Traffic Value */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="relative p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/5 border border-rose-500/20 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-[40px]" />
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-rose-500" />
+                </div>
+                <span className="text-xs text-muted-foreground">Traffic Value</span>
+              </div>
+              {isLoading && !rankedKeywords.length ? (
+                <div className="h-8 bg-muted/50 rounded animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-rose-500">
+                  {formatCurrency(domainOverview?.organic_cost || rankedKeywords.reduce((sum, k) => sum + k.traffic_cost, 0))}
+                </p>
+              )}
             </motion.div>
           </div>
 
-          {/* Row 3: Keywords + Checks + Quick Wins */}
-          <div className="grid grid-cols-12 gap-4">
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="col-span-12 lg:col-span-5">
-              <Card className="h-full border-white/[0.05] bg-white/[0.02] backdrop-blur-sm">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Search className="w-4 h-4 text-emerald-400" />Top Ranking Keywords</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  {topKeywords.length === 0 ? <p className="text-sm text-muted-foreground/60 text-center py-6">No keywords found</p> : (
-                    <div className="space-y-2">
-                      {topKeywords.map((kw, i) => (
-                        <motion.div key={kw.keyword} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} 
-                          className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/[0.03] hover:bg-white/[0.04] transition-colors">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-[10px] text-muted-foreground/50 w-4">{i + 1}</span>
-                            <span className="text-sm truncate">{kw.keyword}</span>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-xs text-cyan-400 font-medium">{formatNumber(kw.search_volume)}</span>
-                            <CompPill level={kw.competition} />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+          {/* Tabs for detailed data */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start bg-muted/30 p-1 h-auto flex-wrap gap-1">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-500">
+                <BarChart3 className="w-4 h-4 mr-1.5" /> Overview
+              </TabsTrigger>
+              <TabsTrigger value="keywords" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-500">
+                <Hash className="w-4 h-4 mr-1.5" /> Keywords ({rankedKeywords.length})
+              </TabsTrigger>
+              <TabsTrigger value="backlinks" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-500">
+                <Link2 className="w-4 h-4 mr-1.5" /> Backlinks ({backlinks.length})
+              </TabsTrigger>
+              <TabsTrigger value="competitors" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-500">
+                <Target className="w-4 h-4 mr-1.5" /> Competitors ({competitors.length})
+              </TabsTrigger>
+              <TabsTrigger value="anchors" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500">
+                <FileText className="w-4 h-4 mr-1.5" /> Anchors ({anchors.length})
+              </TabsTrigger>
+            </TabsList>
 
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="col-span-12 lg:col-span-4">
-              <Card className="h-full border-white/[0.05] bg-white/[0.02] backdrop-blur-sm">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Shield className="w-4 h-4 text-amber-400" />Technical Audit</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  {!onpageData ? <p className="text-sm text-muted-foreground/60 text-center py-6">Run analysis to see checks</p> : (
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Content</span>
-                        <div className="grid grid-cols-3 gap-1 mt-1">{checkCategories.content.map(c => <CheckRow key={c.key} passed={c.passed} label={c.label} />)}</div>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="mt-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Top Keywords Preview */}
+                <Card className="border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-emerald-500" />
+                      Top Ranking Keywords
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading && !rankedKeywords.length ? (
+                      <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
+                        ))}
                       </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">Technical</span>
-                        <div className="grid grid-cols-3 gap-1 mt-1">{checkCategories.technical.map(c => <CheckRow key={c.key} passed={c.passed} label={c.label} />)}</div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide">SEO</span>
-                        <div className="grid grid-cols-3 gap-1 mt-1">{checkCategories.seo.map(c => <CheckRow key={c.key} passed={c.passed} label={c.label} />)}</div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="col-span-12 lg:col-span-3">
-              <Card className="h-full border-white/[0.05] bg-white/[0.02] backdrop-blur-sm">
-                <CardHeader className="pb-2 pt-4 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Lightbulb className="w-4 h-4 text-amber-400" />Quick Wins</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  {opportunities.length === 0 ? <p className="text-sm text-muted-foreground/60 text-center py-6">No opportunities</p> : (
-                    <div className="space-y-2">
-                      {opportunities.map((kw, i) => (
-                        <motion.div key={kw.keyword} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }} className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
-                          <p className="text-xs truncate mb-1">{kw.keyword}</p>
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-amber-400">{formatNumber(kw.search_volume)} vol</span>
-                            <span className="text-emerald-400">Low comp</span>
+                    ) : rankedKeywords.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No keywords found</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {rankedKeywords.slice(0, 5).map((kw, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <Badge variant="outline" className="shrink-0 w-8 justify-center">{kw.position}</Badge>
+                              <span className="text-sm truncate">{kw.keyword}</span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-xs text-muted-foreground">{formatNumber(kw.search_volume)}/mo</span>
+                              <IntentBadge intent={kw.intent} />
+                            </div>
                           </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          {/* Row 4: SERP Features */}
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="col-span-12">
-            <Card className="border-white/[0.05] bg-white/[0.02] backdrop-blur-sm">
-              <CardHeader className="pb-2 pt-4 px-4">
-                <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-                  <Globe className="w-4 h-4 text-cyan-400" />SERP Features
-                  {serpData?.aiOverview && <Badge className="ml-auto bg-violet-500/20 text-violet-400 border-violet-500/30 text-[10px]"><Brain className="w-3 h-3 mr-1" />AI Overview</Badge>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                {!serpData ? <p className="text-sm text-muted-foreground/60 text-center py-6">Run analysis to see SERP data</p> : (
-                  <div className="space-y-3">
-                    {serpData.aiOverview && (
-                      <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
-                        <p className="text-xs text-muted-foreground line-clamp-3">{serpData.aiOverview}</p>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('keywords')}>
+                          View All Keywords <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
                       </div>
                     )}
-                    <div className="flex gap-3 flex-wrap">
-                      <Badge variant="outline" className="text-[10px] bg-cyan-500/10 text-cyan-400 border-cyan-500/30">{serpData.organic.length} Organic</Badge>
-                      <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">{serpData.paa.length} PAA</Badge>
-                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30">{serpData.related.length} Related</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {serpData.organic.slice(0, 3).map((item, i) => (
-                        <div key={i} className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.03]">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] text-cyan-400 font-medium">#{item.rank_group}</span>
-                            <span className="text-xs truncate">{item.title}</span>
+                  </CardContent>
+                </Card>
+
+                {/* Top Backlinks Preview */}
+                <Card className="border-blue-500/20 bg-gradient-to-br from-card to-blue-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-blue-500" />
+                      Top Backlinks
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading && !backlinks.length ? (
+                      <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ) : backlinks.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No backlinks found</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {backlinks.slice(0, 5).map((bl, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <Badge variant={bl.dofollow ? "default" : "secondary"} className="shrink-0 text-[10px]">
+                                {bl.dofollow ? 'DF' : 'NF'}
+                              </Badge>
+                              <span className="text-sm truncate">{bl.domain_from}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0">DR: {bl.domain_from_rank}</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground/60 truncate">{item.url}</p>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('backlinks')}>
+                          View All Backlinks <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Top Competitors Preview */}
+                <Card className="border-violet-500/20 bg-gradient-to-br from-card to-violet-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Target className="w-4 h-4 text-violet-500" />
+                      Top Competitors
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading && !competitors.length ? (
+                      <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ) : competitors.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No competitors found</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {competitors.slice(0, 5).map((comp, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <span className="text-sm truncate flex-1">{comp.domain}</span>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-xs text-muted-foreground">{formatNumber(comp.keywords_common)} common</span>
+                            </div>
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('competitors')}>
+                          View All Competitors <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Top Anchors Preview */}
+                <Card className="border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-amber-500" />
+                      Top Anchor Texts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading && !anchors.length ? (
+                      <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    ) : anchors.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">No anchors found</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {anchors.slice(0, 5).map((anchor, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <span className="text-sm truncate flex-1">{anchor.anchor || '(empty)'}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{formatNumber(anchor.backlinks)} links</span>
+                          </div>
+                        ))}
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('anchors')}>
+                          View All Anchors <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Keywords Tab */}
+            <TabsContent value="keywords" className="mt-6">
+              <Card className="border-emerald-500/20">
+                <CardContent className="p-0">
+                  <div className="max-h-[500px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead className="w-12 text-center">#</TableHead>
+                          <TableHead>Keyword</TableHead>
+                          <TableHead className="text-center">Intent</TableHead>
+                          <TableHead className="text-right">Volume</TableHead>
+                          <TableHead className="text-right">CPC</TableHead>
+                          <TableHead className="text-right">Traffic</TableHead>
+                          <TableHead className="text-right">KD</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rankedKeywords.map((kw, i) => (
+                          <TableRow key={i} className="hover:bg-emerald-500/5">
+                            <TableCell className="text-center font-medium">{kw.position}</TableCell>
+                            <TableCell className="max-w-[250px] truncate">{kw.keyword}</TableCell>
+                            <TableCell className="text-center"><IntentBadge intent={kw.intent} /></TableCell>
+                            <TableCell className="text-right">{formatNumber(kw.search_volume)}</TableCell>
+                            <TableCell className="text-right">${kw.cpc.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(kw.traffic)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Progress value={kw.keyword_difficulty} className="w-12 h-1.5" />
+                                <span className="text-xs w-6">{kw.keyword_difficulty}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {rankedKeywords.length === 0 && !isLoading && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                              No keywords found for this domain
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Backlinks Tab */}
+            <TabsContent value="backlinks" className="mt-6">
+              <Card className="border-blue-500/20">
+                <CardContent className="p-0">
+                  <div className="max-h-[500px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead className="w-16">Type</TableHead>
+                          <TableHead>From Domain</TableHead>
+                          <TableHead>Anchor</TableHead>
+                          <TableHead className="text-right">DR</TableHead>
+                          <TableHead className="text-right">First Seen</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {backlinks.map((bl, i) => (
+                          <TableRow key={i} className="hover:bg-blue-500/5">
+                            <TableCell>
+                              <Badge variant={bl.dofollow ? "default" : "secondary"} className="text-[10px]">
+                                {bl.dofollow ? 'DoFollow' : 'NoFollow'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[200px]">
+                              <a href={bl.url_from} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1 truncate">
+                                {bl.domain_from}
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                              </a>
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+                              {bl.anchor || '(no anchor)'}
+                            </TableCell>
+                            <TableCell className="text-right">{bl.domain_from_rank}</TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground">
+                              {bl.first_seen ? new Date(bl.first_seen).toLocaleDateString() : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {backlinks.length === 0 && !isLoading && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                              No backlinks found for this domain
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Competitors Tab */}
+            <TabsContent value="competitors" className="mt-6">
+              <Card className="border-violet-500/20">
+                <CardContent className="p-0">
+                  <div className="max-h-[500px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead>Competitor</TableHead>
+                          <TableHead className="text-right">Common Keywords</TableHead>
+                          <TableHead className="text-right">Unique Keywords</TableHead>
+                          <TableHead className="text-right">Organic Traffic</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {competitors.map((comp, i) => (
+                          <TableRow key={i} className="hover:bg-violet-500/5">
+                            <TableCell>
+                              <a href={`https://${comp.domain}`} target="_blank" rel="noopener noreferrer" className="text-sm text-violet-500 hover:underline flex items-center gap-1">
+                                {comp.domain}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </TableCell>
+                            <TableCell className="text-right">{formatNumber(comp.keywords_common)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(comp.keywords_unique)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(comp.organic_traffic)}</TableCell>
+                          </TableRow>
+                        ))}
+                        {competitors.length === 0 && !isLoading && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              No competitors found for this domain
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Anchors Tab */}
+            <TabsContent value="anchors" className="mt-6">
+              <Card className="border-amber-500/20">
+                <CardContent className="p-0">
+                  <div className="max-h-[500px] overflow-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead>Anchor Text</TableHead>
+                          <TableHead className="text-right">Backlinks</TableHead>
+                          <TableHead className="text-right">Ref. Domains</TableHead>
+                          <TableHead className="text-right">DoFollow</TableHead>
+                          <TableHead className="text-right">NoFollow</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {anchors.map((anchor, i) => (
+                          <TableRow key={i} className="hover:bg-amber-500/5">
+                            <TableCell className="max-w-[300px] truncate">
+                              {anchor.anchor || '(empty anchor)'}
+                            </TableCell>
+                            <TableCell className="text-right">{formatNumber(anchor.backlinks)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(anchor.referring_domains)}</TableCell>
+                            <TableCell className="text-right text-green-500">{formatNumber(anchor.dofollow)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{formatNumber(anchor.nofollow)}</TableCell>
+                          </TableRow>
+                        ))}
+                        {anchors.length === 0 && !isLoading && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                              No anchor data found for this domain
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </>
       )}
     </div>
   );

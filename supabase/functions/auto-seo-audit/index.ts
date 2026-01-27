@@ -21,7 +21,7 @@ interface AuditResult {
 }
 
 async function runAuditForDomain(domain: string, ahrefsApiKey: string): Promise<AuditResult> {
-  console.log(`[Auto-Audit] Running Ahrefs audit for domain: ${domain}`);
+  console.log(`[Auto-Audit] Running audit for domain: ${domain}`);
   
   try {
     // Clean the domain
@@ -29,81 +29,53 @@ async function runAuditForDomain(domain: string, ahrefsApiKey: string): Promise<
       .replace(/^(https?:\/\/)?(www\.)?/, '')
       .split('/')[0];
     
-    let domainRating: number | null = null;
-    let organicTraffic: number | null = null;
-    let organicKeywords: number | null = null;
-    let backlinks: number | null = null;
-    let referringDomains: number | null = null;
-    let trafficValue: number | null = null;
-    let ahrefsRank: number | null = null;
+    // Call Ahrefs API for domain metrics
+    const ahrefsUrl = `https://api.ahrefs.com/v3/site-explorer/domain-rating?target=${cleanDomain}&output=json`;
     
-    // 1. Get Domain Rating
-    try {
-      const drUrl = `https://apiv2.ahrefs.com?token=${ahrefsApiKey}&from=domain_rating&target=${cleanDomain}&mode=domain&output=json`;
-      const drResponse = await fetch(drUrl);
+    const [drResponse, metricsResponse] = await Promise.all([
+      fetch(ahrefsUrl, {
+        headers: { 'Authorization': `Bearer ${ahrefsApiKey}` }
+      }),
+      fetch(`https://api.ahrefs.com/v3/site-explorer/metrics?target=${cleanDomain}&output=json`, {
+        headers: { 'Authorization': `Bearer ${ahrefsApiKey}` }
+      })
+    ]);
+    
+    let domainRating = null;
+    let organicTraffic = null;
+    let organicKeywords = null;
+    let backlinks = null;
+    let referringDomains = null;
+    let trafficValue = null;
+    let ahrefsRank = null;
+    
+    if (drResponse.ok) {
       const drData = await drResponse.json();
-      
-      if (!drData.error && drData.domain) {
-        domainRating = drData.domain.domain_rating || null;
-      }
-    } catch (drErr) {
-      console.warn(`[Auto-Audit] Domain rating error for ${cleanDomain}:`, drErr);
+      domainRating = drData?.domain_rating || null;
+      ahrefsRank = drData?.ahrefs_rank || null;
     }
     
-    // 2. Get Backlinks Stats
-    try {
-      const backlinksUrl = `https://apiv2.ahrefs.com?token=${ahrefsApiKey}&from=backlinks_stats&target=${cleanDomain}&mode=domain&output=json`;
-      const backlinksResponse = await fetch(backlinksUrl);
-      const backlinksData = await backlinksResponse.json();
-      
-      if (!backlinksData.error && backlinksData.stats) {
-        backlinks = backlinksData.stats.live || null;
-        referringDomains = backlinksData.stats.refdomains || null;
-      }
-    } catch (backlinksErr) {
-      console.warn(`[Auto-Audit] Backlinks error for ${cleanDomain}:`, backlinksErr);
+    if (metricsResponse.ok) {
+      const metricsData = await metricsResponse.json();
+      organicTraffic = metricsData?.organic?.traffic || null;
+      organicKeywords = metricsData?.organic?.keywords || null;
+      backlinks = metricsData?.backlinks_live || null;
+      referringDomains = metricsData?.refdomains_live || null;
+      trafficValue = metricsData?.organic?.cost || null;
     }
     
-    // 3. Get Organic Keywords & Traffic
-    try {
-      const organicUrl = `https://apiv2.ahrefs.com?token=${ahrefsApiKey}&from=positions_metrics&target=${cleanDomain}&mode=domain&output=json`;
-      const organicResponse = await fetch(organicUrl);
-      const organicData = await organicResponse.json();
-      
-      if (!organicData.error && organicData.metrics) {
-        organicTraffic = organicData.metrics.traffic || null;
-        organicKeywords = organicData.metrics.positions || null;
-        trafficValue = organicData.metrics.traffic_cost || null;
-      }
-    } catch (organicErr) {
-      console.warn(`[Auto-Audit] Organic metrics error for ${cleanDomain}:`, organicErr);
-    }
-    
-    // 4. Get Ahrefs Rank
-    try {
-      const rankUrl = `https://apiv2.ahrefs.com?token=${ahrefsApiKey}&from=ahrefs_rank&target=${cleanDomain}&mode=domain&output=json`;
-      const rankResponse = await fetch(rankUrl);
-      const rankData = await rankResponse.json();
-      
-      if (!rankData.error && rankData.domain) {
-        ahrefsRank = rankData.domain.ahrefs_rank || null;
-      }
-    } catch (rankErr) {
-      console.warn(`[Auto-Audit] Ahrefs rank error for ${cleanDomain}:`, rankErr);
-    }
-    
-    console.log(`[Auto-Audit] Audit complete for ${cleanDomain}: DR=${domainRating}, Traffic=${organicTraffic}, Rank=${ahrefsRank}`);
+    console.log(`[Auto-Audit] Audit complete for ${cleanDomain}: DR=${domainRating}, Traffic=${organicTraffic}`);
     
     return {
       domain: cleanDomain,
       success: true,
       metrics: {
         domain_rating: domainRating,
-        organic_traffic: organicTraffic ? Math.round(organicTraffic) : null,
-        organic_keywords: organicKeywords ? Math.round(organicKeywords) : null,
+        organic_traffic: organicTraffic,
+        organic_keywords: organicKeywords,
         backlinks: backlinks,
         referring_domains: referringDomains,
-        traffic_value: trafficValue ? Math.round(trafficValue) : null,
+        traffic_value: trafficValue,
         ahrefs_rank: ahrefsRank,
       }
     };
@@ -132,9 +104,9 @@ Deno.serve(async (req) => {
     const ahrefsApiKey = Deno.env.get('AHREFS_API_KEY');
     
     if (!ahrefsApiKey) {
-      console.error('[Auto-Audit] Missing Ahrefs API key');
+      console.error('[Auto-Audit] Missing AHREFS_API_KEY');
       return new Response(
-        JSON.stringify({ error: 'Missing Ahrefs API key' }),
+        JSON.stringify({ error: 'Missing AHREFS_API_KEY' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -160,7 +132,7 @@ Deno.serve(async (req) => {
       if (result.success && result.metrics) {
         const slug = result.domain.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
         
-        // Upsert to saved_audits
+        // Upsert to saved_audits (no submitter_email = no free directory link)
         const { data: savedAudit, error: upsertError } = await supabase
           .from('saved_audits')
           .upsert({
@@ -207,7 +179,7 @@ Deno.serve(async (req) => {
         }
       }
     } else {
-      // Scheduled batch mode - refresh all audits older than 30 days
+      // Scheduled batch mode - refresh all audits older than 30 days (monthly comparison)
       console.log('[Auto-Audit] Batch mode - refreshing audits for monthly comparison');
       
       const thirtyDaysAgo = new Date();
@@ -217,7 +189,7 @@ Deno.serve(async (req) => {
         .from('saved_audits')
         .select('domain, slug, updated_at')
         .lt('updated_at', thirtyDaysAgo.toISOString())
-        .limit(10);
+        .limit(10); // Process 10 at a time to avoid timeout
       
       if (fetchError) {
         console.error('[Auto-Audit] Error fetching stale audits:', fetchError);
@@ -234,6 +206,7 @@ Deno.serve(async (req) => {
         results.push(result);
         
         if (result.success && result.metrics) {
+          // Get the audit ID first
           const { data: existingAudit } = await supabase
             .from('saved_audits')
             .select('id')
@@ -257,6 +230,7 @@ Deno.serve(async (req) => {
           if (updateError) {
             console.error(`[Auto-Audit] Error updating audit for ${audit.domain}:`, updateError);
           } else {
+            // Insert history snapshot for progress tracking
             const { error: historyError } = await supabase
               .from('audit_history')
               .insert({
