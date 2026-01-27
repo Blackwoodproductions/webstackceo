@@ -38,7 +38,7 @@ import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
-// FloatingChatBar removed - chat functionality disabled
+import ChatSidebar from '@/components/chat/ChatSidebar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
@@ -1693,8 +1693,22 @@ const MarketingDashboard = () => {
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
+  // Transform sessions for ChatSidebar
+  const chatVisitors = useMemo(() => {
+    return sessions.map(s => ({
+      session_id: s.session_id,
+      current_page: pageViews.find(pv => pv.session_id === s.session_id)?.page_path,
+      first_page: s.first_page || undefined,
+      started_at: s.started_at,
+      last_activity_at: s.last_activity_at,
+      referrer: s.referrer || undefined,
+    }));
+  }, [sessions, pageViews]);
+
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
+    <div className="min-h-screen bg-background relative animate-fade-in overflow-hidden flex">
+      {/* Main content area */}
+      <div className="flex-1 pt-16 px-6 md:px-10 lg:px-16 overflow-auto">
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
@@ -3612,6 +3626,10 @@ f.parentNode.insertBefore(j,f);
 
       {/* Spacer for bottom padding */}
       <div className="h-6" />
+      </div>
+      
+      {/* Chat Sidebar */}
+      <ChatSidebar visitors={chatVisitors} className="fixed right-0 top-0 h-screen z-40" />
     </div>
   );
 };
