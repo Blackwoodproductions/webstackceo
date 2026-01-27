@@ -127,6 +127,38 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
   const [isAutoConnecting, setIsAutoConnecting] = useState(!storedConnection); // Start auto-connecting if no stored connection
 
+  // Listen for auth expiry and auto-trigger re-login
+  useEffect(() => {
+    const handleAuthExpired = async () => {
+      console.log('[PPC] Google auth expired - triggering re-login popup');
+      setIsConnected(false);
+      setAccessToken(null);
+      setIsAutoConnecting(true);
+      
+      try {
+        await signInWithGoogle();
+        // After successful re-auth, check for new tokens
+        setTimeout(() => {
+          const newConnection = getStoredConnection();
+          if (newConnection) {
+            setIsConnected(true);
+            setAccessToken(newConnection.token);
+            setConnectedCustomerId(newConnection.customerId);
+            setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
+            handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
+          }
+          setIsAutoConnecting(false);
+        }, 1500);
+      } catch (err) {
+        console.error('[PPC] Re-auth failed:', err);
+        setIsAutoConnecting(false);
+      }
+    };
+
+    window.addEventListener('google-auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('google-auth-expired', handleAuthExpired);
+  }, [signInWithGoogle]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const checkAndRestore = async () => {
       const connection = getStoredConnection();
@@ -622,59 +654,58 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         /* Has unified auth but no campaigns - go directly to campaign setup */
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={handleCampaignSetupCancel} />
       ) : !accessToken && !isAutoConnecting ? (
-        /* No auth available - show login popup button */
+        /* No auth available - the dashboard will auto-trigger re-login when auth expires */
         <motion.div 
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
           className="flex flex-col items-center justify-center py-16 space-y-6"
         >
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/20 flex items-center justify-center border border-orange-500/30 shadow-lg shadow-orange-500/10">
-            <Target className="w-10 h-10 text-orange-400" />
+            {isSigningIn ? (
+              <RefreshCw className="w-10 h-10 text-orange-400 animate-spin" />
+            ) : (
+              <Target className="w-10 h-10 text-orange-400" />
+            )}
           </div>
           <div className="text-center space-y-2">
-            <h3 className="text-xl font-bold">Connect Google Ads</h3>
+            <h3 className="text-xl font-bold">
+              {isSigningIn ? 'Connecting to Google...' : 'Google Sign-in Required'}
+            </h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              Sign in with your Google account to access Google Ads, import keywords, and generate optimized landing pages.
+              {isSigningIn 
+                ? 'Please complete the sign-in in the popup window.' 
+                : 'Sign in with Google to access Google Ads and import keywords.'}
             </p>
           </div>
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-8 py-3 shadow-lg shadow-orange-500/25"
-            onClick={async () => {
-              setIsSigningIn(true);
-              try {
-                await signInWithGoogle();
-                // After login, check for token again
-                setTimeout(() => {
-                  const newConnection = getStoredConnection();
-                  if (newConnection) {
-                    setIsConnected(true);
-                    setAccessToken(newConnection.token);
-                    setConnectedCustomerId(newConnection.customerId);
-                    setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
-                    handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
-                  }
+          {!isSigningIn && (
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-8 py-3 shadow-lg shadow-orange-500/25"
+              onClick={async () => {
+                setIsSigningIn(true);
+                try {
+                  await signInWithGoogle();
+                  setTimeout(() => {
+                    const newConnection = getStoredConnection();
+                    if (newConnection) {
+                      setIsConnected(true);
+                      setAccessToken(newConnection.token);
+                      setConnectedCustomerId(newConnection.customerId);
+                      setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
+                      handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
+                    }
+                    setIsSigningIn(false);
+                  }, 1500);
+                } catch (err) {
+                  console.error('Google sign-in failed:', err);
                   setIsSigningIn(false);
-                }, 1500);
-              } catch (err) {
-                console.error('Google sign-in failed:', err);
-                setIsSigningIn(false);
-              }
-            }}
-            disabled={isSigningIn}
-          >
-            {isSigningIn ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign in with Google
-              </>
-            )}
-          </Button>
+                }
+              }}
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign in with Google
+            </Button>
+          )}
         </motion.div>
       ) : (
         /* Connected State - Google Ads Dashboard */
