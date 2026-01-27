@@ -2708,17 +2708,21 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Right Sidebar - Chat Panel - use fixed width to prevent layout thrashing */}
-        <div
-          className="flex-shrink-0 border-l border-border bg-card/50"
-          style={{ 
-            width: chatPanelOpen ? '256px' : '56px',
-            contain: 'strict',
-            willChange: 'width',
-            transition: 'width 0.15s ease-out',
-          }}
-        >
-          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+        {/* Right Sidebar - Chat Panel (overlay) - avoids reflow/flicker in header + GSC */}
+        <div className="flex-shrink-0" style={{ width: '56px' }}>
+          <div
+            className="fixed right-0 border-l border-border bg-card/50 z-40"
+            style={{
+              top: '52px',
+              height: 'calc(100vh - 140px)',
+              width: '256px',
+              transform: chatPanelOpen ? 'translateX(0px)' : 'translateX(200px)',
+              willChange: 'transform',
+              transition: 'transform 0.15s ease-out',
+              contain: 'layout paint',
+            }}
+          >
+            <div className="h-full flex flex-col">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
@@ -3185,6 +3189,7 @@ f.parentNode.insertBefore(j,f);
           </div>
         </div>
         </div>
+      </div>
       </div>
       )}
 
