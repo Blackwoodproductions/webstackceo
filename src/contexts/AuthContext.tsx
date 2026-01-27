@@ -234,7 +234,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     // Poll for popup close and wait for session
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       let resolved = false;
       
       const pollInterval = setInterval(async () => {
@@ -257,9 +257,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               await new Promise(r => setTimeout(r, 300));
             }
             
-            // If we still don't have a session, the user likely cancelled
+            // If we still don't have a session, resolve anyway (don't show error)
+            // The callback page handles the auth and will redirect appropriately
             if (!resolved) {
-              reject(new Error('Authentication cancelled or timed out'));
+              resolved = true;
+              resolve();
             }
           }
         } catch {
@@ -267,12 +269,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       }, 500);
       
-      // Timeout after 5 minutes
+      // Timeout after 5 minutes - just resolve without error
       setTimeout(() => {
         if (!resolved) {
           clearInterval(pollInterval);
           try { popup.close(); } catch {}
-          reject(new Error('Authentication timed out'));
+          resolved = true;
+          resolve();
         }
       }, 5 * 60 * 1000);
     });
