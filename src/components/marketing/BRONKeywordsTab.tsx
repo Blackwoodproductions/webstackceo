@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, Check, X, 
-  Search, ChevronDown, ChevronRight, ExternalLink, TrendingUp, Save,
-  Link2, FileText, Hash, Calendar, Globe, Layers, CornerDownRight
+  Search, ChevronDown, ChevronRight, ExternalLink, Save,
+  FileText, Hash, Calendar, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +36,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { BronKeyword } from "@/hooks/use-bron-api";
 
 interface BRONKeywordsTabProps {
@@ -49,11 +57,11 @@ interface BRONKeywordsTabProps {
   onRestore: (keywordId: string) => Promise<boolean>;
 }
 
-// Helper to detect nested/related keywords by similar prefixes
+// Group keywords by similar prefixes for nesting (supporting pages)
 function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
   const sorted = [...keywords].sort((a, b) => {
-    const aKey = (a.keywordtitle || a.keyword || '').toLowerCase();
-    const bKey = (b.keywordtitle || b.keyword || '').toLowerCase();
+    const aKey = getKeywordDisplayText(a).toLowerCase();
+    const bKey = getKeywordDisplayText(b).toLowerCase();
     return aKey.localeCompare(bKey);
   });
 
@@ -63,15 +71,15 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
   for (const kw of sorted) {
     if (used.has(kw.id)) continue;
 
-    const kwText = (kw.keywordtitle || kw.keyword || '').toLowerCase();
+    const kwText = getKeywordDisplayText(kw).toLowerCase();
     const children: BronKeyword[] = [];
 
-    // Find variations (e.g., "local seo" matches "local seo services", "local seo agency")
+    // Find variations (e.g., "Cosmetic Dentistry" matches "Best Cosmetic Dentistry", "Cosmetic Dentist")
     for (const other of sorted) {
       if (other.id === kw.id || used.has(other.id)) continue;
-      const otherText = (other.keywordtitle || other.keyword || '').toLowerCase();
+      const otherText = getKeywordDisplayText(other).toLowerCase();
       
-      // Check if other is a variation of kw (starts with kw + space)
+      // Check if other starts with kw + space (is a variation)
       if (otherText.startsWith(kwText + ' ') && otherText.length > kwText.length) {
         children.push(other);
         used.add(other.id);
@@ -85,6 +93,36 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
   return groups;
 }
 
+// Extract keyword display text
+function getKeywordDisplayText(kw: BronKeyword): string {
+  if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
+  if (kw.keyword && kw.keyword.trim()) return kw.keyword;
+  if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
+  if (kw.resfeedtext) {
+    const decoded = kw.resfeedtext
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match && h1Match[1]) return h1Match[1].trim();
+  }
+  return `Keyword #${kw.id}`;
+}
+
+// Decode HTML entities and strip tags for preview
+function decodeHtmlContent(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'").replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–').replace(/&nbsp;/g, ' ');
+}
+
+function stripHtmlTags(html: string): string {
+  return decodeHtmlContent(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export const BRONKeywordsTab = ({
   keywords,
   selectedDomain,
@@ -96,26 +134,24 @@ export const BRONKeywordsTab = ({
   onRestore,
 }: BRONKeywordsTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
-  const [editingId, setEditingId] = useState<number | string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<number | string | null>(null);
-  
-  // Form state for editing
-  const [editForm, setEditForm] = useState<Record<string, string>>({});
-  
-  // Form state for new keyword
+  const [wysiwygKeyword, setWysiwygKeyword] = useState<BronKeyword | null>(null);
   const [newKeyword, setNewKeyword] = useState("");
 
-  // Filter and group keywords
+  // WYSIWYG editor state
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Filter keywords
   const filteredKeywords = useMemo(() => {
     if (!searchQuery.trim()) return keywords;
     const q = searchQuery.toLowerCase();
     return keywords.filter(k => 
-      (k.keywordtitle || k.keyword || '').toLowerCase().includes(q) ||
-      (k.linkouturl || '').toLowerCase().includes(q) ||
-      (k.metatitle || '').toLowerCase().includes(q)
+      getKeywordDisplayText(k).toLowerCase().includes(q) ||
+      (k.metadescription || '').toLowerCase().includes(q)
     );
   }, [keywords, searchQuery]);
 
@@ -124,54 +160,55 @@ export const BRONKeywordsTab = ({
   const toggleExpand = (id: number | string) => {
     setExpandedIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        if (editingId === id) {
-          setEditingId(null);
-          setEditForm({});
-        }
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  const startEditing = (kw: BronKeyword) => {
-    setEditingId(kw.id);
+  const isDeleted = (kw: BronKeyword) => kw.deleted === 1 || kw.is_deleted === true;
+  const isActive = (kw: BronKeyword) => kw.active === 1 && !isDeleted(kw);
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'Not set';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const openWysiwyg = (kw: BronKeyword) => {
+    setWysiwygKeyword(kw);
     setEditForm({
-      keywordtitle: kw.keywordtitle || kw.keyword || '',
-      linkouturl: kw.linkouturl || '',
       metatitle: kw.metatitle || '',
       metadescription: kw.metadescription || '',
+      resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
+      linkouturl: kw.linkouturl || '',
       resaddress: kw.resaddress || '',
       resfb: kw.resfb || '',
     });
   };
 
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditForm({});
-  };
-
-  const saveChanges = async (id: number | string) => {
-    setSavingId(id);
+  const saveWysiwygChanges = async () => {
+    if (!wysiwygKeyword) return;
+    setIsSaving(true);
     try {
-      const success = await onUpdate(String(id), {
-        keywordtitle: editForm.keywordtitle || undefined,
-        linkouturl: editForm.linkouturl || undefined,
+      const success = await onUpdate(String(wysiwygKeyword.id), {
         metatitle: editForm.metatitle || undefined,
         metadescription: editForm.metadescription || undefined,
+        resfeedtext: editForm.resfeedtext || undefined,
+        linkouturl: editForm.linkouturl || undefined,
         resaddress: editForm.resaddress || undefined,
         resfb: editForm.resfb || undefined,
       });
       if (success) {
-        setEditingId(null);
+        setWysiwygKeyword(null);
         setEditForm({});
         onRefresh();
       }
     } finally {
-      setSavingId(null);
+      setIsSaving(false);
     }
   };
 
@@ -194,492 +231,291 @@ export const BRONKeywordsTab = ({
     onRefresh();
   };
 
-  // Extract keyword text - try keywordtitle, keyword, metatitle, or parse from resfeedtext HTML
-  const getKeywordText = (kw: BronKeyword) => {
-    if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
-    if (kw.keyword && kw.keyword.trim()) return kw.keyword;
-    // Use metatitle as the keyword name (this is typically the target keyword)
-    if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
-    // Try to extract from resfeedtext HTML (first h1 or h3 text)
-    if (kw.resfeedtext) {
-      // Decode HTML entities first
-      const decoded = kw.resfeedtext
-        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'");
-      // Try h1 first, then h3
-      const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-      if (h1Match && h1Match[1]) return h1Match[1].trim();
-      const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
-      if (h3Match && h3Match[1]) return h3Match[1].trim();
-    }
-    return `Keyword #${kw.id}`;
-  };
-  const isDeleted = (kw: BronKeyword) => kw.deleted === 1 || kw.is_deleted === true;
-  const isActive = (kw: BronKeyword) => kw.active === 1 && !isDeleted(kw);
-
-  const renderKeywordRow = (kw: BronKeyword, isChild = false, parentExpanded = false) => {
+  // Render a keyword row
+  const renderKeywordRow = (kw: BronKeyword, isChild = false) => {
     const expanded = expandedIds.has(kw.id);
-    const isEditing = editingId === kw.id;
-    const isSaving = savingId === kw.id;
     const deleted = isDeleted(kw);
     const active = isActive(kw);
 
     return (
       <motion.div
         key={kw.id}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={`
-          ${isChild ? 'ml-8 border-l-2 border-violet-500/30 pl-4' : ''}
-          ${deleted ? 'opacity-50' : ''}
-        `}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={deleted ? 'opacity-50' : ''}
       >
-        <Collapsible open={expanded} onOpenChange={() => toggleExpand(kw.id)}>
-          <div className={`
-            group flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer
-            ${expanded ? 'bg-violet-500/10 border-violet-500/40' : 'bg-secondary/30 border-border hover:border-violet-500/30 hover:bg-violet-500/5'}
-          `}>
-            {/* Expand/Collapse */}
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
-                {expanded ? (
-                  <ChevronDown className="w-4 h-4 text-violet-400" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-
-            {/* Icon */}
-            <div className={`
-              w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-              ${isChild 
-                ? 'bg-gradient-to-br from-violet-500/10 to-purple-500/10' 
-                : 'bg-gradient-to-br from-violet-500/20 to-purple-500/20'
-              }
-            `}>
-              {isChild ? (
-                <CornerDownRight className="w-4 h-4 text-violet-400/70" />
-              ) : (
-                <TrendingUp className="w-4 h-4 text-violet-400" />
-              )}
-            </div>
-
-            {/* Keyword title */}
-            <div className="flex-1 min-w-0" onClick={() => toggleExpand(kw.id)}>
-              <div className="flex items-center gap-2">
-                <span className={`font-medium truncate ${isChild ? 'text-sm' : ''}`}>
-                  {getKeywordText(kw)}
-                </span>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-violet-500/10 text-violet-400 border-violet-500/30">
-                  ID: {kw.id}
-                </Badge>
-                {deleted && (
-                  <Badge variant="destructive" className="text-[10px]">Deleted</Badge>
-                )}
-                {!deleted && (
-                  <Badge className={`text-[10px] ${active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                    {active ? 'Active' : 'Inactive'}
-                  </Badge>
-                )}
-              </div>
-              {kw.linkouturl && (
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                  {kw.linkouturl}
-                </p>
-              )}
-            </div>
-
-            {/* Quick actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {!deleted ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 hover:bg-violet-500/20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!expanded) toggleExpand(kw.id);
-                      startEditing(kw);
-                    }}
-                  >
-                    <Edit2 className="w-3.5 h-3.5 text-violet-400" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 hover:bg-destructive/20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirm(String(kw.id));
-                    }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 hover:bg-emerald-500/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRestore(String(kw.id));
-                  }}
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400 mr-1" />
-                  <span className="text-xs text-emerald-400">Restore</span>
-                </Button>
-              )}
-            </div>
+        {/* Main Row */}
+        <div 
+          className={`
+            flex items-center gap-4 py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer
+            ${isChild ? 'pl-12' : ''}
+            ${expanded ? 'bg-primary/5' : ''}
+          `}
+          onClick={() => toggleExpand(kw.id)}
+        >
+          {/* Expand icon */}
+          <div className="w-6 flex-shrink-0">
+            {expanded ? (
+              <ChevronDown className="w-4 h-4 text-primary" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            )}
           </div>
 
-          {/* Expanded content - All fields */}
-          <CollapsibleContent>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-2 p-4 rounded-lg bg-card border border-violet-500/20 space-y-4"
+          {/* Keyword Name */}
+          <div className="flex-1 min-w-0">
+            <span className={`font-medium ${isChild ? 'text-sm text-muted-foreground' : ''}`}>
+              {getKeywordDisplayText(kw)}
+            </span>
+          </div>
+
+          {/* Status */}
+          <div className="w-32 flex-shrink-0">
+            <Badge 
+              className={`
+                text-xs px-3 py-1
+                ${active ? 'bg-blue-500/80 hover:bg-blue-500/80 text-white' : 'bg-muted text-muted-foreground'}
+              `}
             >
-              {/* Field Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Keyword Title */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Key className="w-3 h-3" /> Keyword Title
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      value={editForm.keywordtitle || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, keywordtitle: e.target.value }))}
-                      className="h-8 text-sm bg-secondary/50"
-                    />
-                  ) : (
-                    <p className="text-sm font-medium px-3 py-1.5 rounded bg-secondary/50">
-                      {getKeywordText(kw)}
-                    </p>
-                  )}
-                </div>
+              {deleted ? 'Deleted' : active ? 'Good' : 'Inactive'}
+            </Badge>
+          </div>
 
-                {/* Link Out URL */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Link2 className="w-3 h-3" /> Link Out URL
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      value={editForm.linkouturl || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, linkouturl: e.target.value }))}
-                      placeholder="https://..."
-                      className="h-8 text-sm bg-secondary/50"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm px-3 py-1.5 rounded bg-secondary/50 truncate flex-1">
-                        {kw.linkouturl || <span className="text-muted-foreground italic">Not set</span>}
-                      </p>
-                      {kw.linkouturl && (
-                        <a href={kw.linkouturl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Button>
-                        </a>
-                      )}
+          {/* Last Edited */}
+          <div className="w-28 flex-shrink-0 text-sm text-muted-foreground">
+            {formatDate(kw.createdDate)}
+          </div>
+
+          {/* Action */}
+          <div className="w-20 flex-shrink-0 flex justify-end">
+            {!deleted ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openWysiwyg(kw);
+                }}
+              >
+                <Edit2 className="w-3.5 h-3.5 mr-1" />
+                Edit
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-emerald-400 hover:text-emerald-300"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRestore(String(kw.id));
+                }}
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                Restore
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Expanded Content */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className={`py-4 px-4 bg-card/50 border-b border-border/50 space-y-4 ${isChild ? 'pl-12' : ''}`}>
+                {/* Meta Description */}
+                {kw.metadescription && (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                      <FileText className="w-3.5 h-3.5" />
+                      Meta Description
                     </div>
-                  )}
-                </div>
-
-                {/* Meta Title */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <FileText className="w-3 h-3" /> Meta Title
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      value={editForm.metatitle || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, metatitle: e.target.value }))}
-                      placeholder="SEO meta title..."
-                      className="h-8 text-sm bg-secondary/50"
-                    />
-                  ) : (
-                    <p className="text-sm px-3 py-1.5 rounded bg-secondary/50 truncate">
-                      {kw.metatitle || <span className="text-muted-foreground italic">Not set</span>}
-                    </p>
-                  )}
-                </div>
-
-                {/* Res Address */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Globe className="w-3 h-3" /> Resource Address
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      value={editForm.resaddress || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, resaddress: e.target.value }))}
-                      placeholder="Resource address..."
-                      className="h-8 text-sm bg-secondary/50"
-                    />
-                  ) : (
-                    <p className="text-sm px-3 py-1.5 rounded bg-secondary/50 truncate">
-                      {kw.resaddress || <span className="text-muted-foreground italic">Not set</span>}
-                    </p>
-                  )}
-                </div>
-
-                {/* Res FB */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Hash className="w-3 h-3" /> Resource FB
-                  </Label>
-                  {isEditing ? (
-                    <Input
-                      value={editForm.resfb || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, resfb: e.target.value }))}
-                      placeholder="FB resource..."
-                      className="h-8 text-sm bg-secondary/50"
-                    />
-                  ) : (
-                    <p className="text-sm px-3 py-1.5 rounded bg-secondary/50 truncate">
-                      {kw.resfb || <span className="text-muted-foreground italic">Not set</span>}
-                    </p>
-                  )}
-                </div>
-
-                {/* Created Date */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3" /> Created Date
-                  </Label>
-                  <p className="text-sm px-3 py-1.5 rounded bg-secondary/50">
-                    {kw.createdDate ? new Date(kw.createdDate).toLocaleDateString() : 'Unknown'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Meta Description - Full width */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <FileText className="w-3 h-3" /> Meta Description
-                </Label>
-                {isEditing ? (
-                  <Textarea
-                    value={editForm.metadescription || ''}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, metadescription: e.target.value }))}
-                    placeholder="SEO meta description..."
-                    className="text-sm bg-secondary/50 min-h-[80px]"
-                  />
-                ) : (
-                  <p className="text-sm px-3 py-2 rounded bg-secondary/50 min-h-[60px]">
-                    {kw.metadescription || <span className="text-muted-foreground italic">Not set</span>}
-                  </p>
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-sm leading-relaxed">
+                      {kw.metadescription}
+                    </div>
+                  </div>
                 )}
-              </div>
 
-              {/* Content Preview (resfeedtext) - Collapsible */}
-              {kw.resfeedtext && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <FileText className="w-3 h-3" /> Generated Content Preview
-                  </Label>
-                  <div 
-                    className="text-sm px-3 py-2 rounded bg-secondary/50 max-h-[200px] overflow-y-auto prose prose-sm prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: kw.resfeedtext
-                        .replace(/&lt;/g, '<')
-                        .replace(/&gt;/g, '>')
-                        .replace(/&#39;/g, "'")
-                        .replace(/&amp;/g, '&')
-                    }}
-                  />
+                {/* Generated Content Preview */}
+                {kw.resfeedtext && (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                      <Eye className="w-3.5 h-3.5" />
+                      Generated Content Preview
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-sm leading-relaxed max-h-48 overflow-y-auto">
+                      {stripHtmlTags(kw.resfeedtext).slice(0, 800)}
+                      {stripHtmlTags(kw.resfeedtext).length > 800 && '...'}
+                    </div>
+                  </div>
+                )}
+
+                {/* Meta info row */}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
+                  <span className="flex items-center gap-1">
+                    <Hash className="w-3 h-3" />
+                    Domain ID: {kw.domainid}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    Active: {active ? 'Yes' : 'No'}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" />
+                    Deleted: {deleted ? 'Yes' : 'No'}
+                  </span>
                 </div>
-              )}
 
-              {/* Read-only metadata */}
-              <Separator className="bg-border/50" />
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Hash className="w-3 h-3" /> Domain ID: {kw.domainid || 'N/A'}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Layers className="w-3 h-3" /> Active: {kw.active === 1 ? 'Yes' : 'No'}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Trash2 className="w-3 h-3" /> Deleted: {kw.deleted === 1 ? 'Yes' : 'No'}
-                </span>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex justify-end gap-2 pt-2">
-                {isEditing ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={cancelEditing}
-                      disabled={isSaving}
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => saveChanges(kw.id)}
-                      disabled={isSaving}
-                      className="bg-gradient-to-r from-violet-500 to-purple-500"
-                    >
-                      {isSaving ? (
-                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4 mr-1" />
-                      )}
-                      Save Changes
-                    </Button>
-                  </>
-                ) : (
+                {/* Edit All Fields Button */}
+                <div className="flex justify-end pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => startEditing(kw)}
-                    className="border-violet-500/30 hover:bg-violet-500/10"
+                    className="border-primary/50 hover:border-primary hover:bg-primary/10"
+                    onClick={() => openWysiwyg(kw)}
                   >
-                    <Edit2 className="w-4 h-4 mr-1" />
+                    <Edit2 className="w-4 h-4 mr-2" />
                     Edit All Fields
                   </Button>
-                )}
+                </div>
               </div>
             </motion.div>
-          </CollapsibleContent>
-        </Collapsible>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   };
+
+  if (isLoading && keywords.length === 0) {
+    return (
+      <Card className="border-border/50 bg-card/50">
+        <CardContent className="p-6 space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      className="space-y-4"
     >
-      <Card className="border-violet-500/20 bg-gradient-to-br from-background to-violet-500/5">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Key className="w-5 h-5 text-violet-400" />
-              Keywords
-              {selectedDomain && (
-                <Badge variant="secondary" className="text-xs ml-2">{selectedDomain}</Badge>
-              )}
-              <Badge variant="outline" className="text-xs ml-1 bg-violet-500/10 text-violet-400">
-                {keywords.length} total
-              </Badge>
-            </CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search keywords..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-48 h-9 bg-secondary/50"
-              />
+      {/* Header */}
+      <Card className="border-border/50 bg-card/50">
+        <CardHeader className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
+                <Key className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Keywords
+                  {selectedDomain && (
+                    <Badge variant="outline" className="text-xs font-normal">
+                      {selectedDomain}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="text-xs">
+                    {keywords.length} total
+                  </Badge>
+                </CardTitle>
+              </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowAddModal(true)}
-              className="border-violet-500/30 hover:bg-violet-500/10"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="border-violet-500/30 hover:bg-violet-500/10"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading && keywords.length === 0 ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : groupedKeywords.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>No keywords found</p>
-              <p className="text-sm mt-1">Add keywords to start tracking</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowAddModal(true)}
-                className="mt-4"
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search keywords..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 w-48 bg-background/50"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Keyword
+                <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowAddModal(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add
               </Button>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <AnimatePresence>
-                {groupedKeywords.map(({ parent, children }) => (
-                  <div key={parent.id} className="space-y-1">
-                    {/* Parent keyword */}
-                    {renderKeywordRow(parent, false)}
-                    
-                    {/* Child/nested keywords */}
-                    {children.length > 0 && (
-                      <div className="space-y-1">
-                        {children.map(child => renderKeywordRow(child, true, expandedIds.has(parent.id)))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-        </CardContent>
+          </div>
+        </CardHeader>
       </Card>
 
-      {/* Add Keyword Modal */}
+      {/* Keywords Table */}
+      <Card className="border-border/50 bg-card/50 overflow-hidden">
+        {/* Table Header */}
+        <div className="flex items-center gap-4 py-3 px-4 bg-muted/30 border-b border-border font-medium text-sm text-muted-foreground">
+          <div className="w-6 flex-shrink-0" />
+          <div className="flex-1">Keyword</div>
+          <div className="w-32 flex-shrink-0">Keywords Status</div>
+          <div className="w-28 flex-shrink-0">Last Edited</div>
+          <div className="w-20 flex-shrink-0 text-right">Action</div>
+        </div>
+
+        {/* Keywords List */}
+        <div className="max-h-[600px] overflow-y-auto">
+          {groupedKeywords.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              {searchQuery ? 'No keywords match your search.' : 'No keywords found for this domain.'}
+            </div>
+          ) : (
+            groupedKeywords.map(({ parent, children }) => (
+              <div key={parent.id}>
+                {renderKeywordRow(parent, false)}
+                {children.map(child => renderKeywordRow(child, true))}
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+
+      {/* Add Keyword Dialog */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Add New Keyword</DialogTitle>
             <DialogDescription>
-              Add a keyword to track rankings and link placements.
+              Enter the keyword to track for {selectedDomain || 'this domain'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-keyword">Keyword *</Label>
-              <Input
-                id="new-keyword"
-                placeholder="e.g., best local seo services"
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                className="bg-secondary/50"
-              />
-            </div>
+          <div className="py-4">
+            <Label htmlFor="newKeyword">Keyword</Label>
+            <Input
+              id="newKeyword"
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              placeholder="Enter keyword..."
+              className="mt-2"
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button 
-              onClick={handleAddKeyword}
-              disabled={!newKeyword.trim()}
-              className="bg-gradient-to-r from-violet-500 to-purple-500"
-            >
+            <Button variant="outline" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddKeyword} disabled={!newKeyword.trim()}>
+              <Plus className="w-4 h-4 mr-1" />
               Add Keyword
             </Button>
           </DialogFooter>
@@ -690,23 +526,149 @@ export const BRONKeywordsTab = ({
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Keyword?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this keyword? 
-              This is a soft delete and can be restored later.
+              Are you sure you want to delete this keyword? This action can be undone by restoring it later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* WYSIWYG Editor Modal */}
+      <Dialog open={!!wysiwygKeyword} onOpenChange={() => setWysiwygKeyword(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="w-5 h-5" />
+              Edit Keyword Content
+            </DialogTitle>
+            <DialogDescription>
+              Edit all fields for: {wysiwygKeyword && getKeywordDisplayText(wysiwygKeyword)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-6 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Left: Form Fields */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Meta Title</Label>
+                <Input
+                  value={editForm.metatitle || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, metatitle: e.target.value }))}
+                  placeholder="Meta title..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Meta Description</Label>
+                <Textarea
+                  value={editForm.metadescription || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, metadescription: e.target.value }))}
+                  placeholder="Meta description..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Link Out URL</Label>
+                <Input
+                  value={editForm.linkouturl || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, linkouturl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Resource Address</Label>
+                <Input
+                  value={editForm.resaddress || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, resaddress: e.target.value }))}
+                  placeholder="Resource address..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Facebook URL</Label>
+                <Input
+                  value={editForm.resfb || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, resfb: e.target.value }))}
+                  placeholder="https://facebook.com/..."
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Content HTML</Label>
+                <Textarea
+                  value={editForm.resfeedtext || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, resfeedtext: e.target.value }))}
+                  placeholder="HTML content..."
+                  rows={10}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Right: Live Preview */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                Live Preview
+              </Label>
+              <div 
+                ref={editorRef}
+                className="h-full min-h-[400px] max-h-[500px] overflow-y-auto p-4 rounded-lg border border-border bg-white text-black"
+                style={{ fontFamily: 'Georgia, serif' }}
+              >
+                {/* Preview Header */}
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                    {editForm.metatitle || 'Page Title'}
+                  </h1>
+                  <p className="text-sm text-gray-600 italic">
+                    {editForm.metadescription || 'Meta description will appear here...'}
+                  </p>
+                </div>
+                
+                {/* Preview Content */}
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ 
+                    __html: editForm.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" onClick={() => setWysiwygKeyword(null)}>
+              <X className="w-4 h-4 mr-1" />
+              Cancel
+            </Button>
+            <Button onClick={saveWysiwygChanges} disabled={isSaving}>
+              {isSaving ? (
+                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
+
+export default BRONKeywordsTab;
