@@ -38,7 +38,7 @@ import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
-// FloatingChatBar removed - chat functionality disabled
+import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
@@ -1695,6 +1695,11 @@ const MarketingDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
+      {/* Chat Sidebar */}
+      <ChatSidebar 
+        isOnline={chatOnline} 
+        onNewChat={() => setHasNewMessage(true)} 
+      />
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
