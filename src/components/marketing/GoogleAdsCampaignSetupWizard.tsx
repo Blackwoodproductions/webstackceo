@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   CheckCircle, Globe, Target, Plus, Trash2, DollarSign, Zap, ArrowRight, RefreshCw,
-  AlertCircle, Lightbulb, Building, User, Sparkles
+  AlertCircle, Lightbulb, Building, User, Sparkles, ArrowLeft
 } from 'lucide-react';
 
 // Google Ads icon component
@@ -376,8 +376,12 @@ export function GoogleAdsCampaignSetupWizard({
                     Continue <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                   
-                  <button onClick={onCancel} className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-1">
-                    Cancel
+                  <button 
+                    onClick={onCancel} 
+                    className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground py-1.5"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    Back to Dashboard
                   </button>
                 </>
               )}
@@ -581,11 +585,15 @@ export function GoogleAdsCampaignSetupWizard({
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      {currentStep < 3 && (
-        <div className="relative px-4 pb-2 text-center">
-          <button onClick={onCancel} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            Cancel
+      {/* Footer - Back to Dashboard */}
+      {currentStep < 3 && currentStep > 0 && (
+        <div className="relative px-4 pb-3 text-center">
+          <button 
+            onClick={onCancel} 
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            Back to Dashboard
           </button>
         </div>
       )}
