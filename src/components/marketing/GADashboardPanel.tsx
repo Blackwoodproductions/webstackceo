@@ -1148,10 +1148,6 @@ export const GADashboardPanel = ({
                   <CardDescription className="text-xs">One more step to complete your connection</CardDescription>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-muted-foreground/30 text-muted-foreground hover:bg-muted h-8">
-                <X className="w-3 h-3 mr-1" />
-                Disconnect
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="relative z-10">
@@ -1233,10 +1229,6 @@ export const GADashboardPanel = ({
                 <CardDescription className="text-xs text-destructive">Error loading properties</CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
-              <X className="w-3 h-3 mr-1" />
-              Disconnect
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="relative z-10">
@@ -1299,10 +1291,6 @@ export const GADashboardPanel = ({
                 <CardDescription className="text-xs">No properties found in your account</CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
-              <X className="w-3 h-3 mr-1" />
-              Disconnect
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="relative z-10">
@@ -1386,10 +1374,6 @@ export const GADashboardPanel = ({
                 </CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-8">
-              <X className="w-3 h-3 mr-1" />
-              Disconnect
-            </Button>
           </div>
         </CardHeader>
         
