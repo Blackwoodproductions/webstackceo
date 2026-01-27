@@ -11,7 +11,6 @@ import {
   ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock, Minimize2, Maximize2
 } from 'lucide-react';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
-import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 import { GoogleAdsMetricsDashboard } from './GoogleAdsMetricsDashboard';
 
 interface Keyword {
@@ -121,16 +120,74 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   const [accessToken, setAccessToken] = useState<string | null>(storedConnection?.token || null);
   const [isUnifiedAuth, setIsUnifiedAuth] = useState(storedConnection?.isUnifiedAuth || false);
   const [isCheckingAccount, setIsCheckingAccount] = useState(false);
+  const [isAutoConnecting, setIsAutoConnecting] = useState(!storedConnection); // Start auto-connecting if no stored connection
 
   useEffect(() => {
-    const checkAndRestore = () => {
+    const checkAndRestore = async () => {
       const connection = getStoredConnection();
       if (connection && !hasOAuthCallback()) {
         setIsConnected(true);
         setAccessToken(connection.token);
         setConnectedCustomerId(connection.customerId);
         setIsUnifiedAuth(connection.isUnifiedAuth || false);
+        setIsAutoConnecting(false);
         handleFetchKeywordsWithToken(connection.token, connection.customerId);
+      } else if (!hasOAuthCallback()) {
+        // No stored connection - try to auto-connect using unified auth
+        setIsAutoConnecting(true);
+        
+        // Check for unified Google auth tokens
+        const unifiedToken = localStorage.getItem('unified_google_token') || 
+                             localStorage.getItem('gsc_access_token') || 
+                             localStorage.getItem('ga_access_token');
+        const unifiedExpiry = localStorage.getItem('unified_google_expiry') ||
+                              localStorage.getItem('gsc_token_expiry') || 
+                              localStorage.getItem('ga_token_expiry');
+        
+        if (unifiedToken && unifiedExpiry) {
+          const expiryTime = parseInt(unifiedExpiry, 10);
+          if (Date.now() < expiryTime - 300000) {
+            // Valid unified token - auto-connect
+            console.log('[PPC] Auto-connecting with unified Google auth...');
+            localStorage.setItem('google_ads_access_token', unifiedToken);
+            localStorage.setItem('google_ads_token_expiry', unifiedExpiry);
+            setAccessToken(unifiedToken);
+            setConnectedCustomerId('unified-auth');
+            setIsUnifiedAuth(true);
+            setIsConnected(true);
+            setIsAutoConnecting(false);
+            handleFetchKeywordsWithToken(unifiedToken, 'unified-auth');
+            return;
+          }
+        }
+        
+        // Check for Supabase session token
+        const oauthTokenData = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+        if (oauthTokenData) {
+          try {
+            const parsed = JSON.parse(oauthTokenData);
+            const providerToken = parsed?.provider_token;
+            const expiresAt = parsed?.expires_at;
+            
+            if (providerToken && expiresAt && Date.now() / 1000 < expiresAt - 300) {
+              console.log('[PPC] Auto-connecting with Supabase provider token...');
+              localStorage.setItem('google_ads_access_token', providerToken);
+              localStorage.setItem('google_ads_token_expiry', String(expiresAt * 1000));
+              setAccessToken(providerToken);
+              setConnectedCustomerId('unified-auth');
+              setIsUnifiedAuth(true);
+              setIsConnected(true);
+              setIsAutoConnecting(false);
+              handleFetchKeywordsWithToken(providerToken, 'unified-auth');
+              return;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+        
+        // No valid token found - still set auto-connecting to false
+        setIsAutoConnecting(false);
       }
     };
     checkAndRestore();
@@ -142,6 +199,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         setAccessToken(newConnection.token);
         setConnectedCustomerId(newConnection.customerId);
         setIsUnifiedAuth(newConnection.isUnifiedAuth || false);
+        setIsAutoConnecting(false);
         handleFetchKeywordsWithToken(newConnection.token, newConnection.customerId);
       }
     };
@@ -493,8 +551,19 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </div>
       </header>
 
-      {/* Loading State */}
-      {isCheckingAccount && accessToken ? (
+      {/* Auto-connecting State */}
+      {isAutoConnecting ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center"><Target className="w-6 h-6 text-orange-500" /></div>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Connecting to Google Ads</h3>
+            <p className="text-sm text-muted-foreground">Using your existing Google authentication...</p>
+          </div>
+        </motion.div>
+      ) : isCheckingAccount && accessToken ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 space-y-4">
           <div className="relative">
             <div className="w-16 h-16 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
@@ -510,13 +579,23 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       ) : accessToken && hasCampaigns === false && !keywords.length ? (
         /* Has unified auth but no campaigns - go directly to campaign setup */
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={handleCampaignSetupCancel} />
-      ) : !accessToken ? (
-        /* Only show OAuth wizard if truly not authenticated */
-        <GoogleAdsOnboardingWizard 
-          domain={selectedDomain || ''} 
-          onComplete={handleWizardComplete} 
-          onSkip={handleSkipWizard} 
-        />
+      ) : !accessToken && !isAutoConnecting ? (
+        /* No auth available - show message to login via dashboard */
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="flex flex-col items-center justify-center py-16 space-y-4"
+        >
+          <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/30">
+            <Target className="w-8 h-8 text-orange-400" />
+          </div>
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold">Sign in to Access Google Ads</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Sign in with Google from the main dashboard to connect your Google Ads account and import keywords.
+            </p>
+          </div>
+        </motion.div>
       ) : (
         /* Connected State - Google Ads Dashboard */
         <GoogleAdsMetricsDashboard
