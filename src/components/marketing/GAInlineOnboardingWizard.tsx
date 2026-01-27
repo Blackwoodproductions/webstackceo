@@ -38,6 +38,14 @@ export const GAInlineOnboardingWizard = ({
 
   const normalizedDomain = normalizeDomain(domain);
 
+  // Filter properties to only show ones matching the selected domain
+  const matchingProperties = properties.filter((prop) => {
+    const propName = prop.displayName.toLowerCase();
+    return propName.includes(normalizedDomain) || normalizedDomain.includes(propName.replace(/\s+-\s+ga4$/i, '').trim());
+  });
+
+  const hasMatchingProperty = matchingProperties.length > 0;
+
   const getTrackingCode = (measurementId: string = "G-XXXXXXXXXX") => {
     return `<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>
@@ -62,8 +70,6 @@ export const GAInlineOnboardingWizard = ({
     toast({ title: "Copied!" });
     setTimeout(() => setCopiedUrl(false), 2000);
   };
-
-  const hasProperties = properties.length > 0;
 
   return (
     <motion.div
@@ -109,7 +115,7 @@ export const GAInlineOnboardingWizard = ({
                 </Badge>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                {hasProperties ? "Select a property to connect" : "No GA4 properties found"}
+                {hasMatchingProperty ? "Select a property to connect" : "Domain not found in GA4"}
               </p>
             </div>
           </div>
@@ -126,11 +132,11 @@ export const GAInlineOnboardingWizard = ({
         </div>
 
         {/* Properties Selection Grid */}
-        {hasProperties ? (
+        {hasMatchingProperty ? (
           <div className="space-y-3">
-            {/* Property Cards */}
+            {/* Property Cards - Only show matching properties */}
             <div className="grid gap-2">
-              {properties.map((prop, i) => {
+              {matchingProperties.map((prop, i) => {
                 const isSelected = selectedProperty === prop.name;
                 const propId = prop.name.replace("properties/", "");
                 
@@ -277,31 +283,34 @@ export const GAInlineOnboardingWizard = ({
             )}
           </div>
         ) : (
-          /* No Properties - Show create prompt */
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border/30 text-center">
+          /* Domain not found in any property - Show add to GA prompt */
+          <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30 text-center">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
-              <BarChart3 className="w-5 h-5 text-amber-500" />
+              <Globe className="w-5 h-5 text-amber-500" />
             </div>
+            <h4 className="text-sm font-semibold text-foreground mb-1">
+              Domain Not Found
+            </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              No GA4 properties found in your account. Create one to start tracking.
+              <span className="text-amber-400 font-medium">{normalizedDomain}</span> is not linked to any GA4 property in your account.
             </p>
-            <div className="flex justify-center gap-2">
+            <div className="flex flex-col gap-2">
               <Button
                 size="sm"
-                className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white w-full"
                 onClick={() => window.open("https://analytics.google.com/analytics/web/#/admin/create-property", "_blank")}
               >
-                Create GA4 Property
+                Create GA4 Property for {normalizedDomain}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs"
+                className="h-7 text-xs w-full"
                 onClick={onRefresh}
                 disabled={isRefreshing}
               >
                 <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
+                Refresh After Adding
               </Button>
             </div>
           </div>
