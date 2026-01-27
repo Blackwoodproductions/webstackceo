@@ -282,37 +282,54 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
             : isWaitingForLogin
-              ? "Please complete the login in the popup window. It will close automatically once you're logged in."
+              ? "Please complete the login in the popup window. Once logged in, click 'I'm Logged In' or close the popup."
               : "Opening BRON login window..."}
         </p>
       </div>
 
-      {(isWaitingForLogin || popupBlocked) && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            const focused = focusPopup();
-            if (!focused) {
-              const opened = openPopup();
-              if (!opened) {
-                toast({
-                  title: "Popup Blocked",
-                  description: "Please allow popups for this site and try again.",
-                  variant: "destructive",
-                });
+      <div className="flex items-center gap-3">
+        {(isWaitingForLogin || popupBlocked) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const focused = focusPopup();
+              if (!focused) {
+                const opened = openPopup();
+                if (!opened) {
+                  toast({
+                    title: "Popup Blocked",
+                    description: "Please allow popups for this site and try again.",
+                    variant: "destructive",
+                  });
+                }
               }
-            }
-          }}
-          className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-        >
-          {isWaitingForLogin ? "Focus Login Window" : "Open Login"}
-        </Button>
-      )}
+            }}
+            className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+          >
+            {isWaitingForLogin ? "Focus Login Window" : "Open Login"}
+          </Button>
+        )}
+        
+        {isWaitingForLogin && (
+          <Button
+            size="sm"
+            onClick={() => {
+              // User manually confirms login - close popup and proceed
+              console.log("[BRON] User manually confirmed login");
+              setAuthenticated();
+            }}
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Check className="w-4 h-4" />
+            I'm Logged In
+          </Button>
+        )}
+      </div>
 
       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Sparkles className="w-3 h-3 text-emerald-400" />
-        The popup will close automatically after login
+        Click "I'm Logged In" after completing login in the popup
       </p>
     </motion.div>
   );
