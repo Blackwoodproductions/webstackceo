@@ -25,22 +25,31 @@ export function useBronApiAuth({
   const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
 
-  // Trigger login success with optional token
-  const triggerLoginSuccess = useCallback((bronToken?: string | null) => {
+  // Trigger login success with optional token - redirect popup to wrapper instead of closing
+  const triggerLoginSuccess = useCallback((bronToken?: string | null, domainId?: string | null) => {
     if (hasTriggeredLogin.current) return;
     hasTriggeredLogin.current = true;
 
-    console.log("[BRON Auth] Login confirmed, token received:", !!bronToken);
+    console.log("[BRON Auth] Login confirmed, redirecting popup to wrapper. Token:", !!bronToken, "DomainId:", domainId);
 
-    // Close popup if still open
+    // Redirect popup to our wrapper page instead of closing it
     if (popupRef.current && !popupRef.current.closed) {
       try {
-        popupRef.current.close();
-      } catch {
-        // ignore
+        const wrapperUrl = new URL("/bron-dashboard", window.location.origin);
+        if (domainId) {
+          wrapperUrl.searchParams.set("domain_id", domainId);
+        }
+        if (bronToken) {
+          wrapperUrl.searchParams.set("token", bronToken);
+        }
+        popupRef.current.location.href = wrapperUrl.toString();
+        console.log("[BRON Auth] Redirected popup to:", wrapperUrl.toString());
+      } catch (e) {
+        console.error("[BRON Auth] Failed to redirect popup:", e);
       }
     }
-    popupRef.current = null;
+    // Keep popup reference - don't nullify
+    // popupRef.current = null;
 
     // Stop checking
     if (checkIntervalRef.current) {
@@ -145,9 +154,9 @@ export function useBronApiAuth({
                          url.searchParams.get("access_token");
             
             console.log("[BRON Auth] Extracted domainId:", domainId, "token:", !!token);
-            triggerLoginSuccess(token || domainId);
+            triggerLoginSuccess(token, domainId);
           } catch {
-            triggerLoginSuccess(domainId);
+            triggerLoginSuccess(null, domainId);
           }
           return;
         }
