@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, Check, X, 
   Search, ChevronDown, ChevronRight, ExternalLink, Save,
-  FileText, Hash, Calendar, Eye
+  FileText, Hash, Calendar, Eye, Minimize2, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -328,7 +328,22 @@ export const BRONKeywordsTab = ({
               className="overflow-hidden"
             >
               <div className={`py-4 px-4 bg-card/50 border-b border-border/50 space-y-4 ${isChild ? 'pl-12' : ''}`}>
-                {/* Meta Description */}
+                {/* Minimize Header */}
+                <div className="flex items-center justify-between -mt-2 mb-2">
+                  <span className="text-xs text-muted-foreground">Keyword Details</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(kw.id);
+                    }}
+                  >
+                    <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                    Minimize
+                  </Button>
+                </div>
                 {kw.metadescription && (
                   <div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
@@ -371,8 +386,20 @@ export const BRONKeywordsTab = ({
                   </span>
                 </div>
 
-                {/* Edit All Fields Button */}
-                <div className="flex justify-end pt-2">
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-3 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(kw.id);
+                    }}
+                  >
+                    <Minimize2 className="w-4 h-4 mr-1" />
+                    Collapse
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
