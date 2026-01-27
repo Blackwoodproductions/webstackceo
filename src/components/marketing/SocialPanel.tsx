@@ -218,61 +218,86 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     <div className="relative space-y-6">
       <VIDashboardEffects />
       
-      {/* Header with scan status */}
+      {/* Header with scan status and compact platform carousel */}
       <div className="relative z-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-3">
-              <motion.div 
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center"
-                animate={{ rotate: isScanning ? 360 : 0 }}
-                transition={{ duration: 2, repeat: isScanning ? Infinity : 0, ease: "linear" }}
-              >
-                <Share2 className="w-5 h-5 text-white" />
-              </motion.div>
-              Social Media Dashboard
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
-            </p>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <motion.div 
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shrink-0"
+              animate={{ rotate: isScanning ? 360 : 0 }}
+              transition={{ duration: 2, repeat: isScanning ? Infinity : 0, ease: "linear" }}
+            >
+              <Share2 className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <h2 className="text-xl font-bold">Social Media Dashboard</h2>
+              <p className="text-xs text-muted-foreground">
+                Social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Compact Platform Carousel - Inline */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {isScanning ? (
+              [...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="w-16 h-12 rounded-lg shrink-0" />
+              ))
+            ) : (
+              profiles.map((profile, i) => {
+                const config = platformConfig[profile.platform];
+                const IconComponent = config.icon;
+                
+                return (
+                  <motion.div
+                    key={profile.platform}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className={`flex flex-col items-center p-2 rounded-lg border transition-all shrink-0 min-w-[72px] ${
+                      profile.detected 
+                        ? `${config.bgColor} ${config.borderColor} hover:scale-105` 
+                        : 'bg-muted/30 border-border/50 opacity-60'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center shadow-sm`}>
+                      <IconComponent className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-[10px] font-medium mt-1 truncate">{config.name.split(' ')[0]}</span>
+                    <span className={`text-[8px] ${profile.detected ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                      {profile.detected ? (profile.connected ? 'Connected' : 'Detected') : 'Not found'}
+                    </span>
+                  </motion.div>
+                );
+              })
+            )}
           </div>
           
-          <div className="flex items-center gap-3">
-            {/* Hide profiles badge while checking CADE, show subscription status instead */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Status badges */}
             {isCheckingCade ? (
-              <Badge variant="outline" className="text-violet-400 border-violet-500/30 bg-violet-500/10">
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Verifying CADE...
+              <Badge variant="outline" className="text-violet-400 border-violet-500/30 bg-violet-500/10 text-xs">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />CADE...
               </Badge>
-            ) : !hasCadeSubscription && !isCheckingCade ? (
-              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
-                <AlertCircle className="w-3 h-3 mr-1" />No CADE Subscription
+            ) : !hasCadeSubscription ? (
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10 text-xs">
+                <AlertCircle className="w-3 h-3 mr-1" />No Sub
               </Badge>
-            ) : isScanning ? (
-              <Badge variant="outline" className="text-pink-400 border-pink-500/30 bg-pink-500/10">
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Scanning...
-              </Badge>
-            ) : scanComplete ? (
-              <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                {detectedCount} Profiles Found
+            ) : connectedCount > 0 ? (
+              <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-xs">
+                <Link2 className="w-3 h-3 mr-1" />{connectedCount}
               </Badge>
             ) : null}
-            
-            {connectedCount > 0 && (
-              <Badge className="bg-gradient-to-r from-pink-500 to-rose-500">
-                <Link2 className="w-3 h-3 mr-1" />
-                {connectedCount} Connected
-              </Badge>
-            )}
             
             <Button 
               variant="outline" 
               size="sm" 
               onClick={scanWebsiteForSocials}
               disabled={isScanning}
+              className="h-8"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
-              Rescan
+              <RefreshCw className={`w-3 h-3 mr-1 ${isScanning ? 'animate-spin' : ''}`} />
+              Scan
             </Button>
           </div>
         </div>
@@ -493,80 +518,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           </motion.div>
         ) : null}
       </AnimatePresence>
-
-      {/* Detected Social Profiles Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
-      >
-        {isScanning ? (
-          [...Array(6)].map((_, i) => (
-            <Card key={i} className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <Skeleton className="w-10 h-10 rounded-lg mx-auto mb-3" />
-                <Skeleton className="h-4 w-20 mx-auto mb-2" />
-                <Skeleton className="h-3 w-16 mx-auto" />
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          profiles.map((profile, i) => {
-            const config = platformConfig[profile.platform];
-            const IconComponent = config.icon;
-            
-            return (
-              <motion.div
-                key={profile.platform}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Card className={`relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all hover:border-pink-500/30 ${profile.detected ? '' : 'opacity-50'}`}>
-                  {profile.connected && (
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-emerald-500 text-[10px] px-1.5 py-0.5">
-                        <CheckCircle className="w-2.5 h-2.5 mr-0.5" />Live
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  <CardContent className="p-4 text-center">
-                    <motion.div 
-                      className={`w-12 h-12 rounded-xl bg-gradient-to-br ${config.color} flex items-center justify-center mx-auto mb-3 shadow-lg`}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                    >
-                      <IconComponent className="w-6 h-6 text-white" />
-                    </motion.div>
-                    
-                    <p className="font-medium text-sm">{config.name}</p>
-                    
-                    {profile.detected ? (
-                      <div className="mt-2">
-                        {profile.username && (
-                          <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
-                        )}
-                        {profile.url && (
-                          <a 
-                            href={profile.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-pink-500 hover:underline flex items-center justify-center gap-1 mt-1"
-                          >
-                            View <ExternalLink className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground mt-2">Not detected</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })
-        )}
-      </motion.div>
 
       {/* Connect Accounts Section - Only show when CADE subscription is active */}
       {hasCadeSubscription && (
