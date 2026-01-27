@@ -1546,6 +1546,7 @@ export const GADashboardPanel = ({
             properties={properties}
             onRefresh={handleWizardRefresh}
             isRefreshing={isWizardRefreshing}
+            accessToken={accessToken}
           />
         )}
 

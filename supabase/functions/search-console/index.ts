@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface SearchConsoleRequest {
-  action: 'sites' | 'performance' | 'indexing' | 'sitemaps' | 'urlInspection' | 'submitUrl' | 'submitSitemap' | 'bulkSubmit';
+  action: 'sites' | 'performance' | 'indexing' | 'sitemaps' | 'urlInspection' | 'submitUrl' | 'submitSitemap' | 'bulkSubmit' | 'addSite' | 'getVerificationToken' | 'verifySite';
   accessToken: string;
   siteUrl?: string;
   startDate?: string;
@@ -31,6 +31,8 @@ interface SearchConsoleRequest {
   notificationType?: 'URL_UPDATED' | 'URL_DELETED';
   // For sitemap submission
   sitemapUrl?: string;
+  // For site verification
+  verificationType?: 'META' | 'ANALYTICS' | 'DNS_TXT' | 'FILE';
 }
 
 serve(async (req) => {
@@ -55,7 +57,8 @@ serve(async (req) => {
       urlToSubmit,
       urlsToSubmit,
       notificationType,
-      sitemapUrl
+      sitemapUrl,
+      verificationType
     } = await req.json() as SearchConsoleRequest;
 
     if (!accessToken) {
@@ -347,6 +350,149 @@ serve(async (req) => {
           { headers }
         );
         result = await response.json();
+        break;
+      }
+
+      case 'addSite': {
+        // Add a new site to Search Console
+        if (!siteUrl) {
+          return new Response(
+            JSON.stringify({ error: "Site URL is required to add a site" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const encodedSiteUrl = encodeURIComponent(siteUrl);
+        console.log(`Adding site to GSC: ${siteUrl}`);
+        
+        const response = await fetch(
+          `https://www.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}`,
+          {
+            method: "PUT",
+            headers,
+          }
+        );
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Add site error:", errorData);
+          result = {
+            success: false,
+            error: errorData.error?.message || `HTTP ${response.status}`,
+            siteUrl,
+          };
+        } else {
+          result = {
+            success: true,
+            siteUrl,
+            message: "Site added successfully. Now verify ownership.",
+          };
+        }
+        break;
+      }
+
+      case 'getVerificationToken': {
+        // Get verification token for a site
+        if (!siteUrl) {
+          return new Response(
+            JSON.stringify({ error: "Site URL is required to get verification token" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Map our verification type to Google's format
+        const verificationMethod = verificationType || 'META';
+        const googleVerificationType = verificationMethod === 'DNS_TXT' ? 'DNS_TXT' : 
+                                        verificationMethod === 'FILE' ? 'FILE' :
+                                        verificationMethod === 'ANALYTICS' ? 'ANALYTICS' : 'META';
+        
+        console.log(`Getting verification token for ${siteUrl} using method: ${googleVerificationType}`);
+        
+        const response = await fetch(
+          "https://www.googleapis.com/siteVerification/v1/token",
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              site: {
+                type: "SITE",
+                identifier: siteUrl,
+              },
+              verificationMethod: googleVerificationType,
+            }),
+          }
+        );
+
+        const tokenData = await response.json();
+        
+        if (!response.ok) {
+          console.error("Get verification token error:", tokenData);
+          result = {
+            success: false,
+            error: tokenData.error?.message || `HTTP ${response.status}`,
+            siteUrl,
+          };
+        } else {
+          result = {
+            success: true,
+            siteUrl,
+            token: tokenData.token,
+            method: googleVerificationType,
+          };
+        }
+        break;
+      }
+
+      case 'verifySite': {
+        // Verify ownership of a site
+        if (!siteUrl) {
+          return new Response(
+            JSON.stringify({ error: "Site URL is required to verify a site" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Map our verification type to Google's format
+        const verificationMethod = verificationType || 'META';
+        const googleVerificationType = verificationMethod === 'DNS_TXT' ? 'DNS_TXT' : 
+                                        verificationMethod === 'FILE' ? 'FILE' :
+                                        verificationMethod === 'ANALYTICS' ? 'ANALYTICS' : 'META';
+        
+        console.log(`Verifying site ${siteUrl} using method: ${googleVerificationType}`);
+        
+        const response = await fetch(
+          "https://www.googleapis.com/siteVerification/v1/webResource?verificationMethod=" + googleVerificationType,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              site: {
+                type: "SITE",
+                identifier: siteUrl,
+              },
+            }),
+          }
+        );
+
+        const verifyData = await response.json();
+        
+        if (!response.ok) {
+          console.error("Verify site error:", verifyData);
+          result = {
+            success: false,
+            verified: false,
+            error: verifyData.error?.message || `HTTP ${response.status}`,
+            siteUrl,
+          };
+        } else {
+          result = {
+            success: true,
+            verified: true,
+            siteUrl,
+            owners: verifyData.owners,
+            id: verifyData.id,
+          };
+        }
         break;
       }
 
