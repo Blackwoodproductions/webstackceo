@@ -1684,8 +1684,11 @@ const MarketingDashboard = () => {
         canonical="/visitor-intelligence-dashboard"
       />
 
-      {/* High-tech background effects - matching AuditResults page */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* High-tech background effects - isolated to prevent layout interference */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+        style={{ isolation: 'isolate', contain: 'strict' }}
+      >
         {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -2705,10 +2708,15 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Right Sidebar - Chat Panel */}
+        {/* Right Sidebar - Chat Panel - use fixed width to prevent layout thrashing */}
         <div
-          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
-          style={{ contain: 'layout paint' }}
+          className="flex-shrink-0 border-l border-border bg-card/50"
+          style={{ 
+            width: chatPanelOpen ? '256px' : '56px',
+            contain: 'strict',
+            willChange: 'width',
+            transition: 'width 0.15s ease-out',
+          }}
         >
           <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
             {/* Header with animated icon */}
