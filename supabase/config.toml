@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.bron-content-receiver]
 verify_jwt = false
+
+[functions.cade-api]
+verify_jwt = false
