@@ -54,6 +54,7 @@ export function GoogleAdsOnboardingWizard({
   const [authError, setAuthError] = useState<string | null>(null);
   const [manualCustomerId, setManualCustomerId] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
   const GOOGLE_ADS_SCOPES = [
     'https://www.googleapis.com/auth/adwords',
@@ -87,6 +88,35 @@ export function GoogleAdsOnboardingWizard({
       .replace(/=+$/, '');
     
     return { codeVerifier, codeChallenge };
+  }, []);
+
+  // Fetch customer accounts - defined first so it can be used by other hooks
+  const fetchCustomerAccounts = useCallback(async (token: string) => {
+    setIsLoadingAccounts(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
+        body: {
+          action: 'list-customers',
+          accessToken: token,
+        },
+      });
+
+      if (error) throw error;
+
+      setCustomers(data.customers || []);
+      
+      if (data.isDemo) {
+        toast.info('Demo mode - Google Ads API developer token required for production', {
+          duration: 5000,
+        });
+      }
+    } catch (err: any) {
+      console.error('Error fetching accounts:', err);
+      toast.error('Failed to fetch Google Ads accounts');
+    } finally {
+      setIsLoadingAccounts(false);
+    }
   }, []);
 
   // Handle OAuth callback
@@ -150,34 +180,66 @@ export function GoogleAdsOnboardingWizard({
     handleOAuthCallback();
   }, []);
 
-  // Fetch customer accounts - defined before handleOAuthCodeExchange to avoid hoisting issues
-  const fetchCustomerAccounts = useCallback(async (token: string) => {
-    setIsLoadingAccounts(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('google-ads-keywords', {
-        body: {
-          action: 'list-customers',
-          accessToken: token,
-        },
-      });
-
-      if (error) throw error;
-
-      setCustomers(data.customers || []);
+  // Auto-login using unified Google auth from dashboard
+  useEffect(() => {
+    if (autoLoginAttempted || accessToken) return;
+    
+    const checkUnifiedAuth = async () => {
+      // Check for unified Google auth tokens (GSC/GA/unified)
+      const unifiedToken = localStorage.getItem('unified_google_token') || 
+                           localStorage.getItem('gsc_access_token') || 
+                           localStorage.getItem('ga_access_token');
+      const unifiedExpiry = localStorage.getItem('unified_google_expiry') ||
+                            localStorage.getItem('gsc_token_expiry') || 
+                            localStorage.getItem('ga_token_expiry');
       
-      if (data.isDemo) {
-        toast.info('Demo mode - Google Ads API developer token required for production', {
-          duration: 5000,
-        });
+      if (unifiedToken && unifiedExpiry) {
+        const expiryTime = parseInt(unifiedExpiry, 10);
+        if (Date.now() < expiryTime - 300000) {
+          // Valid token found - auto-login
+          console.log('[GoogleAds Wizard] Found unified auth, auto-connecting...');
+          setAccessToken(unifiedToken);
+          setCurrentStep(2);
+          setExpandedStep(2);
+          toast.success('Using your existing Google connection');
+          
+          // Fetch customer accounts
+          await fetchCustomerAccounts(unifiedToken);
+          setAutoLoginAttempted(true);
+          return;
+        }
       }
-    } catch (err: any) {
-      console.error('Error fetching accounts:', err);
-      toast.error('Failed to fetch Google Ads accounts');
-    } finally {
-      setIsLoadingAccounts(false);
-    }
-  }, []);
+      
+      // Check for Supabase session token
+      const oauthTokenData = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+      if (oauthTokenData) {
+        try {
+          const parsed = JSON.parse(oauthTokenData);
+          const providerToken = parsed?.provider_token;
+          const expiresAt = parsed?.expires_at;
+          
+          if (providerToken && expiresAt && Date.now() / 1000 < expiresAt - 300) {
+            console.log('[GoogleAds Wizard] Found Supabase provider token, auto-connecting...');
+            setAccessToken(providerToken);
+            setCurrentStep(2);
+            setExpandedStep(2);
+            toast.success('Using your existing Google connection');
+            
+            // Fetch customer accounts
+            await fetchCustomerAccounts(providerToken);
+            setAutoLoginAttempted(true);
+            return;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      
+      setAutoLoginAttempted(true);
+    };
+    
+    checkUnifiedAuth();
+  }, [autoLoginAttempted, accessToken, fetchCustomerAccounts]);
 
   // Handle OAuth code exchange (called from popup callback)
   const handleOAuthCodeExchange = useCallback(async (code: string) => {
