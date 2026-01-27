@@ -719,31 +719,16 @@ export const GAInlineOnboardingWizard = ({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="h-7 text-[10px] hover:bg-amber-500/10 gap-1"
-            >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            {/* Collapse/Expand Toggle */}
-            <button
-              onClick={handleTogglePanelCollapse}
-              className="p-2 rounded-lg hover:bg-amber-500/20 transition-colors"
-              aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
-              title={isPanelCollapsed ? "Expand" : "Collapse"}
-            >
-              {isPanelCollapsed ? (
-                <Maximize2 className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-amber-400" />
-              )}
-            </button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="h-7 text-[10px] hover:bg-amber-500/10 gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Collapsible Content */}
@@ -756,13 +741,12 @@ export const GAInlineOnboardingWizard = ({
               exit={{ opacity: 0, height: 0 }}
               className="mt-3 overflow-hidden"
             >
-              <button
-                onClick={handleTogglePanelCollapse}
-                className="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-colors text-xs text-amber-400"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                Click to expand domain setup
-              </button>
+              <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs text-muted-foreground">
+                  Setup wizard minimized — use button below to expand
+                </span>
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -1017,6 +1001,34 @@ export const GAInlineOnboardingWizard = ({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Bottom Collapse Toggle - Always Visible */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-4 pt-3 border-t border-amber-500/20"
+        >
+          <button
+            onClick={handleTogglePanelCollapse}
+            className={`w-full flex items-center justify-center gap-2 p-2.5 rounded-lg transition-all ${
+              isPanelCollapsed 
+                ? 'bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25' 
+                : 'bg-muted/30 border border-border hover:bg-muted/50 hover:border-amber-500/30'
+            }`}
+          >
+            {isPanelCollapsed ? (
+              <>
+                <Maximize2 className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-medium text-amber-400">Expand Domain Setup</span>
+              </>
+            ) : (
+              <>
+                <Minimize2 className="w-4 h-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Minimize Setup Section</span>
+              </>
+            )}
+          </button>
+        </motion.div>
       </div>
     </motion.div>
   );

@@ -8,10 +8,11 @@ import { toast } from 'sonner';
 import {
   Target, FileText, FlaskConical, TrendingUp, CheckCircle,
   RefreshCw, Zap, BarChart3, Eye, ArrowRight,
-  ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock
+  ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock, Minimize2, Maximize2
 } from 'lucide-react';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
 import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
+import { GoogleAdsMetricsDashboard } from './GoogleAdsMetricsDashboard';
 
 interface Keyword {
   id: string;
@@ -517,122 +518,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           onSkip={handleSkipWizard} 
         />
       ) : (
-        /* Connected State - Keywords Dashboard */
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          {/* Summary Cards - Compact */}
-          {summary && (
-            <div className="grid grid-cols-4 gap-2">
-              <div className="p-3 rounded-xl bg-muted/30 border border-border">
-                <p className="text-xl font-bold">{summary.totalKeywords}</p>
-                <p className="text-[10px] text-muted-foreground">Active Keywords</p>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <p className="text-xl font-bold text-amber-400">{summary.avgQualityScore}/10</p>
-                <p className="text-[10px] text-muted-foreground">Avg Quality Score</p>
-              </div>
-              <div className="p-3 rounded-xl bg-muted/30 border border-border">
-                <p className="text-xl font-bold">${summary.estimatedMonthlySpend}</p>
-                <p className="text-[10px] text-muted-foreground">Est. Monthly Spend</p>
-              </div>
-              <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                <p className="text-xl font-bold text-green-400">${summary.potentialMonthlySavings}</p>
-                <p className="text-[10px] text-muted-foreground">Potential Savings</p>
-              </div>
-            </div>
-          )}
-
-          {/* Action Bar */}
-          <div className="p-3 rounded-xl bg-muted/30 border border-border flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Checkbox checked={selectedKeywords.size === keywords.length && keywords.length > 0} onCheckedChange={handleSelectAll} />
-              <span className="text-xs text-muted-foreground">{selectedKeywords.size} of {keywords.length} selected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleFetchKeywords} disabled={isFetchingKeywords} className="h-7 text-xs">
-                <RefreshCw className={`w-3.5 h-3.5 ${isFetchingKeywords ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button size="sm" onClick={handleGeneratePages} disabled={selectedKeywords.size === 0 || isGenerating} className="h-7 text-xs bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-                {isGenerating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <><Zap className="w-3.5 h-3.5 mr-1" />Generate {selectedKeywords.size} Pages</>}
-              </Button>
-            </div>
-          </div>
-
-          {/* Keywords Table */}
-          {isFetchingKeywords ? (
-            <div className="text-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">Importing keywords from Google Ads...</p>
-            </div>
-          ) : keywords.length > 0 ? (
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="w-10 px-3 py-2"></th>
-                      <th className="text-left px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">Keyword</th>
-                      <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">Match</th>
-                      <th className="text-right px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">CPC</th>
-                      <th className="text-right px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">Impr</th>
-                      <th className="text-right px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">Clicks</th>
-                      <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground uppercase">QS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {keywords.map((kw) => (
-                      <tr key={kw.id} className={`hover:bg-muted/30 transition-colors ${selectedKeywords.has(kw.id) ? 'bg-orange-500/5' : ''}`}>
-                        <td className="px-3 py-2"><Checkbox checked={selectedKeywords.has(kw.id)} onCheckedChange={() => handleToggleKeyword(kw.id)} /></td>
-                        <td className="px-3 py-2"><span className="font-medium text-xs">{kw.text}</span></td>
-                        <td className="px-3 py-2 text-center"><Badge variant="outline" className="text-[9px]">{kw.matchType}</Badge></td>
-                        <td className="px-3 py-2 text-right text-xs">${kw.avgCpc.toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right text-xs text-muted-foreground">{kw.impressions.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-xs text-muted-foreground">{kw.clicks.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-center">
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${getQualityScoreBg(kw.qualityScore)} ${getQualityScoreColor(kw.qualityScore)}`}>{kw.qualityScore}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 rounded-xl border border-amber-500/30 bg-amber-500/5 text-center">
-              <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">No Active Campaigns Found</h3>
-              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                {selectedDomain ? <>No campaigns targeting <span className="font-medium text-primary">{selectedDomain}</span>.</> : <>No active campaigns in your account.</>}
-              </p>
-              <Button onClick={() => setShowCampaignSetup(true)} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-                <Zap className="w-4 h-4 mr-2" />Create Campaign
-              </Button>
-            </div>
-          )}
-
-          {/* Generated Pages Preview */}
-          {generatedPages.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold flex items-center gap-2"><Layers className="w-4 h-4 text-orange-500" />Generated Pages</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {generatedPages.slice(0, 6).map((page) => (
-                  <div key={page.keywordId} className="p-3 rounded-xl border border-border bg-card hover:border-orange-500/30 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge className="text-[9px] bg-orange-500/20 text-orange-400">{page.abVariants.length} Variants</Badge>
-                      <Badge variant="outline" className="text-[9px] text-green-400 border-green-500/30">QS: {page.estimatedQualityScore}/10</Badge>
-                    </div>
-                    <p className="font-medium text-xs mb-2 truncate">{page.keyword}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" />Heat</span>
-                      <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />Analytics</span>
-                    </div>
-                    <Button variant="ghost" size="sm" className="w-full mt-2 text-[10px] h-7">Preview <ExternalLink className="w-3 h-3 ml-1" /></Button>
-                  </div>
-                ))}
-              </div>
-              {generatedPages.length > 6 && <p className="text-center text-xs text-muted-foreground">+ {generatedPages.length - 6} more pages</p>}
-            </div>
-          )}
-        </motion.div>
+        /* Connected State - Google Ads Dashboard */
+        <GoogleAdsMetricsDashboard
+          campaigns={[]}
+          isLoading={isFetchingKeywords}
+          onRefresh={handleFetchKeywords}
+          selectedDomain={selectedDomain || undefined}
+        />
       )}
     </div>
   );
