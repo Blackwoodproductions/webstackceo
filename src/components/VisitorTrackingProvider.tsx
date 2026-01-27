@@ -29,26 +29,34 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
       try {
         // Get current user if authenticated
         const { data: { user } } = await supabase.auth.getUser();
-        
-        // Check if session exists
-        const { data: existingSession } = await supabase
-          .from('visitor_sessions')
+
+        // Idempotent session creation (React StrictMode can run effects twice in dev)
+        // ignoreDuplicates prevents 409 conflict errors from double inserts.
+        const { data: existingSession } = await (supabase
+          .from('visitor_sessions') as any)
           .select('id, user_id')
           .eq('session_id', sessionId.current)
-          .maybeSingle() as { data: { id: string; user_id: string | null } | null };
+          .maybeSingle();
 
         if (!existingSession) {
-          // Create new session with user_id if authenticated
-          await (supabase.from('visitor_sessions') as any).insert({
-            session_id: sessionId.current,
-            first_page: window.location.pathname,
-            referrer: document.referrer || null,
-            user_agent: navigator.userAgent,
-            ip_hash: null,
-            user_id: user?.id || null,
-          });
-        } else if (user && !existingSession.user_id) {
-          // Update existing session with user_id if user just logged in
+          await (supabase.from('visitor_sessions') as any).upsert(
+            {
+              session_id: sessionId.current,
+              first_page: window.location.pathname,
+              referrer: document.referrer || null,
+              user_agent: navigator.userAgent,
+              ip_hash: null,
+              user_id: user?.id || null,
+            },
+            {
+              onConflict: 'session_id',
+              ignoreDuplicates: true,
+            }
+          );
+        }
+
+        // If user is authenticated and session row doesn't have user_id yet, update it.
+        if (user && existingSession && !existingSession.user_id) {
           await (supabase.from('visitor_sessions') as any)
             .update({ user_id: user.id })
             .eq('session_id', sessionId.current);
@@ -68,9 +76,13 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
       if (event === 'SIGNED_IN' && session?.user) {
         // Update session with user_id when user logs in
         setTimeout(async () => {
-          await (supabase.from('visitor_sessions') as any)
-            .update({ user_id: session.user.id })
-            .eq('session_id', sessionId.current);
+          try {
+            await (supabase.from('visitor_sessions') as any)
+              .update({ user_id: session.user.id })
+              .eq('session_id', sessionId.current);
+          } catch {
+            // Silent fail
+          }
         }, 0);
       }
     });

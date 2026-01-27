@@ -429,10 +429,16 @@ const LiveChatWidget = () => {
   };
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: "2-digit", 
-      minute: "2-digit" 
-    });
+    try {
+      const d = new Date(timestamp);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
   };
 
   // Generate visitor color based on session ID
