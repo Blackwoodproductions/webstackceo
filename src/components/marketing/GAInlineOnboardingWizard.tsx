@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckCircle2, Circle, ExternalLink, Copy, RefreshCw,
-  ArrowRight, Loader2, Plus, Globe, BarChart3, Code
+  CheckCircle2, Copy, RefreshCw, Loader2, Globe, 
+  BarChart3, Link2, ChevronRight, Sparkles, Radio
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,6 @@ interface GAInlineOnboardingWizardProps {
   isRefreshing?: boolean;
 }
 
-type OnboardingStep = 1 | 2 | 3;
-
 export const GAInlineOnboardingWizard = ({
   domain,
   properties,
@@ -30,23 +28,19 @@ export const GAInlineOnboardingWizard = ({
   isRefreshing = false,
 }: GAInlineOnboardingWizardProps) => {
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>(
-    properties.length > 0 ? 2 : 1
-  );
+  const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
+  const [showTrackingCode, setShowTrackingCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const normalizeDomain = (d: string) =>
     d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "").toLowerCase();
 
   const normalizedDomain = normalizeDomain(domain);
 
-  const getFirstPropertyId = () => {
-    if (properties.length === 0) return null;
-    return properties[0].name.replace("properties/", "");
-  };
-
   const getTrackingCode = (measurementId: string = "G-XXXXXXXXXX") => {
-    return `<script async src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>
+    return `<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -62,76 +56,60 @@ export const GAInlineOnboardingWizard = ({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const steps = [
-    {
-      number: 1 as OnboardingStep,
-      icon: Plus,
-      title: "Create Property",
-      description: "Set up GA4 property",
-      completed: properties.length > 0,
-    },
-    {
-      number: 2 as OnboardingStep,
-      icon: Globe,
-      title: "Add Data Stream",
-      description: `Add ${normalizedDomain}`,
-      completed: false,
-    },
-    {
-      number: 3 as OnboardingStep,
-      icon: Code,
-      title: "Install & Verify",
-      description: "Add tracking code",
-      completed: false,
-    },
-  ];
+  const copyUrl = async () => {
+    await navigator.clipboard.writeText(`https://${normalizedDomain}`);
+    setCopiedUrl(true);
+    toast({ title: "Copied!" });
+    setTimeout(() => setCopiedUrl(false), 2000);
+  };
+
+  const hasProperties = properties.length > 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-orange-500/5"
+      className="relative overflow-hidden rounded-xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-card to-orange-500/5"
     >
-      {/* Animated background effects */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent animate-pulse" style={{ animationDuration: '4s' }} />
+      {/* Scanning line effect */}
       <motion.div 
-        className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"
+        className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent"
         animate={{ x: ['-100%', '100%'] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
       />
       
-      {/* Corner glows */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-[60px]" />
-      <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-tr-[50px]" />
-      
       <div className="relative z-10 p-4">
-        {/* Header with Domain Info */}
+        {/* Sleek Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
-              <img 
-                src={`https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=32`}
-                alt={normalizedDomain}
-                className="w-4 h-4 object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
-                }}
+            <div className="relative">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
+                <img 
+                  src={`https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=32`}
+                  alt={normalizedDomain}
+                  className="w-5 h-5 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                  }}
+                />
+                <Globe className="w-5 h-5 text-amber-500 fallback-icon hidden" />
+              </div>
+              <motion.div 
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
               />
-              <Globe className="w-4 h-4 text-amber-500 fallback-icon hidden" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                Setup Required
-                <Badge className="text-[8px] bg-amber-500/20 text-amber-500 border-amber-500/30">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">Link Domain</span>
+                <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
                   {normalizedDomain}
                 </Badge>
-              </h4>
+              </div>
               <p className="text-[10px] text-muted-foreground">
-                {properties.length > 0 
-                  ? "Add a web data stream for this domain"
-                  : "Create a GA4 property to start tracking"
-                }
+                {hasProperties ? "Select a property to connect" : "No GA4 properties found"}
               </p>
             </div>
           </div>
@@ -140,215 +118,191 @@ export const GAInlineOnboardingWizard = ({
             size="sm"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="h-7 text-xs hover:bg-amber-500/10"
+            className="h-7 text-[10px] hover:bg-amber-500/10 gap-1"
           >
-            <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? "animate-spin" : ""}`} />
-            Verify
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
         </div>
 
-        {/* Compact Step Progress */}
-        <div className="flex items-center gap-2 mb-4">
-          {steps.map((step, index) => (
-            <div key={step.number} className="flex items-center flex-1">
-              <motion.button
-                onClick={() => setCurrentStep(step.number)}
-                className={`flex items-center gap-2 p-2 rounded-lg transition-all flex-1 ${
-                  currentStep === step.number 
-                    ? 'bg-amber-500/20 border border-amber-500/40' 
-                    : step.completed 
-                      ? 'bg-green-500/10 border border-green-500/30'
-                      : 'bg-secondary/50 border border-border/50'
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+        {/* Properties Selection Grid */}
+        {hasProperties ? (
+          <div className="space-y-3">
+            {/* Property Cards */}
+            <div className="grid gap-2">
+              {properties.map((prop, i) => {
+                const isSelected = selectedProperty === prop.name;
+                const propId = prop.name.replace("properties/", "");
+                
+                return (
+                  <motion.button
+                    key={prop.name}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => setSelectedProperty(isSelected ? null : prop.name)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                      isSelected 
+                        ? 'bg-amber-500/15 border-amber-500/50 shadow-lg shadow-amber-500/10' 
+                        : 'bg-secondary/30 border-border/40 hover:bg-secondary/50 hover:border-amber-500/30'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      isSelected ? 'bg-amber-500/30' : 'bg-muted/50'
+                    }`}>
+                      <BarChart3 className={`w-4 h-4 ${isSelected ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-medium truncate ${isSelected ? 'text-amber-400' : 'text-foreground'}`}>
+                        {prop.displayName}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Property ID: {propId}
+                      </p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isSelected ? 'border-amber-500 bg-amber-500' : 'border-muted-foreground/30'
+                    }`}>
+                      {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Selected Property Actions */}
+            <AnimatePresence>
+              {selectedProperty && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 rounded-lg bg-secondary/40 border border-border/30 space-y-3">
+                    {/* Domain URL to add */}
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <span className="text-[10px] text-muted-foreground">Add this URL as a Web Data Stream:</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/30">
+                      <code className="flex-1 text-xs font-mono text-amber-400 truncate">
+                        https://{normalizedDomain}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 hover:bg-amber-500/10"
+                        onClick={copyUrl}
+                      >
+                        {copiedUrl ? (
+                          <CheckCircle2 className="w-3 h-3 text-green-400" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Show Tracking Code Toggle */}
+                    <button
+                      onClick={() => setShowTrackingCode(!showTrackingCode)}
+                      className="flex items-center gap-2 text-[10px] text-amber-500 hover:text-amber-400 transition-colors"
+                    >
+                      <ChevronRight className={`w-3 h-3 transition-transform ${showTrackingCode ? 'rotate-90' : ''}`} />
+                      {showTrackingCode ? 'Hide' : 'Show'} tracking code snippet
+                    </button>
+
+                    {/* Tracking Code */}
+                    <AnimatePresence>
+                      {showTrackingCode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                        >
+                          <div className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
+                            <div className="flex items-center justify-between px-2 py-1.5 bg-zinc-800/50 border-b border-zinc-700">
+                              <span className="text-[9px] text-zinc-400 font-medium">gtag.js</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-5 px-2 text-zinc-400 hover:text-white hover:bg-zinc-700"
+                                onClick={copyTrackingCode}
+                              >
+                                {copiedCode ? (
+                                  <CheckCircle2 className="w-3 h-3 text-green-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                                <span className="ml-1 text-[9px]">{copiedCode ? 'Copied' : 'Copy'}</span>
+                              </Button>
+                            </div>
+                            <pre className="p-2 text-[9px] text-green-400 font-mono overflow-x-auto max-h-20 scrollbar-hide leading-relaxed">
+                              {getTrackingCode()}
+                            </pre>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Verify Button */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex-1"
+                        onClick={onRefresh}
+                        disabled={isRefreshing}
+                      >
+                        {isRefreshing ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <Radio className="w-3.5 h-3.5 mr-1.5" />
+                        )}
+                        Verify Connection
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Hint when no property selected */}
+            {!selectedProperty && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                <p className="text-[10px] text-muted-foreground">
+                  Select a property above, then add <span className="text-amber-400 font-medium">{normalizedDomain}</span> as a web data stream
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* No Properties - Show create prompt */
+          <div className="p-4 rounded-lg bg-secondary/30 border border-border/30 text-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
+              <BarChart3 className="w-5 h-5 text-amber-500" />
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              No GA4 properties found in your account. Create one to start tracking.
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                onClick={() => window.open("https://analytics.google.com/analytics/web/#/admin/create-property", "_blank")}
               >
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  step.completed 
-                    ? 'bg-green-500/20' 
-                    : currentStep === step.number 
-                      ? 'bg-amber-500/30' 
-                      : 'bg-muted'
-                }`}>
-                  {step.completed ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                  ) : (
-                    <step.icon className={`w-3 h-3 ${currentStep === step.number ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                  )}
-                </div>
-                <div className="text-left hidden sm:block">
-                  <p className={`text-[10px] font-medium ${currentStep === step.number ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                    {step.title}
-                  </p>
-                </div>
-              </motion.button>
-              {index < steps.length - 1 && (
-                <ArrowRight className="w-3 h-3 text-muted-foreground/30 mx-1 flex-shrink-0" />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Step Content - Compact */}
-        <div className="bg-secondary/30 rounded-lg p-3 backdrop-blur-sm border border-border/30">
-          {currentStep === 1 && (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-amber-500">1</span>
-                <span>Go to <span className="font-medium text-foreground">Google Analytics Admin</span> → Create Property</span>
-              </div>
-              <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-amber-500">2</span>
-                <span>Name it <code className="bg-background px-1 rounded text-[10px]">{normalizedDomain}</code></span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                  onClick={() => window.open("https://analytics.google.com/analytics/web/#/admin/create-property", "_blank")}
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Create Property
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => setCurrentStep(2)}
-                >
-                  I've Done This
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-amber-500">1</span>
-                <span>In GA Admin → <span className="font-medium text-foreground">Data Streams</span> → Add Stream → Web</span>
-              </div>
-              <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-amber-500">2</span>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span>Enter URL:</span>
-                  <code className="bg-background px-1.5 py-0.5 rounded text-[10px] font-mono">https://{normalizedDomain}</code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1.5"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`https://${normalizedDomain}`);
-                      toast({ title: "Copied!" });
-                    }}
-                  >
-                    <Copy className="w-2.5 h-2.5" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  className="h-7 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                  onClick={() => {
-                    const propId = getFirstPropertyId();
-                    if (propId) {
-                      window.open(`https://analytics.google.com/analytics/web/#/p${propId}/admin/streams`, "_blank");
-                    } else {
-                      window.open("https://analytics.google.com/analytics/web/#/admin", "_blank");
-                    }
-                  }}
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Open Data Streams
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => setCurrentStep(3)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {currentStep === 3 && (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-amber-500">1</span>
-                <span>Copy tracking code from your data stream → Add to <code className="bg-background px-1 rounded">&lt;head&gt;</code></span>
-              </div>
-              
-              {/* Compact code preview */}
-              <div className="bg-zinc-900 rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-2 py-1 bg-zinc-800 border-b border-zinc-700">
-                  <span className="text-[9px] text-zinc-400">gtag.js snippet</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1.5 text-zinc-400 hover:text-white"
-                    onClick={copyTrackingCode}
-                  >
-                    {copiedCode ? <CheckCircle2 className="w-2.5 h-2.5 text-green-400" /> : <Copy className="w-2.5 h-2.5" />}
-                  </Button>
-                </div>
-                <pre className="p-2 text-[9px] text-green-400 font-mono overflow-x-auto max-h-16 scrollbar-hide">
-                  {getTrackingCode()}
-                </pre>
-              </div>
-
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  className="h-7 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-                  onClick={onRefresh}
-                  disabled={isRefreshing}
-                >
-                  {isRefreshing ? (
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                  )}
-                  Verify Setup
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    const propId = getFirstPropertyId();
-                    if (propId) {
-                      window.open(`https://analytics.google.com/analytics/web/#/p${propId}/realtime/overview`, "_blank");
-                    } else {
-                      window.open("https://analytics.google.com/analytics/web/", "_blank");
-                    }
-                  }}
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Realtime
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Property badges if available */}
-        {properties.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-border/30">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[9px] text-muted-foreground">Available:</span>
-              {properties.slice(0, 3).map((prop) => (
-                <Badge key={prop.name} variant="secondary" className="text-[9px] py-0 h-4">
-                  {prop.displayName}
-                </Badge>
-              ))}
-              {properties.length > 3 && (
-                <Badge variant="secondary" className="text-[9px] py-0 h-4">
-                  +{properties.length - 3} more
-                </Badge>
-              )}
+                Create GA4 Property
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
           </div>
         )}
