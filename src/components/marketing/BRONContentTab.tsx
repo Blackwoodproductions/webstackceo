@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { 
-  FileText, RefreshCw, ExternalLink, Search, Eye
+  FileText, RefreshCw, ExternalLink, Search
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,23 +25,16 @@ export const BRONContentTab = ({
 }: BRONContentTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Support both old and new API formats
+  const getTitle = (p: BronPage) => p.post_title || p.title || 'Untitled';
+  const getUrl = (p: BronPage) => p.post_uri || p.url || '';
+  
   const filteredPages = pages.filter(p => 
-    p.url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    getTitle(p).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    getUrl(p).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getTypeColor = (type?: string) => {
-    switch (type?.toLowerCase()) {
-      case 'article':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'page':
-        return 'bg-emerald-500/20 text-emerald-400';
-      case 'post':
-        return 'bg-violet-500/20 text-violet-400';
-      default:
-        return 'bg-secondary text-muted-foreground';
-    }
-  };
+  // Removed unused getTypeColor function
 
   return (
     <motion.div
@@ -102,54 +95,62 @@ export const BRONContentTab = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredPages.map((page, index) => (
-                <motion.div
-                  key={page.url || index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  className="group flex items-center justify-between p-4 rounded-lg border bg-secondary/30 border-border hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium truncate">
-                          {page.title || 'Untitled Page'}
-                        </h4>
-                        <Badge className={`text-xs ${getTypeColor(page.type)}`}>
-                          {page.type || 'page'}
-                        </Badge>
+              {filteredPages.map((page, index) => {
+                const title = getTitle(page);
+                const url = getUrl(page);
+                const excerpt = page.post_excerpt || '';
+                
+                return (
+                  <motion.div
+                    key={page.pageid || url || index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    className="group flex items-center justify-between p-4 rounded-lg border bg-secondary/30 border-border hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-blue-400" />
                       </div>
-                      <p className="text-sm text-muted-foreground truncate mt-0.5">
-                        {page.url}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium truncate">
+                            {title}
+                          </h4>
+                          {page.pageid && (
+                            <Badge className="text-xs bg-blue-500/20 text-blue-400">
+                              ID: {page.pageid}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate mt-0.5">
+                          {url || excerpt}
+                        </p>
+                        {page.post_date && (
+                          <p className="text-xs text-muted-foreground/70 mt-0.5">
+                            {new Date(page.post_date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-4 ml-4">
-                    {page.word_count !== undefined && (
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Words</p>
-                        <p className="text-sm font-medium">{page.word_count.toLocaleString()}</p>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => window.open(page.url, '_blank')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
+                    <div className="flex items-center gap-4 ml-4">
+                      {url && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => window.open(url.startsWith('http') ? url : `https://${url}`, '_blank')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </CardContent>
