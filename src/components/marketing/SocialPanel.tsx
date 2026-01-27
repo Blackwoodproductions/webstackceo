@@ -237,39 +237,55 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
             </div>
           </div>
 
-          {/* Compact Platform Carousel - Inline */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          {/* Social Platform Carousel - Animated Marquee */}
+          <div className="relative overflow-hidden flex-1 max-w-[600px] mx-4">
+            {/* Fade edges */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+            
             {isScanning ? (
-              [...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="w-16 h-12 rounded-lg shrink-0" />
-              ))
+              <div className="flex items-center gap-3 py-1">
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} className="w-20 h-16 rounded-xl shrink-0" />
+                ))}
+              </div>
             ) : (
-              profiles.map((profile, i) => {
-                const config = platformConfig[profile.platform];
-                const IconComponent = config.icon;
-                
-                return (
-                  <motion.div
-                    key={profile.platform}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    className={`flex flex-col items-center p-2 rounded-lg border transition-all shrink-0 min-w-[72px] ${
-                      profile.detected 
-                        ? `${config.bgColor} ${config.borderColor} hover:scale-105` 
-                        : 'bg-muted/30 border-border/50 opacity-60'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center shadow-sm`}>
-                      <IconComponent className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-[10px] font-medium mt-1 truncate">{config.name.split(' ')[0]}</span>
-                    <span className={`text-[8px] ${profile.detected ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-                      {profile.detected ? (profile.connected ? 'Connected' : 'Detected') : 'Not found'}
-                    </span>
-                  </motion.div>
-                );
-              })
+              <motion.div
+                className="flex items-center gap-3 py-1"
+                animate={{ x: ['0%', '-50%'] }}
+                transition={{ 
+                  duration: 20, 
+                  repeat: Infinity, 
+                  ease: 'linear',
+                  repeatType: 'loop'
+                }}
+              >
+                {/* Duplicate profiles for seamless loop */}
+                {[...profiles, ...profiles].map((profile, i) => {
+                  const config = platformConfig[profile.platform];
+                  const IconComponent = config.icon;
+                  
+                  return (
+                    <motion.div
+                      key={`${profile.platform}-${i}`}
+                      whileHover={{ scale: 1.08, y: -2 }}
+                      className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all shrink-0 min-w-[88px] cursor-pointer ${
+                        profile.detected 
+                          ? `${config.bgColor} ${config.borderColor} shadow-lg` 
+                          : 'bg-muted/30 border-border/50 opacity-50'
+                      }`}
+                    >
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg shadow-${config.textColor}/20`}>
+                        <IconComponent className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold mt-2 truncate">{config.name.split(' ')[0]}</span>
+                      <span className={`text-[10px] font-medium ${profile.detected ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                        {profile.detected ? (profile.connected ? 'Connected' : 'Detected') : 'Not found'}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
             )}
           </div>
           
