@@ -1,22 +1,24 @@
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect } from "react";
 import { Shield } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FloatingAIShield = memo(() => {
+  const { isLoading: authLoading } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [isShieldGold, setIsShieldGold] = useState(false);
   const [topPosition, setTopPosition] = useState('78%');
   const [opacity, setOpacity] = useState(1);
-  const maxBottomRef = useRef<number | null>(null);
 
-  // Delay render to not block initial page paint
+  // Delay render until auth is stable
   useEffect(() => {
+    if (authLoading) return;
     let handle: number;
     const hasIdle = typeof window !== "undefined" && "requestIdleCallback" in window;
 
     if (hasIdle) {
       handle = (window as unknown as { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback(() => setIsVisible(true), { timeout: 1000 });
     } else {
-      handle = setTimeout(() => setIsVisible(true), 1) as unknown as number;
+      handle = setTimeout(() => setIsVisible(true), 100) as unknown as number;
     }
 
     return () => {
@@ -26,7 +28,7 @@ const FloatingAIShield = memo(() => {
         clearTimeout(handle);
       }
     };
-  }, []);
+  }, [authLoading]);
 
   // Listen for logo gold state changes from Navbar
   useEffect(() => {
