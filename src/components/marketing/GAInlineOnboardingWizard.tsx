@@ -687,27 +687,29 @@ export const GAInlineOnboardingWizard = ({
       <div className="relative z-10 p-4">
         {/* Compact Status Header - Single line with all info */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30 shadow-lg shadow-amber-500/10">
                 <img 
                   src={`https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=32`}
                   alt={normalizedDomain}
-                  className="w-4 h-4 object-contain"
+                  className="w-5 h-5 object-contain"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                   }}
                 />
-                <Globe className="w-4 h-4 text-amber-500 fallback-icon hidden" />
+                <Globe className="w-5 h-5 text-amber-500 fallback-icon hidden" />
               </div>
             </div>
-            <span className="text-xs font-medium text-foreground">Link Domain</span>
-            <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
-              {normalizedDomain}
-            </Badge>
-            <span className={`text-[10px] ${hasMatchingProperty ? 'text-green-400' : 'text-muted-foreground'}`}>
-              — {hasMatchingProperty ? "Property found! Select below" : "Not found in GSC"}
+            <div className="flex items-center gap-2.5">
+              <span className="text-sm font-semibold text-foreground">Link Domain</span>
+              <Badge className="text-[10px] py-0.5 px-2 h-5 bg-amber-500/20 text-amber-400 border-amber-500/30 font-medium">
+                {normalizedDomain}
+              </Badge>
+            </div>
+            <span className={`text-xs ${hasMatchingProperty ? 'text-green-400' : 'text-muted-foreground'}`}>
+              — {hasMatchingProperty ? "Property found! Select below" : "Not found in Google Search Console"}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -715,14 +717,18 @@ export const GAInlineOnboardingWizard = ({
             {!hasMatchingProperty && (
               <button
                 onClick={handleTogglePanelCollapse}
-                className="p-1.5 rounded-lg hover:bg-amber-500/20 transition-colors"
+                className={`p-2 rounded-xl transition-all ${
+                  isPanelCollapsed 
+                    ? 'bg-amber-500/20 border border-amber-500/40 shadow-lg shadow-amber-500/20 hover:bg-amber-500/30' 
+                    : 'hover:bg-amber-500/10 border border-transparent'
+                }`}
                 aria-label={isPanelCollapsed ? "Expand" : "Collapse"}
-                title={isPanelCollapsed ? "Expand setup" : "Collapse"}
+                title={isPanelCollapsed ? "Expand setup wizard" : "Collapse"}
               >
                 {isPanelCollapsed ? (
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                  <Maximize2 className="w-4 h-4 text-amber-400" />
                 ) : (
-                  <Minimize2 className="w-3.5 h-3.5 text-muted-foreground hover:text-amber-400" />
+                  <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-amber-400" />
                 )}
               </button>
             )}
