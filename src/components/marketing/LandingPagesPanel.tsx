@@ -11,6 +11,7 @@ import {
   ExternalLink, Flame, Layers, AlertCircle, LogOut, Clock
 } from 'lucide-react';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
+import { GoogleAdsOnboardingWizard } from './GoogleAdsOnboardingWizard';
 
 interface Keyword {
   id: string;
@@ -477,6 +478,13 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <p className="text-sm text-muted-foreground">Looking for campaigns targeting {selectedDomain || 'your domain'}...</p>
           </div>
         </motion.div>
+      ) : showWizard && !accessToken ? (
+        /* Google Ads Connection Wizard */
+        <GoogleAdsOnboardingWizard 
+          domain={selectedDomain || ''} 
+          onComplete={handleWizardComplete} 
+          onSkip={handleSkipWizard} 
+        />
       ) : showCampaignSetup && accessToken ? (
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
       ) : !accessToken ? (
