@@ -263,6 +263,16 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     }
   }, [accessToken, connectedCustomerId, handleFetchKeywordsWithToken, handleFetchKeywords]);
 
+  // Cancel campaign setup - go back to connected state without campaigns
+  const handleCampaignSetupCancel = useCallback(() => {
+    setShowCampaignSetup(false);
+    // Set hasCampaigns to true to prevent auto-showing the wizard again
+    // User can manually trigger it later if needed
+    setHasCampaigns(true);
+    setKeywords([]);
+    setSummary(null);
+  }, []);
+
   const handleToggleKeyword = (keywordId: string) => {
     setSelectedKeywords(prev => {
       const next = new Set(prev);
@@ -495,10 +505,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           </div>
         </motion.div>
       ) : showCampaignSetup && accessToken ? (
-        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
-      ) : accessToken && hasCampaigns === false ? (
+        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={handleCampaignSetupCancel} />
+      ) : accessToken && hasCampaigns === false && !keywords.length ? (
         /* Has unified auth but no campaigns - go directly to campaign setup */
-        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
+        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={handleCampaignSetupCancel} />
       ) : !accessToken ? (
         /* Only show OAuth wizard if truly not authenticated */
         <GoogleAdsOnboardingWizard 
