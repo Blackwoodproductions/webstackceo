@@ -269,8 +269,19 @@ export function GoogleAdsCampaignSetupWizard({
       {/* Compact Header */}
       <div className="relative p-4 border-b border-orange-500/20 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/25">
-            <GoogleAdsIcon className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400/20 to-amber-500/20 flex items-center justify-center shadow-lg shadow-orange-500/25 border border-orange-500/30 overflow-hidden">
+            {domain ? (
+              <img 
+                src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`} 
+                alt={domain}
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <Globe className={`w-5 h-5 text-orange-500 fallback-icon ${domain ? 'hidden' : ''}`} />
           </div>
           <div>
             <h3 className="text-sm font-semibold">Campaign Setup</h3>
