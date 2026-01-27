@@ -8,7 +8,8 @@ import {
   Hash, FileText, Sparkles, Shield, Clock, Gauge, 
   LineChart, PieChart, AlertTriangle, CheckCircle, XCircle,
   Smartphone, Monitor, Wifi, WifiOff, Code, Image,
-  Layout, Type, Link2, FileWarning, Layers, Settings2
+  Layout, Type, Link2, FileWarning, Layers, Settings2,
+  Lightbulb, Plus, X, Wand2, Brain, Flame, Snowflake
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -290,6 +292,13 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
     related: any[];
     aiOverview: string | null;
   } | null>(null);
+  
+  // Keyword Research states
+  const [seedKeyword, setSeedKeyword] = useState('');
+  const [seedKeywords, setSeedKeywords] = useState<string[]>([]);
+  const [researchKeywords, setResearchKeywords] = useState<KeywordData[]>([]);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchHistory, setResearchHistory] = useState<string[]>([]);
 
   const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
 
@@ -367,6 +376,53 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
     }
   }, [cleanDomain, isLoading]);
 
+  // Keyword Research function
+  const runKeywordResearch = useCallback(async () => {
+    if (seedKeywords.length === 0) {
+      toast.error('Add at least one seed keyword');
+      return;
+    }
+    
+    setIsResearching(true);
+    toast.info(`Researching ${seedKeywords.length} seed keyword(s)...`);
+    
+    try {
+      const response = await callAPI('keywords_for_keywords', [{
+        keywords: seedKeywords,
+        location_code: 2840,
+        language_code: 'en',
+        limit: 100
+      }]);
+      
+      if (response?.tasks?.[0]?.result) {
+        setResearchKeywords(response.tasks[0].result);
+        setResearchHistory(prev => [...new Set([...seedKeywords, ...prev])].slice(0, 10));
+        toast.success(`Found ${response.tasks[0].result.length} keyword ideas!`);
+      } else {
+        toast.error('No keyword ideas found');
+      }
+    } catch (err) {
+      console.error('[Keyword Research] Error:', err);
+      toast.error('Failed to research keywords');
+    } finally {
+      setIsResearching(false);
+    }
+  }, [seedKeywords]);
+
+  // Add seed keyword
+  const addSeedKeyword = () => {
+    const trimmed = seedKeyword.trim().toLowerCase();
+    if (trimmed && !seedKeywords.includes(trimmed)) {
+      setSeedKeywords(prev => [...prev, trimmed]);
+      setSeedKeyword('');
+    }
+  };
+
+  // Remove seed keyword
+  const removeSeedKeyword = (kw: string) => {
+    setSeedKeywords(prev => prev.filter(k => k !== kw));
+  };
+
   // Reset when domain changes
   useEffect(() => {
     if (cleanDomain !== lastDomain) {
@@ -374,6 +430,8 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
       setKeywords([]);
       setOnpageData(null);
       setSerpData(null);
+      setResearchKeywords([]);
+      setSeedKeywords([]);
     }
   }, [cleanDomain, lastDomain]);
 
@@ -711,6 +769,9 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
               </TabsTrigger>
               <TabsTrigger value="serp" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-500">
                 <Search className="w-4 h-4 mr-1.5" /> SERP Analysis
+              </TabsTrigger>
+              <TabsTrigger value="research" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:text-amber-500">
+                <Lightbulb className="w-4 h-4 mr-1.5" /> Keyword Research
               </TabsTrigger>
             </TabsList>
 
@@ -1112,6 +1173,229 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+
+            {/* Keyword Research Tab */}
+            <TabsContent value="research" className="mt-6 space-y-6">
+              {/* Research Input Section */}
+              <Card className="border-amber-500/20 bg-gradient-to-br from-card via-card to-amber-500/5 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Wand2 className="w-4 h-4 text-amber-500" />
+                    Keyword Research Tool
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Input */}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        placeholder="Enter a seed keyword (e.g., 'seo tools')"
+                        value={seedKeyword}
+                        onChange={(e) => setSeedKeyword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addSeedKeyword()}
+                        className="pr-10 bg-muted/30 border-amber-500/20 focus:border-amber-500"
+                      />
+                      {seedKeyword && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-amber-500"
+                          onClick={addSeedKeyword}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <Button
+                      onClick={runKeywordResearch}
+                      disabled={isResearching || seedKeywords.length === 0}
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                    >
+                      {isResearching ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Researching...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4 mr-2" />
+                          Find Keywords
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Seed Keywords Tags */}
+                  {seedKeywords.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {seedKeywords.map((kw, i) => (
+                        <motion.div
+                          key={kw}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                        >
+                          <Badge 
+                            variant="outline" 
+                            className="bg-amber-500/10 border-amber-500/30 text-amber-500 pl-2 pr-1 py-1"
+                          >
+                            {kw}
+                            <button
+                              onClick={() => removeSeedKeyword(kw)}
+                              className="ml-1.5 hover:bg-amber-500/20 rounded p-0.5"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Quick Suggestions */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs text-muted-foreground">Quick add:</span>
+                    {[cleanDomain?.split('.')[0], 'best', 'how to', 'vs', 'review'].filter(Boolean).map((suggestion) => (
+                      <Badge
+                        key={suggestion}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-muted/50 text-xs"
+                        onClick={() => {
+                          if (!seedKeywords.includes(suggestion!)) {
+                            setSeedKeywords(prev => [...prev, suggestion!]);
+                          }
+                        }}
+                      >
+                        + {suggestion}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Research History */}
+                  {researchHistory.length > 0 && (
+                    <div className="pt-2 border-t border-border/50">
+                      <span className="text-xs text-muted-foreground">Recent searches:</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {researchHistory.slice(0, 5).map((kw) => (
+                          <Badge
+                            key={kw}
+                            variant="secondary"
+                            className="cursor-pointer text-xs opacity-70 hover:opacity-100"
+                            onClick={() => {
+                              if (!seedKeywords.includes(kw)) {
+                                setSeedKeywords(prev => [...prev, kw]);
+                              }
+                            }}
+                          >
+                            {kw}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Research Results */}
+              {researchKeywords.length > 0 && (
+                <Card className="border-amber-500/20 overflow-hidden">
+                  <CardHeader className="border-b border-border/50 bg-gradient-to-r from-amber-500/5 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-amber-500" />
+                        Keyword Ideas ({researchKeywords.length})
+                      </CardTitle>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                          <Snowflake className="w-3 h-3 mr-1" />
+                          Low Comp: {researchKeywords.filter(k => k.competition === 'LOW').length}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-red-500/10 text-red-500 border-red-500/20">
+                          <Flame className="w-3 h-3 mr-1" />
+                          High Vol: {researchKeywords.filter(k => k.search_volume >= 1000).length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="max-h-[500px] overflow-auto">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>Keyword</TableHead>
+                            <TableHead className="text-right">Volume</TableHead>
+                            <TableHead className="text-center">Trend</TableHead>
+                            <TableHead className="text-center">Competition</TableHead>
+                            <TableHead className="text-right">CPC</TableHead>
+                            <TableHead className="text-right">Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {researchKeywords.map((kw, i) => {
+                            const potentialValue = (kw.search_volume || 0) * (kw.cpc || 0) * 0.03;
+                            return (
+                              <motion.tr
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.02 }}
+                                className="hover:bg-amber-500/5 group"
+                              >
+                                <TableCell className="font-medium max-w-[300px]">
+                                  <div className="flex items-center gap-2">
+                                    {kw.competition === 'LOW' && kw.search_volume >= 100 && (
+                                      <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                    )}
+                                    <span className="truncate">{kw.keyword}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <span className="font-medium text-amber-500">{formatNumber(kw.search_volume)}</span>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <KeywordTrendMini data={kw.monthly_searches} />
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <CompetitionBadge level={kw.competition} index={kw.competition_index} />
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {formatCurrency(kw.cpc)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatCurrency(potentialValue)}
+                                  </span>
+                                </TableCell>
+                              </motion.tr>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Empty State */}
+              {researchKeywords.length === 0 && !isResearching && (
+                <Card className="border-dashed border-2 border-amber-500/20 bg-amber-500/5">
+                  <CardContent className="py-12 text-center">
+                    <motion.div
+                      className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center"
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Lightbulb className="w-8 h-8 text-amber-500" />
+                    </motion.div>
+                    <h3 className="text-lg font-semibold mb-2 text-amber-500">Discover Keyword Opportunities</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      Enter seed keywords above to find related keyword ideas with search volume, 
+                      CPC, and competition data. Great for content planning and PPC campaigns.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </>
