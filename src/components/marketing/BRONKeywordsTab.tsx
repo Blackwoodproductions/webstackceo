@@ -3,7 +3,8 @@ import {
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save,
   Eye, ChevronUp, FileText, Link2, Hash, 
-  Sparkles, Maximize2, Minimize2, X, PanelLeftClose, PanelLeft, BarChart3
+  Sparkles, Maximize2, Minimize2, X, PanelLeftClose, PanelLeft, 
+  BarChart3, TrendingUp, TrendingDown, Minus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -419,30 +420,57 @@ export const BRONKeywordsTab = ({
 
               {/* SERP Rankings - right side */}
               {hasRankings && (
-                <div className="flex items-center gap-1.5 flex-shrink-0 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                  <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {googlePos !== null && (
-                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
-                      <span className="opacity-70">G</span>
-                      <span>{googlePos}</span>
+                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
+                      <span className="font-semibold">Google</span>
+                      <span className="text-sm font-bold">#{googlePos}</span>
+                      {googlePos <= 10 ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : googlePos <= 20 ? (
+                        <Minus className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                      )}
                     </div>
                   )}
                   {bingPos !== null && (
-                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
-                      <span className="opacity-70">B</span>
-                      <span>{bingPos}</span>
+                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
+                      <span className="font-semibold">Bing</span>
+                      <span className="text-sm font-bold">#{bingPos}</span>
+                      {bingPos <= 10 ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : bingPos <= 20 ? (
+                        <Minus className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                      )}
                     </div>
                   )}
                   {yahooPos !== null && (
-                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
-                      <span className="opacity-70">Y</span>
-                      <span>{yahooPos}</span>
+                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
+                      <span className="font-semibold">Yahoo</span>
+                      <span className="text-sm font-bold">#{yahooPos}</span>
+                      {yahooPos <= 10 ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : yahooPos <= 20 ? (
+                        <Minus className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                      )}
                     </div>
                   )}
                   {duckPos !== null && (
-                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text} border`}>
-                      <span className="opacity-70">D</span>
-                      <span>{duckPos}</span>
+                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text} border`}>
+                      <span className="font-semibold">DuckDuckGo</span>
+                      <span className="text-sm font-bold">#{duckPos}</span>
+                      {duckPos <= 10 ? (
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : duckPos <= 20 ? (
+                        <Minus className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                      )}
                     </div>
                   )}
                 </div>
