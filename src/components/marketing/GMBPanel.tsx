@@ -1032,58 +1032,114 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           </motion.div>
         </AnimatePresence>
       ) : (
-        /* No Listing Found - Show Onboarding Option */
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* Connection Box - CADE style */}
-          <Card className="border-amber-500/30 bg-gradient-to-br from-card via-amber-500/5 to-card overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none">
-              <motion.div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} />
+        /* No Listing Found - Compact Futuristic Design */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          {/* Compact Connection Card with Inline Layout */}
+          <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-orange-500/5">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <motion.div 
+                className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <motion.div 
+                className="absolute -bottom-8 -left-8 w-24 h-24 bg-orange-500/15 rounded-full blur-xl"
+                animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
+                transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+              />
+              {/* Scanning line */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/10 to-transparent"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+              />
             </div>
-            <CardContent className="relative p-8 text-center">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-10 h-10 text-amber-500" />
+            
+            <div className="relative p-4 flex flex-col md:flex-row items-center gap-4">
+              {/* Icon with pulse effect */}
+              <div className="relative shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/30 border border-amber-500/40 flex items-center justify-center backdrop-blur-sm">
+                  <MapPin className="w-7 h-7 text-amber-500" />
+                </div>
+                <motion.div
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Plus className="w-2.5 h-2.5 text-white" />
+                </motion.div>
               </div>
-              <h3 className="text-xl font-bold mb-2">No GMB Listing Found</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                We couldn't find a Google Business Profile listing for <span className="font-semibold text-foreground">{selectedDomain}</span>. 
-                Add your business to Google Maps to boost local visibility and attract more customers.
-              </p>
-              <div className="flex flex-col items-center gap-3 max-w-sm mx-auto">
-                <Button onClick={openGmbPopup} className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4 mr-2" fill="currentColor">
-                    <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="currentColor"/>
-                  </svg>
-                  Add to Google Maps
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Opens Google Business Profile in a popup to create or claim your listing.
+              
+              {/* Text content */}
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-base font-bold flex items-center gap-2 justify-center md:justify-start">
+                  Get Listed on Google Maps
+                  <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                    <Zap className="w-2.5 h-2.5 mr-0.5" />Quick Setup
+                  </Badge>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  No listing found for <span className="font-medium text-foreground">{selectedDomain}</span>. Boost local visibility in minutes.
                 </p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Benefits Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { icon: MapPin, title: 'Map Pack Visibility', desc: 'Appear in Google Maps search results for local queries', borderClass: 'border-blue-500/20', bgClass: 'from-blue-500/5', iconClass: 'text-blue-500' },
-              { icon: Star, title: 'Customer Reviews', desc: 'Collect and respond to reviews to build trust', borderClass: 'border-amber-500/20', bgClass: 'from-amber-500/5', iconClass: 'text-amber-500' },
-              { icon: TrendingUp, title: 'Performance Insights', desc: 'Track views, clicks, and customer actions', borderClass: 'border-green-500/20', bgClass: 'from-green-500/5', iconClass: 'text-green-500' },
-              { icon: Phone, title: 'Direct Contact', desc: 'Let customers call or message you directly', borderClass: 'border-violet-500/20', bgClass: 'from-violet-500/5', iconClass: 'text-violet-500' },
-              { icon: Globe, title: 'Business Info', desc: 'Display hours, services, and photos', borderClass: 'border-pink-500/20', bgClass: 'from-pink-500/5', iconClass: 'text-pink-500' },
-              { icon: Users, title: 'Local SEO', desc: 'Improve rankings for local search queries', borderClass: 'border-cyan-500/20', bgClass: 'from-cyan-500/5', iconClass: 'text-cyan-500' },
-            ].map((benefit, i) => (
-              <motion.div
-                key={benefit.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className={`p-4 rounded-xl border ${benefit.borderClass} bg-gradient-to-br ${benefit.bgClass} to-transparent`}
+              
+              {/* CTA Button */}
+              <Button 
+                onClick={openGmbPopup} 
+                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 shadow-lg shadow-blue-500/25 shrink-0 gap-2"
               >
-                <benefit.icon className={`w-6 h-6 ${benefit.iconClass} mb-2`} />
-                <h4 className="font-semibold text-sm mb-1">{benefit.title}</h4>
-                <p className="text-xs text-muted-foreground">{benefit.desc}</p>
-              </motion.div>
-            ))}
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                  <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+                </svg>
+                Add to Maps
+              </Button>
+            </div>
+          </div>
+
+          {/* Compact Benefits Grid - 2 rows of 3, smaller cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            {[
+              { icon: MapPin, title: 'Map Pack', desc: 'Local search visibility', color: 'blue' },
+              { icon: Star, title: 'Reviews', desc: 'Build customer trust', color: 'amber' },
+              { icon: TrendingUp, title: 'Insights', desc: 'Track performance', color: 'green' },
+              { icon: Phone, title: 'Contact', desc: 'Direct calls & messages', color: 'violet' },
+              { icon: Globe, title: 'Business Info', desc: 'Hours & services', color: 'pink' },
+              { icon: Users, title: 'Local SEO', desc: 'Rank higher locally', color: 'cyan' },
+            ].map((benefit, i) => {
+              const colorMap: Record<string, { border: string; bg: string; text: string; glow: string }> = {
+                blue: { border: 'border-blue-500/30', bg: 'from-blue-500/10', text: 'text-blue-500', glow: 'shadow-blue-500/20' },
+                amber: { border: 'border-amber-500/30', bg: 'from-amber-500/10', text: 'text-amber-500', glow: 'shadow-amber-500/20' },
+                green: { border: 'border-green-500/30', bg: 'from-green-500/10', text: 'text-green-500', glow: 'shadow-green-500/20' },
+                violet: { border: 'border-violet-500/30', bg: 'from-violet-500/10', text: 'text-violet-500', glow: 'shadow-violet-500/20' },
+                pink: { border: 'border-pink-500/30', bg: 'from-pink-500/10', text: 'text-pink-500', glow: 'shadow-pink-500/20' },
+                cyan: { border: 'border-cyan-500/30', bg: 'from-cyan-500/10', text: 'text-cyan-500', glow: 'shadow-cyan-500/20' },
+              };
+              const colors = colorMap[benefit.color];
+              
+              return (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  className={`relative p-3 rounded-xl border ${colors.border} bg-gradient-to-br ${colors.bg} to-transparent backdrop-blur-sm hover:shadow-lg ${colors.glow} transition-all cursor-default group`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
+                      <benefit.icon className={`w-4 h-4 ${colors.text}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-xs truncate">{benefit.title}</h4>
+                      <p className="text-[10px] text-muted-foreground truncate">{benefit.desc}</p>
+                    </div>
+                  </div>
+                  {/* Subtle corner accent */}
+                  <div className={`absolute bottom-1 right-1 w-1 h-1 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       )}
