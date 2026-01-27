@@ -1,9 +1,9 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, Check, X, 
-  Search, ChevronDown, ChevronRight, ExternalLink, Save,
-  FileText, Hash, Calendar, Eye, Minimize2, ChevronUp
+  Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, X, 
+  Search, ChevronDown, ChevronRight, Save,
+  Eye, Minimize2, ChevronUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -31,19 +30,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { BronKeyword } from "@/hooks/use-bron-api";
 
 interface BRONKeywordsTabProps {
@@ -137,12 +123,11 @@ export const BRONKeywordsTab = ({
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [wysiwygKeyword, setWysiwygKeyword] = useState<BronKeyword | null>(null);
   const [newKeyword, setNewKeyword] = useState("");
 
-  // WYSIWYG editor state
-  const [editForm, setEditForm] = useState<Record<string, string>>({});
-  const [isSaving, setIsSaving] = useState(false);
+  // Inline editor state - stores form data per keyword id
+  const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
+  const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const editorRef = useRef<HTMLDivElement>(null);
 
   // Filter keywords
@@ -157,14 +142,6 @@ export const BRONKeywordsTab = ({
 
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
 
-  const toggleExpand = (id: number | string) => {
-    setExpandedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const isDeleted = (kw: BronKeyword) => kw.deleted === 1 || kw.is_deleted === true;
   const isActive = (kw: BronKeyword) => kw.active === 1 && !isDeleted(kw);
@@ -178,39 +155,67 @@ export const BRONKeywordsTab = ({
     }
   };
 
-  const openWysiwyg = (kw: BronKeyword) => {
-    setWysiwygKeyword(kw);
-    setEditForm({
-      keywordtitle: kw.keywordtitle || kw.keyword || '',
-      metatitle: kw.metatitle || '',
-      metadescription: kw.metadescription || '',
-      resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
-      linkouturl: kw.linkouturl || '',
-      resaddress: kw.resaddress || '',
-      resfb: kw.resfb || '',
-    });
+  // Initialize inline form when expanding a keyword
+  const expandKeyword = (kw: BronKeyword) => {
+    const id = kw.id;
+    if (expandedIds.has(id)) {
+      // Collapse
+      setExpandedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    } else {
+      // Expand and initialize form
+      setExpandedIds(prev => new Set(prev).add(id));
+      if (!inlineEditForms[id]) {
+        setInlineEditForms(prev => ({
+          ...prev,
+          [id]: {
+            keywordtitle: kw.keywordtitle || kw.keyword || '',
+            metatitle: kw.metatitle || '',
+            metadescription: kw.metadescription || '',
+            resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
+            linkouturl: kw.linkouturl || '',
+            resaddress: kw.resaddress || '',
+            resfb: kw.resfb || '',
+          }
+        }));
+      }
+    }
   };
 
-  const saveWysiwygChanges = async () => {
-    if (!wysiwygKeyword) return;
-    setIsSaving(true);
+  const updateInlineForm = (id: number | string, field: string, value: string) => {
+    setInlineEditForms(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  };
+
+  const saveInlineChanges = async (kw: BronKeyword) => {
+    const form = inlineEditForms[kw.id];
+    if (!form) return;
+    
+    setSavingIds(prev => new Set(prev).add(kw.id));
     try {
-      const success = await onUpdate(String(wysiwygKeyword.id), {
-        keywordtitle: editForm.keywordtitle || undefined,
-        metatitle: editForm.metatitle || undefined,
-        metadescription: editForm.metadescription || undefined,
-        resfeedtext: editForm.resfeedtext || undefined,
-        linkouturl: editForm.linkouturl || undefined,
-        resaddress: editForm.resaddress || undefined,
-        resfb: editForm.resfb || undefined,
+      const success = await onUpdate(String(kw.id), {
+        keywordtitle: form.keywordtitle || undefined,
+        metatitle: form.metatitle || undefined,
+        metadescription: form.metadescription || undefined,
+        resfeedtext: form.resfeedtext || undefined,
+        linkouturl: form.linkouturl || undefined,
+        resaddress: form.resaddress || undefined,
+        resfb: form.resfb || undefined,
       });
       if (success) {
-        setWysiwygKeyword(null);
-        setEditForm({});
         onRefresh();
       }
     } finally {
-      setIsSaving(false);
+      setSavingIds(prev => {
+        const next = new Set(prev);
+        next.delete(kw.id);
+        return next;
+      });
     }
   };
 
@@ -246,13 +251,14 @@ export const BRONKeywordsTab = ({
         animate={{ opacity: 1 }}
         className={deleted ? 'opacity-50' : ''}
       >
-        {/* Main Row - Click opens editor directly */}
+        {/* Main Row - Click expands inline editor */}
         <div 
           className={`
             flex items-center gap-4 py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer
             ${isChild ? 'pl-12' : ''}
+            ${expanded ? 'bg-card/95 backdrop-blur-sm sticky top-[41px] z-[5]' : ''}
           `}
-          onClick={() => openWysiwyg(kw)}
+          onClick={() => expandKeyword(kw)}
         >
           {/* Expand icon */}
           <div className="w-6 flex-shrink-0">
@@ -296,11 +302,11 @@ export const BRONKeywordsTab = ({
                 className="h-7 px-2 text-muted-foreground hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
-                  openWysiwyg(kw);
+                  expandKeyword(kw);
                 }}
               >
                 <Edit2 className="w-3.5 h-3.5 mr-1" />
-                Edit
+                {expanded ? 'Close' : 'Edit'}
               </Button>
             ) : (
               <Button
@@ -328,88 +334,217 @@ export const BRONKeywordsTab = ({
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className={`py-4 px-4 bg-card/50 border-b border-border/50 space-y-4 ${isChild ? 'pl-12' : ''}`}>
+              <div className={`py-6 px-4 bg-card/50 border-b border-border/50 ${isChild ? 'pl-12' : ''}`}>
                 {/* Minimize Header */}
-                <div className="flex items-center justify-between -mt-2 mb-2">
-                  <span className="text-xs text-muted-foreground">Keyword Details</span>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-foreground">Edit Keyword Content</span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleExpand(kw.id);
+                      expandKeyword(kw);
                     }}
                   >
                     <ChevronUp className="w-3.5 h-3.5 mr-1" />
                     Minimize
                   </Button>
                 </div>
-                {kw.metadescription && (
-                  <div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                      <FileText className="w-3.5 h-3.5" />
-                      Meta Description
+
+                {/* Two Column Layout: Editor + Preview */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left: Form Fields */}
+                  <div className="space-y-4">
+                    {/* Keyword Info Section */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Keyword Title</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                            placeholder="Primary keyword..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-muted-foreground">ID:</span>{' '}
+                            <span className="font-mono">{kw.id}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Domain ID:</span>{' '}
+                            <span className="font-mono">{kw.domainid}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Status:</span>{' '}
+                            <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
+                              {active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Created:</span>{' '}
+                            <span>{formatDate(kw.createdDate)}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-sm leading-relaxed">
-                      {kw.metadescription}
+
+                    {/* SEO Meta Section */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Meta Title</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.metatitle || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                            placeholder="Page title for search engines..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Meta Description</Label>
+                          <Textarea
+                            value={inlineEditForms[kw.id]?.metadescription || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                            placeholder="Page description for search results..."
+                            rows={3}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Links & Resources Section */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Target URL (Link Out)</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.linkouturl || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                            placeholder="https://example.com/page"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Resource Address</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.resaddress || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                            placeholder="Physical address or location..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Facebook Page URL</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.resfb || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                            placeholder="https://facebook.com/..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Content HTML Section */}
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
+                      <Textarea
+                        value={inlineEditForms[kw.id]?.resfeedtext || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'resfeedtext', e.target.value)}
+                        placeholder="HTML content for this keyword page..."
+                        rows={8}
+                        className="font-mono text-xs"
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* Generated Content Preview */}
-                {kw.resfeedtext && (
-                  <div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                      <Eye className="w-3.5 h-3.5" />
-                      Generated Content Preview
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border/50 text-sm leading-relaxed max-h-48 overflow-y-auto">
-                      {stripHtmlTags(kw.resfeedtext).slice(0, 800)}
-                      {stripHtmlTags(kw.resfeedtext).length > 800 && '...'}
+                  {/* Right: Live Preview */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      Live Preview
+                    </Label>
+                    <div 
+                      className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 rounded-lg border border-border bg-white text-black"
+                      style={{ fontFamily: 'Georgia, serif' }}
+                    >
+                      {/* Preview Header */}
+                      <div className="mb-4 pb-4 border-b border-gray-200">
+                        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                          {inlineEditForms[kw.id]?.metatitle || 'Page Title'}
+                        </h1>
+                        <p className="text-sm text-gray-600 italic">
+                          {inlineEditForms[kw.id]?.metadescription || 'Meta description will appear here...'}
+                        </p>
+                      </div>
+                      
+                      {/* Preview Content */}
+                      <div 
+                        className="prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: inlineEditForms[kw.id]?.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
+                        }}
+                      />
                     </div>
                   </div>
-                )}
-
-                {/* Meta info row */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
-                  <span className="flex items-center gap-1">
-                    <Hash className="w-3 h-3" />
-                    Domain ID: {kw.domainid}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Active: {active ? 'Yes' : 'No'}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Trash2 className="w-3 h-3" />
-                    Deleted: {deleted ? 'Yes' : 'No'}
-                  </span>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-8 px-3 text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleExpand(kw.id);
+                      expandKeyword(kw);
                     }}
                   >
                     <Minimize2 className="w-4 h-4 mr-1" />
                     Collapse
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-primary/50 hover:border-primary hover:bg-primary/10"
-                    onClick={() => openWysiwyg(kw)}
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit All Fields
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {!deleted && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm(String(kw.id));
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        saveInlineChanges(kw);
+                      }}
+                      disabled={savingIds.has(kw.id)}
+                    >
+                      {savingIds.has(kw.id) ? (
+                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-1" />
+                      )}
+                      Save Changes
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -571,175 +706,6 @@ export const BRONKeywordsTab = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* WYSIWYG Editor Modal */}
-      <Dialog open={!!wysiwygKeyword} onOpenChange={() => setWysiwygKeyword(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="w-5 h-5" />
-              Edit Keyword Content
-            </DialogTitle>
-            <DialogDescription>
-              Edit all fields for: {wysiwygKeyword && getKeywordDisplayText(wysiwygKeyword)}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 gap-6 py-4 max-h-[60vh] overflow-y-auto">
-            {/* Left: Form Fields */}
-            <div className="space-y-4">
-              {/* Keyword Info Section */}
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Keyword Title</Label>
-                    <Input
-                      value={editForm.keywordtitle || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, keywordtitle: e.target.value }))}
-                      placeholder="Primary keyword..."
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-muted-foreground">ID:</span>{' '}
-                      <span className="font-mono">{wysiwygKeyword?.id}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Domain ID:</span>{' '}
-                      <span className="font-mono">{wysiwygKeyword?.domainid}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Status:</span>{' '}
-                      <Badge variant={wysiwygKeyword?.active === 1 ? 'default' : 'secondary'} className="text-[10px] ml-1">
-                        {wysiwygKeyword?.active === 1 ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Created:</span>{' '}
-                      <span>{formatDate(wysiwygKeyword?.createdDate)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SEO Meta Section */}
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Meta Title</Label>
-                    <Input
-                      value={editForm.metatitle || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, metatitle: e.target.value }))}
-                      placeholder="Page title for search engines..."
-                    />
-                    <p className="text-[10px] text-muted-foreground">{(editForm.metatitle || '').length}/60 characters</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Meta Description</Label>
-                    <Textarea
-                      value={editForm.metadescription || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, metadescription: e.target.value }))}
-                      placeholder="Page description for search results..."
-                      rows={3}
-                    />
-                    <p className="text-[10px] text-muted-foreground">{(editForm.metadescription || '').length}/160 characters</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Links & Resources Section */}
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Target URL (Link Out)</Label>
-                    <Input
-                      value={editForm.linkouturl || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, linkouturl: e.target.value }))}
-                      placeholder="https://example.com/page"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Resource Address</Label>
-                    <Input
-                      value={editForm.resaddress || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, resaddress: e.target.value }))}
-                      placeholder="Physical address or location..."
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Facebook Page URL</Label>
-                    <Input
-                      value={editForm.resfb || ''}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, resfb: e.target.value }))}
-                      placeholder="https://facebook.com/..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Content HTML Section */}
-              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
-                <Textarea
-                  value={editForm.resfeedtext || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, resfeedtext: e.target.value }))}
-                  placeholder="HTML content for this keyword page..."
-                  rows={8}
-                  className="font-mono text-xs"
-                />
-              </div>
-            </div>
-
-            {/* Right: Live Preview */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                Live Preview
-              </Label>
-              <div 
-                ref={editorRef}
-                className="h-full min-h-[400px] max-h-[500px] overflow-y-auto p-4 rounded-lg border border-border bg-white text-black"
-                style={{ fontFamily: 'Georgia, serif' }}
-              >
-                {/* Preview Header */}
-                <div className="mb-4 pb-4 border-b border-gray-200">
-                  <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                    {editForm.metatitle || 'Page Title'}
-                  </h1>
-                  <p className="text-sm text-gray-600 italic">
-                    {editForm.metadescription || 'Meta description will appear here...'}
-                  </p>
-                </div>
-                
-                {/* Preview Content */}
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ 
-                    __html: editForm.resfeedtext || '<p class="text-gray-400">Content preview will appear here...</p>' 
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-border pt-4">
-            <Button variant="outline" onClick={() => setWysiwygKeyword(null)}>
-              <X className="w-4 h-4 mr-1" />
-              Cancel
-            </Button>
-            <Button onClick={saveWysiwygChanges} disabled={isSaving}>
-              {isSaving ? (
-                <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-1" />
-              )}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 };
