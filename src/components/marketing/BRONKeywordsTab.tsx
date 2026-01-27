@@ -724,6 +724,43 @@ export const BRONKeywordsTab = ({
                       </Button>
                     </div>
                   </div>
+
+                  {/* Rendered Article Preview */}
+                  <div className="p-3 rounded-lg bg-card border border-border/50">
+                    <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+                      <Eye className="w-3 h-3" />
+                      Article Preview
+                    </h4>
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      {/* Browser Chrome */}
+                      <div className="bg-muted/60 px-3 py-1.5 flex items-center gap-2 border-b border-border">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-destructive/50" />
+                          <div className="w-2 h-2 rounded-full bg-secondary" />
+                          <div className="w-2 h-2 rounded-full bg-primary/50" />
+                        </div>
+                        <div className="flex-1 mx-2">
+                          <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
+                            {selectedDomain || "example.com"}/article
+                          </div>
+                        </div>
+                      </div>
+                      {/* Article Content */}
+                      <div className="max-h-[200px] overflow-y-auto bg-background text-foreground">
+                        <article className="p-4">
+                          <div
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{
+                              __html:
+                                inlineEditForms[kw.id]?.resfeedtext ||
+                                decodeHtmlContent(kw.resfeedtext || "") ||
+                                "<p><em>No article content yet…</em></p>",
+                            }}
+                          />
+                        </article>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
@@ -968,7 +1005,7 @@ export const BRONKeywordsTab = ({
 
             {/* Editor Content */}
             {articleEditorId && (
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Article</Label>
                   <WysiwygEditor
@@ -979,42 +1016,6 @@ export const BRONKeywordsTab = ({
                   <p className="text-xs text-muted-foreground">
                     {((inlineEditForms[articleEditorId]?.resfeedtext || "").length || 0).toLocaleString()} characters
                   </p>
-                </div>
-
-                {/* Rendered Article Preview */}
-                <div className="space-y-3 pt-4 border-t border-border">
-                  <Label className="text-sm font-medium flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    Rendered Article Preview
-                  </Label>
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    {/* Browser Chrome */}
-                    <div className="bg-muted/60 px-4 py-2 flex items-center gap-2 border-b border-border">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-destructive/50" />
-                        <div className="w-3 h-3 rounded-full bg-secondary" />
-                        <div className="w-3 h-3 rounded-full bg-primary/50" />
-                      </div>
-                      <div className="flex-1 mx-4">
-                        <div className="bg-background/60 rounded-md px-3 py-1 text-xs text-muted-foreground truncate">
-                          {selectedDomain || "example.com"}/article
-                        </div>
-                      </div>
-                    </div>
-                    {/* Article Content */}
-                    <div className="max-h-[35vh] overflow-y-auto bg-background text-foreground">
-                      <article className="p-8 max-w-3xl mx-auto">
-                        <div
-                          className="prose prose-lg max-w-none"
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              inlineEditForms[articleEditorId]?.resfeedtext ||
-                              "<p><em>Your article preview will appear here…</em></p>",
-                          }}
-                        />
-                      </article>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
