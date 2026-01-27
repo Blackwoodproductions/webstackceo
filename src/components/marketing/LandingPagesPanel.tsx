@@ -437,12 +437,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
             <Target className="w-6 h-6 text-white" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">PPC Landing Pages</h2>
-              <Badge variant="outline" className="text-cyan-400 border-cyan-500/30 bg-cyan-500/10 text-[10px]">
-                <Clock className="w-3 h-3 mr-1" />Coming Soon
-              </Badge>
-            </div>
+            <h2 className="text-xl font-bold">PPC Landing Pages</h2>
             <p className="text-xs text-muted-foreground">Import keywords → Generate optimized pages → Boost Quality Score</p>
           </div>
         </div>
