@@ -53,6 +53,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
   };
 
   const getStoredConnection = () => {
+    // First check for dedicated Google Ads token
     const adsToken = localStorage.getItem('google_ads_access_token');
     const adsExpiry = localStorage.getItem('google_ads_token_expiry');
     const storedCustomerId = localStorage.getItem('google_ads_customer_id');
@@ -64,6 +65,7 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
       }
     }
     
+    // Use unified Google auth from VI dashboard login (GSC/GA/unified)
     const unifiedToken = localStorage.getItem('unified_google_token') || 
                          localStorage.getItem('gsc_access_token') || 
                          localStorage.getItem('ga_access_token');
@@ -74,9 +76,28 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     if (unifiedToken && unifiedExpiry) {
       const expiryTime = parseInt(unifiedExpiry, 10);
       if (Date.now() < expiryTime - 300000) {
+        // Sync the unified token to Google Ads storage
         localStorage.setItem('google_ads_access_token', unifiedToken);
         localStorage.setItem('google_ads_token_expiry', unifiedExpiry);
         return { token: unifiedToken, customerId: storedCustomerId || 'unified-auth', isUnifiedAuth: true };
+      }
+    }
+    
+    // Check for Supabase session token (from VI dashboard Google login)
+    const oauthTokenData = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+    if (oauthTokenData) {
+      try {
+        const parsed = JSON.parse(oauthTokenData);
+        const providerToken = parsed?.provider_token;
+        const expiresAt = parsed?.expires_at;
+        
+        if (providerToken && expiresAt && Date.now() / 1000 < expiresAt - 300) {
+          localStorage.setItem('google_ads_access_token', providerToken);
+          localStorage.setItem('google_ads_token_expiry', String(expiresAt * 1000));
+          return { token: providerToken, customerId: storedCustomerId || 'unified-auth', isUnifiedAuth: true };
+        }
+      } catch (e) {
+        // Ignore parse errors
       }
     }
     
@@ -475,8 +496,11 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         </motion.div>
       ) : showCampaignSetup && accessToken ? (
         <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
+      ) : accessToken && hasCampaigns === false ? (
+        /* Has unified auth but no campaigns - go directly to campaign setup */
+        <GoogleAdsCampaignSetupWizard domain={selectedDomain || ''} customerId={connectedCustomerId || 'unified-auth'} accessToken={accessToken} onComplete={handleCampaignSetupComplete} onCancel={() => setShowCampaignSetup(false)} />
       ) : !accessToken ? (
-        /* Google Ads Onboarding Wizard - Show by default when not connected */
+        /* Only show OAuth wizard if truly not authenticated */
         <GoogleAdsOnboardingWizard 
           domain={selectedDomain || ''} 
           onComplete={handleWizardComplete} 
