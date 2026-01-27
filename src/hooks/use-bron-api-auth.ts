@@ -162,36 +162,23 @@ export function useBronApiAuth({
       const loggedIn = await checkLoginStatus();
       setLastCheckResult(loggedIn);
       
-      // Track initial status - if already logged in when popup opened, 
-      // don't auto-close until we see a state change or user closes popup
+      // Track initial status
       if (!initialStatusChecked.current) {
         initialStatusChecked.current = true;
-        wasLoggedInInitially = loggedIn;
         console.log("[BRON API Auth] Initial status:", loggedIn ? "already logged in" : "not logged in");
         
-        // If already logged in initially, don't auto-close - let user interact
-        if (loggedIn) {
-          console.log("[BRON API Auth] Already logged in - waiting for user to close popup or navigate");
+        // If already logged in, close popup and proceed
+        if (loggedIn && isActive) {
+          console.log("[BRON API Auth] Already logged in - closing popup and proceeding");
+          triggerLoginSuccess();
           return;
         }
       }
       
-      // Only trigger login success if:
-      // 1. User was NOT logged in initially and now IS logged in (fresh login)
-      // 2. OR enough time has passed (user had chance to interact)
-      const timeSinceOpen = Date.now() - popupOpenedAt.current;
-      const minInteractionTime = 5000; // 5 seconds minimum
-      
+      // Fresh login detected
       if (loggedIn && isActive) {
-        if (!wasLoggedInInitially) {
-          // Fresh login detected
-          console.log("[BRON API Auth] Fresh login detected");
-          triggerLoginSuccess();
-        } else if (timeSinceOpen > minInteractionTime) {
-          // Was already logged in but user has had time to interact
-          console.log("[BRON API Auth] User confirmed existing session");
-          triggerLoginSuccess();
-        }
+        console.log("[BRON API Auth] Login detected");
+        triggerLoginSuccess();
       }
     };
 
