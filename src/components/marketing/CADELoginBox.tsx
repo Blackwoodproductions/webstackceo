@@ -19,8 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CADEMetricsBoxes } from "./CADEMetricsBoxes";
-import { useUnifiedApiKey } from "@/hooks/use-unified-api-key";
 
 interface SystemHealth {
   status?: string;
@@ -75,16 +73,6 @@ interface TaskItem {
   progress?: number;
 }
 
-interface ContentTask {
-  task_id: string;
-  status: string;
-  status_url?: string;
-  content_type?: string;
-  domain?: string;
-  started_at?: string;
-  message?: string;
-}
-
 interface QueueInfo {
   name?: string;
   size?: number;
@@ -109,29 +97,21 @@ const CONTENT_TYPES = [
 ];
 
 export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
-  // Use unified API key (shared with BRON)
-  const { apiKey: unifiedKey, isLoading: isLoadingUnifiedKey, isConnected: hasUnifiedKey, setApiKey: saveUnifiedKey } = useUnifiedApiKey();
-  
-  const [inputKey, setInputKey] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [hasAutoCrawled, setHasAutoCrawled] = useState(false);
 
-  // Sync with unified key
-  useEffect(() => {
-    if (hasUnifiedKey && unifiedKey) {
-      setIsConnected(true);
-    }
-  }, [hasUnifiedKey, unifiedKey]);
-
   // Use ref to always have current API key value in callbacks
-  const apiKeyRef = useRef(unifiedKey || "");
+  const apiKeyRef = useRef(apiKey);
   useEffect(() => {
-    apiKeyRef.current = unifiedKey || "";
-  }, [unifiedKey]);
+    apiKeyRef.current = apiKey;
+  }, [apiKey]);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -148,11 +128,60 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [crawling, setCrawling] = useState(false);
   const [generatingFaq, setGeneratingFaq] = useState(false);
   const [previousDomain, setPreviousDomain] = useState<string | undefined>(undefined);
-  
-  // Content Generation Task Tracking
-  const [contentTasks, setContentTasks] = useState<ContentTask[]>([]);
-  const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
 
+  // Get current user and load API key from database
+  useEffect(() => {
+    const loadApiKey = async () => {
+      setIsLoadingKey(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+          
+          // Try to load from database first
+          const { data: keyData } = await supabase
+            .from("user_api_keys")
+            .select("api_key_encrypted")
+            .eq("user_id", user.id)
+            .eq("service_name", "cade")
+            .maybeSingle();
+          
+          if (keyData?.api_key_encrypted) {
+            setApiKey(keyData.api_key_encrypted);
+            setIsConnected(true);
+            // Also update localStorage for quick access
+            localStorage.setItem("cade_api_key", keyData.api_key_encrypted);
+          } else {
+            // Fallback to localStorage for backwards compatibility
+            const storedKey = localStorage.getItem("cade_api_key");
+            if (storedKey) {
+              setApiKey(storedKey);
+              setIsConnected(true);
+            }
+          }
+        } else {
+          // Not logged in, use localStorage only
+          const storedKey = localStorage.getItem("cade_api_key");
+          if (storedKey) {
+            setApiKey(storedKey);
+            setIsConnected(true);
+          }
+        }
+      } catch (err) {
+        console.error("[CADE] Failed to load API key:", err);
+        // Fallback to localStorage
+        const storedKey = localStorage.getItem("cade_api_key");
+        if (storedKey) {
+          setApiKey(storedKey);
+          setIsConnected(true);
+        }
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    
+    loadApiKey();
+  }, []);
 
   // Clear domain-specific data and refetch when domain changes
   useEffect(() => {
@@ -272,18 +301,20 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
           const profile = profileRes.value?.data || profileRes.value;
-          // Only set profile if it's a valid object (not HTML/error response)
-          if (profile && typeof profile === "object" && !profile.raw) {
-            setDomainProfile(profile);
-            
-            // Check if domain needs crawling - only if we got a valid profile response
-            if (!profile?.last_crawl && !hasAutoCrawled) {
-              console.log("[CADE] Domain not crawled yet, triggering auto-crawl");
-              triggerAutoCrawl();
-            }
+          setDomainProfile(profile);
+          
+          // Check if domain needs crawling
+          if (!profile?.last_crawl && !hasAutoCrawled) {
+            console.log("[CADE] Domain not crawled yet, triggering auto-crawl");
+            triggerAutoCrawl();
+          }
+        } else if (profileRes.status === "fulfilled" && profileRes.value?.error) {
+          // Domain not found in CADE, trigger crawl
+          console.log("[CADE] Domain not found, triggering crawl");
+          if (!hasAutoCrawled) {
+            triggerAutoCrawl();
           }
         }
-        // Don't auto-crawl on errors - the API might not be set up yet
         
         if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
           const faqData = faqsRes.value?.data || faqsRes.value;
@@ -297,11 +328,10 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   }, [domain, callCadeApi, hasAutoCrawled]);
 
-  // Auto-crawl function - only runs once per domain
+  // Auto-crawl function
   const triggerAutoCrawl = useCallback(async () => {
     if (!domain || !apiKeyRef.current || hasAutoCrawled) return;
     
-    // Set flag FIRST to prevent any re-triggers
     setHasAutoCrawled(true);
     setCrawling(true);
     toast.info(`Starting automatic crawl for ${domain}...`);
@@ -312,25 +342,26 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       
       if (crawlRes && !crawlRes.error) {
         toast.success(`Domain crawl initiated for ${domain}`);
-        // Do NOT auto-refresh - user can manually refresh when ready
+        // Poll for updates
+        setTimeout(() => fetchAllData(), 5000);
       } else if (crawlRes?.error) {
         console.log("[CADE] Crawl error:", crawlRes.error);
-        // Don't show error toast for expected API issues during setup
+        toast.error(`Crawl failed: ${crawlRes.error.message || crawlRes.error}`);
       }
     } catch (crawlErr) {
       console.error("[CADE] Auto-crawl error:", crawlErr);
-      // Silent fail - API may not be configured yet
+      toast.error("Failed to start domain crawl");
     } finally {
       setCrawling(false);
     }
-  }, [domain, callCadeApi, hasAutoCrawled]);
+  }, [domain, callCadeApi, hasAutoCrawled, fetchAllData]);
 
   // Fetch data when connected or domain changes
   useEffect(() => {
-    if (isConnected && unifiedKey) {
+    if (isConnected && apiKey) {
       fetchAllData();
     }
-  }, [isConnected, unifiedKey, domain, fetchAllData]);
+  }, [isConnected, apiKey, domain, fetchAllData]);
 
   // Reset auto-crawl flag when domain changes
   useEffect(() => {
@@ -347,7 +378,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   }, [domain, previousDomain, isConnected]);
 
   const handleLogin = async () => {
-    if (!inputKey.trim()) {
+    if (!apiKey.trim()) {
       setError("Please enter your CADE API key");
       return;
     }
@@ -356,13 +387,31 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     setError(null);
 
     try {
-      // Temporarily set the key for the health check
-      apiKeyRef.current = inputKey.trim();
       const healthRes = await callCadeApi("health");
 
       if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
-        // Save using unified key system (persists permanently)
-        await saveUnifiedKey(inputKey.trim());
+        // Save to localStorage for quick access
+        localStorage.setItem("cade_api_key", apiKey);
+        
+        // Save to database for long-term storage if user is logged in
+        if (userId) {
+          const { error: upsertError } = await supabase
+            .from("user_api_keys")
+            .upsert({
+              user_id: userId,
+              service_name: "cade",
+              api_key_encrypted: apiKey,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: "user_id,service_name"
+            });
+          
+          if (upsertError) {
+            console.error("[CADE] Failed to save API key to database:", upsertError);
+          } else {
+            console.log("[CADE] API key saved to database successfully");
+          }
+        }
         
         setIsConnected(true);
         setHealth(healthRes.data || healthRes);
@@ -376,13 +425,17 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             try {
               const crawlRes = await callCadeApi("crawl-domain", { force: true });
               console.log("[CADE] Auto-crawl response:", crawlRes);
+              // Accept any non-error response as success
               if (crawlRes && !crawlRes.error) {
                 toast.success(`Domain crawl initiated for ${domain}`);
+              } else if (crawlRes?.error) {
+                console.log("[CADE] Crawl response error:", crawlRes.error);
               }
             } catch (crawlErr) {
               console.log("[CADE] Auto-crawl error:", crawlErr);
             } finally {
               setCrawling(false);
+              // Refetch data after crawl starts
               fetchAllData();
             }
           }, 1000);
@@ -398,11 +451,21 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     }
   };
 
-  // Logout is hidden since key persists forever, but keeping for edge cases
   const handleLogout = async () => {
-    // This effectively does nothing now since we persist keys forever
-    // But keeping for any future disconnect needs
+    // Remove from localStorage
+    localStorage.removeItem("cade_api_key");
+    
+    // Remove from database if user is logged in
+    if (userId) {
+      await supabase
+        .from("user_api_keys")
+        .delete()
+        .eq("user_id", userId)
+        .eq("service_name", "cade");
+    }
+    
     setIsConnected(false);
+    setApiKey("");
     setHealth(null);
     setSubscription(null);
     setDomainProfile(null);
@@ -458,94 +521,18 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
         content_type: contentType,
         auto_publish: false 
       });
-      
-      // Extract task data from response
-      const taskData = res?.data || res;
-      
-      if (taskData?.task_id) {
-        // Add the new task to our tracking list
-        const newTask: ContentTask = {
-          task_id: taskData.task_id,
-          status: taskData.status || "pending",
-          status_url: taskData.status_url,
-          content_type: contentType,
-          domain: domain,
-          started_at: new Date().toISOString(),
-          message: res?.message || taskData?.message,
-        };
-        
-        setContentTasks(prev => [newTask, ...prev]);
-        setPollingTaskId(taskData.task_id);
-        toast.success(`${contentType} generation started! Task ID: ${taskData.task_id.slice(0, 8)}...`);
-        
-        // Switch to content tab to show the task
-        setActiveTab("content");
-      } else if (res?.success || res?.content_id) {
+      if (res?.success || res?.task_id || res?.content_id) {
         toast.success(`${contentType} generation started!`);
         fetchAllData();
       } else {
         toast.error(res?.error || "Failed to start content generation");
       }
     } catch (err) {
-      console.error("[CADE] Content generation error:", err);
       toast.error("Failed to generate content");
     } finally {
       setGeneratingContent(null);
     }
   };
-
-  // Poll for task status updates
-  const pollTaskStatus = useCallback(async (taskId: string) => {
-    try {
-      // Try to get task status from status URL or general endpoint
-      const res = await callCadeApi("crawl-tasks");
-      const allTasks = res?.data || res;
-      
-      if (Array.isArray(allTasks)) {
-        const task = allTasks.find((t: any) => t.id === taskId || t.task_id === taskId);
-        if (task) {
-          setContentTasks(prev => prev.map(t => 
-            t.task_id === taskId 
-              ? { ...t, status: task.status || t.status }
-              : t
-          ));
-          
-          // Stop polling if task is complete
-          if (task.status === "completed" || task.status === "failed") {
-            setPollingTaskId(null);
-            if (task.status === "completed") {
-              toast.success("Content generation completed!");
-              fetchAllData();
-            } else {
-              toast.error("Content generation failed");
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error("[CADE] Poll task status error:", err);
-    }
-  }, [callCadeApi, fetchAllData]);
-
-  // Auto-poll active task
-  useEffect(() => {
-    if (!pollingTaskId) return;
-    
-    const interval = setInterval(() => {
-      pollTaskStatus(pollingTaskId);
-    }, 5000); // Poll every 5 seconds
-    
-    return () => clearInterval(interval);
-  }, [pollingTaskId, pollTaskStatus]);
-
-  // Clear completed/failed tasks after 5 minutes
-  const clearOldTasks = useCallback(() => {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    setContentTasks(prev => prev.filter(t => 
-      t.status === "pending" || t.status === "processing" || 
-      (t.started_at && t.started_at > fiveMinutesAgo)
-    ));
-  }, []);
 
   const handleGenerateFaq = async () => {
     if (!domain) {
@@ -594,7 +581,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   };
 
   // Loading state while checking for saved API key
-  if (isLoadingUnifiedKey) {
+  if (isLoadingKey) {
     return (
       <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
         <div className="flex items-center gap-3">
@@ -664,9 +651,9 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                 <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   type={showKey ? "text" : "password"}
-                  placeholder="Enter your API key (shared with BRON)"
-                  value={inputKey}
-                  onChange={(e) => setInputKey(e.target.value)}
+                  placeholder="Enter your CADE API key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   className="pl-12 pr-12 h-14 text-base bg-background/50 border-violet-500/30 focus:border-violet-500 rounded-xl"
                 />
@@ -695,7 +682,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
               <Button
                 onClick={handleLogin}
-                disabled={isLoading || !inputKey.trim()}
+                disabled={isLoading || !apiKey.trim()}
                 className="w-full h-14 text-base bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-xl shadow-violet-500/30 gap-3 rounded-xl"
               >
                 {isLoading ? (
@@ -805,17 +792,10 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             <div>
               <h3 className="text-xl font-bold flex items-center gap-3">
                 CADE Dashboard
-                {isConnected ? (
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40">
-                    <CheckCircle className="w-3 h-3 mr-1.5" />
-                    Connected
-                  </Badge>
-                ) : (
-                  <Badge className={getStatusColor(health?.status)}>
-                    {getStatusIcon(health?.status)}
-                    <span className="ml-1.5 capitalize">{health?.status || "Connecting..."}</span>
-                  </Badge>
-                )}
+                <Badge className={getStatusColor(health?.status)}>
+                  {getStatusIcon(health?.status)}
+                  <span className="ml-1.5 capitalize">{health?.status || "Connecting..."}</span>
+                </Badge>
               </h3>
               <p className="text-sm text-muted-foreground">
                 AI-Powered Content Automation Engine
@@ -847,33 +827,113 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
         </div>
       </div>
 
-      {/* CADE Metrics Dashboard */}
-      <CADEMetricsBoxes
-        metrics={{
-          status: health?.status,
-          version: health?.version,
-          workers: health?.workers,
-          uptime: health?.uptime,
-          plan: subscription?.plan,
-          planStatus: subscription?.status,
-          articlesGenerated: subscription?.articles_generated,
-          faqsGenerated: subscription?.faqs_generated ?? faqs.length,
-          quotaUsed: subscription?.quota_used,
-          quotaLimit: subscription?.quota_limit,
-          domainsUsed: subscription?.domains_used,
-          domainsLimit: subscription?.domains_limit,
-          creditsRemaining: subscription?.credits_remaining,
-          crawledPages: domainProfile?.crawled_pages,
-          contentCount: domainProfile?.content_count,
-          keywordsTracked: domainProfile?.keywords_tracked,
-          cssAnalyzed: domainProfile?.css_analyzed,
-          lastCrawl: domainProfile?.last_crawl,
-          category: domainProfile?.category,
-          language: domainProfile?.language,
-        }}
-        domain={domain}
-        isConnected={isConnected}
-      />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-green-500/5 border-emerald-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <Activity className="w-4 h-4 text-emerald-400" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Status</span>
+            </div>
+            <p className="text-xl font-bold capitalize">{health?.status || "—"}</p>
+            <p className="text-xs text-muted-foreground mt-1">{health?.version || "Latest"}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Cpu className="w-4 h-4 text-blue-400" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Workers</span>
+            </div>
+            <p className="text-xl font-bold">{health?.workers ?? "—"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Active processors</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/5 border-violet-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Plan</span>
+            </div>
+            <p className="text-xl font-bold">{subscription?.plan || "Pro"}</p>
+            <Badge className={`mt-1 ${getStatusColor(subscription?.status || "active")}`}>
+              {subscription?.status || "Active"}
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <FileText className="w-4 h-4 text-amber-400" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">Articles</span>
+            </div>
+            <p className="text-xl font-bold">{subscription?.articles_generated ?? domainProfile?.content_count ?? "—"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Generated</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-pink-500/10 to-rose-500/5 border-pink-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                <HelpCircle className="w-4 h-4 text-pink-400" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">FAQs</span>
+            </div>
+            <p className="text-xl font-bold">{subscription?.faqs_generated ?? faqs.length ?? "—"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Created</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Usage Progress */}
+      {(subscription?.quota_limit || subscription?.domains_limit) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {subscription?.quota_limit && (
+            <Card className="border-violet-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Content Quota</span>
+                  <span className="text-sm text-muted-foreground">
+                    {subscription.quota_used ?? 0} / {subscription.quota_limit}
+                  </span>
+                </div>
+                <Progress 
+                  value={((subscription.quota_used ?? 0) / subscription.quota_limit) * 100} 
+                  className="h-2"
+                />
+              </CardContent>
+            </Card>
+          )}
+          {subscription?.domains_limit && (
+            <Card className="border-violet-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Domain Slots</span>
+                  <span className="text-sm text-muted-foreground">
+                    {subscription.domains_used ?? 0} / {subscription.domains_limit}
+                  </span>
+                </div>
+                <Progress 
+                  value={((subscription.domains_used ?? 0) / subscription.domains_limit) * 100} 
+                  className="h-2"
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Main Dashboard Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -902,6 +962,66 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
+          {/* Domain Profile */}
+          {domain && (
+            <Card className="border-violet-500/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-violet-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{domain}</CardTitle>
+                      <CardDescription>Domain Profile</CardDescription>
+                    </div>
+                  </div>
+                  <Badge className={getStatusColor(domainProfile?.status)}>
+                    {domainProfile?.status || "Not crawled"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {domainProfile ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">Category</p>
+                      <p className="font-medium">{domainProfile.category || "Unknown"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">Pages Crawled</p>
+                      <p className="font-medium">{domainProfile.crawled_pages ?? 0}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">Content Generated</p>
+                      <p className="font-medium">{domainProfile.content_count ?? 0}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">CSS Analyzed</p>
+                      <p className="font-medium">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Globe className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-4">Domain hasn't been crawled yet</p>
+                    <Button
+                      onClick={handleCrawlDomain}
+                      disabled={crawling}
+                      className="gap-2 bg-violet-500 hover:bg-violet-600"
+                    >
+                      {crawling ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
+                      Start Domain Crawl
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Quick Actions */}
           <Card className="border-violet-500/20">
@@ -956,107 +1076,6 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         {/* Content Generation Tab */}
         <TabsContent value="content" className="space-y-4">
-          {/* Active Content Tasks */}
-          {contentTasks.length > 0 && (
-            <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-green-500/10">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Activity className="w-4 h-4 text-emerald-400" />
-                    Active Content Tasks
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearOldTasks}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Clear Completed
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {contentTasks.map((task) => (
-                    <motion.div
-                      key={task.task_id}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-4 rounded-xl bg-background/50 border border-border/50"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                            task.status === "completed" ? "bg-emerald-500/20" :
-                            task.status === "failed" ? "bg-red-500/20" :
-                            "bg-violet-500/20"
-                          }`}>
-                            {task.status === "completed" ? (
-                              <CheckCircle className="w-5 h-5 text-emerald-400" />
-                            ) : task.status === "failed" ? (
-                              <XCircle className="w-5 h-5 text-red-400" />
-                            ) : (
-                              <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm capitalize">{task.content_type?.replace("-", " ") || "Content"}</span>
-                              <Badge className={getStatusColor(task.status)}>
-                                {task.status || "pending"}
-                              </Badge>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">
-                                  {task.task_id.slice(0, 12)}...
-                                </span>
-                                {task.domain && (
-                                  <span className="flex items-center gap-1">
-                                    <Globe className="w-3 h-3" />
-                                    {task.domain}
-                                  </span>
-                                )}
-                              </div>
-                              {task.message && (
-                                <p className="text-xs text-muted-foreground">{task.message}</p>
-                              )}
-                              {task.started_at && (
-                                <p className="text-[10px] text-muted-foreground/70">
-                                  Started: {new Date(task.started_at).toLocaleTimeString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        {task.status_url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(task.status_url, "_blank")}
-                            className="shrink-0 gap-1 text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Status
-                          </Button>
-                        )}
-                      </div>
-                      {(task.status === "pending" || task.status === "processing") && (
-                        <div className="mt-3">
-                          <Progress 
-                            value={task.status === "processing" ? 50 : 10} 
-                            className="h-1.5 bg-muted/50"
-                          />
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Content Type Selection */}
           <Card className="border-violet-500/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

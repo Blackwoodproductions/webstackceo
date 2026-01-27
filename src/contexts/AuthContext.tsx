@@ -233,51 +233,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error('Popup blocked. Please allow popups for this site.');
     }
 
-    // Poll for popup close and wait for session
-    return new Promise<void>((resolve) => {
-      let resolved = false;
-      
+    // Poll for popup close
+    return new Promise<void>((resolve, reject) => {
       const pollInterval = setInterval(async () => {
         try {
-          if (popup.closed && !resolved) {
+          if (popup.closed) {
             clearInterval(pollInterval);
-            
-            // Wait a moment for the session to be established
-            await new Promise(r => setTimeout(r, 500));
-            
-            // Try multiple times to get the session
-            for (let attempt = 0; attempt < 5; attempt++) {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (session) {
-                resolved = true;
-                resolve();
-                return;
-              }
-              // Wait between attempts
-              await new Promise(r => setTimeout(r, 300));
-            }
-            
-            // If we still don't have a session, resolve anyway (don't show error)
-            // The callback page handles the auth and will redirect appropriately
-            if (!resolved) {
-              resolved = true;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
               resolve();
+            } else {
+              reject(new Error('Authentication cancelled'));
             }
           }
         } catch {
           // Ignore cross-origin errors
         }
       }, 500);
-      
-      // Timeout after 5 minutes - just resolve without error
-      setTimeout(() => {
-        if (!resolved) {
-          clearInterval(pollInterval);
-          try { popup.close(); } catch {}
-          resolved = true;
-          resolve();
-        }
-      }, 5 * 60 * 1000);
     });
   }, []);
 

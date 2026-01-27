@@ -42,7 +42,7 @@ export interface ToolInteraction {
   tool_name: string;
   tool_type: string | null;
   page_path: string | null;
-  metadata?: unknown;
+  metadata: unknown;
   created_at: string;
 }
 
@@ -57,8 +57,8 @@ export interface FunnelStats {
 }
 
 /**
- * Optimized dashboard data hook with reduced data transfer.
- * Uses efficient queries with proper limits and only fetches necessary columns.
+ * Custom hook for fetching and managing dashboard visitor/lead data.
+ * Consolidates data fetching logic that was previously scattered across the monolithic dashboard.
  */
 export const useDashboardData = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -83,86 +83,53 @@ export const useDashboardData = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      // Fetch data efficiently with reduced limits
-      const [
-        leadsRes,
-        recentSessionsRes,
-        recentPageViewsRes,
-        recentToolsRes,
-        todaySessionsRes,
-      ] = await Promise.all([
-        // Leads - full data needed for CRM functionality
-        supabase
-          .from('leads')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100),
-        
-        // Recent sessions (active in last 5 minutes for live visitors)
-        supabase
-          .from('visitor_sessions')
-          .select('id, session_id, first_page, referrer, started_at, last_activity_at')
-          .gte('last_activity_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
-          .order('last_activity_at', { ascending: false })
-          .limit(50),
-        
-        // Recent page views - limited for display purposes
-        supabase
-          .from('page_views')
-          .select('id, session_id, page_path, page_title, created_at')
-          .order('created_at', { ascending: false })
-          .limit(100),
-        
-        // Recent tool interactions
-        supabase
-          .from('tool_interactions')
-          .select('id, session_id, tool_name, tool_type, page_path, created_at')
-          .order('created_at', { ascending: false })
-          .limit(100),
-        
-        // Today's sessions count
-        supabase
-          .from('visitor_sessions')
-          .select('id', { count: 'exact', head: true })
-          .gte('started_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+      // Fetch all data in parallel
+      const [leadsRes, sessionsRes, pageViewsRes, toolsRes] = await Promise.all([
+        supabase.from('leads').select('*').order('created_at', { ascending: false }),
+        supabase.from('visitor_sessions').select('*').order('started_at', { ascending: false }).limit(500),
+        supabase.from('page_views').select('*').order('created_at', { ascending: false }).limit(1000),
+        supabase.from('tool_interactions').select('*').order('created_at', { ascending: false }).limit(500),
       ]);
 
-      // Set data
       if (leadsRes.data) setLeads(leadsRes.data);
-      if (recentPageViewsRes.data) setPageViews(recentPageViewsRes.data);
-      if (recentToolsRes.data) setToolInteractions(recentToolsRes.data as ToolInteraction[]);
+      if (sessionsRes.data) setSessions(sessionsRes.data);
+      if (pageViewsRes.data) setPageViews(pageViewsRes.data);
+      if (toolsRes.data) setToolInteractions(toolsRes.data);
 
-      // Set active visitors from recent sessions
-      const liveVisitors = recentSessionsRes.data || [];
-      setActiveVisitors(liveVisitors.length);
-      setSessions(liveVisitors as VisitorSession[]);
+      // Calculate stats
+      const allSessions = sessionsRes.data || [];
+      const allLeads = leadsRes.data || [];
+      const allTools = toolsRes.data || [];
+
+      // Active visitors (last 5 minutes)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const activeCount = allSessions.filter(s => s.last_activity_at >= fiveMinutesAgo).length;
+      setActiveVisitors(activeCount);
 
       // New visitors today
-      setNewVisitorsToday(todaySessionsRes.count || 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString();
+      const newToday = allSessions.filter(s => s.started_at >= todayStr).length;
+      setNewVisitorsToday(newToday);
 
-      // Calculate funnel stats from leads data
-      const allLeads = leadsRes.data || [];
+      // Calculate funnel stats
+      const uniqueSessionIds = new Set(allSessions.map(s => s.session_id));
+      const engagedSessionIds = new Set(allTools.map(t => t.session_id));
       const qualifiedLeads = allLeads.filter(l => l.qualification_step && l.qualification_step >= 2);
       const closedLeads = allLeads.filter(l => l.status === 'closed');
       const withName = allLeads.filter(l => l.full_name);
       const withCompanyInfo = allLeads.filter(l => l.company_employees || l.annual_revenue);
 
-      // Calculate engaged from tool interactions (unique sessions)
-      const engagedSessions = new Set((recentToolsRes.data || []).map(t => t.session_id));
-
-      // Estimate total visitors from today's count (simplified)
-      const estimatedVisitors = (todaySessionsRes.count || 0) * 7; // Rough weekly estimate
-
       setFunnelStats({
-        visitors: estimatedVisitors,
-        engaged: engagedSessions.size,
+        visitors: uniqueSessionIds.size,
+        engaged: engagedSessionIds.size,
         leads: allLeads.length,
         qualified: qualifiedLeads.length,
         closedLeads: closedLeads.length,
         withName: withName.length,
         withCompanyInfo: withCompanyInfo.length,
       });
-
     } catch (error) {
       console.error('[useDashboardData] Error fetching data:', error);
     } finally {

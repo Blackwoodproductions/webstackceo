@@ -3,6 +3,7 @@ import HeroSection from "@/components/sections/HeroSection";
 import StatsSection from "@/components/sections/StatsSection";
 import FeaturesSection from "@/components/sections/FeaturesSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
+
 import PricingSection from "@/components/sections/PricingSection";
 import ContactSection from "@/components/sections/ContactSection";
 import Footer from "@/components/layout/Footer";
@@ -12,7 +13,7 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import LoadingScreen from "@/components/ui/loading-screen";
 import SectionIndicator from "@/components/ui/section-indicator";
 import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
-import { ChatWidget } from "@/components/chat";
+import LiveChatWidget from "@/components/ui/live-chat-widget";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import FloatingAIShield from "@/components/ui/floating-ai-shield";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
@@ -48,7 +49,7 @@ const Index = () => {
       <ScrollProgress />
       <SectionIndicator />
       <KeyboardShortcutsHelp />
-      <ChatWidget />
+      <LiveChatWidget />
       <Navbar />
       <main>
         <HeroSection />

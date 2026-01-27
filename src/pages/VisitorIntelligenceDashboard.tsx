@@ -38,7 +38,7 @@ import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
 import { GAMetricsBoxes } from '@/components/marketing/GAMetricsBoxes';
-import { ChatSidebar } from '@/components/chat/ChatSidebar';
+import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
@@ -70,7 +70,6 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBPanel } from '@/components/marketing/GMBPanel';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
-import { SEODashboard } from '@/components/marketing/SEODashboard';
 
 interface Lead {
   id: string;
@@ -253,14 +252,12 @@ const MarketingDashboard = () => {
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
-  const [chatSidebarExpanded, setChatSidebarExpanded] = useState(false);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'seo' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
-    'seo',
     'bron',
     'cade',
     'gmb',
@@ -522,16 +519,7 @@ const MarketingDashboard = () => {
   // User-added domains
   const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
     const stored = localStorage.getItem('vi_user_added_domains');
-    if (!stored) return [];
-    try {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      // Self-heal: if the stored value is corrupted, remove it so the app can't crash
-      // during render on subsequent visits.
-      localStorage.removeItem('vi_user_added_domains');
-      return [];
-    }
+    return stored ? JSON.parse(stored) : [];
   });
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
   const [newDomainInput, setNewDomainInput] = useState('');
@@ -806,25 +794,8 @@ const MarketingDashboard = () => {
         is_current_user: s.session_id === currentSessionId,
       }));
       
-      // DEDUPLICATION: Keep only ONE instance of current user (first match wins)
-      // Also remove any duplicate session IDs (should not happen, but safety net)
-      const seenSessionIds = new Set<string>();
-      let foundCurrentUser = false;
-      const deduped = visitorsWithProfiles.filter(v => {
-        // Skip duplicate session IDs
-        if (seenSessionIds.has(v.session_id)) return false;
-        seenSessionIds.add(v.session_id);
-        
-        // Skip additional current user entries
-        if (v.is_current_user) {
-          if (foundCurrentUser) return false;
-          foundCurrentUser = true;
-        }
-        return true;
-      });
-      
       // Sort to put current user first
-      const finalSorted = deduped.sort((a, b) => {
+      const finalSorted = visitorsWithProfiles.sort((a, b) => {
         if (a.is_current_user) return -1;
         if (b.is_current_user) return 1;
         return 0; // Maintain existing order otherwise
@@ -1697,27 +1668,15 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div 
-      className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden transition-[padding] duration-300 ease-out"
-      style={{ paddingRight: chatSidebarExpanded ? 'calc(320px + 1.5rem)' : undefined }}
-    >
-      {/* Chat Sidebar */}
-      <ChatSidebar 
-        isOnline={chatOnline} 
-        onNewChat={() => setHasNewMessage(true)}
-        onExpandChange={setChatSidebarExpanded}
-      />
+    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
         canonical="/visitor-intelligence-dashboard"
       />
 
-      {/* High-tech background effects - isolated to prevent layout interference */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
-        style={{ isolation: 'isolate', contain: 'strict' }}
-      >
+      {/* High-tech background effects - matching AuditResults page */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -1731,10 +1690,14 @@ const MarketingDashboard = () => {
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[200px]" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-cyan-500/10 via-primary/5 to-transparent rounded-tr-[150px]" />
         
-        {/* Static gradient overlay (no animation to prevent jank) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none" />
+        {/* Animated scanning line */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
         
-        {/* Animated floating particles */}
+        {/* Floating particles - animated with framer-motion */}
         <motion.div
           className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/70"
           animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
@@ -1780,10 +1743,22 @@ const MarketingDashboard = () => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-primary/8 via-violet-500/3 to-transparent" />
       </div>
 
-      {/* Header with integrated tabs - wrapped with static glow effect, sticky */}
+      {/* Header with integrated tabs - wrapped with animated glow effect, sticky */}
       <div className="relative max-w-[1480px] mx-auto sticky top-0 z-50 group">
-        {/* Static gradient border glow */}
-        <div className="absolute -inset-[2px] rounded-t-[14px] opacity-40 blur-md bg-gradient-to-r from-cyan-400/40 via-violet-500/40 to-amber-400/30" />
+        {/* Animated gradient glow background - matching AuditResults */}
+        <motion.div
+          className="absolute -inset-[2px] rounded-t-[14px] opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-md"
+          animate={{
+            background: [
+              "linear-gradient(0deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+              "linear-gradient(90deg, rgba(139,92,246,0.4), rgba(251,191,36,0.3), rgba(34,211,238,0.4))",
+              "linear-gradient(180deg, rgba(251,191,36,0.3), rgba(34,211,238,0.4), rgba(139,92,246,0.4))",
+              "linear-gradient(270deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+              "linear-gradient(360deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
+            ],
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+        />
         
         <header className="relative border border-border bg-card/95 backdrop-blur-xl rounded-t-xl overflow-hidden">
           {/* Grid pattern overlay on header */}
@@ -1795,6 +1770,13 @@ const MarketingDashboard = () => {
             }}
           />
           
+          {/* Animated scanning line effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent pointer-events-none"
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+          />
+          
           {/* Corner accent */}
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[50px] pointer-events-none" />
         
@@ -1802,12 +1784,11 @@ const MarketingDashboard = () => {
           <div className="absolute left-1/2 -bottom-px flex items-end gap-0 z-20" style={{ transform: 'translateX(calc(-50% + 80px))' }}>
             {[
               { id: 'visitor-intelligence' as DashboardTab, label: 'Visitor', icon: Eye, isPaid: false },
-              { id: 'seo' as DashboardTab, label: 'SEO', icon: BarChart3, isPaid: true },
               { id: 'bron' as DashboardTab, label: 'Bron', icon: TrendingUp, isPaid: true },
               { id: 'cade' as DashboardTab, label: 'Cade', icon: FileText, isPaid: true },
               { id: 'gmb' as DashboardTab, label: 'Maps', icon: MapPin, isPaid: true },
               { id: 'social-signals' as DashboardTab, label: 'Social', icon: Activity, isPaid: true },
-              { id: 'on-page-seo' as DashboardTab, label: 'On-Page', icon: FileSearch, isPaid: true },
+              { id: 'on-page-seo' as DashboardTab, label: 'SEO', icon: FileSearch, isPaid: true },
               { id: 'landing-pages' as DashboardTab, label: 'PPC', icon: Target, isPaid: true },
             ].map((tab, index) => (
               <button
@@ -2738,45 +2719,556 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Chat panel removed for stability */}
-      </div>
-      </div>
-      )}
+        {/* Right Sidebar - Chat Panel */}
+        <div className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-300 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}>
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
+            {/* Header with animated icon */}
+            <div className="flex flex-col border-b border-border">
+              <div 
+                onClick={() => {
+                  setChatPanelOpen(!chatPanelOpen);
+                  setHasNewMessage(false); // Clear notification when opening
+                }}
+                className="flex items-center justify-center gap-2 p-3 cursor-pointer"
+              >
+                <div className={`relative ${hasNewMessage ? 'animate-ring-bell' : ''}`}>
+                  {chatOnline ? (
+                    <>
+                      <MessageCircle className={`w-5 h-5 absolute inset-0 ${hasNewMessage ? 'text-amber-500/50 animate-ping' : 'text-cyan-500/30 animate-ping'}`} />
+                      <MessageCircle className={`w-5 h-5 relative ${hasNewMessage ? 'text-amber-500' : 'text-cyan-500'}`} />
+                    </>
+                  ) : (
+                    <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                  )}
+                  {chatOnline && sidebarChats.length > 0 && (
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500 animate-bounce' : 'bg-red-500 animate-pulse'}`}>
+                      {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
+                    </span>
+                  )}
+                </div>
+                {chatPanelOpen && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">Live Chats</span>
+                    {hasNewMessage && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-medium animate-pulse">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+              
+            {/* Chat List - only show when online */}
+            {chatOnline && chatPanelOpen && (
+              <div className="flex-1 flex flex-col gap-1 p-2 overflow-auto">
+                {/* Active Chats Section */}
+                {sidebarChats.length > 0 && (
+                  <>
+                    <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1">Active Chats</p>
+                    {sidebarChats.map((chat) => {
+                      const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
+                      
+                      return (
+                        <div
+                          key={chat.id}
+                          onClick={() => setSelectedChatId(chat.id === selectedChatId ? null : chat.id)}
+                          className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedChatId === chat.id 
+                              ? 'bg-cyan-500/20 border border-cyan-500/30' 
+                              : 'hover:bg-secondary/50'
+                          }`}
+                        >
+                          {avatarUrl ? (
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                              <img 
+                                src={avatarUrl} 
+                                alt={chat.visitor_name || 'Visitor'} 
+                                className="w-full h-full rounded-full object-cover ring-2 ring-cyan-500/30"
+                              />
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center flex-shrink-0">
+                              <UserIcon className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {chat.visitor_name || 'Visitor'}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {chat.current_page || 'Unknown page'}
+                            </p>
+                          </div>
+                          {chat.status === 'pending' && (
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
 
+                {/* Live Visitors Section */}
+                {activeVisitors > 0 && (
+                  <>
+                    <p className="text-[10px] text-muted-foreground font-medium px-1 mb-1 mt-2 flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      Live Visitors
+                      <span className="ml-auto text-emerald-500">{activeVisitors}</span>
+                    </p>
+                    {liveVisitors.map((visitor) => {
+                      // Bold, vibrant colors (no pastels)
+                      const colors = [
+                        'from-red-600 to-rose-700',
+                        'from-orange-600 to-amber-700',
+                        'from-emerald-600 to-green-700',
+                        'from-blue-600 to-indigo-700',
+                        'from-purple-600 to-violet-700',
+                        'from-cyan-600 to-teal-700',
+                      ];
+                      const visitorIcons = [Eye, Zap, Flame, Star, Target, Crosshair, Sparkles, Activity];
+                      const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                      const colorClass = colors[hash % colors.length];
+                      const VisitorIcon = visitorIcons[hash % visitorIcons.length];
+                      const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
+                      const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m ago` : `${Math.floor(timeSince / 60)}h ago`;
+                      
+                      // Check if this visitor has an avatar (logged-in user)
+                      const hasAvatar = visitor.avatar_url;
+                      const isCurrentUser = visitor.is_current_user;
+                      
+                      return (
+                        <motion.div
+                          key={visitor.session_id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          onClick={async () => {
+                            if (isCurrentUser) return; // Don't start chat with yourself
+                            const { data: newConv } = await supabase
+                              .from('chat_conversations')
+                              .insert({
+                                session_id: visitor.session_id,
+                                status: 'active',
+                                current_page: visitor.first_page,
+                              })
+                              .select('id')
+                              .single();
+                            
+                            if (newConv) {
+                              await supabase.from('chat_messages').insert({
+                                conversation_id: newConv.id,
+                                sender_type: 'system',
+                                message: `Chat initiated with visitor on ${visitor.first_page || 'homepage'}`,
+                              });
+                              setSelectedChatId(newConv.id);
+                              fetchSidebarChats();
+                              toast.success('Chat started with visitor');
+                            }
+                          }}
+                          className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all duration-300 border backdrop-blur-sm ${
+                            isCurrentUser 
+                              ? 'bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-cyan-500/40 cursor-default' 
+                              : 'hover:bg-primary/5 border-primary/10 hover:border-primary/30 cursor-pointer'
+                          }`}
+                        >
+                          {/* Glow effect on hover */}
+                          {!isCurrentUser && (
+                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                          
+                          {/* Avatar or Icon container */}
+                          <div className="relative flex-shrink-0">
+                            {hasAvatar ? (
+                              <>
+                                {/* Outer glow for avatar */}
+                                <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-40 blur-sm group-hover:opacity-60 transition-opacity`} />
+                                
+                                {/* Avatar image */}
+                                <div className={`relative w-9 h-9 rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/30'}`}>
+                                  <img 
+                                    src={visitor.avatar_url!} 
+                                    alt={visitor.display_name || 'User'} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                
+                                {/* YOU badge for current user */}
+                                {isCurrentUser && (
+                                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg">
+                                    YOU
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {/* Outer glow ring */}
+                                <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-30 blur-sm group-hover:opacity-50 transition-opacity`} />
+                                
+                                {/* Main square */}
+                                <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
+                                  {/* Inner highlight */}
+                                  <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
+                                  
+                                  {/* Scan line effect */}
+                                  <motion.div 
+                                    className="absolute inset-0 rounded-lg overflow-hidden"
+                                    initial={false}
+                                  >
+                                    <motion.div 
+                                      className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                                      animate={{ y: [0, 36, 0] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    />
+                                  </motion.div>
+                                  
+                                  {/* Icon */}
+                                  <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
+                                  
+                                  {/* Corner accents */}
+                                  <div className="absolute top-0 left-0 w-1.5 h-1.5 border-l-2 border-t-2 border-white/40 rounded-tl-sm" />
+                                  <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-r-2 border-b-2 border-white/40 rounded-br-sm" />
+                                </div>
+                              </>
+                            )}
+                            
+                            {/* Live indicator with pulse */}
+                            <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}>
+                              <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                            </span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0 relative z-10">
+                            <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
+                              {isCurrentUser ? (
+                                <>
+                                  <span className="text-cyan-500">You</span>
+                                  <Badge variant="outline" className="text-[8px] py-0 px-1 h-4 border-cyan-500/30 text-cyan-500">Online</Badge>
+                                </>
+                              ) : (
+                                <>
+                                  {visitor.display_name || visitor.first_page || '/'}
+                                  {visitor.user_id && (
+                                    <Badge variant="outline" className="text-[8px] py-0 px-1 h-4 border-emerald-500/30 text-emerald-500">Google</Badge>
+                                  )}
+                                </>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+                              <span className={`w-1 h-1 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                              {isCurrentUser ? 'Your session' : `${timeLabel} • Click to engage`}
+                            </p>
+                          </div>
+                          
+                          {/* Shimmer effect on hover (not for current user) */}
+                          {!isCurrentUser && (
+                            <motion.div 
+                              className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none"
+                              animate={{ x: ['-100%', '200%'] }}
+                              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 1 }}
+                            />
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </>
+                )}
 
-      {/* SEO Intelligence Tab Content - DataForSEO Powered */}
-      {activeTab === 'seo' && (
-        <div className="relative max-w-[1480px] mx-auto group/seo">
-          <motion.div
-            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/seo:opacity-50 transition-opacity duration-500 blur-md -z-10"
-            animate={{
-              background: [
-                "linear-gradient(180deg, rgba(6,182,212,0.3), rgba(59,130,246,0.3))",
-                "linear-gradient(270deg, rgba(59,130,246,0.3), rgba(99,102,241,0.3))",
-                "linear-gradient(180deg, rgba(99,102,241,0.3), rgba(6,182,212,0.3))",
-              ],
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="relative bg-gradient-to-br from-card via-card/98 to-cyan-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
-            {/* Grid pattern */}
-            <div 
-              className="absolute inset-0 opacity-[0.02] pointer-events-none"
-              style={{
-                backgroundImage: `linear-gradient(hsl(192 91% 43%) 1px, transparent 1px), linear-gradient(90deg, hsl(192 91% 43%) 1px, transparent 1px)`,
-                backgroundSize: '30px 30px',
-              }}
-            />
-            {/* Scanning line */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none"
-              animate={{ y: ['-100%', '200%'] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-            />
-            <SEODashboard domain={selectedTrackedDomain || selectedDomainKey} />
+                {/* Empty state */}
+                {sidebarChats.length === 0 && liveVisitors.length === 0 && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center py-8 animate-fade-in">
+                      <div className="relative mx-auto w-12 h-12 mb-3">
+                        <MessageCircle className="w-12 h-12 text-cyan-500/20 absolute inset-0 animate-ping" />
+                        <MessageCircle className="w-12 h-12 text-cyan-500/40 relative" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Waiting for visitors...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Collapsed state - show chats + live visitors when online */}
+            {chatOnline && !chatPanelOpen && (
+              <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
+                {/* Active Chats */}
+                {sidebarChats.slice(0, 5).map((chat) => {
+                  const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
+                  
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        setChatPanelOpen(true);
+                        setSelectedChatId(chat.id);
+                      }}
+                      className={`relative w-10 h-10 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                        chat.status === 'pending' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                      }`}
+                      title={chat.visitor_name || 'Active Chat'}
+                    >
+                      {avatarUrl ? (
+                        <>
+                          <img 
+                            src={avatarUrl} 
+                            alt={chat.visitor_name || 'Visitor'} 
+                            className="w-full h-full rounded-full object-cover ring-2 ring-cyan-500/50"
+                          />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+                        </>
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      {chat.status === 'pending' && (
+                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Separator if both chats and visitors exist */}
+                {sidebarChats.length > 0 && liveVisitors.length > 0 && (
+                  <div className="w-6 h-px bg-border my-1" />
+                )}
+
+                {/* Live Visitors (not in chat yet) */}
+                {liveVisitors.slice(0, 10 - Math.min(sidebarChats.length, 5)).map((visitor, index) => {
+                  // Bold, vibrant colors (no pastels)
+                  const colors = [
+                    'from-red-600 to-rose-700',
+                    'from-orange-600 to-amber-700',
+                    'from-emerald-600 to-green-700',
+                    'from-blue-600 to-indigo-700',
+                    'from-purple-600 to-violet-700',
+                    'from-cyan-600 to-teal-700',
+                  ];
+                  const hash = visitor.session_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                  const colorClass = colors[hash % colors.length];
+                  const visitorIcons = [Eye, Zap, Flame, Star, Target, Crosshair, Sparkles, Activity];
+                  const VisitorIcon = visitorIcons[hash % visitorIcons.length];
+                  const timeSince = Math.floor((Date.now() - new Date(visitor.started_at).getTime()) / 60000);
+                  const timeLabel = timeSince < 1 ? 'Just now' : timeSince < 60 ? `${timeSince}m` : `${Math.floor(timeSince / 60)}h`;
+                  
+                  // Check if this visitor has an avatar (logged-in user)
+                  const hasAvatar = visitor.avatar_url;
+                  const isCurrentUser = visitor.is_current_user;
+                  
+                  return (
+                    <motion.div
+                      key={visitor.session_id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={async () => {
+                        if (isCurrentUser) return; // Don't start chat with yourself
+                        const { data: newConv } = await supabase
+                          .from('chat_conversations')
+                          .insert({
+                            session_id: visitor.session_id,
+                            status: 'active',
+                            current_page: visitor.first_page,
+                          })
+                          .select('id')
+                          .single();
+                        
+                        if (newConv) {
+                          await supabase.from('chat_messages').insert({
+                            conversation_id: newConv.id,
+                            sender_type: 'system',
+                            message: `Chat initiated with visitor on ${visitor.first_page || 'homepage'}`,
+                          });
+                          setChatPanelOpen(true);
+                          setSelectedChatId(newConv.id);
+                          fetchSidebarChats();
+                          toast.success('Chat started with visitor');
+                        }
+                      }}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer'}`}
+                      title={isCurrentUser ? 'You (Online)' : `${visitor.first_page || '/'} • ${timeLabel}`}
+                      whileHover={isCurrentUser ? {} : { scale: 1.15 }}
+                      whileTap={isCurrentUser ? {} : { scale: 0.95 }}
+                    >
+                      {hasAvatar ? (
+                        <>
+                          {/* Outer glow for avatar */}
+                          <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-50 blur-md group-hover:opacity-70 transition-opacity`} />
+                          
+                          {/* Avatar image */}
+                          <div className={`relative w-full h-full rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/40'} shadow-xl`}>
+                            <img 
+                              src={visitor.avatar_url!} 
+                              alt={visitor.display_name || 'User'} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          
+                          {/* Live indicator */}
+                          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/60' : 'bg-emerald-400 shadow-emerald-400/60'}`}>
+                            <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                          </span>
+                          
+                          {/* YOU badge for current user */}
+                          {isCurrentUser && (
+                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                              YOU
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Outer glow */}
+                          <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-40 blur-md group-hover:opacity-70 transition-opacity`} />
+                          
+                          {/* Main container */}
+                          <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-xl overflow-hidden`}>
+                            {/* Inner highlight */}
+                            <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/25 to-transparent" />
+                            
+                            {/* Grid pattern overlay */}
+                            <div 
+                              className="absolute inset-0 opacity-20"
+                              style={{
+                                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                                backgroundSize: '4px 4px'
+                              }}
+                            />
+                            
+                            {/* Scan line */}
+                            <motion.div 
+                              className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                              animate={{ y: [-20, 40] }}
+                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                            />
+                            
+                            {/* Icon */}
+                            <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
+                            
+                            {/* Corner tech accents */}
+                            <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
+                            <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
+                            
+                            {/* Shimmer on hover */}
+                            <motion.div 
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100"
+                              animate={{ x: ['-100%', '200%'] }}
+                              transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
+                            />
+                          </div>
+                          
+                          {/* Live indicator with enhanced glow */}
+                          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/60">
+                            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                          </span>
+                        </>
+                      )}
+                      
+                      {/* Hover tooltip with glass effect */}
+                      <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none scale-95 group-hover:scale-100">
+                        <div className="bg-background/90 backdrop-blur-xl border border-primary/20 rounded-xl px-3 py-2 shadow-2xl shadow-primary/10 whitespace-nowrap">
+                          <div className="flex items-center gap-2 mb-1">
+                            {hasAvatar ? (
+                              <img src={visitor.avatar_url!} alt="" className="w-4 h-4 rounded-full object-cover" />
+                            ) : (
+                              <div className={`w-2 h-2 rounded-sm bg-gradient-to-br ${colorClass}`} />
+                            )}
+                            <p className="text-[11px] text-foreground font-semibold">
+                              {isCurrentUser ? 'You' : visitor.display_name || visitor.first_page || '/'}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                            {isCurrentUser ? 'Your session' : `Click to engage • ${timeLabel}`}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Empty state when no chats and no visitors */}
+                {sidebarChats.length === 0 && liveVisitors.length === 0 && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center animate-fade-in">
+                      <Eye className="w-5 h-5 text-muted-foreground/30 mx-auto" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Offline message */}
+            {!chatOnline && chatPanelOpen && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center py-8 px-4 animate-fade-in">
+                  <div className="relative mx-auto w-12 h-12 mb-3">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground/20 relative" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-0.5 bg-muted-foreground/40 rotate-45" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Chat is offline</p>
+                  <p className="text-[10px] text-muted-foreground/70 mt-1">Turn on to receive chats</p>
+                </div>
+              </div>
+            )}
+
+            {/* Current User (You) - pinned to bottom */}
+            {user && (
+              <div className="mt-auto border-t border-border p-2">
+                {chatPanelOpen ? (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+                    {currentUserProfile?.avatar_url ? (
+                      <img 
+                        src={currentUserProfile.avatar_url} 
+                        alt={currentUserProfile.full_name || 'You'} 
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/50"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                        <span className="text-sm font-semibold text-white">
+                          {(currentUserProfile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {currentUserProfile?.full_name || user.email?.split('@')[0] || 'You'}
+                      </p>
+                      <p className="text-[10px] text-primary truncate">Operator</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    {currentUserProfile?.avatar_url ? (
+                      <div className="relative">
+                        <img 
+                          src={currentUserProfile.avatar_url} 
+                          alt={currentUserProfile.full_name || 'You'} 
+                          className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/50"
+                          title={currentUserProfile.full_name || 'You (Operator)'}
+                        />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center ring-2 ring-primary/30" title="You (Operator)">
+                        <span className="text-lg font-semibold text-white">
+                          {(currentUserProfile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+        </div>
+      </div>
       )}
+
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
@@ -2807,7 +3299,7 @@ f.parentNode.insertBefore(j,f);
               animate={{ y: ['-100%', '200%'] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
-            <BRONPlatformConnect domain={selectedTrackedDomain || selectedDomainKey} />
+            <BRONPlatformConnect />
           </div>
         </div>
       )}
@@ -3427,7 +3919,9 @@ f.parentNode.insertBefore(j,f);
         </div>
       )}
 
-      {/* Chat functionality removed */}
+      {/* Floating Chat Bar - Show on all tabs */}
+      <FloatingChatBar isOnline={chatOnline} selectedChatId={selectedChatId} onChatClose={() => setSelectedChatId(null)} />
+
       {/* Close Lead Dialog */}
       <Dialog open={closeLeadDialog.open} onOpenChange={(open) => setCloseLeadDialog({ open, lead: open ? closeLeadDialog.lead : null })}>
         <DialogContent className="sm:max-w-md">

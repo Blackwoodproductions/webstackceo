@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -7,105 +7,92 @@ const BRON_STORAGE_KEY = "bron_dashboard_auth";
 
 const BronCallback = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [message, setMessage] = useState("Processing BRON authentication...");
 
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // Get any params from the URL - BRON may pass tokens via various param names
+        // Get token/code from URL params (BRON will send these back)
         const token = searchParams.get("token");
         const code = searchParams.get("code");
-        const accessToken = searchParams.get("access_token");
-        const sessionToken = searchParams.get("session_token");
-        const embedToken = searchParams.get("embed_token");
-        const authToken = searchParams.get("auth_token");
         const success = searchParams.get("success");
         const error = searchParams.get("error");
-
-        // Get the best available token
-        const bronToken = token || code || accessToken || sessionToken || embedToken || authToken;
-
-        console.log("[BRON Callback] URL params:", {
-          token: !!token,
-          code: !!code,
-          accessToken: !!accessToken,
-          sessionToken: !!sessionToken,
-          embedToken: !!embedToken,
-          authToken: !!authToken,
-          success,
-          error,
-        });
 
         // Handle explicit error
         if (error) {
           setStatus("error");
           setMessage(`Authentication failed: ${error}`);
           setTimeout(() => {
-            try {
-              if (window.opener) {
-                window.opener.postMessage({ type: "BRON_AUTH_ERROR", error }, window.location.origin);
-              }
-              window.close();
-            } catch {
-              window.location.href = "/visitor-intelligence-dashboard#bron";
-            }
-          }, 2000);
+            navigate("/visitor-intelligence-dashboard#bron");
+          }, 3000);
           return;
         }
 
-        // If we reached this callback page, BRON has redirected us here after login
-        console.log("[BRON Callback] Reached callback - login successful, token:", !!bronToken);
+        // If we have a token, code, or success flag - consider authenticated
+        if (token || code || success === "true" || success === "1") {
+          // Store authentication data
+          const authData = {
+            authenticated: true,
+            token: token || code || null,
+            expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+            authenticatedAt: new Date().toISOString(),
+          };
+          
+          localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
+          
+          setStatus("success");
+          setMessage("Successfully authenticated with BRON!");
+          
+          // Redirect back to dashboard
+          setTimeout(() => {
+            navigate("/visitor-intelligence-dashboard#bron");
+          }, 1500);
+          return;
+        }
 
-        // Store authentication data in localStorage
-        const authData = {
-          authenticated: true,
-          token: bronToken,
-          expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-          authenticatedAt: new Date().toISOString(),
-        };
-        
-        localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
-        
-        setStatus("success");
-        setMessage("Successfully authenticated with BRON!");
-        
-        // Notify the opener window with the token and close this popup
+        // If no explicit token but we got redirected here, assume success
+        // (BRON may redirect without params if using cookie-based sessions)
+        const referrer = document.referrer;
+        if (referrer.includes("dashdev.imagehosting.space") || referrer.includes("bron")) {
+          const authData = {
+            authenticated: true,
+            token: null,
+            expiry: Date.now() + 24 * 60 * 60 * 1000,
+            authenticatedAt: new Date().toISOString(),
+          };
+          
+          localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
+          
+          setStatus("success");
+          setMessage("Successfully authenticated with BRON!");
+          
+          setTimeout(() => {
+            navigate("/visitor-intelligence-dashboard#bron");
+          }, 1500);
+          return;
+        }
+
+        // No auth params detected - might be direct access
+        setStatus("error");
+        setMessage("No authentication data received. Please try logging in again.");
         setTimeout(() => {
-          try {
-            if (window.opener) {
-              // Post message to opener with the BRON token for embedding
-              window.opener.postMessage({ 
-                type: "BRON_AUTH_SUCCESS", 
-                token: bronToken,
-              }, window.location.origin);
-              window.close();
-            } else {
-              // Not a popup, redirect to dashboard
-              window.location.href = "/visitor-intelligence-dashboard#bron";
-            }
-          } catch (e) {
-            console.log("[BRON Callback] Could not close popup:", e);
-            window.location.href = "/visitor-intelligence-dashboard#bron";
-          }
-        }, 1000);
+          navigate("/visitor-intelligence-dashboard#bron");
+        }, 3000);
         
       } catch (err) {
         console.error("[BRON Callback] Error:", err);
         setStatus("error");
         setMessage("An error occurred during authentication.");
         setTimeout(() => {
-          try {
-            window.close();
-          } catch {
-            window.location.href = "/visitor-intelligence-dashboard#bron";
-          }
-        }, 2000);
+          navigate("/visitor-intelligence-dashboard#bron");
+        }, 3000);
       }
     };
 
     processCallback();
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -116,7 +103,7 @@ const BronCallback = () => {
       >
         {status === "processing" && (
           <>
-            <Loader2 className="w-16 h-16 mx-auto mb-4 text-emerald-500 animate-spin" />
+            <Loader2 className="w-16 h-16 mx-auto mb-4 text-cyan-500 animate-spin" />
             <h1 className="text-2xl font-bold mb-2">Connecting to BRON</h1>
           </>
         )}
@@ -136,16 +123,16 @@ const BronCallback = () => {
         
         {status === "error" && (
           <>
-            <XCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
-            <h1 className="text-2xl font-bold mb-2 text-destructive">Connection Failed</h1>
+            <XCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+            <h1 className="text-2xl font-bold mb-2 text-red-500">Connection Failed</h1>
           </>
         )}
         
         <p className="text-muted-foreground">{message}</p>
         
-        {status === "success" && (
+        {status !== "processing" && (
           <p className="text-sm text-muted-foreground mt-4">
-            Closing window...
+            Redirecting to dashboard...
           </p>
         )}
       </motion.div>

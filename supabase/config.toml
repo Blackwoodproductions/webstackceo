@@ -47,24 +47,3 @@ verify_jwt = false
 
 [functions.bron-content-receiver]
 verify_jwt = false
-
-[functions.bron-login-status]
-verify_jwt = false
-
-[functions.bron-api]
-verify_jwt = false
-
-[functions.aggregate-changelog]
-verify_jwt = false
-
-[functions.pagespeed-insights]
-verify_jwt = false
-
-[functions.cade-api]
-verify_jwt = false
-
-[functions.bron-auth]
-verify_jwt = false
-
-[functions.dataforseo-api]
-verify_jwt = false
