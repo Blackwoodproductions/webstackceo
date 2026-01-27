@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { 
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save, Eye,
@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
+import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
@@ -229,7 +230,6 @@ export const BRONKeywordsTab = ({
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
 
   // Filter keywords
   const filteredKeywords = useMemo(() => {
@@ -700,6 +700,23 @@ export const BRONKeywordsTab = ({
                         className="bg-primary hover:bg-primary/90"
                         onClick={(e) => {
                           e.stopPropagation();
+                          // Ensure the edit buffer is initialized before opening the editor.
+                          setInlineEditForms((prev) =>
+                            prev[kw.id]
+                              ? prev
+                              : {
+                                  ...prev,
+                                  [kw.id]: {
+                                    keywordtitle: kw.keywordtitle || kw.keyword || "",
+                                    metatitle: kw.metatitle || "",
+                                    metadescription: kw.metadescription || "",
+                                    resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
+                                    linkouturl: kw.linkouturl || "",
+                                    resaddress: kw.resaddress || "",
+                                    resfb: kw.resfb || "",
+                                  },
+                                },
+                          );
                           setArticleEditorId(kw.id);
                         }}
                       >
@@ -936,7 +953,7 @@ export const BRONKeywordsTab = ({
                     {articleEditorKeyword ? getKeywordDisplayText(articleEditorKeyword) : 'Article Editor'}
                   </DialogTitle>
                   <DialogDescription className="text-xs">
-                    Edit your article content, title, and description
+                    Edit your article content
                   </DialogDescription>
                 </div>
               </div>
@@ -953,43 +970,16 @@ export const BRONKeywordsTab = ({
             {/* Editor Content */}
             {articleEditorId && (
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Title Field */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Article Title (Meta Title)</Label>
-                  <Input
-                    value={inlineEditForms[articleEditorId]?.metatitle || ''}
-                    onChange={(e) => updateInlineForm(articleEditorId, 'metatitle', e.target.value)}
-                    className="text-lg font-semibold"
-                    placeholder="Enter article title..."
+                  <Label className="text-sm font-medium">Article</Label>
+                  <WysiwygEditor
+                    html={inlineEditForms[articleEditorId]?.resfeedtext || ""}
+                    onChange={(html) => updateInlineForm(articleEditorId, "resfeedtext", html)}
+                    placeholder="Paste or write your article here…"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {(inlineEditForms[articleEditorId]?.metatitle || '').length}/60 characters
+                    {((inlineEditForms[articleEditorId]?.resfeedtext || "").length || 0).toLocaleString()} characters
                   </p>
-                </div>
-
-                {/* Summary/Description Field */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Article Summary (Meta Description)</Label>
-                  <Textarea
-                    value={inlineEditForms[articleEditorId]?.metadescription || ''}
-                    onChange={(e) => updateInlineForm(articleEditorId, 'metadescription', e.target.value)}
-                    rows={2}
-                    placeholder="Enter article summary..."
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {(inlineEditForms[articleEditorId]?.metadescription || '').length}/160 characters
-                  </p>
-                </div>
-
-                {/* Content Editor */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Article Content (HTML)</Label>
-                  <Textarea
-                    value={inlineEditForms[articleEditorId]?.resfeedtext || ''}
-                    onChange={(e) => updateInlineForm(articleEditorId, 'resfeedtext', e.target.value)}
-                    className="min-h-[200px] font-mono text-sm"
-                    placeholder="Enter your article HTML content here..."
-                  />
                 </div>
 
                 {/* Rendered Article Preview */}
@@ -998,40 +988,29 @@ export const BRONKeywordsTab = ({
                     <Eye className="w-4 h-4" />
                     Rendered Article Preview
                   </Label>
-                  <div className="rounded-lg border border-border overflow-hidden shadow-lg">
+                  <div className="rounded-lg border border-border overflow-hidden">
                     {/* Browser Chrome */}
-                    <div className="bg-muted/80 px-4 py-2 flex items-center gap-2 border-b border-border">
+                    <div className="bg-muted/60 px-4 py-2 flex items-center gap-2 border-b border-border">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                        <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                        <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                        <div className="w-3 h-3 rounded-full bg-destructive/50" />
+                        <div className="w-3 h-3 rounded-full bg-secondary" />
+                        <div className="w-3 h-3 rounded-full bg-primary/50" />
                       </div>
                       <div className="flex-1 mx-4">
                         <div className="bg-background/60 rounded-md px-3 py-1 text-xs text-muted-foreground truncate">
-                          {selectedDomain || 'example.com'}/{inlineEditForms[articleEditorId]?.metatitle?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 50) || 'article'}
+                          {selectedDomain || "example.com"}/article
                         </div>
                       </div>
                     </div>
                     {/* Article Content */}
-                    <div 
-                      className="p-8 bg-white text-black min-h-[300px]"
-                      style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-                    >
-                      <article className="max-w-3xl mx-auto">
-                        {/* Article Header */}
-                        <header className="mb-8 pb-6 border-b border-gray-200">
-                          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                            {inlineEditForms[articleEditorId]?.metatitle || 'Your Article Title'}
-                          </h1>
-                          <p className="text-lg text-gray-600 italic leading-relaxed">
-                            {inlineEditForms[articleEditorId]?.metadescription || 'Article summary and description will appear here...'}
-                          </p>
-                        </header>
-                        {/* Article Body */}
-                        <div 
-                          className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-ul:text-gray-700 prose-ol:text-gray-700"
-                          dangerouslySetInnerHTML={{ 
-                            __html: inlineEditForms[articleEditorId]?.resfeedtext || '<p class="text-gray-400 italic">Your article content will be rendered here as it would appear on your website...</p>' 
+                    <div className="max-h-[35vh] overflow-y-auto bg-background text-foreground">
+                      <article className="p-8 max-w-3xl mx-auto">
+                        <div
+                          className="prose prose-lg max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              inlineEditForms[articleEditorId]?.resfeedtext ||
+                              "<p><em>Your article preview will appear here…</em></p>",
                           }}
                         />
                       </article>
