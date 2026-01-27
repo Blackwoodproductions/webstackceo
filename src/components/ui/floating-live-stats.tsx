@@ -1,11 +1,11 @@
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect, useRef, forwardRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Users, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const EXCLUDED_ROUTES = ['/admin', '/auth', '/visitor-intelligence-dashboard'];
 
-const FloatingLiveStats = memo(() => {
+const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveStats(_, forwardedRef) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isEmbedMode = searchParams.get('embed') === 'true';
@@ -144,7 +144,15 @@ const FloatingLiveStats = memo(() => {
 
   return (
     <div 
-      ref={containerRef}
+      ref={(node) => {
+        // Handle both the internal ref and the forwarded ref
+        (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      }}
       data-floating-live-stats
       className="fixed left-6 hidden lg:flex flex-col gap-2 z-50 animate-fade-in transition-opacity duration-300"
       style={{ top: topPosition, opacity, pointerEvents: opacity < 0.05 ? 'none' : 'auto' }}
@@ -171,7 +179,7 @@ const FloatingLiveStats = memo(() => {
       </div>
     </div>
   );
-});
+}));
 
 FloatingLiveStats.displayName = "FloatingLiveStats";
 

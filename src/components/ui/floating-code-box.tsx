@@ -1,7 +1,7 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, forwardRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 
-const FloatingCodeBox = memo(() => {
+const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox(_, ref) {
   const [isVisible, setIsVisible] = useState(false);
   const [topPosition, setTopPosition] = useState('8rem');
   const [isGold, setIsGold] = useState(false);
@@ -86,6 +86,7 @@ const FloatingCodeBox = memo(() => {
 
   return (
     <div 
+      ref={ref}
       className={`fixed right-6 w-20 h-20 rounded-xl glass-card hidden lg:flex overflow-hidden cursor-pointer z-40 animate-fade-in ${
         isGold ? "shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-shadow duration-700" : "transition-shadow duration-700"
       }`}
@@ -144,7 +145,9 @@ const FloatingCodeBox = memo(() => {
       `}</style>
     </div>
   );
-});
+}));
+
+FloatingCodeBox.displayName = "FloatingCodeBox";
 
 FloatingCodeBox.displayName = "FloatingCodeBox";
 

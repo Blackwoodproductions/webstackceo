@@ -120,8 +120,12 @@ const App = () => (
               <VisitorTrackingProvider>
                 <ScrollToTop />
                 <Suspense fallback={null}>
-                  <FloatingCodeBox />
-                  <FloatingLiveStats />
+                  <ErrorBoundary fallback={null}>
+                    <FloatingCodeBox />
+                  </ErrorBoundary>
+                  <ErrorBoundary fallback={null}>
+                    <FloatingLiveStats />
+                  </ErrorBoundary>
                 </Suspense>
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
