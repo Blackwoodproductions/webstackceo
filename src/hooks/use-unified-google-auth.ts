@@ -3,7 +3,7 @@ import { usePopupOAuth } from "./use-popup-oauth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 
-// Combined scopes for GA + GSC + Google Ads + GMB in a single OAuth prompt with offline access for refresh tokens
+// Combined scopes for GA + GSC + Google Ads + GMB + Site Verification in a single OAuth prompt with offline access for refresh tokens
 const UNIFIED_GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -11,6 +11,7 @@ const UNIFIED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/analytics.readonly",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
+  "https://www.googleapis.com/auth/siteverification",
   "https://www.googleapis.com/auth/adwords",
   "https://www.googleapis.com/auth/business.manage",
 ].join(" ");

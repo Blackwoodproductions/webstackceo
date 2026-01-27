@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
-// Extended scopes for all Google services
+// Extended scopes for all Google services including Site Verification
 const EXTENDED_GOOGLE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
@@ -11,6 +11,7 @@ const EXTENDED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/analytics.readonly",
   "https://www.googleapis.com/auth/webmasters.readonly",
   "https://www.googleapis.com/auth/webmasters",
+  "https://www.googleapis.com/auth/siteverification",
   "https://www.googleapis.com/auth/adwords",
   "https://www.googleapis.com/auth/business.manage",
 ].join(" ");
