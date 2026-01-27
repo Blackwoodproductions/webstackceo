@@ -96,6 +96,7 @@ interface WorkerInfo {
 
 interface CADELoginBoxProps {
   domain?: string;
+  onSubscriptionChange?: (hasSubscription: boolean) => void;
 }
 
 const CONTENT_TYPES = [
@@ -113,7 +114,7 @@ const MODEL_TIERS = [
   { id: "premium", name: "Premium", desc: "Best quality, slower" },
 ];
 
-export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
+export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -321,6 +322,13 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
       fetchAllData();
     }
   }, [isConnected, domainHasSubscription, domain, fetchAllData]);
+
+  // Notify parent about subscription status changes
+  useEffect(() => {
+    if (domainHasSubscription !== null) {
+      onSubscriptionChange?.(domainHasSubscription);
+    }
+  }, [domainHasSubscription, onSubscriptionChange]);
 
   // === ACTION HANDLERS ===
   const handleRefresh = () => {

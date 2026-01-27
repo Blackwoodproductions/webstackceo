@@ -323,6 +323,9 @@ const MarketingDashboard = () => {
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }, [activeTab]);
   
+  // CADE subscription state
+  const [cadeHasSubscription, setCadeHasSubscription] = useState(false);
+  
   // GMB (Google My Business) state
   const [gmbAuthenticated, setGmbAuthenticated] = useState<boolean>(false);
   const [gmbConnecting, setGmbConnecting] = useState(false);
@@ -3352,15 +3355,20 @@ f.parentNode.insertBefore(j,f);
             </header>
 
             {/* CADE API Login & Dashboard - NOW AT THE TOP */}
-            <CADELoginBox domain={selectedTrackedDomain || selectedDomainKey} />
-
-            {/* Platform Connection Section */}
-            <CADEPlatformConnect 
+            <CADELoginBox 
               domain={selectedTrackedDomain || selectedDomainKey} 
-              onConnectionComplete={(platform) => {
-                toast.success(`Successfully connected to ${platform}!`);
-              }}
+              onSubscriptionChange={setCadeHasSubscription}
             />
+
+            {/* Platform Connection Section - Only show when CADE subscription is active */}
+            {cadeHasSubscription && (
+              <CADEPlatformConnect 
+                domain={selectedTrackedDomain || selectedDomainKey} 
+                onConnectionComplete={(platform) => {
+                  toast.success(`Successfully connected to ${platform}!`);
+                }}
+              />
+            )}
 
             {/* How It Works Section - Collapsible */}
             <Collapsible>
