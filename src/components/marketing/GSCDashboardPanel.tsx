@@ -1367,6 +1367,9 @@ export const GSCDashboardPanel = ({
             </div>
           )}
 
+          {/* Only show dashboard content if domain is found in GSC */}
+          {(isExternalSiteInGsc || !externalSelectedSite || sites.length === 0) && (
+            <>
           {/* Controls - Enhanced with glassmorphism */}
           <motion.div 
             className="relative overflow-hidden flex flex-nowrap gap-3 items-center justify-end bg-gradient-to-r from-cyan-500/5 via-secondary/30 to-violet-500/5 rounded-xl p-3 min-h-[48px] border border-cyan-500/10"
@@ -1833,11 +1836,13 @@ export const GSCDashboardPanel = ({
               {showAdvancedReporting ? <ChevronUp className="w-4 h-4 text-violet-400" /> : <ChevronDown className="w-4 h-4 text-violet-400" />}
             </Button>
           </motion.div>
+          </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Advanced Reporting Panel */}
-      {showAdvancedReporting && (
+      {/* Advanced Reporting Panel - only show if domain is in GSC */}
+      {showAdvancedReporting && (isExternalSiteInGsc || !externalSelectedSite || sites.length === 0) && (
         <GSCAdvancedReporting
           accessToken={accessToken}
           selectedSite={selectedSite}
