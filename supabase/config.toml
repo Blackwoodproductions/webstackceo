@@ -53,3 +53,12 @@ verify_jwt = false
 
 [functions.social-oauth-token]
 verify_jwt = false
+
+[functions.ga-create-datastream]
+verify_jwt = false
+
+[functions.pagespeed-insights]
+verify_jwt = false
+
+[functions.aggregate-changelog]
+verify_jwt = false
