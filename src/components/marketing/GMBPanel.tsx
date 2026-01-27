@@ -23,6 +23,7 @@ import { GMBPerformancePanel } from './GMBPerformancePanel';
 import { GMBBusinessInfoEditor } from './GMBBusinessInfoEditor';
 import { GMBPostCreator } from './GMBPostCreator';
 import { GMBPhotoManager } from './GMBPhotoManager';
+import { GMBClaimListingFlow } from './GMBClaimListingFlow';
 import { useGmbApi } from '@/hooks/use-gmb-api';
 
 interface GmbReview {
@@ -134,6 +135,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   // Dashboard state
   const [activeTab, setActiveTab] = useState("overview");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [showClaimFlow, setShowClaimFlow] = useState(false);
   const [replyText, setReplyText] = useState("");
 
   // Use the GMB API hook for all read/write operations
@@ -940,6 +942,17 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
             </Tabs>
           </motion.div>
         </AnimatePresence>
+      ) : showClaimFlow ? (
+        /* Claim Listing Flow */
+        <GMBClaimListingFlow
+          domain={selectedDomain || ''}
+          accessToken={accessToken}
+          onComplete={() => {
+            setShowClaimFlow(false);
+            handleRefresh();
+          }}
+          onCancel={() => setShowClaimFlow(false)}
+        />
       ) : (
         /* No Listing Found - Inline Onboarding Wizard Style */
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -985,9 +998,9 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 transition-colors" />
               </button>
 
-              {/* Option 2: Claim Existing Listing */}
+              {/* Option 2: Claim Existing Listing - Now uses inline flow */}
               <button
-                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedDomain || '')}+claim+business`, '_blank')}
+                onClick={() => setShowClaimFlow(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-all text-left group"
               >
                 <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
