@@ -535,7 +535,10 @@ const LiveChatWidget = () => {
       {/* Chat Button Stack */}
       <AnimatePresence>
         {!isOpen && (
-          <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-2">
+          <div
+            className="fixed bottom-6 right-6 z-50 flex flex-col-reverse items-center gap-2"
+            style={{ contain: "layout paint", willChange: "transform" }}
+          >
             {/* Live Visitor Icons - stacked above main button */}
             {visitorsForStack.slice(0, 6).map((visitor, index) => {
               const visitorReferrerDomain = getReferrerDomain(visitor.referrer);
@@ -555,9 +558,9 @@ const LiveChatWidget = () => {
                       initial={{ scale: 0, opacity: 0, y: 20 }}
                       animate={{ scale: 1, opacity: 1, y: 0 }}
                       exit={{ scale: 0, opacity: 0, y: 20 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 25, delay: index * 0.05 }}
+                      transition={{ duration: 0.14, ease: "easeOut", delay: index * 0.03 }}
                       onClick={() => !isCurrentUser && handleEngageVisitor(visitor)}
-                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} rounded-full bg-gradient-to-br ${isCurrentUser ? 'from-cyan-400 to-violet-500 ring-2 ring-cyan-400/50' : getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden ${isCurrentUser ? 'cursor-default' : ''}`}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} rounded-full bg-gradient-to-br ${isCurrentUser ? 'from-cyan-400 to-violet-500 ring-2 ring-cyan-400/50' : getVisitorColor(visitor.session_id)} text-white shadow-lg hover:shadow-xl transition-shadow duration-150 flex items-center justify-center text-[10px] font-bold border-2 border-background group overflow-hidden ${isCurrentUser ? 'cursor-default' : ''}`}
                       aria-label={isCurrentUser ? 'You (online)' : `Engage visitor ${visitor.display_name || visitorReferrerDomain || 'direct'}`}
                     >
                       {/* Priority: 1. User avatar, 2. Referrer favicon, 3. User icon */}
@@ -581,7 +584,7 @@ const LiveChatWidget = () => {
                       <User className={`w-4 h-4 ${hasAvatar || visitorFaviconUrl ? 'hidden' : ''}`} />
                       {/* Live pulse indicator - different color for current user */}
                       <span className={`absolute -top-0.5 -right-0.5 ${isCurrentUser ? 'w-3 h-3' : 'w-2.5 h-2.5'} rounded-full ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'} border border-background`}>
-                        <span className={`absolute inset-0 rounded-full ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'} animate-ping opacity-75`} />
+                        {/* Intentionally no ping animation (reduces paint & avoids visual glitching) */}
                       </span>
                       {/* "YOU" badge for current user */}
                       {isCurrentUser && (
@@ -623,9 +626,9 @@ const LiveChatWidget = () => {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              transition={{ duration: 0.14, ease: "easeOut" }}
               onClick={handleOpen}
-              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center group overflow-hidden"
+              className="relative w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 text-white shadow-lg hover:shadow-xl transition-shadow duration-150 flex items-center justify-center group overflow-hidden"
               aria-label="Open chat"
             >
               {/* Show user avatar if logged in, else referrer favicon, else default icon */}
@@ -647,17 +650,13 @@ const LiveChatWidget = () => {
               )}
               {/* Status indicator */}
               <span className={`absolute top-0 right-0 w-4 h-4 rounded-full border-2 border-background ${hasNewMessage ? 'bg-red-500' : 'bg-emerald-400'}`}>
-                {hasNewMessage && <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />}
+                {/* Intentionally no ping animation (reduces paint & avoids visual glitching) */}
               </span>
               {/* Live visitor count badge */}
               {liveVisitors.length > 0 && (
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-background"
-                >
+                <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-background">
                   {liveVisitors.length}
-                </motion.span>
+                </span>
               )}
             </motion.button>
           </div>
@@ -673,6 +672,7 @@ const LiveChatWidget = () => {
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 h-[500px] max-h-[80vh] bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+            style={{ contain: "layout paint", willChange: "transform, opacity" }}
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-cyan-400 to-violet-500 p-4 flex items-center justify-between">
