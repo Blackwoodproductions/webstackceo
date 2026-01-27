@@ -9,7 +9,11 @@ const EXPANDED_HEIGHT = 900;
 
 const BronDashboardWrapper = () => {
   const [dashboardUrl, setDashboardUrl] = useState(BRON_DASHBOARD_URL + "/dashboard");
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    // Check if we're in expanded mode (opened from the expand button)
+    const params = new URLSearchParams(window.location.search);
+    return params.get("expanded") === "true";
+  });
   const [isMaximized, setIsMaximized] = useState(false);
 
   // Extract domain ID or other params from the current URL
@@ -35,19 +39,24 @@ const BronDashboardWrapper = () => {
   }, []);
 
   const handleExpand = () => {
-    // Calculate center position for expanded window
+    // Open a new larger window and close this small one
     const left = (window.screen.width - EXPANDED_WIDTH) / 2;
     const top = (window.screen.height - EXPANDED_HEIGHT) / 2;
     
-    // Resize and reposition the window
-    try {
-      window.resizeTo(EXPANDED_WIDTH, EXPANDED_HEIGHT);
-      window.moveTo(Math.max(0, left), Math.max(0, top));
-    } catch (e) {
-      console.log("Could not resize window:", e);
-    }
+    // Build URL with current params
+    const params = new URLSearchParams(window.location.search);
+    params.set("expanded", "true");
+    const newUrl = `${window.location.origin}/bron-dashboard?${params.toString()}`;
     
-    setIsExpanded(true);
+    // Open new large window
+    window.open(
+      newUrl,
+      "bron_dashboard_full",
+      `popup=yes,width=${EXPANDED_WIDTH},height=${EXPANDED_HEIGHT},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+    );
+    
+    // Close this small popup
+    window.close();
   };
 
   const handleClose = () => {
