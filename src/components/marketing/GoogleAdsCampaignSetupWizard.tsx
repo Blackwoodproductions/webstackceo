@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
   CheckCircle, Globe, Target, Plus, Trash2, DollarSign, Zap, ArrowRight, RefreshCw,
@@ -48,6 +49,7 @@ export function GoogleAdsCampaignSetupWizard({
   onComplete,
   onCancel,
 }: GoogleAdsCampaignSetupWizardProps) {
+  const { user } = useAuth();
   const hasValidCustomerId = initialCustomerId && initialCustomerId !== 'unified-auth' && initialCustomerId.match(/^\d{3}-?\d{3}-?\d{4}$/);
   const [currentStep, setCurrentStep] = useState<SetupStep>(hasValidCustomerId ? 1 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,8 +64,8 @@ export function GoogleAdsCampaignSetupWizard({
   const [accountError, setAccountError] = useState<string | null>(null);
   const [verifiedCustomerId, setVerifiedCustomerId] = useState<string>(hasValidCustomerId ? initialCustomerId : '');
   
-  // New Account Creation state
-  const [newAccountEmail, setNewAccountEmail] = useState('');
+  // New Account Creation state - auto-populate email from logged-in user
+  const [newAccountEmail, setNewAccountEmail] = useState(user?.email || '');
   const [newAccountBusiness, setNewAccountBusiness] = useState(domain || '');
   const [newAccountStep, setNewAccountStep] = useState(0);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
