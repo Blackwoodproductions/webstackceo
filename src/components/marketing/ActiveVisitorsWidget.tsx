@@ -246,8 +246,7 @@ const ActiveVisitorsWidget = () => {
 
     const interval = setInterval(fetchActiveSessions, 30000);
     return () => { channel.unsubscribe(); clearInterval(interval); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount - fetchActiveSessions is stable via useCallback
+  }, []);
 
   const getTimeOnSite = (startedAt: string) => {
     const seconds = differenceInSeconds(new Date(), new Date(startedAt));

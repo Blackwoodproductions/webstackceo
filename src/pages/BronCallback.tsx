@@ -13,34 +13,17 @@ const BronCallback = () => {
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // Get any params from the URL - BRON may pass tokens via various param names
+        // Get token/code from URL params (BRON will send these back)
         const token = searchParams.get("token");
         const code = searchParams.get("code");
-        const accessToken = searchParams.get("access_token");
-        const sessionToken = searchParams.get("session_token");
-        const embedToken = searchParams.get("embed_token");
-        const authToken = searchParams.get("auth_token");
         const success = searchParams.get("success");
         const error = searchParams.get("error");
-
-        // Get the best available token
-        const bronToken = token || code || accessToken || sessionToken || embedToken || authToken;
-
-        console.log("[BRON Callback] URL params:", {
-          token: !!token,
-          code: !!code,
-          accessToken: !!accessToken,
-          sessionToken: !!sessionToken,
-          embedToken: !!embedToken,
-          authToken: !!authToken,
-          success,
-          error,
-        });
 
         // Handle explicit error
         if (error) {
           setStatus("error");
           setMessage(`Authentication failed: ${error}`);
+          // Try to notify opener and close after delay
           setTimeout(() => {
             try {
               if (window.opener) {
@@ -48,20 +31,59 @@ const BronCallback = () => {
               }
               window.close();
             } catch {
-              window.location.href = "/visitor-intelligence-dashboard#bron";
+              // If can't close, just show error
             }
           }, 2000);
           return;
         }
 
-        // If we reached this callback page, BRON has redirected us here after login
-        console.log("[BRON Callback] Reached callback - login successful, token:", !!bronToken);
+        // Check for any success indicators
+        const isSuccess = token || code || success === "true" || success === "1";
+        
+        // Also check referrer as fallback (BRON may redirect without params)
+        const referrer = document.referrer;
+        const isFromBRON = referrer.includes("dashdev.imagehosting.space") || referrer.includes("bron");
 
-        // Store authentication data in localStorage
+        if (isSuccess || isFromBRON) {
+          // Store authentication data in localStorage (shared with opener)
+          const authData = {
+            authenticated: true,
+            token: token || code || null,
+            expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+            authenticatedAt: new Date().toISOString(),
+          };
+          
+          localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
+          
+          setStatus("success");
+          setMessage("Successfully authenticated with BRON!");
+          
+          // Notify the opener window and close this popup
+          setTimeout(() => {
+            try {
+              if (window.opener) {
+                // Post message to opener to trigger dashboard load
+                window.opener.postMessage({ 
+                  type: "BRON_AUTH_SUCCESS", 
+                  token: token || code || null 
+                }, window.location.origin);
+              }
+              window.close();
+            } catch (e) {
+              console.log("[BRON Callback] Could not close popup:", e);
+              // If we can't close (e.g., not a popup), redirect instead
+              window.location.href = "/visitor-intelligence-dashboard#bron";
+            }
+          }, 1000);
+          return;
+        }
+
+        // No auth params and not from BRON - assume it's a direct redirect from login success
+        // Many OAuth flows just redirect without explicit params when using cookies
         const authData = {
           authenticated: true,
-          token: bronToken,
-          expiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+          token: null,
+          expiry: Date.now() + 24 * 60 * 60 * 1000,
           authenticatedAt: new Date().toISOString(),
         };
         
@@ -70,22 +92,13 @@ const BronCallback = () => {
         setStatus("success");
         setMessage("Successfully authenticated with BRON!");
         
-        // Notify the opener window with the token and close this popup
         setTimeout(() => {
           try {
             if (window.opener) {
-              // Post message to opener with the BRON token for embedding
-              window.opener.postMessage({ 
-                type: "BRON_AUTH_SUCCESS", 
-                token: bronToken,
-              }, window.location.origin);
-              window.close();
-            } else {
-              // Not a popup, redirect to dashboard
-              window.location.href = "/visitor-intelligence-dashboard#bron";
+              window.opener.postMessage({ type: "BRON_AUTH_SUCCESS" }, window.location.origin);
             }
-          } catch (e) {
-            console.log("[BRON Callback] Could not close popup:", e);
+            window.close();
+          } catch {
             window.location.href = "/visitor-intelligence-dashboard#bron";
           }
         }, 1000);
