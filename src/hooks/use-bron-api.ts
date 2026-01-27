@@ -27,6 +27,7 @@ export interface BronKeyword {
   metatitle?: string;
   resaddress?: string;
   resfb?: string;
+  resfeedtext?: string; // HTML content
   createdDate?: string;
   // Legacy fields for compatibility
   domain?: string;
