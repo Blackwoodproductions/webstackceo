@@ -1,63 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
 
 type UseBronApiAuthOptions = {
   domain: string;
-  /** Called when login is detected via API */
+  /** Called when login is detected */
   onLoggedIn: () => void;
-  /** Polling interval in ms (default: 2000) */
-  pollIntervalMs?: number;
 };
 
 /**
- * Uses the BRON public API to detect login status.
- * Opens a popup for login and polls the API to detect when user is authenticated.
+ * Opens a popup for BRON login and waits for the callback redirect.
+ * Does NOT use API polling since the API returns domain data regardless of session state.
  */
 export function useBronApiAuth({
   domain,
   onLoggedIn,
-  pollIntervalMs = 2000,
 }: UseBronApiAuthOptions) {
   const popupRef = useRef<Window | null>(null);
-  const pollRef = useRef<number | null>(null);
+  const checkIntervalRef = useRef<number | null>(null);
   const hasTriggeredLogin = useRef(false);
-  const popupOpenedAt = useRef<number>(0);
-  const initialStatusChecked = useRef(false);
 
-  const [isPolling, setIsPolling] = useState(false);
+  const [isWaitingForLogin, setIsWaitingForLogin] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
-  const [lastCheckResult, setLastCheckResult] = useState<boolean | null>(null);
-
-  // Check login status via the edge function
-  const checkLoginStatus = useCallback(async (): Promise<boolean> => {
-    if (!domain) return false;
-
-    try {
-      const { data, error } = await supabase.functions.invoke("bron-login-status", {
-        body: { domain, feedit: "add" },
-      });
-
-      if (error) {
-        console.error("[BRON API Auth] Error checking status:", error);
-        return false;
-      }
-
-      console.log("[BRON API Auth] Status response:", data);
-      return data?.loggedIn === true;
-    } catch (err) {
-      console.error("[BRON API Auth] Exception:", err);
-      return false;
-    }
-  }, [domain]);
 
   // Trigger login success
   const triggerLoginSuccess = useCallback(() => {
     if (hasTriggeredLogin.current) return;
     hasTriggeredLogin.current = true;
 
-    console.log("[BRON API Auth] Login detected via API");
+    console.log("[BRON Auth] Login confirmed");
 
     // Close popup if still open
     if (popupRef.current && !popupRef.current.closed) {
@@ -69,14 +40,13 @@ export function useBronApiAuth({
     }
     popupRef.current = null;
 
-    // Stop polling
-    if (pollRef.current) {
-      window.clearInterval(pollRef.current);
-      pollRef.current = null;
+    // Stop checking
+    if (checkIntervalRef.current) {
+      window.clearInterval(checkIntervalRef.current);
+      checkIntervalRef.current = null;
     }
 
-    setIsPolling(false);
-    setLastCheckResult(true);
+    setIsWaitingForLogin(false);
     onLoggedIn();
   }, [onLoggedIn]);
 
@@ -92,12 +62,10 @@ export function useBronApiAuth({
     popupRef.current = null;
   }, []);
 
-  // Open login popup with redirect to our callback
+  // Open login popup
   const openPopup = useCallback(() => {
     setPopupBlocked(false);
     hasTriggeredLogin.current = false;
-    initialStatusChecked.current = false;
-    popupOpenedAt.current = Date.now();
 
     const popupWidth = 600;
     const popupHeight = 700;
@@ -106,11 +74,11 @@ export function useBronApiAuth({
 
     closePopup();
 
-    // Build login URL with redirect back to our callback
+    // Build login URL - redirect to our callback after login
     const callbackUrl = `${window.location.origin}/bron-callback`;
     const loginUrl = `https://dashdev.imagehosting.space/login?next=${encodeURIComponent(callbackUrl)}`;
 
-    console.log("[BRON API Auth] Opening popup with login URL:", loginUrl);
+    console.log("[BRON Auth] Opening popup:", loginUrl);
 
     const popup = window.open(
       loginUrl,
@@ -124,79 +92,34 @@ export function useBronApiAuth({
     }
 
     popupRef.current = popup;
-    setIsPolling(true);
+    setIsWaitingForLogin(true);
     return true;
   }, [closePopup]);
 
-  // Poll the API to detect login
+  // Check if popup was closed by user (without completing login)
   useEffect(() => {
-    if (!isPolling || !domain) return;
+    if (!isWaitingForLogin) return;
 
-    let isActive = true;
-    let wasLoggedInInitially = false;
-
-    const poll = async () => {
-      // Check if popup was closed by user
+    const checkPopup = () => {
       if (popupRef.current?.closed) {
-        console.log("[BRON API Auth] Popup closed by user");
-        
-        // Give a moment for any redirect/postMessage to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Do one final check
-        const loggedIn = await checkLoginStatus();
-        if (loggedIn && isActive) {
-          triggerLoginSuccess();
-        } else if (isActive) {
-          // Popup closed without login - stop polling
-          setIsPolling(false);
-          if (pollRef.current) {
-            window.clearInterval(pollRef.current);
-            pollRef.current = null;
-          }
+        console.log("[BRON Auth] Popup closed by user");
+        setIsWaitingForLogin(false);
+        if (checkIntervalRef.current) {
+          window.clearInterval(checkIntervalRef.current);
+          checkIntervalRef.current = null;
         }
-        return;
-      }
-
-      // Regular poll
-      const loggedIn = await checkLoginStatus();
-      setLastCheckResult(loggedIn);
-      
-      // Track initial status
-      if (!initialStatusChecked.current) {
-        initialStatusChecked.current = true;
-        console.log("[BRON API Auth] Initial status:", loggedIn ? "already logged in" : "not logged in");
-        
-        // If already logged in, close popup and proceed
-        if (loggedIn && isActive) {
-          console.log("[BRON API Auth] Already logged in - closing popup and proceeding");
-          triggerLoginSuccess();
-          return;
-        }
-      }
-      
-      // Fresh login detected
-      if (loggedIn && isActive) {
-        console.log("[BRON API Auth] Login detected");
-        triggerLoginSuccess();
       }
     };
 
-    // Start polling after a delay to let popup load
-    const initialTimer = setTimeout(poll, 2000);
-
-    // Continue polling
-    pollRef.current = window.setInterval(poll, pollIntervalMs);
+    checkIntervalRef.current = window.setInterval(checkPopup, 500);
 
     return () => {
-      isActive = false;
-      clearTimeout(initialTimer);
-      if (pollRef.current) {
-        window.clearInterval(pollRef.current);
-        pollRef.current = null;
+      if (checkIntervalRef.current) {
+        window.clearInterval(checkIntervalRef.current);
+        checkIntervalRef.current = null;
       }
     };
-  }, [isPolling, domain, checkLoginStatus, pollIntervalMs, triggerLoginSuccess]);
+  }, [isWaitingForLogin]);
 
   // Listen for postMessage from callback page
   useEffect(() => {
@@ -204,7 +127,7 @@ export function useBronApiAuth({
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        console.log("[BRON API Auth] Received auth success message from callback");
+        console.log("[BRON Auth] Received auth success from callback page");
         triggerLoginSuccess();
       }
     };
@@ -216,9 +139,9 @@ export function useBronApiAuth({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (pollRef.current) {
-        window.clearInterval(pollRef.current);
-        pollRef.current = null;
+      if (checkIntervalRef.current) {
+        window.clearInterval(checkIntervalRef.current);
+        checkIntervalRef.current = null;
       }
       closePopup();
     };
@@ -238,12 +161,10 @@ export function useBronApiAuth({
   }, []);
 
   return {
-    isPolling,
+    isWaitingForLogin,
     popupBlocked,
-    lastCheckResult,
     openPopup,
     closePopup,
     focusPopup,
-    checkLoginStatus,
   };
 }

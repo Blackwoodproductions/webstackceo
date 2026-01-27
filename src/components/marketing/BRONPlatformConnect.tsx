@@ -72,16 +72,15 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     });
   }, [onConnectionComplete]);
 
-  // Use API-based auth detection
+  // Use callback-based auth detection (not API polling)
   const {
-    isPolling,
+    isWaitingForLogin,
     popupBlocked,
     openPopup,
     focusPopup,
   } = useBronApiAuth({
     domain: domain || "",
     onLoggedIn: setAuthenticated,
-    pollIntervalMs: 2000,
   });
 
   // Listen for callback page postMessage
@@ -209,7 +208,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Not connected - show waiting for login with API polling
+  // Not connected - show waiting for login
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -229,19 +228,19 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold">
-          {isPolling ? "Checking Login Status..." : "Opening Login..."}
+          {isWaitingForLogin ? "Waiting for Login..." : "Opening Login..."}
         </h2>
         <p className="text-muted-foreground max-w-md">
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
-            : isPolling
-              ? "Please complete the login in the popup window. We're automatically detecting when you log in."
+            : isWaitingForLogin
+              ? "Please complete the login in the popup window. The dashboard will load automatically after you log in."
               : "Opening BRON login window..."}
         </p>
       </div>
 
-      {/* Only show Open Login button if popup blocked or not polling */}
-      {(popupBlocked || !isPolling) && (
+      {/* Show Open Login button if popup blocked or not waiting */}
+      {(popupBlocked || !isWaitingForLogin) && (
         <Button
           variant="outline"
           size="sm"
@@ -260,14 +259,14 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           }}
           className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
         >
-          {isPolling ? "Focus Login Window" : "Open Login"}
+          {isWaitingForLogin ? "Focus Login Window" : "Open Login"}
         </Button>
       )}
 
-      {isPolling && (
+      {isWaitingForLogin && (
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Sparkles className="w-3 h-3 text-emerald-400" />
-          Auto-detecting login via BRON API...
+          Waiting for login confirmation from popup...
         </p>
       )}
     </motion.div>
