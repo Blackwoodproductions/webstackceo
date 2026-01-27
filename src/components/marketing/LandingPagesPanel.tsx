@@ -642,6 +642,8 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           isLoading={isFetchingKeywords}
           onRefresh={handleFetchKeywords}
           selectedDomain={selectedDomain || undefined}
+          customerId={connectedCustomerId || undefined}
+          onBackToSetup={() => setShowCampaignSetup(true)}
         />
       )}
     </div>
