@@ -250,6 +250,7 @@ const VisitorFlowDiagram = ({
   // Fetch initial data including active sessions and external referrers
   useEffect(() => {
     const fetchData = async () => {
+      console.log('[VisitorFlowDiagram] Starting data fetch...');
       try {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         const todayStart = new Date();
@@ -278,6 +279,16 @@ const VisitorFlowDiagram = ({
             .select('id', { count: 'exact', head: true })
             .gte('started_at', todayStartISO)
         ]);
+        
+        console.log('[VisitorFlowDiagram] Page views response:', { 
+          count: pageViewsRes.data?.length || 0, 
+          error: pageViewsRes.error,
+          firstItem: pageViewsRes.data?.[0]
+        });
+        
+        if (pageViewsRes.error) {
+          console.error('[VisitorFlowDiagram] Error fetching page views:', pageViewsRes.error);
+        }
         
         setPageViews(pageViewsRes.data || []);
         setAllSessions(allSessionsRes.data || []);
@@ -589,6 +600,8 @@ const VisitorFlowDiagram = ({
   }, [demoMode]);
 
   const { nodes, maxVisits, visitedCount, totalCount, pathHeatmap, maxPathVisits, externalCountsByPage } = useMemo(() => {
+    console.log(`[VisitorFlowDiagram] useMemo triggered - pageViews count: ${pageViews.length}`);
+    
     const timeFilter = getTimeRangeFilter(timeRange, customDateRange.from, customDateRange.to);
     
     let filteredViews = pageViews;
@@ -602,7 +615,7 @@ const VisitorFlowDiagram = ({
       });
     }
     
-    console.log(`[VisitorFlowDiagram] Time range: ${timeRange}, Filter: ${timeFilter ? `${timeFilter.start.toISOString()} - ${timeFilter.end?.toISOString() || 'now'}` : 'none'}, Total views: ${pageViews.length}, Filtered views: ${filteredViews.length}`);
+    console.log(`[VisitorFlowDiagram] Time range: ${timeRange}, Total views: ${pageViews.length}, Filtered views: ${filteredViews.length}`);
 
     const visitCounts: Record<string, number> = {};
     filteredViews.forEach(pv => {
@@ -753,6 +766,8 @@ const VisitorFlowDiagram = ({
     externalReferrerSessions.forEach(s => {
       extCounts[s.first_page] = (extCounts[s.first_page] || 0) + 1;
     });
+
+    console.log(`[VisitorFlowDiagram] Final counts - visited: ${visited}, total: ${nodeList.length}, maxVisits: ${maxV}, visitCounts keys: ${Object.keys(visitCounts).length}`);
 
     return { 
       nodes: nodeList, 
