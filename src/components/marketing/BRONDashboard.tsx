@@ -107,6 +107,23 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      {/* Selected Domain Indicator */}
+      {selectedDomain && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-blue-500/30 flex items-center justify-center">
+            <Globe className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Viewing data for: <span className="text-cyan-400">{selectedDomain}</span></p>
+            <p className="text-xs text-muted-foreground">Keywords, content, and links filtered by this domain</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Header Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard 
@@ -117,7 +134,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
         />
         <StatCard 
           icon={Key} 
-          label="Keywords" 
+          label={selectedDomain ? `Keywords (${selectedDomain})` : "Keywords"}
           value={bronApi.keywords.length}
           color="violet"
         />
