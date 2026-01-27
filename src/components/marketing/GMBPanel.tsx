@@ -1032,170 +1032,113 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           </motion.div>
         </AnimatePresence>
       ) : (
-        /* No Listing Found - Compact Futuristic Design */
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Compact Connection Card with Inline Layout */}
-          <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-orange-500/5">
-            {/* Animated background elements */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <motion.div 
-                className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-              <motion.div 
-                className="absolute -bottom-8 -left-8 w-24 h-24 bg-orange-500/15 rounded-full blur-xl"
-                animate={{ scale: [1.2, 1, 1.2], opacity: [0.4, 0.2, 0.4] }}
-                transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
-              />
-              {/* Scanning line */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/10 to-transparent"
-                animate={{ x: ['-100%', '200%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              />
-            </div>
-            
-            <div className="relative p-4 flex flex-col md:flex-row items-center gap-4">
-              {/* Icon with pulse effect */}
-              <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/30 border border-amber-500/40 flex items-center justify-center backdrop-blur-sm">
-                  <MapPin className="w-7 h-7 text-amber-500" />
-                </div>
-                <motion.div
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <Plus className="w-2.5 h-2.5 text-white" />
-                </motion.div>
+        /* No Listing Found - Inline Onboarding Wizard Style */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          {/* Inline Wizard Card - Matches GSC/GA onboarding style */}
+          <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-amber-500" />
               </div>
-              
-              {/* Text content */}
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-base font-bold flex items-center gap-2 justify-center md:justify-start">
-                  Get Listed on Google Maps
-                  <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
-                    <Zap className="w-2.5 h-2.5 mr-0.5" />Quick Setup
-                  </Badge>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  No listing found for <span className="font-medium text-foreground">{selectedDomain}</span>. Boost local visibility in minutes.
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-foreground mb-0.5">
+                  Add Your Business to Google Maps
+                </h4>
+                <p className="text-[10px] text-muted-foreground">
+                  <span className="text-amber-400 font-medium">{selectedDomain}</span> isn't listed on Google Maps yet
                 </p>
               </div>
-              
-              {/* CTA Button */}
-              <Button 
-                onClick={openGmbPopup} 
-                className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 shadow-lg shadow-blue-500/25 shrink-0 gap-2"
+            </div>
+
+            {/* Step 1: Main Setup Options */}
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Get your business visible in local search results:
+              </p>
+
+              {/* Option 1: Add to Google Maps */}
+              <button
+                onClick={openGmbPopup}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all text-left group"
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
-                  <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
-                </svg>
-                Add to Maps
-              </Button>
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+                    <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="#4285F4"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-foreground">Create New Listing</span>
+                    <Badge className="text-[8px] py-0 h-3.5 bg-blue-500/20 text-blue-400 border-blue-500/30">Recommended</Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Add {selectedDomain} to Google Business Profile</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 transition-colors" />
+              </button>
+
+              {/* Option 2: Claim Existing Listing */}
+              <button
+                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedDomain || '')}+claim+business`, '_blank')}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-all text-left group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <Search className="w-4 h-4 text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-foreground block">Claim Existing Listing</span>
+                  <p className="text-[10px] text-muted-foreground">Search for and claim an unclaimed listing</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-green-400 transition-colors" />
+              </button>
+
+              {/* Option 3: Re-check Connection */}
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 transition-all text-left group disabled:opacity-50"
+              >
+                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                  <RefreshCw className={`w-4 h-4 text-violet-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </div>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-foreground block">Re-check Connection</span>
+                  <p className="text-[10px] text-muted-foreground">Sync your Google account for new listings</p>
+                </div>
+                {isRefreshing ? (
+                  <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Enhanced Benefits Grid - Larger cards with more info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Compact Benefits Summary - Single Row */}
+          <div className="grid grid-cols-3 gap-2">
             {[
-              { 
-                icon: MapPin, 
-                title: 'Map Pack Rankings', 
-                desc: 'Appear in Google\'s local 3-pack results when customers search for businesses like yours nearby.', 
-                stats: 'Top 3 positions get 70% of clicks',
-                color: 'blue' 
-              },
-              { 
-                icon: Star, 
-                title: 'Review Management', 
-                desc: 'Collect and respond to customer reviews to build trust and improve your local ranking signals.', 
-                stats: 'Avg. 4.5+ stars = 25% more clicks',
-                color: 'amber' 
-              },
-              { 
-                icon: TrendingUp, 
-                title: 'Performance Insights', 
-                desc: 'Track how customers find you, what actions they take, and where your traffic comes from.', 
-                stats: 'Monitor calls, directions & website visits',
-                color: 'green' 
-              },
-              { 
-                icon: Phone, 
-                title: 'Direct Contact', 
-                desc: 'Enable click-to-call, messaging, and appointment booking directly from your listing.', 
-                stats: 'Mobile users call within 24 hours',
-                color: 'violet' 
-              },
-              { 
-                icon: Globe, 
-                title: 'Business Profile', 
-                desc: 'Showcase your hours, services, photos, and special attributes to stand out from competitors.', 
-                stats: 'Complete profiles get 7x more clicks',
-                color: 'pink' 
-              },
-              { 
-                icon: Users, 
-                title: 'Local SEO Boost', 
-                desc: 'GMB signals account for 25% of local pack ranking factors. A verified listing is essential.', 
-                stats: 'Required for local search visibility',
-                color: 'cyan' 
-              },
+              { icon: MapPin, label: 'Local Search', value: 'Top 3 get 70% clicks', color: 'blue' },
+              { icon: Star, label: 'Reviews', value: '4.5+ stars = 25% more', color: 'amber' },
+              { icon: TrendingUp, label: 'Insights', value: 'Track all actions', color: 'green' },
             ].map((benefit, i) => {
-              const colorMap: Record<string, { border: string; bg: string; text: string; glow: string; badge: string }> = {
-                blue: { border: 'border-blue-500/30', bg: 'from-blue-500/10', text: 'text-blue-400', glow: 'shadow-blue-500/20', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-                amber: { border: 'border-amber-500/30', bg: 'from-amber-500/10', text: 'text-amber-400', glow: 'shadow-amber-500/20', badge: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-                green: { border: 'border-green-500/30', bg: 'from-green-500/10', text: 'text-green-400', glow: 'shadow-green-500/20', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
-                violet: { border: 'border-violet-500/30', bg: 'from-violet-500/10', text: 'text-violet-400', glow: 'shadow-violet-500/20', badge: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
-                pink: { border: 'border-pink-500/30', bg: 'from-pink-500/10', text: 'text-pink-400', glow: 'shadow-pink-500/20', badge: 'bg-pink-500/20 text-pink-400 border-pink-500/30' },
-                cyan: { border: 'border-cyan-500/30', bg: 'from-cyan-500/10', text: 'text-cyan-400', glow: 'shadow-cyan-500/20', badge: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
+              const colorMap: Record<string, string> = {
+                blue: 'border-blue-500/20 bg-blue-500/5 text-blue-400',
+                amber: 'border-amber-500/20 bg-amber-500/5 text-amber-400',
+                green: 'border-green-500/20 bg-green-500/5 text-green-400',
               };
-              const colors = colorMap[benefit.color];
               
               return (
                 <motion.div
-                  key={benefit.title}
+                  key={benefit.label}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  className={`relative p-5 rounded-2xl border ${colors.border} bg-gradient-to-br ${colors.bg} via-card/50 to-transparent backdrop-blur-sm hover:shadow-xl ${colors.glow} transition-all cursor-default group overflow-hidden`}
+                  transition={{ delay: i * 0.05 }}
+                  className={`p-3 rounded-lg border ${colorMap[benefit.color]}`}
                 >
-                  {/* Animated background glow */}
-                  <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-bl ${colors.bg} to-transparent rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity`} />
-                  
-                  {/* Subtle grid pattern */}
-                  <div 
-                    className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                    style={{
-                      backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-                      backgroundSize: '16px 16px',
-                    }}
-                  />
-                  
-                  <div className="relative z-10">
-                    {/* Icon and title row */}
-                    <div className="flex items-start gap-4 mb-3">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0 shadow-lg ${colors.glow}`}>
-                        <benefit.icon className={`w-6 h-6 ${colors.text}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-foreground mb-1">{benefit.title}</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{benefit.desc}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Stats badge */}
-                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium border ${colors.badge}`}>
-                      <BarChart3 className="w-3 h-3" />
-                      {benefit.stats}
-                    </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <benefit.icon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-medium">{benefit.label}</span>
                   </div>
-                  
-                  {/* Corner accent dots */}
-                  <div className={`absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-40 group-hover:opacity-100 transition-opacity`} />
-                  <div className={`absolute bottom-2 right-5 w-1 h-1 rounded-full ${colors.text.replace('text-', 'bg-')} opacity-20 group-hover:opacity-60 transition-opacity`} />
+                  <p className="text-[9px] text-muted-foreground">{benefit.value}</p>
                 </motion.div>
               );
             })}
