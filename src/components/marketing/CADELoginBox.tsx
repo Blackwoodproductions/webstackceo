@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Key, LogIn, LogOut, Loader2, CheckCircle2, AlertTriangle,
-  Eye, EyeOff, Shield, Sparkles, Database, Activity, Server,
-  Cpu, BarChart3, Globe, RefreshCw, ChevronDown, ChevronRight,
-  HelpCircle, Zap, FileText, Play, Clock,
+  Loader2, CheckCircle2, AlertTriangle,
+  Shield, Sparkles, Database, Activity, Server,
+  Cpu, BarChart3, Globe, RefreshCw, 
+  HelpCircle, Zap, FileText, Clock,
   Search, Link2, TrendingUp, Target, Layers, Bot, Newspaper,
-  Wand2, ListChecks, ArrowRight, ExternalLink,
+  Wand2, ListChecks,
   CheckCircle, XCircle, Timer, Rocket, PenTool, BookOpen,
-  Upload, Trash2, Settings, Copy, Download, Send
+  Upload, Trash2, Settings, Copy, Send, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -42,6 +41,7 @@ interface SubscriptionInfo {
   articles_generated?: number;
   faqs_generated?: number;
   renewal_date?: string;
+  domains?: string[];
 }
 
 interface DomainProfile {
@@ -114,19 +114,12 @@ const MODEL_TIERS = [
 ];
 
 export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
-
-  const apiKeyRef = useRef(apiKey);
-  useEffect(() => {
-    apiKeyRef.current = apiKey;
-  }, [apiKey]);
+  const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -153,60 +146,13 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
   const [publishPlatform, setPublishPlatform] = useState("wordpress");
   const [publishContentId, setPublishContentId] = useState("");
 
-  // Load API key
-  useEffect(() => {
-    const loadApiKey = async () => {
-      setIsLoadingKey(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserId(user.id);
-          const { data: keyData } = await supabase
-            .from("user_api_keys")
-            .select("api_key_encrypted")
-            .eq("user_id", user.id)
-            .eq("service_name", "cade")
-            .maybeSingle();
-          
-          if (keyData?.api_key_encrypted) {
-            setApiKey(keyData.api_key_encrypted);
-            setIsConnected(true);
-            localStorage.setItem("cade_api_key", keyData.api_key_encrypted);
-          } else {
-            const storedKey = localStorage.getItem("cade_api_key");
-            if (storedKey) {
-              setApiKey(storedKey);
-              setIsConnected(true);
-            }
-          }
-        } else {
-          const storedKey = localStorage.getItem("cade_api_key");
-          if (storedKey) {
-            setApiKey(storedKey);
-            setIsConnected(true);
-          }
-        }
-      } catch (err) {
-        console.error("[CADE] Failed to load API key:", err);
-        const storedKey = localStorage.getItem("cade_api_key");
-        if (storedKey) {
-          setApiKey(storedKey);
-          setIsConnected(true);
-        }
-      } finally {
-        setIsLoadingKey(false);
-      }
-    };
-    loadApiKey();
-  }, []);
-
-  // API call helper
+  // API call helper - uses system API key (no user key needed)
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, currentDomain?: string) => {
-    const key = apiKeyRef.current;
     const targetDomain = currentDomain || domain;
     
+    // Don't pass apiKey - edge function will use CADE_API_KEY secret
     const { data, error } = await supabase.functions.invoke("cade-api", {
-      body: { action, domain: targetDomain, params, apiKey: key },
+      body: { action, domain: targetDomain, params },
     });
 
     if (error) {
@@ -217,9 +163,87 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     return data;
   }, [domain]);
 
-  // Fetch all data
+  // Check system connection on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      setIsLoading(true);
+      try {
+        const healthRes = await callCadeApi("health");
+        if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
+          setIsConnected(true);
+          setHealth(healthRes.data || healthRes);
+        } else {
+          setError("CADE API is not responding properly");
+        }
+      } catch (err) {
+        console.error("[CADE] Connection check failed:", err);
+        setError("Failed to connect to CADE API");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkConnection();
+  }, [callCadeApi]);
+
+  // Check if selected domain has a subscription
+  useEffect(() => {
+    const checkDomainSubscription = async () => {
+      if (!domain || !isConnected) {
+        setDomainHasSubscription(null);
+        return;
+      }
+
+      setCheckingSubscription(true);
+      try {
+        // Fetch subscription info
+        const subRes = await callCadeApi("subscription-active");
+        const subData = subRes?.data || subRes;
+        
+        // Check if subscription is active
+        if (!subData?.status || subData.status === "inactive" || subData.status === "expired") {
+          setDomainHasSubscription(false);
+          setSubscription(subData);
+          return;
+        }
+
+        // Check if domain is in the subscription's domain list (if available)
+        const subscribedDomains = subData?.domains || [];
+        if (subscribedDomains.length > 0) {
+          const domainLower = domain.toLowerCase().replace(/^www\./, '');
+          const isSubscribed = subscribedDomains.some((d: string) => 
+            d.toLowerCase().replace(/^www\./, '') === domainLower
+          );
+          setDomainHasSubscription(isSubscribed);
+        } else {
+          // If no domain list, assume subscription covers all domains
+          setDomainHasSubscription(subData?.status === "active");
+        }
+        
+        setSubscription(subData);
+      } catch (err) {
+        console.error("[CADE] Subscription check error:", err);
+        // On error, try to get domain profile - if it exists, likely has access
+        try {
+          const profileRes = await callCadeApi("domain-profile");
+          if (profileRes && !profileRes.error) {
+            setDomainHasSubscription(true);
+          } else {
+            setDomainHasSubscription(false);
+          }
+        } catch {
+          setDomainHasSubscription(false);
+        }
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    checkDomainSubscription();
+  }, [domain, isConnected, callCadeApi]);
+
+  // Fetch all data when connected and domain has subscription
   const fetchAllData = useCallback(async () => {
-    if (!apiKeyRef.current) return;
+    if (!isConnected || !domainHasSubscription) return;
     
     setError(null);
 
@@ -286,71 +310,15 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [domain, callCadeApi]);
+  }, [domain, isConnected, domainHasSubscription, callCadeApi]);
 
   useEffect(() => {
-    if (isConnected && apiKey) {
+    if (isConnected && domainHasSubscription) {
       fetchAllData();
     }
-  }, [isConnected, apiKey, domain, fetchAllData]);
+  }, [isConnected, domainHasSubscription, domain, fetchAllData]);
 
   // === ACTION HANDLERS ===
-  const handleLogin = async () => {
-    if (!apiKey.trim()) {
-      setError("Please enter your CADE API key");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const healthRes = await callCadeApi("health");
-
-      if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
-        localStorage.setItem("cade_api_key", apiKey);
-        
-        if (userId) {
-          await supabase.from("user_api_keys").upsert({
-            user_id: userId,
-            service_name: "cade",
-            api_key_encrypted: apiKey,
-            updated_at: new Date().toISOString()
-          }, { onConflict: "user_id,service_name" });
-        }
-        
-        setIsConnected(true);
-        setHealth(healthRes.data || healthRes);
-        toast.success("Successfully connected to CADE API!");
-      } else {
-        setError("Unable to verify API connection. Please check your API key.");
-      }
-    } catch (err) {
-      console.error("[CADE Login] Error:", err);
-      setError("Failed to connect. Please verify your API key is correct.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    localStorage.removeItem("cade_api_key");
-    if (userId) {
-      await supabase.from("user_api_keys").delete().eq("user_id", userId).eq("service_name", "cade");
-    }
-    setIsConnected(false);
-    setApiKey("");
-    setHealth(null);
-    setSubscription(null);
-    setDomainProfile(null);
-    setFaqs([]);
-    setCrawlTasks([]);
-    setCategorizationTasks([]);
-    setQueues([]);
-    setWorkers([]);
-    toast.success("Disconnected from CADE API");
-  };
-
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchAllData();
@@ -555,45 +523,101 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     return <Activity className="w-3.5 h-3.5" />;
   };
 
-  // Loading state
-  if (isLoadingKey) {
+  // Loading state - connecting to CADE
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
-        <div className="flex items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
-          <span className="text-muted-foreground">Loading CADE connection...</span>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30">
+              <Bot className="w-8 h-8 text-white" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
+              <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold">Connecting to CADE</p>
+            <p className="text-sm text-muted-foreground">AI Content Automation Engine</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Login Form
-  if (!isConnected) {
+  // Connection error state
+  if (error && !isConnected) {
+    return (
+      <div className="p-8 rounded-2xl bg-gradient-to-br from-red-500/10 via-rose-500/5 to-pink-500/10 border border-red-500/30">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-red-400">Connection Error</h3>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </div>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline" className="gap-2 border-red-500/30 hover:bg-red-500/10">
+          <RefreshCw className="w-4 h-4" />
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
+
+  // Checking subscription state
+  if (checkingSubscription) {
+    return (
+      <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+          <div className="text-center">
+            <p className="text-lg font-semibold">Checking Subscription</p>
+            <p className="text-sm text-muted-foreground">Verifying access for {domain}...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No domain selected state
+  if (!domain) {
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
         <div className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-500/20 to-transparent rounded-full blur-3xl" />
           
           <div className="relative z-10">
-            <div className="flex items-center gap-5 mb-8">
+            <div className="flex items-center gap-5 mb-6">
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30">
                   <Bot className="w-8 h-8 text-white" />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                  <CheckCircle className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
               <div>
                 <h3 className="text-2xl font-bold flex items-center gap-3">
                   CADE Platform
-                  <Badge className="bg-violet-500/15 text-violet-400 border-violet-500/30">AI Content Engine</Badge>
+                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Connected</Badge>
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">Connect to unlock automated content generation & SEO optimization</p>
+                <p className="text-sm text-muted-foreground mt-1">Select a domain to start generating content</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-3">
+                <Globe className="w-5 h-5 text-amber-400" />
+                <div>
+                  <p className="font-medium text-amber-400">No Domain Selected</p>
+                  <p className="text-sm text-muted-foreground">Use the domain selector above to choose a domain for CADE automation</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
               {[
                 { icon: FileText, label: "7 Article Types", color: "text-violet-400" },
                 { icon: HelpCircle, label: "FAQ Generation", color: "text-purple-400" },
@@ -606,103 +630,104 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                 </div>
               ))}
             </div>
-
-            <div className="space-y-4">
-              <div className="relative">
-                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type={showKey ? "text" : "password"}
-                  placeholder="Enter your CADE API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  className="pl-12 pr-12 h-14 text-base bg-background/50 border-violet-500/30 focus:border-violet-500 rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 p-3 rounded-xl"
-                  >
-                    <AlertTriangle className="w-4 h-4" />
-                    {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Button
-                onClick={handleLogin}
-                disabled={isLoading || !apiKey.trim()}
-                className="w-full h-14 text-base bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-xl shadow-violet-500/30 gap-3 rounded-xl"
-              >
-                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Rocket className="w-5 h-5" />Connect to CADE</>}
-              </Button>
-
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
-                <Shield className="w-4 h-4 text-violet-400" />
-                <span>Your API key is stored securely</span>
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // Connected Dashboard
+  // Domain doesn't have subscription
+  if (domainHasSubscription === false) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
+        <div className="relative p-8 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-red-500/10 border border-amber-500/30 overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-500/20 to-transparent rounded-full blur-3xl" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-5 mb-6">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-xl shadow-amber-500/30">
+                  <Lock className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold flex items-center gap-3">
+                  CADE Subscription Required
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">This domain doesn't have an active CADE subscription</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-background/50 border border-border mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <Globe className="w-5 h-5 text-foreground" />
+                <span className="font-semibold">{domain}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                To use CADE's AI content automation features for this domain, a subscription is required. 
+                Contact your account manager or upgrade your plan to include this domain.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { icon: FileText, label: "7 Article Types", color: "text-muted-foreground" },
+                { icon: HelpCircle, label: "FAQ Generation", color: "text-muted-foreground" },
+                { icon: Link2, label: "Smart Linking", color: "text-muted-foreground" },
+                { icon: Target, label: "Competitor Intel", color: "text-muted-foreground" },
+              ].map((f, i) => (
+                <div key={i} className="flex items-center gap-2 p-3 rounded-xl bg-muted/30 border border-border/50 opacity-50">
+                  <f.icon className={`w-4 h-4 ${f.color}`} />
+                  <span className="text-xs font-medium text-muted-foreground">{f.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {subscription && (
+              <div className="mt-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/30">
+                <p className="text-sm font-medium text-violet-400 mb-2">Current Plan: {subscription.plan || "Unknown"}</p>
+                <p className="text-xs text-muted-foreground">
+                  Domains: {subscription.domains_used || 0} / {subscription.domains_limit || "∞"}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Connected Dashboard - domain has subscription
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       {/* Active Domain Banner */}
-      {domain ? (
-        <div className="relative p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-green-500/10 to-teal-500/15 border border-emerald-500/30 overflow-hidden">
-          <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Globe className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Active Domain</p>
-                <p className="text-lg font-bold text-foreground">{domain}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button size="sm" onClick={handleCrawlDomain} disabled={crawling} className="gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30">
-                {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Crawl
-              </Button>
-              <Button size="sm" onClick={handleCategorizeDomain} disabled={categorizing} variant="outline" className="gap-2">
-                {categorizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
-                Categorize
-              </Button>
-              <Button size="sm" onClick={handleAnalyzeCss} disabled={analyzingCss} variant="outline" className="gap-2">
-                {analyzingCss ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
-                Analyze CSS
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+      <div className="relative p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-green-500/10 to-teal-500/15 border border-emerald-500/30 overflow-hidden">
+        <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Globe className="w-5 h-5 text-white" />
+            </div>
             <div>
-              <p className="font-medium text-amber-400">No Domain Selected</p>
-              <p className="text-sm text-muted-foreground">Use the domain selector above to choose a domain</p>
+              <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Active Domain</p>
+              <p className="text-lg font-bold text-foreground">{domain}</p>
             </div>
           </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button size="sm" onClick={handleCrawlDomain} disabled={crawling} className="gap-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30">
+              {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Crawl
+            </Button>
+            <Button size="sm" onClick={handleCategorizeDomain} disabled={categorizing} variant="outline" className="gap-2">
+              {categorizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
+              Categorize
+            </Button>
+            <Button size="sm" onClick={handleAnalyzeCss} disabled={analyzingCss} variant="outline" className="gap-2">
+              {analyzingCss ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings className="w-4 h-4" />}
+              Analyze CSS
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Header */}
       <div className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden">
@@ -733,10 +758,6 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-2 border-violet-500/30 hover:bg-violet-500/10">
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
               Refresh
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-muted-foreground hover:text-red-400 hover:bg-red-500/10">
-              <LogOut className="w-4 h-4" />
-              Disconnect
             </Button>
           </div>
         </div>
@@ -851,67 +872,65 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          {domain && (
-            <Card className="border-violet-500/20">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-violet-400" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{domain}</CardTitle>
-                      <CardDescription>Domain Profile</CardDescription>
-                    </div>
+          <Card className="border-violet-500/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                    <Globe className="w-5 h-5 text-violet-400" />
                   </div>
-                  <Badge className={getStatusColor(domainProfile?.status)}>{domainProfile?.status || "Not crawled"}</Badge>
+                  <div>
+                    <CardTitle className="text-lg">{domain}</CardTitle>
+                    <CardDescription>Domain Profile</CardDescription>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {domainProfile ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Category</p>
-                      <p className="font-medium">{domainProfile.category || "Unknown"}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Pages Crawled</p>
-                      <p className="font-medium">{domainProfile.crawled_pages ?? 0}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">Content Generated</p>
-                      <p className="font-medium">{domainProfile.content_count ?? 0}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-muted/50">
-                      <p className="text-xs text-muted-foreground mb-1">CSS Analyzed</p>
-                      <p className="font-medium">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
-                    </div>
-                    {domainProfile.language && (
-                      <div className="p-3 rounded-xl bg-muted/50">
-                        <p className="text-xs text-muted-foreground mb-1">Language</p>
-                        <p className="font-medium">{domainProfile.language}</p>
-                      </div>
-                    )}
-                    {domainProfile.niche && (
-                      <div className="p-3 rounded-xl bg-muted/50">
-                        <p className="text-xs text-muted-foreground mb-1">Niche</p>
-                        <p className="font-medium">{domainProfile.niche}</p>
-                      </div>
-                    )}
+                <Badge className={getStatusColor(domainProfile?.status)}>{domainProfile?.status || "Not crawled"}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {domainProfile ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-3 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Category</p>
+                    <p className="font-medium">{domainProfile.category || "Unknown"}</p>
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Globe className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground mb-4">Domain hasn't been crawled yet</p>
-                    <Button onClick={handleCrawlDomain} disabled={crawling} className="gap-2 bg-violet-500 hover:bg-violet-600">
-                      {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                      Start Domain Crawl
-                    </Button>
+                  <div className="p-3 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Pages Crawled</p>
+                    <p className="font-medium">{domainProfile.crawled_pages ?? 0}</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                  <div className="p-3 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Content Generated</p>
+                    <p className="font-medium">{domainProfile.content_count ?? 0}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">CSS Analyzed</p>
+                    <p className="font-medium">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
+                  </div>
+                  {domainProfile.language && (
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">Language</p>
+                      <p className="font-medium">{domainProfile.language}</p>
+                    </div>
+                  )}
+                  {domainProfile.niche && (
+                    <div className="p-3 rounded-xl bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-1">Niche</p>
+                      <p className="font-medium">{domainProfile.niche}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Globe className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-muted-foreground mb-4">Domain hasn't been crawled yet</p>
+                  <Button onClick={handleCrawlDomain} disabled={crawling} className="gap-2 bg-violet-500 hover:bg-violet-600">
+                    {crawling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                    Start Domain Crawl
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="border-violet-500/20">
             <CardHeader>
@@ -919,19 +938,19 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <Button variant="outline" onClick={handleCrawlDomain} disabled={crawling || !domain} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
+                <Button variant="outline" onClick={handleCrawlDomain} disabled={crawling} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
                   {crawling ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5 text-violet-400" />}
                   <span className="text-xs">Crawl Domain</span>
                 </Button>
-                <Button variant="outline" onClick={() => handleGenerateContent("blog")} disabled={generatingContent !== null || !domain} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
+                <Button variant="outline" onClick={() => handleGenerateContent("blog")} disabled={generatingContent !== null} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
                   {generatingContent === "blog" ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileText className="w-5 h-5 text-violet-400" />}
                   <span className="text-xs">Generate Article</span>
                 </Button>
-                <Button variant="outline" onClick={handleGenerateFaq} disabled={generatingFaq || !domain} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
+                <Button variant="outline" onClick={handleGenerateFaq} disabled={generatingFaq} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
                   {generatingFaq ? <Loader2 className="w-5 h-5 animate-spin" /> : <HelpCircle className="w-5 h-5 text-violet-400" />}
                   <span className="text-xs">Generate FAQs</span>
                 </Button>
-                <Button variant="outline" onClick={handleGenerateKnowledgeBase} disabled={generatingKb || !domain} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
+                <Button variant="outline" onClick={handleGenerateKnowledgeBase} disabled={generatingKb} className="h-auto py-4 flex-col gap-2 border-violet-500/30 hover:bg-violet-500/10">
                   {generatingKb ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5 text-violet-400" />}
                   <span className="text-xs">Knowledge Base</span>
                 </Button>
@@ -949,7 +968,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
           <Card className="border-violet-500/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Wand2 className="w-5 h-5 text-violet-400" />AI Content Generation</CardTitle>
-              <CardDescription>Select a content type to generate SEO-optimized articles for {domain || "your domain"}</CardDescription>
+              <CardDescription>Select a content type to generate SEO-optimized articles for {domain}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -987,7 +1006,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                     key={type.id}
                     variant="outline"
                     onClick={() => handleGenerateContent(type.id)}
-                    disabled={generatingContent !== null || !domain}
+                    disabled={generatingContent !== null}
                     className="h-auto py-6 flex-col gap-3 border-violet-500/30 hover:bg-violet-500/10 hover:border-violet-500/50"
                   >
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${type.color} flex items-center justify-center`}>
@@ -1011,7 +1030,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2"><HelpCircle className="w-5 h-5 text-violet-400" />FAQ Generation</CardTitle>
-                  <CardDescription>Generate and manage FAQs for {domain || "your domain"}</CardDescription>
+                  <CardDescription>Generate and manage FAQs for {domain}</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <Select value={faqCount} onValueChange={setFaqCount}>
@@ -1024,7 +1043,7 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={handleGenerateFaq} disabled={generatingFaq || !domain} className="gap-2 bg-violet-500 hover:bg-violet-600">
+                  <Button onClick={handleGenerateFaq} disabled={generatingFaq} className="gap-2 bg-violet-500 hover:bg-violet-600">
                     {generatingFaq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                     Generate FAQs
                   </Button>
