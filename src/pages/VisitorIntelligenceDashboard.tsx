@@ -2053,18 +2053,16 @@ const MarketingDashboard = () => {
       {activeTab === 'visitor-intelligence' && (
       <div className="relative max-w-[1480px] mx-auto group/main">
         {/* Animated gradient glow for main container */}
-        <motion.div
+        {/* Animated gradient glow - GPU isolated to prevent layout interference */}
+        <div
           className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/main:opacity-50 transition-opacity duration-500 blur-md -z-10"
-          animate={{
-            background: [
-              "linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3))",
-              "linear-gradient(270deg, rgba(139,92,246,0.3), rgba(34,211,238,0.3))",
-              "linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3))",
-            ],
+          style={{ 
+            background: 'linear-gradient(180deg, rgba(34,211,238,0.3), rgba(139,92,246,0.3))',
+            contain: 'strict',
+            willChange: 'opacity'
           }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
         />
-        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl overflow-hidden">
+        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl overflow-hidden" style={{ contain: 'layout' }}>
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
@@ -2162,8 +2160,8 @@ const MarketingDashboard = () => {
           </>
         )}
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 overflow-auto">
+        {/* Main Content Area - GPU accelerated to prevent reflow during sidebar transitions */}
+        <main className="flex-1 p-6 overflow-auto" style={{ contain: 'layout style', willChange: 'auto' }}>
           {/* No Tracking Installed Prompt - Show when GSC domain selected but no tracking */}
           {shouldShowInstallPrompt && (
             <div className="mb-4 animate-fade-in">
