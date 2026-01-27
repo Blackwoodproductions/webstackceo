@@ -238,23 +238,23 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Hide profiles badge while checking CADE, show subscription status instead */}
-            {isCheckingCade ? (
+            {/* Show scanning/detection status */}
+            {isScanning ? (
+              <Badge variant="outline" className="text-pink-400 border-pink-500/30 bg-pink-500/10">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Scanning Website...
+              </Badge>
+            ) : isCheckingCade ? (
               <Badge variant="outline" className="text-violet-400 border-violet-500/30 bg-violet-500/10">
                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />Verifying CADE...
               </Badge>
-            ) : !hasCadeSubscription && !isCheckingCade ? (
-              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
-                <AlertCircle className="w-3 h-3 mr-1" />No CADE Subscription
-              </Badge>
-            ) : isScanning ? (
-              <Badge variant="outline" className="text-pink-400 border-pink-500/30 bg-pink-500/10">
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Scanning...
-              </Badge>
-            ) : scanComplete ? (
+            ) : scanComplete && detectedCount > 0 ? (
               <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
                 <CheckCircle className="w-3 h-3 mr-1" />
-                {detectedCount} Profiles Found
+                {detectedCount} Profiles Detected
+              </Badge>
+            ) : scanComplete ? (
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                <AlertCircle className="w-3 h-3 mr-1" />No Socials Found
               </Badge>
             ) : null}
             
@@ -278,26 +278,20 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         </div>
       </div>
 
-      {/* CADE Subscription Check / No Subscription Sales Pitch */}
+      {/* Loading States: Scanning Website or Checking CADE */}
       <AnimatePresence mode="wait">
-        {isCheckingCade ? (
+        {isScanning ? (
           <motion.div
-            key="checking"
+            key="scanning"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+            className="relative p-6 rounded-2xl bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-purple-500/10 border border-pink-500/30 overflow-hidden"
           >
-            {/* Animated background effects */}
             <div className="absolute inset-0 overflow-hidden">
               <motion.div
-                className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
+                className="absolute -top-20 -right-20 w-40 h-40 bg-pink-500/20 rounded-full blur-3xl"
                 animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <motion.div
-                className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
-                animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
             </div>
@@ -305,20 +299,59 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
             <div className="relative z-10 flex flex-col items-center gap-3">
               <div className="relative">
                 <motion.div
-                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-600 flex items-center justify-center shadow-xl shadow-pink-500/30"
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                 >
-                  <Sparkles className="w-7 h-7 text-white" />
-                </motion.div>
-                <motion.div
-                  className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                >
-                  <Loader2 className="w-3 h-3 text-white animate-spin" />
+                  <Globe className="w-7 h-7 text-white" />
                 </motion.div>
               </div>
+              
+              <div className="text-center">
+                <p className="text-base font-semibold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                  Scanning Website for Social Profiles
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Crawling <span className="font-medium text-foreground">{selectedDomain}</span> for social links
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-pink-400"
+                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        ) : isCheckingCade ? (
+          <motion.div
+            key="checking"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+          >
+            <div className="absolute inset-0 overflow-hidden">
+              <motion.div
+                className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+            
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <motion.div
+                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles className="w-7 h-7 text-white" />
+              </motion.div>
               
               <div className="text-center">
                 <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
@@ -328,165 +361,163 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                   Checking access for <span className="font-medium text-foreground">{selectedDomain}</span>
                 </p>
               </div>
-              
-              <div className="flex items-center gap-1.5">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
-                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                  />
-                ))}
-              </div>
             </div>
           </motion.div>
-        ) : !hasCadeSubscription ? (
-          /* CADE Sales Pitch - No Subscription */
+        ) : scanComplete && detectedCount > 0 && !hasCadeSubscription ? (
+          /* Detected Socials - Connect Prompt */
           <motion.div
-            key="sales"
+            key="detected-socials"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <Card className="border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
+            <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-cyan-500/10 backdrop-blur-sm overflow-hidden">
               <div className="absolute inset-0 pointer-events-none">
                 <motion.div 
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"
                   animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
                   transition={{ duration: 4, repeat: Infinity }}
                 />
               </div>
               
-              <CardHeader className="relative z-10">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <motion.div
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
-                    >
-                      <Sparkles className="w-7 h-7 text-white" />
-                    </motion.div>
-                    <div>
-                      <CardTitle className="text-xl flex items-center gap-2">
-                        Automate Your Social Signals with CADE
-                        <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
-                          AI-Powered
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription className="mt-1 max-w-xl">
-                        When you subscribe to CADE, every new article and FAQ is automatically shared across your connected social platforms—building consistent brand presence and driving traffic on autopilot.
-                      </CardDescription>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center p-4 rounded-xl bg-background/50 border border-violet-500/20 min-w-[200px]">
-                    <p className="text-sm text-muted-foreground">Starting at</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold text-violet-500">$99</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
-                    </div>
-                    <Badge variant="outline" className="mt-2 text-violet-500 border-violet-500/30">
-                      Includes Social Signals
-                    </Badge>
+              <CardHeader className="relative z-10 pb-4">
+                <div className="flex items-start gap-4">
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/30"
+                  >
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <div>
+                    <CardTitle className="text-xl flex items-center gap-2">
+                      Social Profiles Detected on {selectedDomain}
+                      <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30">
+                        {detectedCount} Found
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="mt-1 max-w-xl">
+                      We found social media links on your website. Connect your accounts to enable automated posting and manage your social presence.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="relative z-10 space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-violet-500" />
-                    How CADE Automates Social Signals
-                  </h4>
-                  
-                  <div className="grid md:grid-cols-5 gap-3">
-                    {[
-                      { step: '1', title: 'Article Published', desc: 'CADE creates optimized content', icon: FileText },
-                      { step: '2', title: 'AI Adapts Copy', desc: 'Platform-specific versions', icon: Sparkles },
-                      { step: '3', title: 'Hashtags Added', desc: 'Trending tags automatically', icon: Hash },
-                      { step: '4', title: 'Scheduled', desc: 'Optimal posting times', icon: Clock },
-                      { step: '5', title: 'Published', desc: 'Simultaneous release', icon: Rocket },
-                    ].map((item, i) => (
-                      <motion.div
-                        key={item.step}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="relative p-4 rounded-xl bg-background/30 border border-violet-500/10"
-                      >
-                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-lg">
-                          {item.step}
-                        </div>
-                        <item.icon className="w-5 h-5 text-violet-500 mb-2" />
-                        <p className="font-medium text-sm">{item.title}</p>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        
-                        {i < 4 && (
-                          <motion.div
-                            className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2"
-                            animate={{ x: [0, 4, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          >
-                            <ChevronRight className="w-4 h-4 text-violet-400" />
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  {[
-                    { platform: 'twitter' as const, preview: '🚀 New guide: How to boost your local SEO rankings in 2025!\n\nKey takeaways inside 👇\n\n#SEO #LocalBusiness #Marketing', stats: '280 chars max' },
-                    { platform: 'linkedin' as const, preview: 'Excited to share our latest comprehensive guide on local SEO strategies.\n\n✅ Google Business optimization\n✅ Review generation\n✅ Local citations', stats: 'Professional tone' },
-                    { platform: 'facebook' as const, preview: '📍 Want to rank higher in local searches? We just published a complete guide covering everything!', stats: 'Casual & engaging' },
-                  ].map((item, i) => {
-                    const config = platformConfig[item.platform];
+              <CardContent className="relative z-10 space-y-4">
+                {/* Detected Profiles Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {profiles.filter(p => p.detected).map((profile, i) => {
+                    const config = platformConfig[profile.platform];
                     const IconComponent = config.icon;
+                    
                     return (
                       <motion.div
-                        key={item.platform}
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        key={profile.platform}
+                        initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + i * 0.1 }}
-                        className={`p-4 rounded-xl ${config.bgColor} border ${config.borderColor}`}
+                        transition={{ delay: i * 0.1 }}
+                        className="p-3 rounded-xl bg-background/50 border border-emerald-500/20 text-center"
                       >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center`}>
-                            <IconComponent className="w-4 h-4 text-white" />
-                          </div>
-                          <span className="font-medium text-sm">{config.name}</span>
-                          <Badge variant="outline" className="ml-auto text-[10px]">{item.stats}</Badge>
+                        <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${config.color} flex items-center justify-center mx-auto mb-2`}>
+                          <IconComponent className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-xs text-muted-foreground whitespace-pre-line">{item.preview}</p>
+                        <p className="text-sm font-medium">{config.name}</p>
+                        {profile.username && (
+                          <p className="text-xs text-muted-foreground truncate">@{profile.username}</p>
+                        )}
+                        {profile.connected ? (
+                          <Badge className="mt-2 h-5 text-[10px] bg-emerald-500 text-white">Connected</Badge>
+                        ) : (
+                          <Badge variant="outline" className="mt-2 h-5 text-[10px] text-amber-500 border-amber-500/30">
+                            Needs Connection
+                          </Badge>
+                        )}
                       </motion.div>
                     );
                   })}
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { icon: Zap, title: 'Zero Manual Work', desc: 'CADE handles everything' },
-                    { icon: Target, title: 'Platform Optimized', desc: 'Tailored for each network' },
-                    { icon: TrendingUp, title: 'Consistent Presence', desc: 'Never miss a post' },
-                    { icon: Sparkles, title: 'AI-Powered Copy', desc: 'Compelling content' },
-                  ].map((benefit, i) => (
+                
+                <Separator className="bg-emerald-500/20" />
+                
+                {/* CADE Upsell - Compact */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-violet-400" />
+                    <div>
+                      <p className="font-medium text-sm">Automate with CADE</p>
+                      <p className="text-xs text-muted-foreground">Auto-post content across all connected platforms</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-violet-400 border-violet-500/30">
+                    Starting at $99/mo
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : scanComplete && detectedCount === 0 && !hasCadeSubscription ? (
+          /* No Socials Found - CADE Sales Pitch */
+          <motion.div
+            key="no-socials"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Card className="border-2 border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-rose-500/10 backdrop-blur-sm overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <motion.div 
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+              </div>
+              
+              <CardHeader className="relative z-10 pb-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
                     <motion.div
-                      key={benefit.title}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5 + i * 0.1 }}
-                      className="p-4 rounded-xl bg-background/30 border border-violet-500/10 text-center"
+                      animate={{ rotate: [0, 10, -10, 0] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/30"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mx-auto mb-2">
-                        <benefit.icon className="w-5 h-5 text-pink-500" />
-                      </div>
-                      <h4 className="font-semibold text-sm">{benefit.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{benefit.desc}</p>
+                      <AlertCircle className="w-7 h-7 text-white" />
                     </motion.div>
-                  ))}
+                    <div>
+                      <CardTitle className="text-xl flex items-center gap-2">
+                        No Social Profiles Found
+                        <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30">
+                          Action Needed
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="mt-1 max-w-xl">
+                        We couldn't detect any social media links on <span className="font-medium text-foreground">{selectedDomain}</span>. 
+                        Add social links to your website or connect accounts manually below.
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="relative z-10 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-background/50 border border-amber-500/20">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-amber-500" />
+                      Add Social Links to Your Site
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Add social media icons/links to your website footer or header so we can detect and manage them.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-background/50 border border-violet-500/20">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-violet-500" />
+                      Let CADE Build Your Presence
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Subscribe to CADE and we'll help you create and manage social profiles with AI-powered automation.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
