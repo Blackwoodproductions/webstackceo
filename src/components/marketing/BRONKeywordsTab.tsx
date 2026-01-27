@@ -507,20 +507,6 @@ export const BRONKeywordsTab = ({
                   </span>
                 </div>
 
-                <div className="w-px h-3 bg-border/50" />
-
-                {/* Meta title */}
-                <div className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${scoreBg(metaTitleQuality.score)}`}>
-                  <Hash className={`w-3 h-3 ${scoreColor(metaTitleQuality.score)}`} />
-                  <span className={scoreColor(metaTitleQuality.score)}>Title: {metaTitleQuality.label}</span>
-                </div>
-
-                {/* Meta desc */}
-                <div className={`flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${scoreBg(metaDescQuality.score)}`}>
-                  <Sparkles className={`w-3 h-3 ${scoreColor(metaDescQuality.score)}`} />
-                  <span className={scoreColor(metaDescQuality.score)}>Desc: {metaDescQuality.label}</span>
-                </div>
-
                 {/* Links indicator */}
                 {hasLinks && (
                   <>
@@ -625,7 +611,20 @@ export const BRONKeywordsTab = ({
 
                   {/* SEO Meta Section */}
                   <div className="p-3 rounded-lg bg-card border border-border/50">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">SEO Meta Tags</h4>
+                      {/* Quality indicators */}
+                      <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${scoreBg(metaTitleQuality.score)}`}>
+                          <Hash className={`w-3 h-3 ${scoreColor(metaTitleQuality.score)}`} />
+                          <span className={scoreColor(metaTitleQuality.score)}>Title: {metaTitleQuality.label}</span>
+                        </div>
+                        <div className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${scoreBg(metaDescQuality.score)}`}>
+                          <Sparkles className={`w-3 h-3 ${scoreColor(metaDescQuality.score)}`} />
+                          <span className={scoreColor(metaDescQuality.score)}>Desc: {metaDescQuality.label}</span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="space-y-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs">Meta Title</Label>
