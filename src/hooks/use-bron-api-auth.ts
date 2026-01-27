@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const BRON_STORAGE_KEY = "bron_dashboard_auth";
+const BRON_DASHBOARD_DOMAIN = "dashdev.imagehosting.space";
 
 type UseBronApiAuthOptions = {
   domain: string;
@@ -9,8 +10,9 @@ type UseBronApiAuthOptions = {
 };
 
 /**
- * Opens a popup for BRON login and waits for the callback redirect.
- * Passes any received token back to the caller for embed purposes.
+ * Opens a popup for BRON login and detects when login completes.
+ * BRON redirects to their dashboard after login (ignores callback URL),
+ * so we detect the dashboard URL in the popup to know login succeeded.
  */
 export function useBronApiAuth({
   domain,
@@ -74,9 +76,8 @@ export function useBronApiAuth({
 
     closePopup();
 
-    // Build login URL - redirect to our callback after login
-    const callbackUrl = `${window.location.origin}/bron-callback`;
-    const loginUrl = `https://dashdev.imagehosting.space/login?next=${encodeURIComponent(callbackUrl)}`;
+    // Open BRON login directly - they redirect to dashboard after login
+    const loginUrl = `https://${BRON_DASHBOARD_DOMAIN}/login`;
 
     console.log("[BRON Auth] Opening popup:", loginUrl);
 
@@ -96,17 +97,72 @@ export function useBronApiAuth({
     return true;
   }, [closePopup]);
 
-  // Check if popup was closed by user (without completing login)
+  // Monitor popup for dashboard redirect (indicates login success)
   useEffect(() => {
     if (!isWaitingForLogin) return;
 
     const checkPopup = () => {
-      if (popupRef.current?.closed) {
-        console.log("[BRON Auth] Popup closed by user");
+      const popup = popupRef.current;
+      
+      // If popup closed by user
+      if (!popup || popup.closed) {
+        console.log("[BRON Auth] Popup closed");
         setIsWaitingForLogin(false);
         if (checkIntervalRef.current) {
           window.clearInterval(checkIntervalRef.current);
           checkIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Try to read popup URL - this works when popup is on same-origin
+      // or when we can see the domain (cross-origin shows domain only)
+      try {
+        const popupUrl = popup.location.href;
+        
+        // Check if popup is now on our callback page
+        if (popupUrl.includes(window.location.origin + "/bron-callback")) {
+          console.log("[BRON Auth] Popup reached our callback");
+          // Let the callback page handle it via postMessage
+          return;
+        }
+        
+        // Check if popup navigated to BRON dashboard (indicates successful login)
+        // URL pattern: dashdev.imagehosting.space/domain/... or /dashboard
+        if (popupUrl.includes(BRON_DASHBOARD_DOMAIN) && 
+            (popupUrl.includes("/domain/") || popupUrl.includes("/dashboard"))) {
+          console.log("[BRON Auth] Detected dashboard URL - login successful!", popupUrl);
+          
+          // Extract domain ID from URL if present (e.g., /domain/112619)
+          const domainMatch = popupUrl.match(/\/domain\/(\d+)/);
+          const domainId = domainMatch ? domainMatch[1] : null;
+          
+          // Try to get any token from URL params
+          try {
+            const url = new URL(popupUrl);
+            const token = url.searchParams.get("token") || 
+                         url.searchParams.get("auth_token") ||
+                         url.searchParams.get("access_token");
+            
+            console.log("[BRON Auth] Extracted domainId:", domainId, "token:", !!token);
+            triggerLoginSuccess(token || domainId);
+          } catch {
+            triggerLoginSuccess(domainId);
+          }
+          return;
+        }
+      } catch {
+        // Cross-origin - can't read URL details, but can try location.host
+        try {
+          const host = popup.location.host;
+          // If we can see the host and it's BRON's dashboard domain
+          if (host === BRON_DASHBOARD_DOMAIN) {
+            // Can't read full URL but we know they're on dashboard
+            console.log("[BRON Auth] Popup is on BRON dashboard (cross-origin)");
+            // We'll need to wait for explicit close or postMessage
+          }
+        } catch {
+          // Complete cross-origin block - normal during login on external domain
         }
       }
     };
@@ -119,15 +175,15 @@ export function useBronApiAuth({
         checkIntervalRef.current = null;
       }
     };
-  }, [isWaitingForLogin]);
+  }, [isWaitingForLogin, triggerLoginSuccess]);
 
-  // Listen for postMessage from callback page with token
+  // Listen for postMessage from callback page
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        console.log("[BRON Auth] Received auth success, token:", !!event.data?.token);
+        console.log("[BRON Auth] Received auth success via postMessage, token:", !!event.data?.token);
         triggerLoginSuccess(event.data?.token);
       }
     };

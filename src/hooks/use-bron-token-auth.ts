@@ -98,7 +98,8 @@ export function useBronTokenAuth({
   }, [onAuthenticated]);
 
   // Create a new session after popup login
-  const createSession = useCallback(async (bronCallbackToken?: string | null): Promise<boolean> => {
+  // bronCallbackData can be a token string OR a domainId extracted from the popup URL
+  const createSession = useCallback(async (bronCallbackData?: string | null): Promise<boolean> => {
     if (!domain) {
       setError("Domain is required");
       return false;
@@ -108,13 +109,20 @@ export function useBronTokenAuth({
     setError(null);
 
     try {
-      console.log("[BRON Token] Creating session for domain:", domain, "Callback token:", !!bronCallbackToken);
+      // Determine if the callback data is a domainId (numeric) or a token
+      const isNumeric = bronCallbackData && /^\d+$/.test(bronCallbackData);
+      const domainIdParam = isNumeric ? bronCallbackData : undefined;
+      const tokenParam = isNumeric ? undefined : bronCallbackData;
+
+      console.log("[BRON Token] Creating session for domain:", domain, 
+        "domainId:", domainIdParam, "token:", !!tokenParam);
       
       const { data, error: invokeError } = await supabase.functions.invoke("bron-auth", {
         body: { 
           action: "create-session", 
           domain,
-          bronToken: bronCallbackToken, // Pass any token from callback
+          bronToken: tokenParam, // Pass any token from callback
+          domainId: domainIdParam, // Pass domain ID if we extracted it from popup URL
         },
       });
 
@@ -135,9 +143,9 @@ export function useBronTokenAuth({
       const newSession: BronSession = {
         token: data.token,
         domain,
-        domainId: data.domainId,
+        domainId: data.domainId || domainIdParam || "",
         userId: data.userId || "",
-        embedToken: data.embedToken || bronCallbackToken || null,
+        embedToken: data.embedToken || tokenParam || null,
         expiresAt: data.expiresAt,
       };
 
@@ -149,7 +157,7 @@ export function useBronTokenAuth({
       setIsAuthenticated(true);
       setIsLoading(false);
 
-      console.log("[BRON Token] Session created, embedToken:", !!newSession.embedToken);
+      console.log("[BRON Token] Session created, domainId:", newSession.domainId, "embedToken:", !!newSession.embedToken);
       onAuthenticated(newSession);
 
       return true;

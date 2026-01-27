@@ -125,6 +125,7 @@ serve(async (req) => {
       case "create-session": {
         const domain = body?.domain as string;
         const bronCallbackToken = body?.bronToken as string | null; // Token from BRON callback
+        const providedDomainId = body?.domainId as string | null; // Domain ID extracted from popup URL
         
         if (!domain) {
           return new Response(
@@ -133,20 +134,36 @@ serve(async (req) => {
           );
         }
 
-        // Verify the domain with BRON
-        const verification = await verifyDomainWithBRON(domain);
-        
-        if (!verification.valid || !verification.domainId || !verification.userId) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Domain not found in BRON" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+        let domainId = providedDomainId;
+        let userId = "";
+
+        // If we have a domain ID from the popup URL, use it directly
+        if (domainId) {
+          console.log("[BRON Auth] Using provided domainId:", domainId);
+          // Still verify with BRON to get userId
+          const verification = await verifyDomainWithBRON(domain);
+          if (verification.userId) {
+            userId = verification.userId;
+          }
+        } else {
+          // Verify the domain with BRON to get IDs
+          const verification = await verifyDomainWithBRON(domain);
+          
+          if (!verification.valid || !verification.domainId) {
+            return new Response(
+              JSON.stringify({ success: false, error: "Domain not found in BRON" }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          
+          domainId = verification.domainId;
+          userId = verification.userId || "";
         }
 
         // Try to get an embed token from BRON
         let embedToken = bronCallbackToken;
-        if (!embedToken) {
-          embedToken = await getEmbedToken(domain, verification.domainId, verification.userId);
+        if (!embedToken && domainId) {
+          embedToken = await getEmbedToken(domain, domainId, userId);
         }
 
         cleanExpiredSessions();
@@ -158,21 +175,21 @@ serve(async (req) => {
 
         sessions.set(token, {
           domain,
-          domainId: verification.domainId,
-          userId: verification.userId,
+          domainId: domainId || "",
+          userId,
           bronToken: embedToken,
           createdAt: now,
           expiresAt,
         });
 
-        console.log("[BRON Auth] Created session for domain:", domain, "Has embed token:", !!embedToken);
+        console.log("[BRON Auth] Created session for domain:", domain, "domainId:", domainId, "Has embed token:", !!embedToken);
 
         return new Response(
           JSON.stringify({ 
             success: true, 
             token,
-            domainId: verification.domainId,
-            userId: verification.userId,
+            domainId,
+            userId,
             embedToken: embedToken, // Return embed token to client
             expiresAt,
           }),
