@@ -507,9 +507,21 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           {ownershipStatus.isOwner === null && !matchingLocation && (
             <Alert className="border-blue-500/30 bg-blue-500/10">
               <Info className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-sm">
-                <span className="font-semibold text-blue-400">Verification Status: </span>
-                {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. Connect your Google account to verify ownership and add a listing.`}
+              <AlertDescription className="text-sm flex items-center justify-between gap-4">
+                <div>
+                  <span className="font-semibold text-blue-400">Verification Status: </span>
+                  {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. Connect your Google account to verify ownership and add a listing.`}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh} 
+                  disabled={isRefreshing}
+                  className="shrink-0 border-blue-500/30 hover:bg-blue-500/10 text-blue-400"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Re-check
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -962,12 +974,9 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 We couldn't find a Google Business Profile listing for <span className="font-semibold text-foreground">{selectedDomain}</span>. 
                 Add your business to Google Maps to boost local visibility and attract more customers.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex justify-center">
                 <Button onClick={() => setShowOnboarding(true)} className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
                   <Plus className="w-4 h-4 mr-2" />Add to Google Maps
-                </Button>
-                <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Re-check Listings
                 </Button>
               </div>
             </CardContent>
