@@ -417,6 +417,37 @@ export const BRONKeywordsTab = ({
                 )}
               </div>
 
+              {/* SERP Rankings - right side */}
+              {hasRankings && (
+                <div className="flex items-center gap-1.5 flex-shrink-0 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                  <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+                  {googlePos !== null && (
+                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
+                      <span className="opacity-70">G</span>
+                      <span>{googlePos}</span>
+                    </div>
+                  )}
+                  {bingPos !== null && (
+                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
+                      <span className="opacity-70">B</span>
+                      <span>{bingPos}</span>
+                    </div>
+                  )}
+                  {yahooPos !== null && (
+                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
+                      <span className="opacity-70">Y</span>
+                      <span>{yahooPos}</span>
+                    </div>
+                  )}
+                  {duckPos !== null && (
+                    <div className={`flex items-center gap-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text} border`}>
+                      <span className="opacity-70">D</span>
+                      <span>{duckPos}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Status & Expand */}
               <div className="flex items-center gap-3 flex-shrink-0">
                 <Badge 
@@ -470,38 +501,6 @@ export const BRONKeywordsTab = ({
                     <div className="flex items-center gap-1 text-xs text-cyan-400">
                       <Link2 className="w-3 h-3" />
                       <span>Links</span>
-                    </div>
-                  </>
-                )}
-
-                {/* SERP Rankings Section */}
-                {hasRankings && (
-                  <>
-                    <div className="w-px h-3 bg-border/50" />
-                    <div className="flex items-center gap-1.5">
-                      <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
-                      <div className="flex items-center gap-1">
-                        {googlePos !== null && (
-                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text}`}>
-                            🟢 {googlePos}
-                          </span>
-                        )}
-                        {bingPos !== null && (
-                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text}`}>
-                            🔵 {bingPos}
-                          </span>
-                        )}
-                        {yahooPos !== null && (
-                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text}`}>
-                            🟣 {yahooPos}
-                          </span>
-                        )}
-                        {duckPos !== null && (
-                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text}`}>
-                            🟠 {duckPos}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </>
                 )}
