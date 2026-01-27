@@ -660,114 +660,116 @@ const LiveChatWidget = () => {
         )}
       </AnimatePresence>
 
-      {/* Chat Panel */}
-      <AnimatePresence mode="wait">
-        {isOpen && (
-          <div
-            className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 h-[500px] max-h-[80vh] bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-2xl"
-            style={{ contain: "layout paint" }}
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-cyan-400 to-violet-500 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Webstack Support</h3>
-                  <p className="text-xs text-white/80 flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-400" />
-                    Online now
+      {/* Chat Panel - Static container to prevent animation glitches */}
+      {isOpen && (
+        <div
+          className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 h-[500px] max-h-[80vh] bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-2xl"
+          style={{ 
+            contain: "layout paint", 
+            willChange: "opacity",
+            transform: "translateZ(0)" // Force GPU layer
+          }}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-cyan-400 to-violet-500 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">Webstack Support</h3>
+                <p className="text-xs text-white/80 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  Online now
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+                aria-label="Minimize chat"
+              >
+                <Minimize2 className="w-4 h-4 text-white" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+                aria-label="Close chat"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
+            {messages.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Start a conversation!</p>
+              </div>
+            )}
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.sender_type === 'visitor' ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                    msg.sender_type === 'visitor'
+                      ? "bg-gradient-to-r from-cyan-400 to-violet-500 text-white rounded-br-md"
+                      : msg.sender_type === 'operator'
+                      ? "bg-primary/20 text-foreground rounded-bl-md border border-primary/30"
+                      : "bg-secondary text-foreground rounded-bl-md"
+                  }`}
+                >
+                  {msg.sender_type === 'operator' && (
+                    <p className="text-xs text-primary font-medium mb-1">Operator</p>
+                  )}
+                  <p className="text-sm">{msg.message}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      msg.sender_type === 'visitor' ? "text-white/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {formatTime(msg.created_at)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-lg hover:bg-white/20 transition-colors"
-                  aria-label="Minimize chat"
-                >
-                  <Minimize2 className="w-4 h-4 text-white" />
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-lg hover:bg-white/20 transition-colors"
-                  aria-label="Close chat"
-                >
-                  <X className="w-4 h-4 text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
-              {messages.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Start a conversation!</p>
-                </div>
-              )}
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender_type === 'visitor' ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                      msg.sender_type === 'visitor'
-                        ? "bg-gradient-to-r from-cyan-400 to-violet-500 text-white rounded-br-md"
-                        : msg.sender_type === 'operator'
-                        ? "bg-primary/20 text-foreground rounded-bl-md border border-primary/30"
-                        : "bg-secondary text-foreground rounded-bl-md"
-                    }`}
-                  >
-                    {msg.sender_type === 'operator' && (
-                      <p className="text-xs text-primary font-medium mb-1">Operator</p>
-                    )}
-                    <p className="text-sm">{msg.message}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        msg.sender_type === 'visitor' ? "text-white/70" : "text-muted-foreground"
-                      }`}
-                    >
-                      {formatTime(msg.created_at)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t border-border bg-background">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSend();
-                }}
-                className="flex gap-2"
-              >
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-secondary/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="bg-gradient-to-r from-cyan-400 to-violet-500 hover:opacity-90"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </form>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Powered by Webstack.ceo
-              </p>
-            </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* Input */}
+          <div className="p-4 border-t border-border bg-background">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSend();
+              }}
+              className="flex gap-2"
+            >
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 bg-secondary/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="bg-gradient-to-r from-cyan-400 to-violet-500 hover:opacity-90"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Powered by Webstack.ceo
+            </p>
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 };
