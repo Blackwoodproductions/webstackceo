@@ -92,7 +92,7 @@ export const BRONKeywordsTab = ({
   const handleUpdateKeyword = async () => {
     if (!editingKeyword || !formKeyword.trim()) return;
     
-    const success = await onUpdate(editingKeyword.id, {
+    const success = await onUpdate(String(editingKeyword.id), {
       keyword: formKeyword.trim(),
       url: formUrl.trim() || undefined,
       anchor_text: formAnchor.trim() || undefined,
@@ -283,7 +283,7 @@ export const BRONKeywordsTab = ({
                                   Edit Keyword
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
-                                  onClick={() => setDeleteConfirm(keyword.id)}
+                                  onClick={() => setDeleteConfirm(String(keyword.id))}
                                   className="text-destructive"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
@@ -291,7 +291,7 @@ export const BRONKeywordsTab = ({
                                 </DropdownMenuItem>
                               </>
                             ) : (
-                              <DropdownMenuItem onClick={() => onRestore(keyword.id)}>
+                              <DropdownMenuItem onClick={() => onRestore(String(keyword.id))}>
                                 <RotateCcw className="w-4 h-4 mr-2" />
                                 Restore Keyword
                               </DropdownMenuItem>

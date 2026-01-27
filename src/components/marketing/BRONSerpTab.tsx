@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { 
-  BarChart3, RefreshCw, Search, TrendingUp, TrendingDown, Minus, Target
+  BarChart3, RefreshCw, Search, Target
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,30 +26,32 @@ export const BRONSerpTab = ({
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredReports = serpReports.filter(r => 
-    r.keyword?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.url?.toLowerCase().includes(searchQuery.toLowerCase())
+    r.keyword?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getPositionBadge = (position?: number) => {
-    if (!position) return <Badge variant="secondary">—</Badge>;
+  // Parse position value from string/number
+  const getPosition = (val?: string | number): number | null => {
+    if (val === undefined || val === null) return null;
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) || num === 0 ? null : num;
+  };
+
+  const getPositionBadge = (val?: string | number) => {
+    const position = getPosition(val);
+    if (position === null) return <Badge variant="secondary" className="text-xs">—</Badge>;
     
     if (position <= 3) {
-      return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{position}</Badge>;
+      return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">{position}</Badge>;
     } else if (position <= 10) {
-      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">{position}</Badge>;
+      return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">{position}</Badge>;
     } else if (position <= 20) {
-      return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">{position}</Badge>;
+      return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">{position}</Badge>;
     } else {
-      return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">{position}</Badge>;
+      return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">{position}</Badge>;
     }
   };
 
-  const getDifficultyColor = (difficulty?: number) => {
-    if (!difficulty) return 'text-muted-foreground';
-    if (difficulty <= 30) return 'text-emerald-400';
-    if (difficulty <= 60) return 'text-amber-400';
-    return 'text-red-400';
-  };
+  // Remove unused getDifficultyColor function since API doesn't return difficulty
 
   return (
     <motion.div
@@ -114,16 +116,25 @@ export const BRONSerpTab = ({
                 <thead>
                   <tr className="border-b border-border text-left">
                     <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Keyword</th>
-                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Position</th>
-                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Volume</th>
-                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Difficulty</th>
-                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Ranking URL</th>
+                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">
+                      <span className="inline-flex items-center gap-1">🟢 Google</span>
+                    </th>
+                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">
+                      <span className="inline-flex items-center gap-1">🔵 Bing</span>
+                    </th>
+                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">
+                      <span className="inline-flex items-center gap-1">🟣 Yahoo</span>
+                    </th>
+                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">
+                      <span className="inline-flex items-center gap-1">🟠 Duck</span>
+                    </th>
+                    <th className="pb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Last Checked</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredReports.map((report, index) => (
                     <motion.tr
-                      key={report.id || `${report.keyword}-${index}`}
+                      key={`${report.keyword}-${index}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.03 }}
@@ -131,38 +142,28 @@ export const BRONSerpTab = ({
                     >
                       <td className="py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center flex-shrink-0">
                             <Target className="w-4 h-4 text-emerald-400" />
                           </div>
-                          <span className="font-medium">{report.keyword}</span>
+                          <span className="font-medium text-sm">{report.keyword}</span>
                         </div>
                       </td>
                       <td className="py-3 text-center">
-                        {getPositionBadge(report.position)}
+                        {getPositionBadge(report.google)}
                       </td>
                       <td className="py-3 text-center">
-                        <span className="text-sm">
-                          {report.search_volume?.toLocaleString() || '—'}
-                        </span>
+                        {getPositionBadge(report.bing)}
                       </td>
                       <td className="py-3 text-center">
-                        <span className={`text-sm font-medium ${getDifficultyColor(report.difficulty)}`}>
-                          {report.difficulty !== undefined ? `${report.difficulty}%` : '—'}
-                        </span>
+                        {getPositionBadge(report.yahoo)}
                       </td>
-                      <td className="py-3">
-                        {report.url ? (
-                          <a 
-                            href={report.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-muted-foreground hover:text-emerald-400 truncate max-w-[200px] inline-block"
-                          >
-                            {report.url.replace(/^https?:\/\//, '')}
-                          </a>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
+                      <td className="py-3 text-center">
+                        {getPositionBadge(report.duck)}
+                      </td>
+                      <td className="py-3 text-center">
+                        <span className="text-xs text-muted-foreground">
+                          {report.complete ? new Date(report.complete).toLocaleDateString() : '—'}
+                        </span>
                       </td>
                     </motion.tr>
                   ))}

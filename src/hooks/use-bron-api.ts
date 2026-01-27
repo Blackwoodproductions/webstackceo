@@ -16,8 +16,19 @@ export interface BronDomain {
 }
 
 export interface BronKeyword {
-  id: string;
-  keyword: string;
+  id: number | string;
+  keyword?: string;
+  keywordtitle?: string;
+  domainid?: number;
+  active?: number;
+  deleted?: number;
+  linkouturl?: string;
+  metadescription?: string;
+  metatitle?: string;
+  resaddress?: string;
+  resfb?: string;
+  createdDate?: string;
+  // Legacy fields for compatibility
   domain?: string;
   url?: string;
   anchor_text?: string;
@@ -29,7 +40,16 @@ export interface BronKeyword {
 }
 
 export interface BronPage {
-  url: string;
+  pageid?: number;
+  post_title?: string;
+  post_content?: string;
+  post_date?: string;
+  post_excerpt?: string;
+  post_uri?: string;
+  post_metatitle?: string;
+  post_metakeywords?: string;
+  // Legacy fields for compatibility
+  url?: string;
   title?: string;
   type?: string;
   status?: string;
@@ -38,14 +58,22 @@ export interface BronPage {
 }
 
 export interface BronSerpReport {
-  id?: string;
   keyword?: string;
+  google?: string | number;
+  bing?: string | number;
+  yahoo?: string | number;
+  duck?: string | number;
+  started?: string;
+  complete?: string;
+  // Legacy fields
+  id?: string;
   position?: number;
   url?: string;
   search_volume?: number;
   difficulty?: number;
   created_at?: string;
 }
+
 
 export interface BronLink {
   source_url?: string;
@@ -311,7 +339,10 @@ export function useBronApi(): UseBronApiReturn {
     try {
       const result = await callApi("getPages", { domain });
       if (result?.success && result.data) {
-        const pageList = result.data.pages || result.data.articles || result.data.items || [];
+        // API returns array directly in data, or nested in pages/articles/items
+        const pageList = Array.isArray(result.data) 
+          ? result.data 
+          : (result.data.pages || result.data.articles || result.data.items || []);
         setPages(Array.isArray(pageList) ? pageList : []);
       }
     } catch (err) {
@@ -327,7 +358,10 @@ export function useBronApi(): UseBronApiReturn {
     try {
       const result = await callApi("getSerpReport", { domain });
       if (result?.success && result.data) {
-        const reports = result.data.rankings || result.data.keywords || result.data.items || [];
+        // API returns array directly or nested
+        const reports = Array.isArray(result.data)
+          ? result.data
+          : (result.data.rankings || result.data.keywords || result.data.items || []);
         setSerpReports(Array.isArray(reports) ? reports : []);
       }
     } catch (err) {
@@ -343,7 +377,10 @@ export function useBronApi(): UseBronApiReturn {
     try {
       const result = await callApi("getLinksIn", { domain });
       if (result?.success && result.data) {
-        const links = result.data.links || result.data.items || [];
+        // API returns array directly or nested
+        const links = Array.isArray(result.data)
+          ? result.data
+          : (result.data.links || result.data.items || []);
         setLinksIn(Array.isArray(links) ? links : []);
       }
     } catch (err) {
@@ -359,7 +396,10 @@ export function useBronApi(): UseBronApiReturn {
     try {
       const result = await callApi("getLinksOut", { domain });
       if (result?.success && result.data) {
-        const links = result.data.links || result.data.items || [];
+        // API returns array directly or nested
+        const links = Array.isArray(result.data)
+          ? result.data
+          : (result.data.links || result.data.items || []);
         setLinksOut(Array.isArray(links) ? links : []);
       }
     } catch (err) {

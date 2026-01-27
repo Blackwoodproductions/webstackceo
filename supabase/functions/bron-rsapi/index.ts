@@ -18,6 +18,19 @@ interface BronRequest {
 }
 
 // Helper to make authenticated requests to BRON API
+// Endpoints that require form-urlencoded data
+const FORM_ENCODED_ENDPOINTS = [
+  "/pages",
+  "/footer",
+  "/serp-report",
+  "/serp-list",
+  "/serp-detail",
+  "/links-in",
+  "/links-out",
+  "/keywords",  // List keywords endpoint also uses form data
+  "/domains",   // List domains endpoint also uses form data
+];
+
 async function bronApiRequest(
   endpoint: string,
   method: string = "GET",
@@ -33,14 +46,17 @@ async function bronApiRequest(
   // Create Basic Auth header
   const credentials = btoa(`${apiId}:${apiKey}`);
   
+  // Check if this endpoint needs form-urlencoded data
+  const useFormData = FORM_ENCODED_ENDPOINTS.includes(endpoint);
+  
   const headers: Record<string, string> = {
     "Authorization": `Basic ${credentials}`,
-    "Content-Type": "application/json",
+    "Content-Type": useFormData ? "application/x-www-form-urlencoded" : "application/json",
     "Accept": "application/json",
   };
 
   const url = `${BRON_API_BASE}${endpoint}`;
-  console.log(`BRON API Request: ${method} ${url}`);
+  console.log(`BRON API Request: ${method} ${url} (format: ${useFormData ? 'form' : 'json'})`);
   
   const options: RequestInit = {
     method,
@@ -48,7 +64,22 @@ async function bronApiRequest(
   };
 
   if (body && (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE")) {
-    options.body = JSON.stringify(body);
+    if (useFormData) {
+      // Convert to URL-encoded form data
+      const formData = new URLSearchParams();
+      for (const [key, value] of Object.entries(body)) {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      }
+      const formBody = formData.toString();
+      console.log(`BRON API Request Body (form): ${formBody}`);
+      options.body = formBody;
+    } else {
+      const bodyStr = JSON.stringify(body);
+      console.log(`BRON API Request Body (json): ${bodyStr}`);
+      options.body = bodyStr;
+    }
   }
 
   const response = await fetch(url, options);
