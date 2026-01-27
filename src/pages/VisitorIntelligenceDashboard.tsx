@@ -1702,15 +1702,47 @@ const MarketingDashboard = () => {
         {/* Static gradient overlay (no animation to prevent jank) */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none" />
         
-        {/* Static decorative particles */}
-        <div className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/50" />
-        <div className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/50" />
-        <div className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-amber-400/50" />
-        <div className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-primary/50" />
-        <div className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-emerald-400/40" />
-        <div className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-rose-400/40" />
-        <div className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-cyan-300/30" />
-        <div className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-violet-300/30" />
+        {/* Animated floating particles */}
+        <motion.div
+          className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/70"
+          animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/70"
+          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
+        />
+        <motion.div
+          className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-amber-400/70"
+          animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+        />
+        <motion.div
+          className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-primary/70"
+          animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
+        />
+        <motion.div
+          className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-emerald-400/60"
+          animate={{ y: [0, -15, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.3, 1] }}
+          transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
+        />
+        <motion.div
+          className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-rose-400/60"
+          animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 0.8 }}
+        />
+        <motion.div
+          className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-cyan-300/50"
+          animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
+        />
+        <motion.div
+          className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-violet-300/50"
+          animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 3.2, repeat: Infinity, delay: 2 }}
+        />
         
         {/* Radial glow from top center */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-primary/8 via-violet-500/3 to-transparent" />
