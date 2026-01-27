@@ -414,12 +414,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
             <MapPin className="w-6 h-6 text-white" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">Google Business Profile</h2>
-              <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10 text-[10px]">
-                <Clock className="w-3 h-3 mr-1" />Coming Soon
-              </Badge>
-            </div>
+            <h2 className="text-xl font-bold">Google Business Profile</h2>
             <p className="text-xs text-muted-foreground">Manage listings, reviews & local SEO → Boost Map Pack rankings</p>
           </div>
         </div>
@@ -462,54 +457,62 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         </div>
       </header>
 
-      {/* Ownership Warning Alert */}
-      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === false && (
+      {/* Domain Ownership Verification Section - Always show when connected */}
+      {!isCheckingAccount && accessToken && selectedDomain && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="space-y-2"
         >
-          <Alert className="border-amber-500/30 bg-amber-500/10">
-            <ShieldAlert className="h-4 w-4 text-amber-500" />
-            <AlertDescription className="text-sm">
-              <span className="font-semibold text-amber-400">Ownership Warning: </span>
-              {ownershipStatus.message}
-            </AlertDescription>
-          </Alert>
-        </motion.div>
-      )}
+          {/* Verified Owner - Has GMB Listing */}
+          {ownershipStatus.isOwner === true && matchingLocation && (
+            <Alert className="border-green-500/30 bg-green-500/10">
+              <UserCheck className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-sm flex items-center gap-2">
+                <span className="font-semibold text-green-400">Verified Owner: </span>
+                Your Google account ({googleProfile?.email}) manages this business listing.
+                <Badge variant="outline" className="ml-2 text-green-400 border-green-500/30 bg-green-500/10 text-[10px]">
+                  <CheckCircle className="w-3 h-3 mr-1" />GMB Verified
+                </Badge>
+              </AlertDescription>
+            </Alert>
+          )}
 
-      {/* Verified Owner Badge (when listing is found) */}
-      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === true && matchingLocation && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Alert className="border-green-500/30 bg-green-500/10">
-            <UserCheck className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-sm flex items-center gap-2">
-              <span className="font-semibold text-green-400">Verified Owner: </span>
-              Your Google account ({googleProfile?.email}) manages this business listing.
-              <Badge variant="outline" className="ml-2 text-green-400 border-green-500/30 bg-green-500/10 text-[10px]">
-                <CheckCircle className="w-3 h-3 mr-1" />GMB Verified
-              </Badge>
-            </AlertDescription>
-          </Alert>
-        </motion.div>
-      )}
+          {/* Verified by Email Domain Match */}
+          {ownershipStatus.isOwner === true && ownershipStatus.verifiedBy === 'email' && !matchingLocation && (
+            <Alert className="border-blue-500/30 bg-blue-500/10">
+              <UserCheck className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-sm flex items-center gap-2">
+                <span className="font-semibold text-blue-400">Domain Match: </span>
+                Your email domain matches {selectedDomain}. You can claim this listing.
+                <Badge variant="outline" className="ml-2 text-blue-400 border-blue-500/30 bg-blue-500/10 text-[10px]">
+                  <CheckCircle className="w-3 h-3 mr-1" />Email Verified
+                </Badge>
+              </AlertDescription>
+            </Alert>
+          )}
 
-      {/* Unknown Ownership - No Listings Info */}
-      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === null && ownershipStatus.reason === 'unknown' && !matchingLocation && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Alert className="border-blue-500/30 bg-blue-500/10">
-            <Info className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="text-sm">
-              <span className="font-semibold text-blue-400">No Listings Found: </span>
-              {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. You can add a new listing below.`}
-            </AlertDescription>
-          </Alert>
+          {/* Ownership Warning - User has other listings but not this domain */}
+          {ownershipStatus.isOwner === false && (
+            <Alert className="border-amber-500/30 bg-amber-500/10">
+              <ShieldAlert className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-sm">
+                <span className="font-semibold text-amber-400">Ownership Warning: </span>
+                {ownershipStatus.message}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* No Listings Found - Unknown ownership */}
+          {ownershipStatus.isOwner === null && !matchingLocation && (
+            <Alert className="border-blue-500/30 bg-blue-500/10">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-sm">
+                <span className="font-semibold text-blue-400">Verification Status: </span>
+                {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. Connect your Google account to verify ownership and add a listing.`}
+              </AlertDescription>
+            </Alert>
+          )}
         </motion.div>
       )}
 
