@@ -194,14 +194,24 @@ export const BRONKeywordsTab = ({
     onRefresh();
   };
 
-  // Extract keyword text - try keywordtitle, keyword, or parse from resfeedtext HTML
+  // Extract keyword text - try keywordtitle, keyword, metatitle, or parse from resfeedtext HTML
   const getKeywordText = (kw: BronKeyword) => {
-    if (kw.keywordtitle) return kw.keywordtitle;
-    if (kw.keyword) return kw.keyword;
-    // Try to extract from resfeedtext HTML (first h3 text)
+    if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
+    if (kw.keyword && kw.keyword.trim()) return kw.keyword;
+    // Use metatitle as the keyword name (this is typically the target keyword)
+    if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
+    // Try to extract from resfeedtext HTML (first h1 or h3 text)
     if (kw.resfeedtext) {
-      const match = kw.resfeedtext.match(/<h3[^>]*>([^<]+)<\/h3>/i);
-      if (match && match[1]) return match[1].replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+      // Decode HTML entities first
+      const decoded = kw.resfeedtext
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+      // Try h1 first, then h3
+      const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      if (h1Match && h1Match[1]) return h1Match[1].trim();
+      const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
+      if (h3Match && h3Match[1]) return h3Match[1].trim();
     }
     return `Keyword #${kw.id}`;
   };
