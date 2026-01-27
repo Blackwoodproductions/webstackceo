@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, ChevronRight, ChevronLeft, X, Send, User, 
-  Clock, Bell, Radio, Users, Globe, Eye
+  Clock, Bell, Radio, Users, Globe, Eye, MapPin, Monitor, Smartphone,
+  MousePointer, FileText, ExternalLink, ArrowUpRight, Zap, TrendingUp
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 interface ChatConversation {
@@ -39,9 +41,13 @@ interface LiveVisitor {
   started_at: string;
   referrer: string | null;
   user_id: string | null;
+  user_agent: string | null;
   avatar_url?: string | null;
   display_name?: string | null;
   is_current_user?: boolean;
+  page_count?: number;
+  pages_viewed?: string[];
+  engagement_score?: number;
 }
 
 interface ChatSidebarProps {
@@ -84,12 +90,65 @@ const getFaviconUrl = (domain: string | null): string | null => {
   return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 };
 
-// Time since helper
+// Time since helper with more detail
 const getTimeSince = (timestamp: string) => {
   const mins = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m`;
-  return `${Math.floor(mins / 60)}h`;
+  if (mins < 1440) return `${Math.floor(mins / 60)}h`;
+  return `${Math.floor(mins / 1440)}d`;
+};
+
+// Calculate session duration
+const getSessionDuration = (startedAt: string) => {
+  const mins = Math.floor((Date.now() - new Date(startedAt).getTime()) / 60000);
+  if (mins < 1) return '<1m';
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
+// Calculate engagement score (0-100)
+const calculateEngagement = (pageCount: number, durationMins: number, hasInteracted: boolean): number => {
+  let score = 0;
+  score += Math.min(pageCount * 15, 40); // Up to 40 for pages viewed
+  score += Math.min(durationMins * 2, 30); // Up to 30 for time on site
+  if (hasInteracted) score += 30; // 30 for form/tool interaction
+  return Math.min(score, 100);
+};
+
+// Get device type from user agent
+const getDeviceType = (userAgent: string | null): 'mobile' | 'tablet' | 'desktop' => {
+  if (!userAgent) return 'desktop';
+  const ua = userAgent.toLowerCase();
+  if (/mobile|android|iphone|ipod|blackberry|windows phone/i.test(ua)) return 'mobile';
+  if (/ipad|tablet|playbook|silk/i.test(ua)) return 'tablet';
+  return 'desktop';
+};
+
+// Get browser from user agent
+const getBrowser = (userAgent: string | null): string => {
+  if (!userAgent) return 'Unknown';
+  if (/edg/i.test(userAgent)) return 'Edge';
+  if (/chrome/i.test(userAgent) && !/edg/i.test(userAgent)) return 'Chrome';
+  if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) return 'Safari';
+  if (/firefox/i.test(userAgent)) return 'Firefox';
+  if (/opera|opr/i.test(userAgent)) return 'Opera';
+  return 'Other';
+};
+
+// Get referrer source type
+const getReferrerType = (referrer: string | null): { type: string; label: string; color: string } => {
+  if (!referrer) return { type: 'direct', label: 'Direct', color: 'bg-slate-500' };
+  const r = referrer.toLowerCase();
+  if (/google\./i.test(r)) return { type: 'search', label: 'Google', color: 'bg-blue-500' };
+  if (/bing\./i.test(r)) return { type: 'search', label: 'Bing', color: 'bg-teal-500' };
+  if (/facebook\.|fb\./i.test(r)) return { type: 'social', label: 'Facebook', color: 'bg-indigo-500' };
+  if (/twitter\.|x\.com/i.test(r)) return { type: 'social', label: 'X/Twitter', color: 'bg-sky-500' };
+  if (/linkedin\./i.test(r)) return { type: 'social', label: 'LinkedIn', color: 'bg-blue-600' };
+  if (/instagram\./i.test(r)) return { type: 'social', label: 'Instagram', color: 'bg-pink-500' };
+  if (/youtube\./i.test(r)) return { type: 'social', label: 'YouTube', color: 'bg-red-500' };
+  if (/lovable\./i.test(r)) return { type: 'platform', label: 'Lovable', color: 'bg-violet-500' };
+  return { type: 'referral', label: 'Referral', color: 'bg-amber-500' };
 };
 
 // Notification sound
@@ -154,18 +213,38 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch live visitors with profile info
+  // Fetch live visitors with profile info and page counts
   const fetchLiveVisitors = useCallback(async () => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     
     const { data: sessions } = await supabase
       .from('visitor_sessions')
-      .select('session_id, first_page, last_activity_at, started_at, referrer, user_id')
+      .select('session_id, first_page, last_activity_at, started_at, referrer, user_id, user_agent')
       .gte('last_activity_at', fiveMinutesAgo)
       .order('last_activity_at', { ascending: false })
       .limit(20);
     
     if (!sessions) return;
+
+    // Get page view counts and pages for each session
+    const sessionIds = sessions.map(s => s.session_id);
+    const { data: pageViews } = await supabase
+      .from('page_views')
+      .select('session_id, page_path')
+      .in('session_id', sessionIds);
+    
+    const pageViewsMap: Record<string, { count: number; pages: string[] }> = {};
+    if (pageViews) {
+      for (const pv of pageViews) {
+        if (!pageViewsMap[pv.session_id]) {
+          pageViewsMap[pv.session_id] = { count: 0, pages: [] };
+        }
+        pageViewsMap[pv.session_id].count++;
+        if (!pageViewsMap[pv.session_id].pages.includes(pv.page_path)) {
+          pageViewsMap[pv.session_id].pages.push(pv.page_path);
+        }
+      }
+    }
 
     // Sort by activity
     const sortedByActivity = [...sessions].sort(
@@ -173,7 +252,6 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
     );
 
     // Deduplicate: one entry per user_id (if logged in) or session_id (if anonymous)
-    // Skip anonymous sessions for logged-in current user
     const uniqueSessions: typeof sessions = [];
     const seenKeys = new Set<string>();
 
@@ -214,16 +292,25 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
       }
     }
 
-    // Build final visitors list
+    // Build final visitors list with enhanced data
     const visitorsWithProfiles: LiveVisitor[] = uniqueSessions.map(v => {
       const isSelf =
         (!!currentUserId && v.user_id === currentUserId) ||
         (!!currentSessionId && v.session_id === currentSessionId);
+      
+      const sessionDurationMins = Math.floor((Date.now() - new Date(v.started_at).getTime()) / 60000);
+      const pageCount = pageViewsMap[v.session_id]?.count || 1;
+      const pagesViewed = pageViewsMap[v.session_id]?.pages || [v.first_page || '/'];
+      
       return {
         ...v,
+        user_agent: v.user_agent || null,
         avatar_url: v.user_id ? profilesMap[v.user_id]?.avatar_url || null : null,
         display_name: v.user_id ? profilesMap[v.user_id]?.full_name || null : null,
         is_current_user: isSelf,
+        page_count: pageCount,
+        pages_viewed: pagesViewed,
+        engagement_score: calculateEngagement(pageCount, sessionDurationMins, false),
       };
     });
 
@@ -521,6 +608,13 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                         : visitor.user_id
                           ? `u:${visitor.user_id}`
                           : `s:${visitor.session_id}`;
+                      
+                      const deviceType = getDeviceType(visitor.user_agent);
+                      const browser = getBrowser(visitor.user_agent);
+                      const referrerInfo = getReferrerType(visitor.referrer);
+                      const sessionDuration = getSessionDuration(visitor.started_at);
+                      const pageCount = visitor.page_count || 1;
+                      const engagement = visitor.engagement_score || 0;
 
                       return (
                         <motion.div
@@ -537,6 +631,7 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                               : 'bg-secondary/30 hover:bg-secondary/60 border-transparent hover:border-primary/20 cursor-pointer hover:shadow-sm'
                           )}
                         >
+                          {/* Top row: Avatar + Name + Badges */}
                           <div className="flex items-center gap-3">
                             {/* Avatar/Badge */}
                             <div className="relative flex-shrink-0">
@@ -545,13 +640,13 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                                   src={visitor.avatar_url!}
                                   alt={visitor.display_name || 'User'}
                                   className={cn(
-                                    'w-9 h-9 rounded-full object-cover',
+                                    'w-10 h-10 rounded-full object-cover',
                                     isCurrentUser && 'ring-2 ring-primary'
                                   )}
                                 />
                               ) : faviconUrl && referrerDomain ? (
                                 <div className={cn(
-                                  'w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center',
+                                  'w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center',
                                   getVisitorColor(visitor.session_id)
                                 )}>
                                   <img
@@ -565,10 +660,10 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                                 </div>
                               ) : (
                                 <div className={cn(
-                                  'w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center',
+                                  'w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center',
                                   getVisitorColor(visitor.session_id)
                                 )}>
-                                  <User className="w-4 h-4 text-white" />
+                                  <User className="w-5 h-5 text-white" />
                                 </div>
                               )}
                               {/* Live indicator */}
@@ -580,9 +675,9 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                               </span>
                             </div>
 
-                            {/* Info */}
+                            {/* Name + Badges */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-sm font-medium truncate">
                                   {isCurrentUser ? 'You' : (visitor.display_name || referrerDomain || 'Visitor')}
                                 </span>
@@ -592,37 +687,124 @@ export const ChatSidebar = memo(({ isOnline, onNewChat, onExpandChange }: ChatSi
                                   </Badge>
                                 )}
                                 {visitor.user_id && !isCurrentUser && (
-                                  <Badge variant="outline" className="text-[9px] px-1 py-0">
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 border-emerald-500/50 text-emerald-500">
                                     <User className="w-2 h-2 mr-0.5" />
-                                    User
+                                    Logged In
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span className="truncate max-w-[100px]">{visitor.first_page || '/'}</span>
-                                <span>•</span>
-                                <span>{getTimeSince(visitor.started_at)}</span>
+                              
+                              {/* Source badge */}
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Badge variant="secondary" className={cn('text-[9px] px-1.5 py-0', referrerInfo.color, 'text-white')}>
+                                  {referrerInfo.label}
+                                </Badge>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {getTimeSince(visitor.last_activity_at)} ago
+                                </span>
                               </div>
                             </div>
 
-                            {/* Engage button (non-current users) */}
+                            {/* Engage button */}
                             {!isCurrentUser && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 hover:bg-primary/20"
+                                    className="h-8 w-8 hover:bg-primary/20 flex-shrink-0"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleEngageVisitor(visitor);
                                     }}
                                   >
-                                    <MessageCircle className="w-3.5 h-3.5 text-primary" />
+                                    <MessageCircle className="w-4 h-4 text-primary" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="left">Start chat</TooltipContent>
                               </Tooltip>
+                            )}
+                          </div>
+
+                          {/* Details row */}
+                          <div className="mt-2 pt-2 border-t border-border/50">
+                            {/* Current page */}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                              <Globe className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{visitor.first_page || '/'}</span>
+                            </div>
+                            
+                            {/* Stats row */}
+                            <div className="flex items-center gap-3 text-[10px]">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <FileText className="w-3 h-3" />
+                                    <span>{pageCount} page{pageCount !== 1 ? 's' : ''}</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-[200px]">
+                                  <p className="font-medium mb-1">Pages viewed:</p>
+                                  <ul className="text-xs space-y-0.5">
+                                    {(visitor.pages_viewed || [visitor.first_page || '/']).slice(0, 5).map((p, i) => (
+                                      <li key={i} className="truncate">{p}</li>
+                                    ))}
+                                    {(visitor.pages_viewed?.length || 1) > 5 && (
+                                      <li className="text-muted-foreground">+{(visitor.pages_viewed?.length || 1) - 5} more</li>
+                                    )}
+                                  </ul>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>{sessionDuration}</span>
+                              </div>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    {deviceType === 'mobile' ? (
+                                      <Smartphone className="w-3 h-3" />
+                                    ) : (
+                                      <Monitor className="w-3 h-3" />
+                                    )}
+                                    <span>{browser}</span>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                  {deviceType.charAt(0).toUpperCase() + deviceType.slice(1)} • {browser}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            
+                            {/* Engagement bar */}
+                            <div className="mt-2">
+                              <div className="flex items-center justify-between text-[10px] mb-1">
+                                <span className="text-muted-foreground flex items-center gap-1">
+                                  <Zap className="w-3 h-3" />
+                                  Engagement
+                                </span>
+                                <span className={cn(
+                                  'font-medium',
+                                  engagement >= 70 ? 'text-emerald-500' : 
+                                  engagement >= 40 ? 'text-amber-500' : 'text-muted-foreground'
+                                )}>
+                                  {engagement}%
+                                </span>
+                              </div>
+                              <Progress 
+                                value={engagement} 
+                                className="h-1.5"
+                              />
+                            </div>
+                            
+                            {/* Referrer URL (if exists) */}
+                            {visitor.referrer && (
+                              <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate opacity-70">{visitor.referrer}</span>
+                              </div>
                             )}
                           </div>
                         </motion.div>
