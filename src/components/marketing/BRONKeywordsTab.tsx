@@ -181,6 +181,7 @@ export const BRONKeywordsTab = ({
   const openWysiwyg = (kw: BronKeyword) => {
     setWysiwygKeyword(kw);
     setEditForm({
+      keywordtitle: kw.keywordtitle || kw.keyword || '',
       metatitle: kw.metatitle || '',
       metadescription: kw.metadescription || '',
       resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
@@ -195,6 +196,7 @@ export const BRONKeywordsTab = ({
     setIsSaving(true);
     try {
       const success = await onUpdate(String(wysiwygKeyword.id), {
+        keywordtitle: editForm.keywordtitle || undefined,
         metatitle: editForm.metatitle || undefined,
         metadescription: editForm.metadescription || undefined,
         resfeedtext: editForm.resfeedtext || undefined,
@@ -586,61 +588,106 @@ export const BRONKeywordsTab = ({
           <div className="grid grid-cols-2 gap-6 py-4 max-h-[60vh] overflow-y-auto">
             {/* Left: Form Fields */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Meta Title</Label>
-                <Input
-                  value={editForm.metatitle || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, metatitle: e.target.value }))}
-                  placeholder="Meta title..."
-                />
+              {/* Keyword Info Section */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Keyword Title</Label>
+                    <Input
+                      value={editForm.keywordtitle || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, keywordtitle: e.target.value }))}
+                      placeholder="Primary keyword..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">ID:</span>{' '}
+                      <span className="font-mono">{wysiwygKeyword?.id}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Domain ID:</span>{' '}
+                      <span className="font-mono">{wysiwygKeyword?.domainid}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Status:</span>{' '}
+                      <Badge variant={wysiwygKeyword?.active === 1 ? 'default' : 'secondary'} className="text-[10px] ml-1">
+                        {wysiwygKeyword?.active === 1 ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Created:</span>{' '}
+                      <span>{formatDate(wysiwygKeyword?.createdDate)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Meta Description</Label>
-                <Textarea
-                  value={editForm.metadescription || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, metadescription: e.target.value }))}
-                  placeholder="Meta description..."
-                  rows={4}
-                />
+              {/* SEO Meta Section */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">SEO Meta Tags</h4>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Meta Title</Label>
+                    <Input
+                      value={editForm.metatitle || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, metatitle: e.target.value }))}
+                      placeholder="Page title for search engines..."
+                    />
+                    <p className="text-[10px] text-muted-foreground">{(editForm.metatitle || '').length}/60 characters</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Meta Description</Label>
+                    <Textarea
+                      value={editForm.metadescription || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, metadescription: e.target.value }))}
+                      placeholder="Page description for search results..."
+                      rows={3}
+                    />
+                    <p className="text-[10px] text-muted-foreground">{(editForm.metadescription || '').length}/160 characters</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Link Out URL</Label>
-                <Input
-                  value={editForm.linkouturl || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, linkouturl: e.target.value }))}
-                  placeholder="https://..."
-                />
+              {/* Links & Resources Section */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Target URL (Link Out)</Label>
+                    <Input
+                      value={editForm.linkouturl || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, linkouturl: e.target.value }))}
+                      placeholder="https://example.com/page"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Resource Address</Label>
+                    <Input
+                      value={editForm.resaddress || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, resaddress: e.target.value }))}
+                      placeholder="Physical address or location..."
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Facebook Page URL</Label>
+                    <Input
+                      value={editForm.resfb || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, resfb: e.target.value }))}
+                      placeholder="https://facebook.com/..."
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Resource Address</Label>
-                <Input
-                  value={editForm.resaddress || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, resaddress: e.target.value }))}
-                  placeholder="Resource address..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Facebook URL</Label>
-                <Input
-                  value={editForm.resfb || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, resfb: e.target.value }))}
-                  placeholder="https://facebook.com/..."
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>Content HTML</Label>
+              {/* Content HTML Section */}
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Content HTML</h4>
                 <Textarea
                   value={editForm.resfeedtext || ''}
                   onChange={(e) => setEditForm(prev => ({ ...prev, resfeedtext: e.target.value }))}
-                  placeholder="HTML content..."
-                  rows={10}
+                  placeholder="HTML content for this keyword page..."
+                  rows={8}
                   className="font-mono text-xs"
                 />
               </div>
