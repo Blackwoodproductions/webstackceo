@@ -762,31 +762,36 @@ const MarketingDashboard = () => {
       .limit(50);
     
     if (sessions) {
-      // ========== DEDUPLICATION LOGIC ==========
-      // Sort by activity first so first occurrence per key is most recent
+      // ========== STRICT DEDUPLICATION LOGIC ==========
+      // Ensures only ONE entry per unique person appears in the visitor list
       const sortedByActivity = [...sessions].sort(
         (a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
       );
       
-      // Dedupe rules:
-      // - Current user: only ONE entry (even if multiple sessions exist)
-      // - Other users: ONE entry per user_id (if present) otherwise ONE per session_id
-      // - Skip anonymous sessions belonging to current user if logged in
       const uniqueSessions: typeof sessions = [];
       const seenKeys = new Set<string>();
+      let selfIncluded = false;
       
       for (const s of sortedByActivity) {
+        // Check if this session belongs to the current user (by session OR user_id match)
         const isSelf =
           (!!currentUserId && s.user_id === currentUserId) ||
           (!!currentSessionId && s.session_id === currentSessionId);
         
-        // If current user is logged in, skip their anonymous sessions
-        if (currentUserId && !s.user_id && s.session_id === currentSessionId) {
+        // STRICT: Only ONE "self" entry ever
+        if (isSelf) {
+          if (selfIncluded) continue; // Skip duplicate self entries
+          selfIncluded = true;
+          uniqueSessions.push(s);
+          // Also mark both keys as seen to prevent any duplicate routes
+          seenKeys.add('self');
+          if (currentUserId) seenKeys.add(`u:${currentUserId}`);
+          if (currentSessionId) seenKeys.add(`s:${currentSessionId}`);
           continue;
         }
         
-        // Generate unique key for deduplication
-        const key = isSelf ? 'self' : s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
+        // For other users: dedupe by user_id (if logged in) or session_id (anonymous)
+        const key = s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
         if (seenKeys.has(key)) continue;
         seenKeys.add(key);
         uniqueSessions.push(s);
@@ -826,28 +831,49 @@ const MarketingDashboard = () => {
         }
       }
       
+      // Also get current user's profile if logged in but missing from profilesMap
+      if (currentUserId && !profilesMap[currentUserId]) {
+        const { data: selfProfile } = await supabase
+          .from('profiles')
+          .select('user_id, avatar_url, full_name')
+          .eq('user_id', currentUserId)
+          .single();
+        if (selfProfile) {
+          profilesMap[selfProfile.user_id] = { avatar_url: selfProfile.avatar_url, full_name: selfProfile.full_name };
+        }
+      }
+      
       // Sort: time on site (descending), then page count (descending)
       const sorted = filteredSessions.sort((a, b) => {
         const timeA = Date.now() - new Date(a.started_at).getTime();
         const timeB = Date.now() - new Date(b.started_at).getTime();
-        if (timeB !== timeA) return timeB - timeA; // Most time first
-        return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0); // Most pages second
+        if (timeB !== timeA) return timeB - timeA;
+        return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0);
       });
       
       // Map with profiles and current user flag
-      const visitorsWithProfiles = sorted.slice(0, 10).map(s => ({
-        ...s,
-        page_count: pageCountMap[s.session_id] || 1,
-        avatar_url: s.user_id ? profilesMap[s.user_id]?.avatar_url : null,
-        display_name: s.user_id ? profilesMap[s.user_id]?.full_name : null,
-        is_current_user: s.session_id === currentSessionId || (!!currentUserId && s.user_id === currentUserId),
-      }));
+      const visitorsWithProfiles = sorted.slice(0, 10).map(s => {
+        const isSelf =
+          (!!currentUserId && s.user_id === currentUserId) ||
+          (!!currentSessionId && s.session_id === currentSessionId);
+        
+        // For "self", prefer current user's profile even if session has no user_id yet
+        const profileUserId = isSelf && currentUserId ? currentUserId : s.user_id;
+        
+        return {
+          ...s,
+          page_count: pageCountMap[s.session_id] || 1,
+          avatar_url: profileUserId ? profilesMap[profileUserId]?.avatar_url : null,
+          display_name: profileUserId ? profilesMap[profileUserId]?.full_name : null,
+          is_current_user: isSelf,
+        };
+      });
       
       // Sort to put current user first
       const finalSorted = visitorsWithProfiles.sort((a, b) => {
         if (a.is_current_user) return -1;
         if (b.is_current_user) return 1;
-        return 0; // Maintain existing order otherwise
+        return 0;
       });
       
       setLiveVisitors(finalSorted);
