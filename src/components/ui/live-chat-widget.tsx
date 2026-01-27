@@ -178,7 +178,8 @@ const LiveChatWidget = () => {
     });
     
     return () => subscription.unsubscribe();
-  }, [currentUserId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount - auth state changes handled by subscription
 
   // Fetch live visitors (active in last 5 minutes) with profile info for authenticated users
   const fetchLiveVisitors = useCallback(async () => {
