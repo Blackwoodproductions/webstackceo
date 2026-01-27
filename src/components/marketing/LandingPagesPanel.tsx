@@ -84,7 +84,9 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
     }
     
     // Check for Supabase session token (from VI dashboard Google login)
-    const oauthTokenData = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+    // The key format is sb-{project-ref}-auth-token where project-ref is extracted from URL
+    const projectRef = import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1] || '';
+    const oauthTokenData = localStorage.getItem(`sb-${projectRef}-auth-token`);
     if (oauthTokenData) {
       try {
         const parsed = JSON.parse(oauthTokenData);
@@ -132,7 +134,10 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         setIsUnifiedAuth(connection.isUnifiedAuth || false);
         setIsAutoConnecting(false);
         handleFetchKeywordsWithToken(connection.token, connection.customerId);
-      } else if (!hasOAuthCallback()) {
+        return;
+      }
+      
+      if (!hasOAuthCallback()) {
         // No stored connection - try to auto-connect using unified auth
         setIsAutoConnecting(true);
         
@@ -162,7 +167,8 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
         }
         
         // Check for Supabase session token
-        const oauthTokenData = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+        const projectRef = import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1] || '';
+        const oauthTokenData = localStorage.getItem(`sb-${projectRef}-auth-token`);
         if (oauthTokenData) {
           try {
             const parsed = JSON.parse(oauthTokenData);
@@ -186,7 +192,40 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           }
         }
         
-        // No valid token found - still set auto-connecting to false
+        // Last resort: Check oauth_tokens table in database
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: tokenData } = await supabase
+              .from('oauth_tokens')
+              .select('access_token, expires_at')
+              .eq('user_id', user.id)
+              .eq('provider', 'google')
+              .maybeSingle();
+            
+            if (tokenData?.access_token) {
+              const expiresAt = new Date(tokenData.expires_at).getTime();
+              if (Date.now() < expiresAt - 300000) {
+                console.log('[PPC] Auto-connecting with database OAuth token...');
+                localStorage.setItem('google_ads_access_token', tokenData.access_token);
+                localStorage.setItem('google_ads_token_expiry', String(expiresAt));
+                localStorage.setItem('unified_google_token', tokenData.access_token);
+                localStorage.setItem('unified_google_expiry', String(expiresAt));
+                setAccessToken(tokenData.access_token);
+                setConnectedCustomerId('unified-auth');
+                setIsUnifiedAuth(true);
+                setIsConnected(true);
+                setIsAutoConnecting(false);
+                handleFetchKeywordsWithToken(tokenData.access_token, 'unified-auth');
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[PPC] Error fetching OAuth token from database:', e);
+        }
+        
+        // No valid token found
         setIsAutoConnecting(false);
       }
     };
