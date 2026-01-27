@@ -176,12 +176,31 @@ class ErrorBoundary extends Component<Props, State> {
             {/* Error Details (prod-safe summary) */}
             {readLastError()?.message && (
               <div className="p-4 rounded-lg bg-muted/40 text-left overflow-auto max-h-40">
-                <p className="text-xs font-mono text-muted-foreground break-words">
-                  <span className="font-semibold">Error:</span> {readLastError()!.message}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-2">
-                  If this keeps happening, click “Reset site data”.
-                </p>
+                {(() => {
+                  const e = readLastError();
+                  if (!e) return null;
+                  const stackPreview = (e.componentStack || e.stack || '').trim().slice(0, 380);
+                  return (
+                    <>
+                      <p className="text-xs font-mono text-muted-foreground break-words">
+                        <span className="font-semibold">Error:</span> {e.message}
+                      </p>
+                      {e.path && (
+                        <p className="text-[11px] text-muted-foreground mt-2">
+                          <span className="font-semibold">Path:</span> {e.path}
+                        </p>
+                      )}
+                      {stackPreview && (
+                        <pre className="text-[11px] font-mono text-muted-foreground mt-2 whitespace-pre-wrap break-words">
+{stackPreview}
+                        </pre>
+                      )}
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        If this keeps happening, click “Reset site data”.
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
