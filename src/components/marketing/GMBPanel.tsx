@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,16 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   MapPin, Building, CheckCircle, RefreshCw, Zap, BarChart3, 
   Star, Globe, Clock, LogOut, AlertTriangle, 
   Eye, Phone, MessageCircle, TrendingUp, Users, 
   ExternalLink, Radio, Edit, Save, X, Plus, Loader2,
-  Calendar, Image, FileText, Settings, ChevronRight, Search
+  Calendar, Image, FileText, Settings, ChevronRight, Search,
+  ShieldAlert, UserCheck, Info
 } from 'lucide-react';
 import { GMBOnboardingWizard } from './GMBOnboardingWizard';
 import { GMBPerformancePanel } from './GMBPerformancePanel';
@@ -114,6 +116,8 @@ const GoogleBusinessIcon = () => (
 );
 
 export function GMBPanel({ selectedDomain }: GMBPanelProps) {
+  const { googleProfile } = useAuth();
+  
   // Connection state
   const [isCheckingAccount, setIsCheckingAccount] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -129,6 +133,54 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Check if user's Google account email domain matches selected domain
+  // or if they have any GMB listing for that domain
+  const ownershipStatus = useMemo(() => {
+    if (!selectedDomain || !accessToken) {
+      return { isOwner: null, reason: '' };
+    }
+
+    const normalizedDomain = normalizeDomain(selectedDomain);
+    
+    // Check 1: Does user's email domain match the selected domain?
+    const userEmailDomain = googleProfile?.email?.split('@')[1]?.toLowerCase() || '';
+    const emailDomainMatch = userEmailDomain && (
+      normalizedDomain.includes(userEmailDomain.replace(/^www\./, '')) ||
+      userEmailDomain.includes(normalizedDomain.replace(/^www\./, ''))
+    );
+
+    // Check 2: Does user have a GMB listing for this domain?
+    const hasGmbListing = !!matchingLocation;
+
+    // Check 3: Does user have ANY GMB locations (suggests they manage businesses)?
+    const hasAnyLocations = locations.length > 0;
+
+    // Determine ownership status
+    if (hasGmbListing) {
+      return { isOwner: true, reason: 'verified', verifiedBy: 'gmb' };
+    }
+    
+    if (emailDomainMatch) {
+      return { isOwner: true, reason: 'email', verifiedBy: 'email' };
+    }
+
+    // If they have other locations but not this domain, likely not owner
+    if (hasAnyLocations && !hasGmbListing) {
+      return { 
+        isOwner: false, 
+        reason: 'no_listing',
+        message: `Your Google account (${googleProfile?.email}) does not appear to own or manage ${selectedDomain}. You have ${locations.length} other business listing(s).`
+      };
+    }
+
+    // No locations at all - might be new user or domain not claimed
+    return { 
+      isOwner: null, 
+      reason: 'unknown',
+      message: `No Google Business Profile listings found for your account. You may need to claim ${selectedDomain} on Google Maps.`
+    };
+  }, [selectedDomain, accessToken, googleProfile?.email, matchingLocation, locations]);
 
   // Get stored connection from unified auth
   const getStoredConnection = useCallback(() => {
@@ -409,6 +461,57 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           )}
         </div>
       </header>
+
+      {/* Ownership Warning Alert */}
+      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === false && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Alert className="border-amber-500/30 bg-amber-500/10">
+            <ShieldAlert className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-sm">
+              <span className="font-semibold text-amber-400">Ownership Warning: </span>
+              {ownershipStatus.message}
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
+
+      {/* Verified Owner Badge (when listing is found) */}
+      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === true && matchingLocation && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Alert className="border-green-500/30 bg-green-500/10">
+            <UserCheck className="h-4 w-4 text-green-500" />
+            <AlertDescription className="text-sm flex items-center gap-2">
+              <span className="font-semibold text-green-400">Verified Owner: </span>
+              Your Google account ({googleProfile?.email}) manages this business listing.
+              <Badge variant="outline" className="ml-2 text-green-400 border-green-500/30 bg-green-500/10 text-[10px]">
+                <CheckCircle className="w-3 h-3 mr-1" />GMB Verified
+              </Badge>
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
+
+      {/* Unknown Ownership - No Listings Info */}
+      {!isCheckingAccount && accessToken && ownershipStatus.isOwner === null && ownershipStatus.reason === 'unknown' && !matchingLocation && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Alert className="border-blue-500/30 bg-blue-500/10">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-sm">
+              <span className="font-semibold text-blue-400">No Listings Found: </span>
+              {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. You can add a new listing below.`}
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
 
       {/* Loading State */}
       {isCheckingAccount ? (
