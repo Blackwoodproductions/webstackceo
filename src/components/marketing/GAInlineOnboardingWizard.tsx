@@ -49,6 +49,13 @@ export const GAInlineOnboardingWizard = ({
   const [isCreating, setIsCreating] = useState(false);
   const [dataStream, setDataStream] = useState<DataStreamResult | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  
+  // Verification states
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{
+    found: boolean;
+    measurementId?: string;
+  } | null>(null);
 
   const normalizeDomain = (d: string) =>
     d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "").toLowerCase();
@@ -155,6 +162,71 @@ export const GAInlineOnboardingWizard = ({
       setIsCreating(false);
     }
   };
+
+  // Verify tracking code is installed on the website
+  const handleVerifyTracking = async () => {
+    if (!dataStream?.measurementId) return;
+    
+    setIsVerifying(true);
+    setVerificationResult(null);
+    
+    try {
+      // Scrape the website to check for GA code
+      const { data, error } = await supabase.functions.invoke("scrape-website", {
+        body: { 
+          url: `https://${normalizedDomain}`,
+          checkGACode: true 
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to check website");
+      }
+
+      const measurementId = dataStream.measurementId;
+      const gaCheck = data?.gaCodeCheck;
+      
+      if (gaCheck?.hasGoogleAnalytics && gaCheck?.measurementId === measurementId) {
+        setVerificationResult({ found: true, measurementId });
+        toast({
+          title: "✓ Tracking Code Verified!",
+          description: `${measurementId} is installed on ${normalizedDomain}`,
+        });
+      } else if (gaCheck?.hasGoogleAnalytics && gaCheck?.measurementId) {
+        // Has GA but different measurement ID
+        setVerificationResult({ found: false });
+        toast({
+          title: "Different GA Code Found",
+          description: `Found ${gaCheck.measurementId} but expected ${measurementId}. Update your tracking code.`,
+          variant: "destructive",
+        });
+      } else if (gaCheck?.hasGTM) {
+        // Has GTM instead
+        setVerificationResult({ found: false });
+        toast({
+          title: "Google Tag Manager Detected",
+          description: `GTM found. Make sure GA4 is configured in GTM with ${measurementId}.`,
+        });
+      } else {
+        setVerificationResult({ found: false });
+        toast({
+          title: "Tracking Code Not Found",
+          description: `Could not find ${measurementId} on ${normalizedDomain}. Install the code and try again.`,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("[GA Wizard] Verify tracking error:", err);
+      toast({
+        title: "Verification Failed",
+        description: err instanceof Error ? err.message : "Could not verify tracking code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -315,19 +387,60 @@ export const GAInlineOnboardingWizard = ({
                           </pre>
                         </div>
 
+                        {/* Verification Result */}
+                        {verificationResult && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`p-2 rounded-lg border ${
+                              verificationResult.found
+                                ? 'bg-green-500/10 border-green-500/30'
+                                : 'bg-amber-500/10 border-amber-500/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {verificationResult.found ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                  <p className="text-xs text-green-400">
+                                    Tracking code verified on {normalizedDomain}!
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <Radio className="w-4 h-4 text-amber-500" />
+                                  <p className="text-xs text-amber-400">
+                                    Tracking code not detected yet. Install and verify again.
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+
                         {/* Verify Connection Button */}
                         <Button
                           size="sm"
-                          className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white w-full"
-                          onClick={onRefresh}
-                          disabled={isRefreshing}
+                          className={`h-8 text-xs w-full ${
+                            verificationResult?.found
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600'
+                              : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                          } text-white`}
+                          onClick={handleVerifyTracking}
+                          disabled={isVerifying}
                         >
-                          {isRefreshing ? (
+                          {isVerifying ? (
                             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : verificationResult?.found ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                           ) : (
                             <Radio className="w-3.5 h-3.5 mr-1.5" />
                           )}
-                          Verify Tracking is Active
+                          {isVerifying 
+                            ? "Scanning Website..." 
+                            : verificationResult?.found 
+                              ? "Verified! Check Again" 
+                              : "Verify Tracking Code is Installed"}
                         </Button>
                       </motion.div>
                     ) : (
