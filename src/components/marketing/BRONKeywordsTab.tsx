@@ -44,13 +44,33 @@ interface BRONKeywordsTabProps {
   onRestore: (keywordId: string) => Promise<boolean>;
 }
 
-// Find matching SERP report for a keyword
+// Find matching SERP report for a keyword - uses flexible matching
 function findSerpForKeyword(keywordText: string, serpReports: BronSerpReport[]): BronSerpReport | null {
   if (!keywordText || !serpReports.length) return null;
   const normalizedKeyword = keywordText.toLowerCase().trim();
-  return serpReports.find(r => 
+  
+  // Try exact match first
+  const exactMatch = serpReports.find(r => 
     r.keyword?.toLowerCase().trim() === normalizedKeyword
-  ) || null;
+  );
+  if (exactMatch) return exactMatch;
+  
+  // Try contains match (keyword text contains SERP keyword or vice versa)
+  const containsMatch = serpReports.find(r => {
+    const serpKeyword = r.keyword?.toLowerCase().trim() || '';
+    return normalizedKeyword.includes(serpKeyword) || serpKeyword.includes(normalizedKeyword);
+  });
+  if (containsMatch) return containsMatch;
+  
+  // Try word-based overlap (at least 2 words match)
+  const keywordWords = normalizedKeyword.split(/\s+/).filter(w => w.length > 2);
+  for (const report of serpReports) {
+    const serpWords = (report.keyword || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const matchCount = keywordWords.filter(w => serpWords.includes(w)).length;
+    if (matchCount >= 2) return report;
+  }
+  
+  return null;
 }
 
 // Parse position value from string/number
@@ -901,6 +921,12 @@ export const BRONKeywordsTab = ({
                   <Badge variant="secondary" className="text-xs">
                     {keywords.length} total
                   </Badge>
+                  {serpReports.length > 0 && (
+                    <Badge className="text-xs bg-violet-500/20 text-violet-400 border-violet-500/30">
+                      <BarChart3 className="w-3 h-3 mr-1" />
+                      {serpReports.length} rankings
+                    </Badge>
+                  )}
                 </CardTitle>
               </div>
             </div>
