@@ -508,10 +508,7 @@ const LiveChatWidget = () => {
     }
   };
 
-  // Only show widget to admins - hide for regular visitors
-  if (isLoading) return null;
-  if (!isAdmin) return null;
-
+  // IMPORTANT: All hooks must be called before any early returns (React Rules of Hooks).
   // Final guardrail: regardless of any transient backend/session states,
   // never render more than one "YOU" entry in the mini visitor stack.
   const visitorsForStack = useMemo(() => {
@@ -528,6 +525,10 @@ const LiveChatWidget = () => {
       return true;
     });
   }, [liveVisitors]);
+
+  // Only show widget to admins - hide for regular visitors
+  if (isLoading) return null;
+  if (!isAdmin) return null;
 
   return (
     <TooltipProvider>
