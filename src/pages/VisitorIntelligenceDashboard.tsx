@@ -1699,75 +1699,27 @@ const MarketingDashboard = () => {
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[200px]" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-cyan-500/10 via-primary/5 to-transparent rounded-tr-[150px]" />
         
-        {/* Animated scanning line */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent"
-          animate={{ y: ['-100%', '200%'] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-        />
+        {/* Static gradient overlay (no animation to prevent jank) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent pointer-events-none" />
         
-        {/* Floating particles - animated with framer-motion */}
-        <motion.div
-          className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/70"
-          animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/70"
-          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
-        />
-        <motion.div
-          className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-amber-400/70"
-          animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
-        />
-        <motion.div
-          className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-primary/70"
-          animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
-        />
-        <motion.div
-          className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-emerald-400/60"
-          animate={{ y: [0, -15, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.3, 1] }}
-          transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
-        />
-        <motion.div
-          className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-rose-400/60"
-          animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 4, repeat: Infinity, delay: 0.8 }}
-        />
-        <motion.div
-          className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-cyan-300/50"
-          animate={{ y: [0, -20, 0], opacity: [0.2, 0.6, 0.2] }}
-          transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
-        />
-        <motion.div
-          className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-violet-300/50"
-          animate={{ y: [0, -12, 0], x: [0, 8, 0], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 3.2, repeat: Infinity, delay: 2 }}
-        />
+        {/* Static decorative particles */}
+        <div className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-cyan-400/50" />
+        <div className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-violet-400/50" />
+        <div className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-amber-400/50" />
+        <div className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-primary/50" />
+        <div className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-emerald-400/40" />
+        <div className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-rose-400/40" />
+        <div className="absolute top-[40%] left-[5%] w-1 h-1 rounded-full bg-cyan-300/30" />
+        <div className="absolute top-[60%] right-[5%] w-1.5 h-1.5 rounded-full bg-violet-300/30" />
         
         {/* Radial glow from top center */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-primary/8 via-violet-500/3 to-transparent" />
       </div>
 
-      {/* Header with integrated tabs - wrapped with animated glow effect, sticky */}
+      {/* Header with integrated tabs - wrapped with static glow effect, sticky */}
       <div className="relative max-w-[1480px] mx-auto sticky top-0 z-50 group">
-        {/* Animated gradient glow background - matching AuditResults */}
-        <motion.div
-          className="absolute -inset-[2px] rounded-t-[14px] opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-md"
-          animate={{
-            background: [
-              "linear-gradient(0deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
-              "linear-gradient(90deg, rgba(139,92,246,0.4), rgba(251,191,36,0.3), rgba(34,211,238,0.4))",
-              "linear-gradient(180deg, rgba(251,191,36,0.3), rgba(34,211,238,0.4), rgba(139,92,246,0.4))",
-              "linear-gradient(270deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
-              "linear-gradient(360deg, rgba(34,211,238,0.4), rgba(139,92,246,0.4), rgba(251,191,36,0.3))",
-            ],
-          }}
-          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        />
+        {/* Static gradient border glow */}
+        <div className="absolute -inset-[2px] rounded-t-[14px] opacity-40 blur-md bg-gradient-to-r from-cyan-400/40 via-violet-500/40 to-amber-400/30" />
         
         <header className="relative border border-border bg-card/95 backdrop-blur-xl rounded-t-xl overflow-hidden">
           {/* Grid pattern overlay on header */}
@@ -1777,13 +1729,6 @@ const MarketingDashboard = () => {
               backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
               backgroundSize: '30px 30px',
             }}
-          />
-          
-          {/* Animated scanning line effect */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent pointer-events-none"
-            animate={{ x: ['-100%', '200%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
           />
           
           {/* Corner accent */}
@@ -2743,17 +2688,16 @@ f.parentNode.insertBefore(j,f);
                 }}
                 className="flex items-center justify-center gap-2 p-3 cursor-pointer"
               >
-                <div className={`relative ${hasNewMessage ? 'animate-ring-bell' : ''}`}>
+                <div className="relative">
                   {chatOnline ? (
                     <>
-                      <MessageCircle className={`w-5 h-5 absolute inset-0 ${hasNewMessage ? 'text-amber-500/50 animate-ping' : 'text-cyan-500/30 animate-ping'}`} />
-                      <MessageCircle className={`w-5 h-5 relative ${hasNewMessage ? 'text-amber-500' : 'text-cyan-500'}`} />
+                      <MessageCircle className={`w-5 h-5 ${hasNewMessage ? 'text-amber-500' : 'text-cyan-500'}`} />
                     </>
                   ) : (
                     <MessageCircle className="w-5 h-5 text-muted-foreground" />
                   )}
                   {chatOnline && sidebarChats.length > 0 && (
-                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500 animate-bounce' : 'bg-red-500 animate-pulse'}`}>
+                    <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${hasNewMessage ? 'bg-amber-500' : 'bg-red-500'}`}>
                       {sidebarChats.length > 9 ? '9+' : sidebarChats.length}
                     </span>
                   )}
@@ -2762,7 +2706,7 @@ f.parentNode.insertBefore(j,f);
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground">Live Chats</span>
                     {hasNewMessage && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-medium animate-pulse">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 font-medium">
                         NEW
                       </span>
                     )}
