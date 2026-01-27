@@ -2882,20 +2882,12 @@ f.parentNode.insertBefore(j,f);
                               ? 'bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-cyan-500/40 cursor-default' 
                               : 'hover:bg-primary/5 border-primary/10 hover:border-primary/30 cursor-pointer'
                           }`}
-                          style={{ contain: 'layout paint', willChange: 'opacity' }}
+                          style={{ contain: 'layout paint' }}
                         >
-                          {/* Glow effect on hover */}
-                          {!isCurrentUser && (
-                            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          )}
-                          
-                          {/* Avatar or Icon container */}
+                          {/* Avatar or Icon container - simplified, no blur/glow effects */}
                           <div className="relative flex-shrink-0">
                             {hasAvatar ? (
                               <>
-                                {/* Outer glow for avatar */}
-                                <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-40 blur-sm group-hover:opacity-60 transition-opacity`} />
-                                
                                 {/* Avatar image */}
                                 <div className={`relative w-9 h-9 rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/30'}`}>
                                   <img 
@@ -2907,26 +2899,20 @@ f.parentNode.insertBefore(j,f);
                                 
                                 {/* YOU badge for current user */}
                                 {isCurrentUser && (
-                                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg">
+                                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
                                     YOU
                                   </span>
                                 )}
                               </>
                             ) : (
                               <>
-                                {/* Outer glow ring */}
-                                <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-30 blur-sm group-hover:opacity-50 transition-opacity`} />
-                                
-                                {/* Main square */}
-                                <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
+                                {/* Main square - no blur glow */}
+                                <div className={`relative w-9 h-9 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-md`}>
                                   {/* Inner highlight */}
                                   <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/20 to-transparent" />
                                   
-                                  {/* Scan line effect (static to prevent animation jank) */}
-                                  <div className="absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-                                  
                                   {/* Icon */}
-                                  <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
+                                  <VisitorIcon className="w-4 h-4 text-white relative z-10" />
                                   
                                   {/* Corner accents */}
                                   <div className="absolute top-0 left-0 w-1.5 h-1.5 border-l-2 border-t-2 border-white/40 rounded-tl-sm" />
@@ -2935,10 +2921,8 @@ f.parentNode.insertBefore(j,f);
                               </>
                             )}
                             
-                            {/* Live indicator with pulse */}
-                            <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}>
-                              <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
-                            </span>
+                            {/* Live indicator - static dot, no animate-ping */}
+                            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
                           </div>
                           
                           <div className="flex-1 min-w-0 relative z-10">
@@ -2958,7 +2942,7 @@ f.parentNode.insertBefore(j,f);
                               )}
                             </p>
                             <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
-                              <span className={`w-1 h-1 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                              <span className={`w-1 h-1 rounded-full ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
                               {isCurrentUser ? 'Your session' : `${timeLabel} • Click to engage`}
                             </p>
                           </div>
@@ -2973,14 +2957,11 @@ f.parentNode.insertBefore(j,f);
                   </>
                 )}
 
-                {/* Empty state */}
+                {/* Empty state - no animate-ping */}
                 {sidebarChats.length === 0 && liveVisitors.length === 0 && (
                   <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center py-8 animate-fade-in">
-                      <div className="relative mx-auto w-12 h-12 mb-3">
-                        <MessageCircle className="w-12 h-12 text-cyan-500/20 absolute inset-0 animate-ping" />
-                        <MessageCircle className="w-12 h-12 text-cyan-500/40 relative" />
-                      </div>
+                    <div className="text-center py-8">
+                      <MessageCircle className="w-10 h-10 text-cyan-500/30 mx-auto mb-2" />
                       <p className="text-xs text-muted-foreground">Waiting for visitors...</p>
                     </div>
                   </div>
@@ -3082,17 +3063,14 @@ f.parentNode.insertBefore(j,f);
                           toast.success('Chat started with visitor');
                         }
                       }}
-                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer'} animate-fade-in`}
+                      className={`relative ${isCurrentUser ? 'w-12 h-12' : 'w-10 h-10'} group ${isCurrentUser ? 'cursor-default' : 'cursor-pointer hover:scale-105 transition-transform'}`}
                       title={isCurrentUser ? 'You (Online)' : `${visitor.first_page || '/'} • ${timeLabel}`}
-                      style={{ contain: 'layout paint', willChange: 'opacity' }}
+                      style={{ contain: 'layout paint' }}
                     >
                       {hasAvatar ? (
                         <>
-                          {/* Outer glow for avatar */}
-                          <div className={`absolute -inset-1 rounded-full ${isCurrentUser ? 'bg-gradient-to-br from-cyan-500 to-violet-500' : `bg-gradient-to-br ${colorClass}`} opacity-50 blur-md group-hover:opacity-70 transition-opacity`} />
-                          
-                          {/* Avatar image */}
-                          <div className={`relative w-full h-full rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/40'} shadow-xl`}>
+                          {/* Avatar image - no blur glow */}
+                          <div className={`relative w-full h-full rounded-full overflow-hidden ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/40'} shadow-md`}>
                             <img 
                               src={visitor.avatar_url!} 
                               alt={visitor.display_name || 'User'} 
@@ -3100,73 +3078,43 @@ f.parentNode.insertBefore(j,f);
                             />
                           </div>
                           
-                          {/* Live indicator */}
-                          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background shadow-lg ${isCurrentUser ? 'bg-cyan-400 shadow-cyan-400/60' : 'bg-emerald-400 shadow-emerald-400/60'}`}>
-                            <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
-                          </span>
+                          {/* Live indicator - static, no animate-ping */}
+                          <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
                           
                           {/* YOU badge for current user */}
                           {isCurrentUser && (
-                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full shadow-sm whitespace-nowrap">
                               YOU
                             </span>
                           )}
                         </>
                       ) : (
                         <>
-                          {/* Outer glow */}
-                          <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${colorClass} opacity-40 blur-md group-hover:opacity-70 transition-opacity`} />
-                          
-                          {/* Main container */}
-                          <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-xl overflow-hidden`}>
+                          {/* Main container - no blur glow */}
+                          <div className={`relative w-full h-full rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-md overflow-hidden`}>
                             {/* Inner highlight */}
                             <div className="absolute inset-0.5 rounded-md bg-gradient-to-br from-white/25 to-transparent" />
                             
-                            {/* Grid pattern overlay */}
-                            <div 
-                              className="absolute inset-0 opacity-20"
-                              style={{
-                                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                                backgroundSize: '4px 4px'
-                              }}
-                            />
-                            
-                            {/* Scan line (static to prevent animation jank) */}
-                            <div className="absolute inset-x-1 top-1/2 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-                            
                             {/* Icon */}
-                            <VisitorIcon className="w-4 h-4 text-white relative z-10 drop-shadow-lg" />
+                            <VisitorIcon className="w-4 h-4 text-white relative z-10" />
                             
                             {/* Corner tech accents */}
-                            <div className="absolute top-0.5 left-0.5 w-2 h-2 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
-                            <div className="absolute bottom-0.5 right-0.5 w-2 h-2 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
-                            
-                            {/* Shimmer on hover (opacity-only) */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-l-2 border-t-2 border-white/50 rounded-tl-sm" />
+                            <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-r-2 border-b-2 border-white/50 rounded-br-sm" />
                           </div>
                           
-                          {/* Live indicator with enhanced glow */}
-                          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-lg shadow-emerald-400/60">
-                            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
-                          </span>
+                          {/* Live indicator - static, no animate-ping */}
+                          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-background" />
                         </>
                       )}
                       
-                      {/* Hover tooltip with glass effect */}
-                      <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none scale-95 group-hover:scale-100">
-                        <div className="bg-background/90 backdrop-blur-xl border border-primary/20 rounded-xl px-3 py-2 shadow-2xl shadow-primary/10 whitespace-nowrap">
-                          <div className="flex items-center gap-2 mb-1">
-                            {hasAvatar ? (
-                              <img src={visitor.avatar_url!} alt="" className="w-4 h-4 rounded-full object-cover" />
-                            ) : (
-                              <div className={`w-2 h-2 rounded-sm bg-gradient-to-br ${colorClass}`} />
-                            )}
-                            <p className="text-[11px] text-foreground font-semibold">
-                              {isCurrentUser ? 'You' : visitor.display_name || visitor.first_page || '/'}
-                            </p>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+                      {/* Hover tooltip - simplified */}
+                      <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-lg whitespace-nowrap">
+                          <p className="text-[11px] text-foreground font-medium">
+                            {isCurrentUser ? 'You' : visitor.display_name || visitor.first_page || '/'}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
                             {isCurrentUser ? 'Your session' : `Click to engage • ${timeLabel}`}
                           </p>
                         </div>
