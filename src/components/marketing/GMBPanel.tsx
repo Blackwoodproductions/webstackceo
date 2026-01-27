@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,13 +13,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   MapPin, Building, CheckCircle, RefreshCw, Zap, BarChart3, 
   Star, Globe, Clock, LogOut, AlertTriangle, 
-  Eye, Phone, MessageCircle, TrendingUp, Users, 
-  ExternalLink, Radio, Edit, Save, X, Plus, Loader2,
-  Calendar, Image, FileText, Settings, ChevronRight, Search,
+  Phone, MessageCircle, TrendingUp, 
+  ExternalLink, Radio, Save, X, Loader2, Edit, Plus,
+  Image, FileText, ChevronRight, Search,
   ShieldAlert, UserCheck, Info
 } from 'lucide-react';
 import { GMBOnboardingWizard } from './GMBOnboardingWizard';
 import { GMBPerformancePanel } from './GMBPerformancePanel';
+import { GMBBusinessInfoEditor } from './GMBBusinessInfoEditor';
+import { GMBPostCreator } from './GMBPostCreator';
+import { GMBPhotoManager } from './GMBPhotoManager';
+import { useGmbApi } from '@/hooks/use-gmb-api';
 
 interface GmbReview {
   name: string;
@@ -132,7 +135,9 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Use the GMB API hook for all read/write operations
+  const gmbApi = useGmbApi(accessToken);
 
   // Check if user's Google account email domain matches selected domain
   // or if they have any GMB listing for that domain
@@ -349,6 +354,17 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     setShowOnboarding(false);
   }, [selectedDomain, locations]);
 
+  // Fetch posts and media when tab changes to those tabs
+  useEffect(() => {
+    if (!matchingLocation || !accessToken) return;
+    
+    if (activeTab === 'posts' && gmbApi.posts.length === 0) {
+      gmbApi.fetchPosts(matchingLocation.name);
+    } else if (activeTab === 'photos' && gmbApi.media.length === 0) {
+      gmbApi.fetchMedia(matchingLocation.name);
+    }
+  }, [activeTab, matchingLocation, accessToken, gmbApi]);
+
   const handleRefresh = useCallback(async () => {
     const token = getStoredConnection()?.token;
     if (!token) return;
@@ -432,14 +448,13 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       toast.error("Please enter a reply");
       return;
     }
-    setSubmittingReply(true);
-    // Placeholder - would call GMB API to submit reply
-    setTimeout(() => {
-      toast.success("Reply submitted successfully!");
+    const success = await gmbApi.replyToReview(reviewName, replyText);
+    if (success) {
       setReplyingTo(null);
       setReplyText("");
-      setSubmittingReply(false);
-    }, 1000);
+      // Refresh to get updated review with reply
+      handleRefresh();
+    }
   };
 
   const rating = matchingLocation?.averageRating || 0;
@@ -851,8 +866,8 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                                           className="text-sm min-h-[80px]"
                                         />
                                         <div className="flex gap-2">
-                                          <Button size="sm" onClick={() => handleReplySubmit(review.name)} disabled={submittingReply} className="bg-gradient-to-r from-blue-600 to-green-600">
-                                            {submittingReply ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                                          <Button size="sm" onClick={() => handleReplySubmit(review.name)} disabled={gmbApi.isLoading} className="bg-gradient-to-r from-blue-600 to-green-600">
+                                            {gmbApi.isLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
                                             Submit
                                           </Button>
                                           <Button size="sm" variant="ghost" onClick={() => { setReplyingTo(null); setReplyText(''); }}>
@@ -885,143 +900,37 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 </Card>
               </TabsContent>
 
-              {/* Business Info Tab */}
+              {/* Business Info Tab - Uses new inline editor */}
               <TabsContent value="info" className="space-y-4">
-                <Card className="border-violet-500/20 bg-gradient-to-br from-card to-violet-500/5">
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Building className="w-4 h-4 text-violet-500" />Business Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-background/50 border border-border">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <MapPin className="w-5 h-5 text-blue-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Address</p>
-                            <p className="text-sm font-medium">{matchingLocation.storefrontAddress?.addressLines?.join(', ')}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {matchingLocation.storefrontAddress?.locality}, {matchingLocation.storefrontAddress?.administrativeArea} {matchingLocation.storefrontAddress?.postalCode}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-background/50 border border-border">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Phone className="w-5 h-5 text-green-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Phone</p>
-                            <p className="text-sm font-medium">{matchingLocation.phoneNumbers?.primaryPhone || 'Not set'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-background/50 border border-border">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-violet-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Website</p>
-                            <p className="text-sm font-medium truncate">{matchingLocation.websiteUri || 'Not set'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-background/50 border border-border">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-amber-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Category</p>
-                            <p className="text-sm font-medium">{matchingLocation.categories?.primaryCategory?.displayName || 'Not set'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hours */}
-                    {matchingLocation.regularHours?.periods && (
-                      <div className="p-4 rounded-xl bg-background/50 border border-border">
-                        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-amber-500" />Business Hours
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
-                            const period = matchingLocation.regularHours?.periods.find(p => p.openDay.startsWith(day.toUpperCase()));
-                            return (
-                              <div key={day} className="text-xs">
-                                <span className="text-muted-foreground">{day}:</span>{' '}
-                                <span className={period ? '' : 'text-red-400'}>{period ? `${formatHours(period.openTime)} - ${formatHours(period.closeTime)}` : 'Closed'}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    <Button variant="outline" className="w-full border-violet-500/30 hover:bg-violet-500/10" onClick={() => window.open('https://business.google.com/', '_blank')}>
-                      <Edit className="w-4 h-4 mr-2" />Edit in Google Business
-                    </Button>
-                  </CardContent>
-                </Card>
+                <GMBBusinessInfoEditor
+                  location={matchingLocation}
+                  isLoading={gmbApi.isLoading}
+                  onSave={async (data) => {
+                    return await gmbApi.updateLocation(matchingLocation.name, data);
+                  }}
+                />
               </TabsContent>
 
-              {/* Posts Tab */}
+              {/* Posts Tab - Uses new inline creator */}
               <TabsContent value="posts" className="space-y-4">
-                <Card className="border-pink-500/20 bg-gradient-to-br from-card to-pink-500/5">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-pink-500" />Google Posts
-                      </CardTitle>
-                      <Button size="sm" className="bg-gradient-to-r from-pink-600 to-rose-600">
-                        <Plus className="w-3 h-3 mr-1" />New Post
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mx-auto mb-4">
-                        <FileText className="w-8 h-8 text-pink-500/50" />
-                      </div>
-                      <p className="text-sm font-medium mb-2">Create Your First Post</p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">Google Posts help you share updates, offers, and events directly on your Business Profile.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <GMBPostCreator
+                  posts={gmbApi.posts}
+                  isLoading={gmbApi.isLoading}
+                  onCreatePost={async (data) => await gmbApi.createPost(matchingLocation.name, data)}
+                  onDeletePost={async (postName) => await gmbApi.deletePost(postName, matchingLocation.name)}
+                  onRefresh={async () => { await gmbApi.fetchPosts(matchingLocation.name); }}
+                />
               </TabsContent>
 
-              {/* Photos Tab */}
+              {/* Photos Tab - Uses new inline manager */}
               <TabsContent value="photos" className="space-y-4">
-                <Card className="border-cyan-500/20 bg-gradient-to-br from-card to-cyan-500/5">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Image className="w-4 h-4 text-cyan-500" />Photos & Media
-                      </CardTitle>
-                      <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600">
-                        <Plus className="w-3 h-3 mr-1" />Upload
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                        <Image className="w-8 h-8 text-cyan-500/50" />
-                      </div>
-                      <p className="text-sm font-medium mb-2">Add Business Photos</p>
-                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">Photos help customers understand your business. Add images of your products, services, and location.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <GMBPhotoManager
+                  media={gmbApi.media}
+                  isLoading={gmbApi.isLoading}
+                  onUpload={async (data) => await gmbApi.uploadMedia(matchingLocation.name, data)}
+                  onDelete={async (mediaName) => await gmbApi.deleteMedia(mediaName, matchingLocation.name)}
+                  onRefresh={async () => { await gmbApi.fetchMedia(matchingLocation.name); }}
+                />
               </TabsContent>
 
               {/* Insights Tab */}
