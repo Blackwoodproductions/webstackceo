@@ -3370,10 +3370,10 @@ f.parentNode.insertBefore(j,f);
               />
             )}
 
-            {/* How It Works Section - Collapsible */}
-            <Collapsible>
+            {/* How It Works Section - Collapsible, closed by default */}
+            <Collapsible defaultOpen={false}>
               <CollapsibleTrigger className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-primary transition-colors group w-full">
-                <ChevronRight className="w-5 h-5 transition-transform group-data-[state=open]:rotate-90" />
+                <ChevronDown className="w-5 h-5 transition-transform group-data-[state=open]:rotate-180" />
                 How CADE Works
                 <Badge variant="outline" className="ml-2 text-[10px] text-violet-500 border-violet-500/30">Learn More</Badge>
               </CollapsibleTrigger>
