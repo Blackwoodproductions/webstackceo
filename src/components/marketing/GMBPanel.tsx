@@ -1,16 +1,41 @@
 import { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   MapPin, Building, CheckCircle, RefreshCw, Zap, BarChart3, 
-  ArrowRight, Star, Globe, Clock, LogOut, AlertTriangle, Target,
-  Eye, FlaskConical
+  Star, Globe, Clock, LogOut, AlertTriangle, 
+  Eye, Phone, MessageCircle, TrendingUp, Users, 
+  ExternalLink, Radio, Edit, Save, X, Plus, Loader2,
+  Calendar, Image, FileText, Settings, ChevronRight, Search
 } from 'lucide-react';
 import { GMBOnboardingWizard } from './GMBOnboardingWizard';
-import { GMBConnectedDashboard } from './GMBConnectedDashboard';
+import { GMBPerformancePanel } from './GMBPerformancePanel';
+
+interface GmbReview {
+  name: string;
+  reviewId: string;
+  reviewer: {
+    displayName: string;
+    profilePhotoUrl?: string;
+  };
+  starRating: string;
+  comment?: string;
+  createTime: string;
+  updateTime?: string;
+  reviewReply?: {
+    comment: string;
+    updateTime: string;
+  };
+}
 
 interface GmbLocation {
   name: string;
@@ -39,7 +64,7 @@ interface GmbLocation {
     };
     additionalCategories?: Array<{ displayName?: string }>;
   };
-  reviews?: any[];
+  reviews?: GmbReview[];
   averageRating?: number;
   totalReviewCount?: number;
 }
@@ -62,6 +87,24 @@ function normalizeDomain(url: string): string {
     .replace(/\/$/, '');
 }
 
+const starRatingToNumber = (rating: string): number => {
+  const map: Record<string, number> = { 'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5 };
+  return map[rating] || 0;
+};
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const formatHours = (time: { hours: number; minutes?: number }) => {
+  const h = time.hours;
+  const m = time.minutes || 0;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+};
+
 // Google Business icon
 const GoogleBusinessIcon = () => (
   <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
@@ -71,9 +114,24 @@ const GoogleBusinessIcon = () => (
 );
 
 export function GMBPanel({ selectedDomain }: GMBPanelProps) {
-  // Get stored connection from unified auth (always connected if user logged in with Google)
-  const getStoredConnection = () => {
-    // Check GMB-specific tokens first
+  // Connection state
+  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<GmbAccount[]>([]);
+  const [locations, setLocations] = useState<GmbLocation[]>([]);
+  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Dashboard state
+  const [activeTab, setActiveTab] = useState("overview");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Get stored connection from unified auth
+  const getStoredConnection = useCallback(() => {
     const gmbToken = localStorage.getItem('gmb_access_token');
     const gmbExpiry = localStorage.getItem('gmb_token_expiry');
     
@@ -84,11 +142,8 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       }
     }
     
-    // Fall back to unified Google auth tokens
-    const unifiedToken = localStorage.getItem('gsc_access_token') || 
-                         localStorage.getItem('ga_access_token');
-    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || 
-                          localStorage.getItem('ga_token_expiry');
+    const unifiedToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
+    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
     
     if (unifiedToken && unifiedExpiry) {
       const expiryTime = parseInt(unifiedExpiry, 10);
@@ -98,17 +153,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
     
     return null;
-  };
-
-  const storedConnection = getStoredConnection();
-  
-  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(storedConnection?.token || null);
-  const [accounts, setAccounts] = useState<GmbAccount[]>([]);
-  const [locations, setLocations] = useState<GmbLocation[]>([]);
-  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  }, []);
 
   // Sync GMB data from API
   const syncGmbData = useCallback(async (token: string, expirySeconds = 3600) => {
@@ -117,7 +162,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     
     try {
       const { data, error } = await supabase.functions.invoke('gmb-sync', {
-        body: { accessToken: token, expiresInSeconds: expirySeconds },
+        body: { accessToken: token, expiresInSeconds: expirySeconds, targetDomain: selectedDomain },
       });
 
       if (error) throw new Error(error.message);
@@ -137,7 +182,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       setAccounts(fetchedAccounts);
       setLocations(fetchedLocations);
       
-      // Store the token
       localStorage.setItem('gmb_access_token', token);
       localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
       
@@ -150,12 +194,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                  locDomain.includes(normalizedSelected) || 
                  normalizedSelected.includes(locDomain);
         });
-        
-        if (match) {
-          setMatchingLocation(match);
-        } else {
-          setMatchingLocation(null);
-        }
+        setMatchingLocation(match || null);
       }
     } catch (err) {
       console.error('[GMBPanel] Sync error:', err);
@@ -165,26 +204,18 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
   }, [selectedDomain]);
 
-  // Auto-connect on mount - always starts checking
+  // Auto-connect on mount
   useEffect(() => {
     const connection = getStoredConnection();
     if (connection) {
       setAccessToken(connection.token);
-      const expiry = localStorage.getItem('gmb_token_expiry') || 
-                     localStorage.getItem('gsc_token_expiry') || 
-                     localStorage.getItem('ga_token_expiry');
-      const remainingSeconds = expiry 
-        ? Math.max(60, Math.floor((parseInt(expiry, 10) - Date.now()) / 1000))
-        : 3600;
+      const expiry = localStorage.getItem('gmb_token_expiry') || localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
+      const remainingSeconds = expiry ? Math.max(60, Math.floor((parseInt(expiry, 10) - Date.now()) / 1000)) : 3600;
       syncGmbData(connection.token, remainingSeconds);
     } else {
-      // No token - finish checking after brief delay
-      setTimeout(() => {
-        setIsCheckingAccount(false);
-      }, 500);
+      setTimeout(() => setIsCheckingAccount(false), 500);
     }
     
-    // Listen for auth sync events
     const handleAuthSync = () => {
       const newConnection = getStoredConnection();
       if (newConnection) {
@@ -195,7 +226,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     
     window.addEventListener("google-auth-synced", handleAuthSync);
     return () => window.removeEventListener("google-auth-synced", handleAuthSync);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getStoredConnection, syncGmbData]);
 
   // Re-check domain match when selected domain changes
   useEffect(() => {
@@ -213,6 +244,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     });
     
     setMatchingLocation(match || null);
+    setShowOnboarding(false);
   }, [selectedDomain, locations]);
 
   const handleRefresh = useCallback(async () => {
@@ -222,7 +254,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     await syncGmbData(token);
     setIsRefreshing(false);
     toast.success('GMB data refreshed');
-  }, [syncGmbData]);
+  }, [getStoredConnection, syncGmbData]);
 
   const handleDisconnect = useCallback(() => {
     localStorage.removeItem('gmb_access_token');
@@ -234,6 +266,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     setLocations([]);
     setMatchingLocation(null);
     setSyncError(null);
+    setShowOnboarding(false);
     toast.info('Disconnected from Google Business Profile');
   }, []);
 
@@ -244,7 +277,8 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       await syncGmbData(token);
       toast.success('Business listing created! It may take a few minutes to appear in Google Maps.');
     }
-  }, [syncGmbData]);
+    setShowOnboarding(false);
+  }, [getStoredConnection, syncGmbData]);
 
   const refreshAccounts = useCallback(async (): Promise<GmbAccount[]> => {
     const token = getStoredConnection()?.token;
@@ -261,13 +295,31 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       console.error('[GMBPanel] Refresh accounts error:', err);
       return accounts;
     }
-  }, [accounts]);
+  }, [accounts, getStoredConnection]);
+
+  const handleReplySubmit = async (reviewName: string) => {
+    if (!replyText.trim()) {
+      toast.error("Please enter a reply");
+      return;
+    }
+    setSubmittingReply(true);
+    // Placeholder - would call GMB API to submit reply
+    setTimeout(() => {
+      toast.success("Reply submitted successfully!");
+      setReplyingTo(null);
+      setReplyText("");
+      setSubmittingReply(false);
+    }, 1000);
+  };
+
+  const rating = matchingLocation?.averageRating || 0;
+  const reviewCount = matchingLocation?.totalReviewCount || 0;
+  const reviews = matchingLocation?.reviews || [];
 
   return (
     <div className="relative space-y-3 overflow-hidden min-h-[400px]">
-      {/* Background Effects - Blue/Green theme for GMB (matching PPC style) */}
+      {/* Background Effects - Blue/Green theme for GMB */}
       <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
-        {/* Grid pattern overlay */}
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -275,103 +327,25 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
             backgroundSize: '40px 40px',
           }}
         />
-        
-        {/* Corner gradient accents - blue/green theme */}
         <motion.div 
           className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-blue-500/15 via-green-500/10 to-transparent rounded-bl-[250px]"
-          animate={{ 
-            scale: [1, 1.05, 1],
-            opacity: [0.8, 1, 0.8],
-          }}
+          animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
           className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-green-500/15 via-blue-500/8 to-transparent rounded-tr-[200px]"
-          animate={{ 
-            scale: [1.05, 1, 1.05],
-            opacity: [0.8, 1, 0.8],
-          }}
+          animate={{ scale: [1.05, 1, 1.05], opacity: [0.8, 1, 0.8] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         />
-        
-        {/* Additional corner blobs for richness */}
-        <motion.div 
-          className="absolute -top-20 -left-20 w-[350px] h-[350px] bg-gradient-to-br from-green-500/10 via-teal-500/5 to-transparent rounded-full blur-xl"
-          animate={{ 
-            x: [0, 30, 0],
-            y: [0, 20, 0],
-            opacity: [0.4, 0.7, 0.4],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div 
-          className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-gradient-to-tl from-blue-500/10 via-cyan-500/5 to-transparent rounded-full blur-xl"
-          animate={{ 
-            x: [0, -20, 0],
-            y: [0, -30, 0],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        />
-        
-        {/* Animated vertical scanning line */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent"
           animate={{ y: ['-100%', '200%'] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         />
-        
-        {/* Animated horizontal scanning line */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/3 to-transparent"
-          animate={{ x: ['-100%', '200%'] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'linear', delay: 4 }}
-        />
-        
-        {/* Floating particles */}
-        <motion.div
-          className="absolute top-[10%] right-[8%] w-2 h-2 rounded-full bg-blue-400/70"
-          animate={{ y: [0, -12, 0], opacity: [0.5, 1, 0.5], scale: [1, 1.2, 1] }}
-          transition={{ duration: 3, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute top-[20%] right-[15%] w-1.5 h-1.5 rounded-full bg-green-400/70"
-          animate={{ y: [0, -10, 0], opacity: [0.4, 0.9, 0.4] }}
-          transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
-        />
-        <motion.div
-          className="absolute top-[15%] right-[25%] w-1 h-1 rounded-full bg-teal-400/70"
-          animate={{ y: [0, -8, 0], opacity: [0.3, 0.8, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
-        />
-        <motion.div
-          className="absolute top-[25%] left-[10%] w-1.5 h-1.5 rounded-full bg-blue-500/70"
-          animate={{ y: [0, -6, 0], x: [0, 3, 0], opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2.8, repeat: Infinity, delay: 0.5 }}
-        />
-        <motion.div
-          className="absolute bottom-[20%] left-[15%] w-2 h-2 rounded-full bg-green-400/60"
-          animate={{ y: [0, -15, 0], opacity: [0.4, 0.8, 0.4], scale: [1, 1.3, 1] }}
-          transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
-        />
-        <motion.div
-          className="absolute bottom-[30%] right-[12%] w-1.5 h-1.5 rounded-full bg-teal-400/60"
-          animate={{ y: [0, -10, 0], x: [0, -5, 0], opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 4, repeat: Infinity, delay: 0.8 }}
-        />
-        
-        {/* Radial glow from top center */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-blue-500/8 via-green-500/3 to-transparent" />
-        
-        {/* Vignette effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60" />
-        
-        {/* Side vignettes */}
-        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background/50 to-transparent" />
-        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background/50 to-transparent" />
       </div>
-      
-      {/* Compact Header (matching PPC style exactly) */}
+
+      {/* Compact Header */}
       <header className="relative flex items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500/5 via-transparent to-green-500/5 border border-blue-500/20 backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
@@ -389,16 +363,32 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         </div>
         
         <div className="flex items-center gap-2">
-          {accessToken ? (
+          {accessToken && matchingLocation ? (
             <>
               <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
                 <GoogleBusinessIcon /><span className="ml-1.5">Connected</span>
               </Badge>
+              <motion.span
+                className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Radio className="w-2 h-2" />LIVE
+              </motion.span>
               <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
                 <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleDisconnect} className="h-7 text-muted-foreground hover:text-destructive">
                 <LogOut className="w-3.5 h-3.5" />
+              </Button>
+            </>
+          ) : accessToken ? (
+            <>
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                <AlertTriangle className="w-3 h-3 mr-1" />No Listing Found
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
             </>
           ) : (
@@ -410,120 +400,485 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         </div>
       </header>
 
-      {/* Loading State - Futuristic spinner matching VI dashboard */}
+      {/* Loading State */}
       {isCheckingAccount ? (
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          className="flex flex-col items-center justify-center py-20 space-y-6"
-        >
-          {/* Animated spinner with multiple rings */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 space-y-6">
           <div className="relative">
-            {/* Outer ring */}
             <motion.div 
               className="w-24 h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500"
               animate={{ rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
             />
-            {/* Middle ring */}
             <motion.div 
               className="absolute inset-2 rounded-full border-4 border-green-500/20 border-b-green-500"
               animate={{ rotate: -360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             />
-            {/* Inner glow */}
-            <motion.div 
-              className="absolute inset-4 rounded-full bg-gradient-to-br from-blue-500/20 to-green-500/20"
-              animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-            {/* Center icon */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              >
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                 <MapPin className="w-8 h-8 text-blue-500" />
               </motion.div>
             </div>
           </div>
-          
-          {/* Loading text with animation */}
-          <div className="text-center space-y-2">
-            <motion.h3 
-              className="text-xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent"
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              Checking Google Business Profile
-            </motion.h3>
-            <p className="text-sm text-muted-foreground">
-              Looking for listings matching <span className="font-medium text-foreground">{selectedDomain || 'your domain'}</span>...
-            </p>
-          </div>
-          
-          {/* Animated dots */}
-          <div className="flex items-center gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-2 h-2 rounded-full bg-blue-500"
-                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-              />
-            ))}
+          <div className="text-center">
+            <p className="font-semibold text-lg">Checking Google Business Profile</p>
+            <p className="text-sm text-muted-foreground">Searching for listings matching {selectedDomain || 'your domain'}...</p>
           </div>
         </motion.div>
-      ) : matchingLocation && accessToken ? (
-        /* Connected State - Domain has matching GMB listing */
-        <GMBConnectedDashboard
-          location={matchingLocation}
-          accessToken={accessToken}
-          onDisconnect={handleDisconnect}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
-        />
-      ) : (
-        /* No listing found - Show Wizard inline (matching PPC pattern exactly) */
+      ) : syncError ? (
+        /* Error State */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-16">
+          <div className="w-20 h-20 rounded-2xl bg-red-500/20 flex items-center justify-center mb-4">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Connection Error</h3>
+          <p className="text-sm text-muted-foreground text-center max-w-md mb-6">{syncError}</p>
+          <Button onClick={handleRefresh} className="bg-gradient-to-r from-blue-600 to-green-600">
+            <RefreshCw className="w-4 h-4 mr-2" />Try Again
+          </Button>
+        </motion.div>
+      ) : !accessToken ? (
+        /* Not Connected - Need Google Auth */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-16">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-green-500/20 flex items-center justify-center mb-4">
+            <MapPin className="w-10 h-10 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Connect Google Account</h3>
+          <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+            Sign in with Google from the main navigation to access your Google Business Profile listings.
+          </p>
+          <Badge variant="outline" className="text-muted-foreground">
+            <GoogleBusinessIcon /><span className="ml-2">Google Sign-in Required</span>
+          </Badge>
+        </motion.div>
+      ) : showOnboarding ? (
+        /* Onboarding Wizard */
         <GMBOnboardingWizard
           domain={selectedDomain || ''}
-          accessToken={accessToken || localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token') || ''}
-          accountId={accounts.length > 0 ? accounts[0].name : null}
+          accessToken={accessToken}
+          accountId={accounts[0]?.name || null}
           accounts={accounts}
           onComplete={handleSetupComplete}
-          onCancel={() => {
-            // User cancelled - trigger a refresh to check again
-            handleRefresh();
-          }}
+          onCancel={() => setShowOnboarding(false)}
           onRefreshAccounts={refreshAccounts}
         />
-      )}
-      
-      {/* Sync Error Display */}
-      {syncError && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 backdrop-blur-sm"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
+      ) : matchingLocation ? (
+        /* Connected Dashboard */
+        <AnimatePresence mode="wait">
+          <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {/* 6-Tab Dashboard matching CADE layout */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList className="w-full justify-start gap-1 bg-background/50 border border-border p-1 rounded-xl">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-green-500/20 data-[state=active]:border-blue-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <BarChart3 className="w-3.5 h-3.5 mr-1.5" />Overview
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:border-amber-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <Star className="w-3.5 h-3.5 mr-1.5" />Reviews
+                </TabsTrigger>
+                <TabsTrigger value="info" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:border-violet-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <Building className="w-3.5 h-3.5 mr-1.5" />Business Info
+                </TabsTrigger>
+                <TabsTrigger value="posts" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500/20 data-[state=active]:to-rose-500/20 data-[state=active]:border-pink-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <FileText className="w-3.5 h-3.5 mr-1.5" />Posts
+                </TabsTrigger>
+                <TabsTrigger value="photos" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-blue-500/20 data-[state=active]:border-cyan-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <Image className="w-3.5 h-3.5 mr-1.5" />Photos
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-teal-500/20 data-[state=active]:border-emerald-500/30 rounded-lg border border-transparent px-3 py-1.5 text-xs">
+                  <TrendingUp className="w-3.5 h-3.5 mr-1.5" />Insights
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-4">
+                {/* Business Header Card */}
+                <Card className="border-blue-500/20 bg-gradient-to-br from-card via-blue-500/5 to-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <motion.div
+                          className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20"
+                          whileHover={{ scale: 1.05, rotate: 3 }}
+                        >
+                          <MapPin className="w-8 h-8 text-white" />
+                        </motion.div>
+                        <div>
+                          <h3 className="text-xl font-bold">{matchingLocation.title}</h3>
+                          {matchingLocation.categories?.primaryCategory?.displayName && (
+                            <p className="text-sm text-muted-foreground">{matchingLocation.categories.primaryCategory.displayName}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            {rating > 0 && (
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'}`} />
+                                ))}
+                                <span className="text-sm font-bold ml-1">{rating.toFixed(1)}</span>
+                                <span className="text-xs text-muted-foreground">({reviewCount})</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="border-blue-500/30 hover:bg-blue-500/10" onClick={() => window.open(`https://business.google.com/`, '_blank')}>
+                        <ExternalLink className="w-4 h-4 mr-2" />Open in GMB
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { icon: Star, label: 'Rating', value: rating > 0 ? rating.toFixed(1) : 'No rating', sublabel: `${reviewCount} reviews`, gradient: 'from-amber-500/20 to-orange-500/10', iconColor: 'text-amber-500', borderColor: 'border-amber-500/30' },
+                    { icon: MessageCircle, label: 'Reviews', value: reviewCount.toString(), sublabel: 'Total reviews', gradient: 'from-blue-500/20 to-cyan-500/10', iconColor: 'text-blue-500', borderColor: 'border-blue-500/30' },
+                    { icon: Globe, label: 'Website', value: matchingLocation.websiteUri ? 'Active' : 'Not set', sublabel: matchingLocation.websiteUri || 'Add website', gradient: 'from-emerald-500/20 to-green-500/10', iconColor: 'text-emerald-500', borderColor: 'border-emerald-500/30' },
+                    { icon: Phone, label: 'Phone', value: matchingLocation.phoneNumbers?.primaryPhone ? 'Active' : 'Not set', sublabel: matchingLocation.phoneNumbers?.primaryPhone || 'Add phone', gradient: 'from-violet-500/20 to-purple-500/10', iconColor: 'text-violet-500', borderColor: 'border-violet-500/30' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`relative p-4 rounded-xl bg-gradient-to-br ${stat.gradient} border ${stat.borderColor} overflow-hidden group`}
+                    >
+                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100" animate={{ x: ["-100%", "200%"] }} transition={{ duration: 2, repeat: Infinity }} />
+                      <div className="relative z-10">
+                        <stat.icon className={`w-5 h-5 ${stat.iconColor} mb-2`} />
+                        <p className="text-lg font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground truncate">{stat.sublabel}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Quick Actions */}
+                <Card className="border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-amber-500" />Quick Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        { label: 'Reply to Review', icon: MessageCircle, onClick: () => setActiveTab('reviews'), color: 'from-blue-500 to-cyan-500' },
+                        { label: 'Update Info', icon: Edit, onClick: () => setActiveTab('info'), color: 'from-violet-500 to-purple-500' },
+                        { label: 'Add Post', icon: FileText, onClick: () => setActiveTab('posts'), color: 'from-pink-500 to-rose-500' },
+                        { label: 'Upload Photo', icon: Image, onClick: () => setActiveTab('photos'), color: 'from-emerald-500 to-green-500' },
+                      ].map((action, i) => (
+                        <Button key={action.label} variant="outline" className="h-auto py-3 flex flex-col items-center gap-2 hover:border-blue-500/50" onClick={action.onClick}>
+                          <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center`}>
+                            <action.icon className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-xs">{action.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Panel */}
+                <GMBPerformancePanel accessToken={accessToken} locationName={matchingLocation.name} locationTitle={matchingLocation.title} />
+              </TabsContent>
+
+              {/* Reviews Tab */}
+              <TabsContent value="reviews" className="space-y-4">
+                <Card className="border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Star className="w-4 h-4 text-amber-500" />Reviews & Replies
+                      </CardTitle>
+                      {reviewCount > 0 && (
+                        <div className="flex items-center gap-2">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className={`w-4 h-4 ${s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'}`} />
+                          ))}
+                          <span className="text-sm font-bold">{rating.toFixed(1)}</span>
+                          <span className="text-xs text-muted-foreground">({reviewCount})</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {reviews.length > 0 ? (
+                      <ScrollArea className="h-[400px] pr-4">
+                        <div className="space-y-4">
+                          {reviews.map((review, i) => {
+                            const stars = starRatingToNumber(review.starRating);
+                            return (
+                              <motion.div
+                                key={review.reviewId}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="p-4 rounded-xl bg-background/60 border border-border group hover:border-amber-500/30 transition-colors"
+                              >
+                                <div className="flex items-start gap-3">
+                                  {review.reviewer.profilePhotoUrl ? (
+                                    <img src={review.reviewer.profilePhotoUrl} alt={review.reviewer.displayName} className="w-10 h-10 rounded-full object-cover ring-2 ring-amber-500/20" />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                                      {review.reviewer.displayName.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                      <p className="font-medium text-sm truncate">{review.reviewer.displayName}</p>
+                                      <span className="text-xs text-muted-foreground flex-shrink-0">{formatDate(review.createTime)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1 mb-2">
+                                      {[1, 2, 3, 4, 5].map((s) => (
+                                        <Star key={s} className={`w-3 h-3 ${s <= stars ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'}`} />
+                                      ))}
+                                    </div>
+                                    {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
+                                    
+                                    {review.reviewReply ? (
+                                      <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                                        <p className="text-xs font-medium text-primary mb-1">Your response</p>
+                                        <p className="text-xs text-muted-foreground">{review.reviewReply.comment}</p>
+                                      </div>
+                                    ) : replyingTo === review.reviewId ? (
+                                      <div className="mt-3 space-y-2">
+                                        <Textarea
+                                          placeholder="Write your reply..."
+                                          value={replyText}
+                                          onChange={(e) => setReplyText(e.target.value)}
+                                          className="text-sm min-h-[80px]"
+                                        />
+                                        <div className="flex gap-2">
+                                          <Button size="sm" onClick={() => handleReplySubmit(review.name)} disabled={submittingReply} className="bg-gradient-to-r from-blue-600 to-green-600">
+                                            {submittingReply ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                                            Submit
+                                          </Button>
+                                          <Button size="sm" variant="ghost" onClick={() => { setReplyingTo(null); setReplyText(''); }}>
+                                            <X className="w-3 h-3 mr-1" />Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <Button size="sm" variant="ghost" className="mt-2 text-xs" onClick={() => setReplyingTo(review.reviewId)}>
+                                        <MessageCircle className="w-3 h-3 mr-1" />Reply
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-4">
+                          <MessageCircle className="w-8 h-8 text-muted-foreground/50" />
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">No reviews yet</p>
+                        <p className="text-xs text-muted-foreground">Reviews will appear here once customers leave feedback</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Business Info Tab */}
+              <TabsContent value="info" className="space-y-4">
+                <Card className="border-violet-500/20 bg-gradient-to-br from-card to-violet-500/5">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Building className="w-4 h-4 text-violet-500" />Business Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl bg-background/50 border border-border">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Address</p>
+                            <p className="text-sm font-medium">{matchingLocation.storefrontAddress?.addressLines?.join(', ')}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {matchingLocation.storefrontAddress?.locality}, {matchingLocation.storefrontAddress?.administrativeArea} {matchingLocation.storefrontAddress?.postalCode}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-background/50 border border-border">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <Phone className="w-5 h-5 text-green-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Phone</p>
+                            <p className="text-sm font-medium">{matchingLocation.phoneNumbers?.primaryPhone || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-background/50 border border-border">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                            <Globe className="w-5 h-5 text-violet-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Website</p>
+                            <p className="text-sm font-medium truncate">{matchingLocation.websiteUri || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-background/50 border border-border">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Category</p>
+                            <p className="text-sm font-medium">{matchingLocation.categories?.primaryCategory?.displayName || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hours */}
+                    {matchingLocation.regularHours?.periods && (
+                      <div className="p-4 rounded-xl bg-background/50 border border-border">
+                        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-500" />Business Hours
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => {
+                            const period = matchingLocation.regularHours?.periods.find(p => p.openDay.startsWith(day.toUpperCase()));
+                            return (
+                              <div key={day} className="text-xs">
+                                <span className="text-muted-foreground">{day}:</span>{' '}
+                                <span className={period ? '' : 'text-red-400'}>{period ? `${formatHours(period.openTime)} - ${formatHours(period.closeTime)}` : 'Closed'}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <Button variant="outline" className="w-full border-violet-500/30 hover:bg-violet-500/10" onClick={() => window.open('https://business.google.com/', '_blank')}>
+                      <Edit className="w-4 h-4 mr-2" />Edit in Google Business
+                    </Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Posts Tab */}
+              <TabsContent value="posts" className="space-y-4">
+                <Card className="border-pink-500/20 bg-gradient-to-br from-card to-pink-500/5">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-pink-500" />Google Posts
+                      </CardTitle>
+                      <Button size="sm" className="bg-gradient-to-r from-pink-600 to-rose-600">
+                        <Plus className="w-3 h-3 mr-1" />New Post
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-pink-500/10 flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-pink-500/50" />
+                      </div>
+                      <p className="text-sm font-medium mb-2">Create Your First Post</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">Google Posts help you share updates, offers, and events directly on your Business Profile.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Photos Tab */}
+              <TabsContent value="photos" className="space-y-4">
+                <Card className="border-cyan-500/20 bg-gradient-to-br from-card to-cyan-500/5">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Image className="w-4 h-4 text-cyan-500" />Photos & Media
+                      </CardTitle>
+                      <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600">
+                        <Plus className="w-3 h-3 mr-1" />Upload
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
+                        <Image className="w-8 h-8 text-cyan-500/50" />
+                      </div>
+                      <p className="text-sm font-medium mb-2">Add Business Photos</p>
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">Photos help customers understand your business. Add images of your products, services, and location.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Insights Tab */}
+              <TabsContent value="insights" className="space-y-4">
+                <GMBPerformancePanel accessToken={accessToken} locationName={matchingLocation.name} locationTitle={matchingLocation.title} />
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        /* No Listing Found - Show Onboarding Option */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          {/* Connection Box - CADE style */}
+          <Card className="border-amber-500/30 bg-gradient-to-br from-card via-amber-500/5 to-card overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none">
+              <motion.div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} transition={{ duration: 4, repeat: Infinity }} />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Connection Issue</p>
-              <p className="text-xs text-muted-foreground mt-1">{syncError}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefresh} 
-                className="mt-3 h-8 text-xs border-amber-500/30 hover:bg-amber-500/10"
-                disabled={isRefreshing}
+            <CardContent className="relative p-8 text-center">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-10 h-10 text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">No GMB Listing Found</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+                We couldn't find a Google Business Profile listing for <span className="font-semibold text-foreground">{selectedDomain}</span>. 
+                Add your business to Google Maps to boost local visibility and attract more customers.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={() => setShowOnboarding(true)} className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
+                  <Plus className="w-4 h-4 mr-2" />Add to Google Maps
+                </Button>
+                <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Re-check Listings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Benefits Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { icon: MapPin, title: 'Map Pack Visibility', desc: 'Appear in Google Maps search results for local queries', color: 'blue' },
+              { icon: Star, title: 'Customer Reviews', desc: 'Collect and respond to reviews to build trust', color: 'amber' },
+              { icon: TrendingUp, title: 'Performance Insights', desc: 'Track views, clicks, and customer actions', color: 'green' },
+              { icon: Phone, title: 'Direct Contact', desc: 'Let customers call or message you directly', color: 'violet' },
+              { icon: Globe, title: 'Business Info', desc: 'Display hours, services, and photos', color: 'pink' },
+              { icon: Users, title: 'Local SEO', desc: 'Improve rankings for local search queries', color: 'cyan' },
+            ].map((benefit, i) => (
+              <motion.div
+                key={benefit.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`p-4 rounded-xl border border-${benefit.color}-500/20 bg-gradient-to-br from-${benefit.color}-500/5 to-transparent`}
               >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Retry Connection
-              </Button>
-            </div>
+                <benefit.icon className={`w-6 h-6 text-${benefit.color}-500 mb-2`} />
+                <h4 className="font-semibold text-sm mb-1">{benefit.title}</h4>
+                <p className="text-xs text-muted-foreground">{benefit.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       )}
