@@ -707,16 +707,14 @@ export const GAInlineOnboardingWizard = ({
                 transition={{ duration: 1.5, repeat: Infinity }}
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">Link Domain</span>
-                <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  {normalizedDomain}
-                </Badge>
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                {hasMatchingProperty ? "Select a property to connect" : "Domain not found in Google Search Console"}
-              </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-foreground">Link Domain</span>
+              <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                {normalizedDomain}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">
+                — {hasMatchingProperty ? "Select a property to connect" : "Domain not found in Google Search Console"}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-1">
