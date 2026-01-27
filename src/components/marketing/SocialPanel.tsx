@@ -98,6 +98,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const [profiles, setProfiles] = useState<SocialProfile[]>([]);
   const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
   const [isCheckingCade, setIsCheckingCade] = useState(false);
+  const [cadeSubscription, setCadeSubscription] = useState<{ plan?: string; status?: string } | null>(null);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
@@ -106,19 +107,35 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     if (!selectedDomain) return;
     
     setIsCheckingCade(true);
+    setCadeSubscription(null);
     try {
-      const { data, error } = await supabase.functions.invoke('cade-api', {
-        body: { action: 'subscription-active', domain: selectedDomain },
-      });
+      // Fetch both active status and subscription details in parallel
+      const [activeRes, detailRes] = await Promise.allSettled([
+        supabase.functions.invoke('cade-api', {
+          body: { action: 'subscription-active', domain: selectedDomain },
+        }),
+        supabase.functions.invoke('cade-api', {
+          body: { action: 'subscription-detail', domain: selectedDomain },
+        }),
+      ]);
       
-      if (!error && data?.active) {
+      const activeData = activeRes.status === 'fulfilled' ? activeRes.value.data : null;
+      const detailData = detailRes.status === 'fulfilled' ? detailRes.value.data : null;
+      
+      if (activeData && !activeData.error && (activeData.active || activeData.status === 'active')) {
         setHasCadeSubscription(true);
+        setCadeSubscription({
+          plan: detailData?.plan || activeData?.plan || 'Pro',
+          status: detailData?.status || activeData?.status || 'active',
+        });
       } else {
         setHasCadeSubscription(false);
+        setCadeSubscription(null);
       }
     } catch (err) {
       console.error('Error checking CADE subscription:', err);
       setHasCadeSubscription(false);
+      setCadeSubscription(null);
     } finally {
       setIsCheckingCade(false);
     }
@@ -431,13 +448,66 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
       <AnimatePresence mode="wait">
         {isCheckingCade ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex items-center justify-center py-8"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
           >
-            <Loader2 className="w-6 h-6 animate-spin text-pink-500 mr-2" />
-            <span className="text-muted-foreground">Checking CADE subscription...</span>
+            {/* Animated background effects */}
+            <div className="absolute inset-0 overflow-hidden">
+              <motion.div
+                className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
+                animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+            
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              {/* Animated icon */}
+              <div className="relative">
+                <motion.div
+                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles className="w-8 h-8 text-white" />
+                </motion.div>
+                <motion.div
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                </motion.div>
+              </div>
+              
+              {/* Text content */}
+              <div className="text-center">
+                <p className="text-lg font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+                  Verifying CADE Subscription
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Checking access for <span className="font-medium text-foreground">{selectedDomain}</span>
+                </p>
+              </div>
+              
+              {/* Progress dots */}
+              <div className="flex items-center gap-2">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 rounded-full bg-violet-400"
+                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+              </div>
+            </div>
           </motion.div>
         ) : hasCadeSubscription ? (
           /* Active CADE Dashboard */
@@ -446,8 +516,25 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
-              <CardHeader className="pb-4">
+            <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden relative">
+              {/* Subscription Level Badge - Top Right */}
+              <div className="absolute top-0 right-0 z-10">
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-bl-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border-l border-b border-violet-500/30"
+                >
+                  <Shield className="w-3.5 h-3.5 text-violet-400" />
+                  <span className="text-xs font-semibold text-violet-300 uppercase tracking-wider">
+                    {cadeSubscription?.plan || "Pro"}
+                  </span>
+                  <Badge className="h-5 text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                    {cadeSubscription?.status || "active"}
+                  </Badge>
+                </motion.div>
+              </div>
+              
+              <CardHeader className="pb-4 pt-10 md:pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <motion.div 
