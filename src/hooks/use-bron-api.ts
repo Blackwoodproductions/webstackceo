@@ -29,6 +29,11 @@ export interface BronKeyword {
   resfb?: string;
   resfeedtext?: string; // HTML content
   createdDate?: string;
+  // Cluster/hierarchy fields
+  parent_keyword_id?: number | string;
+  is_supporting?: boolean | number;
+  bubblefeed?: boolean | number;
+  cluster_id?: number | string;
   // Legacy fields for compatibility
   domain?: string;
   url?: string;

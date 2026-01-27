@@ -43,70 +43,66 @@ interface BRONKeywordsTabProps {
   onRestore: (keywordId: string) => Promise<boolean>;
 }
 
-// Extract core topic from keyword (e.g., "Best Dentist in Port Coquitlam" -> "dentist")
-function extractCoreTopic(text: string): string {
-  const lower = text.toLowerCase();
-  // Remove common location patterns
-  const withoutLocation = lower
-    .replace(/\s+(in|port|coquitlam|vancouver|bc|british columbia)\b/gi, '')
-    .replace(/\s+:\s+.*/g, '') // Remove everything after colon
-    .trim();
-  
-  // Extract core topic keywords
-  const coreTopics = [
-    'dentist', 'dental', 'cosmetic dentistry', 'emergency dental', 
-    'dental implants', 'dental bridges', 'teeth whitening', 'invisalign',
-    'family dentist', 'cdcp insurance', 'molar extraction'
-  ];
-  
-  for (const topic of coreTopics) {
-    if (withoutLocation.includes(topic)) {
-      return topic;
-    }
-  }
-  
-  // Fallback: extract first significant words
-  const words = withoutLocation.split(/\s+/).filter(w => 
-    !['best', 'top', 'rated', 'affordable', 'trusted', 'local', 'expert', 'professional', '&', 'and', 'the', 'a'].includes(w)
-  );
-  return words.slice(0, 2).join(' ') || withoutLocation;
+// Check if keyword is a supporting page (child)
+function isSupporting(kw: BronKeyword): boolean {
+  // Check various possible fields that might indicate supporting page status
+  if (kw.is_supporting === true || kw.is_supporting === 1) return true;
+  if (kw.bubblefeed === true || kw.bubblefeed === 1) return true;
+  if (kw.parent_keyword_id) return true;
+  return false;
 }
 
-// Group keywords by topic similarity
+// Group keywords by parent-child relationship
 function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
   if (keywords.length === 0) return [];
   
-  // Create topic groups
-  const topicGroups: Map<string, BronKeyword[]> = new Map();
+  // Separate main keywords from supporting keywords
+  const mainKeywords: BronKeyword[] = [];
+  const supportingKeywords: BronKeyword[] = [];
   
   for (const kw of keywords) {
-    const text = getKeywordDisplayText(kw);
-    const topic = extractCoreTopic(text);
-    
-    if (!topicGroups.has(topic)) {
-      topicGroups.set(topic, []);
+    if (isSupporting(kw)) {
+      supportingKeywords.push(kw);
+    } else {
+      mainKeywords.push(kw);
     }
-    topicGroups.get(topic)!.push(kw);
   }
   
+  // If we have explicit parent-child relationships via parent_keyword_id
+  const parentIdMap = new Map<string | number, BronKeyword[]>();
+  for (const child of supportingKeywords) {
+    if (child.parent_keyword_id) {
+      const key = child.parent_keyword_id;
+      if (!parentIdMap.has(key)) {
+        parentIdMap.set(key, []);
+      }
+      parentIdMap.get(key)!.push(child);
+    }
+  }
+  
+  // Build groups
   const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
+  const usedChildren = new Set<number | string>();
   
-  for (const [, kwList] of topicGroups) {
-    // Sort by keyword length (shortest first - likely the main keyword)
-    const sorted = [...kwList].sort((a, b) => {
-      const aLen = getKeywordDisplayText(a).length;
-      const bLen = getKeywordDisplayText(b).length;
-      return aLen - bLen;
-    });
+  // Sort main keywords alphabetically
+  mainKeywords.sort((a, b) => 
+    getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
+  );
+  
+  for (const parent of mainKeywords) {
+    // Get children linked to this parent
+    const linkedChildren = parentIdMap.get(parent.id) || [];
+    linkedChildren.forEach(c => usedChildren.add(c.id));
     
-    const [parent, ...children] = sorted;
-    groups.push({ parent, children });
+    groups.push({ parent, children: linkedChildren });
   }
   
-  // Sort groups alphabetically by parent keyword
-  groups.sort((a, b) => 
-    getKeywordDisplayText(a.parent).localeCompare(getKeywordDisplayText(b.parent))
-  );
+  // Add any orphaned supporting keywords as their own groups
+  for (const child of supportingKeywords) {
+    if (!usedChildren.has(child.id)) {
+      groups.push({ parent: child, children: [] });
+    }
+  }
   
   return groups;
 }
