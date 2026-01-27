@@ -248,6 +248,13 @@ const MarketingDashboard = () => {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [prevChatCount, setPrevChatCount] = useState(0);
   const [currentUserProfile, setCurrentUserProfile] = useState<{ avatar_url: string | null; full_name: string | null } | null>(null);
+
+  // Keep chat session IDs in a ref so we don't have to re-trigger polling effects whenever chats update.
+  const chatSessionIdsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    chatSessionIdsRef.current = sidebarChats.map((c) => c.session_id);
+  }, [sidebarChats]);
   const [expandedStatFilter, setExpandedStatFilter] = useState<string | null>(null);
   const [liveVisitors, setLiveVisitors] = useState<{ session_id: string; first_page: string | null; last_activity_at: string; started_at: string; page_count?: number; user_id?: string | null; avatar_url?: string | null; display_name?: string | null; is_current_user?: boolean; }[]>([]);
   const [formTestDialogOpen, setFormTestDialogOpen] = useState(false);
@@ -732,7 +739,7 @@ const MarketingDashboard = () => {
 
   // Fetch live visitors (active in last 5 minutes) - ordered by time on site, then page count
   // DEDUPLICATION: Show only ONE entry per user_id (most recent session), preventing duplicate avatars
-  const fetchLiveVisitors = async () => {
+  const fetchLiveVisitors = useCallback(async () => {
     // Get current user's session ID and user ID for marking
     const currentSessionId = sessionStorage.getItem('webstack_session_id');
     const currentUserId = user?.id || null;
@@ -777,7 +784,7 @@ const MarketingDashboard = () => {
       }
       
       // Filter out sessions that already have an active chat
-      const chatSessionIds = sidebarChats.map(c => c.session_id);
+      const chatSessionIds = chatSessionIdsRef.current;
       const filteredSessions = uniqueSessions.filter(v => !chatSessionIds.includes(v.session_id));
       
       // Fetch page view counts for each session
@@ -836,7 +843,7 @@ const MarketingDashboard = () => {
       
       setLiveVisitors(finalSorted);
     }
-  };
+  }, [user?.id]);
 
   // Poll for live visitors every 30 seconds
   useEffect(() => {
@@ -845,7 +852,7 @@ const MarketingDashboard = () => {
       const interval = setInterval(fetchLiveVisitors, 30000);
       return () => clearInterval(interval);
     }
-  }, [chatOnline, sidebarChats]);
+  }, [chatOnline, fetchLiveVisitors]);
 
   // Play notification sound for new chats
   const playNotificationSound = () => {
