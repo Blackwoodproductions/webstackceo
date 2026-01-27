@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Link2, TrendingUp, Search, Target, Users, BarChart3, 
-  Globe, ArrowUpRight, ArrowDownRight, Minus, RefreshCw,
-  Award, Zap, ExternalLink, Filter, ChevronDown, ChevronRight,
+  TrendingUp, Search, Target, Users, BarChart3, 
+  Globe, ArrowUpRight, ArrowDownRight, RefreshCw,
+  Zap, ExternalLink, ChevronRight, ChevronDown,
   Activity, Loader2, AlertCircle, CheckCircle2, Eye, DollarSign,
-  Hash, FileText, Sparkles, Network, Shield
+  Hash, FileText, Sparkles, Shield, Clock, Gauge, 
+  LineChart, PieChart, AlertTriangle, CheckCircle, XCircle,
+  Smartphone, Monitor, Wifi, WifiOff, Code, Image,
+  Layout, Type, Link2, FileWarning, Layers, Settings2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,15 +16,57 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useDataForSEO, BacklinksSummary, RankedKeyword, Competitor, BacklinkItem, AnchorData } from '@/hooks/use-dataforseo';
+import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface SEODashboardProps {
   domain: string;
 }
 
-// Helper to format large numbers
+interface KeywordData {
+  keyword: string;
+  search_volume: number;
+  cpc: number | null;
+  competition: string;
+  competition_index: number;
+  monthly_searches: Array<{ month: number; year: number; search_volume: number }>;
+}
+
+interface OnPageCheckItem {
+  url: string;
+  meta: {
+    title: string;
+    description: string;
+    h1: string[];
+  };
+  page_timing: {
+    time_to_interactive: number;
+    dom_complete: number;
+    largest_contentful_paint: number;
+  };
+  onpage_score: number;
+  checks: Record<string, boolean>;
+  content_size: number;
+  total_dom_size: number;
+  internal_links_count: number;
+  external_links_count: number;
+  images_count: number;
+  duplicate_title: boolean;
+  duplicate_description: boolean;
+  duplicate_content: boolean;
+}
+
+interface SERPItem {
+  type: string;
+  rank_group: number;
+  title: string;
+  description: string;
+  url: string;
+  domain: string;
+}
+
+// Format numbers nicely
 const formatNumber = (num: number | undefined | null): string => {
   if (num === undefined || num === null) return '0';
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -29,68 +74,234 @@ const formatNumber = (num: number | undefined | null): string => {
   return num.toLocaleString();
 };
 
-// Helper to format currency
 const formatCurrency = (num: number | undefined | null): string => {
-  if (num === undefined || num === null) return '$0';
-  if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
-  return `$${num.toFixed(0)}`;
+  if (num === undefined || num === null || num === 0) return '-';
+  return `$${num.toFixed(2)}`;
 };
 
-// Position change indicator
-const PositionChange = ({ current, previous }: { current: number; previous: number | null }) => {
-  if (previous === null) return <Badge variant="outline" className="text-[10px]">New</Badge>;
-  const diff = previous - current;
-  if (diff > 0) return <span className="flex items-center text-green-500 text-xs"><ArrowUpRight className="w-3 h-3" />{diff}</span>;
-  if (diff < 0) return <span className="flex items-center text-red-500 text-xs"><ArrowDownRight className="w-3 h-3" />{Math.abs(diff)}</span>;
-  return <Minus className="w-3 h-3 text-muted-foreground" />;
+const formatTime = (ms: number | undefined | null): string => {
+  if (ms === undefined || ms === null) return '-';
+  return `${(ms / 1000).toFixed(2)}s`;
 };
 
-// Intent badge
-const IntentBadge = ({ intent }: { intent: string[] }) => {
-  const colors: Record<string, string> = {
-    informational: 'bg-blue-500/20 text-blue-500 border-blue-500/30',
-    commercial: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
-    transactional: 'bg-green-500/20 text-green-500 border-green-500/30',
-    navigational: 'bg-purple-500/20 text-purple-500 border-purple-500/30',
-  };
-  const primary = intent[0] || 'informational';
+// Animated gauge component
+const AnimatedGauge = ({ value, max = 100, label, color, icon: Icon }: { 
+  value: number; 
+  max?: number; 
+  label: string;
+  color: string;
+  icon: any;
+}) => {
+  const percentage = Math.min(100, (value / max) * 100);
+  const circumference = 2 * Math.PI * 45;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  
   return (
-    <Badge variant="outline" className={`text-[10px] ${colors[primary] || colors.informational}`}>
-      {primary.charAt(0).toUpperCase()}
+    <div className="relative flex flex-col items-center">
+      <svg className="w-32 h-32 transform -rotate-90">
+        <circle
+          cx="64"
+          cy="64"
+          r="45"
+          stroke="currentColor"
+          strokeWidth="8"
+          fill="none"
+          className="text-muted/20"
+        />
+        <motion.circle
+          cx="64"
+          cy="64"
+          r="45"
+          stroke={color}
+          strokeWidth="8"
+          fill="none"
+          strokeLinecap="round"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          style={{ strokeDasharray: circumference }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <Icon className="w-5 h-5 mb-1" style={{ color }} />
+        <motion.span 
+          className="text-2xl font-bold"
+          style={{ color }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {Math.round(value)}
+        </motion.span>
+      </div>
+      <span className="text-xs text-muted-foreground mt-2 text-center">{label}</span>
+    </div>
+  );
+};
+
+// SEO Score Ring
+const SEOScoreRing = ({ score, issues }: { score: number; issues: { passed: number; warnings: number; errors: number } }) => {
+  const circumference = 2 * Math.PI * 58;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  
+  const getScoreColor = (s: number) => {
+    if (s >= 80) return '#22c55e';
+    if (s >= 60) return '#eab308';
+    return '#ef4444';
+  };
+
+  return (
+    <div className="relative">
+      <svg className="w-40 h-40 transform -rotate-90">
+        <defs>
+          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx="80"
+          cy="80"
+          r="58"
+          stroke="currentColor"
+          strokeWidth="12"
+          fill="none"
+          className="text-muted/10"
+        />
+        <motion.circle
+          cx="80"
+          cy="80"
+          r="58"
+          stroke="url(#scoreGradient)"
+          strokeWidth="12"
+          fill="none"
+          strokeLinecap="round"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          style={{ strokeDasharray: circumference }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <motion.span 
+          className="text-4xl font-bold bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 bg-clip-text text-transparent"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5, type: "spring" }}
+        >
+          {score}
+        </motion.span>
+        <span className="text-xs text-muted-foreground">SEO Score</span>
+      </div>
+      
+      {/* Issue indicators */}
+      <div className="flex justify-center gap-3 mt-3">
+        <div className="flex items-center gap-1 text-xs">
+          <CheckCircle className="w-3 h-3 text-green-500" />
+          <span className="text-green-500">{issues.passed}</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs">
+          <AlertTriangle className="w-3 h-3 text-amber-500" />
+          <span className="text-amber-500">{issues.warnings}</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs">
+          <XCircle className="w-3 h-3 text-red-500" />
+          <span className="text-red-500">{issues.errors}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Keyword Trend Chart
+const KeywordTrendMini = ({ data }: { data: Array<{ month: number; year: number; search_volume: number }> }) => {
+  if (!data || data.length === 0) return <span className="text-muted-foreground">-</span>;
+  
+  const maxVolume = Math.max(...data.map(d => d.search_volume));
+  const height = 24;
+  const width = 80;
+  
+  const points = data.slice(0, 6).reverse().map((d, i) => {
+    const x = (i / 5) * width;
+    const y = height - (d.search_volume / maxVolume) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} className="inline-block">
+      <polyline
+        points={points}
+        fill="none"
+        stroke="url(#trendGradient)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <defs>
+        <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+};
+
+// Competition badge
+const CompetitionBadge = ({ level, index }: { level: string; index: number }) => {
+  const colors = {
+    LOW: 'bg-green-500/20 text-green-500 border-green-500/30',
+    MEDIUM: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
+    HIGH: 'bg-red-500/20 text-red-500 border-red-500/30',
+  };
+  
+  return (
+    <Badge variant="outline" className={`text-[10px] ${colors[level as keyof typeof colors] || colors.LOW}`}>
+      {level} ({index})
     </Badge>
   );
 };
 
-export const SEODashboard = ({ domain }: SEODashboardProps) => {
-  const {
-    loading,
-    error,
-    getBacklinksSummary,
-    getBacklinks,
-    getAnchors,
-    getReferringDomains,
-    getDomainRankOverview,
-    getRankedKeywords,
-    getCompetitors,
-  } = useDataForSEO();
+// Check status indicator
+const CheckStatus = ({ passed, label }: { passed: boolean; label: string }) => (
+  <div className={`flex items-center gap-2 p-2 rounded-lg ${passed ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+    {passed ? (
+      <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+    ) : (
+      <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+    )}
+    <span className={`text-sm ${passed ? 'text-green-500' : 'text-red-500'}`}>{label}</span>
+  </div>
+);
 
-  // State for all data
-  const [backlinksSummary, setBacklinksSummary] = useState<BacklinksSummary | null>(null);
-  const [domainOverview, setDomainOverview] = useState<any>(null);
-  const [rankedKeywords, setRankedKeywords] = useState<RankedKeyword[]>([]);
-  const [competitors, setCompetitors] = useState<Competitor[]>([]);
-  const [backlinks, setBacklinks] = useState<BacklinkItem[]>([]);
-  const [anchors, setAnchors] = useState<AnchorData[]>([]);
-  const [referringDomains, setReferringDomains] = useState<any[]>([]);
-  
+export const SEODashboard = ({ domain }: SEODashboardProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingSection, setLoadingSection] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastDomain, setLastDomain] = useState<string | null>(null);
+  
+  // Data states
+  const [keywords, setKeywords] = useState<KeywordData[]>([]);
+  const [onpageData, setOnpageData] = useState<OnPageCheckItem | null>(null);
+  const [serpData, setSerpData] = useState<{
+    organic: SERPItem[];
+    paa: any[];
+    related: any[];
+    aiOverview: string | null;
+  } | null>(null);
 
-  // Clean domain for API
   const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+
+  // Call DataForSEO API
+  const callAPI = async (action: string, data: any) => {
+    const { data: response, error } = await supabase.functions.invoke('dataforseo-api', {
+      body: { action, data }
+    });
+    
+    if (error) throw new Error(error.message);
+    return response;
+  };
 
   // Load all data
   const loadAllData = useCallback(async () => {
@@ -98,80 +309,160 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
     
     setIsLoading(true);
     setHasLoaded(true);
+    setLastDomain(cleanDomain);
     toast.info(`Analyzing ${cleanDomain}...`);
 
     try {
-      // Load overview data in parallel
-      setLoadingSection('overview');
-      const [blSummary, domainRank] = await Promise.all([
-        getBacklinksSummary(cleanDomain),
-        getDomainRankOverview(cleanDomain),
-      ]);
-      
-      setBacklinksSummary(blSummary);
-      setDomainOverview(domainRank);
-
-      // Load keywords
+      // 1. Load Keywords for Site
       setLoadingSection('keywords');
-      const keywords = await getRankedKeywords(cleanDomain, 100);
-      setRankedKeywords(keywords);
+      const kwResponse = await callAPI('keywords_for_site', [{
+        target: cleanDomain,
+        location_code: 2840,
+        language_code: 'en',
+        limit: 50
+      }]);
+      
+      if (kwResponse?.tasks?.[0]?.result) {
+        setKeywords(kwResponse.tasks[0].result);
+      }
 
-      // Load backlinks data
-      setLoadingSection('backlinks');
-      const [blList, anchorList, refDomains] = await Promise.all([
-        getBacklinks(cleanDomain, 50),
-        getAnchors(cleanDomain, 30),
-        getReferringDomains(cleanDomain, 50),
-      ]);
-      setBacklinks(blList);
-      setAnchors(anchorList);
-      setReferringDomains(refDomains);
+      // 2. Load OnPage Instant Analysis
+      setLoadingSection('technical');
+      const onpageResponse = await callAPI('onpage_instant_pages', [{
+        url: `https://${cleanDomain}`,
+        enable_javascript: true
+      }]);
+      
+      if (onpageResponse?.tasks?.[0]?.result?.[0]?.items?.[0]) {
+        setOnpageData(onpageResponse.tasks[0].result[0].items[0]);
+      }
 
-      // Load competitors
-      setLoadingSection('competitors');
-      const compList = await getCompetitors(cleanDomain, 15);
-      setCompetitors(compList);
+      // 3. Load SERP data for brand keyword
+      setLoadingSection('serp');
+      const serpResponse = await callAPI('serp_google_organic', [{
+        keyword: cleanDomain.split('.')[0],
+        location_code: 2840,
+        language_code: 'en'
+      }]);
+      
+      if (serpResponse?.tasks?.[0]?.result?.[0]) {
+        const result = serpResponse.tasks[0].result[0];
+        const items = result.items || [];
+        
+        setSerpData({
+          organic: items.filter((i: any) => i.type === 'organic').slice(0, 10),
+          paa: items.filter((i: any) => i.type === 'people_also_ask'),
+          related: items.filter((i: any) => i.type === 'related_searches'),
+          aiOverview: items.find((i: any) => i.type === 'ai_overview')?.items?.[0]?.text || null
+        });
+      }
 
-      toast.success('SEO analysis complete!');
+      toast.success('Analysis complete!');
     } catch (err) {
-      toast.error('Failed to load SEO data');
-      console.error(err);
+      console.error('[SEO Dashboard] Error:', err);
+      toast.error('Failed to load some data');
     } finally {
       setIsLoading(false);
       setLoadingSection(null);
     }
-  }, [cleanDomain, getBacklinksSummary, getDomainRankOverview, getRankedKeywords, getBacklinks, getAnchors, getReferringDomains, getCompetitors, isLoading]);
+  }, [cleanDomain, isLoading]);
 
-  // Auto-load when domain changes
+  // Reset when domain changes
   useEffect(() => {
-    if (cleanDomain && !hasLoaded) {
-      // Delay initial load slightly
-      const timer = setTimeout(() => loadAllData(), 500);
-      return () => clearTimeout(timer);
+    if (cleanDomain !== lastDomain) {
+      setHasLoaded(false);
+      setKeywords([]);
+      setOnpageData(null);
+      setSerpData(null);
     }
-  }, [cleanDomain]);
+  }, [cleanDomain, lastDomain]);
 
-  // Calculate domain score (DR-like metric)
-  const domainScore = backlinksSummary?.rank 
-    ? Math.min(100, Math.max(0, Math.round(Math.log10(backlinksSummary.rank + 1) * 15)))
-    : 0;
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    const totalSearchVolume = keywords.reduce((sum, k) => sum + (k.search_volume || 0), 0);
+    const avgCPC = keywords.length > 0 
+      ? keywords.reduce((sum, k) => sum + (k.cpc || 0), 0) / keywords.filter(k => k.cpc).length 
+      : 0;
+    const trafficValue = keywords.reduce((sum, k) => sum + ((k.search_volume || 0) * (k.cpc || 0) * 0.03), 0);
+    
+    // OnPage score calculation
+    const checks = onpageData?.checks || {};
+    const passedChecks = Object.values(checks).filter(v => v === true).length;
+    const failedChecks = Object.values(checks).filter(v => v === false).length;
+    const totalChecks = passedChecks + failedChecks;
+    const seoScore = totalChecks > 0 ? Math.round((passedChecks / totalChecks) * 100) : 0;
+    
+    return {
+      totalKeywords: keywords.length,
+      totalSearchVolume,
+      avgCPC: avgCPC || 0,
+      trafficValue,
+      seoScore,
+      passedChecks,
+      failedChecks,
+      lcp: onpageData?.page_timing?.largest_contentful_paint || 0,
+      tti: onpageData?.page_timing?.time_to_interactive || 0,
+      domComplete: onpageData?.page_timing?.dom_complete || 0,
+    };
+  }, [keywords, onpageData]);
+
+  // Check categories
+  const checkCategories = useMemo(() => {
+    if (!onpageData?.checks) return { content: [], technical: [], seo: [] };
+    
+    const checks = onpageData.checks;
+    
+    return {
+      content: [
+        { key: 'no_title', label: 'Has Title Tag', passed: !checks.no_title },
+        { key: 'no_description', label: 'Has Meta Description', passed: !checks.no_description },
+        { key: 'no_h1_tag', label: 'Has H1 Tag', passed: !checks.no_h1_tag },
+        { key: 'low_content_rate', label: 'Content Rate OK', passed: !checks.low_content_rate },
+        { key: 'low_readability_rate', label: 'Readability OK', passed: !checks.low_readability_rate },
+        { key: 'lorem_ipsum', label: 'No Lorem Ipsum', passed: !checks.lorem_ipsum },
+      ],
+      technical: [
+        { key: 'is_https', label: 'Uses HTTPS', passed: checks.is_https },
+        { key: 'has_html_doctype', label: 'Has DOCTYPE', passed: checks.has_html_doctype },
+        { key: 'no_encoding_meta_tag', label: 'Has Encoding', passed: !checks.no_encoding_meta_tag },
+        { key: 'high_loading_time', label: 'Fast Loading', passed: !checks.high_loading_time },
+        { key: 'no_favicon', label: 'Has Favicon', passed: !checks.no_favicon },
+        { key: 'is_broken', label: 'Not Broken', passed: !checks.is_broken },
+      ],
+      seo: [
+        { key: 'seo_friendly_url', label: 'SEO-Friendly URL', passed: checks.seo_friendly_url },
+        { key: 'canonical', label: 'Has Canonical', passed: checks.canonical },
+        { key: 'no_image_alt', label: 'Images Have Alt', passed: !checks.no_image_alt },
+        { key: 'duplicate_title', label: 'No Duplicate Title', passed: !checks.duplicate_title_tag },
+        { key: 'duplicate_meta_tags', label: 'No Duplicate Meta', passed: !checks.duplicate_meta_tags },
+        { key: 'has_meta_refresh_redirect', label: 'No Meta Refresh', passed: !checks.has_meta_refresh_redirect },
+      ]
+    };
+  }, [onpageData]);
 
   return (
-    <div className="space-y-6">
-      {/* Header with Domain & Refresh */}
-      <header className="flex items-center justify-between gap-4">
+    <div className="relative space-y-6 min-h-[600px]">
+      {/* Background effects */}
+      <VIDashboardEffects />
+      
+      {/* Header */}
+      <header className="relative z-10 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <motion.div 
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/30"
-            animate={{ scale: [1, 1.02, 1] }}
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 via-violet-500 to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/30"
+            animate={{ 
+              boxShadow: ['0 0 20px rgba(6,182,212,0.3)', '0 0 40px rgba(139,92,246,0.4)', '0 0 20px rgba(6,182,212,0.3)']
+            }}
             transition={{ duration: 3, repeat: Infinity }}
           >
             <BarChart3 className="w-7 h-7 text-white" />
           </motion.div>
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold">SEO Intelligence</h2>
-              <Badge variant="outline" className="text-cyan-500 border-cyan-500/30 bg-cyan-500/10">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 bg-clip-text text-transparent">
+                SEO Intelligence
+              </h2>
+              <Badge variant="outline" className="text-cyan-500 border-cyan-500/30 bg-cyan-500/10 animate-pulse">
                 <Sparkles className="w-3 h-3 mr-1" />
                 DataForSEO
               </Badge>
@@ -186,356 +477,379 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
         <Button
           onClick={loadAllData}
           disabled={isLoading || !cleanDomain}
-          className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+          size="lg"
+          className="bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500 hover:opacity-90 shadow-lg shadow-violet-500/30"
         >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {loadingSection ? `Loading ${loadingSection}...` : 'Analyzing...'}
+              {loadingSection ? `Analyzing ${loadingSection}...` : 'Analyzing...'}
             </>
           ) : (
             <>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Analyze Domain
+              <Zap className="w-4 h-4 mr-2" />
+              Run Full Analysis
             </>
           )}
         </Button>
       </header>
 
-      {/* No domain selected state */}
-      {!cleanDomain && (
-        <Card className="border-dashed border-2 border-cyan-500/30 bg-cyan-500/5">
-          <CardContent className="py-12 text-center">
-            <Globe className="w-12 h-12 mx-auto mb-4 text-cyan-500/50" />
-            <h3 className="text-lg font-semibold mb-2">Select a Domain</h3>
-            <p className="text-sm text-muted-foreground">
-              Choose a domain from the selector above to view comprehensive SEO analytics
-            </p>
-          </CardContent>
-        </Card>
+      {/* No domain / Ready state */}
+      {!hasLoaded && !isLoading && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="relative border-2 border-dashed border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-violet-500/5 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5" />
+            <CardContent className="relative py-16 text-center">
+              <motion.div
+                className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-500/20 to-violet-500/20 flex items-center justify-center"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Search className="w-10 h-10 text-cyan-500" />
+              </motion.div>
+              <h3 className="text-xl font-bold mb-2 bg-gradient-to-r from-cyan-500 to-violet-500 bg-clip-text text-transparent">
+                {cleanDomain ? 'Ready to Analyze' : 'Select a Domain'}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                {cleanDomain 
+                  ? `Run a comprehensive SEO analysis on ${cleanDomain} including keyword research, technical audit, and SERP analysis.`
+                  : 'Choose a domain from the selector above to begin your SEO intelligence analysis.'
+                }
+              </p>
+              {cleanDomain && (
+                <Button 
+                  onClick={loadAllData} 
+                  size="lg"
+                  className="bg-gradient-to-r from-cyan-500 to-violet-500 hover:opacity-90 shadow-lg"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Start Analysis
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
-      {/* Loading state before first load */}
-      {cleanDomain && !hasLoaded && !isLoading && (
-        <Card className="border-dashed border-2 border-cyan-500/30 bg-cyan-500/5">
-          <CardContent className="py-12 text-center">
-            <Search className="w-12 h-12 mx-auto mb-4 text-cyan-500/50" />
-            <h3 className="text-lg font-semibold mb-2">Ready to Analyze</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Click "Analyze Domain" to fetch SEO data for {cleanDomain}
-            </p>
-            <Button onClick={loadAllData} className="bg-gradient-to-r from-cyan-500 to-blue-500">
-              <Zap className="w-4 h-4 mr-2" />
-              Start Analysis
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Main Dashboard Content */}
+      {/* Main Dashboard */}
       {(hasLoaded || isLoading) && cleanDomain && (
         <>
-          {/* Overview Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {/* Domain Rank */}
+          {/* Hero Metrics Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* SEO Score Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="lg:col-span-1"
             >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                  <Award className="w-4 h-4 text-cyan-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Domain Rank</span>
-              </div>
-              {isLoading && !backlinksSummary ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <p className="text-2xl font-bold text-cyan-500">{formatNumber(backlinksSummary?.rank)}</p>
-              )}
-            </motion.div>
-
-            {/* Backlinks */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/20 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Link2 className="w-4 h-4 text-blue-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Backlinks</span>
-              </div>
-              {isLoading && !backlinksSummary ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <>
-                  <p className="text-2xl font-bold text-blue-500">{formatNumber(backlinksSummary?.backlinks)}</p>
-                  {(backlinksSummary?.backlinks_new ?? 0) > 0 && (
-                    <span className="text-[10px] text-green-500 flex items-center gap-0.5">
-                      <ArrowUpRight className="w-3 h-3" /> +{formatNumber(backlinksSummary?.backlinks_new)} new
-                    </span>
+              <Card className="relative h-full border-cyan-500/20 bg-gradient-to-br from-card via-card to-cyan-500/5 backdrop-blur-sm overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 via-violet-500/5 to-transparent rounded-bl-[80px]" />
+                <CardContent className="p-6 flex flex-col items-center justify-center h-full">
+                  {isLoading && !onpageData ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <Loader2 className="w-12 h-12 animate-spin text-cyan-500" />
+                      <span className="text-sm text-muted-foreground">Analyzing...</span>
+                    </div>
+                  ) : (
+                    <SEOScoreRing 
+                      score={metrics.seoScore} 
+                      issues={{ 
+                        passed: metrics.passedChecks, 
+                        warnings: 0, 
+                        errors: metrics.failedChecks 
+                      }} 
+                    />
                   )}
-                </>
-              )}
+                </CardContent>
+              </Card>
             </motion.div>
 
-            {/* Referring Domains */}
+            {/* Performance Gauges */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/20 overflow-hidden"
+              className="lg:col-span-3"
             >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                  <Network className="w-4 h-4 text-violet-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Ref. Domains</span>
-              </div>
-              {isLoading && !backlinksSummary ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <p className="text-2xl font-bold text-violet-500">{formatNumber(backlinksSummary?.referring_domains)}</p>
-              )}
-            </motion.div>
-
-            {/* Organic Keywords */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/5 border border-emerald-500/20 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                  <Hash className="w-4 h-4 text-emerald-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Keywords</span>
-              </div>
-              {isLoading && !rankedKeywords.length ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <p className="text-2xl font-bold text-emerald-500">{formatNumber(rankedKeywords.length)}</p>
-              )}
-            </motion.div>
-
-            {/* Organic Traffic */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-amber-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Est. Traffic</span>
-              </div>
-              {isLoading && !domainOverview ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <p className="text-2xl font-bold text-amber-500">
-                  {formatNumber(domainOverview?.organic_traffic || rankedKeywords.reduce((sum, k) => sum + k.traffic, 0))}
-                </p>
-              )}
-            </motion.div>
-
-            {/* Traffic Value */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="relative p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-pink-500/5 border border-rose-500/20 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-[40px]" />
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-rose-500" />
-                </div>
-                <span className="text-xs text-muted-foreground">Traffic Value</span>
-              </div>
-              {isLoading && !rankedKeywords.length ? (
-                <div className="h-8 bg-muted/50 rounded animate-pulse" />
-              ) : (
-                <p className="text-2xl font-bold text-rose-500">
-                  {formatCurrency(domainOverview?.organic_cost || rankedKeywords.reduce((sum, k) => sum + k.traffic_cost, 0))}
-                </p>
-              )}
+              <Card className="relative h-full border-violet-500/20 bg-gradient-to-br from-card via-card to-violet-500/5 backdrop-blur-sm overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-violet-500" />
+                    Performance Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading && !onpageData ? (
+                    <div className="h-40 flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <AnimatedGauge 
+                        value={Math.min(100, (metrics.lcp / 4000) * 100)} 
+                        label="LCP" 
+                        color={metrics.lcp < 2500 ? '#22c55e' : metrics.lcp < 4000 ? '#eab308' : '#ef4444'}
+                        icon={Clock}
+                      />
+                      <AnimatedGauge 
+                        value={Math.min(100, (metrics.tti / 5000) * 100)} 
+                        label="TTI" 
+                        color={metrics.tti < 3800 ? '#22c55e' : metrics.tti < 7300 ? '#eab308' : '#ef4444'}
+                        icon={Zap}
+                      />
+                      <AnimatedGauge 
+                        value={metrics.totalKeywords} 
+                        max={100}
+                        label="Keywords" 
+                        color="#8b5cf6"
+                        icon={Hash}
+                      />
+                      <AnimatedGauge 
+                        value={metrics.totalSearchVolume / 100} 
+                        max={100}
+                        label="Search Vol." 
+                        color="#06b6d4"
+                        icon={TrendingUp}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           </div>
 
-          {/* Tabs for detailed data */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start bg-muted/30 p-1 h-auto flex-wrap gap-1">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-500">
-                <BarChart3 className="w-4 h-4 mr-1.5" /> Overview
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              { 
+                label: 'Keywords Found', 
+                value: formatNumber(metrics.totalKeywords), 
+                icon: Hash, 
+                color: 'cyan',
+                gradient: 'from-cyan-500/10 to-blue-500/5',
+                border: 'border-cyan-500/20'
+              },
+              { 
+                label: 'Total Volume', 
+                value: formatNumber(metrics.totalSearchVolume), 
+                icon: TrendingUp, 
+                color: 'violet',
+                gradient: 'from-violet-500/10 to-purple-500/5',
+                border: 'border-violet-500/20'
+              },
+              { 
+                label: 'Avg. CPC', 
+                value: formatCurrency(metrics.avgCPC), 
+                icon: DollarSign, 
+                color: 'emerald',
+                gradient: 'from-emerald-500/10 to-green-500/5',
+                border: 'border-emerald-500/20'
+              },
+              { 
+                label: 'Traffic Value', 
+                value: formatCurrency(metrics.trafficValue), 
+                icon: Sparkles, 
+                color: 'amber',
+                gradient: 'from-amber-500/10 to-orange-500/5',
+                border: 'border-amber-500/20'
+              },
+              { 
+                label: 'Internal Links', 
+                value: formatNumber(onpageData?.internal_links_count || 0), 
+                icon: Link2, 
+                color: 'blue',
+                gradient: 'from-blue-500/10 to-indigo-500/5',
+                border: 'border-blue-500/20'
+              },
+              { 
+                label: 'Images', 
+                value: formatNumber(onpageData?.images_count || 0), 
+                icon: Image, 
+                color: 'pink',
+                gradient: 'from-pink-500/10 to-rose-500/5',
+                border: 'border-pink-500/20'
+              },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * i }}
+                className={`relative p-4 rounded-xl bg-gradient-to-br ${stat.gradient} border ${stat.border} overflow-hidden group hover:scale-[1.02] transition-transform`}
+              >
+                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-[40px]" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-8 h-8 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center`}>
+                    <stat.icon className={`w-4 h-4 text-${stat.color}-500`} />
+                  </div>
+                  <span className="text-xs text-muted-foreground">{stat.label}</span>
+                </div>
+                {isLoading ? (
+                  <div className="h-8 bg-muted/50 rounded animate-pulse" />
+                ) : (
+                  <p className={`text-2xl font-bold text-${stat.color}-500`}>{stat.value}</p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="relative z-10">
+            <TabsList className="w-full justify-start bg-card/50 backdrop-blur-sm border border-border/50 p-1 h-auto flex-wrap gap-1">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-violet-500/20 data-[state=active]:text-cyan-500">
+                <Layers className="w-4 h-4 mr-1.5" /> Overview
               </TabsTrigger>
               <TabsTrigger value="keywords" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-500">
-                <Hash className="w-4 h-4 mr-1.5" /> Keywords ({rankedKeywords.length})
+                <Hash className="w-4 h-4 mr-1.5" /> Keywords ({keywords.length})
               </TabsTrigger>
-              <TabsTrigger value="backlinks" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-500">
-                <Link2 className="w-4 h-4 mr-1.5" /> Backlinks ({backlinks.length})
+              <TabsTrigger value="technical" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-500">
+                <Settings2 className="w-4 h-4 mr-1.5" /> Technical SEO
               </TabsTrigger>
-              <TabsTrigger value="competitors" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-500">
-                <Target className="w-4 h-4 mr-1.5" /> Competitors ({competitors.length})
-              </TabsTrigger>
-              <TabsTrigger value="anchors" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500">
-                <FileText className="w-4 h-4 mr-1.5" /> Anchors ({anchors.length})
+              <TabsTrigger value="serp" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-500">
+                <Search className="w-4 h-4 mr-1.5" /> SERP Analysis
               </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-6 space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Top Keywords Preview */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Top Keywords */}
                 <Card className="border-emerald-500/20 bg-gradient-to-br from-card to-emerald-500/5">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
                       <Hash className="w-4 h-4 text-emerald-500" />
-                      Top Ranking Keywords
+                      Top Keywords by Volume
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isLoading && !rankedKeywords.length ? (
+                    {isLoading && !keywords.length ? (
                       <div className="space-y-2">
                         {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
+                          <div key={i} className="h-10 bg-muted/50 rounded animate-pulse" />
                         ))}
                       </div>
-                    ) : rankedKeywords.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No keywords found</p>
+                    ) : keywords.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No keywords found</p>
                     ) : (
                       <div className="space-y-2">
-                        {rankedKeywords.slice(0, 5).map((kw, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Badge variant="outline" className="shrink-0 w-8 justify-center">{kw.position}</Badge>
-                              <span className="text-sm truncate">{kw.keyword}</span>
+                        {keywords.slice(0, 5).map((kw, i) => (
+                          <motion.div 
+                            key={i} 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                          >
+                            <span className="text-sm truncate flex-1">{kw.keyword}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <KeywordTrendMini data={kw.monthly_searches} />
+                              <Badge variant="outline" className="text-[10px]">
+                                {formatNumber(kw.search_volume)}
+                              </Badge>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs text-muted-foreground">{formatNumber(kw.search_volume)}/mo</span>
-                              <IntentBadge intent={kw.intent} />
-                            </div>
-                          </div>
+                          </motion.div>
                         ))}
                         <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('keywords')}>
-                          View All Keywords <ChevronRight className="w-4 h-4 ml-1" />
+                          View All <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Top Backlinks Preview */}
-                <Card className="border-blue-500/20 bg-gradient-to-br from-card to-blue-500/5">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-blue-500" />
-                      Top Backlinks
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading && !backlinks.length ? (
-                      <div className="space-y-2">
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
-                        ))}
-                      </div>
-                    ) : backlinks.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No backlinks found</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {backlinks.slice(0, 5).map((bl, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Badge variant={bl.dofollow ? "default" : "secondary"} className="shrink-0 text-[10px]">
-                                {bl.dofollow ? 'DF' : 'NF'}
-                              </Badge>
-                              <span className="text-sm truncate">{bl.domain_from}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground shrink-0">DR: {bl.domain_from_rank}</span>
-                          </div>
-                        ))}
-                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('backlinks')}>
-                          View All Backlinks <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Top Competitors Preview */}
+                {/* Technical Checks Summary */}
                 <Card className="border-violet-500/20 bg-gradient-to-br from-card to-violet-500/5">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Target className="w-4 h-4 text-violet-500" />
-                      Top Competitors
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Settings2 className="w-4 h-4 text-violet-500" />
+                      Technical Health
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isLoading && !competitors.length ? (
+                    {isLoading && !onpageData ? (
                       <div className="space-y-2">
-                        {[...Array(5)].map((_, i) => (
+                        {[...Array(6)].map((_, i) => (
                           <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
                         ))}
                       </div>
-                    ) : competitors.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No competitors found</p>
+                    ) : !onpageData ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No data</p>
                     ) : (
                       <div className="space-y-2">
-                        {competitors.slice(0, 5).map((comp, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <span className="text-sm truncate flex-1">{comp.domain}</span>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs text-muted-foreground">{formatNumber(comp.keywords_common)} common</span>
-                            </div>
-                          </div>
+                        {checkCategories.technical.slice(0, 6).map((check, i) => (
+                          <motion.div
+                            key={check.key}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                          >
+                            <CheckStatus passed={check.passed} label={check.label} />
+                          </motion.div>
                         ))}
-                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('competitors')}>
-                          View All Competitors <ChevronRight className="w-4 h-4 ml-1" />
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('technical')}>
+                          View Full Audit <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                {/* Top Anchors Preview */}
-                <Card className="border-amber-500/20 bg-gradient-to-br from-card to-amber-500/5">
+                {/* SERP Features */}
+                <Card className="border-blue-500/20 bg-gradient-to-br from-card to-blue-500/5">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-amber-500" />
-                      Top Anchor Texts
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Search className="w-4 h-4 text-blue-500" />
+                      SERP Features Found
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isLoading && !anchors.length ? (
+                    {isLoading && !serpData ? (
                       <div className="space-y-2">
-                        {[...Array(5)].map((_, i) => (
+                        {[...Array(4)].map((_, i) => (
                           <div key={i} className="h-8 bg-muted/50 rounded animate-pulse" />
                         ))}
                       </div>
-                    ) : anchors.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">No anchors found</p>
+                    ) : !serpData ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No SERP data</p>
                     ) : (
-                      <div className="space-y-2">
-                        {anchors.slice(0, 5).map((anchor, i) => (
-                          <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <span className="text-sm truncate flex-1">{anchor.anchor || '(empty)'}</span>
-                            <span className="text-xs text-muted-foreground shrink-0">{formatNumber(anchor.backlinks)} links</span>
+                      <div className="space-y-3">
+                        {serpData.aiOverview && (
+                          <div className="p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border border-cyan-500/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Sparkles className="w-4 h-4 text-cyan-500" />
+                              <span className="text-xs font-medium text-cyan-500">AI Overview</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {serpData.aiOverview.slice(0, 100)}...
+                            </p>
                           </div>
-                        ))}
-                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('anchors')}>
-                          View All Anchors <ChevronRight className="w-4 h-4 ml-1" />
+                        )}
+                        
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                          <span className="text-sm">Organic Results</span>
+                          <Badge variant="outline">{serpData.organic.length}</Badge>
+                        </div>
+                        
+                        {serpData.paa.length > 0 && (
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                            <span className="text-sm">People Also Ask</span>
+                            <Badge variant="outline">{serpData.paa.length}</Badge>
+                          </div>
+                        )}
+                        
+                        {serpData.related.length > 0 && (
+                          <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                            <span className="text-sm">Related Searches</span>
+                            <Badge variant="outline">{serpData.related.length}</Badge>
+                          </div>
+                        )}
+                        
+                        <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setActiveTab('serp')}>
+                          View SERP <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
                     )}
@@ -546,42 +860,51 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
 
             {/* Keywords Tab */}
             <TabsContent value="keywords" className="mt-6">
-              <Card className="border-emerald-500/20">
+              <Card className="border-emerald-500/20 overflow-hidden">
+                <CardHeader className="border-b border-border/50 bg-gradient-to-r from-emerald-500/5 to-transparent">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-emerald-500" />
+                    Keyword Opportunities ({keywords.length} found)
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="p-0">
-                  <div className="max-h-[500px] overflow-auto">
+                  <div className="max-h-[600px] overflow-auto">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-card z-10">
-                        <TableRow>
-                          <TableHead className="w-12 text-center">#</TableHead>
+                      <TableHeader className="sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+                        <TableRow className="hover:bg-transparent">
                           <TableHead>Keyword</TableHead>
-                          <TableHead className="text-center">Intent</TableHead>
                           <TableHead className="text-right">Volume</TableHead>
+                          <TableHead className="text-center">Trend</TableHead>
+                          <TableHead className="text-center">Competition</TableHead>
                           <TableHead className="text-right">CPC</TableHead>
-                          <TableHead className="text-right">Traffic</TableHead>
-                          <TableHead className="text-right">KD</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {rankedKeywords.map((kw, i) => (
-                          <TableRow key={i} className="hover:bg-emerald-500/5">
-                            <TableCell className="text-center font-medium">{kw.position}</TableCell>
-                            <TableCell className="max-w-[250px] truncate">{kw.keyword}</TableCell>
-                            <TableCell className="text-center"><IntentBadge intent={kw.intent} /></TableCell>
-                            <TableCell className="text-right">{formatNumber(kw.search_volume)}</TableCell>
-                            <TableCell className="text-right">${kw.cpc.toFixed(2)}</TableCell>
-                            <TableCell className="text-right">{formatNumber(kw.traffic)}</TableCell>
+                        {keywords.map((kw, i) => (
+                          <TableRow key={i} className="hover:bg-emerald-500/5 group">
+                            <TableCell className="font-medium max-w-[300px] truncate">
+                              {kw.keyword}
+                            </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Progress value={kw.keyword_difficulty} className="w-12 h-1.5" />
-                                <span className="text-xs w-6">{kw.keyword_difficulty}</span>
-                              </div>
+                              <span className="font-medium text-emerald-500">{formatNumber(kw.search_volume)}</span>
+                              <span className="text-xs text-muted-foreground">/mo</span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <KeywordTrendMini data={kw.monthly_searches} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <CompetitionBadge level={kw.competition} index={kw.competition_index} />
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(kw.cpc)}
                             </TableCell>
                           </TableRow>
                         ))}
-                        {rankedKeywords.length === 0 && !isLoading && (
+                        {keywords.length === 0 && !isLoading && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                              No keywords found for this domain
+                            <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                              <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              No keyword data available
                             </TableCell>
                           </TableRow>
                         )}
@@ -592,48 +915,156 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
               </Card>
             </TabsContent>
 
-            {/* Backlinks Tab */}
-            <TabsContent value="backlinks" className="mt-6">
+            {/* Technical SEO Tab */}
+            <TabsContent value="technical" className="mt-6 space-y-6">
+              {/* Page Info */}
+              {onpageData && (
+                <Card className="border-violet-500/20 bg-gradient-to-br from-card to-violet-500/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-violet-500" />
+                      Page Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="p-3 rounded-lg bg-muted/30">
+                        <span className="text-xs text-muted-foreground">Title</span>
+                        <p className="text-sm font-medium truncate">{onpageData.meta?.title || 'No title'}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/30">
+                        <span className="text-xs text-muted-foreground">Description</span>
+                        <p className="text-sm truncate">{onpageData.meta?.description || 'No description'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg bg-muted/20 text-center">
+                        <span className="text-2xl font-bold text-violet-500">{formatNumber(onpageData.content_size)}</span>
+                        <p className="text-xs text-muted-foreground">Content Size</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/20 text-center">
+                        <span className="text-2xl font-bold text-cyan-500">{formatNumber(onpageData.total_dom_size)}</span>
+                        <p className="text-xs text-muted-foreground">DOM Size</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/20 text-center">
+                        <span className="text-2xl font-bold text-blue-500">{onpageData.internal_links_count}</span>
+                        <p className="text-xs text-muted-foreground">Internal Links</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/20 text-center">
+                        <span className="text-2xl font-bold text-emerald-500">{onpageData.external_links_count}</span>
+                        <p className="text-xs text-muted-foreground">External Links</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Check Categories */}
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Content Checks */}
+                <Card className="border-emerald-500/20">
+                  <CardHeader className="pb-3 border-b border-border/50">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Type className="w-4 h-4 text-emerald-500" />
+                      Content
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-2">
+                    {checkCategories.content.map((check, i) => (
+                      <CheckStatus key={check.key} passed={check.passed} label={check.label} />
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Technical Checks */}
+                <Card className="border-violet-500/20">
+                  <CardHeader className="pb-3 border-b border-border/50">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Code className="w-4 h-4 text-violet-500" />
+                      Technical
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-2">
+                    {checkCategories.technical.map((check, i) => (
+                      <CheckStatus key={check.key} passed={check.passed} label={check.label} />
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* SEO Checks */}
+                <Card className="border-blue-500/20">
+                  <CardHeader className="pb-3 border-b border-border/50">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Search className="w-4 h-4 text-blue-500" />
+                      SEO
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-2">
+                    {checkCategories.seo.map((check, i) => (
+                      <CheckStatus key={check.key} passed={check.passed} label={check.label} />
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* SERP Tab */}
+            <TabsContent value="serp" className="mt-6 space-y-6">
+              {/* AI Overview */}
+              {serpData?.aiOverview && (
+                <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-violet-500/5 overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-violet-500 to-pink-500" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-cyan-500" />
+                      AI Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {serpData.aiOverview}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Organic Results */}
               <Card className="border-blue-500/20">
+                <CardHeader className="pb-3 border-b border-border/50">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Search className="w-4 h-4 text-blue-500" />
+                    Organic Rankings
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="p-0">
-                  <div className="max-h-[500px] overflow-auto">
+                  <div className="max-h-[400px] overflow-auto">
                     <Table>
                       <TableHeader className="sticky top-0 bg-card z-10">
                         <TableRow>
-                          <TableHead className="w-16">Type</TableHead>
-                          <TableHead>From Domain</TableHead>
-                          <TableHead>Anchor</TableHead>
-                          <TableHead className="text-right">DR</TableHead>
-                          <TableHead className="text-right">First Seen</TableHead>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Domain</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {backlinks.map((bl, i) => (
+                        {serpData?.organic.map((item, i) => (
                           <TableRow key={i} className="hover:bg-blue-500/5">
-                            <TableCell>
-                              <Badge variant={bl.dofollow ? "default" : "secondary"} className="text-[10px]">
-                                {bl.dofollow ? 'DoFollow' : 'NoFollow'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="max-w-[200px]">
-                              <a href={bl.url_from} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline flex items-center gap-1 truncate">
-                                {bl.domain_from}
-                                <ExternalLink className="w-3 h-3 shrink-0" />
+                            <TableCell className="font-bold text-blue-500">{item.rank_group}</TableCell>
+                            <TableCell className="max-w-[300px]">
+                              <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm hover:text-blue-500 hover:underline flex items-center gap-1 truncate">
+                                {item.title}
+                                <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
                               </a>
+                              <p className="text-xs text-muted-foreground truncate">{item.description?.slice(0, 100)}...</p>
                             </TableCell>
-                            <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
-                              {bl.anchor || '(no anchor)'}
-                            </TableCell>
-                            <TableCell className="text-right">{bl.domain_from_rank}</TableCell>
-                            <TableCell className="text-right text-xs text-muted-foreground">
-                              {bl.first_seen ? new Date(bl.first_seen).toLocaleDateString() : '-'}
-                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{item.domain}</TableCell>
                           </TableRow>
                         ))}
-                        {backlinks.length === 0 && !isLoading && (
+                        {(!serpData?.organic || serpData.organic.length === 0) && (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                              No backlinks found for this domain
+                            <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                              No organic results found
                             </TableCell>
                           </TableRow>
                         )}
@@ -642,89 +1073,45 @@ export const SEODashboard = ({ domain }: SEODashboardProps) => {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            {/* Competitors Tab */}
-            <TabsContent value="competitors" className="mt-6">
-              <Card className="border-violet-500/20">
-                <CardContent className="p-0">
-                  <div className="max-h-[500px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-card z-10">
-                        <TableRow>
-                          <TableHead>Competitor</TableHead>
-                          <TableHead className="text-right">Common Keywords</TableHead>
-                          <TableHead className="text-right">Unique Keywords</TableHead>
-                          <TableHead className="text-right">Organic Traffic</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {competitors.map((comp, i) => (
-                          <TableRow key={i} className="hover:bg-violet-500/5">
-                            <TableCell>
-                              <a href={`https://${comp.domain}`} target="_blank" rel="noopener noreferrer" className="text-sm text-violet-500 hover:underline flex items-center gap-1">
-                                {comp.domain}
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </TableCell>
-                            <TableCell className="text-right">{formatNumber(comp.keywords_common)}</TableCell>
-                            <TableCell className="text-right">{formatNumber(comp.keywords_unique)}</TableCell>
-                            <TableCell className="text-right">{formatNumber(comp.organic_traffic)}</TableCell>
-                          </TableRow>
-                        ))}
-                        {competitors.length === 0 && !isLoading && (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                              No competitors found for this domain
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Anchors Tab */}
-            <TabsContent value="anchors" className="mt-6">
-              <Card className="border-amber-500/20">
-                <CardContent className="p-0">
-                  <div className="max-h-[500px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-card z-10">
-                        <TableRow>
-                          <TableHead>Anchor Text</TableHead>
-                          <TableHead className="text-right">Backlinks</TableHead>
-                          <TableHead className="text-right">Ref. Domains</TableHead>
-                          <TableHead className="text-right">DoFollow</TableHead>
-                          <TableHead className="text-right">NoFollow</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {anchors.map((anchor, i) => (
-                          <TableRow key={i} className="hover:bg-amber-500/5">
-                            <TableCell className="max-w-[300px] truncate">
-                              {anchor.anchor || '(empty anchor)'}
-                            </TableCell>
-                            <TableCell className="text-right">{formatNumber(anchor.backlinks)}</TableCell>
-                            <TableCell className="text-right">{formatNumber(anchor.referring_domains)}</TableCell>
-                            <TableCell className="text-right text-green-500">{formatNumber(anchor.dofollow)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{formatNumber(anchor.nofollow)}</TableCell>
-                          </TableRow>
-                        ))}
-                        {anchors.length === 0 && !isLoading && (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                              No anchor data found for this domain
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* People Also Ask & Related */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {serpData?.paa && serpData.paa.length > 0 && (
+                  <Card className="border-amber-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                        People Also Ask
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {serpData.paa.slice(0, 4).map((item: any, i: number) => (
+                        <div key={i} className="p-2 rounded-lg bg-muted/30 text-sm">
+                          {item.title || item.items?.[0]?.title || 'Question'}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {serpData?.related && serpData.related.length > 0 && (
+                  <Card className="border-pink-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Target className="w-4 h-4 text-pink-500" />
+                        Related Searches
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap gap-2">
+                      {serpData.related[0]?.items?.slice(0, 8).map((item: any, i: number) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {item.title}
+                        </Badge>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </>
