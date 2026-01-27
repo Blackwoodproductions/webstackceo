@@ -2,7 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Copy, RefreshCw, Loader2, Globe, 
-  BarChart3, Link2, ChevronRight, Sparkles, Radio
+  BarChart3, Link2, ChevronRight, Sparkles, Radio,
+  FileText, Code, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,9 @@ export const GAInlineOnboardingWizard = ({
   const [showTrackingCode, setShowTrackingCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [showGSCSetup, setShowGSCSetup] = useState(false);
+  const [copiedMeta, setCopiedMeta] = useState(false);
+  const [copiedDNS, setCopiedDNS] = useState(false);
 
   const normalizeDomain = (d: string) =>
     d.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "").toLowerCase();
@@ -71,6 +75,23 @@ export const GAInlineOnboardingWizard = ({
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
+  const getMetaTag = () => `<meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" />`;
+  
+  const getDNSRecord = () => `google-site-verification=YOUR_VERIFICATION_CODE`;
+
+  const copyMetaTag = async () => {
+    await navigator.clipboard.writeText(getMetaTag());
+    setCopiedMeta(true);
+    toast({ title: "Copied!", description: "Meta tag copied - replace YOUR_VERIFICATION_CODE with your actual code from GSC" });
+    setTimeout(() => setCopiedMeta(false), 2000);
+  };
+
+  const copyDNSRecord = async () => {
+    await navigator.clipboard.writeText(getDNSRecord());
+    setCopiedDNS(true);
+    toast({ title: "Copied!", description: "DNS record copied - replace YOUR_VERIFICATION_CODE with your actual code from GSC" });
+    setTimeout(() => setCopiedDNS(false), 2000);
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -283,35 +304,130 @@ export const GAInlineOnboardingWizard = ({
             )}
           </div>
         ) : (
-          /* Domain not found - Instruct to add to GSC first */
-          <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30 text-center">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
-              <Globe className="w-5 h-5 text-amber-500" />
-            </div>
-            <h4 className="text-sm font-semibold text-foreground mb-1">
-              Add Domain to Google Search Console First
-            </h4>
-            <p className="text-xs text-muted-foreground mb-3">
-              To track <span className="text-amber-400 font-medium">{normalizedDomain}</span> in Google Analytics, you must first verify it in Google Search Console.
-            </p>
-            <div className="flex flex-col gap-2">
-              <Button
-                size="sm"
-                className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white w-full"
-                onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${normalizedDomain}`, "_blank")}
+          /* Domain not found - Inline GSC setup guide */
+          <div className="space-y-3">
+            <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-0.5">
+                    Verify Domain in Google Search Console
+                  </h4>
+                  <p className="text-[10px] text-muted-foreground">
+                    <span className="text-amber-400 font-medium">{normalizedDomain}</span> must be verified in GSC before linking to GA4
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle GSC Setup Steps */}
+              <button
+                onClick={() => setShowGSCSetup(!showGSCSetup)}
+                className="flex items-center gap-2 text-xs text-amber-500 hover:text-amber-400 transition-colors mb-2"
               >
-                Add {normalizedDomain} to Search Console
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs w-full"
-                onClick={onRefresh}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh After Verifying
-              </Button>
+                <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showGSCSetup ? 'rotate-90' : ''}`} />
+                {showGSCSetup ? 'Hide' : 'Show'} verification methods
+              </button>
+
+              <AnimatePresence>
+                {showGSCSetup && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    {/* Method 1: HTML Meta Tag */}
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Code className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs font-medium text-foreground">Option 1: HTML Meta Tag</span>
+                        <Badge className="text-[8px] py-0 h-3.5 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Recommended</Badge>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mb-2">
+                        Add this tag to the &lt;head&gt; section of your homepage
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-[9px] font-mono text-cyan-400 bg-zinc-900/80 p-2 rounded overflow-x-auto">
+                          {getMetaTag()}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 hover:bg-cyan-500/10"
+                          onClick={copyMetaTag}
+                        >
+                          {copiedMeta ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Method 2: DNS TXT Record */}
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-4 h-4 text-violet-400" />
+                        <span className="text-xs font-medium text-foreground">Option 2: DNS TXT Record</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mb-2">
+                        Add this TXT record to your domain's DNS settings
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-[9px] font-mono text-violet-400 bg-zinc-900/80 p-2 rounded overflow-x-auto">
+                          {getDNSRecord()}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 hover:bg-violet-500/10"
+                          onClick={copyDNSRecord}
+                        >
+                          {copiedDNS ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Get verification code link */}
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                      <ExternalLink className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      <p className="text-[10px] text-muted-foreground flex-1">
+                        Get your verification code from{" "}
+                        <button
+                          onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${normalizedDomain}`, "_blank")}
+                          className="text-amber-400 hover:text-amber-300 underline"
+                        >
+                          Google Search Console
+                        </button>
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  className="h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white flex-1"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                >
+                  {isRefreshing ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Radio className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  Verify & Refresh
+                </Button>
+              </div>
             </div>
           </div>
         )}
