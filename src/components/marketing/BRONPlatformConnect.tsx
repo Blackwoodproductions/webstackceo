@@ -6,10 +6,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useBronApiAuth } from "@/hooks/use-bron-api-auth";
+import { useBronTokenAuth } from "@/hooks/use-bron-token-auth";
 
-const BRON_STORAGE_KEY = "bron_dashboard_auth";
 const BRON_DASHBOARD_URL = "https://dashdev.imagehosting.space/dashboard";
-const BRON_DOMAIN_ID = "112619";
 
 interface BRONPlatformConnectProps {
   domain?: string;
@@ -17,62 +16,42 @@ interface BRONPlatformConnectProps {
 }
 
 export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatformConnectProps) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [iframeKey, setIframeKey] = useState(0);
-  const [iframeError, setIframeError] = useState(false);
   const hasNotified = useRef(false);
   const autoOpenAttempted = useRef(false);
+  const [domainId, setDomainId] = useState<string>("");
 
-  // Dashboard URL for iframe
-  const iframeSrc = `${BRON_DASHBOARD_URL}?domain_id=${BRON_DOMAIN_ID}&tab=analysis`;
-
-  // Check if already authenticated from localStorage
-  const checkAuth = useCallback(() => {
-    try {
-      const stored = localStorage.getItem(BRON_STORAGE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        if (data.authenticated && data.expiry > Date.now()) {
-          return true;
-        }
-        localStorage.removeItem(BRON_STORAGE_KEY);
+  // Token-based authentication
+  const {
+    isLoading: isTokenLoading,
+    isAuthenticated,
+    session,
+    createSession,
+    logout,
+  } = useBronTokenAuth({
+    domain: domain || "",
+    onAuthenticated: (sess) => {
+      console.log("[BRON] Token auth successful, domainId:", sess.domainId);
+      setDomainId(sess.domainId);
+      setIframeKey(prev => prev + 1);
+      
+      if (!hasNotified.current) {
+        hasNotified.current = true;
+        onConnectionComplete?.("bron");
       }
-    } catch {
-      // Ignore parse errors
-    }
-    return false;
-  }, []);
+      
+      toast({
+        title: "Connected to BRON",
+        description: "Dashboard is now loading below.",
+      });
+    },
+    onLogout: () => {
+      hasNotified.current = false;
+      autoOpenAttempted.current = false;
+    },
+  });
 
-  // Mark as authenticated and store in localStorage
-  const setAuthenticated = useCallback(() => {
-    console.log("[BRON] Setting authenticated state");
-    
-    setIframeError(false);
-    
-    const authData = {
-      authenticated: true,
-      expiry: Date.now() + 24 * 60 * 60 * 1000,
-      authenticatedAt: new Date().toISOString(),
-      domainId: BRON_DOMAIN_ID,
-    };
-    localStorage.setItem(BRON_STORAGE_KEY, JSON.stringify(authData));
-    
-    setIsConnected(true);
-    setIframeKey(prev => prev + 1);
-    
-    if (!hasNotified.current) {
-      hasNotified.current = true;
-      onConnectionComplete?.("bron");
-    }
-    
-    toast({
-      title: "Connected to BRON",
-      description: "Dashboard is now loading below.",
-    });
-  }, [onConnectionComplete]);
-
-  // Use callback-based auth detection (not API polling)
+  // Popup-based login flow
   const {
     isWaitingForLogin,
     popupBlocked,
@@ -80,36 +59,23 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     focusPopup,
   } = useBronApiAuth({
     domain: domain || "",
-    onLoggedIn: setAuthenticated,
+    onLoggedIn: async () => {
+      // After popup login confirmed, create a token session
+      console.log("[BRON] Popup login completed, creating token session...");
+      const success = await createSession();
+      if (!success) {
+        toast({
+          title: "Session Error",
+          description: "Failed to create session. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
   });
 
-  // Listen for callback page postMessage
+  // Auto-open login popup when component mounts (if not already authenticated)
   useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === "BRON_AUTH_SUCCESS") {
-        setAuthenticated();
-      }
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [setAuthenticated]);
-
-  // Initial auth check
-  useEffect(() => {
-    const isAuth = checkAuth();
-    setIsConnected(isAuth);
-    setIsLoading(false);
-    
-    if (isAuth && !hasNotified.current) {
-      hasNotified.current = true;
-      onConnectionComplete?.("bron");
-    }
-  }, [checkAuth, onConnectionComplete]);
-
-  // Auto-open login popup when component mounts (if not already connected)
-  useEffect(() => {
-    if (!isLoading && !isConnected && domain && !autoOpenAttempted.current) {
+    if (!isTokenLoading && !isAuthenticated && domain && !autoOpenAttempted.current) {
       autoOpenAttempted.current = true;
       
       const timer = setTimeout(() => {
@@ -126,22 +92,23 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       
       return () => clearTimeout(timer);
     }
-  }, [domain, isConnected, isLoading, openPopup]);
+  }, [domain, isAuthenticated, isTokenLoading, openPopup]);
 
-  const handleLogout = () => {
-    localStorage.removeItem(BRON_STORAGE_KEY);
-    setIsConnected(false);
-    hasNotified.current = false;
-    autoOpenAttempted.current = false;
-    
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Disconnected",
       description: "You've been logged out of BRON.",
     });
   };
 
+  // Build iframe URL with token and domain ID
+  const iframeSrc = session?.domainId 
+    ? `${BRON_DASHBOARD_URL}?domain_id=${session.domainId}&tab=analysis`
+    : `${BRON_DASHBOARD_URL}?tab=analysis`;
+
   // Loading state
-  if (isLoading) {
+  if (isTokenLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
@@ -149,8 +116,8 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Connected state - show iframe dashboard directly
-  if (isConnected) {
+  // Authenticated state - show iframe dashboard
+  if (isAuthenticated && session) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -175,11 +142,16 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
                 BRON Dashboard
                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   <Check className="w-3 h-3 inline mr-1" />
-                  Connected
+                  Token Authenticated
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
                 Managing <span className="text-emerald-400 font-medium">{domain}</span>
+                {session.domainId && (
+                  <span className="text-xs ml-2 text-muted-foreground/60">
+                    (ID: {session.domainId})
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -194,11 +166,20 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           </Button>
         </div>
 
+        {/* Session info */}
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
+          <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <div className="text-muted-foreground">
+            <span className="text-emerald-400 font-medium">Token-based session active.</span>{" "}
+            Expires: {new Date(session.expiresAt).toLocaleString()}
+          </div>
+        </div>
+
         {/* Dashboard iframe */}
         <div className="rounded-xl border border-border/50 overflow-hidden bg-background">
           <iframe
             key={iframeKey}
-            src="https://dashdev.imagehosting.space/dashboard?tab=analysis"
+            src={iframeSrc}
             className="w-full min-h-[700px] border-0"
             title="BRON Dashboard"
             allow="clipboard-write"
@@ -208,7 +189,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Not connected - show waiting for login
+  // Not authenticated - show waiting for login
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -234,7 +215,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
           {popupBlocked
             ? "Your browser blocked the popup. Please allow popups, then click 'Open Login'."
             : isWaitingForLogin
-              ? "Please complete the login in the popup window. The dashboard will load automatically after you log in."
+              ? "Please complete the login in the popup window. A secure token session will be created automatically."
               : "Opening BRON login window..."}
         </p>
       </div>
@@ -266,7 +247,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
       {isWaitingForLogin && (
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Sparkles className="w-3 h-3 text-emerald-400" />
-          Waiting for login confirmation from popup...
+          Waiting for login confirmation...
         </p>
       )}
     </motion.div>

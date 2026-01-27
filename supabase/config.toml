@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.cade-api]
 verify_jwt = false
+
+[functions.bron-auth]
+verify_jwt = false
