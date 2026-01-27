@@ -27,9 +27,11 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   googleProfile: GoogleProfile | null;
+  isGoogleConnected: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  checkGoogleTokenValidity: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,11 +54,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [googleProfile, setGoogleProfile] = useState<GoogleProfile | null>(null);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isReauthPending, setIsReauthPending] = useState(false);
+
+  // Check if Google tokens are still valid
+  const checkGoogleTokenValidity = useCallback((): boolean => {
+    const tokenKeys = [
+      { token: 'unified_google_token', expiry: 'unified_google_expiry' },
+      { token: 'gsc_access_token', expiry: 'gsc_token_expiry' },
+      { token: 'ga_access_token', expiry: 'ga_token_expiry' },
+    ];
+
+    for (const { token, expiry } of tokenKeys) {
+      const tokenVal = localStorage.getItem(token);
+      const expiryVal = localStorage.getItem(expiry);
+      
+      if (tokenVal && expiryVal) {
+        const expiryTime = parseInt(expiryVal, 10);
+        // Token valid if more than 5 minutes remaining
+        if (Date.now() < expiryTime - 300000) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, []);
 
   // Sync Google tokens to localStorage and database
   const syncGoogleTokens = useCallback(async (session: Session) => {
     const provider = session.user?.app_metadata?.provider;
-    if (provider !== 'google' || !session.provider_token) return;
+    if (provider !== 'google' || !session.provider_token) {
+      setIsGoogleConnected(false);
+      return;
+    }
 
     const expiryTime = Date.now() + 3600 * 1000;
     const expiryStr = expiryTime.toString();
@@ -84,6 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
     
     setGoogleProfile(profileData);
+    setIsGoogleConnected(true);
     localStorage.setItem('unified_google_profile', JSON.stringify(profileData));
     localStorage.setItem('gsc_google_profile', JSON.stringify(profileData));
 
@@ -122,7 +153,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, []);
 
-  // Load stored profile
+  // Load stored profile and check initial token validity
   useEffect(() => {
     const storedProfile = localStorage.getItem('unified_google_profile');
     if (storedProfile) {
@@ -132,7 +163,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Ignore parse errors
       }
     }
-  }, []);
+    // Check initial Google connection status
+    setIsGoogleConnected(checkGoogleTokenValidity());
+  }, [checkGoogleTokenValidity]);
+
+  // Periodic token validity check - triggers re-auth when tokens expire
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      const isValid = checkGoogleTokenValidity();
+      const wasConnected = isGoogleConnected;
+      
+      if (wasConnected && !isValid && !isReauthPending) {
+        console.log('[AuthContext] Google tokens expired - triggering re-auth');
+        setIsGoogleConnected(false);
+        setIsReauthPending(true);
+        
+        // Dispatch event for components to react
+        window.dispatchEvent(new CustomEvent('google-auth-expired'));
+      } else if (isValid && !wasConnected) {
+        setIsGoogleConnected(true);
+        setIsReauthPending(false);
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(checkInterval);
+  }, [checkGoogleTokenValidity, isGoogleConnected, isReauthPending]);
 
   // Initialize auth state
   useEffect(() => {
@@ -270,9 +325,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isLoading,
     isAdmin,
     googleProfile,
+    isGoogleConnected,
     signInWithGoogle,
     signOut,
     refreshSession,
+    checkGoogleTokenValidity,
   };
 
   return (

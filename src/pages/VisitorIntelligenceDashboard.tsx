@@ -34,6 +34,7 @@ import { generateAPIDocs } from '@/lib/generateAPIDocs';
 import { InlineSEOReport } from '@/components/audit/InlineSEOReport';
 import { AnimatedTagline } from '@/components/ui/animated-tagline';
 import { useGoogleAuthSync } from '@/hooks/use-google-auth-sync';
+import { useAuth } from '@/contexts/AuthContext';
 import VisitorFlowDiagram, { VisitorFlowSummary, TimeRange } from '@/components/marketing/VisitorFlowDiagram';
 import { GSCDashboardPanel } from '@/components/marketing/GSCDashboardPanel';
 import { GADashboardPanel } from '@/components/marketing/GADashboardPanel';
@@ -214,6 +215,10 @@ const MarketingDashboard = () => {
   
   // Sync Google OAuth tokens and profile for auto-connect
   useGoogleAuthSync();
+  
+  // Import useAuth for automatic re-login when tokens expire
+  const { signInWithGoogle } = useAuth();
+  
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -322,6 +327,31 @@ const MarketingDashboard = () => {
     url.hash = activeTab === 'visitor-intelligence' ? '' : `#${activeTab}`;
     window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
   }, [activeTab]);
+  
+  // Auto re-login when Google tokens expire - triggers popup automatically
+  useEffect(() => {
+    const handleAuthExpired = async () => {
+      console.log('[VI Dashboard] Google auth expired - triggering re-login popup');
+      
+      // Clear auth states
+      setGscAuthenticated(false);
+      setGaAuthenticated(false);
+      setGmbAuthenticated(false);
+      
+      try {
+        await signInWithGoogle();
+        console.log('[VI Dashboard] Re-auth successful');
+        // Tokens will be synced by AuthContext, trigger refresh
+        window.location.reload();
+      } catch (err) {
+        console.error('[VI Dashboard] Re-auth failed:', err);
+        toast.error('Session expired. Please sign in again.');
+      }
+    };
+
+    window.addEventListener('google-auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('google-auth-expired', handleAuthExpired);
+  }, [signInWithGoogle]);
   
   // CADE subscription state
   const [cadeHasSubscription, setCadeHasSubscription] = useState(false);
