@@ -219,8 +219,34 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
 
       if (error) throw new Error(error.message);
       
-      // Handle quota errors gracefully - don't block UI, just show no listings
+      // Handle authentication errors (401) - clear stale tokens and reset state
       if (data?.error) {
+        const errorMsg = data.error.toLowerCase();
+        const is401Error = errorMsg.includes('401') || 
+                           errorMsg.includes('unauthenticated') || 
+                           errorMsg.includes('invalid authentication') ||
+                           errorMsg.includes('invalid credentials');
+        
+        if (is401Error) {
+          console.warn('[GMBPanel] Token expired or invalid, clearing credentials');
+          // Clear all stale tokens
+          localStorage.removeItem('gmb_access_token');
+          localStorage.removeItem('gmb_token_expiry');
+          sessionStorage.removeItem('gmb_access_token');
+          // Also clear unified tokens if they're stale
+          localStorage.removeItem('gsc_access_token');
+          localStorage.removeItem('gsc_token_expiry');
+          localStorage.removeItem('ga_access_token');
+          localStorage.removeItem('ga_token_expiry');
+          // Reset state to show connect flow
+          setAccessToken(null);
+          setAccounts([]);
+          setLocations([]);
+          setMatchingLocation(null);
+          toast.info('Your Google session has expired. Please reconnect to continue.');
+          return;
+        }
+        
         if (data.isQuotaError) {
           // Quota exceeded - still allow access to onboarding, just show a toast
           console.warn('[GMBPanel] API quota exceeded, showing onboarding option');
@@ -260,7 +286,21 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       }
     } catch (err) {
       console.error('[GMBPanel] Sync error:', err);
-      setSyncError(err instanceof Error ? err.message : 'Failed to sync GMB data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to sync GMB data';
+      
+      // Check if catch block error is also a 401
+      if (errorMessage.includes('401') || errorMessage.toLowerCase().includes('unauthenticated')) {
+        localStorage.removeItem('gmb_access_token');
+        localStorage.removeItem('gmb_token_expiry');
+        setAccessToken(null);
+        setAccounts([]);
+        setLocations([]);
+        setMatchingLocation(null);
+        toast.info('Your Google session has expired. Please reconnect to continue.');
+        return;
+      }
+      
+      setSyncError(errorMessage);
     } finally {
       setIsCheckingAccount(false);
     }
