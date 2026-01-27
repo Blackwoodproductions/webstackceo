@@ -781,14 +781,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                     </motion.div>
                   ))}
                 </div>
-
-                {/* CTA */}
-                <div className="flex justify-center pt-4">
-                  <Button className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/30">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Get Started with CADE
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </motion.div>
