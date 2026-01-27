@@ -803,8 +803,25 @@ const MarketingDashboard = () => {
         is_current_user: s.session_id === currentSessionId,
       }));
       
+      // DEDUPLICATION: Keep only ONE instance of current user (first match wins)
+      // Also remove any duplicate session IDs (should not happen, but safety net)
+      const seenSessionIds = new Set<string>();
+      let foundCurrentUser = false;
+      const deduped = visitorsWithProfiles.filter(v => {
+        // Skip duplicate session IDs
+        if (seenSessionIds.has(v.session_id)) return false;
+        seenSessionIds.add(v.session_id);
+        
+        // Skip additional current user entries
+        if (v.is_current_user) {
+          if (foundCurrentUser) return false;
+          foundCurrentUser = true;
+        }
+        return true;
+      });
+      
       // Sort to put current user first
-      const finalSorted = visitorsWithProfiles.sort((a, b) => {
+      const finalSorted = deduped.sort((a, b) => {
         if (a.is_current_user) return -1;
         if (b.is_current_user) return 1;
         return 0; // Maintain existing order otherwise
@@ -2708,21 +2725,12 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Right Sidebar - Chat Panel (overlay) - avoids reflow/flicker in header + GSC */}
-        <div className="flex-shrink-0" style={{ width: '56px' }}>
-          <div
-            className="fixed right-0 border-l border-border bg-card/50 z-40"
-            style={{
-              top: '52px',
-              height: 'calc(100vh - 140px)',
-              width: '256px',
-              transform: chatPanelOpen ? 'translateX(0px)' : 'translateX(200px)',
-              willChange: 'transform',
-              transition: 'transform 0.15s ease-out',
-              contain: 'layout paint',
-            }}
-          >
-            <div className="h-full flex flex-col">
+        {/* Right Sidebar - Chat Panel (in-layout, no overlay) */}
+        <div
+          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
+          style={{ contain: 'layout paint' }}
+        >
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
@@ -3189,7 +3197,6 @@ f.parentNode.insertBefore(j,f);
           </div>
         </div>
         </div>
-      </div>
       </div>
       )}
 
