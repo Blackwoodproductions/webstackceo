@@ -5,7 +5,8 @@ import {
   BarChart3, Globe, FileText, Link2, AlertTriangle, CheckCircle,
   RefreshCw, Calendar, ArrowUpRight, ArrowDownRight, Loader2,
   ExternalLink, Key, Download, Smartphone, Monitor, Tablet,
-  Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp, X
+  Image, Video, Newspaper, Sparkles, Code, Copy, Check, ChevronDown, ChevronUp, X,
+  Shield, ChevronRight, CheckSquare, AlertCircle
 } from "lucide-react";
 import { usePopupOAuth } from "@/hooks/use-popup-oauth";
 import { GSCAdvancedReporting } from "./GSCAdvancedReporting";
@@ -221,7 +222,24 @@ export const GSCDashboardPanel = ({
   const [showClientIdDialog, setShowClientIdDialog] = useState(false);
   const [clientIdInput, setClientIdInput] = useState("");
   
-  
+  // GSC Inline Verification Wizard State
+  type VerificationMethod = 'META' | 'DNS_TXT' | 'ANALYTICS';
+  interface GSCSetupState {
+    step: 'choose-method' | 'show-token' | 'verifying' | 'verified' | 'error';
+    selectedMethod: VerificationMethod | null;
+    token: string | null;
+    error: string | null;
+    isLoading: boolean;
+  }
+  const [gscSetupState, setGscSetupState] = useState<GSCSetupState>({
+    step: 'choose-method',
+    selectedMethod: null,
+    token: null,
+    error: null,
+    isLoading: false,
+  });
+  const [copiedMeta, setCopiedMeta] = useState(false);
+  const [copiedDNS, setCopiedDNS] = useState(false);
   
   // Advanced reporting toggle
   const [showAdvancedReporting, setShowAdvancedReporting] = useState(true);
@@ -231,6 +249,161 @@ export const GSCDashboardPanel = ({
   
   // Performance by Source expanded state - open by default with WEB selected
   const [showSourceDetails, setShowSourceDetails] = useState(true);
+  
+  // Helper functions for GSC verification
+  const getMetaTag = (token?: string) => 
+    `<meta name="google-site-verification" content="${token || gscSetupState.token || 'YOUR_TOKEN'}" />`;
+  const getDNSRecord = (token?: string) => 
+    `google-site-verification=${token || gscSetupState.token || 'YOUR_TOKEN'}`;
+  
+  const copyMetaTag = async () => {
+    await navigator.clipboard.writeText(getMetaTag());
+    setCopiedMeta(true);
+    setTimeout(() => setCopiedMeta(false), 2000);
+    toast({ title: "Copied!", description: "Meta tag copied to clipboard" });
+  };
+  
+  const copyDNSRecord = async () => {
+    await navigator.clipboard.writeText(getDNSRecord());
+    setCopiedDNS(true);
+    setTimeout(() => setCopiedDNS(false), 2000);
+    toast({ title: "Copied!", description: "DNS record copied to clipboard" });
+  };
+  
+  // GSC verification handlers
+  const handleSelectVerificationMethod = async (method: VerificationMethod) => {
+    if (!accessToken || !externalSelectedSite) {
+      toast({
+        title: "Authentication Required",
+        description: "Please connect your Google account first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const siteUrl = `https://${normalizeGscDomain(externalSelectedSite)}/`;
+    setGscSetupState(prev => ({ ...prev, selectedMethod: method, isLoading: true, error: null }));
+
+    try {
+      // First, add the site to GSC
+      console.log(`[GSC Panel] Adding site: ${siteUrl}`);
+      const addResult = await supabase.functions.invoke("search-console", {
+        body: { action: 'addSite', accessToken, siteUrl },
+      });
+
+      if (addResult.error) {
+        throw new Error(addResult.error.message || "Failed to add site");
+      }
+
+      // Now get the verification token
+      console.log(`[GSC Panel] Getting token for method: ${method}`);
+      const tokenResult = await supabase.functions.invoke("search-console", {
+        body: { action: 'getVerificationToken', accessToken, siteUrl, verificationType: method },
+      });
+
+      if (tokenResult.error || !tokenResult.data?.success) {
+        throw new Error(tokenResult.data?.error || tokenResult.error?.message || "Failed to get verification token");
+      }
+
+      setGscSetupState(prev => ({
+        ...prev,
+        step: 'show-token',
+        token: tokenResult.data.token,
+        isLoading: false,
+      }));
+
+      toast({
+        title: "Site Added to Search Console!",
+        description: `Now add the verification code to your ${method === 'META' ? 'website' : method === 'DNS_TXT' ? 'DNS settings' : 'Google Analytics'}`,
+      });
+    } catch (err) {
+      console.error("[GSC Panel] Error:", err);
+      setGscSetupState(prev => ({
+        ...prev,
+        error: err instanceof Error ? err.message : "Failed to setup verification",
+        isLoading: false,
+      }));
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to setup verification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleVerifySite = async () => {
+    if (!accessToken || !gscSetupState.selectedMethod || !externalSelectedSite) {
+      return;
+    }
+
+    const siteUrl = `https://${normalizeGscDomain(externalSelectedSite)}/`;
+    setGscSetupState(prev => ({ ...prev, step: 'verifying', isLoading: true, error: null }));
+
+    try {
+      console.log(`[GSC Panel] Verifying site: ${siteUrl} with method: ${gscSetupState.selectedMethod}`);
+      const verifyResult = await supabase.functions.invoke("search-console", {
+        body: { 
+          action: 'verifySite', 
+          accessToken, 
+          siteUrl,
+          verificationType: gscSetupState.selectedMethod,
+        },
+      });
+
+      if (verifyResult.error || !verifyResult.data?.success) {
+        throw new Error(verifyResult.data?.error || verifyResult.error?.message || "Verification failed");
+      }
+
+      if (verifyResult.data.verified) {
+        setGscSetupState(prev => ({ ...prev, step: 'verified', isLoading: false }));
+        toast({
+          title: "✓ Domain Verified!",
+          description: `${normalizeGscDomain(externalSelectedSite)} is now verified in Google Search Console`,
+        });
+        
+        // Trigger refresh to reload sites
+        setTimeout(() => {
+          fetchSites();
+        }, 1500);
+      } else {
+        throw new Error("Verification not confirmed. Please ensure you've added the verification code correctly.");
+      }
+    } catch (err) {
+      console.error("[GSC Panel] Verify error:", err);
+      setGscSetupState(prev => ({
+        ...prev,
+        step: 'show-token',
+        error: err instanceof Error ? err.message : "Verification failed",
+        isLoading: false,
+      }));
+      toast({
+        title: "Verification Failed",
+        description: err instanceof Error ? err.message : "Please ensure you've added the verification code correctly",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetVerification = () => {
+    setGscSetupState({
+      step: 'choose-method',
+      selectedMethod: null,
+      token: null,
+      error: null,
+      isLoading: false,
+    });
+  };
+  
+  // Reset GSC setup state when domain changes
+  useEffect(() => {
+    setGscSetupState({
+      step: 'choose-method',
+      selectedMethod: null,
+      token: null,
+      error: null,
+      isLoading: false,
+    });
+  }, [externalSelectedSite]);
   
   // Check if the externally selected site is in GSC
   const isExternalSiteInGsc = useMemo(() => {
@@ -1327,42 +1500,228 @@ export const GSCDashboardPanel = ({
         </CardHeader>
         
         <CardContent className="relative z-10 space-y-3 pt-0 px-4 pb-4">
-          {/* Domain Not in GSC Warning */}
+{/* Domain Not in GSC - Inline Verification Wizard */}
           {isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-amber-500 mb-1">
-                    Domain Not Found in Search Console
-                  </h4>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    <span className="font-medium">{normalizeGscDomain(externalSelectedSite)}</span> is not connected to your Google Search Console. 
-                    Add it to start tracking search performance.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      size="sm" 
-                      className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-white"
-                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${normalizeGscDomain(externalSelectedSite)}`, '_blank')}
+            <div className="space-y-3">
+              <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-foreground mb-0.5">
+                      {gscSetupState.step === 'verified' ? 'Domain Verified!' : 'Verify Domain in Google Search Console'}
+                    </h4>
+                    <p className="text-[10px] text-muted-foreground">
+                      <span className="text-amber-400 font-medium">{normalizeGscDomain(externalSelectedSite)}</span> must be verified in GSC to track search performance
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 1: Choose Verification Method */}
+                {gscSetupState.step === 'choose-method' && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Choose your preferred verification method:
+                    </p>
+
+                    {/* Method Options */}
+                    <div className="space-y-2">
+                      {/* Meta Tag Option */}
+                      <button
+                        onClick={() => handleSelectVerificationMethod('META')}
+                        disabled={gscSetupState.isLoading}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                          <Code className="w-4 h-4 text-cyan-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-foreground">HTML Meta Tag</span>
+                            <Badge className="text-[8px] py-0 h-3.5 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Recommended</Badge>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">Add a meta tag to your homepage</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
+                      </button>
+
+                      {/* DNS TXT Option */}
+                      <button
+                        onClick={() => handleSelectVerificationMethod('DNS_TXT')}
+                        disabled={gscSetupState.isLoading}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-violet-400" />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-xs font-medium text-foreground block">DNS TXT Record</span>
+                          <p className="text-[10px] text-muted-foreground">Add a TXT record to your DNS settings</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+                      </button>
+
+                      {/* Google Analytics Option */}
+                      <button
+                        onClick={() => handleSelectVerificationMethod('ANALYTICS')}
+                        disabled={gscSetupState.isLoading}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-all text-left group disabled:opacity-50"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                          <BarChart3 className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-xs font-medium text-foreground block">Google Analytics</span>
+                          <p className="text-[10px] text-muted-foreground">Use existing GA tracking code</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-amber-400 transition-colors" />
+                      </button>
+                    </div>
+
+                    {gscSetupState.isLoading && (
+                      <div className="flex items-center justify-center gap-2 p-3">
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                        <span className="text-xs text-muted-foreground">Adding site to Search Console...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Step 2: Show Token and Instructions */}
+                {gscSetupState.step === 'show-token' && (
+                  <div className="space-y-3">
+                    {/* Back Button */}
+                    <button
+                      onClick={handleResetVerification}
+                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Add Domain Property
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="h-7 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
-                      onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=https://${normalizeGscDomain(externalSelectedSite)}/`, '_blank')}
+                      <ChevronRight className="w-3 h-3 rotate-180" />
+                      Change method
+                    </button>
+
+                    {/* Method-specific instructions */}
+                    {gscSetupState.selectedMethod === 'META' && (
+                      <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Code className="w-4 h-4 text-cyan-400" />
+                          <span className="text-xs font-medium text-cyan-400">Add this meta tag to your &lt;head&gt;</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-[9px] font-mono text-cyan-300 bg-zinc-900/80 p-2 rounded overflow-x-auto">
+                            {getMetaTag()}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 hover:bg-cyan-500/10"
+                            onClick={copyMetaTag}
+                          >
+                            {copiedMeta ? (
+                              <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {gscSetupState.selectedMethod === 'DNS_TXT' && (
+                      <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-4 h-4 text-violet-400" />
+                          <span className="text-xs font-medium text-violet-400">Add this TXT record to your DNS</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 text-[9px] font-mono text-violet-300 bg-zinc-900/80 p-2 rounded overflow-x-auto">
+                            {getDNSRecord()}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 hover:bg-violet-500/10"
+                            onClick={copyDNSRecord}
+                          >
+                            {copiedDNS ? (
+                              <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground mt-2">
+                          DNS changes may take up to 72 hours to propagate
+                        </p>
+                      </div>
+                    )}
+
+                    {gscSetupState.selectedMethod === 'ANALYTICS' && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <BarChart3 className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-medium text-amber-400">Google Analytics Verification</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Ensure Google Analytics tracking code is installed on your homepage. 
+                          The verification will use your existing GA implementation.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Error Display */}
+                    {gscSetupState.error && (
+                      <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <p className="text-[10px] text-red-400">{gscSetupState.error}</p>
+                      </div>
+                    )}
+
+                    {/* Verify Button */}
+                    <Button
+                      size="sm"
+                      className="h-9 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white w-full"
+                      onClick={handleVerifySite}
+                      disabled={gscSetupState.isLoading}
                     >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Add URL Prefix
+                      {gscSetupState.isLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
+                      )}
+                      Verify Ownership
                     </Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    After adding, click Refresh below to sync your data.
-                  </p>
-                </div>
+                )}
+
+                {/* Step 3: Verifying */}
+                {gscSetupState.step === 'verifying' && (
+                  <div className="flex flex-col items-center justify-center py-6 gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                    <p className="text-xs text-muted-foreground">Verifying domain ownership...</p>
+                  </div>
+                )}
+
+                {/* Step 4: Verified */}
+                {gscSetupState.step === 'verified' && (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-green-400">Domain Verified!</h4>
+                        <p className="text-[10px] text-muted-foreground">
+                          {normalizeGscDomain(externalSelectedSite)} is now verified. Loading data...
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-green-500" />
+                      <span className="text-[10px] text-muted-foreground">Refreshing Search Console data...</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
