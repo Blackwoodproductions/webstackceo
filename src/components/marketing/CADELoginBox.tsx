@@ -8,7 +8,7 @@ import {
   Search, Link2, TrendingUp, Target, Layers, Bot, Newspaper,
   Wand2, ListChecks,
   CheckCircle, XCircle, Timer, Rocket, PenTool, BookOpen,
-  Upload, Trash2, Settings, Copy, Send, Lock
+  Upload, Trash2, Settings, Copy, Send, Lock, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -641,63 +641,142 @@ export const CADELoginBox = ({ domain }: CADELoginBoxProps) => {
     );
   }
 
-  // Domain doesn't have subscription
+  // Domain doesn't have subscription - Show CADE Sales Pitch
   if (domainHasSubscription === false) {
     return (
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
-        <div className="relative p-8 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-red-500/10 border border-amber-500/30 overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-amber-500/20 to-transparent rounded-full blur-3xl" />
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <Card className="border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <motion.div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+          </div>
           
-          <div className="relative z-10">
-            <div className="flex items-center gap-5 mb-6">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-xl shadow-amber-500/30">
-                  <Lock className="w-8 h-8 text-white" />
+          <CardHeader className="relative z-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
+                >
+                  <Sparkles className="w-7 h-7 text-white" />
+                </motion.div>
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    Automate Your Content with CADE
+                    <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
+                      AI-Powered
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="mt-1 max-w-xl">
+                    CADE automatically generates SEO-optimized articles, FAQs, and landing pages that match your website's native CSS and inner-link to your money pages.
+                  </CardDescription>
                 </div>
               </div>
-              <div>
-                <h3 className="text-2xl font-bold flex items-center gap-3">
-                  CADE Subscription Required
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">This domain doesn't have an active CADE subscription</p>
+
+              <div className="flex flex-col items-center p-4 rounded-xl bg-background/50 border border-violet-500/20 min-w-[200px]">
+                <p className="text-sm text-muted-foreground">Starting at</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-violet-500">$99</span>
+                  <span className="text-sm text-muted-foreground">/month</span>
+                </div>
+                <Badge variant="outline" className="mt-2 text-violet-500 border-violet-500/30">
+                  Includes Social Signals
+                </Badge>
               </div>
             </div>
-
-            <div className="p-4 rounded-xl bg-background/50 border border-border mb-6">
-              <div className="flex items-center gap-3 mb-3">
-                <Globe className="w-5 h-5 text-foreground" />
-                <span className="font-semibold">{domain}</span>
+          </CardHeader>
+          
+          <CardContent className="relative z-10 space-y-6">
+            <div>
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-violet-500" />
+                How CADE Automates Content Creation
+              </h4>
+              
+              <div className="grid md:grid-cols-5 gap-3">
+                {[
+                  { step: '1', title: 'Analyze Competitors', desc: 'Reverse-engineer top 5 rankings', icon: Target },
+                  { step: '2', title: 'Generate Content', desc: '7 article types available', icon: FileText },
+                  { step: '3', title: 'Match Your CSS', desc: 'Native website styling', icon: Settings },
+                  { step: '4', title: 'Add Inner Links', desc: 'Connect to money pages', icon: Link2 },
+                  { step: '5', title: 'Publish', desc: 'Auto-deploy to your CMS', icon: Rocket },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.step}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="relative p-4 rounded-xl bg-background/30 border border-violet-500/10"
+                  >
+                    <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                      {item.step}
+                    </div>
+                    <item.icon className="w-5 h-5 text-violet-500 mb-2" />
+                    <p className="font-medium text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    
+                    {i < 4 && (
+                      <motion.div
+                        className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ChevronRight className="w-4 h-4 text-violet-400" />
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
               </div>
-              <p className="text-sm text-muted-foreground">
-                To use CADE's AI content automation features for this domain, a subscription is required. 
-                Contact your account manager or upgrade your plan to include this domain.
-              </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { icon: FileText, label: "7 Article Types", color: "text-muted-foreground" },
-                { icon: HelpCircle, label: "FAQ Generation", color: "text-muted-foreground" },
-                { icon: Link2, label: "Smart Linking", color: "text-muted-foreground" },
-                { icon: Target, label: "Competitor Intel", color: "text-muted-foreground" },
-              ].map((f, i) => (
-                <div key={i} className="flex items-center gap-2 p-3 rounded-xl bg-muted/30 border border-border/50 opacity-50">
-                  <f.icon className={`w-4 h-4 ${f.color}`} />
-                  <span className="text-xs font-medium text-muted-foreground">{f.label}</span>
-                </div>
+                { icon: FileText, title: '7 Article Types', desc: 'Blog, pillar, how-to & more' },
+                { icon: HelpCircle, title: 'FAQ Generation', desc: 'Automated Q&A content' },
+                { icon: Link2, title: 'Smart Inner Linking', desc: 'Connect to core pages' },
+                { icon: Target, title: 'Competitor Intel', desc: 'Outrank competitors' },
+              ].map((benefit, i) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  className="p-4 rounded-xl bg-background/30 border border-violet-500/10 text-center"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center mx-auto mb-2">
+                    <benefit.icon className="w-5 h-5 text-violet-500" />
+                  </div>
+                  <h4 className="font-semibold text-sm">{benefit.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">{benefit.desc}</p>
+                </motion.div>
               ))}
             </div>
 
+            {/* Domain info box */}
+            <div className="p-4 rounded-xl bg-background/50 border border-violet-500/20">
+              <div className="flex items-center gap-3 mb-2">
+                <Globe className="w-5 h-5 text-violet-400" />
+                <span className="font-semibold">{domain}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This domain doesn't have an active CADE subscription. Contact your account manager to add this domain to your plan.
+              </p>
+            </div>
+
             {subscription && (
-              <div className="mt-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/30">
+              <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/30">
                 <p className="text-sm font-medium text-violet-400 mb-2">Current Plan: {subscription.plan || "Unknown"}</p>
                 <p className="text-xs text-muted-foreground">
                   Domains: {subscription.domains_used || 0} / {subscription.domains_limit || "∞"}
                 </p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </motion.div>
     );
   }
