@@ -283,24 +283,24 @@ export const GAInlineOnboardingWizard = ({
             )}
           </div>
         ) : (
-          /* Domain not found in any property - Show add to GA prompt */
+          /* Domain not found - Instruct to add to GSC first */
           <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30 text-center">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
               <Globe className="w-5 h-5 text-amber-500" />
             </div>
             <h4 className="text-sm font-semibold text-foreground mb-1">
-              Domain Not Found
+              Add Domain to Google Search Console First
             </h4>
             <p className="text-xs text-muted-foreground mb-3">
-              <span className="text-amber-400 font-medium">{normalizedDomain}</span> is not linked to any GA4 property in your account.
+              To track <span className="text-amber-400 font-medium">{normalizedDomain}</span> in Google Analytics, you must first verify it in Google Search Console.
             </p>
             <div className="flex flex-col gap-2">
               <Button
                 size="sm"
                 className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white w-full"
-                onClick={() => window.open("https://analytics.google.com/analytics/web/#/admin/create-property", "_blank")}
+                onClick={() => window.open(`https://search.google.com/search-console/welcome?resource_id=sc-domain:${normalizedDomain}`, "_blank")}
               >
-                Create GA4 Property for {normalizedDomain}
+                Add {normalizedDomain} to Search Console
               </Button>
               <Button
                 size="sm"
@@ -310,7 +310,7 @@ export const GAInlineOnboardingWizard = ({
                 disabled={isRefreshing}
               >
                 <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh After Adding
+                Refresh After Verifying
               </Button>
             </div>
           </div>
