@@ -3,7 +3,7 @@ import {
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save,
   Eye, ChevronUp, FileText, Link2, Hash, 
-  Sparkles, Maximize2, Minimize2, X, PanelLeftClose, PanelLeft
+  Sparkles, Maximize2, Minimize2, X, PanelLeftClose, PanelLeft, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,10 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BronKeyword } from "@/hooks/use-bron-api";
+import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
 
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
+  serpReports?: BronSerpReport[];
   selectedDomain?: string;
   isLoading: boolean;
   onRefresh: () => void;
@@ -41,6 +42,31 @@ interface BRONKeywordsTabProps {
   onUpdate: (keywordId: string, data: Record<string, unknown>) => Promise<boolean>;
   onDelete: (keywordId: string) => Promise<boolean>;
   onRestore: (keywordId: string) => Promise<boolean>;
+}
+
+// Find matching SERP report for a keyword
+function findSerpForKeyword(keywordText: string, serpReports: BronSerpReport[]): BronSerpReport | null {
+  if (!keywordText || !serpReports.length) return null;
+  const normalizedKeyword = keywordText.toLowerCase().trim();
+  return serpReports.find(r => 
+    r.keyword?.toLowerCase().trim() === normalizedKeyword
+  ) || null;
+}
+
+// Parse position value from string/number
+function getPosition(val?: string | number): number | null {
+  if (val === undefined || val === null) return null;
+  const num = typeof val === 'string' ? parseInt(val, 10) : val;
+  return isNaN(num) || num === 0 ? null : num;
+}
+
+// Get position badge styling
+function getPositionStyle(position: number | null): { bg: string; text: string; label: string } {
+  if (position === null) return { bg: 'bg-muted/50', text: 'text-muted-foreground', label: '—' };
+  if (position <= 3) return { bg: 'bg-emerald-500/20 border-emerald-500/30', text: 'text-emerald-400', label: String(position) };
+  if (position <= 10) return { bg: 'bg-blue-500/20 border-blue-500/30', text: 'text-blue-400', label: String(position) };
+  if (position <= 20) return { bg: 'bg-amber-500/20 border-amber-500/30', text: 'text-amber-400', label: String(position) };
+  return { bg: 'bg-red-500/20 border-red-500/30', text: 'text-red-400', label: String(position) };
 }
 
 // Check if keyword is a supporting page (child)
@@ -164,6 +190,7 @@ function getMetaDescQuality(desc: string): { score: 'good' | 'warning' | 'poor';
 
 export const BRONKeywordsTab = ({
   keywords,
+  serpReports = [],
   selectedDomain,
   isLoading,
   onRefresh,
@@ -304,6 +331,15 @@ export const BRONKeywordsTab = ({
     const metaDescQuality = getMetaDescQuality(kw.metadescription || '');
     const hasLinks = !!(kw.linkouturl);
 
+    // SERP ranking data for this keyword
+    const keywordText = getKeywordDisplayText(kw);
+    const serpData = findSerpForKeyword(keywordText, serpReports);
+    const googlePos = getPosition(serpData?.google);
+    const bingPos = getPosition(serpData?.bing);
+    const yahooPos = getPosition(serpData?.yahoo);
+    const duckPos = getPosition(serpData?.duck);
+    const hasRankings = googlePos !== null || bingPos !== null || yahooPos !== null || duckPos !== null;
+
     const scoreColor = (score: 'good' | 'warning' | 'poor') => ({
       good: 'text-emerald-400',
       warning: 'text-amber-400',
@@ -414,6 +450,38 @@ export const BRONKeywordsTab = ({
                     <div className="flex items-center gap-1 text-xs text-cyan-400">
                       <Link2 className="w-3 h-3" />
                       <span>Links</span>
+                    </div>
+                  </>
+                )}
+
+                {/* SERP Rankings Section */}
+                {hasRankings && (
+                  <>
+                    <div className="w-px h-3 bg-border/50" />
+                    <div className="flex items-center gap-1.5">
+                      <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+                      <div className="flex items-center gap-1">
+                        {googlePos !== null && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text}`}>
+                            🟢 {googlePos}
+                          </span>
+                        )}
+                        {bingPos !== null && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text}`}>
+                            🔵 {bingPos}
+                          </span>
+                        )}
+                        {yahooPos !== null && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text}`}>
+                            🟣 {yahooPos}
+                          </span>
+                        )}
+                        {duckPos !== null && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text}`}>
+                            🟠 {duckPos}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
