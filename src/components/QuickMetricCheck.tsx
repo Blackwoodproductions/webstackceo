@@ -5,8 +5,27 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { trackToolInteractionGlobal, getGlobalSessionId } from "@/hooks/use-visitor-tracking";
+import { getCurrentSessionId } from "@/components/VisitorTrackingProvider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Track tool interaction helper
+const trackToolInteractionGlobal = async (
+  toolName: string,
+  toolType: string,
+  metadata: object = {}
+) => {
+  try {
+    await supabase.from('tool_interactions').insert([{
+      session_id: getCurrentSessionId(),
+      tool_name: toolName,
+      tool_type: toolType,
+      page_path: window.location.pathname,
+      metadata: metadata as any,
+    }]);
+  } catch (error) {
+    console.error('Failed to track tool interaction:', error);
+  }
+};
 import {
   Search,
   Link2,

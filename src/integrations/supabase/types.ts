@@ -507,6 +507,13 @@ export type Database = {
             foreignKeyName: "form_submissions_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "live_visitors"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "form_submissions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "visitor_sessions"
             referencedColumns: ["session_id"]
           },
@@ -864,6 +871,13 @@ export type Database = {
             foreignKeyName: "page_views_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "live_visitors"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "page_views_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "visitor_sessions"
             referencedColumns: ["session_id"]
           },
@@ -1028,6 +1042,13 @@ export type Database = {
             foreignKeyName: "tool_interactions_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
+            referencedRelation: "live_visitors"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "tool_interactions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
             referencedRelation: "visitor_sessions"
             referencedColumns: ["session_id"]
           },
@@ -1119,9 +1140,58 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dashboard_stats: {
+        Row: {
+          stat_date: string | null
+          total_page_views: number | null
+          unique_pages: number | null
+          unique_sessions: number | null
+        }
+        Relationships: []
+      }
+      funnel_stats: {
+        Row: {
+          closed_leads: number | null
+          engaged_visitors: number | null
+          qualified_leads: number | null
+          total_leads: number | null
+          total_visitors: number | null
+        }
+        Relationships: []
+      }
+      live_visitors: {
+        Row: {
+          current_page: string | null
+          first_page: string | null
+          last_activity_at: string | null
+          referrer: string | null
+          session_id: string | null
+          started_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          current_page?: never
+          first_page?: string | null
+          last_activity_at?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          started_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          current_page?: never
+          first_page?: string | null
+          last_activity_at?: string | null
+          referrer?: string | null
+          session_id?: string | null
+          started_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cleanup_old_analytics: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
