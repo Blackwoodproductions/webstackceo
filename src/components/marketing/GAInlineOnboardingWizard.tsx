@@ -685,61 +685,44 @@ export const GAInlineOnboardingWizard = ({
       />
       
       <div className="relative z-10 p-4">
-        {/* Sleek Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        {/* Compact Status Header - Single line with all info */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/30">
                 <img 
                   src={`https://www.google.com/s2/favicons?domain=${normalizedDomain}&sz=32`}
                   alt={normalizedDomain}
-                  className="w-5 h-5 object-contain"
+                  className="w-4 h-4 object-contain"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                   }}
                 />
-                <Globe className="w-5 h-5 text-amber-500 fallback-icon hidden" />
+                <Globe className="w-4 h-4 text-amber-500 fallback-icon hidden" />
               </div>
-              <motion.div 
-                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-foreground">Link Domain</span>
-              <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
-                {normalizedDomain}
-              </Badge>
-              <span className="text-[10px] text-muted-foreground">
-                — {hasMatchingProperty ? "Select a property to connect" : "Domain not found in Google Search Console"}
-              </span>
-            </div>
+            <span className="text-xs font-medium text-foreground">Link Domain</span>
+            <Badge className="text-[9px] py-0 h-4 bg-amber-500/20 text-amber-400 border-amber-500/30">
+              {normalizedDomain}
+            </Badge>
+            <span className={`text-[10px] ${hasMatchingProperty ? 'text-green-400' : 'text-muted-foreground'}`}>
+              — {hasMatchingProperty ? "Property found! Select below" : "Not found in GSC"}
+            </span>
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="h-7 text-[10px] hover:bg-amber-500/10 gap-1"
-            >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            {/* Collapse/Expand Toggle - Only show when domain is NOT found (needs GSC verification) */}
+            {/* Collapse/Expand Toggle - Only show when domain is NOT found */}
             {!hasMatchingProperty && (
               <button
                 onClick={handleTogglePanelCollapse}
-                className="p-2 rounded-lg hover:bg-amber-500/20 transition-colors"
-                aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
-                title={isPanelCollapsed ? "Expand" : "Collapse"}
+                className="p-1.5 rounded-lg hover:bg-amber-500/20 transition-colors"
+                aria-label={isPanelCollapsed ? "Expand" : "Collapse"}
+                title={isPanelCollapsed ? "Expand setup" : "Collapse"}
               >
                 {isPanelCollapsed ? (
-                  <Maximize2 className="w-4 h-4 text-amber-400" />
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
                 ) : (
-                  <Minimize2 className="w-4 h-4 text-muted-foreground hover:text-amber-400" />
+                  <Minimize2 className="w-3.5 h-3.5 text-muted-foreground hover:text-amber-400" />
                 )}
               </button>
             )}
@@ -754,7 +737,7 @@ export const GAInlineOnboardingWizard = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 overflow-hidden"
+              className="overflow-hidden"
             >
         {hasMatchingProperty ? (
           <div className="space-y-3">
