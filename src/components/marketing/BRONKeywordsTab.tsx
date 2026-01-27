@@ -256,7 +256,7 @@ export const BRONKeywordsTab = ({
           className={`
             flex items-center gap-4 py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer
             ${isChild ? 'pl-12' : ''}
-            ${expanded ? 'bg-card/95 backdrop-blur-sm sticky top-[41px] z-[5]' : ''}
+            ${expanded ? 'bg-primary/5' : ''}
           `}
           onClick={() => expandKeyword(kw)}
         >
@@ -475,7 +475,7 @@ export const BRONKeywordsTab = ({
                       Live Preview
                     </Label>
                     <div 
-                      className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 rounded-lg border border-border bg-white text-black"
+                      className="p-4 rounded-lg border border-border bg-white text-black"
                       style={{ fontFamily: 'Georgia, serif' }}
                     >
                       {/* Preview Header */}
