@@ -1640,6 +1640,18 @@ const MarketingDashboard = () => {
     };
   }, [pageFilter, leads, pageViews, toolInteractions, sessions]);
 
+  // Transform sessions for ChatSidebar - MUST be before early returns (React hooks rule)
+  const chatVisitors = useMemo(() => {
+    return sessions.map(s => ({
+      session_id: s.session_id,
+      current_page: pageViews.find(pv => pv.session_id === s.session_id)?.page_path,
+      first_page: s.first_page || undefined,
+      started_at: s.started_at,
+      last_activity_at: s.last_activity_at,
+      referrer: s.referrer || undefined,
+    }));
+  }, [sessions, pageViews]);
+
   // Redirect to auth if not authenticated - using useEffect for proper navigation
   useEffect(() => {
     if (!isLoading && (!user || !session)) {
@@ -1692,18 +1704,6 @@ const MarketingDashboard = () => {
   ];
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
-
-  // Transform sessions for ChatSidebar
-  const chatVisitors = useMemo(() => {
-    return sessions.map(s => ({
-      session_id: s.session_id,
-      current_page: pageViews.find(pv => pv.session_id === s.session_id)?.page_path,
-      first_page: s.first_page || undefined,
-      started_at: s.started_at,
-      last_activity_at: s.last_activity_at,
-      referrer: s.referrer || undefined,
-    }));
-  }, [sessions, pageViews]);
 
   return (
     <div className="min-h-screen bg-background relative animate-fade-in overflow-hidden flex">
