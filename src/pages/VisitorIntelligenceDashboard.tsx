@@ -2062,7 +2062,7 @@ const MarketingDashboard = () => {
             willChange: 'opacity'
           }}
         />
-        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl overflow-hidden" style={{ contain: 'layout' }}>
+        <div className="relative flex min-h-[calc(100vh-180px)] bg-gradient-to-br from-card via-card/98 to-primary/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl overflow-hidden">
         {/* Left Sidebar - Only show when tracking is installed or no GSC site is selected */}
         {shouldShowViPanels && (
           <>
@@ -2161,7 +2161,7 @@ const MarketingDashboard = () => {
         )}
 
         {/* Main Content Area - GPU accelerated to prevent reflow during sidebar transitions */}
-        <main className="flex-1 p-6 overflow-auto" style={{ contain: 'layout style', willChange: 'auto' }}>
+        <main className="flex-1 p-6 overflow-auto">
           {/* No Tracking Installed Prompt - Show when GSC domain selected but no tracking */}
           {shouldShowInstallPrompt && (
             <div className="mb-4 animate-fade-in">
@@ -2750,16 +2750,11 @@ f.parentNode.insertBefore(j,f);
 
         </main>
 
-        {/* Right Sidebar - Chat Panel - GPU accelerated to prevent layout thrashing */}
+        {/* Right Sidebar - Chat Panel */}
         <div 
-          className={`flex-shrink-0 border-l border-border bg-card/50 ${chatPanelOpen ? 'w-64' : 'w-14'}`}
-          style={{ 
-            contain: 'layout style paint',
-            willChange: chatPanelOpen ? 'auto' : 'width',
-            transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
+          className={`flex-shrink-0 border-l border-border bg-card/50 transition-[width] duration-200 ease-out ${chatPanelOpen ? 'w-64' : 'w-14'}`}
         >
-          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col" style={{ contain: 'layout' }}>
+          <div className="sticky top-[52px] h-[calc(100vh-140px)] flex flex-col overflow-hidden">
             {/* Header with animated icon */}
             <div className="flex flex-col border-b border-border">
               <div 
