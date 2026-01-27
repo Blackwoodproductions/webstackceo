@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocialOAuth } from '@/hooks/use-social-oauth';
 import {
   Twitter, Linkedin, Facebook, Instagram, Youtube, 
   RefreshCw, CheckCircle, AlertCircle, ExternalLink,
@@ -91,6 +92,7 @@ const platformConfig = {
 
 export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { user } = useAuth();
+  const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [profiles, setProfiles] = useState<SocialProfile[]>([]);
@@ -98,13 +100,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const [isCheckingCade, setIsCheckingCade] = useState(false);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
-
-  // Simulate connected accounts (in real implementation, this would come from OAuth)
-  const [connectedAccounts, setConnectedAccounts] = useState<Record<string, boolean>>({
-    facebook: false,
-    twitter: false,
-    linkedin: false,
-  });
 
   // Check CADE subscription
   const checkCadeSubscription = useCallback(async () => {
@@ -146,9 +141,9 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
       const socialLinks = data?.socialLinks || {};
       
       const detectedProfiles: SocialProfile[] = [
-        { platform: 'facebook', url: socialLinks.facebook, detected: !!socialLinks.facebook, connected: connectedAccounts.facebook },
-        { platform: 'twitter', url: socialLinks.twitter, detected: !!socialLinks.twitter, connected: connectedAccounts.twitter },
-        { platform: 'linkedin', url: socialLinks.linkedin, detected: !!socialLinks.linkedin, connected: connectedAccounts.linkedin },
+        { platform: 'facebook', url: socialLinks.facebook, detected: !!socialLinks.facebook, connected: connections.facebook.connected },
+        { platform: 'twitter', url: socialLinks.twitter, detected: !!socialLinks.twitter, connected: connections.twitter.connected },
+        { platform: 'linkedin', url: socialLinks.linkedin, detected: !!socialLinks.linkedin, connected: connections.linkedin.connected },
         { platform: 'instagram', url: socialLinks.instagram, detected: !!socialLinks.instagram, connected: false },
         { platform: 'youtube', url: socialLinks.youtube, detected: !!socialLinks.youtube, connected: false },
         { platform: 'tiktok', url: socialLinks.tiktok, detected: !!socialLinks.tiktok, connected: false },
@@ -171,46 +166,17 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     } finally {
       setIsScanning(false);
     }
-  }, [selectedDomain, connectedAccounts]);
+  }, [selectedDomain, connections]);
 
-  // OAuth connection handlers
-  const connectPlatform = useCallback(async (platform: 'facebook' | 'twitter' | 'linkedin') => {
-    // In a real implementation, this would trigger OAuth flow
-    // For now, we'll show a popup explaining the feature
-    
-    const oauthUrls: Record<string, string> = {
-      facebook: 'https://www.facebook.com/v18.0/dialog/oauth',
-      twitter: 'https://twitter.com/i/oauth2/authorize',
-      linkedin: 'https://www.linkedin.com/oauth/v2/authorization',
-    };
-    
-    // Open OAuth popup (simulated - in production would use proper OAuth)
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    toast.info(`${platformConfig[platform].name} OAuth integration coming soon!`, {
-      description: 'This will allow CADE to post to your social accounts automatically.'
-    });
-    
-    // Simulate successful connection for demo
-    setTimeout(() => {
-      setConnectedAccounts(prev => ({ ...prev, [platform]: true }));
-      setProfiles(prev => prev.map(p => 
-        p.platform === platform ? { ...p, connected: true } : p
-      ));
-      toast.success(`${platformConfig[platform].name} connected successfully!`);
-    }, 1500);
-  }, []);
-
-  const disconnectPlatform = useCallback((platform: string) => {
-    setConnectedAccounts(prev => ({ ...prev, [platform]: false }));
-    setProfiles(prev => prev.map(p => 
-      p.platform === platform ? { ...p, connected: false } : p
-    ));
-    toast.info(`${platformConfig[platform as keyof typeof platformConfig].name} disconnected`);
-  }, []);
+  // Update profiles when connections change
+  useEffect(() => {
+    setProfiles(prev => prev.map(p => {
+      if (p.platform === 'facebook' || p.platform === 'twitter' || p.platform === 'linkedin') {
+        return { ...p, connected: connections[p.platform].connected };
+      }
+      return p;
+    }));
+  }, [connections]);
 
   // Initial scan when domain changes
   useEffect(() => {
@@ -384,7 +350,9 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               {(['facebook', 'twitter', 'linkedin'] as const).map((platform) => {
                 const config = platformConfig[platform];
                 const IconComponent = config.icon;
-                const isConnected = connectedAccounts[platform];
+                const connection = connections[platform];
+                const isConnected = connection.connected;
+                const isPlatformConnecting = isConnecting === platform;
                 const profile = profiles.find(p => p.platform === platform);
                 
                 return (
@@ -399,14 +367,23 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{config.name}</p>
-                        {isConnected ? (
-                          <p className="text-xs text-emerald-500">Connected</p>
+                        {isConnected && connection.profile ? (
+                          <p className="text-xs text-emerald-500 truncate">
+                            {connection.profile.name || connection.profile.email}
+                          </p>
                         ) : profile?.detected ? (
                           <p className="text-xs text-muted-foreground">Detected on site</p>
                         ) : (
                           <p className="text-xs text-muted-foreground">Not detected</p>
                         )}
                       </div>
+                      {isConnected && connection.profile?.picture && (
+                        <img 
+                          src={connection.profile.picture} 
+                          alt={connection.profile.name || 'Profile'} 
+                          className="w-8 h-8 rounded-full border-2 border-emerald-500/30"
+                        />
+                      )}
                     </div>
                     
                     {isConnected ? (
@@ -417,7 +394,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => disconnectPlatform(platform)}
+                          onClick={() => disconnect(platform)}
                           className="text-muted-foreground hover:text-destructive"
                         >
                           Disconnect
@@ -425,11 +402,21 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                       </div>
                     ) : (
                       <Button 
-                        onClick={() => connectPlatform(platform)}
+                        onClick={() => connect(platform)}
+                        disabled={isPlatformConnecting}
                         className={`w-full bg-gradient-to-r ${config.color} hover:opacity-90`}
                       >
-                        <IconComponent className="w-4 h-4 mr-2" />
-                        Connect {config.name}
+                        {isPlatformConnecting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <IconComponent className="w-4 h-4 mr-2" />
+                            Connect {config.name}
+                          </>
+                        )}
                       </Button>
                     )}
                   </motion.div>
