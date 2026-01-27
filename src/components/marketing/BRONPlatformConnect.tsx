@@ -150,21 +150,7 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
     );
   }
 
-  // Auto-open dashboard in new tab when connected (since iframe won't have cookies)
-  useEffect(() => {
-    if (isConnected && !iframeError) {
-      // Give iframe a chance to load, then check if it shows login page
-      const checkTimer = setTimeout(() => {
-        // Since we can't read cross-origin iframe content, assume cookie issue
-        // and prompt user or auto-open in new tab
-        console.log("[BRON] Connected - dashboard ready");
-      }, 2000);
-      
-      return () => clearTimeout(checkTimer);
-    }
-  }, [isConnected, iframeError]);
-
-  // Connected state - show iframe dashboard
+  // Connected state - show iframe dashboard directly
   if (isConnected) {
     return (
       <motion.div
@@ -199,73 +185,24 @@ export const BRONPlatformConnect = ({ domain, onConnectionComplete }: BRONPlatfo
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(iframeSrc, '_blank')}
-              className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open in New Tab
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              Disconnect
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            Disconnect
+          </Button>
         </div>
 
-        {/* Important: Due to cookie restrictions, open dashboard in new tab */}
-        <div className="flex items-start gap-2 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <Sparkles className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-foreground font-medium mb-2">
-              Your BRON account is connected!
-            </p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Due to browser security restrictions, the dashboard must be opened in a new tab to access your authenticated session.
-            </p>
-            <Button
-              onClick={() => window.open(iframeSrc, '_blank')}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Open BRON Dashboard
-            </Button>
-          </div>
-        </div>
-
-        {/* Dashboard preview (may show login due to cookie restrictions) */}
-        <div className="rounded-xl border border-border/50 overflow-hidden bg-background relative">
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10 p-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 mb-4">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">Dashboard Ready</h3>
-            <p className="text-muted-foreground text-center max-w-md mb-4">
-              You're logged in to BRON. Click below to access your full dashboard with all features.
-            </p>
-            <Button
-              size="lg"
-              onClick={() => window.open(iframeSrc, '_blank')}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-            >
-              <ExternalLink className="w-5 h-5" />
-              Launch Dashboard
-            </Button>
-          </div>
+        {/* Dashboard iframe */}
+        <div className="rounded-xl border border-border/50 overflow-hidden bg-background">
           <iframe
             key={iframeKey}
-            src={iframeSrc}
-            className="w-full min-h-[500px] border-0 opacity-30"
-            title="BRON Dashboard Preview"
+            src="https://dashdev.imagehosting.space/dashboard?tab=analysis"
+            className="w-full min-h-[700px] border-0"
+            title="BRON Dashboard"
             allow="clipboard-write"
-            onError={() => setIframeError(true)}
           />
         </div>
       </motion.div>
