@@ -318,6 +318,34 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     toast.success('GMB data refreshed');
   }, [getStoredConnection, syncGmbData]);
 
+  // Popup to open Google Business Profile creation page
+  const openGmbPopup = useCallback(() => {
+    const width = 600;
+    const height = 700;
+    const left = (window.screenX ?? 0) + (window.outerWidth - width) / 2;
+    const top = (window.screenY ?? 0) + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      'https://business.google.com/create',
+      'CreateGMBBusiness',
+      `popup=yes,width=${width},height=${height},left=${Math.max(0, left)},top=${Math.max(0, top)}`
+    );
+    
+    if (!popup) {
+      toast.error('Popup blocked. Please allow popups for this site and try again.');
+      return;
+    }
+
+    // Poll to detect when popup is closed, then refresh
+    const pollInterval = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollInterval);
+        toast.info('Checking for new listings...');
+        handleRefresh();
+      }
+    }, 1000);
+  }, [handleRefresh]);
+
   const handleDisconnect = useCallback(() => {
     localStorage.removeItem('gmb_access_token');
     localStorage.removeItem('gmb_token_expiry');
@@ -980,10 +1008,28 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                 We couldn't find a Google Business Profile listing for <span className="font-semibold text-foreground">{selectedDomain}</span>. 
                 Add your business to Google Maps to boost local visibility and attract more customers.
               </p>
-              <div className="flex justify-center">
-                <Button onClick={() => setShowOnboarding(true)} className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
+              <div className="flex flex-col items-center gap-4 max-w-sm mx-auto">
+                <Button onClick={() => setShowOnboarding(true)} className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700">
                   <Plus className="w-4 h-4 mr-2" />Add to Google Maps
                 </Button>
+                
+                <div className="flex items-center gap-3 w-full">
+                  <Separator className="flex-1" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <Separator className="flex-1" />
+                </div>
+                
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    You need a Google Business account to add a location. Create one in Google Business Profile, then check for accounts.
+                  </p>
+                  <Button onClick={openGmbPopup} variant="outline" className="w-full bg-gradient-to-r from-blue-500/10 to-green-500/10 border-blue-500/30 hover:border-blue-400/50">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 mr-2" fill="currentColor">
+                      <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" fill="#4285F4"/>
+                    </svg>
+                    Create Business Account (popup)
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
