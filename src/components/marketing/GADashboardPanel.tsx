@@ -1685,13 +1685,11 @@ export const GADashboardPanel = ({
         </div>
         )}
 
-        {/* Engagement Metrics Bar - Enhanced with glassmorphism */}
+        {/* Engagement Metrics Bar - Static for performance */}
         {(isExternalSiteInGA || !externalSelectedSite) && (
-        <motion.div 
+        <div 
           className="relative overflow-hidden bg-gradient-to-r from-orange-500/5 via-amber-500/5 to-yellow-500/5 rounded-xl p-4 border border-orange-500/10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          style={{ contain: "layout" }}
         >
           {/* Subtle grid pattern */}
           <div 
@@ -1700,12 +1698,6 @@ export const GADashboardPanel = ({
               backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
             }}
-          />
-          {/* Shimmer effect */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/5 to-transparent pointer-events-none"
-            animate={{ x: ['-100%', '200%'] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
           />
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-3">
@@ -1725,11 +1717,9 @@ export const GADashboardPanel = ({
                   <span className="font-semibold text-green-400">{metrics ? `${metrics.engagementRate.toFixed(1)}%` : "—"}</span>
                 </div>
                 <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${metrics?.engagementRate || 0}%` }}
-                    transition={{ duration: 1, delay: 0.5 }}
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all duration-500"
+                    style={{ width: `${metrics?.engagementRate || 0}%` }}
                   />
                 </div>
               </div>
@@ -1739,11 +1729,9 @@ export const GADashboardPanel = ({
                   <span className="font-semibold text-amber-400">{metrics ? `${metrics.bounceRate.toFixed(1)}%` : "—"}</span>
                 </div>
                 <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-orange-400 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${metrics?.bounceRate || 0}%` }}
-                    transition={{ duration: 1, delay: 0.6 }}
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-500"
+                    style={{ width: `${metrics?.bounceRate || 0}%` }}
                   />
                 </div>
               </div>
@@ -1753,17 +1741,15 @@ export const GADashboardPanel = ({
                   <span className="font-semibold">{metrics ? metrics.pagesPerSession.toFixed(2) : "—"}</span>
                 </div>
                 <div className="relative h-2 bg-secondary/50 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-violet-400 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((metrics?.pagesPerSession || 0) * 20, 100)}%` }}
-                    transition={{ duration: 1, delay: 0.7 }}
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-violet-400 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min((metrics?.pagesPerSession || 0) * 20, 100)}%` }}
                   />
                 </div>
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
         )}
 
         {/* Sessions Chart - Enhanced */}
