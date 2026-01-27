@@ -42,7 +42,6 @@ import FloatingChatBar from '@/components/marketing/FloatingChatBar';
 import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection, OnPageSEOExtendedSection, GMBExtendedSection, PPCLandingPagesExtendedSection } from '@/components/marketing/ServiceTabExtensions';
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
-
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import { CADELoginBox } from '@/components/marketing/CADELoginBox';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
@@ -71,6 +70,16 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
 import { GMBPanel } from '@/components/marketing/GMBPanel';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
+
+// Import modular dashboard components
+import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
+import { VIDashboardHeader } from '@/components/dashboard/VIDashboardHeader';
+import { VIDashboardTabs, type DashboardTab } from '@/components/dashboard/VIDashboardTabs';
+import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
+
+// Import optimized hooks
+import { useVIAuth } from '@/hooks/use-vi-auth';
+import { useVIChat } from '@/hooks/use-vi-chat';
 
 interface Lead {
   id: string;
