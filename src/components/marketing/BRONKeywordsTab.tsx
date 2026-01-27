@@ -43,39 +43,71 @@ interface BRONKeywordsTabProps {
   onRestore: (keywordId: string) => Promise<boolean>;
 }
 
-// Group keywords by similar prefixes for nesting (supporting pages)
-function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
-  const sorted = [...keywords].sort((a, b) => {
-    const aKey = getKeywordDisplayText(a).toLowerCase();
-    const bKey = getKeywordDisplayText(b).toLowerCase();
-    return aKey.localeCompare(bKey);
-  });
-
-  const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
-  const used = new Set<number | string>();
-
-  for (const kw of sorted) {
-    if (used.has(kw.id)) continue;
-
-    const kwText = getKeywordDisplayText(kw).toLowerCase();
-    const children: BronKeyword[] = [];
-
-    // Find variations (e.g., "Cosmetic Dentistry" matches "Best Cosmetic Dentistry", "Cosmetic Dentist")
-    for (const other of sorted) {
-      if (other.id === kw.id || used.has(other.id)) continue;
-      const otherText = getKeywordDisplayText(other).toLowerCase();
-      
-      // Check if other starts with kw + space (is a variation)
-      if (otherText.startsWith(kwText + ' ') && otherText.length > kwText.length) {
-        children.push(other);
-        used.add(other.id);
-      }
+// Extract core topic from keyword (e.g., "Best Dentist in Port Coquitlam" -> "dentist")
+function extractCoreTopic(text: string): string {
+  const lower = text.toLowerCase();
+  // Remove common location patterns
+  const withoutLocation = lower
+    .replace(/\s+(in|port|coquitlam|vancouver|bc|british columbia)\b/gi, '')
+    .replace(/\s+:\s+.*/g, '') // Remove everything after colon
+    .trim();
+  
+  // Extract core topic keywords
+  const coreTopics = [
+    'dentist', 'dental', 'cosmetic dentistry', 'emergency dental', 
+    'dental implants', 'dental bridges', 'teeth whitening', 'invisalign',
+    'family dentist', 'cdcp insurance', 'molar extraction'
+  ];
+  
+  for (const topic of coreTopics) {
+    if (withoutLocation.includes(topic)) {
+      return topic;
     }
-
-    used.add(kw.id);
-    groups.push({ parent: kw, children });
   }
+  
+  // Fallback: extract first significant words
+  const words = withoutLocation.split(/\s+/).filter(w => 
+    !['best', 'top', 'rated', 'affordable', 'trusted', 'local', 'expert', 'professional', '&', 'and', 'the', 'a'].includes(w)
+  );
+  return words.slice(0, 2).join(' ') || withoutLocation;
+}
 
+// Group keywords by topic similarity
+function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
+  if (keywords.length === 0) return [];
+  
+  // Create topic groups
+  const topicGroups: Map<string, BronKeyword[]> = new Map();
+  
+  for (const kw of keywords) {
+    const text = getKeywordDisplayText(kw);
+    const topic = extractCoreTopic(text);
+    
+    if (!topicGroups.has(topic)) {
+      topicGroups.set(topic, []);
+    }
+    topicGroups.get(topic)!.push(kw);
+  }
+  
+  const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
+  
+  for (const [, kwList] of topicGroups) {
+    // Sort by keyword length (shortest first - likely the main keyword)
+    const sorted = [...kwList].sort((a, b) => {
+      const aLen = getKeywordDisplayText(a).length;
+      const bLen = getKeywordDisplayText(b).length;
+      return aLen - bLen;
+    });
+    
+    const [parent, ...children] = sorted;
+    groups.push({ parent, children });
+  }
+  
+  // Sort groups alphabetically by parent keyword
+  groups.sort((a, b) => 
+    getKeywordDisplayText(a.parent).localeCompare(getKeywordDisplayText(b.parent))
+  );
+  
   return groups;
 }
 
@@ -247,68 +279,79 @@ export const BRONKeywordsTab = ({
     return (
       <motion.div
         key={kw.id}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15 }}
         className={deleted ? 'opacity-50' : ''}
       >
-        {/* Main Row - Click expands inline editor */}
+        {/* Main Row */}
         <div 
           className={`
-            flex items-center gap-4 py-3 px-4 border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer
-            ${isChild ? 'pl-12' : ''}
-            ${expanded ? 'bg-primary/5' : ''}
+            flex items-center py-4 px-6 transition-colors cursor-pointer group
+            ${isChild 
+              ? 'pl-16 bg-card/30 border-l-2 border-l-border/30 hover:border-l-primary/30' 
+              : 'bg-card/60 hover:bg-card/80'
+            }
+            ${expanded ? 'bg-primary/5 border-l-primary' : ''}
+            border-b border-border/30
           `}
           onClick={() => expandKeyword(kw)}
         >
           {/* Expand icon */}
-          <div className="w-6 flex-shrink-0">
-            {expanded ? (
-              <ChevronDown className="w-4 h-4 text-primary" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            )}
+          <div className="w-8 flex-shrink-0">
+            <ChevronRight 
+              className={`w-5 h-5 transition-transform duration-200 ${
+                expanded ? 'rotate-90 text-primary' : 'text-muted-foreground group-hover:text-foreground'
+              }`}
+            />
           </div>
 
           {/* Keyword Name */}
           <div className="flex-1 min-w-0">
-            <span className={`font-medium ${isChild ? 'text-sm text-muted-foreground' : ''}`}>
+            <span className={`
+              ${isChild 
+                ? 'text-[15px] text-muted-foreground group-hover:text-foreground transition-colors' 
+                : 'text-base font-medium text-foreground'
+              }
+            `}>
               {getKeywordDisplayText(kw)}
             </span>
           </div>
 
-          {/* Status */}
-          <div className="w-32 flex-shrink-0">
-            <Badge 
-              className={`
-                text-xs px-3 py-1
-                ${active ? 'bg-blue-500/80 hover:bg-blue-500/80 text-white' : 'bg-muted text-muted-foreground'}
-              `}
-            >
-              {deleted ? 'Deleted' : active ? 'Good' : 'Inactive'}
-            </Badge>
+          {/* Status - only show for parent rows or on hover for children */}
+          <div className={`w-24 flex-shrink-0 ${isChild ? 'opacity-0 group-hover:opacity-100 transition-opacity' : ''}`}>
+            {!isChild && (
+              <Badge 
+                className={`
+                  text-xs px-3 py-1 rounded-full
+                  ${active 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-muted/50 text-muted-foreground border border-border/50'
+                  }
+                `}
+              >
+                {deleted ? 'Deleted' : active ? 'Good' : 'Inactive'}
+              </Badge>
+            )}
           </div>
 
-          {/* Last Edited */}
-          <div className="w-28 flex-shrink-0 text-sm text-muted-foreground">
-            {formatDate(kw.createdDate)}
+          {/* Last Edited - only show for parent rows */}
+          <div className={`w-28 flex-shrink-0 text-sm text-muted-foreground ${isChild ? 'hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity' : ''}`}>
+            {!isChild && formatDate(kw.createdDate)}
           </div>
 
           {/* Action */}
-          <div className="w-20 flex-shrink-0 flex justify-end">
-            {!deleted ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  expandKeyword(kw);
-                }}
-              >
-                <Edit2 className="w-3.5 h-3.5 mr-1" />
-                {expanded ? 'Close' : 'Edit'}
-              </Button>
-            ) : (
+          <div className="w-16 flex-shrink-0 flex justify-end">
+            {!deleted && (
+              <span className={`
+                text-sm flex items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors
+                ${isChild ? 'opacity-0 group-hover:opacity-100' : ''}
+              `}>
+                <Edit2 className="w-4 h-4" />
+                {!isChild && 'Edit'}
+              </span>
+            )}
+            {deleted && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -627,27 +670,34 @@ export const BRONKeywordsTab = ({
       </Card>
 
       {/* Keywords Table */}
-      <Card className="border-border/50 bg-card/50 overflow-hidden">
-        {/* Table Header - Sticky */}
-        <div className="flex items-center gap-4 py-3 px-4 bg-muted/80 backdrop-blur-sm border-b border-border font-medium text-sm text-muted-foreground sticky top-0 z-10">
-          <div className="w-6 flex-shrink-0" />
+      <Card className="border-border/50 bg-card/30 overflow-hidden rounded-xl">
+        {/* Table Header */}
+        <div className="flex items-center py-4 px-6 bg-muted/50 border-b border-border/50 font-medium text-sm text-muted-foreground sticky top-0 z-10">
+          <div className="w-8 flex-shrink-0" />
           <div className="flex-1">Keyword</div>
-          <div className="w-32 flex-shrink-0">Keywords Status</div>
-          <div className="w-28 flex-shrink-0">Last Edited</div>
-          <div className="w-20 flex-shrink-0 text-right">Action</div>
+          <div className="w-24 flex-shrink-0 hidden sm:block">Status</div>
+          <div className="w-28 flex-shrink-0 hidden lg:block">Last Edited</div>
+          <div className="w-16 flex-shrink-0 text-right">Action</div>
         </div>
 
         {/* Keywords List */}
-        <div className="max-h-[600px] overflow-y-auto">
+        <div>
           {groupedKeywords.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {searchQuery ? 'No keywords match your search.' : 'No keywords found for this domain.'}
+            <div className="p-12 text-center text-muted-foreground">
+              <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="text-lg">
+                {searchQuery ? 'No keywords match your search.' : 'No keywords found for this domain.'}
+              </p>
             </div>
           ) : (
             groupedKeywords.map(({ parent, children }) => (
-              <div key={parent.id}>
+              <div key={parent.id} className="group/parent">
                 {renderKeywordRow(parent, false)}
-                {children.map(child => renderKeywordRow(child, true))}
+                {children.length > 0 && (
+                  <div className="bg-card/20">
+                    {children.map(child => renderKeywordRow(child, true))}
+                  </div>
+                )}
               </div>
             ))
           )}
