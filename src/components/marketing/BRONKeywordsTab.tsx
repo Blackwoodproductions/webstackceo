@@ -771,6 +771,23 @@ export const BRONKeywordsTab = ({
     const bingPos = bingData.position;
     const yahooPos = yahooData.position;
     const hasRankings = googlePos !== null || bingPos !== null || yahooPos !== null;
+    
+    // Calculate movement from initial positions (historical comparison)
+    const keywordLower = keywordText.toLowerCase();
+    const initial = initialPositions[keywordLower];
+    const calculateMovement = (currentPos: number | null, initialPos: number | null, apiMovement: number): number => {
+      // If API already provides movement, use it
+      if (apiMovement !== 0) return apiMovement;
+      // Calculate from initial historical position
+      if (currentPos !== null && initialPos !== null) {
+        // Positive = improved (went from lower rank to higher), negative = declined
+        return initialPos - currentPos;
+      }
+      return 0;
+    };
+    const googleMovementValue = calculateMovement(googlePos, initial?.google ?? null, googleData.movement);
+    const bingMovementValue = calculateMovement(bingPos, initial?.bing ?? null, bingData.movement);
+    const yahooMovementValue = calculateMovement(yahooPos, initial?.yahoo ?? null, yahooData.movement);
 
     // Get keyword intent type
     const intent = getKeywordIntent(keywordText);
@@ -809,8 +826,8 @@ export const BRONKeywordsTab = ({
           >
             {/* Fixed Column Layout for Perfect Alignment - spread evenly */}
             <div className="flex items-center justify-between w-full gap-6">
-              {/* Column 1: Page Speed Indicator - 70px (Real Google PageSpeed Data) */}
-              <div className="w-[70px] flex-shrink-0">
+              {/* Column 1: Page Speed Gauge - 70px (Real Google PageSpeed Data) */}
+              <div className="w-[70px] flex-shrink-0 flex justify-center">
                 {(() => {
                   // Build URL for this keyword
                   let url = kw.linkouturl;
@@ -828,35 +845,64 @@ export const BRONKeywordsTab = ({
                   const hasError = pageSpeed?.error && !isUpdating;
                   const score = pageSpeed?.mobileScore || 0;
                   
-                  const getSpeedColor = () => {
-                    if (isLoadingSpeed) return { ring: 'ring-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'text-blue-400' };
-                    if (hasError || score === 0) return { ring: 'ring-muted-foreground/30', bg: 'bg-muted/30', text: 'text-muted-foreground', icon: 'text-muted-foreground' };
-                    if (score >= 90) return { ring: 'ring-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-400' };
-                    if (score >= 50) return { ring: 'ring-amber-500/50', bg: 'bg-amber-500/20', text: 'text-amber-400', icon: 'text-amber-400' };
-                    return { ring: 'ring-red-500/50', bg: 'bg-red-500/20', text: 'text-red-400', icon: 'text-red-400' };
+                  // Circular gauge colors
+                  const getGaugeColor = () => {
+                    if (isLoadingSpeed || hasError || score === 0) return { stroke: 'stroke-muted-foreground/30', text: 'text-muted-foreground', glow: '' };
+                    if (score >= 90) return { stroke: 'stroke-emerald-500', text: 'text-emerald-400', glow: 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]' };
+                    if (score >= 50) return { stroke: 'stroke-amber-500', text: 'text-amber-400', glow: 'drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]' };
+                    return { stroke: 'stroke-red-500', text: 'text-red-400', glow: 'drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]' };
                   };
                   
-                  const colors = getSpeedColor();
+                  const colors = getGaugeColor();
+                  const circumference = 2 * Math.PI * 18; // radius = 18
+                  const progress = hasError || isLoadingSpeed ? 0 : (score / 100);
+                  const strokeDashoffset = circumference * (1 - progress);
                   
                   return (
                     <div 
-                      className={`relative w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`} 
+                      className="relative w-12 h-12 flex items-center justify-center"
                       title={isUpdating ? 'Updating PageSpeed score...' : `PageSpeed Score: ${score}/100 (Mobile)`}
                     >
-                      {/* Updating indicator - rotating border */}
+                      {/* Background circle */}
+                      <svg className="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r="18"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="text-muted/30"
+                        />
+                        {/* Progress arc */}
+                        <circle
+                          cx="22"
+                          cy="22"
+                          r="18"
+                          fill="none"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          className={`${colors.stroke} ${colors.glow} transition-all duration-500`}
+                          strokeDasharray={circumference}
+                          strokeDashoffset={strokeDashoffset}
+                        />
+                      </svg>
+                      
+                      {/* Center content */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        {isLoadingSpeed ? (
+                          <Gauge className="w-4 h-4 text-muted-foreground animate-pulse" />
+                        ) : (
+                          <span className={`text-sm font-bold ${colors.text}`}>
+                            {hasError ? '—' : score}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Updating indicator */}
                       {isUpdating && (
-                        <div className="absolute inset-0 rounded-lg overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-spin" style={{ animationDuration: '2s' }} />
-                        </div>
-                      )}
-                      <Zap className={`w-4 h-4 ${colors.icon} ${isLoadingSpeed ? 'animate-pulse' : ''}`} />
-                      <span className={`text-[9px] font-bold ${colors.text}`}>
-                        {isLoadingSpeed ? '...' : hasError ? '—' : score}
-                      </span>
-                      {/* Small updating badge */}
-                      {isUpdating && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cyan-500 animate-pulse flex items-center justify-center">
-                          <RefreshCw className="w-2 h-2 text-white animate-spin" />
+                        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-cyan-500/90 flex items-center justify-center animate-pulse">
+                          <RefreshCw className="w-2.5 h-2.5 text-white animate-spin" />
                         </div>
                       )}
                     </div>
@@ -894,56 +940,39 @@ export const BRONKeywordsTab = ({
               {/* Column 4: SERP Rankings - 300px */}
               <div className="w-[300px] flex-shrink-0">
                 {(() => {
-                  const googleMovement = getMovementFromDelta(googleData.movement);
-                  const bingMovement = getMovementFromDelta(bingData.movement);
-                  const yahooMovement = getMovementFromDelta(yahooData.movement);
+                  // Use the calculated movement values that compare against historical data
+                  const googleMovement = getMovementFromDelta(googleMovementValue);
+                  const bingMovement = getMovementFromDelta(bingMovementValue);
+                  const yahooMovement = getMovementFromDelta(yahooMovementValue);
+                  
+                  const renderRanking = (label: string, pos: number | null, movement: typeof googleMovement) => (
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</span>
+                      <div className="flex items-center justify-center gap-1">
+                        <span className={`text-xl font-bold ${pos !== null ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {pos !== null ? `#${pos}` : '—'}
+                        </span>
+                        {pos !== null && movement.delta !== 0 && (
+                          <div className={`flex items-center gap-0.5 ${movement.color}`}>
+                            {movement.type === 'up' && <TrendingUp className={`w-3.5 h-3.5 ${movement.glow ? 'drop-shadow-[0_0_4px_rgba(251,146,60,0.6)]' : ''}`} />}
+                            {movement.type === 'down' && <TrendingDown className="w-3.5 h-3.5" />}
+                            <span className="text-xs font-semibold">
+                              {movement.delta > 0 ? `+${movement.delta}` : movement.delta}
+                            </span>
+                          </div>
+                        )}
+                        {pos !== null && movement.delta === 0 && (
+                          <Minus className="w-3 h-3 text-blue-400/50" />
+                        )}
+                      </div>
+                    </div>
+                  );
                   
                   return (
                     <div className="grid grid-cols-3 gap-6 text-center">
-                      {/* Google Column */}
-                      <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
-                        <div className={`flex items-center justify-center gap-1 ${googleMovement.color}`}>
-                          <span className="text-xl font-bold">{googlePos !== null ? `#${googlePos}` : '—'}</span>
-                          {googlePos !== null && (
-                            <>
-                              {googleMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
-                              {googleMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
-                              {googleMovement.type === 'down' && <Activity className="w-4 h-4" />}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Bing Column */}
-                      <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
-                        <div className={`flex items-center justify-center gap-1 ${bingMovement.color}`}>
-                          <span className="text-xl font-bold">{bingPos !== null ? `#${bingPos}` : '—'}</span>
-                          {bingPos !== null && (
-                            <>
-                              {bingMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
-                              {bingMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
-                              {bingMovement.type === 'down' && <Activity className="w-4 h-4" />}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Yahoo Column */}
-                      <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
-                        <div className={`flex items-center justify-center gap-1 ${yahooMovement.color}`}>
-                          <span className="text-xl font-bold">{yahooPos !== null ? `#${yahooPos}` : '—'}</span>
-                          {yahooPos !== null && (
-                            <>
-                              {yahooMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
-                              {yahooMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
-                              {yahooMovement.type === 'down' && <Activity className="w-4 h-4" />}
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      {renderRanking('Google', googlePos, googleMovement)}
+                      {renderRanking('Bing', bingPos, bingMovement)}
+                      {renderRanking('Yahoo', yahooPos, yahooMovement)}
                     </div>
                   );
                 })()}
