@@ -146,18 +146,47 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
   const { fetchSubscription } = useBronApi();
   
-  // Check cache synchronously for instant loading
-  const [cachedData] = useState(() => selectedDomain ? loadCachedSocialData(selectedDomain) : null);
-  
-  const [isScanning, setIsScanning] = useState(!cachedData);
-  const [scanComplete, setScanComplete] = useState(!!cachedData);
-  const [profiles, setProfiles] = useState<SocialProfile[]>(cachedData?.profiles || []);
-  const [hasCadeSubscription, setHasCadeSubscription] = useState(cachedData?.hasCadeSubscription || false);
-  const [isCheckingCade, setIsCheckingCade] = useState(!cachedData);
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(cachedData?.bronSubscription || null);
+  const [isScanning, setIsScanning] = useState(true);
+  const [scanComplete, setScanComplete] = useState(false);
+  const [profiles, setProfiles] = useState<SocialProfile[]>([]);
+  const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
+  const [isCheckingCade, setIsCheckingCade] = useState(true);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(!!cachedData);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
+
+  // CRITICAL: Hydrate from cache synchronously when domain changes
+  // This prevents the "loading" flash when switching between domains
+  useEffect(() => {
+    if (!selectedDomain) {
+      setProfiles([]);
+      setHasCadeSubscription(false);
+      setBronSubscription(null);
+      setIsScanning(false);
+      setIsCheckingCade(false);
+      setScanComplete(false);
+      return;
+    }
+
+    // Try to load from cache SYNCHRONOUSLY
+    const cached = loadCachedSocialData(selectedDomain);
+    if (cached) {
+      console.log('[SocialPanel] Hydrating from cache for', selectedDomain);
+      setProfiles(cached.profiles);
+      setHasCadeSubscription(cached.hasCadeSubscription);
+      setBronSubscription(cached.bronSubscription);
+      setIsScanning(false);
+      setIsCheckingCade(false);
+      setScanComplete(true);
+      setIsBackgroundSyncing(true);
+    } else {
+      // No cache - will load fresh
+      setIsScanning(true);
+      setIsCheckingCade(true);
+      setScanComplete(false);
+    }
+  }, [selectedDomain]);
 
   // Check subscription via BRON API
   const checkCadeSubscription = useCallback(async (isBackground = false) => {
@@ -244,35 +273,35 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     }));
   }, [connections]);
 
-  // Initial scan when domain changes
+  // Background refresh after cache hydration + initial scan for uncached domains
   useEffect(() => {
-    if (selectedDomain) {
-      // If we have cached data, do background refresh
-      if (cachedData) {
-        setIsBackgroundSyncing(true);
-        Promise.all([
-          scanWebsiteForSocials(),
-          checkCadeSubscription(true),
-        ]).then(([, subscription]) => {
-          // Save updated cache
-          if (profiles.length > 0) {
-            saveCachedSocialData(
-              selectedDomain, 
-              profiles, 
-              subscription?.has_cade === true && subscription?.status === 'active',
-              subscription || null
-            );
-          }
-        }).finally(() => {
-          setIsBackgroundSyncing(false);
-        });
-      } else {
-        // No cache, do full scan
-        scanWebsiteForSocials();
-        checkCadeSubscription();
-      }
+    if (!selectedDomain) return;
+    
+    // Check if we loaded from cache (background sync will be true)
+    if (isBackgroundSyncing) {
+      // Background refresh - non-blocking
+      Promise.all([
+        scanWebsiteForSocials(),
+        checkCadeSubscription(true),
+      ]).then(([, subscription]) => {
+        // Save updated cache
+        if (profiles.length > 0) {
+          saveCachedSocialData(
+            selectedDomain, 
+            profiles, 
+            subscription?.has_cade === true && subscription?.status === 'active',
+            subscription || null
+          );
+        }
+      }).finally(() => {
+        setIsBackgroundSyncing(false);
+      });
+    } else if (isScanning) {
+      // No cache - do full scan
+      scanWebsiteForSocials();
+      checkCadeSubscription();
     }
-  }, [selectedDomain]);
+  }, [selectedDomain, isBackgroundSyncing, isScanning]);
   
   // Save to cache when data updates (after scans complete)
   useEffect(() => {
