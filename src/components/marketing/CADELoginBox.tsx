@@ -20,6 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBronApi, type BronSubscription } from "@/hooks/use-bron-api";
 
 interface SystemHealth {
   status?: string;
@@ -115,12 +116,15 @@ const MODEL_TIERS = [
 ];
 
 export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps) => {
+  const { fetchSubscription } = useBronApi();
+
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(null);
   const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>('connecting');
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -170,12 +174,14 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
       setIsLoading(true);
       setLoadingPhase('connecting');
       setError(null);
+      setBronSubscription(null);
 
       try {
-        // Run health check and subscription check in parallel
-        const [healthResult, subscriptionResult] = await Promise.allSettled([
+        // Run CADE health check and BRON entitlement check in parallel
+        // IMPORTANT: Use the same CADE entitlement logic as the Social Signals tab.
+        const [healthResult, bronSubResult] = await Promise.allSettled([
           callCadeApi("health"),
-          domain ? callCadeApi("subscription-active") : Promise.resolve(null),
+          domain ? fetchSubscription(domain) : Promise.resolve(null),
         ]);
 
         // Process health check
@@ -198,41 +204,39 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
           return;
         }
 
-        // Process subscription check if domain exists
-        if (domain && subscriptionResult.status === 'fulfilled' && subscriptionResult.value) {
-          setLoadingPhase('subscription');
-          const subRes = subscriptionResult.value;
-          const subData = subRes?.data || subRes;
-          
-          // Check if subscription is active
-          if (!subData?.status || subData.status === "inactive" || subData.status === "expired") {
-            setDomainHasSubscription(false);
-            setSubscription(subData);
-          } else {
-            // Check if domain is in the subscription's domain list (if available)
-            const subscribedDomains = subData?.domains || [];
-            if (subscribedDomains.length > 0) {
-              const domainLower = domain.toLowerCase().replace(/^www\./, '');
-              const isSubscribed = subscribedDomains.some((d: string) => 
-                d.toLowerCase().replace(/^www\./, '') === domainLower
-              );
-              setDomainHasSubscription(isSubscribed);
-            } else {
-              // If no domain list, assume subscription covers all domains
-              setDomainHasSubscription(subData?.status === "active");
-            }
-            setSubscription(subData);
-          }
-        } else if (domain && subscriptionResult.status === 'rejected') {
-          // On subscription error, try domain profile as fallback
-          try {
-            const profileRes = await callCadeApi("domain-profile");
-            setDomainHasSubscription(profileRes && !profileRes.error);
-          } catch {
-            setDomainHasSubscription(false);
-          }
-        } else if (!domain) {
+        // Process BRON entitlement check (authoritative for CADE access)
+        setLoadingPhase('subscription');
+
+        if (!domain) {
           setDomainHasSubscription(null);
+          setSubscription(null);
+          setBronSubscription(null);
+          return;
+        }
+
+        if (bronSubResult.status === 'fulfilled') {
+          const bronSub = bronSubResult.value;
+          setBronSubscription(bronSub);
+
+          // Match Social Signals logic exactly
+          const hasEntitlement = Boolean(bronSub && bronSub.has_cade && bronSub.status === 'active');
+          setDomainHasSubscription(hasEntitlement);
+
+          // Seed plan/status so header UI can render immediately; detailed quotas come from CADE API later.
+          if (bronSub) {
+            setSubscription((prev) => ({
+              ...prev,
+              plan: bronSub.plan || bronSub.servicetype || prev?.plan,
+              status: bronSub.status || prev?.status,
+            }));
+          } else {
+            setSubscription(null);
+          }
+        } else {
+          console.error('[CADE] BRON subscription check failed:', bronSubResult.reason);
+          setBronSubscription(null);
+          setDomainHasSubscription(false);
+          setSubscription(null);
         }
       } catch (err) {
         console.error("[CADE] Initialization error:", err);
@@ -244,7 +248,7 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     };
 
     initializeConnection();
-  }, [domain, callCadeApi]);
+  }, [domain, callCadeApi, fetchSubscription]);
 
   // Fetch all data when connected and domain has subscription
   const fetchAllData = useCallback(async () => {
