@@ -2,4 +2,7 @@ export { BronKeywordCard, getKeywordDisplayText, getPosition } from "./BronKeywo
 export type { KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
 export { BronKeywordExpanded } from "./BronKeywordExpanded";
 export { BronCitationAnalytics } from "./BronCitationAnalytics";
+export { BronCachedMap } from "./BronCachedMap";
+export { BronDomainProfile } from "./BronDomainProfile";
+export { BronKeywordsInfoCards, InfoCard } from "./BronInfoCards";
 export * from "./utils";
