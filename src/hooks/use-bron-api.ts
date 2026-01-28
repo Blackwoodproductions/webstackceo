@@ -1098,7 +1098,9 @@ export function useBronApi(): UseBronApiReturn {
       }
     }
     
-    return withPending(async () => {
+    // No cache available - fetch in background WITHOUT blocking UI (no withPending)
+    // This prevents the 5-second "lag" feel; keywords will appear as soon as they arrive.
+    (async () => {
       try {
         const allKeywords: BronKeyword[] = [];
         let page = 1;
@@ -1150,11 +1152,11 @@ export function useBronApi(): UseBronApiReturn {
         }
       } catch (err) {
         if (reqId !== keywordsReqIdRef.current) return;
-        toast.error("Failed to fetch keywords");
-        console.error(err);
+        // Don't toast on background fetch failures - just log
+        console.warn('[BRON] Background keyword fetch failed:', err);
       }
-    });
-  }, [callApi, normalizeDomainKey, withPending]);
+    })();
+  }, [callApi, normalizeDomainKey]);
 
   const addKeyword = useCallback(async (data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
