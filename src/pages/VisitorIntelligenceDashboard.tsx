@@ -1734,6 +1734,36 @@ const MarketingDashboard = () => {
     }
   }, [isLoading, user, session, navigate]);
 
+  // Keep dashboard sticky header + domain selector from overlapping the global fixed navbar.
+  // We measure the dashboard header shell and combine it with --app-navbar-height (set by Navbar).
+  // IMPORTANT: This ref + useLayoutEffect MUST be declared before any conditional returns to avoid
+  // React hook ordering violations.
+  const dashboardHeaderShellRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const el = dashboardHeaderShellRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    let raf = 0;
+    const update = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const h = el.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--vi-dashboard-header-height', `${Math.round(h)}px`);
+      });
+    };
+
+    update();
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      // Reset to a safe default when leaving the page.
+      document.documentElement.style.setProperty('--vi-dashboard-header-height', '0px');
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1779,34 +1809,6 @@ const MarketingDashboard = () => {
   ];
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
-
-  // Keep dashboard sticky header + domain selector from overlapping the global fixed navbar.
-  // We measure the dashboard header shell and combine it with --app-navbar-height (set by Navbar).
-  const dashboardHeaderShellRef = useRef<HTMLDivElement | null>(null);
-  useLayoutEffect(() => {
-    const el = dashboardHeaderShellRef.current;
-    if (!el || typeof window === 'undefined') return;
-
-    let raf = 0;
-    const update = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const h = el.getBoundingClientRect().height;
-        document.documentElement.style.setProperty('--vi-dashboard-header-height', `${Math.round(h)}px`);
-      });
-    };
-
-    update();
-    const ro = new ResizeObserver(() => update());
-    ro.observe(el);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      ro.disconnect();
-      // Reset to a safe default when leaving the page.
-      document.documentElement.style.setProperty('--vi-dashboard-header-height', '0px');
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
