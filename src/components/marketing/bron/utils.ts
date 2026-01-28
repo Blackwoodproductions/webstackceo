@@ -118,12 +118,15 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   for (const kw of contentKeywords) {
     const bubblefeed = kw.bubblefeed;
-    // Main keywords have no bubblefeed (empty, null, undefined, 0, or empty string)
+    // Main keywords have no bubblefeed (empty, null, undefined, 0, false, or empty string)
+    // Supporting keywords have a bubblefeed value that is a valid ID (positive number)
     const hasBubblefeed = bubblefeed !== undefined && 
                           bubblefeed !== null && 
                           bubblefeed !== 0 && 
+                          bubblefeed !== false &&
                           String(bubblefeed) !== '0' && 
-                          String(bubblefeed) !== '';
+                          String(bubblefeed) !== '' &&
+                          String(bubblefeed) !== 'false';
     
     if (hasBubblefeed) {
       supportingKeywords.push(kw);
