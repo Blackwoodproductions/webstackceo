@@ -160,9 +160,13 @@ const KeywordListItem = memo(({
   };
 
   return (
-    <div className="space-y-2" style={{ contain: 'layout style paint' }}>
+    <div className="space-y-1" style={{ contain: 'layout style paint' }}>
       {renderKeyword(cluster.parent, false, cluster.children.length)}
-      {cluster.children.map(child => renderKeyword(child, true))}
+      {cluster.children.length > 0 && (
+        <div className="pl-4 space-y-1 border-l-2 border-hover-accent/20 ml-6">
+          {cluster.children.map(child => renderKeyword(child, true))}
+        </div>
+      )}
     </div>
   );
 });
