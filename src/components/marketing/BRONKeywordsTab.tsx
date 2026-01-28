@@ -129,7 +129,12 @@ const KeywordListItem = memo(({
     const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
     
     return (
-      <div key={kw.id} style={{ contain: 'layout style paint' }}>
+      <div 
+        key={kw.id} 
+        className="no-theme-transition"
+        style={{ contain: 'layout style' }}
+        data-no-theme-transition
+      >
         <BronKeywordCard
           keyword={kw}
           serpData={serpData}
@@ -150,20 +155,22 @@ const KeywordListItem = memo(({
           onToggleExpand={() => onToggleExpand(kw)}
         />
         
-        {/* Expanded content */}
+        {/* Expanded content - only render when expanded AND form is ready */}
         {isExpanded && inlineEditForms[kw.id] && (
-          <BronKeywordExpanded
-            keyword={kw}
-            isTrackingOnly={isTrackingOnly}
-            selectedDomain={selectedDomain}
-            linksIn={keywordLinksIn}
-            linksOut={keywordLinksOut}
-            formData={inlineEditForms[kw.id] as any}
-            isSaving={savingIds.has(kw.id)}
-            onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}
-            onSave={() => onSave(kw)}
-            onOpenArticleEditor={() => onOpenArticleEditor(kw)}
-          />
+          <div style={{ contain: 'layout style paint' }}>
+            <BronKeywordExpanded
+              keyword={kw}
+              isTrackingOnly={isTrackingOnly}
+              selectedDomain={selectedDomain}
+              linksIn={keywordLinksIn}
+              linksOut={keywordLinksOut}
+              formData={inlineEditForms[kw.id] as any}
+              isSaving={savingIds.has(kw.id)}
+              onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}
+              onSave={() => onSave(kw)}
+              onOpenArticleEditor={() => onOpenArticleEditor(kw)}
+            />
+          </div>
         )}
       </div>
     );
@@ -658,22 +665,25 @@ export const BRONKeywordsTab = memo(({
     const id = kw.id;
     const isCurrentlyExpanded = expandedIdsRef.current.has(id);
 
-    // Ensure the expanded panel has its form data in the SAME batched update.
-    // This avoids a "half-expanded" render where the card shows expanded state
-    // but the panel isn't mounted yet.
-    if (!isCurrentlyExpanded && !(inlineEditFormsRef.current as any)[id]) {
-      setInlineEditForms((p) => ({
-        ...p,
-        [id]: buildInitialInlineForm(kw),
-      }));
+    // Batch both state updates together using React's automatic batching.
+    // We use flushSync-free approach: update form state first, then expanded state
+    // in a single synchronous block so React batches them automatically.
+    if (!isCurrentlyExpanded) {
+      // Expanding: set form data and expansion in one go
+      const hasForm = !!(inlineEditFormsRef.current as any)[id];
+      if (!hasForm) {
+        const newForm = buildInitialInlineForm(kw);
+        setInlineEditForms((p) => ({ ...p, [id]: newForm }));
+      }
+      setExpandedIds((prev) => new Set(prev).add(id));
+    } else {
+      // Collapsing: just remove from expanded set
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
-
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   }, [buildInitialInlineForm]);
 
   const handleUpdateForm = useCallback((id: number | string, field: string, value: string) => {
