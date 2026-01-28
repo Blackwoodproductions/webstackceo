@@ -938,7 +938,7 @@ export const BRONKeywordsTab = ({
               </div>
 
               {/* Column 4: SERP Rankings - 300px */}
-              <div className="w-[300px] flex-shrink-0">
+              <div className="w-[220px] flex-shrink-0">
                 {(() => {
                   // Use the calculated movement values that compare against historical data
                   const googleMovement = getMovementFromDelta(googleMovementValue);
@@ -969,7 +969,7 @@ export const BRONKeywordsTab = ({
                   );
                   
                   return (
-                    <div className="grid grid-cols-3 gap-6 text-center">
+                    <div className="grid grid-cols-3 gap-3 text-center">
                       {renderRanking('Google', googlePos, googleMovement)}
                       {renderRanking('Bing', bingPos, bingMovement)}
                       {renderRanking('Yahoo', yahooPos, yahooMovement)}
@@ -978,17 +978,10 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 5: Keyword Metrics - 280px */}
-              <div className="w-[280px] flex-shrink-0">
+              {/* Column 5: Keyword Metrics - 210px */}
+              <div className="w-[210px] flex-shrink-0">
                 {(() => {
                   const metrics = keywordMetrics[keywordText.toLowerCase()];
-                  
-                  const formatVolume = (vol?: number) => {
-                    if (vol === undefined || vol === null) return '—';
-                    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
-                    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
-                    return String(vol);
-                  };
                   
                   const getCompetitionColor = (level?: string) => {
                     switch (level?.toUpperCase()) {
@@ -1012,17 +1005,7 @@ export const BRONKeywordsTab = ({
                   const ctrValue = getEstimatedCTR(googlePos);
                   
                   return (
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {/* Search Volume */}
-                      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                        <div className="flex items-center gap-0.5">
-                          <Users className="w-2.5 h-2.5 text-blue-400" />
-                          <span className="text-[10px] font-bold text-blue-400">
-                            {metricsLoading ? '...' : formatVolume(metrics?.search_volume)}
-                          </span>
-                        </div>
-                        <span className="text-[7px] text-blue-400/70">Vol/mo</span>
-                      </div>
+                    <div className="grid grid-cols-3 gap-1.5">
                       
                       {/* CPC */}
                       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
