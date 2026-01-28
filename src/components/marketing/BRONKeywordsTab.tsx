@@ -632,18 +632,21 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Keyword Text with intent badge */}
-              <div className="flex-1 min-w-0 pl-2 flex items-center gap-3">
+              {/* Keyword Text - no wrap */}
+              <div className="min-w-0 max-w-[320px] pl-2 flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-foreground">
+                  <h3 className="font-medium text-foreground whitespace-nowrap truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
                   {active && (
                     <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                   )}
                 </div>
-                {/* Intent badge - always visible */}
-                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 flex-shrink-0">
+              </div>
+
+              {/* Intent badge - centered between keyword and rankings */}
+              <div className="flex-1 flex justify-center">
+                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5">
                   <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                     <IntentIcon className={`w-3 h-3 ${intent.color}`} />
                   </div>
