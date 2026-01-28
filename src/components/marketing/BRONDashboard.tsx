@@ -194,28 +194,123 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bronApi.isAuthenticated, selectedDomain]);
 
+  // Screenshot cache for instant loading
+  const SCREENSHOT_CACHE_KEY = 'bron_screenshot_cache';
+  
+  const loadCachedScreenshot = useCallback((domain: string): string | null => {
+    try {
+      const cached = localStorage.getItem(SCREENSHOT_CACHE_KEY);
+      if (!cached) return null;
+      const parsed = JSON.parse(cached) as Record<string, { url: string; cachedAt: number }>;
+      const entry = parsed[domain];
+      // Screenshot cache valid for 7 days
+      if (!entry || (Date.now() - entry.cachedAt) > 7 * 24 * 60 * 60 * 1000) return null;
+      return entry.url;
+    } catch {
+      return null;
+    }
+  }, []);
+  
+  const saveCachedScreenshot = useCallback((domain: string, url: string) => {
+    try {
+      const cached = localStorage.getItem(SCREENSHOT_CACHE_KEY);
+      const parsed = cached ? JSON.parse(cached) as Record<string, { url: string; cachedAt: number }> : {};
+      // Limit to 10 cached screenshots
+      const domains = Object.keys(parsed);
+      if (domains.length >= 10 && !parsed[domain]) {
+        const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+        delete parsed[oldest];
+      }
+      parsed[domain] = { url, cachedAt: Date.now() };
+      localStorage.setItem(SCREENSHOT_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      // Ignore cache errors
+    }
+  }, []);
+
+  // Domain info cache for instant loading
+  const DOMAIN_INFO_CACHE_KEY = 'bron_domain_info_cache';
+  
+  const loadCachedDomainInfo = useCallback((domain: string): BronDomain | null => {
+    try {
+      const cached = localStorage.getItem(DOMAIN_INFO_CACHE_KEY);
+      if (!cached) return null;
+      const parsed = JSON.parse(cached) as Record<string, { info: BronDomain; cachedAt: number }>;
+      const entry = parsed[domain];
+      // 24 hour cache
+      if (!entry || (Date.now() - entry.cachedAt) > 24 * 60 * 60 * 1000) return null;
+      return entry.info;
+    } catch {
+      return null;
+    }
+  }, []);
+  
+  const saveCachedDomainInfo = useCallback((domain: string, info: BronDomain) => {
+    try {
+      const cached = localStorage.getItem(DOMAIN_INFO_CACHE_KEY);
+      const parsed = cached ? JSON.parse(cached) as Record<string, { info: BronDomain; cachedAt: number }> : {};
+      const domains = Object.keys(parsed);
+      if (domains.length >= 10 && !parsed[domain]) {
+        const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+        delete parsed[oldest];
+      }
+      parsed[domain] = { info, cachedAt: Date.now() };
+      localStorage.setItem(DOMAIN_INFO_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      // Ignore cache errors
+    }
+  }, []);
+
   // Load domain-specific data when domain changes
-  // IMPORTANT: Don't reset data before fetching - let cache serve instantly
+  // CRITICAL: Hydrate cached data SYNCHRONOUSLY to prevent "No keywords" flash
   useEffect(() => {
     let cancelled = false;
-    const loadCore = async () => {
-      if (!bronApi.isAuthenticated || !selectedDomain) return;
-
-      // Only reset the refs to prevent stale requests, NOT the data
-      // The fetch functions will serve cached data immediately if available
-      linksRequestedForDomainRef.current = null;
+    
+    if (!selectedDomain) {
       setScreenshotUrl(null);
       setDomainInfo(null);
+      return;
+    }
 
-      // Check for existing screenshot in background (don't block)
+    // Reset refs to prevent stale requests
+    linksRequestedForDomainRef.current = null;
+
+    // INSTANT: Hydrate from cache synchronously BEFORE any async work
+    const cachedScreenshot = loadCachedScreenshot(selectedDomain);
+    if (cachedScreenshot) {
+      setScreenshotUrl(cachedScreenshot);
+    }
+    
+    const cachedInfo = loadCachedDomainInfo(selectedDomain);
+    if (cachedInfo) {
+      setDomainInfo(cachedInfo);
+    }
+
+    // If no cache, set null only if we had data from a different domain
+    if (!cachedScreenshot && screenshotUrl) {
+      setScreenshotUrl(null);
+    }
+    if (!cachedInfo && domainInfo) {
+      setDomainInfo(null);
+    }
+
+    const loadCore = async () => {
+      if (!bronApi.isAuthenticated) return;
+
+      // Background: Check for existing screenshot (don't block UI)
       getExistingScreenshot(selectedDomain).then((hasExisting) => {
-        if (!hasExisting && !cancelled) {
-          captureScreenshot(selectedDomain);
+        if (hasExisting && !cancelled) {
+          // The getExistingScreenshot already sets screenshotUrl
+        } else if (!cancelled) {
+          captureScreenshot(selectedDomain).then((url) => {
+            if (url && !cancelled) {
+              saveCachedScreenshot(selectedDomain, url);
+            }
+          });
         }
       });
 
-      // Fetch all data in parallel - cache will be served immediately if available
-      // The fetch functions handle cache-first logic internally
+      // Fetch all data in parallel - cache is served immediately by the hook
       const [info] = await Promise.all([
         bronApi.fetchDomain(selectedDomain),
         bronApi.fetchKeywords(selectedDomain),
@@ -223,7 +318,10 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         bronApi.fetchSerpList(selectedDomain),
       ]);
       
-      if (!cancelled && info) setDomainInfo(info);
+      if (!cancelled && info) {
+        setDomainInfo(info);
+        saveCachedDomainInfo(selectedDomain, info);
+      }
       
       // Fetch pages separately (lower priority)
       if (cancelled) return;
@@ -235,7 +333,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     return () => {
       cancelled = true;
     };
-  }, [bronApi.isAuthenticated, selectedDomain, captureScreenshot, getExistingScreenshot]);
+  }, [bronApi.isAuthenticated, selectedDomain, captureScreenshot, getExistingScreenshot, loadCachedScreenshot, loadCachedDomainInfo, saveCachedScreenshot, saveCachedDomainInfo]);
 
   // Load link reports eagerly (in parallel) for faster dashboard loading
   useEffect(() => {
