@@ -275,16 +275,20 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
-                  {/* Recapture button */}
+                  {/* Recapture button with loading state */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 h-7 w-7 bg-background/80 hover:bg-background/90"
+                    className={`absolute top-2 right-2 h-8 w-8 bg-background/90 hover:bg-background border border-border/50 shadow-sm transition-all ${isCapturingScreenshot ? 'animate-pulse' : ''}`}
                     onClick={() => captureScreenshot(selectedDomain)}
                     disabled={isCapturingScreenshot}
-                    title="Recapture screenshot"
+                    title={isCapturingScreenshot ? "Capturing screenshot..." : "Recapture screenshot"}
                   >
-                    <Camera className={`w-3.5 h-3.5 ${isCapturingScreenshot ? 'animate-pulse' : ''}`} />
+                    {isCapturingScreenshot ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-cyan-500" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 <Button 
