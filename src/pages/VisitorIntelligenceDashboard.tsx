@@ -1739,7 +1739,14 @@ const MarketingDashboard = () => {
   // IMPORTANT: This ref + useLayoutEffect MUST be declared before any conditional returns to avoid
   // React hook ordering violations.
   const dashboardHeaderShellRef = useRef<HTMLDivElement | null>(null);
+  
+  // Derive whether the full dashboard UI will render (not loading, authenticated, is admin)
+  const dashboardRendered = !isLoading && !!user && !!session && isAdmin;
+  
   useLayoutEffect(() => {
+    // Only run when dashboard is actually rendered
+    if (!dashboardRendered) return;
+    
     const el = dashboardHeaderShellRef.current;
     if (!el || typeof window === 'undefined') return;
 
@@ -1762,7 +1769,7 @@ const MarketingDashboard = () => {
       // Reset to a safe default when leaving the page.
       document.documentElement.style.setProperty('--vi-dashboard-header-height', '0px');
     };
-  }, []);
+  }, [dashboardRendered]);
 
   if (isLoading) {
     return (
