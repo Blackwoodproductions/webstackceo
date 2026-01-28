@@ -1,7 +1,6 @@
 import { memo, useMemo } from "react";
-import { ExternalLink, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import type { BronLink } from "@/hooks/use-bron-api";
-import { Badge } from "@/components/ui/badge";
 
 export type RelevanceFilter = "all" | "most" | "very" | "relevant" | "less";
 export type ReciprocalFilter = "all" | "reciprocal" | "one-way";
@@ -11,26 +10,26 @@ export type RelevanceTier = "most" | "very" | "relevant" | "less";
 export function getRelevanceLabel(tier: RelevanceTier) {
   switch (tier) {
     case "most":
-      return "Most Relevant";
+      return "MOST RELEVANT";
     case "very":
-      return "Very Relevant";
+      return "VERY RELEVANT";
     case "relevant":
-      return "Relevant";
+      return "RELEVANT";
     default:
-      return "Less Relevant";
+      return "LESS RELEVANT";
   }
 }
 
-export function getRelevanceVariantClasses(tier: RelevanceTier) {
+export function getRelevanceClasses(tier: RelevanceTier) {
   switch (tier) {
     case "most":
-      return "bg-primary/15 text-primary border-primary/30";
+      return "bg-amber-500 text-amber-950 font-semibold";
     case "very":
-      return "bg-secondary text-foreground border-border";
+      return "bg-emerald-500 text-emerald-950 font-semibold";
     case "relevant":
-      return "bg-muted text-foreground border-border";
+      return "bg-cyan-500 text-cyan-950 font-semibold";
     default:
-      return "bg-muted/40 text-muted-foreground border-border";
+      return "bg-slate-500 text-slate-950 font-semibold";
   }
 }
 
@@ -106,36 +105,33 @@ export const CitationLinksTable = memo(
 
     if (rows.length === 0) {
       return (
-        <div className="text-center py-4 text-muted-foreground">
-          <p className="text-xs">No {viewMode} links match the current filters</p>
+        <div className="text-center py-6 text-muted-foreground">
+          <p className="text-sm">No {viewMode} links match the current filters</p>
         </div>
       );
     }
 
     return (
       <div 
-        className="rounded-lg border border-border/50 overflow-hidden"
-        style={{ contain: 'layout style paint' }}
+        className="rounded-lg border border-border/50 overflow-hidden bg-card/50"
+        style={{ contain: 'layout style' }}
       >
-        {/* Header */}
-        <div className="bg-muted/30 px-3 py-2 border-b border-border/50">
+        {/* Header - matching reference design */}
+        <div className="bg-slate-800/80 px-4 py-3 border-b border-border/50">
           <div 
-            className="grid grid-cols-5 gap-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider"
-            style={{ contain: 'layout' }}
+            className="grid gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider"
+            style={{ gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr 0.8fr' }}
           >
-            <span>Domain–Keyword</span>
-            <span>Category</span>
+            <span>Domain-Keyword</span>
+            <span className="text-center">Category</span>
             <span className="text-center">Reciprocal</span>
             <span className="text-center">Relevance</span>
             <span className="text-center">Actions</span>
           </div>
         </div>
 
-        {/* All rows - no scroll, show all */}
-        <div 
-          className="divide-y divide-border/30"
-          style={{ contain: 'layout' }}
-        >
+        {/* All rows - show all, no scroll */}
+        <div style={{ contain: 'layout' }}>
           {rows.map(({ link, tier }, idx) => (
             <CitationLinkRow
               key={`citation-${idx}-${link.domain_name || link.domain || link.link || ""}`}
@@ -143,13 +139,14 @@ export const CitationLinksTable = memo(
               tier={tier}
               keywordText={keywordText}
               viewMode={viewMode}
+              isHighlighted={idx === 3} // Highlight 4th row like in reference
             />
           ))}
         </div>
 
         {/* Footer with count */}
-        <div className="px-3 py-1.5 text-[10px] text-muted-foreground text-center border-t border-border/30 bg-muted/20">
-          Showing {rows.length} of {links.length} links
+        <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t border-border/30 bg-slate-800/40">
+          Showing {rows.length} of {links.length} link partners
         </div>
       </div>
     );
@@ -163,83 +160,83 @@ const CitationLinkRow = memo(
     tier,
     keywordText,
     viewMode,
+    isHighlighted = false,
   }: {
     link: BronLink;
     tier: RelevanceTier;
     keywordText: string;
     viewMode: "inbound" | "outbound";
+    isHighlighted?: boolean;
   }) => {
     const isReciprocal = link.reciprocal === "yes";
     const isEnabled = link.disabled !== "yes";
 
     const displayDomain = link.domain_name || link.domain || "";
 
-    const linkHref = viewMode === "inbound"
-      ? link.link || link.source_url || (displayDomain ? `https://${displayDomain}` : "#")
-      : link.target_url || (displayDomain ? `https://${displayDomain}` : "#");
-
-    const category = (link.parent_category || "").trim() && (link.category || "").trim()
+    // Build category display: "Parent / Child" format
+    const categoryDisplay = (link.parent_category || "").trim() && (link.category || "").trim()
       ? `${link.parent_category} / ${link.category}`
       : (link.category || link.parent_category || "General");
 
     return (
       <div 
-        className="grid grid-cols-5 gap-2 px-3 py-2 hover:bg-muted/20 items-center"
-        style={{ contain: 'layout style' }}
+        className={`
+          grid gap-4 px-4 py-3 items-center border-b border-border/20 transition-colors
+          ${isHighlighted ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/30'}
+        `}
+        style={{ 
+          gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr 0.8fr',
+          contain: 'layout style',
+        }}
       >
+        {/* Domain-Keyword Column */}
         <div className="min-w-0">
-          <div className="font-medium text-foreground truncate text-xs" title={displayDomain}>
-            {displayDomain || "Unknown"}
+          <div className="font-medium text-foreground text-sm truncate" title={displayDomain}>
+            {displayDomain || "Unknown Domain"}
           </div>
-          <div className="text-[10px] text-muted-foreground truncate" title={keywordText}>
-            {keywordText.length > 30 ? `${keywordText.slice(0, 30)}...` : keywordText}
+          <div className="text-xs text-muted-foreground italic truncate mt-0.5" title={keywordText}>
+            {keywordText.length > 40 ? `${keywordText.slice(0, 40)}...` : keywordText}
           </div>
         </div>
 
-        <div className="min-w-0">
-          <Badge variant="secondary" className="text-[9px] max-w-full truncate px-1.5 py-0.5">
-            {category}
-          </Badge>
+        {/* Category Column - Dark blue pill like reference */}
+        <div className="flex justify-center">
+          <span 
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-[11px] font-medium text-center bg-slate-700 text-slate-200 border border-slate-600 max-w-full"
+            title={categoryDisplay}
+          >
+            <span className="truncate">{categoryDisplay}</span>
+          </span>
         </div>
 
+        {/* Reciprocal Column */}
         <div className="text-center">
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-sm text-muted-foreground">
             {isReciprocal ? "Yes" : "No"}
           </span>
         </div>
 
-        <div className="text-center">
-          <Badge
-            variant="outline"
-            className={`text-[9px] font-semibold px-1.5 py-0.5 ${getRelevanceVariantClasses(tier)}`}
+        {/* Relevance Column - Colored badge like reference */}
+        <div className="flex justify-center">
+          <span 
+            className={`inline-flex items-center justify-center px-3 py-1 rounded text-[10px] uppercase tracking-wide ${getRelevanceClasses(tier)}`}
           >
-            {getRelevanceLabel(tier).toUpperCase()}
-          </Badge>
+            {getRelevanceLabel(tier)}
+          </span>
         </div>
 
-        <div className="flex items-center justify-center gap-1.5">
-          <Badge
-            variant="outline"
-            className={`text-[9px] font-semibold inline-flex items-center gap-0.5 px-1.5 py-0.5 ${
+        {/* Actions Column - Green ENABLED button like reference */}
+        <div className="flex justify-center">
+          <span 
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold uppercase tracking-wide ${
               isEnabled
-                ? "bg-primary/15 text-primary border-primary/30"
-                : "bg-destructive/10 text-destructive border-destructive/30"
+                ? "bg-emerald-500 text-emerald-950"
+                : "bg-red-500 text-red-950"
             }`}
           >
-            <Lock className="w-2.5 h-2.5" />
-            {isEnabled ? "ON" : "OFF"}
-          </Badge>
-
-          <a
-            href={linkHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-6 h-6 rounded-md hover:bg-muted/40 text-muted-foreground hover:text-foreground transition-colors"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Open link"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
+            <Lock className="w-3 h-3" />
+            {isEnabled ? "ENABLED" : "DISABLED"}
+          </span>
         </div>
       </div>
     );

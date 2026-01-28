@@ -166,6 +166,7 @@ export interface UseBronApiReturn {
   fetchSerpDetail: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
   fetchLinksIn: (domain: string, domainId?: number | string) => Promise<void>;
   fetchLinksOut: (domain: string, domainId?: number | string) => Promise<void>;
+  resetDomainData: () => void;
 }
 
 export function useBronApi(): UseBronApiReturn {
@@ -629,6 +630,18 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
+  // Reset domain-specific data (for faster domain switching)
+  const resetDomainData = useCallback(() => {
+    setKeywords([]);
+    setPages([]);
+    setSerpReports([]);
+    setSerpHistory([]);
+    setLinksIn([]);
+    setLinksOut([]);
+    setLinksInError(null);
+    setLinksOutError(null);
+  }, []);
+
   return {
     isLoading,
     isAuthenticated,
@@ -659,5 +672,6 @@ export function useBronApi(): UseBronApiReturn {
     fetchSerpDetail,
     fetchLinksIn,
     fetchLinksOut,
+    resetDomainData,
   };
 }
