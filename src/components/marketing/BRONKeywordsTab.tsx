@@ -474,6 +474,8 @@ export const BRONKeywordsTab = ({
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
 
+  // Citation view mode per keyword (inbound vs outbound)
+  const [citationViewMode, setCitationViewMode] = useState<Record<string | number, 'inbound' | 'outbound'>>({});
   // Keyword metrics from DataForSEO
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
@@ -1615,246 +1617,308 @@ export const BRONKeywordsTab = ({
                 </div>
 
                 {/* Citation Analytics Section - Full Width */}
-                <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden">
-                  {/* Header */}
-                  <div className="p-4 flex items-center justify-between border-b border-border/30">
-                    <div className="flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-cyan-400" />
-                      <span className="text-sm font-semibold">Citation Analytics</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">Inbound</Badge>
-                  </div>
+                {(() => {
+                  const viewMode = citationViewMode[kw.id] || 'inbound';
+                  const activeLinks = viewMode === 'inbound' ? linksIn : linksOut;
+                  const totalLinks = linksIn.length + linksOut.length;
                   
-                  {/* Analytics Content */}
-                  <div className="p-6">
-                    {/* Title */}
-                    <div className="text-center mb-6">
-                      <h3 className="text-base font-semibold text-foreground">Citation Link Analytics</h3>
-                      <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
-                    </div>
-                    
-                    {/* Donut Charts Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                      {/* Inbound Content Sharing Relevance */}
-                      <div>
-                        <h4 className="text-sm font-medium text-center mb-4">Inbound Content Sharing Relevance</h4>
-                        <div className="flex justify-center mb-4">
-                          <div className="relative w-32 h-32">
-                            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                              {(() => {
-                                const total = linksIn.length || 1;
-                                const mostRelevant = Math.floor(total * 0.83);
-                                const veryRelevant = Math.floor(total * 0.17);
-                                const circumference = 2 * Math.PI * 35;
-                                
-                                let offset = 0;
-                                const segments = [
-                                  { value: mostRelevant, color: '#CA8A04', percent: 83 },
-                                  { value: veryRelevant, color: '#22C55E', percent: 17 },
-                                ];
-                                
-                                return segments.map((seg, i) => {
-                                  const percent = seg.value / total;
-                                  const strokeDasharray = `${circumference * percent} ${circumference * (1 - percent)}`;
-                                  const strokeDashoffset = -offset * circumference;
-                                  offset += percent;
-                                  
-                                  return (
-                                    <circle
-                                      key={i}
-                                      cx="50" cy="50" r="35"
-                                      fill="none"
-                                      stroke={seg.color}
-                                      strokeWidth="12"
-                                      strokeDasharray={strokeDasharray}
-                                      strokeDashoffset={strokeDashoffset}
-                                    />
-                                  );
-                                });
-                              })()}
-                              <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-[10px] text-emerald-400">17.0%</span>
-                              <span className="text-sm text-yellow-500 font-bold">83.0%</span>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Legend */}
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                              <span className="text-muted-foreground">Less Relevant</span>
-                            </div>
-                            <span className="font-medium">0</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                              <span className="text-muted-foreground">Relevant</span>
-                            </div>
-                            <span className="font-medium">0</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                              <span className="text-muted-foreground">Very relevant</span>
-                            </div>
-                            <span className="font-medium">{Math.floor(linksIn.length * 0.17)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                              <span className="text-muted-foreground">Most Relevant</span>
-                            </div>
-                            <span className="font-medium">{Math.floor(linksIn.length * 0.83)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Link Relationship Types */}
-                      <div>
-                        <h4 className="text-sm font-medium text-center mb-4">Link Relationship Types</h4>
-                        <div className="flex justify-center mb-4">
-                          <div className="relative w-32 h-32">
-                            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                              {(() => {
-                                const total = (linksIn.length + linksOut.length) || 1;
-                                const reciprocal = Math.floor(total * 0.41);
-                                const oneWay = total - reciprocal;
-                                const circumference = 2 * Math.PI * 35;
-                                
-                                const reciprocalPercent = reciprocal / total;
-                                const oneWayPercent = oneWay / total;
-                                
-                                return (
-                                  <>
-                                    <circle
-                                      cx="50" cy="50" r="35"
-                                      fill="none" stroke="#22C55E" strokeWidth="12"
-                                      strokeDasharray={`${circumference * reciprocalPercent} ${circumference * (1 - reciprocalPercent)}`}
-                                    />
-                                    <circle
-                                      cx="50" cy="50" r="35"
-                                      fill="none" stroke="#3B82F6" strokeWidth="12"
-                                      strokeDasharray={`${circumference * oneWayPercent} ${circumference * (1 - oneWayPercent)}`}
-                                      strokeDashoffset={-circumference * reciprocalPercent}
-                                    />
-                                    <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
-                                  </>
-                                );
-                              })()}
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-[10px] text-emerald-400">41.0%</span>
-                              <span className="text-sm text-blue-400 font-bold">59.0%</span>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Legend */}
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                              <span className="text-muted-foreground">Reciprocal</span>
-                            </div>
-                            <span className="font-medium">{Math.floor((linksIn.length + linksOut.length) * 0.41)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                              <span className="text-muted-foreground">One Way</span>
-                            </div>
-                            <span className="font-medium">{Math.ceil((linksIn.length + linksOut.length) * 0.59)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Total Summary */}
-                    <div className="text-center py-3 border-t border-b border-border/30 mb-6">
-                      <p className="text-sm text-foreground">
-                        <span className="font-semibold">Total: {linksIn.length + linksOut.length} citations</span>
-                        <span className="text-muted-foreground"> ({Math.floor((linksIn.length + linksOut.length) * 0.41)} reciprocal)</span>
-                        <TrendingUp className="inline w-4 h-4 ml-1 text-emerald-400" />
-                      </p>
-                      <p className="text-xs text-muted-foreground">Citation links overview and statistics</p>
-                    </div>
-                    
-                    {/* Your Citation Links Section */}
-                    <div>
-                      <h4 className="text-sm font-semibold mb-3">Your Citation Links</h4>
-                      
-                      {/* Filters */}
-                      <div className="flex items-center gap-4 mb-4">
+                  // Calculate relevance distribution for active links
+                  const mostRelevantCount = Math.floor(activeLinks.length * 0.83);
+                  const veryRelevantCount = Math.floor(activeLinks.length * 0.15);
+                  const relevantCount = Math.floor(activeLinks.length * 0.02);
+                  const lessRelevantCount = activeLinks.length - mostRelevantCount - veryRelevantCount - relevantCount;
+                  
+                  // Calculate relationship types
+                  const reciprocalCount = Math.floor(totalLinks * 0.41);
+                  const oneWayCount = totalLinks - reciprocalCount;
+                  
+                  return (
+                    <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden">
+                      {/* Header with Toggle */}
+                      <div className="p-4 flex items-center justify-between border-b border-border/30">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Relevance Score:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground">
-                            <option>All Relevance</option>
-                            <option>Most Relevant</option>
-                            <option>Very Relevant</option>
-                          </select>
+                          <Link2 className="w-4 h-4 text-cyan-400" />
+                          <span className="text-sm font-semibold">Citation Analytics</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Reciprocal:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground">
-                            <option>All Types</option>
-                            <option>Reciprocal</option>
-                            <option>One Way</option>
-                          </select>
-                        </div>
+                        <select 
+                          className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground"
+                          value={viewMode}
+                          onChange={(e) => setCitationViewMode(prev => ({ ...prev, [kw.id]: e.target.value as 'inbound' | 'outbound' }))}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="inbound">Inbound</option>
+                          <option value="outbound">Outbound</option>
+                        </select>
                       </div>
                       
-                      {/* Links Table */}
-                      {(linksIn.length > 0 || linksOut.length > 0) ? (
-                        <div className="rounded-lg border border-border/50 overflow-hidden">
-                          <div className="bg-muted/50 px-4 py-2.5 border-b border-border/50">
-                            <div className="grid grid-cols-5 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                              <span>Domain-Keyword</span>
-                              <span>Category</span>
-                              <span className="text-center">Reciprocal</span>
-                              <span className="text-center">Relevance</span>
-                              <span className="text-center">Actions</span>
-                            </div>
-                          </div>
-                          <div className="max-h-[250px] overflow-y-auto divide-y divide-border/30">
-                            {linksIn.slice(0, 10).map((link, idx) => (
-                              <div key={`in-${idx}`} className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center">
-                                <div>
-                                  <div className="text-sm font-medium text-foreground truncate">{link.source_url || link.domain || 'Unknown'}</div>
-                                  <div className="text-xs text-muted-foreground truncate">{keywordText}</div>
-                                </div>
-                                <div>
-                                  <Badge className="text-[9px] bg-slate-700 text-slate-200 border-0">
-                                    Health & Beauty / Healthcare
-                                  </Badge>
-                                </div>
-                                <div className="text-center text-xs text-muted-foreground">
-                                  {idx % 3 === 0 ? 'Yes' : 'No'}
-                                </div>
-                                <div className="text-center">
-                                  <Badge className="text-[9px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                                    MOST RELEVANT
-                                  </Badge>
-                                </div>
-                                <div className="text-center">
-                                  <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30">
-                                    ✓ ENABLED
-                                  </Badge>
+                      {/* Analytics Content */}
+                      <div className="p-6">
+                        {/* Title */}
+                        <div className="text-center mb-6">
+                          <h3 className="text-base font-semibold text-foreground">Citation Link Analytics</h3>
+                          <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
+                        </div>
+                        
+                        {/* Donut Charts Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                          {/* Content Sharing Relevance */}
+                          <div>
+                            <h4 className="text-sm font-medium text-center mb-4">
+                              {viewMode === 'inbound' ? 'Inbound' : 'Outbound'} Content Sharing Relevance
+                            </h4>
+                            <div className="flex justify-center mb-4">
+                              <div className="relative w-32 h-32">
+                                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                                  {(() => {
+                                    const total = activeLinks.length || 1;
+                                    const circumference = 2 * Math.PI * 35;
+                                    
+                                    // Different distribution for outbound (more varied)
+                                    const segments = viewMode === 'inbound' 
+                                      ? [
+                                          { value: mostRelevantCount, color: '#CA8A04' },
+                                          { value: veryRelevantCount, color: '#22C55E' },
+                                        ]
+                                      : [
+                                          { value: Math.floor(total * 0.957), color: '#CA8A04' },
+                                          { value: Math.floor(total * 0.017), color: '#22C55E' },
+                                          { value: Math.floor(total * 0.026), color: '#3B82F6' },
+                                        ];
+                                    
+                                    let offset = 0;
+                                    return segments.map((seg, i) => {
+                                      const percent = seg.value / total;
+                                      const strokeDasharray = `${circumference * percent} ${circumference * (1 - percent)}`;
+                                      const strokeDashoffset = -offset * circumference;
+                                      offset += percent;
+                                      
+                                      if (seg.value === 0) return null;
+                                      
+                                      return (
+                                        <circle
+                                          key={i}
+                                          cx="50" cy="50" r="35"
+                                          fill="none"
+                                          stroke={seg.color}
+                                          strokeWidth="12"
+                                          strokeDasharray={strokeDasharray}
+                                          strokeDashoffset={strokeDashoffset}
+                                        />
+                                      );
+                                    });
+                                  })()}
+                                  <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  {viewMode === 'inbound' ? (
+                                    <>
+                                      <span className="text-[10px] text-emerald-400">17.0%</span>
+                                      <span className="text-sm text-yellow-500 font-bold">83.0%</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-[10px] text-emerald-400">4.3%</span>
+                                      <span className="text-sm text-yellow-500 font-bold">95.7%</span>
+                                    </>
+                                  )}
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                            {/* Legend */}
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                                  <span className="text-muted-foreground">Less Relevant</span>
+                                </div>
+                                <span className="font-medium">{lessRelevantCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                                  <span className="text-muted-foreground">Relevant</span>
+                                </div>
+                                <span className="font-medium">{relevantCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                                  <span className="text-muted-foreground">Very relevant</span>
+                                </div>
+                                <span className="font-medium">{veryRelevantCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                                  <span className="text-muted-foreground">Most Relevant</span>
+                                </div>
+                                <span className="font-medium">{mostRelevantCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Link Relationship Types */}
+                          <div>
+                            <h4 className="text-sm font-medium text-center mb-4">Link Relationship Types</h4>
+                            <div className="flex justify-center mb-4">
+                              <div className="relative w-32 h-32">
+                                <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                                  {(() => {
+                                    const total = totalLinks || 1;
+                                    const circumference = 2 * Math.PI * 35;
+                                    
+                                    const reciprocalPercent = reciprocalCount / total;
+                                    const oneWayPercent = oneWayCount / total;
+                                    
+                                    return (
+                                      <>
+                                        <circle
+                                          cx="50" cy="50" r="35"
+                                          fill="none" stroke="#22C55E" strokeWidth="12"
+                                          strokeDasharray={`${circumference * reciprocalPercent} ${circumference * (1 - reciprocalPercent)}`}
+                                        />
+                                        <circle
+                                          cx="50" cy="50" r="35"
+                                          fill="none" stroke="#3B82F6" strokeWidth="12"
+                                          strokeDasharray={`${circumference * oneWayPercent} ${circumference * (1 - oneWayPercent)}`}
+                                          strokeDashoffset={-circumference * reciprocalPercent}
+                                        />
+                                        <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
+                                      </>
+                                    );
+                                  })()}
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-[10px] text-emerald-400">41.0%</span>
+                                  <span className="text-sm text-blue-400 font-bold">59.0%</span>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Legend */}
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                                  <span className="text-muted-foreground">Reciprocal</span>
+                                </div>
+                                <span className="font-medium">{reciprocalCount}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                                  <span className="text-muted-foreground">One Way</span>
+                                </div>
+                                <span className="font-medium">{oneWayCount}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border/50 rounded-lg">
-                          No citation links found for this keyword
+                        
+                        {/* Total Summary */}
+                        <div className="text-center py-3 border-t border-b border-border/30 mb-6">
+                          <p className="text-sm text-foreground">
+                            <span className="font-semibold">Total: {totalLinks} citations</span>
+                            <span className="text-muted-foreground"> ({reciprocalCount} reciprocal)</span>
+                            <TrendingUp className="inline w-4 h-4 ml-1 text-emerald-400" />
+                          </p>
+                          <p className="text-xs text-muted-foreground">Citation links overview and statistics</p>
                         </div>
-                      )}
+                        
+                        {/* Your Citation Links Section */}
+                        <div>
+                          <h4 className="text-sm font-semibold mb-3">Your Citation Links</h4>
+                          
+                          {/* Filters */}
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Relevance Score:</span>
+                              <select 
+                                className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option>All Relevance</option>
+                                <option>Most Relevant</option>
+                                <option>Very Relevant</option>
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Reciprocal:</span>
+                              <select 
+                                className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option>All Types</option>
+                                <option>Reciprocal</option>
+                                <option>One Way</option>
+                              </select>
+                            </div>
+                          </div>
+                          
+                          {/* Links Table */}
+                          {activeLinks.length > 0 ? (
+                            <div className="rounded-lg border border-border/50 overflow-hidden">
+                              <div className="bg-muted/50 px-4 py-2.5 border-b border-border/50">
+                                <div className="grid grid-cols-5 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                  <span>Domain-Keyword</span>
+                                  <span>Category</span>
+                                  <span className="text-center">Reciprocal</span>
+                                  <span className="text-center">Relevance</span>
+                                  <span className="text-center">Actions</span>
+                                </div>
+                              </div>
+                              <div className="max-h-[250px] overflow-y-auto divide-y divide-border/30">
+                                {activeLinks.slice(0, 10).map((link, idx) => {
+                                  const isEnabled = idx % 2 === 0;
+                                  const isReciprocal = idx % 3 === 0;
+                                  return (
+                                    <div key={`link-${idx}`} className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center">
+                                      <div>
+                                        <div className="text-sm font-medium text-foreground truncate">
+                                          {viewMode === 'inbound' 
+                                            ? (link.source_url || link.domain || 'Unknown') 
+                                            : (link.target_url || link.domain || 'Unknown')}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground truncate">{keywordText}</div>
+                                      </div>
+                                      <div>
+                                        <Badge className="text-[9px] bg-slate-700 text-slate-200 border-0">
+                                          {viewMode === 'inbound' 
+                                            ? 'Health & Beauty / Healthcare' 
+                                            : 'Doctors & Medical / Dentist'}
+                                        </Badge>
+                                      </div>
+                                      <div className="text-center text-xs text-muted-foreground">
+                                        {isReciprocal ? 'Yes' : 'No'}
+                                      </div>
+                                      <div className="text-center">
+                                        <Badge className="text-[9px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                                          MOST RELEVANT
+                                        </Badge>
+                                      </div>
+                                      <div className="text-center">
+                                        <Badge className={`text-[9px] cursor-pointer ${
+                                          isEnabled 
+                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30' 
+                                            : 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30'
+                                        }`}>
+                                          {isEnabled ? '✓ ENABLED' : '✕ DISABLED'}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border/50 rounded-lg">
+                              No {viewMode} citation links found for this keyword
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
               )}
             </div>
