@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X } from "lucide-react";
+import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -696,26 +698,152 @@ export const BRONKeywordsTab = memo(({
       <Dialog open={!!articleEditorId} onOpenChange={() => setArticleEditorId(null)}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden p-0 [&>button]:hidden">
           <div className="h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background">
-              <DialogHeader className="p-0 space-y-0">
-                <DialogTitle className="text-base">
-                  Edit: {editorKeyword ? getKeywordDisplayText(editorKeyword) : 'Article'}
-                </DialogTitle>
-              </DialogHeader>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setArticleEditorId(null)}
-                className="h-8 w-8"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+            {/* Header with Keyword Metadata */}
+            <div className="border-b border-border/50 bg-background">
+              {/* Metadata Bar */}
+              {editorKeyword && (
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30 border-b border-border/30">
+                  <Badge variant="outline" className="text-xs font-mono bg-muted/50">
+                    ID: {editorKeyword.id}
+                  </Badge>
+                  <Badge 
+                    className={`text-xs ${
+                      editorKeyword.active === 1 
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                        : 'bg-muted/50 text-muted-foreground border-border'
+                    }`}
+                  >
+                    {editorKeyword.active === 1 ? 'Active' : 'Inactive'}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {editorKeyword.createdDate 
+                      ? new Date(editorKeyword.createdDate).toLocaleDateString('en-CA')
+                      : 'No date'}
+                  </span>
+                  <div className="flex-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      setDeleteConfirm(String(editorKeyword.id));
+                      setArticleEditorId(null);
+                    }}
+                  >
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    Delete
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 bg-cyan-600 hover:bg-cyan-700 text-white"
+                    onClick={() => {
+                      if (editorKeyword) {
+                        handleSave(editorKeyword);
+                      }
+                    }}
+                    disabled={savingIds.has(editorKeyword?.id || '')}
+                  >
+                    <Save className="w-3.5 h-3.5 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setArticleEditorId(null)}
+                    className="h-7 w-7"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              
+              {/* SEO Form Fields */}
+              {editorKeyword && inlineEditForms[editorKeyword.id] && (
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Keyword Title */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Keyword Title</Label>
+                      <Input
+                        value={inlineEditForms[editorKeyword.id].keywordtitle}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'keywordtitle', e.target.value)}
+                        placeholder="Primary keyword..."
+                        className="h-9 bg-muted/50 border-border/50"
+                      />
+                    </div>
+                    
+                    {/* Target URL */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Target URL</Label>
+                      <Input
+                        value={inlineEditForms[editorKeyword.id].linkouturl}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'linkouturl', e.target.value)}
+                        placeholder="https://example.com/page"
+                        className="h-9 bg-muted/50 border-border/50"
+                      />
+                    </div>
+                    
+                    {/* Meta Title */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Meta Title</Label>
+                        <span className="text-[10px] text-cyan-400">
+                          {(inlineEditForms[editorKeyword.id].metatitle || '').length}/60
+                        </span>
+                      </div>
+                      <Input
+                        value={inlineEditForms[editorKeyword.id].metatitle}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'metatitle', e.target.value)}
+                        placeholder="SEO-optimized title..."
+                        className="h-9 bg-muted/50 border-border/50"
+                      />
+                    </div>
+                    
+                    {/* Address */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Address</Label>
+                      <Input
+                        value={inlineEditForms[editorKeyword.id].resaddress}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'resaddress', e.target.value)}
+                        placeholder="Physical address..."
+                        className="h-9 bg-muted/50 border-border/50"
+                      />
+                    </div>
+                    
+                    {/* Meta Description - Full Width */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Meta Description</Label>
+                        <span className="text-[10px] text-cyan-400">
+                          {(inlineEditForms[editorKeyword.id].metadescription || '').length}/160
+                        </span>
+                      </div>
+                      <Textarea
+                        value={inlineEditForms[editorKeyword.id].metadescription}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'metadescription', e.target.value)}
+                        placeholder="Compelling meta description..."
+                        className="min-h-[80px] bg-muted/50 border-border/50 text-sm resize-none"
+                      />
+                    </div>
+                    
+                    {/* Facebook URL */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Facebook URL</Label>
+                      <Input
+                        value={inlineEditForms[editorKeyword.id].resfb}
+                        onChange={(e) => handleUpdateForm(editorKeyword.id, 'resfb', e.target.value)}
+                        placeholder="https://facebook.com/..."
+                        className="h-9 bg-muted/50 border-border/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Editor */}
-            <div className="flex-1 min-h-[400px] overflow-y-auto p-4">
-            {editorKeyword && inlineEditForms[editorKeyword.id] && (
+            <div className="flex-1 min-h-[300px] overflow-y-auto p-4">
+              {editorKeyword && inlineEditForms[editorKeyword.id] && (
                 <WysiwygEditor
                   html={inlineEditForms[editorKeyword.id].resfeedtext || ''}
                   onChange={(content) => handleUpdateForm(editorKeyword.id, 'resfeedtext', content)}
