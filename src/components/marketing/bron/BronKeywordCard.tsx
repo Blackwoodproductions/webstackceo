@@ -164,7 +164,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
 });
 PageSpeedGauge.displayName = 'PageSpeedGauge';
 
-// Rankings Display Component - memoized
+// Rankings Display Component - memoized (labels are shown in header row, not here)
 const RankingsDisplay = memo(({ 
   googlePos, bingPos, yahooPos, 
   googleMovement, bingMovement, yahooMovement 
@@ -182,29 +182,26 @@ const RankingsDisplay = memo(({
     return 'text-muted-foreground';
   };
 
-  const renderRanking = (label: string, pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
-    <div className="flex flex-col items-center w-[70px]">
-      <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">{label}</span>
-      <div className="flex items-center justify-center gap-1 h-7">
-        <span className={`text-lg font-normal ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
-          {pos !== null ? `#${pos}` : '—'}
-        </span>
-        {pos !== null && movement.delta !== 0 && (
-          <div className={`flex items-center gap-0.5 ${movement.color}`}>
-            {movement.type === 'up' && <TrendingUp className="w-3 h-3" />}
-            {movement.type === 'down' && <TrendingDown className="w-3 h-3" />}
-          </div>
-        )}
-        {pos !== null && movement.delta === 0 && <Minus className="w-2.5 h-2.5 text-muted-foreground/50" />}
-      </div>
+  const renderRanking = (pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
+    <div className="flex items-center justify-center gap-1 w-[70px] h-7">
+      <span className={`text-lg font-normal ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
+        {pos !== null ? `#${pos}` : '—'}
+      </span>
+      {pos !== null && movement.delta !== 0 && (
+        <div className={`flex items-center gap-0.5 ${movement.color}`}>
+          {movement.type === 'up' && <TrendingUp className="w-3 h-3" />}
+          {movement.type === 'down' && <TrendingDown className="w-3 h-3" />}
+        </div>
+      )}
+      {pos !== null && movement.delta === 0 && <Minus className="w-2.5 h-2.5 text-muted-foreground/50" />}
     </div>
   );
 
   return (
     <div className="flex items-center justify-center gap-1">
-      {renderRanking('Google', googlePos, getMovementFromDelta(googleMovement))}
-      {renderRanking('Bing', bingPos, getMovementFromDelta(bingMovement))}
-      {renderRanking('Yahoo', yahooPos, getMovementFromDelta(yahooMovement))}
+      {renderRanking(googlePos, getMovementFromDelta(googleMovement))}
+      {renderRanking(bingPos, getMovementFromDelta(bingMovement))}
+      {renderRanking(yahooPos, getMovementFromDelta(yahooMovement))}
     </div>
   );
 });
