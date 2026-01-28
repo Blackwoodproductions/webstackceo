@@ -81,6 +81,7 @@ import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
 // Import optimized hooks
 import { useVIAuth } from '@/hooks/use-vi-auth';
 import { useVIChat } from '@/hooks/use-vi-chat';
+import { useDomainCache } from '@/hooks/use-domain-cache';
 
 interface Lead {
   id: string;
@@ -566,26 +567,30 @@ const MarketingDashboard = () => {
   } | null>(null);
   const [inlineAuditError, setInlineAuditError] = useState<string | null>(null);
   
-  // User-added domains
-  const [userAddedDomains, setUserAddedDomains] = useState<string[]>(() => {
-    const stored = localStorage.getItem('vi_user_added_domains');
-    return stored ? JSON.parse(stored) : [];
-  });
+  // Domain caching hook - provides cached domain state with 24h persistence
+  const {
+    trackedDomains,
+    userAddedDomains,
+    gscSites,
+    selectedDomainKey,
+    selectedTrackedDomain: cachedSelectedTrackedDomain,
+    setTrackedDomains,
+    setUserAddedDomains,
+    setGscSites,
+    setSelectedDomainKey,
+    setSelectedTrackedDomain: setCachedSelectedTrackedDomain,
+    addUserDomain,
+    isCacheFresh,
+  } = useDomainCache();
+  
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
   const [newDomainInput, setNewDomainInput] = useState('');
   
-  // Persist user-added domains to localStorage
-  useEffect(() => {
-    localStorage.setItem('vi_user_added_domains', JSON.stringify(userAddedDomains));
-  }, [userAddedDomains]);
-  
   // GSC domain tracking status
   // Single source-of-truth for the header domain selector (domain-first)
-  const [selectedDomainKey, setSelectedDomainKey] = useState<string>("");
   const [selectedGscDomain, setSelectedGscDomain] = useState<string | null>(null);
   const [gscDomainHasTracking, setGscDomainHasTracking] = useState<boolean>(true); // Default to true until we check
   const [gscTrackingByDomain, setGscTrackingByDomain] = useState<Record<string, boolean>>({});
-  const [gscSites, setGscSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [gscAuthenticated, setGscAuthenticated] = useState<boolean>(false);
   const [gaAuthenticated, setGaAuthenticated] = useState<boolean>(false);
   const [gaMetrics, setGaMetrics] = useState<{
@@ -605,9 +610,9 @@ const MarketingDashboard = () => {
   const selectedGscDomainRef = useRef<string>("");
   const [gscProfile, setGscProfile] = useState<GoogleUserProfile | null>(null);
   
-  // Tracked domains from visitor intelligence (domains with tracking code installed)
-  const [trackedDomains, setTrackedDomains] = useState<string[]>([]);
-  const [selectedTrackedDomain, setSelectedTrackedDomain] = useState<string>("");
+  // selectedTrackedDomain is aliased from cache hook
+  const selectedTrackedDomain = cachedSelectedTrackedDomain;
+  const setSelectedTrackedDomain = setCachedSelectedTrackedDomain;
   
   // Track whether currently selected domain is in GSC
   const isCurrentDomainInGsc = useMemo(() => {
