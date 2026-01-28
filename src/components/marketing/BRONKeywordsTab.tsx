@@ -674,7 +674,7 @@ export const BRONKeywordsTab = ({
                 const yahooMovement = getMovementIndicator(yahooPos, initial?.yahoo ?? null);
                 
                 return (
-                  <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-16">
+                  <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-32">
                     {/* Google Column */}
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
