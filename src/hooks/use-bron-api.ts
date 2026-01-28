@@ -2,9 +2,193 @@ import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// ─── Cache Configuration ───
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_CACHED_DOMAINS = 10; // Limit cache entries per type
+
+// ─── Domains Cache ───
+const DOMAINS_CACHE_KEY = 'bron_domains_cache';
+
+interface DomainsCacheEntry {
+  domains: BronDomain[];
+  cachedAt: number;
+}
+
+function loadCachedDomains(): BronDomain[] | null {
+  try {
+    const cached = localStorage.getItem(DOMAINS_CACHE_KEY);
+    if (!cached) return null;
+    const entry = JSON.parse(cached) as DomainsCacheEntry;
+    if ((Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[BRON] Using cached domains (${entry.domains.length} domains)`);
+    return entry.domains;
+  } catch (e) {
+    console.warn('[BRON] Failed to load domains cache:', e);
+    return null;
+  }
+}
+
+function saveCachedDomains(domains: BronDomain[]) {
+  try {
+    localStorage.setItem(DOMAINS_CACHE_KEY, JSON.stringify({ domains, cachedAt: Date.now() }));
+    console.log(`[BRON] Cached ${domains.length} domains`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save domains cache:', e);
+  }
+}
+
+function invalidateDomainsCache() {
+  try {
+    localStorage.removeItem(DOMAINS_CACHE_KEY);
+    console.log('[BRON] Invalidated domains cache');
+  } catch (e) {
+    console.warn('[BRON] Failed to invalidate domains cache:', e);
+  }
+}
+
+// ─── Domain Details Cache ───
+const DOMAIN_DETAILS_CACHE_KEY = 'bron_domain_details_cache';
+
+interface DomainDetailsCacheEntry {
+  domain: BronDomain;
+  cachedAt: number;
+}
+
+function loadCachedDomainDetails(domainName: string): BronDomain | null {
+  try {
+    const cached = localStorage.getItem(DOMAIN_DETAILS_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, DomainDetailsCacheEntry>;
+    const entry = parsed[domainName];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[BRON] Using cached domain details for ${domainName}`);
+    return entry.domain;
+  } catch (e) {
+    console.warn('[BRON] Failed to load domain details cache:', e);
+    return null;
+  }
+}
+
+function saveCachedDomainDetails(domainName: string, domain: BronDomain) {
+  try {
+    const cached = localStorage.getItem(DOMAIN_DETAILS_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, DomainDetailsCacheEntry> : {};
+    
+    const domains = Object.keys(parsed);
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domainName]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domainName] = { domain, cachedAt: Date.now() };
+    localStorage.setItem(DOMAIN_DETAILS_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached domain details for ${domainName}`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save domain details cache:', e);
+  }
+}
+
+function invalidateDomainDetailsCache(domainName: string) {
+  try {
+    const cached = localStorage.getItem(DOMAIN_DETAILS_CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, DomainDetailsCacheEntry>;
+    if (parsed[domainName]) {
+      delete parsed[domainName];
+      localStorage.setItem(DOMAIN_DETAILS_CACHE_KEY, JSON.stringify(parsed));
+      console.log(`[BRON] Invalidated domain details cache for ${domainName}`);
+    }
+  } catch (e) {
+    console.warn('[BRON] Failed to invalidate domain details cache:', e);
+  }
+}
+
+// ─── Subscription Cache ───
+const SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
+
+interface SubscriptionCacheEntry {
+  subscription: BronSubscription;
+  cachedAt: number;
+}
+
+function loadCachedSubscription(domain: string): BronSubscription | null {
+  try {
+    const cached = localStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, SubscriptionCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[BRON] Using cached subscription for ${domain}`);
+    return entry.subscription;
+  } catch (e) {
+    console.warn('[BRON] Failed to load subscription cache:', e);
+    return null;
+  }
+}
+
+function saveCachedSubscription(domain: string, subscription: BronSubscription) {
+  try {
+    const cached = localStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, SubscriptionCacheEntry> : {};
+    
+    const domains = Object.keys(parsed);
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domain] = { subscription, cachedAt: Date.now() };
+    localStorage.setItem(SUBSCRIPTION_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached subscription for ${domain}`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save subscription cache:', e);
+  }
+}
+
+// ─── Pages Cache ───
+const PAGES_CACHE_KEY = 'bron_pages_cache';
+
+interface PagesCacheEntry {
+  pages: BronPage[];
+  cachedAt: number;
+}
+
+function loadCachedPages(domain: string): BronPage[] | null {
+  try {
+    const cached = localStorage.getItem(PAGES_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, PagesCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[BRON] Using cached pages for ${domain} (${entry.pages.length} pages)`);
+    return entry.pages;
+  } catch (e) {
+    console.warn('[BRON] Failed to load pages cache:', e);
+    return null;
+  }
+}
+
+function saveCachedPages(domain: string, pages: BronPage[]) {
+  try {
+    const cached = localStorage.getItem(PAGES_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, PagesCacheEntry> : {};
+    
+    const domains = Object.keys(parsed);
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domain] = { pages, cachedAt: Date.now() };
+    localStorage.setItem(PAGES_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached ${pages.length} pages for ${domain}`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save pages cache:', e);
+  }
+}
+
 // ─── Keyword Data Cache ───
 const KEYWORD_CACHE_KEY = 'bron_keywords_cache';
-const KEYWORD_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 interface KeywordCacheEntry {
   keywords: BronKeyword[];
@@ -17,11 +201,7 @@ function loadCachedKeywords(domain: string): BronKeyword[] | null {
     if (!cached) return null;
     const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
     const entry = parsed[domain];
-    if (!entry) return null;
-    const now = Date.now();
-    if ((now - entry.cachedAt) > KEYWORD_CACHE_MAX_AGE) {
-      return null; // Cache expired
-    }
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
     console.log(`[BRON] Using cached keywords for ${domain} (${entry.keywords.length} keywords)`);
     return entry.keywords;
   } catch (e) {
@@ -35,9 +215,8 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
     const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
     const parsed = cached ? JSON.parse(cached) as Record<string, KeywordCacheEntry> : {};
     
-    // Keep only last 10 domains to avoid localStorage bloat
     const domains = Object.keys(parsed);
-    if (domains.length >= 10 && !parsed[domain]) {
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
       const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
       delete parsed[oldest];
     }
@@ -67,87 +246,12 @@ export function invalidateKeywordCache(domain: string) {
 
 // ─── SERP Data Cache ───
 const SERP_CACHE_KEY = 'bron_serp_cache';
-const SERP_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 interface SerpCacheEntry {
   serpReports: BronSerpReport[];
   serpHistory: BronSerpListItem[];
-  latestReportId: string | number | null; // Used to detect new reports
+  latestReportId: string | number | null;
   cachedAt: number;
-}
-
-// ─── Links Data Cache ───
-const LINKS_CACHE_KEY = 'bron_links_cache';
-const LINKS_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-
-interface LinksCacheEntry {
-  linksIn: BronLink[];
-  linksOut: BronLink[];
-  linksInCount: number;
-  linksOutCount: number;
-  cachedAt: number;
-}
-
-function loadCachedLinks(domain: string): { linksIn: BronLink[]; linksOut: BronLink[] } | null {
-  try {
-    const cached = localStorage.getItem(LINKS_CACHE_KEY);
-    if (!cached) return null;
-    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
-    const entry = parsed[domain];
-    if (!entry) return null;
-    const now = Date.now();
-    if ((now - entry.cachedAt) > LINKS_CACHE_MAX_AGE) {
-      return null; // Cache expired
-    }
-    console.log(`[BRON] Using cached links for ${domain} (${entry.linksIn.length} in, ${entry.linksOut.length} out)`);
-    return { linksIn: entry.linksIn, linksOut: entry.linksOut };
-  } catch (e) {
-    console.warn('[BRON] Failed to load links cache:', e);
-    return null;
-  }
-}
-
-function saveCachedLinks(domain: string, linksIn: BronLink[], linksOut: BronLink[]) {
-  try {
-    const cached = localStorage.getItem(LINKS_CACHE_KEY);
-    const parsed = cached ? JSON.parse(cached) as Record<string, LinksCacheEntry> : {};
-    
-    // Keep only last 10 domains
-    const domains = Object.keys(parsed);
-    if (domains.length >= 10 && !parsed[domain]) {
-      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
-      delete parsed[oldest];
-    }
-    
-    parsed[domain] = { 
-      linksIn, 
-      linksOut, 
-      linksInCount: linksIn.length,
-      linksOutCount: linksOut.length,
-      cachedAt: Date.now() 
-    };
-    localStorage.setItem(LINKS_CACHE_KEY, JSON.stringify(parsed));
-    console.log(`[BRON] Cached links for ${domain} (${linksIn.length} in, ${linksOut.length} out)`);
-  } catch (e) {
-    console.warn('[BRON] Failed to save links cache:', e);
-  }
-}
-
-function getCachedLinksCounts(domain: string): { inCount: number; outCount: number } | null {
-  try {
-    const cached = localStorage.getItem(LINKS_CACHE_KEY);
-    if (!cached) return null;
-    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
-    const entry = parsed[domain];
-    if (!entry) return null;
-    const now = Date.now();
-    if ((now - entry.cachedAt) > LINKS_CACHE_MAX_AGE) {
-      return null;
-    }
-    return { inCount: entry.linksInCount, outCount: entry.linksOutCount };
-  } catch {
-    return null;
-  }
 }
 
 function loadCachedSerp(domain: string): { serpReports: BronSerpReport[]; serpHistory: BronSerpListItem[]; latestReportId: string | number | null } | null {
@@ -156,11 +260,7 @@ function loadCachedSerp(domain: string): { serpReports: BronSerpReport[]; serpHi
     if (!cached) return null;
     const parsed = JSON.parse(cached) as Record<string, SerpCacheEntry>;
     const entry = parsed[domain];
-    if (!entry) return null;
-    const now = Date.now();
-    if ((now - entry.cachedAt) > SERP_CACHE_MAX_AGE) {
-      return null; // Cache expired
-    }
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
     console.log(`[BRON] Using cached SERP data for ${domain} (${entry.serpReports.length} rankings, ${entry.serpHistory.length} reports)`);
     return { serpReports: entry.serpReports, serpHistory: entry.serpHistory, latestReportId: entry.latestReportId };
   } catch (e) {
@@ -174,14 +274,12 @@ function saveCachedSerp(domain: string, serpReports: BronSerpReport[], serpHisto
     const cached = localStorage.getItem(SERP_CACHE_KEY);
     const parsed = cached ? JSON.parse(cached) as Record<string, SerpCacheEntry> : {};
     
-    // Keep only last 10 domains
     const domains = Object.keys(parsed);
-    if (domains.length >= 10 && !parsed[domain]) {
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
       const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
       delete parsed[oldest];
     }
     
-    // Get the latest report ID for change detection
     const latestReportId = serpHistory.length > 0 
       ? (serpHistory.sort((a, b) => {
           const dateA = new Date(a.started || a.created_at || 0).getTime();
@@ -198,14 +296,54 @@ function saveCachedSerp(domain: string, serpReports: BronSerpReport[], serpHisto
   }
 }
 
-function getCachedLatestReportId(domain: string): string | number | null {
+// ─── Links Data Cache ───
+const LINKS_CACHE_KEY = 'bron_links_cache';
+
+interface LinksCacheEntry {
+  linksIn: BronLink[];
+  linksOut: BronLink[];
+  linksInCount: number;
+  linksOutCount: number;
+  cachedAt: number;
+}
+
+function loadCachedLinks(domain: string): { linksIn: BronLink[]; linksOut: BronLink[] } | null {
   try {
-    const cached = localStorage.getItem(SERP_CACHE_KEY);
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
     if (!cached) return null;
-    const parsed = JSON.parse(cached) as Record<string, SerpCacheEntry>;
-    return parsed[domain]?.latestReportId || null;
-  } catch {
+    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[BRON] Using cached links for ${domain} (${entry.linksIn.length} in, ${entry.linksOut.length} out)`);
+    return { linksIn: entry.linksIn, linksOut: entry.linksOut };
+  } catch (e) {
+    console.warn('[BRON] Failed to load links cache:', e);
     return null;
+  }
+}
+
+function saveCachedLinks(domain: string, linksIn: BronLink[], linksOut: BronLink[]) {
+  try {
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, LinksCacheEntry> : {};
+    
+    const domains = Object.keys(parsed);
+    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domain] = { 
+      linksIn, 
+      linksOut, 
+      linksInCount: linksIn.length,
+      linksOutCount: linksOut.length,
+      cachedAt: Date.now() 
+    };
+    localStorage.setItem(LINKS_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached links for ${domain} (${linksIn.length} in, ${linksOut.length} out)`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save links cache:', e);
   }
 }
 
@@ -507,20 +645,51 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const fetchDomains = useCallback(async () => {
+  // Fetch domains with caching
+  const fetchDomains = useCallback(async (forceRefresh = false) => {
+    // Try cache first
+    if (!forceRefresh) {
+      const cached = loadCachedDomains();
+      if (cached) {
+        setDomains(cached);
+        
+        // Background refresh to check for changes
+        callApi("listDomains", { limit: 100 }).then(result => {
+          if (result?.success && result.data) {
+            const rawList = result.data.domains || result.data.items || [];
+            const freshDomains: BronDomain[] = (Array.isArray(rawList) ? rawList : []).map((d: any) => ({
+              id: d.id,
+              domain: String(d.domain_name || d.domain || ""),
+              domain_name: d.domain_name,
+              is_deleted: d.deleted === 1 || d.is_deleted === true,
+            }));
+            
+            // Only update if count changed
+            if (freshDomains.length !== cached.length) {
+              console.log(`[BRON] Domains changed (${cached.length} -> ${freshDomains.length})`);
+              setDomains(freshDomains);
+              saveCachedDomains(freshDomains);
+            }
+          }
+        }).catch(err => console.warn('[BRON] Background domains check failed:', err));
+        
+        return; // Served from cache
+      }
+    }
+    
     return withPending(async () => {
       try {
         const result = await callApi("listDomains", { limit: 100 });
         if (result?.success && result.data) {
           const rawList = result.data.domains || result.data.items || [];
-          // Normalize domain_name to domain for consistency
-          const domainList: BronDomain[] = (Array.isArray(rawList) ? rawList : []).map((d: { id?: number; domain_name?: string; domain?: string; deleted?: number; is_deleted?: boolean }) => ({
+          const domainList: BronDomain[] = (Array.isArray(rawList) ? rawList : []).map((d: any) => ({
             id: d.id,
             domain: String(d.domain_name || d.domain || ""),
             domain_name: d.domain_name,
             is_deleted: d.deleted === 1 || d.is_deleted === true,
           }));
           setDomains(domainList);
+          saveCachedDomains(domainList);
         }
       } catch (err) {
         toast.error("Failed to fetch domains");
@@ -529,11 +698,29 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const fetchDomain = useCallback(async (domain: string): Promise<BronDomain | null> => {
+  // Fetch single domain details with caching
+  const fetchDomain = useCallback(async (domain: string, forceRefresh = false): Promise<BronDomain | null> => {
+    // Try cache first
+    if (!forceRefresh) {
+      const cached = loadCachedDomainDetails(domain);
+      if (cached) {
+        // Background refresh
+        callApi("getDomain", { domain }).then(result => {
+          if (result?.success && result.data) {
+            saveCachedDomainDetails(domain, result.data as BronDomain);
+          }
+        }).catch(err => console.warn('[BRON] Background domain details check failed:', err));
+        
+        return cached;
+      }
+    }
+    
     try {
       const result = await callApi("getDomain", { domain });
       if (result?.success && result.data) {
-        return result.data as BronDomain;
+        const domainData = result.data as BronDomain;
+        saveCachedDomainDetails(domain, domainData);
+        return domainData;
       }
       return null;
     } catch (err) {
@@ -542,11 +729,29 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
-  const fetchSubscription = useCallback(async (domain: string): Promise<BronSubscription | null> => {
+  // Fetch subscription with caching
+  const fetchSubscription = useCallback(async (domain: string, forceRefresh = false): Promise<BronSubscription | null> => {
+    // Try cache first
+    if (!forceRefresh) {
+      const cached = loadCachedSubscription(domain);
+      if (cached) {
+        // Background refresh
+        callApi("getSubscription", { domain }).then(result => {
+          if (result?.success && result.data) {
+            saveCachedSubscription(domain, result.data as BronSubscription);
+          }
+        }).catch(err => console.warn('[BRON] Background subscription check failed:', err));
+        
+        return cached;
+      }
+    }
+    
     try {
       const result = await callApi("getSubscription", { domain });
       if (result?.success && result.data) {
-        return result.data as BronSubscription;
+        const subData = result.data as BronSubscription;
+        saveCachedSubscription(domain, subData);
+        return subData;
       }
       return null;
     } catch (err) {
@@ -560,6 +765,9 @@ export function useBronApi(): UseBronApiReturn {
       try {
         const result = await callApi("updateDomain", { domain, data });
         if (result?.success) {
+          // Invalidate caches
+          invalidateDomainDetailsCache(domain);
+          invalidateDomainsCache();
           toast.success("Domain updated successfully");
           return true;
         }
@@ -577,8 +785,11 @@ export function useBronApi(): UseBronApiReturn {
       try {
         const result = await callApi("deleteDomain", { domain });
         if (result?.success) {
+          // Invalidate caches
+          invalidateDomainDetailsCache(domain);
+          invalidateDomainsCache();
           toast.success("Domain deleted");
-          await fetchDomains();
+          await fetchDomains(true); // Force refresh
           return true;
         }
         return false;
@@ -595,8 +806,11 @@ export function useBronApi(): UseBronApiReturn {
       try {
         const result = await callApi("restoreDomain", { domain });
         if (result?.success) {
+          // Invalidate caches
+          invalidateDomainDetailsCache(domain);
+          invalidateDomainsCache();
           toast.success("Domain restored");
-          await fetchDomains();
+          await fetchDomains(true); // Force refresh
           return true;
         }
         return false;
@@ -757,18 +971,49 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const fetchPages = useCallback(async (domain: string) => {
+  // Fetch pages with caching
+  const fetchPages = useCallback(async (domain: string, forceRefresh = false) => {
     const reqId = ++pagesReqIdRef.current;
+    
+    // Try cache first
+    if (!forceRefresh) {
+      const cached = loadCachedPages(domain);
+      if (cached) {
+        setPages(cached);
+        
+        // Background refresh
+        callApi("getPages", { domain }).then(result => {
+          if (reqId !== pagesReqIdRef.current) return;
+          if (result?.success && result.data) {
+            const pageList = Array.isArray(result.data)
+              ? result.data
+              : (result.data.pages || result.data.articles || result.data.items || []);
+            const freshPages = Array.isArray(pageList) ? pageList : [];
+            
+            // Only update if count changed
+            if (freshPages.length !== cached.length) {
+              console.log(`[BRON] Pages changed for ${domain} (${cached.length} -> ${freshPages.length})`);
+              setPages(freshPages);
+              saveCachedPages(domain, freshPages);
+            }
+          }
+        }).catch(err => console.warn('[BRON] Background pages check failed:', err));
+        
+        return; // Served from cache
+      }
+    }
+    
     return withPending(async () => {
       try {
         const result = await callApi("getPages", { domain });
         if (reqId !== pagesReqIdRef.current) return;
         if (result?.success && result.data) {
-          // API returns array directly in data, or nested in pages/articles/items
           const pageList = Array.isArray(result.data)
             ? result.data
             : (result.data.pages || result.data.articles || result.data.items || []);
-          setPages(Array.isArray(pageList) ? pageList : []);
+          const freshPages = Array.isArray(pageList) ? pageList : [];
+          setPages(freshPages);
+          saveCachedPages(domain, freshPages);
         }
       } catch (err) {
         if (reqId !== pagesReqIdRef.current) return;
