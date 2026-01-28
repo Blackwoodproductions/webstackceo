@@ -123,10 +123,8 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   const clusters: KeywordCluster[] = [];
   
   // Build a lookup map: keyword ID -> keyword object
-  // This allows us to find parent keywords when a child has bubblefeedid pointing to it
   const keywordById = new Map<number | string, BronKeyword>();
   for (const kw of contentKeywords) {
-    // Store by both string and number versions to handle type mismatches
     keywordById.set(kw.id, kw);
     keywordById.set(String(kw.id), kw);
     if (typeof kw.id === 'string' && !isNaN(Number(kw.id))) {
@@ -134,22 +132,54 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     }
   }
   
-  // Build parent-child relationships using bubblefeedid:
-  // A supporting keyword has bubblefeedid = parent keyword's ID
-  // Example: Supporting keyword ID 15134 has bubblefeedid: 582231
-  //          Parent keyword "Best Dentist in Port Coquitlam" has ID: 582231
+  // Build parent-child relationships
+  // The BRON API returns relationships in TWO ways:
+  // 1. Parent keywords have a `supporting_keywords[]` array containing child keyword objects
+  // 2. Child keywords (if in flat list) have `bubblefeedid` pointing to parent ID
   const parentChildMap = new Map<number | string, BronKeyword[]>();
   const childIds = new Set<number | string>();
   
+  // FIRST: Process supporting_keywords arrays from parent keywords
+  // This is the PRIMARY source since child keywords are nested in parent objects
   for (const kw of contentKeywords) {
-    // Check if this keyword has a bubblefeedid pointing to a parent
+    if (kw.supporting_keywords && Array.isArray(kw.supporting_keywords) && kw.supporting_keywords.length > 0) {
+      const children: BronKeyword[] = [];
+      
+      for (const supportingKw of kw.supporting_keywords) {
+        if (supportingKw && supportingKw.id) {
+          // Check if this supporting keyword already exists in the flat list
+          const existingKw = keywordById.get(supportingKw.id) || keywordById.get(String(supportingKw.id));
+          
+          if (existingKw) {
+            // Use the existing keyword object (has more complete data)
+            children.push(existingKw);
+            childIds.add(existingKw.id);
+          } else {
+            // Use the supporting keyword object from the array (might be partial data)
+            children.push(supportingKw as BronKeyword);
+            childIds.add(supportingKw.id);
+          }
+          
+          console.log(`[BRON Clustering] Found supporting keyword from array: "${getKeywordDisplayText(supportingKw)}" (ID: ${supportingKw.id}) -> parent: "${getKeywordDisplayText(kw)}" (ID: ${kw.id})`);
+        }
+      }
+      
+      if (children.length > 0) {
+        parentChildMap.set(kw.id, children);
+      }
+    }
+  }
+  
+  // SECOND: Process bubblefeedid for any keywords not yet assigned
+  // This catches cases where child keywords appear in flat list with bubblefeedid
+  for (const kw of contentKeywords) {
+    // Skip if already marked as a child
+    if (childIds.has(kw.id)) continue;
+    
     const bubbleId = kw.bubblefeedid;
     
     if (bubbleId && typeof bubbleId !== 'boolean') {
-      // This keyword is a CHILD - its bubblefeedid points to its parent
       const parentId = bubbleId;
-      
-      // Verify the parent exists in our keyword list
       const parentExists = keywordById.has(parentId) || keywordById.has(String(parentId));
       
       if (parentExists) {
@@ -159,12 +189,15 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
         if (!parentChildMap.has(normalizedParentId)) {
           parentChildMap.set(normalizedParentId, []);
         }
-        parentChildMap.get(normalizedParentId)!.push(kw);
+        // Only add if not already in the array
+        const existingChildren = parentChildMap.get(normalizedParentId)!;
+        if (!existingChildren.some(c => c.id === kw.id)) {
+          existingChildren.push(kw);
+        }
         
-        console.log(`[BRON Clustering] Found child: "${getKeywordDisplayText(kw)}" (ID: ${kw.id}) -> parent ID: ${parentId}`);
+        console.log(`[BRON Clustering] Found child via bubblefeedid: "${getKeywordDisplayText(kw)}" (ID: ${kw.id}) -> parent ID: ${parentId}`);
       }
     }
-    
     // Fallback: Check parent_keyword_id
     else if (kw.parent_keyword_id) {
       const parentId = kw.parent_keyword_id;
@@ -177,7 +210,10 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
         if (!parentChildMap.has(normalizedParentId)) {
           parentChildMap.set(normalizedParentId, []);
         }
-        parentChildMap.get(normalizedParentId)!.push(kw);
+        const existingChildren = parentChildMap.get(normalizedParentId)!;
+        if (!existingChildren.some(c => c.id === kw.id)) {
+          existingChildren.push(kw);
+        }
       }
     }
   }
@@ -188,6 +224,7 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     childrenFound: childIds.size,
     parentCount: parentChildMap.size,
     parentIds: Array.from(parentChildMap.keys()),
+    childIdsList: Array.from(childIds),
   });
   
   if (childIds.size > 0) {
