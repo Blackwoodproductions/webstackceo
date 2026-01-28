@@ -278,6 +278,15 @@ export const BRONKeywordsTab = ({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
+  // Initial keyword positions from first snapshot (for movement tracking)
+  interface InitialPositions {
+    google: number | null;
+    bing: number | null;
+    yahoo: number | null;
+  }
+  const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
+  const [initialPositionsLoading, setInitialPositionsLoading] = useState(false);
+
   // Filter keywords
   const filteredKeywords = useMemo(() => {
     if (!searchQuery.trim()) return keywords;
@@ -289,6 +298,44 @@ export const BRONKeywordsTab = ({
   }, [keywords, searchQuery]);
 
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
+
+  // Fetch initial positions from first snapshot for movement tracking
+  useEffect(() => {
+    const fetchInitialPositions = async () => {
+      if (!selectedDomain || keywords.length === 0) return;
+      
+      setInitialPositionsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('keyword_ranking_history')
+          .select('keyword, google_position, bing_position, yahoo_position, snapshot_at')
+          .eq('domain', selectedDomain)
+          .order('snapshot_at', { ascending: true });
+        
+        if (!error && data && data.length > 0) {
+          // Get the first recorded position for each keyword
+          const firstPositions: Record<string, InitialPositions> = {};
+          for (const row of data) {
+            const keyLower = row.keyword.toLowerCase();
+            if (!firstPositions[keyLower]) {
+              firstPositions[keyLower] = {
+                google: row.google_position,
+                bing: row.bing_position,
+                yahoo: row.yahoo_position,
+              };
+            }
+          }
+          setInitialPositions(firstPositions);
+        }
+      } catch (err) {
+        console.error('Failed to fetch initial positions:', err);
+      } finally {
+        setInitialPositionsLoading(false);
+      }
+    };
+    
+    fetchInitialPositions();
+  }, [selectedDomain, keywords]);
 
   // Fetch keyword metrics from DataForSEO
   useEffect(() => {
@@ -320,6 +367,25 @@ export const BRONKeywordsTab = ({
     
     fetchMetrics();
   }, [keywords]);
+
+  // Helper to get movement indicator for a position
+  const getMovementIndicator = (currentPos: number | null, initialPos: number | null) => {
+    if (currentPos === null || initialPos === null) {
+      return { type: 'none' as const, color: 'text-muted-foreground', bgColor: '' };
+    }
+    
+    // Lower position number = better ranking
+    if (currentPos < initialPos) {
+      // Improved - went up in rankings
+      return { type: 'up' as const, color: 'text-emerald-400', bgColor: 'text-emerald-400' };
+    } else if (currentPos > initialPos) {
+      // Declined - went down in rankings
+      return { type: 'down' as const, color: 'text-amber-400', bgColor: 'text-amber-400' };
+    } else {
+      // Same position
+      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'text-blue-400' };
+    }
+  };
 
 
   const isDeleted = (kw: BronKeyword) => kw.deleted === 1 || kw.is_deleted === true;
@@ -571,47 +637,80 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* SERP Rankings - 3 Column Layout with Headers */}
-              <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-16">
-                {/* Google Column */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
-                  {googlePos !== null ? (
-                    <div className={`flex items-center gap-1 ${getPositionStyle(googlePos).text}`}>
-                      <span className="text-lg font-bold">#{googlePos}</span>
-                      {googlePos <= 10 ? (
-                        <TrendingUp className="w-3 h-3 text-emerald-400" />
-                      ) : googlePos <= 20 ? (
-                        <Minus className="w-3 h-3 text-amber-400" />
+              {/* SERP Rankings - 3 Column Layout with Headers + Movement Indicators */}
+              {(() => {
+                const initial = initialPositions[keywordText.toLowerCase()];
+                const googleMovement = getMovementIndicator(googlePos, initial?.google ?? null);
+                const bingMovement = getMovementIndicator(bingPos, initial?.bing ?? null);
+                const yahooMovement = getMovementIndicator(yahooPos, initial?.yahoo ?? null);
+                
+                return (
+                  <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-16">
+                    {/* Google Column */}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
+                      {googlePos !== null ? (
+                        <div className={`flex items-center gap-1 ${googleMovement.color}`}>
+                          <span className="text-lg font-bold">#{googlePos}</span>
+                          {googleMovement.type === 'up' && (
+                            <TrendingUp className="w-3.5 h-3.5" />
+                          )}
+                          {googleMovement.type === 'same' && (
+                            <Minus className="w-3.5 h-3.5" />
+                          )}
+                          {googleMovement.type === 'down' && (
+                            <Activity className="w-3.5 h-3.5" />
+                          )}
+                        </div>
                       ) : (
-                        <TrendingDown className="w-3 h-3 text-red-400" />
+                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
                       )}
                     </div>
-                  ) : (
-                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                  )}
-                </div>
-                
-                {/* Bing Column */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
-                  {bingPos !== null ? (
-                    <span className={`text-lg font-bold ${getPositionStyle(bingPos).text}`}>#{bingPos}</span>
-                  ) : (
-                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                  )}
-                </div>
-                
-                {/* Yahoo Column */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
-                  {yahooPos !== null ? (
-                    <span className={`text-lg font-bold ${getPositionStyle(yahooPos).text}`}>#{yahooPos}</span>
-                  ) : (
-                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                  )}
-                </div>
-              </div>
+                    
+                    {/* Bing Column */}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
+                      {bingPos !== null ? (
+                        <div className={`flex items-center gap-1 ${bingMovement.color}`}>
+                          <span className="text-lg font-bold">#{bingPos}</span>
+                          {bingMovement.type === 'up' && (
+                            <TrendingUp className="w-3.5 h-3.5" />
+                          )}
+                          {bingMovement.type === 'same' && (
+                            <Minus className="w-3.5 h-3.5" />
+                          )}
+                          {bingMovement.type === 'down' && (
+                            <Activity className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                      )}
+                    </div>
+                    
+                    {/* Yahoo Column */}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
+                      {yahooPos !== null ? (
+                        <div className={`flex items-center gap-1 ${yahooMovement.color}`}>
+                          <span className="text-lg font-bold">#{yahooPos}</span>
+                          {yahooMovement.type === 'up' && (
+                            <TrendingUp className="w-3.5 h-3.5" />
+                          )}
+                          {yahooMovement.type === 'same' && (
+                            <Minus className="w-3.5 h-3.5" />
+                          )}
+                          {yahooMovement.type === 'down' && (
+                            <Activity className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Keyword Metrics from DataForSEO - Between Rankings and Links */}
               {(() => {
