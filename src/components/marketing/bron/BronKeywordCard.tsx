@@ -183,9 +183,9 @@ const RankingsDisplay = memo(({
   };
 
   const renderRanking = (label: string, pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-[70px]">
       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</span>
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex items-center justify-center gap-1 h-7">
         <span className={`text-xl font-bold ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground'}`}>
           {pos !== null ? `#${pos}` : '—'}
         </span>
@@ -193,7 +193,6 @@ const RankingsDisplay = memo(({
           <div className={`flex items-center gap-0.5 ${movement.color}`}>
             {movement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
             {movement.type === 'down' && <TrendingDown className="w-3.5 h-3.5" />}
-            <span className="text-xs font-semibold">{movement.delta > 0 ? `+${movement.delta}` : movement.delta}</span>
           </div>
         )}
         {pos !== null && movement.delta === 0 && <Minus className="w-3 h-3 text-muted-foreground/50" />}
@@ -202,7 +201,7 @@ const RankingsDisplay = memo(({
   );
 
   return (
-    <div className="grid grid-cols-3 gap-3 text-center">
+    <div className="flex items-center justify-center gap-1">
       {renderRanking('Google', googlePos, getMovementFromDelta(googleMovement))}
       {renderRanking('Bing', bingPos, getMovementFromDelta(bingMovement))}
       {renderRanking('Yahoo', yahooPos, getMovementFromDelta(yahooMovement))}
