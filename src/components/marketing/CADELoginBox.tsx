@@ -8,10 +8,11 @@ import {
   Search, Link2, TrendingUp, Target, Layers, Bot, Newspaper,
   Wand2, ListChecks,
   CheckCircle, XCircle, Timer, Rocket, PenTool, BookOpen,
-  Upload, Trash2, Settings, Copy, Send, Lock, ChevronRight
+  Upload, Trash2, Settings, Copy, Send, Lock, ChevronRight, Edit, X, Save, Eye, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -65,6 +66,24 @@ interface FAQItem {
   answer?: string;
   created_at?: string;
   status?: string;
+}
+
+interface ContentItem {
+  id?: string;
+  content_id?: string;
+  title?: string;
+  type?: string;
+  status?: string;
+  keyword?: string;
+  word_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  published_at?: string;
+  body?: string;
+  meta_title?: string;
+  meta_description?: string;
+  slug?: string;
+  published_url?: string;
 }
 
 interface TaskItem {
@@ -131,6 +150,7 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(null);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  const [contentList, setContentList] = useState<ContentItem[]>([]);
   const [crawlTasks, setCrawlTasks] = useState<TaskItem[]>([]);
   const [categorizationTasks, setCategorizationTasks] = useState<TaskItem[]>([]);
   const [queues, setQueues] = useState<QueueInfo[]>([]);
@@ -150,6 +170,15 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
   const [faqCount, setFaqCount] = useState("5");
   const [publishPlatform, setPublishPlatform] = useState("wordpress");
   const [publishContentId, setPublishContentId] = useState("");
+  
+  // Inline editing states
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
+  const [savingContent, setSavingContent] = useState(false);
+  const [editingFaqId, setEditingFaqId] = useState<string | null>(null);
+  const [editingFaq, setEditingFaq] = useState<FAQItem | null>(null);
+  const [savingFaq, setSavingFaq] = useState(false);
+  const [loadingContent, setLoadingContent] = useState(false);
 
   // API call helper - uses system API key (no user key needed)
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, currentDomain?: string) => {
@@ -304,6 +333,7 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
         const domainResults = await Promise.allSettled([
           callCadeApi("domain-profile"),
           callCadeApi("get-faqs"),
+          callCadeApi("list-content", { limit: 50 }),
         ]);
 
         if (domainResults[0].status === "fulfilled" && !domainResults[0].value?.error) {
@@ -312,6 +342,10 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
         if (domainResults[1].status === "fulfilled" && !domainResults[1].value?.error) {
           const faqData = domainResults[1].value?.data || domainResults[1].value;
           setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
+        }
+        if (domainResults[2].status === "fulfilled" && !domainResults[2].value?.error) {
+          const contentData = domainResults[2].value?.data || domainResults[2].value;
+          setContentList(Array.isArray(contentData) ? contentData : contentData?.items || contentData?.content || []);
         }
       }
     } catch (err) {
@@ -508,6 +542,123 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     } catch (err) {
       toast.error("Failed to terminate task");
     }
+  };
+
+  // === CONTENT CRUD HANDLERS ===
+  const handleEditContent = async (contentId: string) => {
+    setLoadingContent(true);
+    setEditingContentId(contentId);
+    try {
+      const res = await callCadeApi("get-content", { content_id: contentId });
+      if (res && !res.error) {
+        setEditingContent(res?.data || res);
+      } else {
+        toast.error("Failed to load content for editing");
+        setEditingContentId(null);
+      }
+    } catch (err) {
+      toast.error("Failed to load content");
+      setEditingContentId(null);
+    } finally {
+      setLoadingContent(false);
+    }
+  };
+
+  const handleSaveContent = async () => {
+    if (!editingContent || !editingContentId) return;
+    setSavingContent(true);
+    try {
+      const res = await callCadeApi("update-content", {
+        content_id: editingContentId,
+        title: editingContent.title,
+        body: editingContent.body,
+        meta_title: editingContent.meta_title,
+        meta_description: editingContent.meta_description,
+        slug: editingContent.slug,
+      });
+      if (res && !res.error) {
+        toast.success("Content updated successfully!");
+        setEditingContentId(null);
+        setEditingContent(null);
+        fetchAllData();
+      } else {
+        toast.error(res?.error || "Failed to update content");
+      }
+    } catch (err) {
+      toast.error("Failed to save content");
+    } finally {
+      setSavingContent(false);
+    }
+  };
+
+  const handleDeleteContent = async (contentId: string) => {
+    if (!confirm("Are you sure you want to delete this content?")) return;
+    try {
+      const res = await callCadeApi("delete-content", { content_id: contentId });
+      if (res && !res.error) {
+        toast.success("Content deleted");
+        fetchAllData();
+      } else {
+        toast.error(res?.error || "Failed to delete content");
+      }
+    } catch (err) {
+      toast.error("Failed to delete content");
+    }
+  };
+
+  const handleCancelEditContent = () => {
+    setEditingContentId(null);
+    setEditingContent(null);
+  };
+
+  // === FAQ CRUD HANDLERS ===
+  const handleEditFaq = (faq: FAQItem) => {
+    setEditingFaqId(faq.id || null);
+    setEditingFaq({ ...faq });
+  };
+
+  const handleSaveFaq = async () => {
+    if (!editingFaq || !editingFaqId) return;
+    setSavingFaq(true);
+    try {
+      const res = await callCadeApi("update-faq", {
+        faq_id: editingFaqId,
+        question: editingFaq.question,
+        answer: editingFaq.answer,
+      });
+      if (res && !res.error) {
+        toast.success("FAQ updated successfully!");
+        setEditingFaqId(null);
+        setEditingFaq(null);
+        fetchAllData();
+      } else {
+        toast.error(res?.error || "Failed to update FAQ");
+      }
+    } catch (err) {
+      toast.error("Failed to save FAQ");
+    } finally {
+      setSavingFaq(false);
+    }
+  };
+
+  const handleDeleteFaq = async (faqId: string) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+    try {
+      const res = await callCadeApi("delete-faq", { faq_id: faqId });
+      if (res && !res.error) {
+        toast.success("FAQ deleted");
+        fetchAllData();
+      } else {
+        toast.error(res?.error || "Failed to delete FAQ");
+      }
+    } catch (err) {
+      toast.error("Failed to delete FAQ");
+    }
+  };
+
+  const handleCancelEditFaq = () => {
+    setEditingFaqId(null);
+    setEditingFaq(null);
   };
 
   const copyToClipboard = (text: string) => {
@@ -1078,6 +1229,135 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
 
         {/* Content Generation Tab */}
         <TabsContent value="content" className="space-y-4">
+          {/* Content Editor Modal */}
+          {editingContentId && (
+            <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Edit className="w-5 h-5 text-violet-400" />
+                    Edit Content
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleCancelEditContent} disabled={savingContent}>
+                      <X className="w-4 h-4 mr-1" />Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSaveContent} disabled={savingContent} className="bg-violet-500 hover:bg-violet-600">
+                      {savingContent ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {loadingContent ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-violet-400" />
+                  </div>
+                ) : editingContent ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Title</label>
+                        <Input
+                          value={editingContent.title || ""}
+                          onChange={(e) => setEditingContent({ ...editingContent, title: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Slug</label>
+                        <Input
+                          value={editingContent.slug || ""}
+                          onChange={(e) => setEditingContent({ ...editingContent, slug: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Meta Title</label>
+                        <Input
+                          value={editingContent.meta_title || ""}
+                          onChange={(e) => setEditingContent({ ...editingContent, meta_title: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Meta Description</label>
+                        <Input
+                          value={editingContent.meta_description || ""}
+                          onChange={(e) => setEditingContent({ ...editingContent, meta_description: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Content Body</label>
+                      <Textarea
+                        value={editingContent.body || ""}
+                        onChange={(e) => setEditingContent({ ...editingContent, body: e.target.value })}
+                        rows={12}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">Content not found</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content List */}
+          {contentList.length > 0 && !editingContentId && (
+            <Card className="border-violet-500/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-violet-400" />
+                    Generated Content ({contentList.length})
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-64">
+                  <div className="space-y-2">
+                    {contentList.map((content, i) => (
+                      <div key={content.id || content.content_id || i} className="p-4 rounded-xl bg-muted/50 border border-border flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{content.title || "Untitled"}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge variant="outline" className="text-xs">{content.type || "article"}</Badge>
+                            <Badge className={getStatusColor(content.status)}>{content.status || "draft"}</Badge>
+                            {content.word_count && <span className="text-xs text-muted-foreground">{content.word_count} words</span>}
+                            {content.created_at && <span className="text-xs text-muted-foreground">{new Date(content.created_at).toLocaleDateString()}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {content.published_url && (
+                            <Button variant="ghost" size="icon" onClick={() => window.open(content.published_url, "_blank")}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => handleEditContent(content.id || content.content_id || "")}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            setPublishContentId(content.id || content.content_id || "");
+                            setActiveTab("publish");
+                          }}>
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-500" onClick={() => handleDeleteContent(content.id || content.content_id || "")}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Generator */}
           <Card className="border-violet-500/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Wand2 className="w-5 h-5 text-violet-400" />AI Content Generation</CardTitle>
@@ -1169,19 +1449,60 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
                   <div className="space-y-3">
                     {faqs.map((faq, i) => (
                       <div key={faq.id || i} className="p-4 rounded-xl bg-muted/50 border border-border">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <p className="font-medium flex items-start gap-2">
-                              <HelpCircle className="w-4 h-4 text-violet-400 shrink-0 mt-1" />
-                              {faq.question}
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-2 pl-6">{faq.answer}</p>
+                        {editingFaqId === faq.id ? (
+                          // Inline editing mode
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <label className="text-xs font-medium text-muted-foreground">Question</label>
+                              <Input
+                                value={editingFaq?.question || ""}
+                                onChange={(e) => setEditingFaq(prev => prev ? { ...prev, question: e.target.value } : prev)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-medium text-muted-foreground">Answer</label>
+                              <Textarea
+                                value={editingFaq?.answer || ""}
+                                onChange={(e) => setEditingFaq(prev => prev ? { ...prev, answer: e.target.value } : prev)}
+                                rows={4}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 justify-end">
+                              <Button variant="ghost" size="sm" onClick={handleCancelEditFaq} disabled={savingFaq}>
+                                <X className="w-4 h-4 mr-1" />Cancel
+                              </Button>
+                              <Button size="sm" onClick={handleSaveFaq} disabled={savingFaq} className="bg-violet-500 hover:bg-violet-600">
+                                {savingFaq ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                                Save
+                              </Button>
+                            </div>
                           </div>
-                          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => copyToClipboard(`Q: ${faq.question}\nA: ${faq.answer}`)}>
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        {faq.created_at && <p className="text-xs text-muted-foreground mt-2 pl-6">{new Date(faq.created_at).toLocaleDateString()}</p>}
+                        ) : (
+                          // Display mode
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium flex items-start gap-2">
+                                <HelpCircle className="w-4 h-4 text-violet-400 shrink-0 mt-1" />
+                                {faq.question}
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-2 pl-6">{faq.answer}</p>
+                              {faq.created_at && <p className="text-xs text-muted-foreground mt-2 pl-6">{new Date(faq.created_at).toLocaleDateString()}</p>}
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button variant="ghost" size="icon" onClick={() => copyToClipboard(`Q: ${faq.question}\nA: ${faq.answer}`)}>
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleEditFaq(faq)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              {faq.id && (
+                                <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-500" onClick={() => handleDeleteFaq(faq.id!)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
