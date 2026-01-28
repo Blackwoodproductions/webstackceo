@@ -292,12 +292,19 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
   );
   
   for (const parent of mainKeywords) {
-    const children = parentChildMap.get(parent.id) || [];
-    // Sort children alphabetically too
-    children.sort((a, b) => 
+    const allChildren = parentChildMap.get(parent.id) || [];
+    // Sort children alphabetically and LIMIT TO 2 supporting pages per main keyword
+    allChildren.sort((a, b) => 
       getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
     );
+    // Enforce cluster of 3: 1 main + max 2 supporting
+    const children = allChildren.slice(0, 2);
     groups.push({ parent, children });
+    
+    // Any excess children beyond 2 become orphaned and will be standalone
+    for (let i = 2; i < allChildren.length; i++) {
+      usedChildren.delete(allChildren[i].id);
+    }
   }
   
   // Add any truly orphaned supporting keywords (no parent found) as standalone entries
@@ -588,14 +595,19 @@ export const BRONKeywordsTab = ({
   }, [keywords]);
 
   // Fetch PageSpeed scores from Google API for keyword URLs - ONLY ONCE per session
+  // Uses mergedKeywords to include both main and supporting pages
   useEffect(() => {
     const fetchPageSpeedScores = async () => {
-      if (keywords.length === 0 || !selectedDomain) return;
+      if (mergedKeywords.length === 0 || !selectedDomain) return;
       
       // Collect URLs that haven't been fetched this session
       const urlsToFetch: { url: string; keywordId: string | number }[] = [];
       
-      for (const kw of keywords) {
+      // Iterate over ALL keywords (merged) to ensure supporting pages get PageSpeed
+      for (const kw of mergedKeywords) {
+        // Skip tracking-only keywords (no actual page)
+        if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) continue;
+        
         let url = kw.linkouturl;
         if (!url && selectedDomain) {
           const keywordSlug = getKeywordDisplayText(kw)
@@ -706,7 +718,7 @@ export const BRONKeywordsTab = ({
     const timer = setTimeout(fetchPageSpeedScores, 800);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keywords.length, selectedDomain]);
+  }, [mergedKeywords.length, selectedDomain]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
   const getMovementFromDelta = (movement: number) => {
     if (movement > 0) {
@@ -1051,7 +1063,7 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 2: Keyword Text - flex grow to use more available space */}
+              {/* Column 2: Keyword Text + External Link - flex grow to use more available space */}
               <div className="flex-1 min-w-[280px] max-w-[480px] pr-6 group/keyword">
                 <div className="flex items-center gap-2">
                   <h3 
@@ -1060,6 +1072,34 @@ export const BRONKeywordsTab = ({
                   >
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
+                  
+                  {/* External URL link button */}
+                  {(() => {
+                    let pageUrl = kw.linkouturl;
+                    if (!pageUrl && selectedDomain && !isTrackingOnly) {
+                      const keywordSlug = keywordText
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
+                      pageUrl = `https://${selectedDomain}/${keywordSlug}`;
+                    }
+                    if (pageUrl) {
+                      return (
+                        <a
+                          href={pageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-shrink-0 p-1 rounded-md hover:bg-primary/20 transition-colors group/link"
+                          title={`Open ${pageUrl}`}
+                        >
+                          <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground group-hover/link:text-primary transition-colors" />
+                        </a>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
                   {/* Badge hierarchy: Main vs Supporting vs Tracking Only */}
                   {isTrackingOnly ? (
                     <Badge className="text-[9px] h-5 bg-amber-500/20 text-amber-400 border-amber-500/30">
