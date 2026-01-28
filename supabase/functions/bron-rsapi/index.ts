@@ -315,7 +315,8 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        response = await bronApiRequest("/serp-detail", "POST", { domain, report_id: data.report_id });
+        // API requires 'serpid' not 'report_id'
+        response = await bronApiRequest("/serp-detail", "POST", { domain, serpid: data.report_id });
         result = await readResponseBody(response);
         break;
       }
