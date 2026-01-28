@@ -93,12 +93,14 @@ function getKeywordIntent(keyword: string) {
 }
 
 function getMovementFromDelta(movement: number) {
+  // Positive movement means ranking improved (e.g., from #10 to #5 = +5 improvement)
   if (movement > 0) {
-    return { type: 'up' as const, color: 'text-orange-400', bgColor: 'bg-orange-500/20', glow: true, delta: movement };
+    return { type: 'up' as const, color: 'text-emerald-500', bgColor: 'bg-emerald-500/20', delta: movement };
   } else if (movement < 0) {
-    return { type: 'down' as const, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', glow: false, delta: movement };
+    // Negative movement means ranking dropped (e.g., from #5 to #10 = -5 decline)
+    return { type: 'down' as const, color: 'text-red-500', bgColor: 'bg-red-500/20', delta: movement };
   }
-  return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false, delta: 0 };
+  return { type: 'same' as const, color: 'text-muted-foreground', bgColor: 'bg-muted/20', delta: 0 };
 }
 
 // PageSpeed Gauge Component - memoized with stable rendering
@@ -175,21 +177,27 @@ const RankingsDisplay = memo(({
   bingMovement: number;
   yahooMovement: number;
 }) => {
+  const getPositionColor = (movement: ReturnType<typeof getMovementFromDelta>) => {
+    if (movement.type === 'up') return 'text-emerald-500';
+    if (movement.type === 'down') return 'text-red-500';
+    return 'text-foreground';
+  };
+
   const renderRanking = (label: string, pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
     <div className="flex flex-col items-center">
       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</span>
       <div className="flex items-center justify-center gap-1">
-        <span className={`text-xl font-bold ${pos !== null ? 'text-foreground' : 'text-muted-foreground'}`}>
+        <span className={`text-xl font-bold ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground'}`}>
           {pos !== null ? `#${pos}` : '—'}
         </span>
         {pos !== null && movement.delta !== 0 && (
           <div className={`flex items-center gap-0.5 ${movement.color}`}>
-            {movement.type === 'up' && <TrendingUp className={`w-3.5 h-3.5 ${movement.glow ? 'drop-shadow-[0_0_4px_rgba(251,146,60,0.6)]' : ''}`} />}
+            {movement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
             {movement.type === 'down' && <TrendingDown className="w-3.5 h-3.5" />}
             <span className="text-xs font-semibold">{movement.delta > 0 ? `+${movement.delta}` : movement.delta}</span>
           </div>
         )}
-        {pos !== null && movement.delta === 0 && <Minus className="w-3 h-3 text-blue-400/50" />}
+        {pos !== null && movement.delta === 0 && <Minus className="w-3 h-3 text-muted-foreground/50" />}
       </div>
     </div>
   );
