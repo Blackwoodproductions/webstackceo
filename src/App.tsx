@@ -25,7 +25,7 @@ const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Admin = lazy(() => import("./pages/Admin"));
-const VisitorIntelligenceDashboard = lazy(() => import("./pages/VisitorIntelligenceDashboard"));
+
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Security = lazy(() => import("./pages/Security"));
@@ -142,8 +142,6 @@ const App = () => (
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/auth/callback" element={<AuthCallback />} />
                       <Route path="/admin" element={<Admin />} />
-                      <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
-                      <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
                       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/security" element={<Security />} />
@@ -192,7 +190,7 @@ const App = () => (
                       <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
                       <Route path="/sitemap" element={<Sitemap />} />
                       <Route path="/tools" element={<Tools />} />
-                      <Route path="/analytics" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
+                      
                       <Route path="/audits" element={<WebsiteAudits />} />
                       <Route path="/case-studies" element={<CaseStudies />} />
                       <Route path="/case-study/:domain" element={<AuditResults />} />
