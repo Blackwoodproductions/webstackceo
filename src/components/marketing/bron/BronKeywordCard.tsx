@@ -432,12 +432,13 @@ export const BronKeywordCard = memo(({
 
   return (
     <div
-      className={deleted ? 'opacity-50' : ''}
+      className={`${deleted ? 'opacity-50' : ''} no-theme-transition`}
       style={{ contain: 'layout style paint' }}
+      data-no-theme-transition
     >
       <div 
         className={`
-          rounded-xl border overflow-hidden
+          rounded-xl border overflow-hidden no-theme-transition
           ${isNested 
             ? 'border-l-4 border-l-amber-500/70 bg-amber-500/10 border-amber-500/30'
             : isTrackingOnly 
