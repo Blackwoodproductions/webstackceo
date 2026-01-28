@@ -46,62 +46,58 @@ interface BronKeywordCardProps {
 
 // Utility functions
 export function getKeywordDisplayText(kw: BronKeyword): string {
-  // Check all possible text fields from BRON API
-  // Different BRON packages may use different field names
+  // FAST PATH: Check primary string fields first (no parsing needed)
+  if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle.trim();
+  if (kw.keyword && kw.keyword.trim()) return kw.keyword.trim();
+  if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle.trim();
   
-  // Primary fields
-  if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
-  if (kw.keyword && kw.keyword.trim()) return kw.keyword;
-  if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
-  
-  // restitle is commonly used for supporting keywords
+  // Check extended fields via any-cast (still fast)
   const kwAny = kw as unknown as Record<string, unknown>;
-  if (typeof kwAny.restitle === 'string' && kwAny.restitle.trim()) return kwAny.restitle;
+  if (typeof kwAny.restitle === 'string' && kwAny.restitle.trim()) return kwAny.restitle.trim();
+  if (typeof kwAny.title === 'string' && kwAny.title.trim()) return kwAny.title.trim();
+  if (typeof kwAny.name === 'string' && kwAny.name.trim()) return kwAny.name.trim();
+  if (typeof kwAny.keyword_text === 'string' && kwAny.keyword_text.trim()) return kwAny.keyword_text.trim();
+  if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text.trim();
+  if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase.trim();
   
-  // Other possible title fields
-  if (typeof kwAny.title === 'string' && kwAny.title.trim()) return kwAny.title;
-  if (typeof kwAny.name === 'string' && kwAny.name.trim()) return kwAny.name;
-  if (typeof kwAny.keyword_text === 'string' && kwAny.keyword_text.trim()) return kwAny.keyword_text;
-  if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text;
-  if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase;
-  
-  // Try to extract from resfeedtext HTML content
-  if (kw.resfeedtext) {
-    const decoded = kw.resfeedtext
-      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
-      .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—');
-    
-    // Try h1 first (main title), then h3, h2, title
-    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1Match && h1Match[1] && h1Match[1].trim().length > 3) return h1Match[1].trim();
-    
-    const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
-    if (h3Match && h3Match[1] && h3Match[1].trim().length > 3) return h3Match[1].trim();
-    
-    const h2Match = decoded.match(/<h2[^>]*>([^<]+)<\/h2>/i);
-    if (h2Match && h2Match[1] && h2Match[1].trim().length > 3) return h2Match[1].trim();
-    
-    const titleMatch = decoded.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch && titleMatch[1] && titleMatch[1].trim().length > 3) return titleMatch[1].trim();
+  // MEDIUM PATH: Extract from linkouturl slug (faster than HTML parsing)
+  if (kw.linkouturl) {
+    // Remove protocol and domain
+    const pathStart = kw.linkouturl.indexOf('/', kw.linkouturl.indexOf('//') + 2);
+    if (pathStart > 0) {
+      const path = kw.linkouturl.slice(pathStart).replace(/\/$/, '');
+      const lastSlash = path.lastIndexOf('/');
+      const segment = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
+      if (segment.length > 2) {
+        // Remove trailing ID pattern like "-15134" or "-568071bc"
+        const cleaned = segment.replace(/-\d+bc$/i, '').replace(/-\d+$/, '');
+        if (cleaned.length > 2) {
+          // Convert slug to readable text
+          const words = cleaned.split(/[-_]+/).filter(w => w.length > 0);
+          const readable = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          if (readable.length > 3) return readable;
+        }
+      }
+    }
   }
   
-  // Check linkouturl for keyword slug
-  if (kw.linkouturl) {
-    const urlPath = kw.linkouturl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
-    const lastSegment = urlPath.split('/').pop();
-    if (lastSegment && lastSegment.length > 2) {
-      // Remove trailing ID pattern like "-15134" or "-568071bc"
-      const cleanedSegment = lastSegment.replace(/-\d+bc$/, '').replace(/-\d+$/, '');
-      const readable = cleanedSegment
-        .replace(/-/g, ' ')
-        .replace(/_/g, ' ')
-        .split(' ')
-        .filter(w => w.length > 0)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      if (readable.length > 3) return readable;
+  // SLOW PATH: Parse resfeedtext HTML (only as last resort)
+  // Limit parsing to first 2000 chars to avoid processing huge articles
+  if (kw.resfeedtext && kw.resfeedtext.length > 0) {
+    const snippet = kw.resfeedtext.length > 2000 ? kw.resfeedtext.slice(0, 2000) : kw.resfeedtext;
+    
+    // Decode HTML entities in one pass
+    const decoded = snippet
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;|&#x27;/g, "'")
+      .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—');
+    
+    // Try h1 first, then h3, h2, title (combined into one pass for efficiency)
+    const headingMatch = decoded.match(/<h[123][^>]*>([^<]{4,})<\/h[123]>/i) 
+                      || decoded.match(/<title[^>]*>([^<]{4,})<\/title>/i);
+    if (headingMatch && headingMatch[1]) {
+      return headingMatch[1].trim();
     }
   }
   
