@@ -572,7 +572,7 @@ export const BRONKeywordsTab = ({
               </div>
 
               {/* SERP Rankings - 3 Column Layout with Headers */}
-              <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px]">
+              <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-16">
                 {/* Google Column */}
                 <div className="flex flex-col items-center">
                   <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
