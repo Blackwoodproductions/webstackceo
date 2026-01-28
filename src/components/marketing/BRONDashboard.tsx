@@ -113,8 +113,10 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
 
-      // Reset screenshot when domain changes
+      // Reset all domain-specific data immediately for faster perceived switching
+      bronApi.resetDomainData();
       setScreenshotUrl(null);
+      setDomainInfo(null);
 
       // Check for existing screenshot first, then capture if needed
       const hasExisting = await getExistingScreenshot(selectedDomain);
@@ -127,16 +129,18 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       const info = await bronApi.fetchDomain(selectedDomain);
       if (!cancelled && info) setDomainInfo(info);
 
-      await sleep(260);
+      // Fetch keywords immediately (no delay for first critical data)
       if (cancelled) return;
       await bronApi.fetchKeywords(selectedDomain);
-      await sleep(260);
+      
+      // Stagger remaining requests
+      await sleep(150);
       if (cancelled) return;
       await bronApi.fetchPages(selectedDomain);
-      await sleep(260);
+      await sleep(150);
       if (cancelled) return;
       await bronApi.fetchSerpReport(selectedDomain);
-      await sleep(260);
+      await sleep(150);
       if (cancelled) return;
       await bronApi.fetchSerpList(selectedDomain);
     };
