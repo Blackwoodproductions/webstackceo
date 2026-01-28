@@ -350,40 +350,49 @@ export const BRONKeywordsTab = memo(({
         }
         return next;
       });
-      
-      await Promise.all(batch.map(async ({ url }) => {
-        try {
-          const { data, error } = await supabase.functions.invoke('pagespeed-insights', { body: { url } });
-          
-          if (!error && data?.metrics) {
-            setPageSpeedScores(prev => {
-              const updated = {
-                ...prev,
-                [url]: {
-                  mobileScore: data.metrics.mobile?.score || 0,
-                  desktopScore: data.metrics.desktop?.score || 0,
-                  loading: false,
-                  updating: false,
-                  error: false,
-                  cachedAt: Date.now(),
-                }
+
+      // Batch updates to avoid re-rendering the whole keyword list once per URL.
+      const results = await Promise.all(
+        batch.map(async ({ url }) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('pagespeed-insights', { body: { url } });
+            if (!error && data?.metrics) {
+              return {
+                url,
+                ok: true as const,
+                mobileScore: data.metrics.mobile?.score || 0,
+                desktopScore: data.metrics.desktop?.score || 0,
               };
-              saveCachedPageSpeedScores(updated);
-              return updated;
-            });
-          } else {
-            setPageSpeedScores(prev => ({
-              ...prev,
-              [url]: { mobileScore: 0, desktopScore: 0, loading: false, updating: false, error: true }
-            }));
+            }
+            return { url, ok: false as const };
+          } catch {
+            return { url, ok: false as const };
           }
-        } catch {
-          setPageSpeedScores(prev => ({
-            ...prev,
-            [url]: { mobileScore: 0, desktopScore: 0, loading: false, updating: false, error: true }
-          }));
+        })
+      );
+
+      setPageSpeedScores(prev => {
+        const updated = { ...prev };
+        const now = Date.now();
+
+        for (const r of results) {
+          if (r.ok) {
+            updated[r.url] = {
+              mobileScore: r.mobileScore,
+              desktopScore: r.desktopScore,
+              loading: false,
+              updating: false,
+              error: false,
+              cachedAt: now,
+            };
+          } else {
+            updated[r.url] = { mobileScore: 0, desktopScore: 0, loading: false, updating: false, error: true };
+          }
         }
-      }));
+
+        saveCachedPageSpeedScores(updated);
+        return updated;
+      });
     };
     
     const batchSize = 3;
