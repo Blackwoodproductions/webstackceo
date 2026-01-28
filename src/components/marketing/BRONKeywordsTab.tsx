@@ -204,6 +204,7 @@ export const BRONKeywordsTab = memo(({
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
   const pageSpeedScoresRef = useRef(pageSpeedScores);
+  const pageSpeedCacheSaveTimerRef = useRef<number | null>(null);
   const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
@@ -213,6 +214,28 @@ export const BRONKeywordsTab = memo(({
   useEffect(() => {
     pageSpeedScoresRef.current = pageSpeedScores;
   }, [pageSpeedScores]);
+
+  // Debounce PageSpeed cache writes to avoid main-thread jank (large JSON stringify) that can look like flicker.
+  const schedulePageSpeedCacheSave = useCallback((scores: Record<string, PageSpeedScore>) => {
+    if (pageSpeedCacheSaveTimerRef.current) {
+      window.clearTimeout(pageSpeedCacheSaveTimerRef.current);
+    }
+    pageSpeedCacheSaveTimerRef.current = window.setTimeout(() => {
+      try {
+        saveCachedPageSpeedScores(scores);
+      } catch {
+        // no-op: localStorage can fail in private mode / quota
+      }
+    }, 900);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pageSpeedCacheSaveTimerRef.current) {
+        window.clearTimeout(pageSpeedCacheSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   // Merge keywords with SERP data
   const mergedKeywords = useMemo(() => 
@@ -433,7 +456,7 @@ export const BRONKeywordsTab = memo(({
         })
       );
 
-       startTransition(() => {
+        startTransition(() => {
          setPageSpeedScores(prev => {
            const updated = { ...prev };
            const now = Date.now();
@@ -453,7 +476,7 @@ export const BRONKeywordsTab = memo(({
              }
            }
 
-           saveCachedPageSpeedScores(updated);
+            schedulePageSpeedCacheSave(updated);
            return updated;
          });
        });
