@@ -206,7 +206,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
           <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-white" />
+            <Loader2 className="w-8 h-8 text-white animate-spin motion-reduce:animate-none" />
           </div>
         </div>
         <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
@@ -331,7 +331,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
                         <div className="relative">
                           <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-md" />
                           <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                            <Loader2 className="w-6 h-6 text-white" />
+                             <Loader2 className="w-6 h-6 text-white animate-spin motion-reduce:animate-none" />
                           </div>
                         </div>
                         <span className="text-sm font-medium text-foreground">Capturing screenshot...</span>
