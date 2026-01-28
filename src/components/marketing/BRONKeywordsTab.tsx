@@ -632,18 +632,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Intent Type Icon + Label */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className={`w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
-                  <IntentIcon className={`w-5 h-5 ${intent.color}`} />
-                </div>
-                <span className={`text-[10px] font-medium capitalize w-20 ${intent.color}`}>
-                  {intent.type}
-                </span>
-              </div>
-
-              {/* Keyword Text - full width display */}
-              <div className="flex-1 min-w-0 pl-2">
+              {/* Keyword Text - with hover tooltip showing intent */}
+              <div className="flex-1 min-w-0 pl-2 group/keyword relative">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -651,6 +641,22 @@ export const BRONKeywordsTab = ({
                   {active && (
                     <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                   )}
+                </div>
+                {/* Hover tooltip with intent type */}
+                <div className="absolute left-0 top-full mt-1 opacity-0 group-hover/keyword:opacity-100 pointer-events-none z-50 transition-opacity duration-200">
+                  <div className="bg-card border border-border/60 shadow-xl rounded-lg px-3 py-2 flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
+                      <IntentIcon className={`w-4 h-4 ${intent.color}`} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground whitespace-nowrap">
+                        {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
+                      </span>
+                      <span className={`text-[10px] font-medium capitalize ${intent.color}`}>
+                        {intent.type} Intent
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
