@@ -34,7 +34,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
+import { KeywordHistoryChart } from "@/components/marketing/KeywordHistoryChart";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Keyword metrics from DataForSEO
 interface KeywordMetrics {
@@ -415,6 +417,54 @@ export const BRONKeywordsTab = ({
     onRefresh();
   };
 
+  // Save current keyword rankings as a historical snapshot
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  
+  const saveRankingSnapshot = async () => {
+    if (!selectedDomain || keywords.length === 0) return;
+    
+    setSavingSnapshot(true);
+    try {
+      // Build snapshot data from current keywords and SERP reports
+      const snapshotData = keywords.map(kw => {
+        const keywordText = getKeywordDisplayText(kw);
+        const serpData = findSerpForKeyword(keywordText, serpReports);
+        const metrics = keywordMetrics[keywordText.toLowerCase()];
+        
+        return {
+          keyword: keywordText,
+          google_position: getPosition(serpData?.google),
+          bing_position: getPosition(serpData?.bing),
+          yahoo_position: getPosition(serpData?.yahoo),
+          search_volume: metrics?.search_volume || null,
+          cpc: metrics?.cpc || null,
+          competition_level: metrics?.competition_level || null,
+        };
+      });
+
+      const { data, error } = await supabase.functions.invoke('keyword-history-snapshot', {
+        body: { 
+          action: 'saveSnapshot', 
+          domain: selectedDomain, 
+          keywords: snapshotData 
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success(`Saved ${data.count} keyword rankings snapshot`);
+      } else if (data?.message) {
+        toast.info(data.message);
+      }
+    } catch (err) {
+      console.error('Failed to save snapshot:', err);
+      toast.error('Failed to save ranking snapshot');
+    } finally {
+      setSavingSnapshot(false);
+    }
+  };
+
   // Render a keyword card - simplified, GPU-optimized
   const renderKeywordCard = (kw: BronKeyword) => {
     const expanded = expandedIds.has(kw.id);
@@ -752,6 +802,25 @@ export const BRONKeywordsTab = ({
                   </div>
                 </div>
 
+                {/* Historical Rankings Chart */}
+                {selectedDomain && (
+                  <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
+                    <summary className="flex items-center gap-2 p-3 text-sm font-medium text-foreground cursor-pointer hover:bg-muted/30">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      Ranking History
+                    </summary>
+                    <div className="border-t border-border/30 p-4">
+                      <KeywordHistoryChart
+                        domain={selectedDomain}
+                        keyword={keywordText}
+                        currentGooglePosition={googlePos}
+                        currentBingPosition={bingPos}
+                        currentYahooPosition={yahooPos}
+                      />
+                    </div>
+                  </details>
+                )}
+
                 {/* Article Section - compact row */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20 mb-3">
                   <div className="flex items-center gap-3">
@@ -940,6 +1009,16 @@ export const BRONKeywordsTab = ({
                   className="pl-8 h-9 w-48 bg-background/50"
                 />
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveRankingSnapshot}
+                disabled={savingSnapshot || keywords.length === 0}
+                className="border-primary/50 text-primary hover:bg-primary/10"
+              >
+                <BarChart3 className={`w-4 h-4 mr-1 ${savingSnapshot ? 'animate-pulse' : ''}`} />
+                {savingSnapshot ? 'Saving...' : 'Save Snapshot'}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
