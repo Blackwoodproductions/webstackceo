@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save, Eye,
   ChevronUp, FileText, Link2, Hash, 
   Sparkles, X, BarChart3, TrendingUp, TrendingDown, Minus,
-  ShoppingCart, Info, Compass, Target, ArrowDownLeft, ArrowUpRight
+  ShoppingCart, Info, Compass, Target, ArrowDownLeft, ArrowUpRight,
+  DollarSign, Activity, Gauge
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
+import { supabase } from "@/integrations/supabase/client";
+
+// Keyword metrics from DataForSEO
+interface KeywordMetrics {
+  search_volume: number;
+  cpc: number;
+  competition: number;
+  competition_level: string;
+}
 
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
@@ -262,6 +272,10 @@ export const BRONKeywordsTab = ({
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
 
+  // Keyword metrics from DataForSEO
+  const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
   // Filter keywords
   const filteredKeywords = useMemo(() => {
     if (!searchQuery.trim()) return keywords;
@@ -273,6 +287,37 @@ export const BRONKeywordsTab = ({
   }, [keywords, searchQuery]);
 
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
+
+  // Fetch keyword metrics from DataForSEO
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (keywords.length === 0) return;
+      
+      const keywordTexts = keywords
+        .map(k => getKeywordDisplayText(k))
+        .filter(k => k && !k.startsWith('Keyword #'))
+        .slice(0, 50); // Limit to 50 keywords per batch
+      
+      if (keywordTexts.length === 0) return;
+      
+      setMetricsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('keyword-metrics', {
+          body: { keywords: keywordTexts }
+        });
+        
+        if (!error && data?.metrics) {
+          setKeywordMetrics(data.metrics);
+        }
+      } catch (err) {
+        console.error('Failed to fetch keyword metrics:', err);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+    
+    fetchMetrics();
+  }, [keywords]);
 
 
   const isDeleted = (kw: BronKeyword) => kw.deleted === 1 || kw.is_deleted === true;
@@ -478,22 +523,106 @@ export const BRONKeywordsTab = ({
                 )}
               </div>
 
-              {/* Inbound/Outbound Links */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400">
-                  <ArrowDownLeft className="w-3.5 h-3.5" />
-                  <span className="font-semibold">In</span>
-                  <span className="text-sm font-bold">{linksIn.length}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-400">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span className="font-semibold">Out</span>
-                  <span className="text-sm font-bold">{linksOut.length}</span>
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Right Side: Keyword Metrics + Links */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                {/* Keyword Metrics from DataForSEO */}
+                {(() => {
+                  const metrics = keywordMetrics[keywordText.toLowerCase()];
+                  if (metricsLoading) {
+                    return (
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
+                      </div>
+                    );
+                  }
+                  if (!metrics) return null;
+                  
+                  const formatVolume = (vol: number) => {
+                    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+                    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+                    return String(vol);
+                  };
+                  
+                  const getCompetitionColor = (level: string) => {
+                    switch (level?.toUpperCase()) {
+                      case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
+                      case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+                      case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
+                      default: return 'text-muted-foreground border-border bg-muted/50';
+                    }
+                  };
+                  
+                  return (
+                    <div className="flex items-center gap-2">
+                      {/* Search Volume */}
+                      <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                        <div className="flex items-center gap-1">
+                          <Activity className="w-3 h-3 text-blue-400" />
+                          <span className="text-xs font-bold text-blue-400">{formatVolume(metrics.search_volume)}</span>
+                        </div>
+                        <span className="text-[9px] text-blue-400/70">Volume</span>
+                      </div>
+                      
+                      {/* CPC */}
+                      <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3 text-emerald-400" />
+                          <span className="text-xs font-bold text-emerald-400">${metrics.cpc.toFixed(2)}</span>
+                        </div>
+                        <span className="text-[9px] text-emerald-400/70">CPC</span>
+                      </div>
+                      
+                      {/* Competition */}
+                      <div className={`flex flex-col items-center px-3 py-1.5 rounded-lg border ${getCompetitionColor(metrics.competition_level)}`}>
+                        <div className="flex items-center gap-1">
+                          <Gauge className="w-3 h-3" />
+                          <span className="text-xs font-bold capitalize">{metrics.competition_level?.toLowerCase() || '—'}</span>
+                        </div>
+                        <span className="text-[9px] opacity-70">Difficulty</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-border/50" />
+
+                {/* Inbound/Outbound Links - Elegant Card Style */}
+                <div className="flex items-center gap-2">
+                  {/* Inbound Links */}
+                  <div className="relative group">
+                    <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                          <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
+                        </div>
+                        <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
+                      </div>
+                      <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
+                    </div>
+                  </div>
+                  
+                  {/* Outbound Links */}
+                  <div className="relative group">
+                    <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20 hover:border-violet-500/40 transition-colors">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
+                          <ArrowUpRight className="w-3 h-3 text-violet-400" />
+                        </div>
+                        <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
+                      </div>
+                      <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Spacer + Expand Arrow */}
-              <div className="flex-1" />
+              {/* Expand Arrow */}
               <ChevronRight 
                 className={`w-5 h-5 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
               />
