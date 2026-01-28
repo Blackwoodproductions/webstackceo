@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { 
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save, Eye,
@@ -431,8 +431,7 @@ export const BRONKeywordsTab = ({
 // PageSpeed scores from Google API - keyed by URL (initialized from cache)
   const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
   
-  // Track URLs that have been fetched this session (never refetch these)
-  const [fetchedThisSession] = useState<Set<string>>(() => new Set());
+  // (fetchedThisSession replaced by fetchedUrlsRef in useEffect)
 
   // Initial keyword positions from first BRON SERP report (for movement tracking)
   interface InitialPositions {
@@ -594,69 +593,73 @@ export const BRONKeywordsTab = ({
     fetchMetrics();
   }, [keywords]);
 
-  // Fetch PageSpeed scores from Google API for keyword URLs - ONLY ONCE per session
-  // Uses mergedKeywords to include both main and supporting pages
+  // Fetch PageSpeed scores from Google API for keyword URLs - stabilized with useRef
+  // Use ref to track fetched URLs - prevents re-fetching on state changes
+  const fetchedUrlsRef = useRef<Set<string>>(new Set());
+  
+  // Reset fetched URLs when domain changes
   useEffect(() => {
-    const fetchPageSpeedScores = async () => {
-      if (mergedKeywords.length === 0 || !selectedDomain) return;
+    fetchedUrlsRef.current = new Set();
+  }, [selectedDomain]);
+  
+  useEffect(() => {
+    if (mergedKeywords.length === 0 || !selectedDomain) return;
+    
+    // Build list of URLs to fetch - use stable references
+    const urlsToFetch: { url: string; keywordId: string | number }[] = [];
+    
+    for (const kw of mergedKeywords) {
+      // Skip tracking-only keywords (no actual page)
+      if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) continue;
       
-      // Collect URLs that haven't been fetched this session
-      const urlsToFetch: { url: string; keywordId: string | number }[] = [];
-      
-      // Iterate over ALL keywords (merged) to ensure supporting pages get PageSpeed
-      for (const kw of mergedKeywords) {
-        // Skip tracking-only keywords (no actual page)
-        if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) continue;
-        
-        let url = kw.linkouturl;
-        if (!url && selectedDomain) {
-          const keywordSlug = getKeywordDisplayText(kw)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-          url = `https://${selectedDomain}/${keywordSlug}`;
-        }
-        
-        if (!url) continue;
-        
-        // Skip if already fetched this session (prevents re-testing on state changes)
-        if (fetchedThisSession.has(url)) continue;
-        
-        // Check cache - if we have valid cached data, use it and mark as fetched
-        const cached = pageSpeedScores[url];
-        if (cached && cached.mobileScore > 0 && !cached.error && !cached.loading && !cached.updating) {
-          fetchedThisSession.add(url);
-          continue;
-        }
-        
-        // Skip if currently loading
-        if (cached?.loading || cached?.updating) continue;
-        
-        urlsToFetch.push({ url, keywordId: kw.id });
+      let url = kw.linkouturl;
+      if (!url && selectedDomain) {
+        const keywordSlug = getKeywordDisplayText(kw)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        url = `https://${selectedDomain}/${keywordSlug}`;
       }
       
-      if (urlsToFetch.length === 0) return;
+      if (!url) continue;
       
-      // Limit concurrent requests
-      const batchSize = 3;
-      const urlsToProcess = urlsToFetch.slice(0, batchSize);
+      // Skip if already fetched this session (ref is stable across renders)
+      if (fetchedUrlsRef.current.has(url)) continue;
       
-      // Mark URLs as fetched this session BEFORE starting the fetch
-      for (const { url } of urlsToProcess) {
-        fetchedThisSession.add(url);
+      // Check if we already have valid cached data in state
+      const cached = pageSpeedScores[url];
+      if (cached && cached.mobileScore > 0 && !cached.error) {
+        fetchedUrlsRef.current.add(url);
+        continue;
       }
       
-      // Mark as loading in state
+      urlsToFetch.push({ url, keywordId: kw.id });
+    }
+    
+    if (urlsToFetch.length === 0) return;
+    
+    // Process in batches to avoid rate limiting
+    const processBatch = async (batch: typeof urlsToFetch) => {
+      // Mark URLs as being fetched
+      for (const { url } of batch) {
+        fetchedUrlsRef.current.add(url);
+      }
+      
+      // Set loading state
       setPageSpeedScores(prev => {
         const next = { ...prev };
-        for (const { url } of urlsToProcess) {
-          next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+        for (const { url } of batch) {
+          if (!next[url] || next[url].mobileScore === 0) {
+            next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+          } else {
+            next[url] = { ...next[url], updating: true };
+          }
         }
         return next;
       });
       
-      // Fetch in parallel (limited batch)
-      const fetchPromises = urlsToProcess.map(async ({ url }) => {
+      // Fetch in parallel using edge function
+      await Promise.all(batch.map(async ({ url }) => {
         try {
           const { data, error } = await supabase.functions.invoke('pagespeed-insights', {
             body: { url }
@@ -675,7 +678,6 @@ export const BRONKeywordsTab = ({
                   cachedAt: Date.now(),
                 }
               };
-              // Save to localStorage
               saveCachedPageSpeedScores(updated);
               return updated;
             });
@@ -692,7 +694,7 @@ export const BRONKeywordsTab = ({
             }));
           }
         } catch (err) {
-          console.error(`PageSpeed fetch failed for ${url}:`, err);
+          console.warn(`PageSpeed fetch failed for ${url}:`, err);
           setPageSpeedScores(prev => ({
             ...prev,
             [url]: { 
@@ -704,19 +706,29 @@ export const BRONKeywordsTab = ({
             }
           }));
         }
-      });
-      
-      await Promise.all(fetchPromises);
-      
-      // If there are more URLs to fetch, schedule next batch
-      if (urlsToFetch.length > batchSize) {
-        setTimeout(fetchPageSpeedScores, 2000);
-      }
+      }));
     };
     
-    // Start fetching after a short delay to avoid race conditions
-    const timer = setTimeout(fetchPageSpeedScores, 800);
+    // Process first batch immediately, then schedule remaining
+    const batchSize = 3;
+    const firstBatch = urlsToFetch.slice(0, batchSize);
+    const remainingBatches: typeof urlsToFetch[] = [];
+    for (let i = batchSize; i < urlsToFetch.length; i += batchSize) {
+      remainingBatches.push(urlsToFetch.slice(i, i + batchSize));
+    }
+    
+    const timer = setTimeout(async () => {
+      await processBatch(firstBatch);
+      
+      // Process remaining batches with delays
+      for (let i = 0; i < remainingBatches.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await processBatch(remainingBatches[i]);
+      }
+    }, 500);
+    
     return () => clearTimeout(timer);
+  // Only re-run when mergedKeywords length changes or domain changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mergedKeywords.length, selectedDomain]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
@@ -1065,9 +1077,9 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 2: Keyword Text + External Link - fixed width with internal indentation for nested cards */}
+              {/* Column 2: Keyword Text + External Link - fixed width with subtle internal indentation for nested cards */}
               <div className="w-[320px] flex-shrink-0 pr-4 group/keyword">
-                <div className={`flex items-center gap-2 ${isNested ? 'pl-6' : ''}`}>
+                <div className={`flex items-center gap-2 ${isNested ? 'pl-3' : ''}`}>
                   <h3 
                     className={`font-medium truncate ${isSupportingKeyword ? 'text-foreground/80' : 'text-foreground'}`}
                     title={keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
