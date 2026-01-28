@@ -114,8 +114,14 @@ export interface BronLink {
   target_url?: string;
   anchor_text?: string;
   domain?: string;
+  domain_name?: string;
   status?: string;
   type?: string;
+  category?: string;
+  parent_category?: string;
+  link?: string; // The actual link URL from BRON API
+  reciprocal?: string; // "yes" or "no"
+  disabled?: string; // "yes" or "no"
   created_at?: string;
 }
 

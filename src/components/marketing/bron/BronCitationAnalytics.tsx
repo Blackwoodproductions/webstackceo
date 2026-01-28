@@ -1,5 +1,5 @@
-import { memo, useState } from "react";
-import { Link2, TrendingUp } from "lucide-react";
+import { memo, useState, useMemo } from "react";
+import { Link2, TrendingUp, ExternalLink } from "lucide-react";
 import { BronLink } from "@/hooks/use-bron-api";
 
 interface BronCitationAnalyticsProps {
@@ -16,17 +16,45 @@ export const BronCitationAnalytics = memo(({
   linksOut,
 }: BronCitationAnalyticsProps) => {
   const [viewMode, setViewMode] = useState<'inbound' | 'outbound'>('inbound');
+  const [relevanceFilter, setRelevanceFilter] = useState<string>('all');
+  const [reciprocalFilter, setReciprocalFilter] = useState<string>('all');
   
   const activeLinks = viewMode === 'inbound' ? linksIn : linksOut;
   const totalLinks = linksIn.length + linksOut.length;
   
-  // Calculate distributions
-  const mostRelevantCount = Math.floor(activeLinks.length * 0.83);
-  const veryRelevantCount = Math.floor(activeLinks.length * 0.15);
-  const relevantCount = Math.floor(activeLinks.length * 0.02);
-  const lessRelevantCount = activeLinks.length - mostRelevantCount - veryRelevantCount - relevantCount;
-  const reciprocalCount = Math.floor(totalLinks * 0.41);
-  const oneWayCount = totalLinks - reciprocalCount;
+  // Calculate actual reciprocal counts from API data
+  const { reciprocalCount, oneWayCount, categoryBreakdown } = useMemo(() => {
+    const allLinks = [...linksIn, ...linksOut];
+    let reciprocal = 0;
+    let oneWay = 0;
+    const categories: Record<string, number> = {};
+    
+    for (const link of allLinks) {
+      if (link.reciprocal === 'yes') {
+        reciprocal++;
+      } else {
+        oneWay++;
+      }
+      
+      const cat = link.category || link.parent_category || 'General';
+      categories[cat] = (categories[cat] || 0) + 1;
+    }
+    
+    return { reciprocalCount: reciprocal, oneWayCount: oneWay, categoryBreakdown: categories };
+  }, [linksIn, linksOut]);
+  
+  // Filter links based on selections
+  const filteredLinks = useMemo(() => {
+    return activeLinks.filter(link => {
+      if (reciprocalFilter === 'reciprocal' && link.reciprocal !== 'yes') return false;
+      if (reciprocalFilter === 'one-way' && link.reciprocal === 'yes') return false;
+      return true;
+    });
+  }, [activeLinks, reciprocalFilter]);
+  
+  // Calculate percentages
+  const reciprocalPercent = totalLinks > 0 ? Math.round((reciprocalCount / totalLinks) * 100) : 0;
+  const oneWayPercent = 100 - reciprocalPercent;
   
   return (
     <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden" style={{ contain: 'layout style paint' }}>
@@ -42,8 +70,8 @@ export const BronCitationAnalytics = memo(({
           onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
           onClick={(e) => e.stopPropagation()}
         >
-          <option value="inbound">Inbound</option>
-          <option value="outbound">Outbound</option>
+          <option value="inbound">Inbound ({linksIn.length})</option>
+          <option value="outbound">Outbound ({linksOut.length})</option>
         </select>
       </div>
       
@@ -54,127 +82,130 @@ export const BronCitationAnalytics = memo(({
           <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
         </div>
         
-        {/* Donut Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-          {/* Content Sharing Relevance */}
-          <div>
-            <h4 className="text-sm font-medium text-center mb-4">
-              {viewMode === 'inbound' ? 'Inbound' : 'Outbound'} Content Sharing Relevance
-            </h4>
-            <div className="flex justify-center mb-4">
-              <DonutChart 
-                segments={viewMode === 'inbound' 
-                  ? [
-                      { value: mostRelevantCount, color: '#CA8A04' },
-                      { value: veryRelevantCount, color: '#22C55E' },
-                    ]
-                  : [
-                      { value: Math.floor((activeLinks.length || 1) * 0.957), color: '#CA8A04' },
-                      { value: Math.floor((activeLinks.length || 1) * 0.017), color: '#22C55E' },
-                      { value: Math.floor((activeLinks.length || 1) * 0.026), color: '#3B82F6' },
-                    ]
-                }
-                total={activeLinks.length || 1}
-                centerTop={viewMode === 'inbound' ? '17.0%' : '4.3%'}
-                centerBottom={viewMode === 'inbound' ? '83.0%' : '95.7%'}
-              />
-            </div>
-            <Legend items={[
-              { color: 'bg-amber-400', label: 'Less Relevant', value: lessRelevantCount },
-              { color: 'bg-blue-400', label: 'Relevant', value: relevantCount },
-              { color: 'bg-emerald-400', label: 'Very relevant', value: veryRelevantCount },
-              { color: 'bg-yellow-500', label: 'Most Relevant', value: mostRelevantCount },
-            ]} />
+        {totalLinks === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Link2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">No citation links found for this keyword</p>
+            <p className="text-xs mt-1">Links will appear here when the BRON network has citations pointing to this page</p>
           </div>
-          
-          {/* Link Relationship Types */}
-          <div>
-            <h4 className="text-sm font-medium text-center mb-4">Link Relationship Types</h4>
-            <div className="flex justify-center mb-4">
-              <DonutChart 
-                segments={[
-                  { value: reciprocalCount, color: '#22C55E' },
-                  { value: oneWayCount, color: '#3B82F6' },
-                ]}
-                total={totalLinks || 1}
-                centerTop="41.0%"
-                centerBottom="59.0%"
-                centerTopColor="text-emerald-400"
-                centerBottomColor="text-blue-400"
-              />
+        ) : (
+          <>
+            {/* Donut Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+              {/* Current View Stats */}
+              <div>
+                <h4 className="text-sm font-medium text-center mb-4">
+                  {viewMode === 'inbound' ? 'Inbound' : 'Outbound'} Links by Category
+                </h4>
+                <div className="flex justify-center mb-4">
+                  <DonutChart 
+                    segments={Object.entries(categoryBreakdown).slice(0, 4).map(([cat, count], i) => ({
+                      value: count,
+                      color: ['#22C55E', '#3B82F6', '#CA8A04', '#8B5CF6'][i % 4]
+                    }))}
+                    total={totalLinks || 1}
+                    centerTop={`${activeLinks.length}`}
+                    centerBottom="links"
+                    centerTopColor="text-cyan-400"
+                    centerBottomColor="text-muted-foreground"
+                  />
+                </div>
+                <Legend items={Object.entries(categoryBreakdown).slice(0, 4).map(([cat, count], i) => ({
+                  color: ['bg-emerald-400', 'bg-blue-400', 'bg-amber-400', 'bg-violet-400'][i % 4],
+                  label: cat.length > 20 ? cat.substring(0, 20) + '...' : cat,
+                  value: count
+                }))} />
+              </div>
+              
+              {/* Link Relationship Types */}
+              <div>
+                <h4 className="text-sm font-medium text-center mb-4">Link Relationship Types</h4>
+                <div className="flex justify-center mb-4">
+                  <DonutChart 
+                    segments={[
+                      { value: reciprocalCount, color: '#22C55E' },
+                      { value: oneWayCount, color: '#3B82F6' },
+                    ]}
+                    total={totalLinks || 1}
+                    centerTop={`${reciprocalPercent}%`}
+                    centerBottom={`${oneWayPercent}%`}
+                    centerTopColor="text-emerald-400"
+                    centerBottomColor="text-blue-400"
+                  />
+                </div>
+                <Legend items={[
+                  { color: 'bg-emerald-400', label: 'Reciprocal', value: reciprocalCount },
+                  { color: 'bg-blue-400', label: 'One Way', value: oneWayCount },
+                ]} />
+              </div>
             </div>
-            <Legend items={[
-              { color: 'bg-emerald-400', label: 'Reciprocal', value: reciprocalCount },
-              { color: 'bg-blue-400', label: 'One Way', value: oneWayCount },
-            ]} />
-          </div>
-        </div>
-        
-        {/* Summary */}
-        <div className="text-center py-3 border-t border-b border-border/30 mb-6">
-          <p className="text-sm text-foreground">
-            <span className="font-semibold">Total: {totalLinks} citations</span>
-            <span className="text-muted-foreground"> ({reciprocalCount} reciprocal)</span>
-            <TrendingUp className="inline w-4 h-4 ml-1 text-emerald-400" />
-          </p>
-          <p className="text-xs text-muted-foreground">Citation links overview and statistics</p>
-        </div>
-        
-        {/* Links Table */}
-        <div>
-          <h4 className="text-sm font-semibold mb-3">Your Citation Links</h4>
-          
-          {/* Filters */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Relevance Score:</span>
-              <select className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground" onClick={(e) => e.stopPropagation()}>
-                <option>All Relevance</option>
-                <option>Most Relevant</option>
-                <option>Very Relevant</option>
-              </select>
+            
+            {/* Summary */}
+            <div className="text-center py-3 border-t border-b border-border/30 mb-6">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">Total: {totalLinks} citations</span>
+                <span className="text-muted-foreground"> ({reciprocalCount} reciprocal)</span>
+                <TrendingUp className="inline w-4 h-4 ml-1 text-emerald-400" />
+              </p>
+              <p className="text-xs text-muted-foreground">Citation links overview and statistics</p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Reciprocal:</span>
-              <select className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground" onClick={(e) => e.stopPropagation()}>
-                <option>All Types</option>
-                <option>Reciprocal</option>
-                <option>One Way</option>
-              </select>
-            </div>
-          </div>
-          
-          {activeLinks.length > 0 ? (
-            <div className="rounded-lg border border-border/50 overflow-hidden">
-              <div className="bg-muted/50 px-4 py-2.5 border-b border-border/50">
-                <div className="grid grid-cols-5 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  <span>Domain-Keyword</span>
-                  <span>Category</span>
-                  <span className="text-center">Reciprocal</span>
-                  <span className="text-center">Relevance</span>
-                  <span className="text-center">Actions</span>
+            
+            {/* Links Table */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Your Citation Links</h4>
+              
+              {/* Filters */}
+              <div className="flex items-center gap-4 mb-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Reciprocal:</span>
+                  <select 
+                    className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground" 
+                    onClick={(e) => e.stopPropagation()}
+                    value={reciprocalFilter}
+                    onChange={(e) => setReciprocalFilter(e.target.value)}
+                  >
+                    <option value="all">All Types ({activeLinks.length})</option>
+                    <option value="reciprocal">Reciprocal Only</option>
+                    <option value="one-way">One Way Only</option>
+                  </select>
                 </div>
               </div>
-              <div className="max-h-[250px] overflow-y-auto divide-y divide-border/30">
-                {activeLinks.slice(0, 10).map((link, idx) => (
-                  <LinkRow 
-                    key={`link-${idx}`}
-                    link={link}
-                    keywordText={keywordText}
-                    viewMode={viewMode}
-                    isEnabled={idx % 2 === 0}
-                    isReciprocal={idx % 3 === 0}
-                  />
-                ))}
-              </div>
+              
+              {filteredLinks.length > 0 ? (
+                <div className="rounded-lg border border-border/50 overflow-hidden">
+                  <div className="bg-muted/50 px-4 py-2.5 border-b border-border/50">
+                    <div className="grid grid-cols-5 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      <span>{viewMode === 'inbound' ? 'Source Domain' : 'Target Domain'}</span>
+                      <span>Category</span>
+                      <span className="text-center">Reciprocal</span>
+                      <span className="text-center">Status</span>
+                      <span className="text-center">Actions</span>
+                    </div>
+                  </div>
+                  <div className="max-h-[250px] overflow-y-auto divide-y divide-border/30">
+                    {filteredLinks.slice(0, 20).map((link, idx) => (
+                      <LinkRow 
+                        key={`link-${idx}`}
+                        link={link}
+                        viewMode={viewMode}
+                      />
+                    ))}
+                  </div>
+                  {filteredLinks.length > 20 && (
+                    <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t border-border/30">
+                      Showing 20 of {filteredLinks.length} links
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Link2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No {viewMode} links match the current filters</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Link2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No {viewMode} links found</p>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -227,8 +258,8 @@ const DonutChart = memo(({
         <circle cx="50" cy="50" r="28" fill="hsl(var(--card))" />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-[10px] ${centerTopColor}`}>{centerTop}</span>
-        <span className={`text-sm font-bold ${centerBottomColor}`}>{centerBottom}</span>
+        <span className={`text-lg font-bold ${centerTopColor}`}>{centerTop}</span>
+        <span className={`text-xs ${centerBottomColor}`}>{centerBottom}</span>
       </div>
     </div>
   );
@@ -242,7 +273,7 @@ const Legend = memo(({ items }: { items: { color: string; label: string; value: 
       <div key={i} className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-          <span className="text-muted-foreground">{item.label}</span>
+          <span className="text-muted-foreground truncate max-w-[120px]">{item.label}</span>
         </div>
         <span className="font-medium">{item.value}</span>
       </div>
@@ -252,48 +283,66 @@ const Legend = memo(({ items }: { items: { color: string; label: string; value: 
 Legend.displayName = 'Legend';
 
 // Link Row Component
-const LinkRow = memo(({ link, keywordText, viewMode, isEnabled, isReciprocal }: {
+const LinkRow = memo(({ link, viewMode }: {
   link: BronLink;
-  keywordText: string;
   viewMode: 'inbound' | 'outbound';
-  isEnabled: boolean;
-  isReciprocal: boolean;
-}) => (
-  <div className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center">
-    <div>
-      <div className="text-sm font-medium text-foreground truncate">
-        {viewMode === 'inbound' 
-          ? (link.source_url || link.domain || 'Unknown') 
-          : (link.target_url || link.domain || 'Unknown')}
+}) => {
+  const isReciprocal = link.reciprocal === 'yes';
+  const isEnabled = link.disabled !== 'yes';
+  const displayUrl = viewMode === 'inbound' 
+    ? (link.domain_name || link.domain || link.source_url || 'Unknown')
+    : (link.link || link.target_url || link.domain || 'Unknown');
+  
+  // Extract domain from URL for display
+  const displayDomain = displayUrl.replace(/^https?:\/\//, '').split('/')[0];
+  
+  const linkHref = viewMode === 'inbound'
+    ? (link.source_url || `https://${link.domain_name || link.domain}`)
+    : (link.link || link.target_url || `https://${link.domain}`);
+  
+  const category = link.category || link.parent_category || 'General';
+  const shortCategory = category.length > 18 ? category.substring(0, 18) + '...' : category;
+  
+  return (
+    <div className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center text-sm">
+      <div>
+        <div className="font-medium text-foreground truncate" title={displayUrl}>
+          {displayDomain}
+        </div>
       </div>
-      <div className="text-xs text-muted-foreground truncate">{keywordText}</div>
+      <div>
+        <span className="text-xs px-2 py-1 rounded-md bg-muted/50 text-muted-foreground truncate" title={category}>
+          {shortCategory}
+        </span>
+      </div>
+      <div className="text-center">
+        {isReciprocal ? (
+          <span className="text-emerald-400 text-xs font-medium">✓ Yes</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">No</span>
+        )}
+      </div>
+      <div className="text-center">
+        <span className={`text-xs px-2 py-1 rounded-md ${
+          isEnabled 
+            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+            : 'bg-red-500/20 text-red-400 border border-red-500/30'
+        }`}>
+          {isEnabled ? 'Active' : 'Disabled'}
+        </span>
+      </div>
+      <div className="text-center">
+        <a
+          href={linkHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+      </div>
     </div>
-    <div>
-      <span className="text-xs px-2 py-1 rounded-md bg-muted/50 text-muted-foreground">
-        {link.type || 'General'}
-      </span>
-    </div>
-    <div className="text-center">
-      {isReciprocal ? (
-        <span className="text-emerald-400 text-xs">✓ Yes</span>
-      ) : (
-        <span className="text-muted-foreground text-xs">No</span>
-      )}
-    </div>
-    <div className="text-center">
-      <span className="text-xs px-2 py-1 rounded-md bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">
-        MOST RELEVANT
-      </span>
-    </div>
-    <div className="text-center">
-      <span className={`text-xs px-2 py-1 rounded-md ${
-        isEnabled 
-          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-          : 'bg-red-500/20 text-red-400 border border-red-500/30'
-      }`}>
-        {isEnabled ? '✓ ENABLED' : '✕ DISABLED'}
-      </span>
-    </div>
-  </div>
-));
+  );
+});
 LinkRow.displayName = 'LinkRow';
