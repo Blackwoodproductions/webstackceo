@@ -625,6 +625,44 @@ export const BRONKeywordsTab = memo(({
             </div>
           ) : (
             <div>
+              {/* Column Headers Row */}
+              <div className="flex items-center w-full justify-between px-4 py-2 mb-2 rounded-lg bg-card/80 border border-border/50" style={{ minWidth: '1050px' }}>
+                {/* Speed */}
+                <div className="w-[70px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Speed</span>
+                </div>
+                {/* Keyword */}
+                <div className="w-[320px] flex-shrink-0 pr-4">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Keyword</span>
+                </div>
+                {/* Intent */}
+                <div className="w-[80px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Intent</span>
+                </div>
+                {/* Rankings: Google, Bing, Yahoo */}
+                <div className="w-[220px] flex-shrink-0 flex items-center justify-center gap-1">
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
+                  </div>
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Bing</span>
+                  </div>
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yahoo</span>
+                  </div>
+                </div>
+                {/* Metrics */}
+                <div className="w-[140px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
+                </div>
+                {/* Links */}
+                <div className="w-[80px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Links</span>
+                </div>
+                {/* Expand */}
+                <div className="w-[40px] flex-shrink-0" />
+              </div>
+              
               {groupedKeywords.map((cluster) => (
                 <KeywordListItem
                   key={cluster.parentId}
