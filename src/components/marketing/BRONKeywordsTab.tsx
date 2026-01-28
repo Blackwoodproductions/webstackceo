@@ -1106,61 +1106,74 @@ export const BRONKeywordsTab = ({
             </div>
           </div>
 
-          {/* Expanded Content - simple show/hide, no animation */}
+          {/* Expanded Content - Redesigned Nested System */}
           {expanded && (
             <div 
-              className="border-t border-border/30 bg-muted/20"
+              className="border-t border-primary/20 bg-gradient-to-b from-card/80 to-muted/30"
               style={{ contain: 'layout paint' }}
             >
-              <div className="p-4">
-                {/* Header with metadata inline */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1.5">
-                      <Edit2 className="w-3.5 h-3.5 text-primary" />
-                      <span className="font-medium text-foreground">Edit Keyword</span>
-                    </span>
-                    <span className="text-muted-foreground">ID: <span className="font-mono">{kw.id}</span></span>
-                    <Badge variant={active ? 'default' : 'secondary'} className="text-[10px]">
+              {/* Nested Tab Container */}
+              <div className="p-3">
+                {/* Compact Header Bar */}
+                <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
+                  <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+                      <Edit2 className="w-3 h-3 text-primary" />
+                      <span className="font-semibold text-primary">Edit Mode</span>
+                    </div>
+                    <div className="h-4 w-px bg-border/50" />
+                    <span className="text-muted-foreground font-mono text-[10px]">ID: {kw.id}</span>
+                    <Badge variant={active ? 'default' : 'secondary'} className="text-[9px] h-5">
                       {active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <span className="text-muted-foreground">{formatDate(kw.createdDate)}</span>
+                    <span className="text-muted-foreground text-[10px]">{formatDate(kw.createdDate)}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     onClick={(e) => {
                       e.stopPropagation();
                       expandKeyword(kw);
                     }}
                   >
-                    <ChevronUp className="w-3 h-3 mr-1" />
+                    <ChevronUp className="w-4 h-4" />
                     Collapse
                   </Button>
                 </div>
 
-                {/* Collapsible Tab 1: Relevant Business Citations - Compact Analytics */}
-                <details open className="mb-3 rounded-lg border border-cyan-500/30 overflow-hidden bg-card/80">
-                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-cyan-500/10 transition-colors border-b border-cyan-500/20">
-                    <div className="flex items-center gap-2">
-                      <Link2 className="w-4 h-4 text-cyan-400" />
-                      <span className="text-sm font-medium text-foreground">Relevant Business Citations</span>
-                      <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-400">
-                        {linksIn.length + linksOut.length} links
-                      </Badge>
-                    </div>
-                    <ChevronUp className="w-5 h-5 text-cyan-400 transition-transform duration-200 [details:not([open])_&]:rotate-180" />
-                  </summary>
-                  <div className="p-3 bg-gradient-to-br from-background to-muted/20">
-                    {/* Compact Citation Link Analytics */}
-                    <div className="text-center mb-3">
-                      <h3 className="text-sm font-semibold text-foreground">Citation Link Analytics</h3>
-                      <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
-                    </div>
+                {/* Nested Tabs Grid */}
+                <div className="space-y-2">
+                  {/* Tab 1: Relevant Business Citations */}
+                  <details open className="group rounded-xl border border-cyan-500/30 overflow-hidden bg-gradient-to-br from-cyan-500/5 to-transparent shadow-sm">
+                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-cyan-500/10 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                          <Link2 className="w-4 h-4 text-cyan-400" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold text-foreground">Business Citations</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[9px] border-cyan-500/30 text-cyan-400 h-4">
+                              {linksIn.length} inbound
+                            </Badge>
+                            <Badge variant="outline" className="text-[9px] border-violet-500/30 text-violet-400 h-4">
+                              {linksOut.length} outbound
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronUp className="w-5 h-5 text-cyan-400 transition-transform duration-200 group-[[open]]:rotate-0 group-[&:not([open])]:rotate-180" />
+                    </summary>
+                    <div className="p-4 border-t border-cyan-500/20 bg-card/50">
+                      {/* Compact Citation Link Analytics */}
+                      <div className="text-center mb-3">
+                        <h3 className="text-sm font-semibold text-foreground">Citation Link Analytics</h3>
+                        <p className="text-xs text-muted-foreground">Content sharing overview</p>
+                      </div>
                     
-                    {/* Compact Donut Charts Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Compact Donut Charts Section */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       {/* Inbound Content Sharing Relevance - Compact */}
                       <div className="p-3 rounded-lg border border-border/50 bg-card/50">
                         <h4 className="text-xs font-medium text-center text-foreground mb-2">Inbound Content Sharing Relevance</h4>
@@ -1401,19 +1414,28 @@ export const BRONKeywordsTab = ({
                   </div>
                 </details>
 
-                {/* Collapsible Tab 2: Keyword Content */}
-                <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
-                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-primary/10 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-foreground">Keyword Content</span>
-                      <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                        {getWordCount(kw.resfeedtext || '')} words
-                      </Badge>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 [details[open]_&]:rotate-90" />
-                  </summary>
-                  <div className="border-t border-primary/20 p-4 bg-card/50">
+                  {/* Tab 2: Keyword Content */}
+                  <details className="group rounded-xl border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5 shadow-sm">
+                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-primary/10 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-semibold text-foreground">Keyword Content</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className="text-[9px] border-primary/30 text-primary h-4">
+                              {getWordCount(kw.resfeedtext || '')} words
+                            </Badge>
+                            <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-400 h-4">
+                              SEO ready
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronUp className="w-5 h-5 text-primary transition-transform duration-200 group-[[open]]:rotate-0 group-[&:not([open])]:rotate-180" />
+                    </summary>
+                    <div className="border-t border-primary/20 p-4 bg-card/50">
                     {/* Two-column layout for compact form */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                       {/* Left Column: Keyword & SEO */}
@@ -1599,6 +1621,7 @@ export const BRONKeywordsTab = ({
                     </details>
                   </div>
                 </details>
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
