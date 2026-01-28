@@ -340,6 +340,8 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               isLoading={bronApi.isLoading}
               onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
               onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
+              errorIn={bronApi.linksInError}
+              errorOut={bronApi.linksOutError}
             />
           </TabsContent>
         </AnimatePresence>

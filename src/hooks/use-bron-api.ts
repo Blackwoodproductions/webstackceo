@@ -100,6 +100,8 @@ export interface UseBronApiReturn {
   serpReports: BronSerpReport[];
   linksIn: BronLink[];
   linksOut: BronLink[];
+  linksInError: string | null;
+  linksOutError: string | null;
   verifyAuth: () => Promise<boolean>;
   fetchDomains: () => Promise<void>;
   fetchDomain: (domain: string) => Promise<BronDomain | null>;
@@ -126,6 +128,8 @@ export function useBronApi(): UseBronApiReturn {
   const [serpReports, setSerpReports] = useState<BronSerpReport[]>([]);
   const [linksIn, setLinksIn] = useState<BronLink[]>([]);
   const [linksOut, setLinksOut] = useState<BronLink[]>([]);
+  const [linksInError, setLinksInError] = useState<string | null>(null);
+  const [linksOutError, setLinksOutError] = useState<string | null>(null);
 
   const callApi = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
     try {
@@ -380,6 +384,7 @@ export function useBronApi(): UseBronApiReturn {
 
   const fetchLinksIn = useCallback(async (domain: string) => {
     setIsLoading(true);
+    setLinksInError(null);
     try {
       const result = await callApi("getLinksIn", { domain });
       if (result?.success && result.data) {
@@ -388,9 +393,12 @@ export function useBronApi(): UseBronApiReturn {
           ? result.data
           : (result.data.links || result.data.items || []);
         setLinksIn(Array.isArray(links) ? links : []);
+      } else if (result?.error) {
+        setLinksInError(result.error || "Failed to fetch inbound links");
       }
     } catch (err) {
-      toast.error("Failed to fetch inbound links");
+      const errorMsg = err instanceof Error ? err.message : "Failed to fetch inbound links";
+      setLinksInError(errorMsg);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -399,6 +407,7 @@ export function useBronApi(): UseBronApiReturn {
 
   const fetchLinksOut = useCallback(async (domain: string) => {
     setIsLoading(true);
+    setLinksOutError(null);
     try {
       const result = await callApi("getLinksOut", { domain });
       if (result?.success && result.data) {
@@ -407,9 +416,12 @@ export function useBronApi(): UseBronApiReturn {
           ? result.data
           : (result.data.links || result.data.items || []);
         setLinksOut(Array.isArray(links) ? links : []);
+      } else if (result?.error) {
+        setLinksOutError(result.error || "Failed to fetch outbound links");
       }
     } catch (err) {
-      toast.error("Failed to fetch outbound links");
+      const errorMsg = err instanceof Error ? err.message : "Failed to fetch outbound links";
+      setLinksOutError(errorMsg);
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -425,6 +437,8 @@ export function useBronApi(): UseBronApiReturn {
     serpReports,
     linksIn,
     linksOut,
+    linksInError,
+    linksOutError,
     verifyAuth,
     fetchDomains,
     fetchDomain,

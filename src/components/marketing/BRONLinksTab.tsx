@@ -18,6 +18,8 @@ interface BRONLinksTabProps {
   isLoading: boolean;
   onRefreshIn: () => void;
   onRefreshOut: () => void;
+  errorIn?: string | null;
+  errorOut?: string | null;
 }
 
 export const BRONLinksTab = ({
@@ -27,6 +29,8 @@ export const BRONLinksTab = ({
   isLoading,
   onRefreshIn,
   onRefreshOut,
+  errorIn,
+  errorOut,
 }: BRONLinksTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [linkType, setLinkType] = useState<"in" | "out">("in");
@@ -118,6 +122,25 @@ export const BRONLinksTab = ({
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-14 w-full" />
               ))}
+            </div>
+          ) : (linkType === "in" ? errorIn : errorOut) ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Link2 className="w-8 h-8 text-destructive/60" />
+              </div>
+              <p className="text-foreground font-medium mb-1">Unable to load {linkType === "in" ? "inbound" : "outbound"} links</p>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                The BRON API returned an error. This may be a temporary issue with the link analysis service.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                className="border-primary/30 hover:bg-primary/10"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
             </div>
           ) : filteredLinks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
