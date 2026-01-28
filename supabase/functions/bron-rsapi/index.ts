@@ -10,6 +10,7 @@ const BRON_API_BASE = "https://public4.imagehosting.space/api/rsapi";
 interface BronRequest {
   action: string;
   domain?: string;
+  domain_id?: number | string;
   keyword_id?: string;
   data?: Record<string, unknown>;
   page?: number;
@@ -105,9 +106,9 @@ serve(async (req) => {
 
   try {
     const body: BronRequest = await req.json();
-    const { action, domain, keyword_id, data, page, limit, include_deleted } = body;
+    const { action, domain, domain_id, keyword_id, data, page, limit, include_deleted } = body;
 
-    console.log(`BRON RSAPI - Action: ${action}, Domain: ${domain || "N/A"}`);
+    console.log(`BRON RSAPI - Action: ${action}, Domain: ${domain || "N/A"}, DomainID: ${domain_id || "N/A"}`);
 
     let response: Response;
     let result: unknown;
@@ -321,26 +322,48 @@ serve(async (req) => {
 
       // ========== LINK REPORTS ==========
       case "getLinksIn": {
-        if (!domain) {
+        if (!domain && !domain_id) {
           return new Response(
-            JSON.stringify({ error: "Domain is required" }),
+            JSON.stringify({ error: "Domain or domain_id is required" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        response = await bronApiRequest("/links-in", "POST", { domain });
+        // The API requires 'domain' field - domain_id is not supported
+        // Include domain_id in the payload if provided, but domain is mandatory
+        const linksInPayload: Record<string, unknown> = {};
+        if (domain) {
+          linksInPayload.domain = domain;
+        }
+        if (domain_id) {
+          linksInPayload.domain_id = domain_id;
+        }
+        console.log(`BRON Links-In request payload:`, JSON.stringify(linksInPayload));
+        response = await bronApiRequest("/links-in", "POST", linksInPayload);
         result = await readResponseBody(response);
+        console.log(`BRON Links-In response status: ${response.status}, result:`, JSON.stringify(result).substring(0, 500));
         break;
       }
 
       case "getLinksOut": {
-        if (!domain) {
+        if (!domain && !domain_id) {
           return new Response(
-            JSON.stringify({ error: "Domain is required" }),
+            JSON.stringify({ error: "Domain or domain_id is required" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        response = await bronApiRequest("/links-out", "POST", { domain });
+        // The API requires 'domain' field - domain_id is not supported
+        // Include domain_id in the payload if provided, but domain is mandatory
+        const linksOutPayload: Record<string, unknown> = {};
+        if (domain) {
+          linksOutPayload.domain = domain;
+        }
+        if (domain_id) {
+          linksOutPayload.domain_id = domain_id;
+        }
+        console.log(`BRON Links-Out request payload:`, JSON.stringify(linksOutPayload));
+        response = await bronApiRequest("/links-out", "POST", linksOutPayload);
         result = await readResponseBody(response);
+        console.log(`BRON Links-Out response status: ${response.status}, result:`, JSON.stringify(result).substring(0, 500));
         break;
       }
 
