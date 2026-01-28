@@ -297,6 +297,17 @@ export function filterLinksForKeyword(
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
 
+  // BRON URLs commonly include a stable token like "-582231bc".
+  // For links-out, BRON returns our page URL (contains this token).
+  // For links-in, BRON returns the referrer's page URL (also contains this token),
+  // but does NOT include a target_url to our page. So token matching is required
+  // to associate inbound links to a specific keyword.
+  const extractBronToken = (value?: string | null): string | null => {
+    if (!value) return null;
+    const match = String(value).match(/-(\d+bc)(?:\/?$)/i) || String(value).match(/(\d+bc)/i);
+    return match?.[1]?.toLowerCase() || null;
+  };
+
   const normalize = (value: string) =>
     value
       .toLowerCase()
@@ -316,6 +327,15 @@ export function filterLinksForKeyword(
   
   // Generate possible URL patterns for this keyword (normalized, protocol-less)
   const urlPatterns: string[] = [];
+
+  // Build token candidates for matching inbound/outbound links.
+  const tokenCandidates = new Set<string>();
+  const tokenFromUrl = extractBronToken(keywordUrl);
+  if (tokenFromUrl) tokenCandidates.add(tokenFromUrl);
+  const idStr = String(keyword.id);
+  if (/^\d+$/.test(idStr)) tokenCandidates.add(`${idStr}bc`);
+  // Some domains include the token with a leading hyphen.
+  for (const t of Array.from(tokenCandidates)) tokenCandidates.add(`-${t}`);
   
   if (keywordUrl) {
     // Extract slug from the actual keyword URL
@@ -357,11 +377,25 @@ export function filterLinksForKeyword(
       return false;
     });
   };
+
+  const matchesKeywordToken = (value?: string) => {
+    if (!value) return false;
+    if (tokenCandidates.size === 0) return false;
+    const normalizedValue = normalize(value);
+    if (!normalizedValue) return false;
+    for (const token of tokenCandidates) {
+      if (token && normalizedValue.includes(token)) return true;
+    }
+    return false;
+  };
   
   // Links Out: Links FROM our domain TO other domains
   // BRON returns these with `link` pointing to OUR page (contains topic/keyword slug)
   const keywordLinksOut = linksOut.filter((link) => {
     return (
+      matchesKeywordToken(link.link) ||
+      matchesKeywordToken(link.source_url) ||
+      matchesKeywordToken(link.target_url) ||
       matchesKeywordUrl(link.link) ||
       matchesKeywordUrl(link.source_url) ||
       matchesKeywordUrl(link.target_url)
@@ -373,6 +407,9 @@ export function filterLinksForKeyword(
   // Try to match if there's a target_url that contains our keyword
   const keywordLinksIn = linksIn.filter((link) => {
     return (
+      matchesKeywordToken(link.link) ||
+      matchesKeywordToken(link.source_url) ||
+      matchesKeywordToken(link.target_url) ||
       matchesKeywordUrl(link.target_url) ||
       matchesKeywordUrl(link.link)
     );
