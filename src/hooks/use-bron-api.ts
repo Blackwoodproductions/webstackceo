@@ -636,15 +636,23 @@ export function useBronApi(): UseBronApiReturn {
   const verifyAuth = useCallback(async (): Promise<boolean> => {
     return withPending(async () => {
       try {
-        // Quick auth check with 1 retry
-        const result = await callApi("verifyAuth", {}, 1);
-        const authenticated = result?.success === true;
+        console.log("[BRON] Starting auth verification...");
+        // Auth check with 2 retries (total 3 attempts) for better reliability
+        const result = await callApi("verifyAuth", {}, 2);
+        console.log("[BRON] Auth result:", result);
+        
+        // Check for success - the API returns success: true with data containing status
+        const authenticated = result?.success === true && 
+          (result?.data?.status === "authenticated" || result?.data?.authenticated === true);
+        
+        console.log("[BRON] Authenticated:", authenticated);
         setIsAuthenticated(authenticated);
         return authenticated;
       } catch (err) {
-        console.warn("[BRON] Auth verification failed:", err);
+        console.error("[BRON] Auth verification failed:", err);
         setIsAuthenticated(false);
-        return false;
+        // Re-throw so the dashboard can show a meaningful error
+        throw err;
       }
     });
   }, [callApi, withPending]);
