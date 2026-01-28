@@ -163,7 +163,7 @@ const KeywordListItem = memo(({
     <div style={{ contain: 'layout style paint' }}>
       {renderKeyword(cluster.parent, false, cluster.children.length)}
       {cluster.children.length > 0 && (
-        <div className="pl-4 border-l-2 border-hover-accent/20 ml-6">
+        <div className="border-l-2 border-hover-accent/20 ml-2">
           {cluster.children.map(child => renderKeyword(child, true))}
         </div>
       )}
