@@ -208,8 +208,10 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
         </g>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        {showLoading || showPending ? (
-          <span className="text-xs text-muted-foreground">—</span>
+        {showLoading ? (
+          <span className="text-[10px] text-muted-foreground/70">...</span>
+        ) : showPending ? (
+          <span className="text-[10px] text-muted-foreground/50">—</span>
         ) : (
           <span className={`text-sm font-bold ${colors.textClass}`}>{error ? '—' : score}</span>
         )}
