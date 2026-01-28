@@ -19,6 +19,10 @@ import { BronKeyword, BronSerpReport, BronLink, BronSerpListItem } from "@/hooks
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  loadKeywordMetricsCache,
+  mergeAndSaveKeywordMetricsCache,
+} from "@/lib/bronKeywordMetricsCache";
 
 // Import modular components
 import {
@@ -464,7 +468,7 @@ export const BRONKeywordsTab = memo(({
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      if (keywords.length === 0) return;
+      if (!selectedDomain || keywords.length === 0) return;
       
       // Extract unique core keywords (national terms without location)
       const coreKeywordMap = new Map<string, string>(); // core -> first full keyword
@@ -483,38 +487,46 @@ export const BRONKeywordsTab = memo(({
       
       if (uniqueCoreKeywords.length === 0) return;
       
-      console.log('[BRON] Fetching national keyword metrics for:', uniqueCoreKeywords.slice(0, 5));
-      
+      const buildEnrichedMetrics = (metricsByCore: Record<string, KeywordMetrics>) => {
+        const enriched: Record<string, KeywordMetrics> = {};
+        for (const kw of keywords) {
+          const full = getKeywordDisplayText(kw);
+          const fullKey = full.toLowerCase();
+          const core = extractCoreKeyword(full);
+          const m = metricsByCore[core];
+          if (m) enriched[fullKey] = m;
+        }
+        return enriched;
+      };
+
+      // Serve cached metrics immediately (no API call on cache hit)
+      const cachedByCore = loadKeywordMetricsCache(selectedDomain);
+      setKeywordMetrics(buildEnrichedMetrics(cachedByCore));
+
+      const missing = uniqueCoreKeywords.filter((k) => !cachedByCore[k]);
+      if (missing.length === 0) return;
+
       setMetricsLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('keyword-metrics', {
-          body: { keywords: uniqueCoreKeywords }
+        const { data, error } = await supabase.functions.invoke("keyword-metrics", {
+          body: { keywords: missing },
         });
-        
+
         if (!error && data?.metrics) {
-          // Map core keyword metrics back to all full keywords
-          const enrichedMetrics: Record<string, any> = {};
-          
-          for (const kw of keywords) {
-            const fullText = getKeywordDisplayText(kw).toLowerCase();
-            const coreText = extractCoreKeyword(fullText);
-            
-            if (data.metrics[coreText]) {
-              enrichedMetrics[fullText] = data.metrics[coreText];
-            }
-          }
-          
-          setKeywordMetrics(enrichedMetrics);
+          const incomingByCore = data.metrics as Record<string, KeywordMetrics>;
+          mergeAndSaveKeywordMetricsCache(selectedDomain, incomingByCore);
+          const mergedByCore = { ...cachedByCore, ...incomingByCore };
+          setKeywordMetrics(buildEnrichedMetrics(mergedByCore));
         }
       } catch (err) {
-        console.error('Failed to fetch metrics:', err);
+        console.error("Failed to fetch metrics:", err);
       } finally {
         setMetricsLoading(false);
       }
     };
     
     fetchMetrics();
-  }, [keywords, extractCoreKeyword]);
+  }, [keywords, extractCoreKeyword, selectedDomain]);
 
   // Fetch PageSpeed scores
   useEffect(() => {
@@ -704,7 +716,7 @@ export const BRONKeywordsTab = memo(({
         [id]: buildInitialInlineForm(kw),
       }));
     }
-    setArticleEditorId(id);
+    setArticleEditorId(String(id));
   }, [buildInitialInlineForm]);
 
   const handleAddKeyword = async () => {
@@ -755,7 +767,9 @@ export const BRONKeywordsTab = memo(({
   };
 
   // Get keyword for article editor
-  const editorKeyword = articleEditorId ? mergedKeywords.find(k => k.id === articleEditorId) : null;
+  const editorKeyword = articleEditorId
+    ? mergedKeywords.find((k) => String(k.id) === String(articleEditorId))
+    : null;
 
   return (
     <div style={{ contain: 'layout' }}>
