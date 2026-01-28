@@ -1,4 +1,5 @@
-import { Globe, Plus, CalendarIcon, Filter, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Globe, Plus, CalendarIcon, Filter, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
 
@@ -63,6 +65,22 @@ export function DomainSelectorBar({
   const viDomains = [...new Set([...trackedSet, ...userAddedSet])].filter(Boolean);
   const selectedValue = selectedDomain ? normalizeDomainKey(selectedDomain) : '';
   
+  // Track domain switching for smooth transitions
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [displayedDomain, setDisplayedDomain] = useState(selectedValue);
+  
+  useEffect(() => {
+    if (selectedValue !== displayedDomain) {
+      setIsTransitioning(true);
+      // Brief transition delay for visual smoothness
+      const timer = setTimeout(() => {
+        setDisplayedDomain(selectedValue);
+        setIsTransitioning(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedValue, displayedDomain]);
+  
   return (
     <div 
       className="relative border-x border-b border-border bg-card sticky z-40 max-w-[1480px] mx-auto"
@@ -88,70 +106,96 @@ export function DomainSelectorBar({
       <div className="relative z-20 px-8 py-2 flex items-center justify-between">
         {/* Left: Domain Selector & Time Range */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Domain Selector */}
-          <>
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10 hover:scale-105 transition-transform">
+          {/* Domain Selector with smooth transitions */}
+          <motion.div 
+            className="flex items-center gap-2"
+            animate={{ opacity: isTransitioning ? 0.7 : 1 }}
+            transition={{ duration: 0.15 }}
+          >
+            <motion.div 
+              className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10"
+              animate={{ 
+                scale: isTransitioning ? 0.95 : 1,
+                rotate: isTransitioning ? 180 : 0 
+              }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {isTransitioning ? (
+                <RefreshCw className="w-4 h-4 text-primary animate-spin" />
+              ) : (
                 <Globe className="w-4 h-4 text-primary" />
-              </div>
+              )}
+            </motion.div>
 
-              <Select value={selectedValue} onValueChange={onDomainChange}>
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto">
-                  <SelectValue placeholder="Select domain" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px] pointer-events-auto">
-                  {viDomains.length === 0 && (
-                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                      No domains yet
-                    </div>
-                  )}
-
-                  {viDomains.map((domain) => {
-                    const hasViTracking = trackedSet.has(domain);
-                    return (
-                      <SelectItem
-                        key={domain}
-                        value={domain}
-                        className="text-xs"
-                        indicator={hasViTracking ? (
-                          <Globe className="w-3.5 h-3.5 text-primary" />
-                        ) : undefined}
-                      >
-                        <span className="truncate max-w-[300px]" title={domain}>
-                          {domain}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-
-                  <SelectSeparator />
-                  <div 
-                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddDomainClick();
-                    }}
+            <Select value={selectedValue} onValueChange={onDomainChange}>
+              <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto transition-all duration-200">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={selectedValue}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="truncate"
                   >
-                    <Plus className="w-3 h-3" />
-                    Add domain
+                    <SelectValue placeholder="Select domain" />
+                  </motion.span>
+                </AnimatePresence>
+              </SelectTrigger>
+              <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px] pointer-events-auto">
+                {viDomains.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    No domains yet
                   </div>
-                </SelectContent>
-              </Select>
-              
-              {/* Live indicator - static for performance */}
-              <span
-                className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                LIVE
-              </span>
-            </div>
+                )}
 
-            <div className="w-px h-5 bg-border/50" />
-          </>
+                {viDomains.map((domain) => {
+                  const hasViTracking = trackedSet.has(domain);
+                  return (
+                    <SelectItem
+                      key={domain}
+                      value={domain}
+                      className="text-xs transition-colors duration-150"
+                      indicator={hasViTracking ? (
+                        <Globe className="w-3.5 h-3.5 text-primary" />
+                      ) : undefined}
+                    >
+                      <span className="truncate max-w-[300px]" title={domain}>
+                        {domain}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+
+                <SelectSeparator />
+                <div 
+                  className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm transition-colors duration-150"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddDomainClick();
+                  }}
+                >
+                  <Plus className="w-3 h-3" />
+                  Add domain
+                </div>
+              </SelectContent>
+            </Select>
+            
+            {/* Live indicator - static for performance */}
+            <motion.span
+              className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
+              animate={{ opacity: isTransitioning ? 0.5 : 1 }}
+              transition={{ duration: 0.15 }}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              LIVE
+            </motion.span>
+          </motion.div>
+
+          <div className="w-px h-5 bg-border/50" />
           
           {/* Time Range Selector */}
           {showTimeRange && onTimeRangeChange && (
