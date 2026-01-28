@@ -1004,7 +1004,7 @@ export const BRONKeywordsTab = ({
               </div>
 
               {/* Column 5: Keyword Metrics - 210px */}
-              <div className="w-[210px] flex-shrink-0">
+              <div className="w-[210px] flex-shrink-0 ml-6">
                 {(() => {
                   const metrics = keywordMetrics[keywordText.toLowerCase()];
                   
