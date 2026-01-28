@@ -200,8 +200,8 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               </div>
 
               {/* MIDDLE: Domain Info Fields */}
-              <div className="lg:col-span-4 p-4 border-r border-border/30">
-                <div className="space-y-3">
+              <div className="lg:col-span-4 p-4 border-r border-border/30 flex items-center">
+                <div className="space-y-3 w-full">
                   {/* Domain Info Progress */}
                   <div className="flex items-center gap-3">
                     <span className="text-muted-foreground text-sm min-w-[110px]">Domain Info :</span>
