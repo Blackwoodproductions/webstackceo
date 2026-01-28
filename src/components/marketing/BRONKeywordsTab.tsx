@@ -51,7 +51,52 @@ interface PageSpeedScore {
   mobileScore: number;
   desktopScore: number;
   loading?: boolean;
+  updating?: boolean; // True when refreshing an existing cached score
   error?: boolean;
+  cachedAt?: number; // Timestamp when cached
+}
+
+// LocalStorage key for PageSpeed cache
+const PAGESPEED_CACHE_KEY = 'bron_pagespeed_cache';
+const PAGESPEED_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Load cached PageSpeed scores from localStorage
+function loadCachedPageSpeedScores(): Record<string, PageSpeedScore> {
+  try {
+    const cached = localStorage.getItem(PAGESPEED_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      // Filter out expired entries
+      const now = Date.now();
+      const valid: Record<string, PageSpeedScore> = {};
+      for (const [url, score] of Object.entries(parsed)) {
+        const s = score as PageSpeedScore;
+        if (s.cachedAt && (now - s.cachedAt) < PAGESPEED_CACHE_MAX_AGE) {
+          valid[url] = s;
+        }
+      }
+      return valid;
+    }
+  } catch (e) {
+    console.warn('Failed to load PageSpeed cache:', e);
+  }
+  return {};
+}
+
+// Save PageSpeed scores to localStorage
+function saveCachedPageSpeedScores(scores: Record<string, PageSpeedScore>) {
+  try {
+    // Only save completed scores (not loading/updating)
+    const toSave: Record<string, PageSpeedScore> = {};
+    for (const [url, score] of Object.entries(scores)) {
+      if (!score.loading && !score.updating && !score.error && score.mobileScore > 0) {
+        toSave[url] = { ...score, cachedAt: score.cachedAt || Date.now() };
+      }
+    }
+    localStorage.setItem(PAGESPEED_CACHE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.warn('Failed to save PageSpeed cache:', e);
+  }
 }
 
 interface BRONKeywordsTabProps {
@@ -310,8 +355,8 @@ export const BRONKeywordsTab = ({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
-  // PageSpeed scores from Google API - keyed by URL
-  const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>({});
+  // PageSpeed scores from Google API - keyed by URL (initialized from cache)
+  const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
 
   // Initial keyword positions from first BRON SERP report (for movement tracking)
   interface InitialPositions {
@@ -437,13 +482,13 @@ export const BRONKeywordsTab = ({
     const fetchPageSpeedScores = async () => {
       if (keywords.length === 0 || !selectedDomain) return;
       
-      // Get unique URLs from keywords that have linkouturl
-      const urlsToFetch: { url: string; keywordId: string | number }[] = [];
+      // Get unique URLs from keywords
+      const urlsToFetch: { url: string; keywordId: string | number; hasCache: boolean }[] = [];
+      const now = Date.now();
+      
       for (const kw of keywords) {
-        // Build the URL - either use linkouturl or construct from domain + keyword
         let url = kw.linkouturl;
         if (!url && selectedDomain) {
-          // Construct URL from domain if no linkouturl
           const keywordSlug = getKeywordDisplayText(kw)
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -451,63 +496,98 @@ export const BRONKeywordsTab = ({
           url = `https://${selectedDomain}/${keywordSlug}`;
         }
         
-        if (url && !pageSpeedScores[url]) {
-          urlsToFetch.push({ url, keywordId: kw.id });
+        if (!url) continue;
+        
+        const cached = pageSpeedScores[url];
+        const isCacheExpired = !cached?.cachedAt || (now - cached.cachedAt) > PAGESPEED_CACHE_MAX_AGE;
+        const needsFetch = !cached || cached.error || isCacheExpired;
+        const isAlreadyFetching = cached?.loading || cached?.updating;
+        
+        if (needsFetch && !isAlreadyFetching) {
+          urlsToFetch.push({ 
+            url, 
+            keywordId: kw.id, 
+            hasCache: !!cached && cached.mobileScore > 0 
+          });
         }
       }
       
       if (urlsToFetch.length === 0) return;
       
-      // Limit concurrent requests and batch size
-      const batchSize = 5;
+      // Limit concurrent requests
+      const batchSize = 3;
       const urlsToProcess = urlsToFetch.slice(0, batchSize);
       
-      // Mark as loading
+      // Mark as loading or updating (keep existing scores visible while updating)
       setPageSpeedScores(prev => {
         const next = { ...prev };
-        for (const { url } of urlsToProcess) {
-          next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+        for (const { url, hasCache } of urlsToProcess) {
+          if (hasCache && prev[url]) {
+            // Keep existing score visible, just mark as updating
+            next[url] = { ...prev[url], updating: true, loading: false };
+          } else {
+            next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+          }
         }
         return next;
       });
       
       // Fetch in parallel (limited batch)
-      for (const { url } of urlsToProcess) {
+      const fetchPromises = urlsToProcess.map(async ({ url }) => {
         try {
           const { data, error } = await supabase.functions.invoke('pagespeed-insights', {
             body: { url }
           });
           
           if (!error && data?.metrics) {
-            setPageSpeedScores(prev => ({
-              ...prev,
-              [url]: {
-                mobileScore: data.metrics.mobile?.score || 0,
-                desktopScore: data.metrics.desktop?.score || 0,
-                loading: false,
-                error: false,
-              }
-            }));
+            setPageSpeedScores(prev => {
+              const updated = {
+                ...prev,
+                [url]: {
+                  mobileScore: data.metrics.mobile?.score || 0,
+                  desktopScore: data.metrics.desktop?.score || 0,
+                  loading: false,
+                  updating: false,
+                  error: false,
+                  cachedAt: Date.now(),
+                }
+              };
+              // Save to localStorage
+              saveCachedPageSpeedScores(updated);
+              return updated;
+            });
           } else {
             setPageSpeedScores(prev => ({
               ...prev,
-              [url]: { mobileScore: 0, desktopScore: 0, loading: false, error: true }
+              [url]: { 
+                ...prev[url], 
+                loading: false, 
+                updating: false, 
+                error: true 
+              }
             }));
           }
         } catch (err) {
           console.error(`PageSpeed fetch failed for ${url}:`, err);
           setPageSpeedScores(prev => ({
             ...prev,
-            [url]: { mobileScore: 0, desktopScore: 0, loading: false, error: true }
+            [url]: { 
+              ...prev[url], 
+              loading: false, 
+              updating: false, 
+              error: true 
+            }
           }));
         }
-      }
+      });
+      
+      await Promise.all(fetchPromises);
     };
     
     // Debounce the fetch to avoid too many API calls
-    const timer = setTimeout(fetchPageSpeedScores, 1000);
+    const timer = setTimeout(fetchPageSpeedScores, 1500);
     return () => clearTimeout(timer);
-  }, [keywords, selectedDomain, pageSpeedScores]);
+  }, [keywords, selectedDomain]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
   const getMovementFromDelta = (movement: number) => {
     if (movement > 0) {
@@ -741,7 +821,8 @@ export const BRONKeywordsTab = ({
                   
                   const pageSpeed = url ? pageSpeedScores[url] : null;
                   const isLoadingSpeed = pageSpeed?.loading;
-                  const hasError = pageSpeed?.error;
+                  const isUpdating = pageSpeed?.updating;
+                  const hasError = pageSpeed?.error && !isUpdating;
                   const score = pageSpeed?.mobileScore || 0;
                   
                   const getSpeedColor = () => {
@@ -755,11 +836,26 @@ export const BRONKeywordsTab = ({
                   const colors = getSpeedColor();
                   
                   return (
-                    <div className={`w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`} title={`PageSpeed Score: ${score}/100 (Mobile)`}>
+                    <div 
+                      className={`relative w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`} 
+                      title={isUpdating ? 'Updating PageSpeed score...' : `PageSpeed Score: ${score}/100 (Mobile)`}
+                    >
+                      {/* Updating indicator - rotating border */}
+                      {isUpdating && (
+                        <div className="absolute inset-0 rounded-lg overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-spin" style={{ animationDuration: '2s' }} />
+                        </div>
+                      )}
                       <Zap className={`w-4 h-4 ${colors.icon} ${isLoadingSpeed ? 'animate-pulse' : ''}`} />
                       <span className={`text-[9px] font-bold ${colors.text}`}>
                         {isLoadingSpeed ? '...' : hasError ? '—' : score}
                       </span>
+                      {/* Small updating badge */}
+                      {isUpdating && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-cyan-500 animate-pulse flex items-center justify-center">
+                          <RefreshCw className="w-2 h-2 text-white animate-spin" />
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
