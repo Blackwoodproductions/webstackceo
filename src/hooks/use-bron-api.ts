@@ -250,24 +250,33 @@ function evictOldestKeywordV2Entries(index: Record<string, KeywordCacheIndexEntr
 }
 
 function loadCachedKeywords(domain: string): BronKeyword[] | null {
+  const startTime = performance.now();
   try {
     // Prefer V2 per-domain cache
     const v2Raw = localStorage.getItem(getKeywordV2Key(domain));
     if (v2Raw) {
       const entry = JSON.parse(v2Raw) as KeywordCacheEntry;
       if (entry && (Date.now() - entry.cachedAt) <= CACHE_MAX_AGE) {
-        console.log(`[BRON] Using cached keywords for ${domain} (${entry.keywords.length} keywords)`);
+        const elapsed = (performance.now() - startTime).toFixed(1);
+        console.log(`[BRON] Cache HIT for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
         return entry.keywords;
       }
     }
 
     // Fallback to legacy V1 map (migration happens on save)
     const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
-    if (!cached) return null;
+    if (!cached) {
+      console.log(`[BRON] Cache MISS for ${domain}: no cached data found`);
+      return null;
+    }
     const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
     const entry = parsed[domain];
-    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
-    console.log(`[BRON] Using cached keywords for ${domain} (${entry.keywords.length} keywords)`);
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) {
+      console.log(`[BRON] Cache MISS for ${domain}: entry expired or not found`);
+      return null;
+    }
+    const elapsed = (performance.now() - startTime).toFixed(1);
+    console.log(`[BRON] Cache HIT (legacy) for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
     return entry.keywords;
   } catch (e) {
     console.warn('[BRON] Failed to load keyword cache:', e);
@@ -780,6 +789,9 @@ export function useBronApi(): UseBronApiReturn {
   // When the header domain selector changes, hydrate this domain's cached data
   // immediately (or clear) to prevent mismatched UI/data.
   const selectDomain = useCallback((domain: string | null) => {
+    const selectStart = performance.now();
+    console.log(`[BRON] selectDomain called with: ${domain}`);
+    
     // Invalidate any in-flight responses so they can't clobber the new domain.
     keywordsReqIdRef.current += 1;
     pagesReqIdRef.current += 1;
@@ -805,7 +817,9 @@ export function useBronApi(): UseBronApiReturn {
     }
 
     // Hydrate caches synchronously.
-    setKeywords(loadCachedKeywords(key) || []);
+    const cachedKeywords = loadCachedKeywords(key);
+    console.log(`[BRON] selectDomain: setting ${cachedKeywords?.length ?? 0} keywords from cache`);
+    setKeywords(cachedKeywords || []);
     setPages(loadCachedPages(key) || []);
 
     const cachedSerp = loadCachedSerp(key);
