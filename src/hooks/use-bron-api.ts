@@ -631,11 +631,18 @@ export interface UseBronApiReturn {
   prefetchKeywordsForDomains: (domainList: BronDomain[]) => Promise<void>;
 }
 
+// ─── Initial Cache Hydration (synchronous on mount) ───
+// This ensures hard refresh doesn't show "loading" when cache exists
+function getInitialDomains(): BronDomain[] {
+  return loadCachedDomains() || [];
+}
+
 export function useBronApi(): UseBronApiReturn {
   const [pendingCount, setPendingCount] = useState(0);
   const isLoading = pendingCount > 0;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [domains, setDomains] = useState<BronDomain[]>([]);
+  // Hydrate domains from cache on mount to prevent loading screen on hard refresh
+  const [domains, setDomains] = useState<BronDomain[]>(getInitialDomains);
   const [keywords, setKeywords] = useState<BronKeyword[]>([]);
   const [pages, setPages] = useState<BronPage[]>([]);
   const [serpReports, setSerpReports] = useState<BronSerpReport[]>([]);
