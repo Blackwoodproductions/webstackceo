@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
@@ -21,7 +21,7 @@ interface BRONDashboardProps {
   selectedDomain?: string;
 }
 
-export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
+export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const bronApi = useBronApi();
   const [activeTab, setActiveTab] = useState("keywords");
   const [isAuthenticating, setIsAuthenticating] = useState(true);
@@ -256,6 +256,53 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
   // Calculate domain info progress (keywords count out of target)
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
+
+  // Stabilize data references to prevent child component re-renders
+  // These useMemo calls ensure the same array reference is passed if content hasn't changed
+  const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
+  const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
+  const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
+  const stableLinksIn = useMemo(() => bronApi.linksIn, [bronApi.linksIn]);
+  const stableLinksOut = useMemo(() => bronApi.linksOut, [bronApi.linksOut]);
+  const stableDomains = useMemo(() => bronApi.domains, [bronApi.domains]);
+  const stablePages = useMemo(() => bronApi.pages, [bronApi.pages]);
+
+  // Stable callbacks for child components
+  const handleRefreshKeywords = useCallback(() => {
+    bronApi.fetchKeywords(selectedDomain, true);
+  }, [selectedDomain]);
+
+  const handleAddKeyword = useCallback((data: Record<string, unknown>) => {
+    return bronApi.addKeyword(data, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleUpdateKeyword = useCallback((id: string, data: Record<string, unknown>) => {
+    return bronApi.updateKeyword(id, data, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleDeleteKeyword = useCallback((id: string) => {
+    return bronApi.deleteKeyword(id, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRestoreKeyword = useCallback((id: string) => {
+    return bronApi.restoreKeyword(id, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshPages = useCallback(() => {
+    if (selectedDomain) bronApi.fetchPages(selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshSerp = useCallback(() => {
+    if (selectedDomain) bronApi.fetchSerpReport(selectedDomain, true);
+  }, [selectedDomain]);
+
+  const handleRefreshLinksIn = useCallback(() => {
+    if (selectedDomain) bronApi.fetchLinksIn(selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshLinksOut = useCallback(() => {
+    if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
+  }, [selectedDomain]);
 
   return (
     <div 
@@ -555,7 +602,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
         <TabsContent value="domains" className="mt-0">
           <BRONDomainsTab 
-            domains={bronApi.domains}
+            domains={stableDomains}
             isLoading={bronApi.isLoading}
             onRefresh={bronApi.fetchDomains}
             onUpdate={bronApi.updateDomain}
@@ -566,48 +613,48 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
         <TabsContent value="keywords" className="mt-0">
           <BRONKeywordsTab 
-            keywords={bronApi.keywords}
-            serpReports={bronApi.serpReports}
-            serpHistory={bronApi.serpHistory}
-            linksIn={bronApi.linksIn}
-            linksOut={bronApi.linksOut}
+            keywords={stableKeywords}
+            serpReports={stableSerpReports}
+            serpHistory={stableSerpHistory}
+            linksIn={stableLinksIn}
+            linksOut={stableLinksOut}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefresh={() => bronApi.fetchKeywords(selectedDomain, true)}
-            onAdd={(data) => bronApi.addKeyword(data, selectedDomain)}
-            onUpdate={(id, data) => bronApi.updateKeyword(id, data, selectedDomain)}
-            onDelete={(id) => bronApi.deleteKeyword(id, selectedDomain)}
-            onRestore={(id) => bronApi.restoreKeyword(id, selectedDomain)}
+            onRefresh={handleRefreshKeywords}
+            onAdd={handleAddKeyword}
+            onUpdate={handleUpdateKeyword}
+            onDelete={handleDeleteKeyword}
+            onRestore={handleRestoreKeyword}
             onFetchSerpDetail={bronApi.fetchSerpDetail}
           />
         </TabsContent>
 
         <TabsContent value="content" className="mt-0">
           <BRONContentTab 
-            pages={bronApi.pages}
+            pages={stablePages}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefresh={() => selectedDomain && bronApi.fetchPages(selectedDomain)}
+            onRefresh={handleRefreshPages}
           />
         </TabsContent>
 
         <TabsContent value="serp" className="mt-0">
           <BRONSerpTab 
-            serpReports={bronApi.serpReports}
+            serpReports={stableSerpReports}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain, true)}
+            onRefresh={handleRefreshSerp}
           />
         </TabsContent>
 
         <TabsContent value="links" className="mt-0">
           <BRONLinksTab 
-            linksIn={bronApi.linksIn}
-            linksOut={bronApi.linksOut}
+            linksIn={stableLinksIn}
+            linksOut={stableLinksOut}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
-            onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
+            onRefreshIn={handleRefreshLinksIn}
+            onRefreshOut={handleRefreshLinksOut}
             errorIn={bronApi.linksInError}
             errorOut={bronApi.linksOutError}
           />
@@ -615,7 +662,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       </Tabs>
     </div>
   );
-};
+});
 
 // Stat Card Component
 interface StatCardProps {
@@ -749,5 +796,7 @@ const ActionCard = ({ icon: Icon, title, description, color, onClick, active }: 
     </div>
   );
 };
+
+BRONDashboard.displayName = 'BRONDashboard';
 
 export default BRONDashboard;
