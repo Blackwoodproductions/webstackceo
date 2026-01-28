@@ -4,7 +4,7 @@ import {
   Search, ChevronRight, Save, Eye,
   ChevronUp, FileText, Link2, Hash, 
   Sparkles, X, BarChart3, TrendingUp, TrendingDown, Minus,
-  ShoppingCart, Info, Compass, Target
+  ShoppingCart, Info, Compass, Target, ArrowDownLeft, ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,12 +31,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
+import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
   serpReports?: BronSerpReport[];
+  linksIn?: BronLink[];
+  linksOut?: BronLink[];
   selectedDomain?: string;
   isLoading: boolean;
   onRefresh: () => void;
@@ -239,6 +241,8 @@ function getKeywordIntent(keyword: string): { type: 'transactional' | 'commercia
 export const BRONKeywordsTab = ({
   keywords,
   serpReports = [],
+  linksIn = [],
+  linksOut = [],
   selectedDomain,
   isLoading,
   onRefresh,
@@ -472,6 +476,20 @@ export const BRONKeywordsTab = ({
                     <span className="text-sm font-bold">#{yahooPos}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Inbound/Outbound Links */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-400">
+                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                  <span className="font-semibold">In</span>
+                  <span className="text-sm font-bold">{linksIn.length}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-400">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span className="font-semibold">Out</span>
+                  <span className="text-sm font-bold">{linksOut.length}</span>
+                </div>
               </div>
 
               {/* Spacer + Expand Arrow */}

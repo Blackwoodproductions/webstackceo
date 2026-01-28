@@ -369,6 +369,8 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
             <BRONKeywordsTab 
               keywords={bronApi.keywords}
               serpReports={bronApi.serpReports}
+              linksIn={bronApi.linksIn}
+              linksOut={bronApi.linksOut}
               selectedDomain={selectedDomain}
               isLoading={bronApi.isLoading}
               onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
