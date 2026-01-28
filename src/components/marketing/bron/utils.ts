@@ -293,44 +293,63 @@ export function filterLinksForKeyword(
 ): { keywordLinksIn: BronLink[]; keywordLinksOut: BronLink[] } {
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
+
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/\/+$/, "");
   
-  // Generate possible URL patterns for this keyword
+  // Generate possible URL patterns for this keyword (normalized, protocol-less)
   const urlPatterns: string[] = [];
   
   if (keywordUrl) {
-    urlPatterns.push(keywordUrl.toLowerCase());
-    // Also try without protocol
-    urlPatterns.push(keywordUrl.replace(/^https?:\/\//, '').toLowerCase());
+    urlPatterns.push(normalize(keywordUrl));
   }
   
   // Create slug from keyword text
   const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   if (selectedDomain) {
-    urlPatterns.push(`${selectedDomain}/${slug}`.toLowerCase());
-    urlPatterns.push(`www.${selectedDomain}/${slug}`.toLowerCase());
+    urlPatterns.push(normalize(`${selectedDomain}/${slug}`));
+    urlPatterns.push(normalize(`www.${selectedDomain}/${slug}`));
   }
-  // Also add just the slug for partial matching
-  if (slug.length > 5) {
-    urlPatterns.push(slug);
-  }
+  // Also add path-only + slug fallbacks for partial matching
+  if (slug.length > 2) urlPatterns.push(`/${slug}`.replace(/\/+$/, ""));
+  if (slug.length > 5) urlPatterns.push(slug);
+
+  const matchesKeywordUrl = (value?: string) => {
+    if (!value) return false;
+    const normalizedValue = normalize(value);
+    if (!normalizedValue) return false;
+    return urlPatterns.some((pattern) => {
+      const p = normalize(pattern);
+      if (!p) return false;
+      return normalizedValue.includes(p);
+    });
+  };
   
-  // Filter inbound links - where the `link` field contains this keyword's page URL
-  const keywordLinksIn = linksIn.filter(link => {
-    const linkUrl = (link.link || '').toLowerCase();
-    if (!linkUrl) return false;
-    
-    // Check if the link URL matches any of our patterns
-    return urlPatterns.some(pattern => 
-      linkUrl.includes(pattern) || 
-      // Also check if the slug appears in the link path
-      (pattern === slug && linkUrl.includes(`/${slug}`))
+  // Inbound links: BRON typically returns source_url (referrer) + target_url (our page)
+  // We match against target_url first, but also try `link` as some payloads use that.
+  const keywordLinksIn = linksIn.filter((link) => {
+    return (
+      matchesKeywordUrl(link.target_url) ||
+      matchesKeywordUrl(link.link) ||
+      // fallback (some responses may swap fields)
+      matchesKeywordUrl(link.source_url)
     );
   });
-  
-  // Outbound links are domain-level, not per-keyword
-  // Return empty for now - they don't have per-keyword tracking in the API
-  // OR we could show all outbound links for non-tracking keywords
-  const keywordLinksOut: BronLink[] = [];
+
+  // Outbound links: we want links originating from this keyword page.
+  // BRON usually uses source_url as our page + target_url/link as the external destination.
+  const keywordLinksOut = linksOut.filter((link) => {
+    return (
+      matchesKeywordUrl(link.source_url) ||
+      // fallback (some responses may swap fields)
+      matchesKeywordUrl(link.target_url)
+    );
+  });
   
   return { keywordLinksIn, keywordLinksOut };
 }
