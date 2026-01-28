@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
-  MapPin, X, Camera
+  MapPin, X, Camera, Facebook, Linkedin, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -390,6 +390,67 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                       >
                         {selectedDomain}
                       </a>
+                      
+                      {/* Social Media Icons */}
+                      {(domainInfo?.wr_facebook || domainInfo?.wr_linkedin || domainInfo?.wr_instagram || domainInfo?.wr_twitter || domainInfo?.wr_video) && (
+                        <div className="flex items-center gap-2 pt-2 mt-1 border-t border-border/30">
+                          {domainInfo?.wr_facebook && (
+                            <a
+                              href={domainInfo.wr_facebook.startsWith('http') ? domainInfo.wr_facebook : `https://facebook.com/${domainInfo.wr_facebook}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-6 h-6 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"
+                              title="Facebook"
+                            >
+                              <Facebook className="w-3.5 h-3.5 text-white" />
+                            </a>
+                          )}
+                          {domainInfo?.wr_linkedin && (
+                            <a
+                              href={domainInfo.wr_linkedin.startsWith('http') ? domainInfo.wr_linkedin : `https://linkedin.com/company/${domainInfo.wr_linkedin}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-6 h-6 rounded-full bg-[#0A66C2] flex items-center justify-center hover:opacity-80 transition-opacity"
+                              title="LinkedIn"
+                            >
+                              <Linkedin className="w-3.5 h-3.5 text-white" />
+                            </a>
+                          )}
+                          {domainInfo?.wr_instagram && (
+                            <a
+                              href={domainInfo.wr_instagram.startsWith('http') ? domainInfo.wr_instagram : `https://instagram.com/${domainInfo.wr_instagram}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-6 h-6 rounded-full bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center hover:opacity-80 transition-opacity"
+                              title="Instagram"
+                            >
+                              <Instagram className="w-3.5 h-3.5 text-white" />
+                            </a>
+                          )}
+                          {domainInfo?.wr_twitter && (
+                            <a
+                              href={domainInfo.wr_twitter.startsWith('http') ? domainInfo.wr_twitter : `https://twitter.com/${domainInfo.wr_twitter}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-6 h-6 rounded-full bg-black flex items-center justify-center hover:opacity-80 transition-opacity"
+                              title="X (Twitter)"
+                            >
+                              <Twitter className="w-3.5 h-3.5 text-white" />
+                            </a>
+                          )}
+                          {domainInfo?.wr_video && (
+                            <a
+                              href={domainInfo.wr_video.startsWith('http') ? domainInfo.wr_video : `https://youtube.com/${domainInfo.wr_video}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-6 h-6 rounded-full bg-[#FF0000] flex items-center justify-center hover:opacity-80 transition-opacity"
+                              title="YouTube"
+                            >
+                              <Youtube className="w-3.5 h-3.5 text-white" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Google Maps Embed */}
