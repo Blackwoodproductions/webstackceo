@@ -370,15 +370,56 @@ export const BRONKeywordsTab = ({
   const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
   const [initialPositionsLoading, setInitialPositionsLoading] = useState(false);
 
-  // Filter keywords
+  // Merge keywords from content API with SERP-tracked keywords (to show all 60+ keywords)
+  // SERP keywords without content pages are shown as "tracking only" keywords
+  const mergedKeywords = useMemo(() => {
+    // Start with all content keywords
+    const keywordMap = new Map<string, BronKeyword>();
+    
+    for (const kw of keywords) {
+      const text = getKeywordDisplayText(kw).toLowerCase().trim();
+      keywordMap.set(text, kw);
+    }
+    
+    // Add SERP keywords that don't have matching content pages
+    for (const serpReport of serpReports) {
+      const serpKeyword = serpReport.keyword?.toLowerCase().trim();
+      if (!serpKeyword) continue;
+      
+      // Check if this SERP keyword already has a content page
+      const hasContent = keywordMap.has(serpKeyword) || 
+        [...keywordMap.keys()].some(k => 
+          k.includes(serpKeyword) || serpKeyword.includes(k)
+        );
+      
+      if (!hasContent) {
+        // Create a virtual keyword entry for SERP-only keywords
+        const virtualKeyword: BronKeyword = {
+          id: `serp_${serpKeyword.replace(/\s+/g, '_')}`,
+          keyword: serpReport.keyword,
+          keywordtitle: serpReport.keyword,
+          is_supporting: true, // Mark as supporting/tracking-only
+          active: 1,
+          deleted: 0,
+          // Store SERP data reference
+          status: 'tracking_only',
+        };
+        keywordMap.set(serpKeyword, virtualKeyword);
+      }
+    }
+    
+    return Array.from(keywordMap.values());
+  }, [keywords, serpReports]);
+
+  // Filter merged keywords
   const filteredKeywords = useMemo(() => {
-    if (!searchQuery.trim()) return keywords;
+    if (!searchQuery.trim()) return mergedKeywords;
     const q = searchQuery.toLowerCase();
-    return keywords.filter(k => 
+    return mergedKeywords.filter(k => 
       getKeywordDisplayText(k).toLowerCase().includes(q) ||
       (k.metadescription || '').toLowerCase().includes(q)
     );
-  }, [keywords, searchQuery]);
+  }, [mergedKeywords, searchQuery]);
 
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
 
@@ -764,8 +805,11 @@ export const BRONKeywordsTab = ({
     const deleted = isDeleted(kw);
     const active = isActive(kw);
     
-    // Content preview stats
-    const wordCount = getWordCount(kw.resfeedtext || '');
+    // Check if this is a "tracking only" keyword (from SERP without content)
+    const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
+    
+    // Content preview stats - only meaningful for content keywords
+    const wordCount = isTrackingOnly ? 0 : getWordCount(kw.resfeedtext || '');
     const metaTitleQuality = getMetaTitleQuality(kw.metatitle || '');
     const metaDescQuality = getMetaDescQuality(kw.metadescription || '');
     const hasLinks = !!(kw.linkouturl);
@@ -820,11 +864,14 @@ export const BRONKeywordsTab = ({
         className={`${deleted ? 'opacity-50' : ''}`}
         style={{ contain: 'layout' }}
       >
-        {/* Card container */}
+        {/* Card container - different styling for tracking-only keywords */}
         <div 
           className={`
-            rounded-xl border bg-card/80 overflow-hidden transition-colors duration-150
-            ${expanded ? 'ring-1 ring-primary/40 border-primary/50' : 'border-border/50 hover:border-primary/30'}
+            rounded-xl border overflow-hidden transition-colors duration-150
+            ${isTrackingOnly 
+              ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : ' hover:border-amber-500/30')
+              : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50 hover:border-primary/30')
+            }
           `}
           style={{ contain: 'layout paint' }}
         >
@@ -944,9 +991,13 @@ export const BRONKeywordsTab = ({
                   >
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
-                  {active && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                  )}
+                  {isTrackingOnly ? (
+                    <Badge className="text-[9px] h-5 bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      Tracking Only
+                    </Badge>
+                  ) : active ? (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" title="Has content page" />
+                  ) : null}
                 </div>
               </div>
 
@@ -1109,10 +1160,82 @@ export const BRONKeywordsTab = ({
           {/* Expanded Content - Redesigned Nested System */}
           {expanded && (
             <div 
-              className="border-t border-primary/20 bg-gradient-to-b from-card/80 to-muted/30"
+              className={`border-t ${isTrackingOnly ? 'border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-muted/30' : 'border-primary/20 bg-gradient-to-b from-card/80 to-muted/30'}`}
               style={{ contain: 'layout paint' }}
             >
-              {/* Nested Tab Container */}
+              {/* Tracking Only Keywords - Simplified View */}
+              {isTrackingOnly ? (
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/20 border border-amber-500/30">
+                        <Eye className="w-3 h-3 text-amber-400" />
+                        <span className="font-semibold text-amber-400">Tracking Mode</span>
+                      </div>
+                      <div className="h-4 w-px bg-border/50" />
+                      <span className="text-muted-foreground">This keyword is being tracked for rankings but has no content page yet.</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        expandKeyword(kw);
+                      }}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                      Collapse
+                    </Button>
+                  </div>
+                  
+                  {/* Quick Actions for Tracking-Only Keywords */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-xl border border-border/30 bg-card/50">
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <Plus className="w-4 h-4 text-primary" />
+                        Create Content Page
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Build a dedicated page targeting this keyword to improve rankings.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Pre-fill the add keyword form with this keyword
+                          setNewKeyword(keywordText);
+                          setShowAddModal(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Create Page
+                      </Button>
+                    </div>
+                    
+                    <div className="p-4 rounded-xl border border-border/30 bg-card/50">
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-violet-400" />
+                        Ranking History
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        View historical ranking data for this tracked keyword.
+                      </p>
+                      {selectedDomain && (
+                        <KeywordHistoryChart
+                          domain={selectedDomain}
+                          keyword={keywordText}
+                          currentGooglePosition={googlePos}
+                          currentBingPosition={bingPos}
+                          currentYahooPosition={yahooPos}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+              /* Full Content Keywords - Original Nested System */
               <div className="p-3">
                 {/* Compact Header Bar */}
                 <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
@@ -1671,6 +1794,7 @@ export const BRONKeywordsTab = ({
                   </div>
                 </div>
               </div>
+              )}
             </div>
           )}
         </div>
@@ -1683,7 +1807,7 @@ export const BRONKeywordsTab = ({
     ? keywords.find(k => k.id === articleEditorId) 
     : null;
 
-  if (isLoading && keywords.length === 0) {
+  if (isLoading && mergedKeywords.length === 0) {
     return (
       <Card className="border-border/50 bg-card/50">
         <CardContent className="p-6 space-y-4">
@@ -1706,7 +1830,7 @@ export const BRONKeywordsTab = ({
                 <Key className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
                   Keywords
                   {selectedDomain && (
                     <Badge variant="outline" className="text-xs font-normal">
@@ -1714,8 +1838,19 @@ export const BRONKeywordsTab = ({
                     </Badge>
                   )}
                   <Badge variant="secondary" className="text-xs">
-                    {keywords.length} total
+                    {mergedKeywords.length} total
                   </Badge>
+                  {/* Show breakdown of content vs tracking-only */}
+                  {keywords.length > 0 && (
+                    <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      {keywords.length} with content
+                    </Badge>
+                  )}
+                  {mergedKeywords.length - keywords.length > 0 && (
+                    <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      {mergedKeywords.length - keywords.length} tracking only
+                    </Badge>
+                  )}
                   {serpReports.length > 0 && (
                     <Badge className="text-xs bg-violet-500/20 text-violet-400 border-violet-500/30">
                       <BarChart3 className="w-3 h-3 mr-1" />
