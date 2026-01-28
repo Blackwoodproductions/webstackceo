@@ -380,10 +380,10 @@ export const BronKeywordCard = memo(({
         style={{ contain: 'content' }}
       >
         {/* Header - Clickable */}
-        <div className="p-4 cursor-pointer" onClick={onToggleExpand}>
-          <div className="grid items-center gap-2" style={{ gridTemplateColumns: '70px 280px 130px 210px 180px 100px 40px', minWidth: '1010px' }}>
+        <div className="p-4 cursor-pointer overflow-x-auto" onClick={onToggleExpand}>
+          <div className="flex items-center w-full justify-between" style={{ minWidth: '1050px' }}>
             {/* Column 1: Page Speed Gauge */}
-            <div className="flex justify-center">
+            <div className="w-[70px] flex-shrink-0 flex justify-center">
               <PageSpeedGauge 
                 score={pageSpeedScore?.mobileScore || 0}
                 loading={pageSpeedScore?.loading}
@@ -393,10 +393,10 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 2: Keyword Text */}
-            <div className="pr-2 overflow-hidden">
+            <div className="w-[320px] flex-shrink-0 pr-4">
               <div className="flex items-center gap-2">
                 <h3 
-                  className={`font-medium truncate ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
+                  className={`font-medium truncate max-w-[180px] ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
                   title={keywordText}
                 >
                   {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -415,7 +415,7 @@ export const BronKeywordCard = memo(({
                   </a>
                 )}
                 
-                {/* Badges container */}
+                {/* Badges container - fixed width to ensure alignment */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {isTrackingOnly ? (
                     <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
@@ -442,7 +442,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 3: Intent Badge */}
-            <div className="flex justify-center">
+            <div className="w-[140px] flex-shrink-0 flex justify-center">
               <div className="bg-card border border-border/60 rounded-md px-3 py-1.5 flex items-center gap-2 justify-center">
                 <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                   <IntentIcon className={`w-3 h-3 ${intent.color}`} />
@@ -454,7 +454,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 4: SERP Rankings */}
-            <div>
+            <div className="w-[220px] flex-shrink-0">
               <RankingsDisplay
                 googlePos={googlePos}
                 bingPos={bingPos}
@@ -466,7 +466,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 5: Keyword Metrics */}
-            <div>
+            <div className="w-[180px] flex-shrink-0">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
@@ -475,7 +475,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 6: Links Display */}
-            <div className="flex justify-center">
+            <div className="w-[90px] flex-shrink-0 flex justify-center">
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40">
                 <div className="flex items-center gap-1">
                   <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
@@ -490,7 +490,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 7: Expand/Collapse */}
-            <div className="flex justify-center">
+            <div className="w-[40px] flex-shrink-0 flex justify-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 isExpanded 
                   ? 'bg-primary/20 text-primary' 
