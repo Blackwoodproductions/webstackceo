@@ -371,7 +371,7 @@ export const BronKeywordCard = memo(({
         className={`
           rounded-xl border overflow-hidden
           ${isNested 
-            ? 'border-l-2 border-l-hover-accent/60 ml-2 bg-hover-accent/10 border-hover-accent/25'
+            ? 'border-l-2 border-l-hover-accent/60 bg-hover-accent/10 border-hover-accent/25'
             : isTrackingOnly 
               ? 'bg-hover-accent/5 border-hover-accent/20'
               : 'bg-primary/10 border-primary/25'
@@ -394,9 +394,9 @@ export const BronKeywordCard = memo(({
 
             {/* Column 2: Keyword Text */}
             <div className="w-[320px] flex-shrink-0 pr-4">
-              <div className={`flex items-center gap-2 ${isNested ? 'pl-3' : ''}`}>
+              <div className="flex items-center gap-2">
                 <h3 
-                  className={`font-medium truncate ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
+                  className={`font-medium truncate max-w-[180px] ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
                   title={keywordText}
                 >
                   {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -415,28 +415,29 @@ export const BronKeywordCard = memo(({
                   </a>
                 )}
                 
-                {isTrackingOnly ? (
-                   <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap flex-shrink-0">
-                    Tracking
-                  </Badge>
-                ) : isNested ? (
-                   <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap flex-shrink-0">
-                    Supporting
-                  </Badge>
-                ) : (
-                  <>
-                    {active && (
-                       <Badge className="text-[9px] h-5 px-2 bg-primary/20 text-primary border-primary/30 whitespace-nowrap flex-shrink-0">
+                {/* Badges container - fixed width to ensure alignment */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {isTrackingOnly ? (
+                    <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
+                      Tracking
+                    </Badge>
+                  ) : isNested ? (
+                    <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
+                      Supporting
+                    </Badge>
+                  ) : (
+                    <>
+                      <Badge className="text-[9px] h-5 px-2 bg-primary/20 text-primary border-primary/30 whitespace-nowrap">
                         Main
                       </Badge>
-                    )}
-                    {clusterChildCount && clusterChildCount > 0 && (
-                      <Badge className="text-[9px] h-5 px-2 bg-violet-500/20 text-violet-400 border-violet-500/30 whitespace-nowrap flex-shrink-0">
-                        +{clusterChildCount}
-                      </Badge>
-                    )}
-                  </>
-                )}
+                      {clusterChildCount !== undefined && clusterChildCount > 0 && (
+                        <Badge className="text-[9px] h-5 px-2 bg-violet-500/20 text-violet-400 border-violet-500/30 whitespace-nowrap">
+                          +{clusterChildCount}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
