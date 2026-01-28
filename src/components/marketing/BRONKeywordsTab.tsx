@@ -91,11 +91,31 @@ function findSerpForKeyword(keywordText: string, serpReports: BronSerpReport[]):
   return null;
 }
 
-// Parse position value from string/number
+// Parse position and movement from SERP value like "5 +1" or "6 -4" or just "5"
+function parsePositionAndMovement(val?: string | number): { position: number | null; movement: number } {
+  if (val === undefined || val === null) return { position: null, movement: 0 };
+  
+  const str = String(val).trim();
+  
+  // Check for format like "5 +1" or "6 -4" or "2 +999"
+  const match = str.match(/^(\d+)\s*([+-]\d+)?$/);
+  if (match) {
+    const position = parseInt(match[1], 10);
+    const movement = match[2] ? parseInt(match[2], 10) : 0;
+    return { 
+      position: isNaN(position) || position === 0 ? null : position,
+      movement: isNaN(movement) ? 0 : movement
+    };
+  }
+  
+  // Just a number
+  const num = parseInt(str, 10);
+  return { position: isNaN(num) || num === 0 ? null : num, movement: 0 };
+}
+
+// Legacy helper for backwards compatibility
 function getPosition(val?: string | number): number | null {
-  if (val === undefined || val === null) return null;
-  const num = typeof val === 'string' ? parseInt(val, 10) : val;
-  return isNaN(num) || num === 0 ? null : num;
+  return parsePositionAndMovement(val).position;
 }
 
 // Get position badge styling
@@ -384,28 +404,18 @@ export const BRONKeywordsTab = ({
     fetchMetrics();
   }, [keywords]);
 
-  // Helper to get movement indicator for a position
-  // Colors: Blue = no movement/no data, Yellow = down, Orange with glow = up
-  const getMovementIndicator = (currentPos: number | null, initialPos: number | null) => {
-    if (currentPos === null) {
-      return { type: 'none' as const, color: 'text-muted-foreground', bgColor: '', glow: false };
-    }
-    
-    // If no historical data, default to blue (no movement known)
-    if (initialPos === null) {
-      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false };
-    }
-    
-    // Lower position number = better ranking
-    if (currentPos < initialPos) {
+  // Helper to get movement indicator based on movement delta from SERP
+  // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
+  const getMovementFromDelta = (movement: number) => {
+    if (movement > 0) {
       // Improved - went up in rankings - bright orange with glow
-      return { type: 'up' as const, color: 'text-orange-400', bgColor: 'bg-orange-500/20', glow: true };
-    } else if (currentPos > initialPos) {
+      return { type: 'up' as const, color: 'text-orange-400', bgColor: 'bg-orange-500/20', glow: true, delta: movement };
+    } else if (movement < 0) {
       // Declined - went down in rankings - yellow
-      return { type: 'down' as const, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', glow: false };
+      return { type: 'down' as const, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', glow: false, delta: movement };
     } else {
       // Same position - blue
-      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false };
+      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false, delta: 0 };
     }
   };
 
@@ -565,14 +575,16 @@ export const BRONKeywordsTab = ({
     const metaDescQuality = getMetaDescQuality(kw.metadescription || '');
     const hasLinks = !!(kw.linkouturl);
 
-    // SERP ranking data for this keyword
+    // SERP ranking data for this keyword - parse both position and movement
     const keywordText = getKeywordDisplayText(kw);
     const serpData = findSerpForKeyword(keywordText, serpReports);
-    const googlePos = getPosition(serpData?.google);
-    const bingPos = getPosition(serpData?.bing);
-    const yahooPos = getPosition(serpData?.yahoo);
-    const duckPos = getPosition(serpData?.duck);
-    const hasRankings = googlePos !== null || bingPos !== null || yahooPos !== null || duckPos !== null;
+    const googleData = parsePositionAndMovement(serpData?.google);
+    const bingData = parsePositionAndMovement(serpData?.bing);
+    const yahooData = parsePositionAndMovement(serpData?.yahoo);
+    const googlePos = googleData.position;
+    const bingPos = bingData.position;
+    const yahooPos = yahooData.position;
+    const hasRankings = googlePos !== null || bingPos !== null || yahooPos !== null;
 
     // Get keyword intent type
     const intent = getKeywordIntent(keywordText);
@@ -663,10 +675,10 @@ export const BRONKeywordsTab = ({
 
               {/* SERP Rankings - 3 Column Layout with Headers + Movement Indicators */}
               {(() => {
-                const initial = initialPositions[keywordText.toLowerCase()];
-                const googleMovement = getMovementIndicator(googlePos, initial?.google ?? null);
-                const bingMovement = getMovementIndicator(bingPos, initial?.bing ?? null);
-                const yahooMovement = getMovementIndicator(yahooPos, initial?.yahoo ?? null);
+                // Use movement from SERP data directly
+                const googleMovement = getMovementFromDelta(googleData.movement);
+                const bingMovement = getMovementFromDelta(bingData.movement);
+                const yahooMovement = getMovementFromDelta(yahooData.movement);
                 
                 return (
                   <div className="flex-shrink-0 grid grid-cols-3 gap-2 text-center w-[300px]">
