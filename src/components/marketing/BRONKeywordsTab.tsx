@@ -1140,9 +1140,9 @@ export const BRONKeywordsTab = ({
                   </Button>
                 </div>
 
-                {/* Collapsible Tab 1: Relevant Business Citations - Full Analytics */}
-                <details className="mb-3 rounded-lg border border-cyan-500/30 overflow-hidden bg-card/80">
-                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-cyan-500/10 transition-colors border-b border-cyan-500/20">
+                {/* Collapsible Tab 1: Relevant Business Citations - Compact Analytics */}
+                <details open className="mb-3 rounded-lg border border-cyan-500/30 overflow-hidden bg-card/80">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-cyan-500/10 transition-colors border-b border-cyan-500/20">
                     <div className="flex items-center gap-2">
                       <Link2 className="w-4 h-4 text-cyan-400" />
                       <span className="text-sm font-medium text-foreground">Relevant Business Citations</span>
@@ -1150,37 +1150,32 @@ export const BRONKeywordsTab = ({
                         {linksIn.length + linksOut.length} links
                       </Badge>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 [details[open]_&]:rotate-90" />
+                    <ChevronUp className="w-5 h-5 text-cyan-400 transition-transform duration-200 [details:not([open])_&]:rotate-180" />
                   </summary>
-                  <div className="p-4 bg-gradient-to-br from-background to-muted/20">
-                    {/* Citation Link Analytics Header */}
-                    <div className="text-center mb-6">
-                      <h3 className="text-lg font-semibold text-foreground">Citation Link Analytics</h3>
-                      <p className="text-sm text-muted-foreground">Content sharing overview and relevance analysis</p>
+                  <div className="p-3 bg-gradient-to-br from-background to-muted/20">
+                    {/* Compact Citation Link Analytics */}
+                    <div className="text-center mb-3">
+                      <h3 className="text-sm font-semibold text-foreground">Citation Link Analytics</h3>
+                      <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
                     </div>
                     
-                    {/* Donut Charts Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      {/* Inbound Content Sharing Relevance */}
-                      <div className="p-4 rounded-xl border border-border/50 bg-card/50">
-                        <h4 className="text-sm font-medium text-center text-foreground mb-4">Inbound Content Sharing Relevance</h4>
-                        <div className="flex justify-center mb-4">
-                          <div className="relative w-40 h-40">
+                    {/* Compact Donut Charts Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* Inbound Content Sharing Relevance - Compact */}
+                      <div className="p-3 rounded-lg border border-border/50 bg-card/50">
+                        <h4 className="text-xs font-medium text-center text-foreground mb-2">Inbound Content Sharing Relevance</h4>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-20 h-20 flex-shrink-0">
                             {/* SVG Donut Chart */}
                             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                               {(() => {
                                 const total = linksIn.length || 1;
-                                // Simulated relevance distribution
                                 const mostRelevant = Math.floor(total * 0.83);
                                 const veryRelevant = Math.floor(total * 0.17);
-                                const relevant = 0;
-                                const lessRelevant = 0;
                                 
                                 const segments = [
-                                  { value: mostRelevant, color: '#EAB308', label: 'Most Relevant' },
-                                  { value: veryRelevant, color: '#22C55E', label: 'Very relevant' },
-                                  { value: relevant, color: '#3B82F6', label: 'Relevant' },
-                                  { value: lessRelevant, color: '#F59E0B', label: 'Less Relevant' },
+                                  { value: mostRelevant, color: '#EAB308' },
+                                  { value: veryRelevant, color: '#22C55E' },
                                 ];
                                 
                                 let offset = 0;
@@ -1202,61 +1197,51 @@ export const BRONKeywordsTab = ({
                                       r="35"
                                       fill="none"
                                       stroke={seg.color}
-                                      strokeWidth="12"
+                                      strokeWidth="10"
                                       strokeDasharray={strokeDasharray}
                                       strokeDashoffset={strokeDashoffset}
-                                      className="transition-all duration-500"
                                     />
                                   );
                                 });
                               })()}
                               <circle cx="50" cy="50" r="29" fill="hsl(var(--card))" />
                             </svg>
-                            {/* Center percentages */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-xs text-emerald-400 font-semibold">17.0%</span>
-                              <span className="text-lg text-yellow-400 font-bold">83.0%</span>
+                              <span className="text-[10px] text-emerald-400 font-semibold">17%</span>
+                              <span className="text-sm text-yellow-400 font-bold">83%</span>
                             </div>
                           </div>
-                        </div>
-                        {/* Legend */}
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                              <span className="text-muted-foreground">Less Relevant</span>
+                          {/* Compact Legend */}
+                          <div className="flex-1 grid grid-cols-2 gap-1 text-[10px]">
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-amber-400" />
+                              <span className="text-muted-foreground">Less</span>
+                              <span className="font-semibold ml-auto">0</span>
                             </div>
-                            <span className="font-semibold text-foreground">0</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                              <span className="text-muted-foreground">Relevant</span>
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-blue-400" />
+                              <span className="text-muted-foreground">Rel</span>
+                              <span className="font-semibold ml-auto">0</span>
                             </div>
-                            <span className="font-semibold text-foreground">0</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                              <span className="text-muted-foreground">Very relevant</span>
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                              <span className="text-muted-foreground">Very</span>
+                              <span className="font-semibold ml-auto">{Math.floor(linksIn.length * 0.17)}</span>
                             </div>
-                            <span className="font-semibold text-foreground">{Math.floor(linksIn.length * 0.17)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                              <span className="text-muted-foreground">Most Relevant</span>
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                              <span className="text-muted-foreground">Most</span>
+                              <span className="font-semibold ml-auto">{Math.floor(linksIn.length * 0.83)}</span>
                             </div>
-                            <span className="font-semibold text-foreground">{Math.floor(linksIn.length * 0.83)}</span>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Link Relationship Types */}
-                      <div className="p-4 rounded-xl border border-border/50 bg-card/50">
-                        <h4 className="text-sm font-medium text-center text-foreground mb-4">Link Relationship Types</h4>
-                        <div className="flex justify-center mb-4">
-                          <div className="relative w-40 h-40">
+                      {/* Link Relationship Types - Compact */}
+                      <div className="p-3 rounded-lg border border-border/50 bg-card/50">
+                        <h4 className="text-xs font-medium text-center text-foreground mb-2">Link Relationship Types</h4>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-20 h-20 flex-shrink-0">
                             {/* SVG Donut Chart */}
                             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                               {(() => {
@@ -1271,86 +1256,69 @@ export const BRONKeywordsTab = ({
                                 return (
                                   <>
                                     <circle
-                                      cx="50"
-                                      cy="50"
-                                      r="35"
-                                      fill="none"
-                                      stroke="#22C55E"
-                                      strokeWidth="12"
+                                      cx="50" cy="50" r="35"
+                                      fill="none" stroke="#22C55E" strokeWidth="10"
                                       strokeDasharray={`${circumference * reciprocalPercent} ${circumference * (1 - reciprocalPercent)}`}
-                                      className="transition-all duration-500"
                                     />
                                     <circle
-                                      cx="50"
-                                      cy="50"
-                                      r="35"
-                                      fill="none"
-                                      stroke="#3B82F6"
-                                      strokeWidth="12"
+                                      cx="50" cy="50" r="35"
+                                      fill="none" stroke="#3B82F6" strokeWidth="10"
                                       strokeDasharray={`${circumference * oneWayPercent} ${circumference * (1 - oneWayPercent)}`}
                                       strokeDashoffset={-circumference * reciprocalPercent}
-                                      className="transition-all duration-500"
                                     />
                                     <circle cx="50" cy="50" r="29" fill="hsl(var(--card))" />
                                   </>
                                 );
                               })()}
                             </svg>
-                            {/* Center percentages */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-xs text-emerald-400 font-semibold">41.0%</span>
-                              <span className="text-lg text-blue-400 font-bold">59.0%</span>
+                              <span className="text-[10px] text-emerald-400 font-semibold">41%</span>
+                              <span className="text-sm text-blue-400 font-bold">59%</span>
                             </div>
                           </div>
-                        </div>
-                        {/* Legend */}
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                          {/* Compact Legend */}
+                          <div className="flex-1 space-y-1 text-[10px]">
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
                               <span className="text-muted-foreground">Reciprocal</span>
+                              <span className="font-semibold ml-auto">{Math.floor((linksIn.length + linksOut.length) * 0.41)}</span>
                             </div>
-                            <span className="font-semibold text-foreground">{Math.floor((linksIn.length + linksOut.length) * 0.41)}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                            <div className="flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-blue-400" />
                               <span className="text-muted-foreground">One Way</span>
+                              <span className="font-semibold ml-auto">{Math.ceil((linksIn.length + linksOut.length) * 0.59)}</span>
                             </div>
-                            <span className="font-semibold text-foreground">{Math.ceil((linksIn.length + linksOut.length) * 0.59)}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Total Summary */}
-                    <div className="text-center mb-6 py-3 border-t border-b border-border/30">
-                      <p className="text-sm text-foreground">
+                    {/* Compact Total Summary */}
+                    <div className="text-center mb-3 py-2 border-t border-b border-border/30">
+                      <p className="text-xs text-foreground">
                         <span className="font-semibold">Total: {linksIn.length + linksOut.length} citations</span>
                         <span className="text-muted-foreground"> ({Math.floor((linksIn.length + linksOut.length) * 0.41)} reciprocal)</span>
-                        <TrendingUp className="inline w-4 h-4 ml-2 text-emerald-400" />
+                        <TrendingUp className="inline w-3 h-3 ml-1 text-emerald-400" />
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">Citation links overview and statistics</p>
                     </div>
                     
-                    {/* Your Citation Links Section */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-foreground mb-3">Your Citation Links</h4>
+                    {/* Your Citation Links Section - Compact */}
+                    <div className="mb-2">
+                      <h4 className="text-xs font-semibold text-foreground mb-2">Your Citation Links</h4>
                       {/* Filters Row */}
-                      <div className="flex items-center gap-4 mb-3 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Relevance Score:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded px-2 py-1 text-foreground text-xs">
-                            <option>All Relevance</option>
-                            <option>Most Relevant</option>
-                            <option>Very Relevant</option>
-                            <option>Relevant</option>
+                      <div className="flex items-center gap-3 mb-2 text-[10px]">
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">Relevance:</span>
+                          <select className="bg-muted/50 border border-border/50 rounded px-1.5 py-0.5 text-foreground text-[10px]">
+                            <option>All</option>
+                            <option>Most</option>
+                            <option>Very</option>
                           </select>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Reciprocal:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded px-2 py-1 text-foreground text-xs">
-                            <option>All Types</option>
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground">Type:</span>
+                          <select className="bg-muted/50 border border-border/50 rounded px-1.5 py-0.5 text-foreground text-[10px]">
+                            <option>All</option>
                             <option>Reciprocal</option>
                             <option>One Way</option>
                           </select>
