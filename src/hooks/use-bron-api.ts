@@ -626,6 +626,7 @@ export interface UseBronApiReturn {
   fetchLinksIn: (domain: string, domainId?: number | string) => Promise<void>;
   fetchLinksOut: (domain: string, domainId?: number | string) => Promise<void>;
   resetDomainData: () => void;
+  prefetchKeywordsForDomains: (domainList: BronDomain[]) => Promise<void>;
 }
 
 export function useBronApi(): UseBronApiReturn {
@@ -1557,6 +1558,64 @@ export function useBronApi(): UseBronApiReturn {
     setLinksOutError(null);
   }, []);
 
+  // Prefetch keywords for all domains in background to enable instant domain switching.
+  // This runs after initial auth without blocking the UI - it populates cache silently.
+  const prefetchKeywordsForDomains = useCallback(async (domainList: BronDomain[]) => {
+    const domainsToFetch = domainList
+      .filter(d => !d.is_deleted && d.domain)
+      .map(d => normalizeDomainKey(d.domain));
+
+    // Check which domains already have cached keywords (skip those)
+    const uncached = domainsToFetch.filter(domain => {
+      const cached = loadCachedKeywords(domain);
+      return !cached || cached.length === 0;
+    });
+
+    if (uncached.length === 0) {
+      console.log('[BRON] All domains already have cached keywords');
+      return;
+    }
+
+    console.log(`[BRON] Prefetching keywords for ${uncached.length} domains in background...`);
+
+    // Fetch in sequence with small delays to avoid overwhelming API
+    for (const domain of uncached) {
+      try {
+        const allKeywords: BronKeyword[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore && page <= 10) {
+          const result = await callApi("listKeywords", { domain, page, limit: 100, include_deleted: false });
+          if (result?.success && result.data) {
+            const keywords = result.data.keywords || result.data.items || [];
+            if (Array.isArray(keywords) && keywords.length > 0) {
+              allKeywords.push(...keywords);
+              hasMore = keywords.length >= 100;
+              page++;
+            } else {
+              hasMore = false;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+
+        if (allKeywords.length > 0) {
+          saveCachedKeywords(domain, allKeywords);
+          console.log(`[BRON] Prefetched ${allKeywords.length} keywords for ${domain}`);
+        }
+
+        // Small delay between domains to avoid rate limiting
+        await new Promise(r => setTimeout(r, 300));
+      } catch (err) {
+        console.warn(`[BRON] Failed to prefetch keywords for ${domain}:`, err);
+      }
+    }
+
+    console.log('[BRON] Background keyword prefetch complete');
+  }, [callApi, normalizeDomainKey]);
+
   return {
     isLoading,
     isAuthenticated,
@@ -1589,5 +1648,6 @@ export function useBronApi(): UseBronApiReturn {
     fetchLinksIn,
     fetchLinksOut,
     resetDomainData,
+    prefetchKeywordsForDomains,
   };
 }
