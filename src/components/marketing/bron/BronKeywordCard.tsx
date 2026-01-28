@@ -45,9 +45,38 @@ interface BronKeywordCardProps {
 
 // Utility functions
 export function getKeywordDisplayText(kw: BronKeyword): string {
+  // Check all possible text fields from BRON API
+  // Different BRON packages may use different field names
   if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
   if (kw.keyword && kw.keyword.trim()) return kw.keyword;
   if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
+  
+  // Some BRON packages use 'title' or 'name' fields
+  const kwAny = kw as unknown as Record<string, unknown>;
+  if (typeof kwAny.title === 'string' && kwAny.title.trim()) return kwAny.title;
+  if (typeof kwAny.name === 'string' && kwAny.name.trim()) return kwAny.name;
+  if (typeof kwAny.keyword_text === 'string' && kwAny.keyword_text.trim()) return kwAny.keyword_text;
+  if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text;
+  if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase;
+  
+  // Check linkouturl for keyword slug
+  if (kw.linkouturl) {
+    // Extract last path segment as keyword hint
+    const urlPath = kw.linkouturl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
+    const lastSegment = urlPath.split('/').pop();
+    if (lastSegment && lastSegment.length > 2) {
+      // Convert slug to readable text: "best-dentist-port-coquitlam" -> "Best Dentist Port Coquitlam"
+      const readable = lastSegment
+        .replace(/-/g, ' ')
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      if (readable.length > 3) return readable;
+    }
+  }
+  
+  // Try to extract from resfeedtext HTML content
   if (kw.resfeedtext) {
     const decoded = kw.resfeedtext
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
@@ -55,7 +84,10 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
       .replace(/&#39;/g, "'");
     const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
     if (h1Match && h1Match[1]) return h1Match[1].trim();
+    const titleMatch = decoded.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch && titleMatch[1]) return titleMatch[1].trim();
   }
+  
   return `Keyword #${kw.id}`;
 }
 

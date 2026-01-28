@@ -372,12 +372,22 @@ export function useBronApi(): UseBronApiReturn {
           const keywordList = result.data.keywords || result.data.items || [];
           const keywords = Array.isArray(keywordList) ? keywordList : [];
           
-          // Log first page to check for parent_keyword_id relationships and package types
+          // Log first page to check for all available fields
           if (page === 1 && keywords.length > 0) {
+            // Log ALL fields from first keyword to see what's available
+            console.log('[BRON] First keyword raw data (all fields):', JSON.stringify(keywords[0], null, 2));
             console.log('[BRON] Sample keyword data (checking for clustering fields):', {
               sample: keywords.slice(0, 5).map((k: BronKeyword) => ({
                 id: k.id,
-                keyword: k.keywordtitle || k.keyword,
+                keyword: k.keyword,
+                keywordtitle: k.keywordtitle,
+                metatitle: k.metatitle,
+                // Check additional potential text fields
+                title: (k as unknown as Record<string, unknown>).title,
+                name: (k as unknown as Record<string, unknown>).name,
+                keyword_text: (k as unknown as Record<string, unknown>).keyword_text,
+                text: (k as unknown as Record<string, unknown>).text,
+                linkouturl: k.linkouturl,
                 parent_keyword_id: k.parent_keyword_id,
                 is_supporting: k.is_supporting,
                 bubblefeed: k.bubblefeed,
