@@ -29,29 +29,16 @@ export const useVisitorTracking = () => {
     hasInitialized.current = true;
 
     try {
-      // Check if session exists
-      const { data: existingSession } = await supabase
-        .from('visitor_sessions')
-        .select('id')
-        .eq('session_id', sessionId.current)
-        .maybeSingle();
-
-      if (!existingSession) {
-        // Create new session
-        await supabase.from('visitor_sessions').insert({
+      // Route all writes through backend function to avoid RLS/anon write failures.
+      await supabase.functions.invoke('visitor-session-track', {
+        body: {
+          action: 'init',
           session_id: sessionId.current,
           first_page: window.location.pathname,
           referrer: document.referrer || null,
           user_agent: navigator.userAgent,
-          ip_hash: null, // Would need server-side to hash IP
-        });
-      } else {
-        // Update last activity
-        await supabase
-          .from('visitor_sessions')
-          .update({ last_activity_at: new Date().toISOString() })
-          .eq('session_id', sessionId.current);
-      }
+        },
+      });
     } catch (error) {
       console.error('Failed to init session:', error);
     }
@@ -60,12 +47,15 @@ export const useVisitorTracking = () => {
   // Track page view
   const trackPageView = useCallback(async () => {
     try {
-      await supabase.from('page_views').insert({
-        session_id: sessionId.current,
-        page_path: window.location.pathname,
-        page_title: document.title,
-        time_on_page: 0,
-        scroll_depth: 0,
+      await supabase.functions.invoke('visitor-session-track', {
+        body: {
+          action: 'page_view',
+          session_id: sessionId.current,
+          page_path: window.location.pathname,
+          page_title: document.title,
+          time_on_page: 0,
+          scroll_depth: 0,
+        },
       });
     } catch (error) {
       console.error('Failed to track page view:', error);
@@ -149,10 +139,15 @@ export const useVisitorTracking = () => {
     // Update session activity periodically
     const activityInterval = setInterval(async () => {
       try {
-        await supabase
-          .from('visitor_sessions')
-          .update({ last_activity_at: new Date().toISOString() })
-          .eq('session_id', sessionId.current);
+        await supabase.functions.invoke('visitor-session-track', {
+          body: {
+            action: 'touch',
+            session_id: sessionId.current,
+            first_page: window.location.pathname,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent,
+          },
+        });
       } catch (error) {
         // Silent fail
       }
