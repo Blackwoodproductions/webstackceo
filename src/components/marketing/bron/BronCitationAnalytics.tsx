@@ -93,8 +93,8 @@ export const BronCitationAnalytics = memo(({
   return (
     <div 
       data-no-theme-transition
-      className="rounded-xl border border-border/60 bg-card/60"
-      style={{ contain: 'layout style' }}
+      className="rounded-xl border border-border/60 bg-card/60 no-theme-transition"
+      style={{ contain: 'layout style paint' }}
     >
       {/* Header - compact with Save/Edit buttons */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-transparent">
@@ -122,7 +122,7 @@ export const BronCitationAnalytics = memo(({
               disabled={isSaving}
               className="h-7 text-xs"
             >
-              <Save className={`w-3 h-3 mr-1 ${isSaving ? 'animate-spin' : ''}`} />
+              <Save className="w-3 h-3 mr-1" />
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           )}

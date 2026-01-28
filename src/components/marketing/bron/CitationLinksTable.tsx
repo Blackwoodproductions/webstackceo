@@ -115,7 +115,7 @@ export const CitationLinksTable = memo(
       <div 
         className="rounded-lg border border-border/40 bg-card no-theme-transition" 
         data-no-theme-transition
-        style={{ contain: 'layout style' }}
+        style={{ contain: 'layout style paint' }}
       >
         {/* Header - matching reference exactly */}
         <div className="bg-muted/80 px-5 py-3 border-b border-border/50 no-theme-transition">
@@ -185,7 +185,7 @@ const CitationLinkRow = memo(
           grid gap-4 px-5 py-4 items-center border-b border-border/30 no-theme-transition
           ${isHighlighted ? 'border-l-[3px] border-l-primary bg-accent/30' : 'bg-transparent'}
         `}
-        style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
+        style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr', contain: 'layout style' }}
         data-no-theme-transition
       >
         {/* Domain-Keyword Column */}

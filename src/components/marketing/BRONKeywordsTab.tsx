@@ -808,7 +808,7 @@ export const BRONKeywordsTab = memo(({
               disabled={isLoading || !selectedDomain}
               className="border-primary/30 hover:bg-primary/10"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
@@ -818,7 +818,7 @@ export const BRONKeywordsTab = memo(({
               className="border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400"
               title="Save current rankings as historical snapshot"
             >
-              <Save className={`w-4 h-4 ${savingSnapshot ? 'animate-spin' : ''}`} />
+              <Save className="w-4 h-4" />
             </Button>
             <Button 
               size="sm" 
@@ -856,7 +856,7 @@ export const BRONKeywordsTab = memo(({
               ))}
             </div>
           ) : (
-            <div>
+            <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
               {/* Column Headers Row - must match BronKeywordCard column widths exactly */}
               <div className="flex items-center w-full justify-between px-4 py-2 mb-2 rounded-lg bg-card/80 border border-border/50" style={{ minWidth: '1050px' }}>
                 {/* Speed - matches w-[70px] in card */}
@@ -894,28 +894,30 @@ export const BRONKeywordsTab = memo(({
                 {/* Expand - matches w-[40px] in card */}
                 <div className="w-[40px] flex-shrink-0" />
               </div>
-              
-              {displayClusters.map((cluster) => (
-                <KeywordListItem
-                  key={cluster.parentId}
-                  cluster={cluster}
-                  serpReports={serpReports}
-                  keywordMetrics={keywordMetrics}
-                  pageSpeedScores={pageSpeedScores}
-                  linksIn={linksIn}
-                  linksOut={linksOut}
-                  selectedDomain={selectedDomain}
-                  expandedIds={expandedIds}
-                  initialPositions={initialPositions}
-                  metricsLoading={metricsLoading}
-                  inlineEditForms={inlineEditForms}
-                  savingIds={savingIds}
-                  onToggleExpand={handleToggleExpand}
-                  onUpdateForm={handleUpdateForm}
-                  onSave={handleSave}
-                  onOpenArticleEditor={handleOpenArticleEditor}
-                />
-              ))}
+              {/* Keyword list with containment for scroll performance */}
+              <div style={{ contain: 'layout style' }}>
+                {displayClusters.map((cluster) => (
+                  <KeywordListItem
+                    key={cluster.parentId}
+                    cluster={cluster}
+                    serpReports={serpReports}
+                    keywordMetrics={keywordMetrics}
+                    pageSpeedScores={pageSpeedScores}
+                    linksIn={linksIn}
+                    linksOut={linksOut}
+                    selectedDomain={selectedDomain}
+                    expandedIds={expandedIds}
+                    initialPositions={initialPositions}
+                    metricsLoading={metricsLoading}
+                    inlineEditForms={inlineEditForms}
+                    savingIds={savingIds}
+                    onToggleExpand={handleToggleExpand}
+                    onUpdateForm={handleUpdateForm}
+                    onSave={handleSave}
+                    onOpenArticleEditor={handleOpenArticleEditor}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

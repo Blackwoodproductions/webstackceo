@@ -31,9 +31,9 @@ export const DonutChart = memo(({
 
   return (
     <div 
-      className={`relative ${config.container}`}
+      className={`relative ${config.container} no-theme-transition`}
       style={{ 
-        contain: 'layout paint',
+        contain: 'layout paint style',
       }}
       data-no-theme-transition
     >
