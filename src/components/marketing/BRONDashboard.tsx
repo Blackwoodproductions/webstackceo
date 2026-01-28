@@ -565,11 +565,11 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
             linksOut={bronApi.linksOut}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
-            onAdd={bronApi.addKeyword}
-            onUpdate={bronApi.updateKeyword}
-            onDelete={bronApi.deleteKeyword}
-            onRestore={bronApi.restoreKeyword}
+            onRefresh={() => bronApi.fetchKeywords(selectedDomain, true)}
+            onAdd={(data) => bronApi.addKeyword(data, selectedDomain)}
+            onUpdate={(id, data) => bronApi.updateKeyword(id, data, selectedDomain)}
+            onDelete={(id) => bronApi.deleteKeyword(id, selectedDomain)}
+            onRestore={(id) => bronApi.restoreKeyword(id, selectedDomain)}
             onFetchSerpDetail={bronApi.fetchSerpDetail}
           />
         </TabsContent>

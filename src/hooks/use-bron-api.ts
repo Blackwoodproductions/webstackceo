@@ -2,6 +2,69 @@ import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// ─── Keyword Data Cache ───
+const KEYWORD_CACHE_KEY = 'bron_keywords_cache';
+const KEYWORD_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface KeywordCacheEntry {
+  keywords: BronKeyword[];
+  cachedAt: number;
+}
+
+function loadCachedKeywords(domain: string): BronKeyword[] | null {
+  try {
+    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry) return null;
+    const now = Date.now();
+    if ((now - entry.cachedAt) > KEYWORD_CACHE_MAX_AGE) {
+      return null; // Cache expired
+    }
+    console.log(`[BRON] Using cached keywords for ${domain} (${entry.keywords.length} keywords)`);
+    return entry.keywords;
+  } catch (e) {
+    console.warn('[BRON] Failed to load keyword cache:', e);
+    return null;
+  }
+}
+
+function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
+  try {
+    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, KeywordCacheEntry> : {};
+    
+    // Keep only last 10 domains to avoid localStorage bloat
+    const domains = Object.keys(parsed);
+    if (domains.length >= 10 && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domain] = { keywords, cachedAt: Date.now() };
+    localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached ${keywords.length} keywords for ${domain}`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save keyword cache:', e);
+  }
+}
+
+export function invalidateKeywordCache(domain: string) {
+  try {
+    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
+    if (parsed[domain]) {
+      delete parsed[domain];
+      localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(parsed));
+      console.log(`[BRON] Invalidated keyword cache for ${domain}`);
+    }
+  } catch (e) {
+    console.warn('[BRON] Failed to invalidate keyword cache:', e);
+  }
+}
+
 // Types for BRON API responses
 export interface BronDomain {
   id?: number;
@@ -161,11 +224,11 @@ export interface UseBronApiReturn {
   updateDomain: (domain: string, data: Record<string, unknown>) => Promise<boolean>;
   deleteDomain: (domain: string) => Promise<boolean>;
   restoreDomain: (domain: string) => Promise<boolean>;
-  fetchKeywords: (domain?: string) => Promise<void>;
-  addKeyword: (data: Record<string, unknown>) => Promise<boolean>;
-  updateKeyword: (keywordId: string, data: Record<string, unknown>) => Promise<boolean>;
-  deleteKeyword: (keywordId: string) => Promise<boolean>;
-  restoreKeyword: (keywordId: string) => Promise<boolean>;
+  fetchKeywords: (domain?: string, forceRefresh?: boolean) => Promise<void>;
+  addKeyword: (data: Record<string, unknown>, domain?: string) => Promise<boolean>;
+  updateKeyword: (keywordId: string, data: Record<string, unknown>, domain?: string) => Promise<boolean>;
+  deleteKeyword: (keywordId: string, domain?: string) => Promise<boolean>;
+  restoreKeyword: (keywordId: string, domain?: string) => Promise<boolean>;
   fetchPages: (domain: string) => Promise<void>;
   fetchSerpReport: (domain: string) => Promise<void>;
   fetchSerpList: (domain: string) => Promise<void>;
@@ -402,8 +465,20 @@ export function useBronApi(): UseBronApiReturn {
   }, [callApi, fetchDomains, withPending]);
 
   // Fetch all keywords with automatic pagination to get complete list
-  const fetchKeywords = useCallback(async (domain?: string) => {
+  // Uses 24-hour localStorage cache per domain
+  const fetchKeywords = useCallback(async (domain?: string, forceRefresh = false) => {
     const reqId = ++keywordsReqIdRef.current;
+    
+    // Check cache first (unless force refresh)
+    if (domain && !forceRefresh) {
+      const cached = loadCachedKeywords(domain);
+      if (cached) {
+        setKeywords(cached);
+        // Return early - data is served from cache
+        return;
+      }
+    }
+    
     return withPending(async () => {
       try {
         const allKeywords: BronKeyword[] = [];
@@ -427,37 +502,6 @@ export function useBronApi(): UseBronApiReturn {
             const keywordList = result.data.keywords || result.data.items || [];
             const keywords = Array.isArray(keywordList) ? keywordList : [];
 
-            // Log first page to check for all available fields
-            if (page === 1 && keywords.length > 0) {
-              // Log ALL fields from first keyword to see what's available
-              console.log('[BRON] First keyword raw data (all fields):', JSON.stringify(keywords[0], null, 2));
-              console.log('[BRON] Sample keyword data (checking for clustering fields):', {
-                sample: keywords.slice(0, 5).map((k: BronKeyword) => ({
-                  id: k.id,
-                  keyword: k.keyword,
-                  keywordtitle: k.keywordtitle,
-                  metatitle: k.metatitle,
-                  // Check additional potential text fields
-                  title: (k as unknown as Record<string, unknown>).title,
-                  name: (k as unknown as Record<string, unknown>).name,
-                  keyword_text: (k as unknown as Record<string, unknown>).keyword_text,
-                  text: (k as unknown as Record<string, unknown>).text,
-                  linkouturl: k.linkouturl,
-                  parent_keyword_id: k.parent_keyword_id,
-                  is_supporting: k.is_supporting,
-                  bubblefeedid: k.bubblefeedid,
-                  cluster_id: k.cluster_id,
-                  domainid: k.domainid,
-                  supporting_keywords_count: k.supporting_keywords?.length || 0,
-                })),
-                hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
-                hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
-                hasBubblefeedid: keywords.some((k: BronKeyword) => k.bubblefeedid !== undefined && k.bubblefeedid !== null),
-                hasClusterId: keywords.some((k: BronKeyword) => k.cluster_id !== undefined),
-                hasSupportingKeywords: keywords.some((k: BronKeyword) => k.supporting_keywords && k.supporting_keywords.length > 0),
-              });
-            }
-
             if (keywords.length > 0) {
               allKeywords.push(...keywords);
               // Check if we got a full page (meaning there might be more)
@@ -480,6 +524,11 @@ export function useBronApi(): UseBronApiReturn {
         if (reqId !== keywordsReqIdRef.current) return;
         console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
         setKeywords(allKeywords);
+        
+        // Save to cache
+        if (domain && allKeywords.length > 0) {
+          saveCachedKeywords(domain, allKeywords);
+        }
       } catch (err) {
         if (reqId !== keywordsReqIdRef.current) return;
         toast.error("Failed to fetch keywords");
@@ -488,11 +537,13 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const addKeyword = useCallback(async (data: Record<string, unknown>): Promise<boolean> => {
+  const addKeyword = useCallback(async (data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
       try {
         const result = await callApi("addKeyword", { data });
         if (result?.success) {
+          // Invalidate cache so next fetch gets fresh data
+          if (domain) invalidateKeywordCache(domain);
           toast.success("Keyword added successfully");
           return true;
         }
@@ -505,11 +556,13 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const updateKeyword = useCallback(async (keywordId: string, data: Record<string, unknown>): Promise<boolean> => {
+  const updateKeyword = useCallback(async (keywordId: string, data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
       try {
         const result = await callApi("updateKeyword", { keyword_id: keywordId, data });
         if (result?.success) {
+          // Invalidate cache so next fetch gets fresh data
+          if (domain) invalidateKeywordCache(domain);
           toast.success("Keyword updated successfully");
           return true;
         }
@@ -522,11 +575,13 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const deleteKeyword = useCallback(async (keywordId: string): Promise<boolean> => {
+  const deleteKeyword = useCallback(async (keywordId: string, domain?: string): Promise<boolean> => {
     return withPending(async () => {
       try {
         const result = await callApi("deleteKeyword", { keyword_id: keywordId });
         if (result?.success) {
+          // Invalidate cache so next fetch gets fresh data
+          if (domain) invalidateKeywordCache(domain);
           toast.success("Keyword deleted");
           return true;
         }
@@ -539,11 +594,13 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const restoreKeyword = useCallback(async (keywordId: string): Promise<boolean> => {
+  const restoreKeyword = useCallback(async (keywordId: string, domain?: string): Promise<boolean> => {
     return withPending(async () => {
       try {
         const result = await callApi("restoreKeyword", { keyword_id: keywordId });
         if (result?.success) {
+          // Invalidate cache so next fetch gets fresh data
+          if (domain) invalidateKeywordCache(domain);
           toast.success("Keyword restored");
           return true;
         }
