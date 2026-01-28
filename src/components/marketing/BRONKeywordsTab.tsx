@@ -1118,23 +1118,23 @@ export const BRONKeywordsTab = ({
                   
                   {/* Badge hierarchy: Main vs Supporting vs Tracking Only */}
                   {isTrackingOnly ? (
-                    <Badge className="text-[9px] h-5 bg-amber-500/20 text-amber-400 border-amber-500/30">
-                      Tracking Only
+                    <Badge className="text-[9px] h-5 px-2 bg-amber-500/20 text-amber-400 border-amber-500/30 whitespace-nowrap flex-shrink-0">
+                      Tracking
                     </Badge>
                   ) : isSupportingKeyword ? (
-                    <Badge className="text-[9px] h-5 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                    <Badge className="text-[9px] h-5 px-2 bg-cyan-500/20 text-cyan-400 border-cyan-500/30 whitespace-nowrap flex-shrink-0">
                       Supporting
                     </Badge>
                   ) : (
                     <>
                       {active && (
-                        <Badge className="text-[9px] h-5 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        <Badge className="text-[9px] h-5 px-2 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 whitespace-nowrap flex-shrink-0">
                           Main
                         </Badge>
                       )}
                       {clusterChildCount && clusterChildCount > 0 && (
-                        <Badge className="text-[9px] h-5 bg-violet-500/20 text-violet-400 border-violet-500/30">
-                          +{clusterChildCount} cluster
+                        <Badge className="text-[9px] h-5 px-2 bg-violet-500/20 text-violet-400 border-violet-500/30 whitespace-nowrap flex-shrink-0">
+                          +{clusterChildCount}
                         </Badge>
                       )}
                     </>
