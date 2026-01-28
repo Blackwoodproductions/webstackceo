@@ -289,16 +289,20 @@ const LinkRow = memo(({ link, viewMode }: {
 }) => {
   const isReciprocal = link.reciprocal === 'yes';
   const isEnabled = link.disabled !== 'yes';
-  const displayUrl = viewMode === 'inbound' 
-    ? (link.domain_name || link.domain || link.source_url || 'Unknown')
-    : (link.link || link.target_url || link.domain || 'Unknown');
   
-  // Extract domain from URL for display
-  const displayDomain = displayUrl.replace(/^https?:\/\//, '').split('/')[0];
+  // BRON API structure:
+  // - Inbound: `link` = referrer's page URL, `domain_name` = referrer domain
+  // - Outbound: `link` = our page URL (contains keyword ID), `domain_name` = target domain
   
+  // For display: show the OTHER domain (not our domain)
+  const displayDomain = link.domain_name || link.domain || '';
+  
+  // For link href: 
+  // - Inbound: link to the referrer's page (`link` field)
+  // - Outbound: link to the target domain (domain_name)
   const linkHref = viewMode === 'inbound'
-    ? (link.source_url || `https://${link.domain_name || link.domain}`)
-    : (link.link || link.target_url || `https://${link.domain}`);
+    ? (link.link || link.source_url || `https://${displayDomain}`)
+    : (link.target_url || `https://${displayDomain}`);
   
   const category = link.category || link.parent_category || 'General';
   const shortCategory = category.length > 18 ? category.substring(0, 18) + '...' : category;
@@ -306,8 +310,8 @@ const LinkRow = memo(({ link, viewMode }: {
   return (
     <div className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center text-sm">
       <div>
-        <div className="font-medium text-foreground truncate" title={displayUrl}>
-          {displayDomain}
+        <div className="font-medium text-foreground truncate" title={displayDomain}>
+          {displayDomain || 'Unknown'}
         </div>
       </div>
       <div>
