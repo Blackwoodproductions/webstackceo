@@ -2,6 +2,54 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+type StoredErrorDiagnostics = {
+  name?: string;
+  message: string;
+  stack?: string;
+  componentStack?: string;
+  url?: string;
+  userAgent?: string;
+  occurredAt: string;
+  buildMode: 'dev' | 'prod';
+};
+
+const LAST_ERROR_KEY = 'webstack_last_error_v1';
+
+function safeStoreDiagnostics(diag: StoredErrorDiagnostics) {
+  try {
+    localStorage.setItem(LAST_ERROR_KEY, JSON.stringify(diag));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function safeReadDiagnostics(): StoredErrorDiagnostics | null {
+  try {
+    const raw = localStorage.getItem(LAST_ERROR_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredErrorDiagnostics;
+  } catch {
+    return null;
+  }
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Fallback for older browsers
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.position = 'fixed';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+}
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -31,6 +79,19 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Caught error:', error, errorInfo);
     this.setState({ errorInfo });
+
+    // Persist diagnostics so users can screenshot/copy even if logs aren't available.
+    const diagnostics: StoredErrorDiagnostics = {
+      name: error?.name,
+      message: error?.message || 'Unknown error',
+      stack: error?.stack,
+      componentStack: errorInfo?.componentStack,
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      occurredAt: new Date().toISOString(),
+      buildMode: import.meta.env.DEV ? 'dev' : 'prod',
+    };
+    safeStoreDiagnostics(diagnostics);
     
     // You could send this to an error reporting service
     // logErrorToService(error, errorInfo);
@@ -51,6 +112,19 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const stored = safeReadDiagnostics();
+      const detailsText = JSON.stringify(
+        {
+          runtime: 'web',
+          ...stored,
+          // Ensure current render state's message is included even if storage is blocked.
+          message: this.state.error?.message || stored?.message || 'Unknown error',
+          componentStack: this.state.errorInfo?.componentStack || stored?.componentStack,
+        },
+        null,
+        2
+      );
+
       return (
         <div className="min-h-[400px] flex items-center justify-center p-8">
           <div className="max-w-md w-full text-center space-y-6">
@@ -69,19 +143,24 @@ class ErrorBoundary extends Component<Props, State> {
               </p>
             </div>
 
-            {/* Error Details (development only) */}
-            {import.meta.env.DEV && this.state.error && (
-              <div className="p-4 rounded-lg bg-muted/50 text-left overflow-auto max-h-40">
-                <p className="text-xs font-mono text-destructive break-words">
-                  {this.state.error.message}
+            {/* Error Details (available in all builds; safe + copyable) */}
+            <div className="p-4 rounded-lg bg-muted/50 text-left overflow-auto max-h-60">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className="text-xs font-mono text-muted-foreground">
+                  Diagnostics
                 </p>
-                {this.state.errorInfo?.componentStack && (
-                  <pre className="text-xs font-mono text-muted-foreground mt-2 whitespace-pre-wrap">
-                    {this.state.errorInfo.componentStack.slice(0, 500)}
-                  </pre>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => copyToClipboard(detailsText)}
+                >
+                  Copy details
+                </Button>
               </div>
-            )}
+              <pre className="text-xs font-mono text-foreground whitespace-pre-wrap break-words">
+                {detailsText.slice(0, 4000)}
+              </pre>
+            </div>
 
             {/* Action Buttons */}
             <div className="flex items-center justify-center gap-3">
