@@ -245,10 +245,34 @@ export const BRONKeywordsTab = memo(({
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
+  // Keep latest Set/object state in refs so callbacks can stay stable (prevents
+  // stale-closure bugs that can cause a one-frame "glitch" during expand).
+  const expandedIdsRef = useRef(expandedIds);
+  const inlineEditFormsRef = useRef(inlineEditForms);
+  useEffect(() => {
+    expandedIdsRef.current = expandedIds;
+  }, [expandedIds]);
+  useEffect(() => {
+    inlineEditFormsRef.current = inlineEditForms;
+  }, [inlineEditForms]);
+
   // Keep latest scores available to async effects without adding it as a dependency (prevents loops).
   useEffect(() => {
     pageSpeedScoresRef.current = pageSpeedScores;
   }, [pageSpeedScores]);
+
+  const buildInitialInlineForm = useCallback((kw: BronKeyword) => {
+    return {
+      keywordtitle: kw.keywordtitle || kw.keyword || "",
+      metatitle: kw.metatitle || "",
+      metadescription: kw.metadescription || "",
+      // NOTE: decoding can be expensive; keep it here for now to preserve current behavior.
+      resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
+      linkouturl: kw.linkouturl || "",
+      resaddress: kw.resaddress || "",
+      resfb: kw.resfb || "",
+    } as unknown as Record<string, string>;
+  }, []);
 
   // Debounce PageSpeed cache writes to avoid main-thread jank (large JSON stringify) that can look like flicker.
   const schedulePageSpeedCacheSave = useCallback((scores: Record<string, PageSpeedScore>) => {
@@ -538,30 +562,25 @@ export const BRONKeywordsTab = memo(({
   // Callbacks
   const handleToggleExpand = useCallback((kw: BronKeyword) => {
     const id = kw.id;
-    setExpandedIds(prev => {
+    const isCurrentlyExpanded = expandedIdsRef.current.has(id);
+
+    // Ensure the expanded panel has its form data in the SAME batched update.
+    // This avoids a "half-expanded" render where the card shows expanded state
+    // but the panel isn't mounted yet.
+    if (!isCurrentlyExpanded && !(inlineEditFormsRef.current as any)[id]) {
+      setInlineEditForms((p) => ({
+        ...p,
+        [id]: buildInitialInlineForm(kw),
+      }));
+    }
+
+    setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-        if (!inlineEditForms[id]) {
-          setInlineEditForms(p => ({
-            ...p,
-            [id]: {
-              keywordtitle: kw.keywordtitle || kw.keyword || '',
-              metatitle: kw.metatitle || '',
-              metadescription: kw.metadescription || '',
-              resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
-              linkouturl: kw.linkouturl || '',
-              resaddress: kw.resaddress || '',
-              resfb: kw.resfb || '',
-            }
-          }));
-        }
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
-  }, [inlineEditForms]);
+  }, [buildInitialInlineForm]);
 
   const handleUpdateForm = useCallback((id: number | string, field: string, value: string) => {
     setInlineEditForms(prev => ({
@@ -596,22 +615,15 @@ export const BRONKeywordsTab = memo(({
   }, [inlineEditForms, onUpdate, onRefresh]);
 
   const handleOpenArticleEditor = useCallback((kw: BronKeyword) => {
-    if (!inlineEditForms[kw.id]) {
-      setInlineEditForms(prev => ({
+    const id = kw.id;
+    if (!(inlineEditFormsRef.current as any)[id]) {
+      setInlineEditForms((prev) => ({
         ...prev,
-        [kw.id]: {
-          keywordtitle: kw.keywordtitle || kw.keyword || '',
-          metatitle: kw.metatitle || '',
-          metadescription: kw.metadescription || '',
-          resfeedtext: decodeHtmlContent(kw.resfeedtext || ''),
-          linkouturl: kw.linkouturl || '',
-          resaddress: kw.resaddress || '',
-          resfb: kw.resfb || '',
-        }
+        [id]: buildInitialInlineForm(kw),
       }));
     }
-    setArticleEditorId(kw.id);
-  }, [inlineEditForms]);
+    setArticleEditorId(id);
+  }, [buildInitialInlineForm]);
 
   const handleAddKeyword = async () => {
     if (!newKeyword.trim()) return;
