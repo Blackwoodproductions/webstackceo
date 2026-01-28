@@ -384,6 +384,7 @@ function areBronKeywordCardPropsEqual(prev: BronKeywordCardProps, next: BronKeyw
     prev.isExpanded === next.isExpanded &&
     prev.isNested === next.isNested &&
     prev.isTrackingOnly === next.isTrackingOnly &&
+    prev.isMainKeyword === next.isMainKeyword &&
     prev.clusterChildCount === next.clusterChildCount &&
     prev.selectedDomain === next.selectedDomain &&
     prev.googleMovement === next.googleMovement &&
