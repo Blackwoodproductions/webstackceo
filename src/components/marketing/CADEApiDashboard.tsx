@@ -105,20 +105,29 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   }, [domain]);
 
   // Check subscription via BRON API - same pattern as SocialPanel
-  const checkSubscription = useCallback(async () => {
+  // Returns the subscription result directly to avoid race conditions
+  const checkSubscription = useCallback(async (): Promise<boolean> => {
     if (!domain) {
       setIsCheckingSubscription(false);
       setIsLoading(false);
-      return;
+      return false;
     }
     
     setIsCheckingSubscription(true);
     setBronSubscription(null);
     
     try {
+      console.log("[CADE] Checking subscription for domain:", domain);
       const subData = await fetchSubscription(domain);
+      console.log("[CADE] Subscription response:", subData);
       
-      if (subData && subData.has_cade && subData.status === 'active') {
+      // Check for valid CADE subscription - be lenient with status check
+      const hasValidSubscription = subData && 
+        subData.has_cade === true && 
+        (subData.status === 'active' || !subData.status);
+      
+      if (hasValidSubscription) {
+        console.log("[CADE] Valid subscription detected, showing dashboard");
         setHasCadeSubscription(true);
         setBronSubscription(subData);
         setSubscription({
@@ -127,15 +136,22 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           quota_used: undefined,
           quota_limit: undefined,
         });
+        return true;
       } else {
+        console.log("[CADE] No valid subscription found:", { 
+          has_cade: subData?.has_cade, 
+          status: subData?.status 
+        });
         setHasCadeSubscription(false);
         setBronSubscription(subData);
         setSubscription(null);
+        return false;
       }
     } catch (err) {
       console.error("[CADE] Subscription check error:", err);
       setHasCadeSubscription(false);
       setBronSubscription(null);
+      return false;
     } finally {
       setIsCheckingSubscription(false);
     }
@@ -206,28 +222,38 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
   }, [callCadeApi, domain, hasCadeSubscription]);
 
-  // Check subscription first when domain changes
+  // Check subscription first when domain changes - then fetch data if valid
   useEffect(() => {
-    checkSubscription();
-  }, [checkSubscription]);
-
-  // Then fetch dashboard data if subscription is valid
-  useEffect(() => {
-    if (!isCheckingSubscription && hasCadeSubscription) {
-      fetchAllData();
-    } else if (!isCheckingSubscription && !hasCadeSubscription) {
-      setIsLoading(false);
-    }
-  }, [isCheckingSubscription, hasCadeSubscription, fetchAllData]);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    checkSubscription().then(() => {
-      if (hasCadeSubscription) {
+    let cancelled = false;
+    
+    const initDashboard = async () => {
+      const hasSubscription = await checkSubscription();
+      
+      if (cancelled) return;
+      
+      // Only fetch data if subscription is valid
+      if (hasSubscription) {
         fetchAllData();
+      } else {
+        setIsLoading(false);
       }
-    });
-    toast.success("Refreshing CADE data...");
+    };
+    
+    initDashboard();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [domain]); // Only re-run when domain changes
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const hasSubscription = await checkSubscription();
+    if (hasSubscription) {
+      await fetchAllData();
+    }
+    setIsRefreshing(false);
+    toast.success("CADE data refreshed");
   };
 
   const getStatusColor = (status?: string) => {
