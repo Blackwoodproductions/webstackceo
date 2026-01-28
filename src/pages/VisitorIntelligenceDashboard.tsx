@@ -356,7 +356,6 @@ const MarketingDashboard = () => {
   
   // CADE subscription state
   const [cadeHasSubscription, setCadeHasSubscription] = useState(false);
-  const [cadePlatformConnected, setCadePlatformConnected] = useState<string | null>(null);
   
   // GMB (Google My Business) state
   const [gmbAuthenticated, setGmbAuthenticated] = useState<boolean>(false);
@@ -3526,68 +3525,24 @@ f.parentNode.insertBefore(j,f);
               </div>
             </header>
 
-            {/* Platform Connection Section - Show at TOP when not connected, hidden during loading */}
-            {cadeHasSubscription && !cadePlatformConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <CADEPlatformConnect 
-                  domain={selectedTrackedDomain || selectedDomainKey} 
-                  onConnectionComplete={(platform) => {
-                    setCadePlatformConnected(platform);
-                    toast.success(`Successfully connected to ${platform}!`);
-                  }}
-                />
-              </motion.div>
-            )}
-
-            {/* CADE API Login & Dashboard */}
+            {/* CADE API Login & Dashboard - NOW AT THE TOP */}
             <CADELoginBox 
               domain={selectedTrackedDomain || selectedDomainKey} 
               onSubscriptionChange={setCadeHasSubscription}
             />
 
-            {/* Platform Connection Section - Compact "Connected" state at BOTTOM after connection */}
-            {cadeHasSubscription && cadePlatformConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
-                      <CheckCircle className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm flex items-center gap-2">
-                        Website Connected
-                        <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-[10px]">
-                          {cadePlatformConnected}
-                        </Badge>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        AI-generated content will be auto-published to your {cadePlatformConnected} site
-                      </p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="border-green-500/30 text-green-600 hover:bg-green-500/10"
-                    onClick={() => setCadePlatformConnected(null)}
-                  >
-                    Change Platform
-                  </Button>
-                </div>
-              </motion.div>
+            {/* Platform Connection Section - Only show when CADE subscription is active */}
+            {cadeHasSubscription && (
+              <CADEPlatformConnect 
+                domain={selectedTrackedDomain || selectedDomainKey} 
+                onConnectionComplete={(platform) => {
+                  toast.success(`Successfully connected to ${platform}!`);
+                }}
+              />
             )}
 
-            {/* How It Works Section - Auto-shown, collapsed by default for active users */}
-            <Collapsible defaultOpen={true}>
+            {/* How It Works Section - Collapsible, closed by default */}
+            <Collapsible defaultOpen={false}>
               <CollapsibleTrigger className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-primary transition-colors group w-full">
                 <ChevronDown className="w-5 h-5 transition-transform group-data-[state=open]:rotate-180" />
                 How CADE Works
