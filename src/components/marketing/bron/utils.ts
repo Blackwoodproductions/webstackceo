@@ -1,5 +1,8 @@
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
-import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
+import { getKeywordDisplayText, getPosition, PageSpeedScore } from "./BronKeywordCard";
+
+// Re-export PageSpeedScore for backward compatibility
+export type { PageSpeedScore };
 
 // LocalStorage key for PageSpeed cache
 export const PAGESPEED_CACHE_KEY = 'bron_pagespeed_cache';
@@ -8,16 +11,6 @@ export const PAGESPEED_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 // LocalStorage key for Keyword Cluster cache
 export const CLUSTER_CACHE_KEY = 'bron_cluster_cache';
 export const CLUSTER_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-
-// PageSpeed score cache type
-export interface PageSpeedScore {
-  mobileScore: number;
-  desktopScore: number;
-  loading?: boolean;
-  updating?: boolean;
-  error?: boolean;
-  cachedAt?: number;
-}
 
 // Cluster cache type
 interface ClusterCacheEntry {
