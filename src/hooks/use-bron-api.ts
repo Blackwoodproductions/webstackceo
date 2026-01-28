@@ -4,7 +4,9 @@ import { toast } from "sonner";
 
 // ─── Cache Configuration ───
 const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-const MAX_CACHED_DOMAINS = 10; // Limit cache entries per type
+const MAX_CACHED_DOMAINS = 10; // Limit cache entries per type (general)
+// Keywords are the most noticeable on domain switch; keep a larger MRU set.
+const MAX_CACHED_KEYWORD_DOMAINS = 25;
 
 // ─── Domains Cache ───
 const DOMAINS_CACHE_KEY = 'bron_domains_cache';
@@ -229,13 +231,13 @@ function saveKeywordV2Index(index: Record<string, KeywordCacheIndexEntry>) {
 
 function evictOldestKeywordV2Entries(index: Record<string, KeywordCacheIndexEntry>, keepDomain?: string) {
   const domains = Object.keys(index);
-  if (domains.length <= MAX_CACHED_DOMAINS) return;
+  if (domains.length <= MAX_CACHED_KEYWORD_DOMAINS) return;
 
   const sorted = domains
     .filter((d) => d !== keepDomain)
     .sort((a, b) => (index[a]?.cachedAt ?? 0) - (index[b]?.cachedAt ?? 0));
 
-  while (Object.keys(index).length > MAX_CACHED_DOMAINS && sorted.length > 0) {
+  while (Object.keys(index).length > MAX_CACHED_KEYWORD_DOMAINS && sorted.length > 0) {
     const oldest = sorted.shift();
     if (!oldest) break;
     try {
@@ -1099,15 +1101,42 @@ export function useBronApi(): UseBronApiReturn {
     }
     
     // No cache available - fetch in background WITHOUT blocking UI (no withPending)
-    // This prevents the 5-second "lag" feel; keywords will appear as soon as they arrive.
+    // Show the first page as soon as it arrives, then complete pagination in background.
     (async () => {
       try {
         const allKeywords: BronKeyword[] = [];
         let page = 1;
         const pageSize = 100;
         let hasMore = true;
+
+        // Fetch first page and render immediately
+        const first = await callApi("listKeywords", {
+          domain: domainKey,
+          page: 1,
+          limit: pageSize,
+          include_deleted: false,
+        });
+
+        if (reqId !== keywordsReqIdRef.current) return;
+
+        if (first?.success && first.data) {
+          const keywordList = first.data.keywords || first.data.items || [];
+          const firstPageKeywords = Array.isArray(keywordList) ? keywordList : [];
+
+          allKeywords.push(...firstPageKeywords);
+          setKeywords(firstPageKeywords);
+          if (firstPageKeywords.length > 0) {
+            // Cache something immediately so switching away/back doesn't incur the full delay again.
+            saveCachedKeywords(domainKey, firstPageKeywords);
+          }
+
+          hasMore = firstPageKeywords.length >= pageSize;
+          page = 2;
+        } else {
+          hasMore = false;
+        }
         
-        // Fetch all pages of keywords
+        // Fetch remaining pages (if any)
         while (hasMore) {
           const result = await callApi("listKeywords", {
             domain: domainKey,
@@ -1144,7 +1173,8 @@ export function useBronApi(): UseBronApiReturn {
 
         if (reqId !== keywordsReqIdRef.current) return;
         console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
-        setKeywords(allKeywords);
+        // Only replace the list if we actually got more than the first page
+        if (allKeywords.length > 0) setKeywords(allKeywords);
         
         // Save to cache
         if (allKeywords.length > 0) {
@@ -1590,33 +1620,19 @@ export function useBronApi(): UseBronApiReturn {
     // Fetch in sequence with small delays to avoid overwhelming API
     for (const domain of uncached) {
       try {
-        const allKeywords: BronKeyword[] = [];
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore && page <= 10) {
-          const result = await callApi("listKeywords", { domain, page, limit: 100, include_deleted: false });
-          if (result?.success && result.data) {
-            const keywords = result.data.keywords || result.data.items || [];
-            if (Array.isArray(keywords) && keywords.length > 0) {
-              allKeywords.push(...keywords);
-              hasMore = keywords.length >= 100;
-              page++;
-            } else {
-              hasMore = false;
-            }
-          } else {
-            hasMore = false;
+        // Lightweight prefetch: first page only (enough for instant rendering)
+        const result = await callApi("listKeywords", { domain, page: 1, limit: 100, include_deleted: false });
+        if (result?.success && result.data) {
+          const keywordList = result.data.keywords || result.data.items || [];
+          const keywords = Array.isArray(keywordList) ? keywordList : [];
+          if (keywords.length > 0) {
+            saveCachedKeywords(domain, keywords);
+            console.log(`[BRON] Prefetched ${keywords.length} keywords (page 1) for ${domain}`);
           }
         }
 
-        if (allKeywords.length > 0) {
-          saveCachedKeywords(domain, allKeywords);
-          console.log(`[BRON] Prefetched ${allKeywords.length} keywords for ${domain}`);
-        }
-
         // Small delay between domains to avoid rate limiting
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 250));
       } catch (err) {
         console.warn(`[BRON] Failed to prefetch keywords for ${domain}:`, err);
       }
