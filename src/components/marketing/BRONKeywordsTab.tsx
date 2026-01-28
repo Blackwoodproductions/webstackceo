@@ -1069,16 +1069,9 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 6: Combined Links Button (also acts as expand indicator) */}
+              {/* Column 6: Combined Links Display */}
               <div 
-                className={`
-                  flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200
-                  bg-card/80 border
-                  ${expanded 
-                    ? 'border-primary/50 ring-1 ring-primary/30' 
-                    : 'border-border/40 hover:border-primary/40'
-                  }
-                `}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40"
               >
                 {/* Inbound - arrow pointing INTO the box (right arrow) */}
                 <div className="flex items-center gap-1">
@@ -1094,10 +1087,20 @@ export const BRONKeywordsTab = ({
                   <ArrowUpRight className="w-3.5 h-3.5 text-violet-400" />
                   <span className="text-xs font-semibold text-violet-400">{linksOut.length}</span>
                 </div>
-                
-                {/* Expand Arrow */}
+              </div>
+              
+              {/* Column 7: Expand/Collapse Button - separate from links box */}
+              <div 
+                className={`
+                  flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all duration-200
+                  ${expanded 
+                    ? 'bg-primary/20 border border-primary/50' 
+                    : 'bg-card/60 border border-border/40 hover:border-primary/40 hover:bg-card/80'
+                  }
+                `}
+              >
                 <ChevronRight 
-                  className={`w-3.5 h-3.5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+                  className={`w-4 h-4 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
                 />
               </div>
             </div>
