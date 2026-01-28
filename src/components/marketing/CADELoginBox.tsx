@@ -6,7 +6,7 @@ import {
   Cpu, BarChart3, Globe, RefreshCw, 
   HelpCircle, Zap, FileText, Clock,
   Search, Link2, TrendingUp, Target, Layers, Bot, Newspaper,
-  Wand2, ListChecks,
+  Wand2, ListChecks, Brain,
   CheckCircle, XCircle, Timer, Rocket, PenTool, BookOpen,
   Upload, Trash2, Settings, Copy, Send, Lock, ChevronRight, Edit, X, Save, Eye, ExternalLink
 } from "lucide-react";
@@ -119,6 +119,48 @@ interface CADELoginBoxProps {
   onSubscriptionChange?: (hasSubscription: boolean) => void;
 }
 
+// Persistent subscription cache - shared with CADEApiDashboard
+const CADE_SUBSCRIPTION_CACHE_KEY = "cade_subscription_cache";
+const CADE_SUBSCRIPTION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+interface CachedSubscription {
+  data: BronSubscription;
+  domain: string;
+  timestamp: number;
+}
+
+const getCachedSubscription = (targetDomain: string): BronSubscription | null => {
+  try {
+    const cached = localStorage.getItem(CADE_SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+    
+    const parsed: CachedSubscription = JSON.parse(cached);
+    if (
+      parsed.domain === targetDomain &&
+      Date.now() - parsed.timestamp < CADE_SUBSCRIPTION_CACHE_TTL &&
+      parsed.data?.has_cade === true
+    ) {
+      return parsed.data;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedSubscription = (targetDomain: string, data: BronSubscription) => {
+  try {
+    const cache: CachedSubscription = { data, domain: targetDomain, timestamp: Date.now() };
+    localStorage.setItem(CADE_SUBSCRIPTION_CACHE_KEY, JSON.stringify(cache));
+  } catch { /* ignore */ }
+};
+
+const clearCachedSubscription = () => {
+  try {
+    localStorage.removeItem(CADE_SUBSCRIPTION_CACHE_KEY);
+  } catch { /* ignore */ }
+};
+
 const CONTENT_TYPES = [
   { id: "blog", name: "Blog Article", icon: FileText, desc: "Long-form SEO-optimized content", color: "from-blue-500 to-cyan-500" },
   { id: "pillar", name: "Pillar Page", icon: Layers, desc: "Comprehensive topic hub pages", color: "from-violet-500 to-purple-500" },
@@ -197,26 +239,78 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     return data;
   }, [domain]);
 
-  // Optimized: Parallel connection + subscription check
+  // Optimized: Parallel connection + subscription check with persistent cache
   useEffect(() => {
     const initializeConnection = async () => {
+      if (!domain) {
+        setDomainHasSubscription(null);
+        setSubscription(null);
+        setBronSubscription(null);
+        setIsLoading(false);
+        setLoadingPhase(null);
+        return;
+      }
+
+      // FAST PATH: Check persistent cache first (instant)
+      const cachedSub = getCachedSubscription(domain);
+      if (cachedSub && cachedSub.has_cade === true) {
+        console.log("[CADELoginBox] Using cached subscription (instant load)");
+        setDomainHasSubscription(true);
+        setBronSubscription(cachedSub);
+        setSubscription({
+          plan: cachedSub.plan || cachedSub.servicetype,
+          status: cachedSub.status || "active",
+        });
+        setIsConnected(true);
+        setIsLoading(false);
+        setLoadingPhase(null);
+        
+        // Background refresh for subscription changes (non-blocking)
+        Promise.allSettled([
+          callCadeApi("health"),
+          fetchSubscription(domain),
+        ]).then(([healthRes, subRes]) => {
+          if (healthRes.status === 'fulfilled') {
+            const hData = healthRes.value;
+            const isHealthy = hData?.success === true || hData?.data?.status === "healthy" || hData?.status === "healthy";
+            if (isHealthy) {
+              setHealth(hData.data || hData);
+            }
+          }
+          if (subRes.status === 'fulfilled') {
+            const freshSub = subRes.value;
+            if (freshSub) {
+              if (freshSub.has_cade === true) {
+                setCachedSubscription(domain, freshSub);
+                setBronSubscription(freshSub);
+              } else {
+                // Subscription canceled
+                clearCachedSubscription();
+                setDomainHasSubscription(false);
+                setBronSubscription(freshSub);
+              }
+            }
+          }
+        });
+        
+        return;
+      }
+
+      // SLOW PATH: No cache, do full check
       setIsLoading(true);
       setLoadingPhase('connecting');
       setError(null);
       setBronSubscription(null);
 
       try {
-        // Run CADE health check and BRON entitlement check in parallel
-        // IMPORTANT: Use the same CADE entitlement logic as the Social Signals tab.
         const [healthResult, bronSubResult] = await Promise.allSettled([
           callCadeApi("health"),
-          domain ? fetchSubscription(domain) : Promise.resolve(null),
+          fetchSubscription(domain),
         ]);
 
-        // Process health check - be very permissive about what we consider "healthy"
+        // Process health check
         if (healthResult.status === 'fulfilled') {
           const healthRes = healthResult.value;
-          // Check multiple possible success indicators
           const isHealthy = 
             healthRes?.success === true || 
             healthRes?.message === "success" ||
@@ -244,32 +338,24 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
           return;
         }
 
-        // Process BRON entitlement check (authoritative for CADE access)
+        // Process BRON entitlement check
         setLoadingPhase('subscription');
-
-        if (!domain) {
-          setDomainHasSubscription(null);
-          setSubscription(null);
-          setBronSubscription(null);
-          return;
-        }
 
         if (bronSubResult.status === 'fulfilled') {
           const bronSub = bronSubResult.value;
           setBronSubscription(bronSub);
 
-          // Match Social Signals logic exactly
           const hasEntitlement = Boolean(bronSub && bronSub.has_cade && bronSub.status === 'active');
           setDomainHasSubscription(hasEntitlement);
 
-          // Seed plan/status so header UI can render immediately; detailed quotas come from CADE API later.
-          if (bronSub) {
-            setSubscription((prev) => ({
-              ...prev,
-              plan: bronSub.plan || bronSub.servicetype || prev?.plan,
-              status: bronSub.status || prev?.status,
-            }));
+          if (hasEntitlement && bronSub) {
+            setCachedSubscription(domain, bronSub);
+            setSubscription({
+              plan: bronSub.plan || bronSub.servicetype,
+              status: bronSub.status || "active",
+            });
           } else {
+            clearCachedSubscription();
             setSubscription(null);
           }
         } else {

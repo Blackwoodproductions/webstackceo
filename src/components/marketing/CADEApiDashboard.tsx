@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity, AlertTriangle, CheckCircle2, Clock, FileText,
   Globe, HelpCircle, Loader2, RefreshCw, Server, Sparkles,
   Target, TrendingUp, Users, Zap, ChevronDown, ChevronRight,
-  Database, Cpu, BarChart3, Rocket
+  Database, Cpu, BarChart3, Rocket, Bot, Brain, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,49 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
+
+// Persistent subscription cache key
+const CADE_SUBSCRIPTION_CACHE_KEY = "cade_subscription_cache";
+const CADE_SUBSCRIPTION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days until subscription change
+
+interface CachedSubscription {
+  data: BronSubscription;
+  domain: string;
+  timestamp: number;
+}
+
+const getCachedSubscription = (domain: string): BronSubscription | null => {
+  try {
+    const cached = localStorage.getItem(CADE_SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+    
+    const parsed: CachedSubscription = JSON.parse(cached);
+    // Validate cache: same domain, not expired, and was active
+    if (
+      parsed.domain === domain &&
+      Date.now() - parsed.timestamp < CADE_SUBSCRIPTION_CACHE_TTL &&
+      parsed.data?.has_cade === true
+    ) {
+      return parsed.data;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedSubscription = (domain: string, data: BronSubscription) => {
+  try {
+    const cache: CachedSubscription = { data, domain, timestamp: Date.now() };
+    localStorage.setItem(CADE_SUBSCRIPTION_CACHE_KEY, JSON.stringify(cache));
+  } catch { /* ignore */ }
+};
+
+const clearCachedSubscription = () => {
+  try {
+    localStorage.removeItem(CADE_SUBSCRIPTION_CACHE_KEY);
+  } catch { /* ignore */ }
+};
 
 interface SystemHealth {
   status?: string;
@@ -142,7 +185,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
   }, [domain]);
 
-  // Check subscription via BRON API - optimized for speed with cache-first approach
+  // Check subscription via BRON API - optimized with persistent cache
   // Returns the subscription result directly to avoid race conditions
   const checkSubscription = useCallback(async (): Promise<boolean> => {
     if (!domain) {
@@ -152,23 +195,52 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
     
     setIsCheckingSubscription(true);
-    setBronSubscription(null);
     
+    // FAST PATH: Check persistent localStorage cache first (instant)
+    const cachedSub = getCachedSubscription(domain);
+    if (cachedSub && cachedSub.has_cade === true) {
+      console.log("[CADE] Using cached subscription (instant load)");
+      setHasCadeSubscription(true);
+      setBronSubscription(cachedSub);
+      setSubscription({
+        plan: cachedSub.plan || cachedSub.servicetype || "CADE",
+        status: cachedSub.status || "active",
+        quota_used: undefined,
+        quota_limit: undefined,
+      });
+      setIsCheckingSubscription(false);
+      
+      // Background refresh to update cache (non-blocking)
+      fetchSubscription(domain).then((freshData) => {
+        if (freshData) {
+          if (freshData.has_cade === true) {
+            setCachedSubscription(domain, freshData);
+            setBronSubscription(freshData);
+          } else {
+            // Subscription canceled - clear cache and update UI
+            clearCachedSubscription();
+            setHasCadeSubscription(false);
+            setBronSubscription(freshData);
+          }
+        }
+      }).catch(() => { /* ignore background refresh errors */ });
+      
+      return true;
+    }
+    
+    // SLOW PATH: No cache, fetch from API
     try {
       console.log("[CADE] Checking subscription for domain:", domain);
-      
-      // fetchSubscription already uses cache-first approach - it returns cached data immediately
-      // and does background refresh, making this call very fast for returning users
       const subData = await fetchSubscription(domain);
       console.log("[CADE] Subscription response:", subData);
       
-      // Check for valid CADE subscription - be lenient with status check
       const hasValidSubscription = subData && 
         subData.has_cade === true && 
         (subData.status === 'active' || !subData.status);
       
       if (hasValidSubscription) {
-        console.log("[CADE] Valid subscription detected, showing dashboard");
+        console.log("[CADE] Valid subscription detected, caching and showing dashboard");
+        setCachedSubscription(domain, subData);
         setHasCadeSubscription(true);
         setBronSubscription(subData);
         setSubscription({
@@ -177,14 +249,11 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           quota_used: undefined,
           quota_limit: undefined,
         });
-        // Immediately show dashboard, data will load in background
         setIsCheckingSubscription(false);
         return true;
       } else {
-        console.log("[CADE] No valid subscription found:", { 
-          has_cade: subData?.has_cade, 
-          status: subData?.status 
-        });
+        console.log("[CADE] No valid subscription found");
+        clearCachedSubscription();
         setHasCadeSubscription(false);
         setBronSubscription(subData);
         setSubscription(null);
@@ -318,54 +387,118 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     return "bg-violet-500/15 text-violet-600 border-violet-500/30";
   };
 
-  // Subscription verification loading state - optimized for speed
+  // Futuristic AI-agentic loading animation for subscription check
   if (isCheckingSubscription) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.15 }}
-        className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+        transition={{ duration: 0.2 }}
+        className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-cyan-500/10 border border-violet-500/30 overflow-hidden"
       >
+        {/* Animated background grid */}
         <div className="absolute inset-0 overflow-hidden">
+          <div 
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
+            }}
+          />
           <motion.div
-            className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
-            animate={{ opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500 to-transparent"
+            animate={{ y: [0, 200, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute -top-32 -right-32 w-64 h-64 bg-gradient-to-bl from-violet-500/30 via-purple-500/20 to-transparent rounded-full blur-3xl"
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute -bottom-32 -left-32 w-64 h-64 bg-gradient-to-tr from-cyan-500/20 via-blue-500/10 to-transparent rounded-full blur-3xl"
+            animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.15, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
           />
         </div>
         
-        <div className="relative z-10 flex flex-col items-center gap-2">
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          {/* AI Brain icon with orbiting particles */}
           <div className="relative">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
             <motion.div
-              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-md bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-md"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 0.8, repeat: Infinity }}
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-violet-500/40"
+              animate={{ 
+                boxShadow: [
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.4)",
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.7)",
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.4)"
+                ]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Loader2 className="w-2.5 h-2.5 text-white animate-spin" />
+              <Brain className="w-8 h-8 text-white" />
+            </motion.div>
+            
+            {/* Orbiting particles */}
+            <motion.div
+              className="absolute top-1/2 left-1/2 w-24 h-24 -translate-x-1/2 -translate-y-1/2"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="absolute top-0 left-1/2 w-2 h-2 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 -translate-x-1/2" />
+              <div className="absolute bottom-0 left-1/2 w-1.5 h-1.5 rounded-full bg-violet-400 shadow-lg shadow-violet-400/50 -translate-x-1/2" />
+            </motion.div>
+            <motion.div
+              className="absolute top-1/2 left-1/2 w-20 h-20 -translate-x-1/2 -translate-y-1/2"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-lg shadow-amber-400/50" />
             </motion.div>
           </div>
           
           <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">
-              Connecting to CADE
-            </p>
-            <p className="text-xs text-muted-foreground">AI Content Automation Engine</p>
+            <motion.p 
+              className="text-base font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Initializing AI Agent
+            </motion.p>
+            <p className="text-xs text-muted-foreground mt-1">CADE Content Automation Engine</p>
           </div>
           
-          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          {/* Progress steps */}
+          <div className="flex items-center gap-2 text-xs">
+            <motion.span 
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-500/10 text-green-500 border border-green-500/20"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <motion.span 
+                className="w-1.5 h-1.5 rounded-full bg-green-500"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
               Connecting
-            </span>
-            <span className="text-muted-foreground/50">→</span>
-            <span className="flex items-center gap-1.5 opacity-50">
+            </motion.span>
+            <motion.span 
+              className="text-muted-foreground/40"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              →
+            </motion.span>
+            <motion.span 
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/30 text-muted-foreground/50"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 0.5, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-              Access
-            </span>
+              Ready
+            </motion.span>
           </div>
         </div>
       </motion.div>
