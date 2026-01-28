@@ -669,25 +669,21 @@ export const BRONKeywordsTab = ({
                 const yahooMovement = getMovementIndicator(yahooPos, initial?.yahoo ?? null);
                 
                 return (
-                  <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px] ml-32">
+                  <div className="flex-shrink-0 grid grid-cols-3 gap-2 text-center w-[300px]">
                     {/* Google Column */}
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
                       {googlePos !== null ? (
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{googlePos}</span>
-                          {googleMovement.type === 'up' && (
-                            <TrendingUp className="w-3.5 h-3.5" />
-                          )}
-                          {googleMovement.type === 'same' && (
-                            <Minus className="w-3.5 h-3.5" />
-                          )}
-                          {googleMovement.type === 'down' && (
-                            <Activity className="w-3.5 h-3.5" />
-                          )}
+                          {googleMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                          {googleMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                          {googleMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
                         </div>
                       ) : (
-                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        </div>
                       )}
                     </div>
                     
@@ -695,20 +691,16 @@ export const BRONKeywordsTab = ({
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
                       {bingPos !== null ? (
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{bingPos}</span>
-                          {bingMovement.type === 'up' && (
-                            <TrendingUp className="w-3.5 h-3.5" />
-                          )}
-                          {bingMovement.type === 'same' && (
-                            <Minus className="w-3.5 h-3.5" />
-                          )}
-                          {bingMovement.type === 'down' && (
-                            <Activity className="w-3.5 h-3.5" />
-                          )}
+                          {bingMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                          {bingMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                          {bingMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
                         </div>
                       ) : (
-                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        </div>
                       )}
                     </div>
                     
@@ -716,20 +708,16 @@ export const BRONKeywordsTab = ({
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
                       {yahooPos !== null ? (
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{yahooPos}</span>
-                          {yahooMovement.type === 'up' && (
-                            <TrendingUp className="w-3.5 h-3.5" />
-                          )}
-                          {yahooMovement.type === 'same' && (
-                            <Minus className="w-3.5 h-3.5" />
-                          )}
-                          {yahooMovement.type === 'down' && (
-                            <Activity className="w-3.5 h-3.5" />
-                          )}
+                          {yahooMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                          {yahooMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                          {yahooMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
                         </div>
                       ) : (
-                        <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                        </div>
                       )}
                     </div>
                   </div>
