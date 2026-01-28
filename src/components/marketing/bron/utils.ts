@@ -1,13 +1,47 @@
 import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
-import { getKeywordDisplayText } from "./BronKeywordCard";
-import type { PageSpeedScore } from "./BronKeywordCard";
 
 // LocalStorage key for PageSpeed cache
 export const PAGESPEED_CACHE_KEY = 'bron_pagespeed_cache';
 export const PAGESPEED_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Re-export PageSpeedScore type for backwards compatibility
-export type { PageSpeedScore } from "./BronKeywordCard";
+// PageSpeed score type (canonical definition)
+export interface PageSpeedScore {
+  mobileScore: number;
+  desktopScore: number;
+  loading?: boolean;
+  updating?: boolean;
+  error?: boolean;
+  cachedAt?: number;
+}
+
+// Get display text for a keyword (canonical definition - used by all BRON components)
+export function getKeywordDisplayText(kw: BronKeyword): string {
+  if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
+  if (kw.keyword && kw.keyword.trim()) return kw.keyword;
+  if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
+  if (kw.resfeedtext) {
+    const decoded = kw.resfeedtext
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match && h1Match[1]) return h1Match[1].trim();
+  }
+  return `Keyword #${kw.id}`;
+}
+
+// Parse position from SERP data
+export function getPosition(val?: string | number): number | null {
+  if (val === undefined || val === null) return null;
+  const str = String(val).trim();
+  const match = str.match(/^(\d+)\s*([+-]\d+)?$/);
+  if (match) {
+    const position = parseInt(match[1], 10);
+    return isNaN(position) || position === 0 ? null : position;
+  }
+  const num = parseInt(str, 10);
+  return isNaN(num) || num === 0 ? null : num;
+}
 
 // Load cached PageSpeed scores from localStorage
 export function loadCachedPageSpeedScores(): Record<string, PageSpeedScore> {

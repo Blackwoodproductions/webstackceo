@@ -3,7 +3,7 @@ import { Edit2, Save, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronLink } from "@/hooks/use-bron-api";
 import { BronCitationAnalytics } from "./BronCitationAnalytics";
-import { getKeywordDisplayText } from "./BronKeywordCard";
+import { getKeywordDisplayText } from "./utils";
 
 interface InlineFormData {
   keywordtitle: string;
