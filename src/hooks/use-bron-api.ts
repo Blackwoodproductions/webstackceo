@@ -76,6 +76,80 @@ interface SerpCacheEntry {
   cachedAt: number;
 }
 
+// ─── Links Data Cache ───
+const LINKS_CACHE_KEY = 'bron_links_cache';
+const LINKS_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface LinksCacheEntry {
+  linksIn: BronLink[];
+  linksOut: BronLink[];
+  linksInCount: number;
+  linksOutCount: number;
+  cachedAt: number;
+}
+
+function loadCachedLinks(domain: string): { linksIn: BronLink[]; linksOut: BronLink[] } | null {
+  try {
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry) return null;
+    const now = Date.now();
+    if ((now - entry.cachedAt) > LINKS_CACHE_MAX_AGE) {
+      return null; // Cache expired
+    }
+    console.log(`[BRON] Using cached links for ${domain} (${entry.linksIn.length} in, ${entry.linksOut.length} out)`);
+    return { linksIn: entry.linksIn, linksOut: entry.linksOut };
+  } catch (e) {
+    console.warn('[BRON] Failed to load links cache:', e);
+    return null;
+  }
+}
+
+function saveCachedLinks(domain: string, linksIn: BronLink[], linksOut: BronLink[]) {
+  try {
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, LinksCacheEntry> : {};
+    
+    // Keep only last 10 domains
+    const domains = Object.keys(parsed);
+    if (domains.length >= 10 && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[domain] = { 
+      linksIn, 
+      linksOut, 
+      linksInCount: linksIn.length,
+      linksOutCount: linksOut.length,
+      cachedAt: Date.now() 
+    };
+    localStorage.setItem(LINKS_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached links for ${domain} (${linksIn.length} in, ${linksOut.length} out)`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save links cache:', e);
+  }
+}
+
+function getCachedLinksCounts(domain: string): { inCount: number; outCount: number } | null {
+  try {
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry) return null;
+    const now = Date.now();
+    if ((now - entry.cachedAt) > LINKS_CACHE_MAX_AGE) {
+      return null;
+    }
+    return { inCount: entry.linksInCount, outCount: entry.linksOutCount };
+  } catch {
+    return null;
+  }
+}
+
 function loadCachedSerp(domain: string): { serpReports: BronSerpReport[]; serpHistory: BronSerpListItem[]; latestReportId: string | number | null } | null {
   try {
     const cached = localStorage.getItem(SERP_CACHE_KEY);
@@ -849,21 +923,58 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
-  const fetchLinksIn = useCallback(async (domain: string, domainId?: number | string) => {
+  // Combined fetch for both links - uses cache and background refresh
+  const fetchLinksIn = useCallback(async (domain: string, domainId?: number | string, forceRefresh = false) => {
     const reqId = ++linksInReqIdRef.current;
     setLinksInError(null);
+    
+    // Try cache first (unless forcing refresh)
+    if (!forceRefresh) {
+      const cached = loadCachedLinks(domain);
+      if (cached) {
+        setLinksIn(cached.linksIn);
+        // Also set linksOut if it's in cache
+        if (cached.linksOut.length > 0) {
+          setLinksOut(cached.linksOut);
+        }
+        
+        // Background refresh to check for changes
+        callApi("getLinksIn", { domain, domain_id: domainId }).then(result => {
+          if (reqId !== linksInReqIdRef.current) return;
+          if (result?.success && result.data) {
+            const links = Array.isArray(result.data)
+              ? result.data
+              : (result.data.links || result.data.items || []);
+            const freshLinks = Array.isArray(links) ? links : [];
+            
+            // Only update if count changed (simple change detection)
+            if (freshLinks.length !== cached.linksIn.length) {
+              console.log(`[BRON] Links-in changed for ${domain} (${cached.linksIn.length} -> ${freshLinks.length})`);
+              setLinksIn(freshLinks);
+              // Re-save cache with fresh in links but keep existing out links
+              saveCachedLinks(domain, freshLinks, cached.linksOut);
+            }
+          }
+        }).catch(err => console.warn('[BRON] Background links-in check failed:', err));
+        
+        return; // Served from cache
+      }
+    }
+    
     return withPending(async () => {
       try {
         console.log(`[BRON] Fetching links-in for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
         const result = await callApi("getLinksIn", { domain, domain_id: domainId });
         if (reqId !== linksInReqIdRef.current) return;
         if (result?.success && result.data) {
-          // API returns array directly or nested
           const links = Array.isArray(result.data)
             ? result.data
             : (result.data.links || result.data.items || []);
-          console.log(`[BRON] Links-in result: ${Array.isArray(links) ? links.length : 0} links`);
-          setLinksIn(Array.isArray(links) ? links : []);
+          const freshLinks = Array.isArray(links) ? links : [];
+          console.log(`[BRON] Links-in result: ${freshLinks.length} links`);
+          setLinksIn(freshLinks);
+          
+          // Cache will be saved when linksOut is also fetched
         } else if (result?.error) {
           setLinksInError(result.error || "Failed to fetch inbound links");
         }
@@ -876,21 +987,55 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const fetchLinksOut = useCallback(async (domain: string, domainId?: number | string) => {
+  const fetchLinksOut = useCallback(async (domain: string, domainId?: number | string, forceRefresh = false) => {
     const reqId = ++linksOutReqIdRef.current;
     setLinksOutError(null);
+    
+    // Try cache first (unless forcing refresh)
+    if (!forceRefresh) {
+      const cached = loadCachedLinks(domain);
+      if (cached && cached.linksOut.length > 0) {
+        setLinksOut(cached.linksOut);
+        // Also set linksIn if it's in cache
+        if (cached.linksIn.length > 0) {
+          setLinksIn(cached.linksIn);
+        }
+        
+        // Background refresh to check for changes
+        callApi("getLinksOut", { domain, domain_id: domainId }).then(result => {
+          if (reqId !== linksOutReqIdRef.current) return;
+          if (result?.success && result.data) {
+            const links = Array.isArray(result.data)
+              ? result.data
+              : (result.data.links || result.data.items || []);
+            const freshLinks = Array.isArray(links) ? links : [];
+            
+            // Only update if count changed
+            if (freshLinks.length !== cached.linksOut.length) {
+              console.log(`[BRON] Links-out changed for ${domain} (${cached.linksOut.length} -> ${freshLinks.length})`);
+              setLinksOut(freshLinks);
+              // Re-save cache with fresh out links but keep existing in links
+              saveCachedLinks(domain, cached.linksIn, freshLinks);
+            }
+          }
+        }).catch(err => console.warn('[BRON] Background links-out check failed:', err));
+        
+        return; // Served from cache
+      }
+    }
+    
     return withPending(async () => {
       try {
         console.log(`[BRON] Fetching links-out for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
         const result = await callApi("getLinksOut", { domain, domain_id: domainId });
         if (reqId !== linksOutReqIdRef.current) return;
         if (result?.success && result.data) {
-          // API returns array directly or nested
           const links = Array.isArray(result.data)
             ? result.data
             : (result.data.links || result.data.items || []);
-          console.log(`[BRON] Links-out result: ${Array.isArray(links) ? links.length : 0} links`);
-          setLinksOut(Array.isArray(links) ? links : []);
+          const freshLinks = Array.isArray(links) ? links : [];
+          console.log(`[BRON] Links-out result: ${freshLinks.length} links`);
+          setLinksOut(freshLinks);
         } else if (result?.error) {
           setLinksOutError(result.error || "Failed to fetch outbound links");
         }
@@ -902,6 +1047,13 @@ export function useBronApi(): UseBronApiReturn {
       }
     });
   }, [callApi, withPending]);
+  
+  // Helper to save both links to cache (called after both are fetched)
+  const saveLinksCacheIfReady = useCallback((domain: string, currentLinksIn: BronLink[], currentLinksOut: BronLink[]) => {
+    if (currentLinksIn.length > 0 || currentLinksOut.length > 0) {
+      saveCachedLinks(domain, currentLinksIn, currentLinksOut);
+    }
+  }, []);
 
   // Reset domain-specific data (for faster domain switching)
   const resetDomainData = useCallback(() => {

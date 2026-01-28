@@ -136,22 +136,37 @@
     scroll-behavior: smooth;
   }
 
-  /* Theme transition - only background and text colors, not borders/shadows */
+  /* Theme transition - ONLY background and text colors
+     Explicitly exclude borders, box-shadows, and outlines to prevent visual glitches */
   html,
   html *,
   html *::before,
   html *::after {
     transition-property: background-color, color, fill, stroke;
-    transition-duration: 200ms;
+    transition-duration: 150ms;
     transition-timing-function: ease-out;
   }
 
-  /* Disable transitions for elements that shouldn't animate */
+  /* Ensure borders and box-shadows never animate */
+  html *,
+  html *::before,
+  html *::after {
+    border-color: inherit;
+  }
+
+  /* Disable ALL transitions for elements marked as no-theme-transition */
   html [data-no-theme-transition],
   html [data-no-theme-transition] *,
   html .no-theme-transition,
   html .no-theme-transition * {
     transition: none !important;
+  }
+  
+  /* Prevent border/box-shadow transitions on interactive elements */
+  button, input, select, textarea, [role="button"], 
+  .glass-card, .card, [class*="border"], [class*="rounded"] {
+    transition-property: background-color, color, fill, stroke, opacity, transform;
+    border-transition: none;
   }
 
   body {

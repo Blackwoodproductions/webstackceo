@@ -112,9 +112,9 @@ export const CitationLinksTable = memo(
     }
 
     return (
-      <div className="rounded-lg border border-border/40 overflow-hidden bg-card">
+      <div className="rounded-lg border border-border/40 overflow-hidden bg-card no-theme-transition" data-no-theme-transition>
         {/* Header - matching reference exactly */}
-        <div className="bg-muted/80 px-5 py-3 border-b border-border/50">
+        <div className="bg-muted/80 px-5 py-3 border-b border-border/50 no-theme-transition">
           <div 
             className="grid gap-4 text-[13px] font-semibold text-muted-foreground"
             style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
@@ -175,10 +175,11 @@ const CitationLinkRow = memo(
     return (
       <div 
         className={`
-          grid gap-4 px-5 py-4 items-center border-b border-border/30
+          grid gap-4 px-5 py-4 items-center border-b border-border/30 no-theme-transition
           ${isHighlighted ? 'border-l-[3px] border-l-cyan-400 bg-accent/30' : 'bg-transparent'}
         `}
         style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
+        data-no-theme-transition
       >
         {/* Domain-Keyword Column */}
         <div className="min-w-0">
