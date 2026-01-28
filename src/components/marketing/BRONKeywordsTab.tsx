@@ -1573,67 +1573,48 @@ export const BRONKeywordsTab = ({
                   </div>
                 </div>
 
-                {/* Article & Citations Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Article Card */}
-                  <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">Article Content</span>
-                        <Badge variant="outline" className="text-[10px] border-primary/30">
-                          {getWordCount(kw.resfeedtext || '')} words
-                        </Badge>
-                      </div>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="h-7 bg-primary hover:bg-primary/90"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setInlineEditForms((prev) =>
-                            prev[kw.id]
-                              ? prev
-                              : {
-                                  ...prev,
-                                  [kw.id]: {
-                                    keywordtitle: kw.keywordtitle || kw.keyword || "",
-                                    metatitle: kw.metatitle || "",
-                                    metadescription: kw.metadescription || "",
-                                    resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
-                                    linkouturl: kw.linkouturl || "",
-                                    resaddress: kw.resaddress || "",
-                                    resfb: kw.resfb || "",
-                                  },
+                {/* Article Card - Full Width */}
+                <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Article Content</span>
+                      <Badge variant="outline" className="text-[10px] border-primary/30">
+                        {getWordCount(kw.resfeedtext || '')} words
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-7 bg-primary hover:bg-primary/90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInlineEditForms((prev) =>
+                          prev[kw.id]
+                            ? prev
+                            : {
+                                ...prev,
+                                [kw.id]: {
+                                  keywordtitle: kw.keywordtitle || kw.keyword || "",
+                                  metatitle: kw.metatitle || "",
+                                  metadescription: kw.metadescription || "",
+                                  resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
+                                  linkouturl: kw.linkouturl || "",
+                                  resaddress: kw.resaddress || "",
+                                  resfb: kw.resfb || "",
                                 },
-                          );
-                          setArticleEditorId(kw.id);
-                        }}
-                      >
-                        <Edit2 className="w-3.5 h-3.5 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Citations Card */}
-                  <div className="p-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Link2 className="w-4 h-4 text-cyan-400" />
-                        <span className="text-sm font-medium">Citations</span>
-                        <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-400">
-                          {linksIn.length} in
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] border-violet-500/30 text-violet-400">
-                          {linksOut.length} out
-                        </Badge>
-                      </div>
-                    </div>
+                              },
+                        );
+                        setArticleEditorId(kw.id);
+                      }}
+                    >
+                      <Edit2 className="w-3.5 h-3.5 mr-1" />
+                      Edit
+                    </Button>
                   </div>
                 </div>
 
-                {/* Ranking History */}
+                {/* Ranking History - Full Width */}
                 {selectedDomain && (
                   <div className="p-3 rounded-lg border border-border/30 bg-muted/20">
                     <div className="flex items-center gap-2 mb-3">
@@ -1649,6 +1630,86 @@ export const BRONKeywordsTab = ({
                     />
                   </div>
                 )}
+
+                {/* Citations Section - Full Width, Open by Default with Graph */}
+                <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 overflow-hidden">
+                  <div className="p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-cyan-400" />
+                      <span className="text-sm font-medium">Citations</span>
+                      <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-400">
+                        {linksIn.length} inbound
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] border-violet-500/30 text-violet-400">
+                        {linksOut.length} outbound
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  {/* Citation Link Graph - Always Visible */}
+                  <div className="border-t border-cyan-500/20 p-4 bg-card/50">
+                    {/* Visual Link Graph */}
+                    <div className="flex items-center justify-center gap-8 py-6">
+                      {/* Inbound Links */}
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {[...Array(Math.min(3, linksIn.length || 1))].map((_, i) => (
+                            <div 
+                              key={`in-${i}`}
+                              className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center"
+                              style={{ opacity: 1 - i * 0.25 }}
+                            >
+                              <ArrowDownLeft className="w-4 h-4 text-cyan-400" />
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-xs text-cyan-400 font-medium">{linksIn.length} Inbound</span>
+                      </div>
+                      
+                      {/* Center Node - This Page */}
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/30 to-violet-500/30 border-2 border-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
+                          <FileText className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          <span className="text-[10px] text-muted-foreground">This Page</span>
+                        </div>
+                      </div>
+                      
+                      {/* Outbound Links */}
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {[...Array(Math.min(3, linksOut.length || 1))].map((_, i) => (
+                            <div 
+                              key={`out-${i}`}
+                              className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/40 flex items-center justify-center"
+                              style={{ opacity: 1 - i * 0.25 }}
+                            >
+                              <ArrowUpRight className="w-4 h-4 text-violet-400" />
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-xs text-violet-400 font-medium">{linksOut.length} Outbound</span>
+                      </div>
+                    </div>
+                    
+                    {/* Link Stats Summary */}
+                    <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border/30">
+                      <div className="text-center p-2 rounded-lg bg-muted/30">
+                        <div className="text-lg font-bold text-foreground">{linksIn.length + linksOut.length}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Links</div>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-cyan-500/10">
+                        <div className="text-lg font-bold text-cyan-400">{linksIn.length}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Referring</div>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-violet-500/10">
+                        <div className="text-lg font-bold text-violet-400">{linksOut.length}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Linking To</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               )}
             </div>
