@@ -46,6 +46,14 @@ interface KeywordMetrics {
   competition_level: string;
 }
 
+// PageSpeed score cache
+interface PageSpeedScore {
+  mobileScore: number;
+  desktopScore: number;
+  loading?: boolean;
+  error?: boolean;
+}
+
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
   serpReports?: BronSerpReport[];
@@ -302,6 +310,9 @@ export const BRONKeywordsTab = ({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
+  // PageSpeed scores from Google API - keyed by URL
+  const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>({});
+
   // Initial keyword positions from first BRON SERP report (for movement tracking)
   interface InitialPositions {
     google: number | null;
@@ -404,7 +415,82 @@ export const BRONKeywordsTab = ({
     fetchMetrics();
   }, [keywords]);
 
-  // Helper to get movement indicator based on movement delta from SERP
+  // Fetch PageSpeed scores from Google API for keyword URLs
+  useEffect(() => {
+    const fetchPageSpeedScores = async () => {
+      if (keywords.length === 0 || !selectedDomain) return;
+      
+      // Get unique URLs from keywords that have linkouturl
+      const urlsToFetch: { url: string; keywordId: string | number }[] = [];
+      for (const kw of keywords) {
+        // Build the URL - either use linkouturl or construct from domain + keyword
+        let url = kw.linkouturl;
+        if (!url && selectedDomain) {
+          // Construct URL from domain if no linkouturl
+          const keywordSlug = getKeywordDisplayText(kw)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+          url = `https://${selectedDomain}/${keywordSlug}`;
+        }
+        
+        if (url && !pageSpeedScores[url]) {
+          urlsToFetch.push({ url, keywordId: kw.id });
+        }
+      }
+      
+      if (urlsToFetch.length === 0) return;
+      
+      // Limit concurrent requests and batch size
+      const batchSize = 5;
+      const urlsToProcess = urlsToFetch.slice(0, batchSize);
+      
+      // Mark as loading
+      setPageSpeedScores(prev => {
+        const next = { ...prev };
+        for (const { url } of urlsToProcess) {
+          next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+        }
+        return next;
+      });
+      
+      // Fetch in parallel (limited batch)
+      for (const { url } of urlsToProcess) {
+        try {
+          const { data, error } = await supabase.functions.invoke('pagespeed-insights', {
+            body: { url }
+          });
+          
+          if (!error && data?.metrics) {
+            setPageSpeedScores(prev => ({
+              ...prev,
+              [url]: {
+                mobileScore: data.metrics.mobile?.score || 0,
+                desktopScore: data.metrics.desktop?.score || 0,
+                loading: false,
+                error: false,
+              }
+            }));
+          } else {
+            setPageSpeedScores(prev => ({
+              ...prev,
+              [url]: { mobileScore: 0, desktopScore: 0, loading: false, error: true }
+            }));
+          }
+        } catch (err) {
+          console.error(`PageSpeed fetch failed for ${url}:`, err);
+          setPageSpeedScores(prev => ({
+            ...prev,
+            [url]: { mobileScore: 0, desktopScore: 0, loading: false, error: true }
+          }));
+        }
+      }
+    };
+    
+    // Debounce the fetch to avoid too many API calls
+    const timer = setTimeout(fetchPageSpeedScores, 1000);
+    return () => clearTimeout(timer);
+  }, [keywords, selectedDomain, pageSpeedScores]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
   const getMovementFromDelta = (movement: number) => {
     if (movement > 0) {
@@ -623,17 +709,28 @@ export const BRONKeywordsTab = ({
           >
             {/* Fixed Column Layout for Perfect Alignment */}
             <div className="flex items-center min-w-max">
-              {/* Column 1: Page Speed Indicator - 60px */}
+              {/* Column 1: Page Speed Indicator - 60px (Real Google PageSpeed Data) */}
               <div className="w-[60px] flex-shrink-0">
                 {(() => {
-                  const hasContent = wordCount > 300;
-                  const hasMetaTitle = !!kw.metatitle;
-                  const hasMetaDesc = !!kw.metadescription;
-                  const hasLink = !!kw.linkouturl;
-                  const score = (hasContent ? 25 : 0) + (hasMetaTitle ? 25 : 0) + (hasMetaDesc ? 25 : 0) + (hasLink ? 25 : 0);
+                  // Build URL for this keyword
+                  let url = kw.linkouturl;
+                  if (!url && selectedDomain) {
+                    const keywordSlug = keywordText
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-|-$/g, '');
+                    url = `https://${selectedDomain}/${keywordSlug}`;
+                  }
+                  
+                  const pageSpeed = url ? pageSpeedScores[url] : null;
+                  const isLoadingSpeed = pageSpeed?.loading;
+                  const hasError = pageSpeed?.error;
+                  const score = pageSpeed?.mobileScore || 0;
                   
                   const getSpeedColor = () => {
-                    if (score >= 75) return { ring: 'ring-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-400' };
+                    if (isLoadingSpeed) return { ring: 'ring-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-400', icon: 'text-blue-400' };
+                    if (hasError || score === 0) return { ring: 'ring-muted-foreground/30', bg: 'bg-muted/30', text: 'text-muted-foreground', icon: 'text-muted-foreground' };
+                    if (score >= 90) return { ring: 'ring-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-400' };
                     if (score >= 50) return { ring: 'ring-amber-500/50', bg: 'bg-amber-500/20', text: 'text-amber-400', icon: 'text-amber-400' };
                     return { ring: 'ring-red-500/50', bg: 'bg-red-500/20', text: 'text-red-400', icon: 'text-red-400' };
                   };
@@ -641,9 +738,11 @@ export const BRONKeywordsTab = ({
                   const colors = getSpeedColor();
                   
                   return (
-                    <div className={`w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`}>
-                      <Zap className={`w-4 h-4 ${colors.icon}`} />
-                      <span className={`text-[9px] font-bold ${colors.text}`}>{score}</span>
+                    <div className={`w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`} title={`PageSpeed Score: ${score}/100 (Mobile)`}>
+                      <Zap className={`w-4 h-4 ${colors.icon} ${isLoadingSpeed ? 'animate-pulse' : ''}`} />
+                      <span className={`text-[9px] font-bold ${colors.text}`}>
+                        {isLoadingSpeed ? '...' : hasError ? '—' : score}
+                      </span>
                     </div>
                   );
                 })()}
