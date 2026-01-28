@@ -251,12 +251,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
       linksRequestedForDomainRef.current = null;
       setScreenshotUrl(null);
 
-      // Check for existing screenshot in background (don't block)
-      getExistingScreenshot(selectedDomain).then((hasExisting) => {
-        if (!hasExisting && !cancelled) {
-          captureScreenshot(selectedDomain);
-        }
-      });
+      // Only load cached screenshot - don't auto-capture (user clicks camera to refresh)
+      getExistingScreenshot(selectedDomain);
 
       // Fire all fetches in parallel - they handle cache-first internally
       // Each will update state immediately if cache exists, then background refresh
