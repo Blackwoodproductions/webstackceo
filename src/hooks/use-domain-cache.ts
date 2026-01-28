@@ -166,9 +166,129 @@ export function useDomainCache() {
     setUserAddedDomains([...userAddedDomains.filter(d => d !== domain), domain]);
   }, [userAddedDomains, setUserAddedDomains]);
 
-  // Remove a user domain
+  // Remove a user domain and ALL its cached data (BRON, screenshots, etc.)
   const removeUserDomain = useCallback((domain: string) => {
-    setUserAddedDomains(userAddedDomains.filter(d => d !== domain));
+    const normalizedDomain = domain
+      .toLowerCase()
+      .trim()
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .split('/')[0];
+    
+    console.log(`[Domain Cache] Removing domain and all cached data: ${normalizedDomain}`);
+    
+    // Remove from user-added domains list
+    setUserAddedDomains(userAddedDomains.filter(d => {
+      const normalized = d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+      return normalized !== normalizedDomain;
+    }));
+    
+    // Clear all BRON-related caches for this domain
+    const bronCacheKeys = [
+      `bron_keywords_cache_v2_${normalizedDomain}`,
+      `bron_domain_details_cache`,
+      `bron_pages_cache`,
+      `bron_serp_cache`,
+      `bron_links_cache`,
+      `bron_subscription_cache`,
+    ];
+    
+    // Clear per-domain V2 keyword cache
+    try {
+      localStorage.removeItem(`bron_keywords_cache_v2_${normalizedDomain}`);
+      console.log(`[Domain Cache] Cleared keywords cache for ${normalizedDomain}`);
+    } catch {}
+    
+    // Clear domain from aggregated caches (domain details, pages, serp, links, subscription)
+    const aggregatedCacheKeys = [
+      'bron_domain_details_cache',
+      'bron_pages_cache', 
+      'bron_serp_cache',
+      'bron_links_cache',
+      'bron_subscription_cache',
+    ];
+    
+    for (const key of aggregatedCacheKeys) {
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object' && parsed[normalizedDomain]) {
+            delete parsed[normalizedDomain];
+            localStorage.setItem(key, JSON.stringify(parsed));
+            console.log(`[Domain Cache] Removed ${normalizedDomain} from ${key}`);
+          }
+        }
+      } catch {}
+    }
+    
+    // Clear keyword V2 index entry
+    try {
+      const indexRaw = localStorage.getItem('bron_keywords_cache_v2_index');
+      if (indexRaw) {
+        const index = JSON.parse(indexRaw);
+        if (index && index[normalizedDomain]) {
+          delete index[normalizedDomain];
+          localStorage.setItem('bron_keywords_cache_v2_index', JSON.stringify(index));
+          console.log(`[Domain Cache] Removed ${normalizedDomain} from keyword index`);
+        }
+      }
+    } catch {}
+    
+    // Clear keyword metrics cache
+    try {
+      const metricsRaw = localStorage.getItem('bron_keyword_metrics_cache_v1');
+      if (metricsRaw) {
+        const metrics = JSON.parse(metricsRaw);
+        if (metrics && metrics[normalizedDomain]) {
+          delete metrics[normalizedDomain];
+          localStorage.setItem('bron_keyword_metrics_cache_v1', JSON.stringify(metrics));
+          console.log(`[Domain Cache] Removed ${normalizedDomain} from keyword metrics cache`);
+        }
+      }
+    } catch {}
+    
+    // Clear screenshot cache for this domain
+    try {
+      const screenshotCacheRaw = localStorage.getItem('website_screenshot_cache');
+      if (screenshotCacheRaw) {
+        const screenshotCache = JSON.parse(screenshotCacheRaw);
+        if (screenshotCache) {
+          // Find and remove entries matching this domain
+          const keysToRemove = Object.keys(screenshotCache).filter(k => 
+            k.toLowerCase().includes(normalizedDomain)
+          );
+          for (const key of keysToRemove) {
+            delete screenshotCache[key];
+          }
+          localStorage.setItem('website_screenshot_cache', JSON.stringify(screenshotCache));
+          if (keysToRemove.length > 0) {
+            console.log(`[Domain Cache] Removed ${keysToRemove.length} screenshot cache entries for ${normalizedDomain}`);
+          }
+        }
+      }
+    } catch {}
+    
+    // Clear map cache for this domain
+    try {
+      const mapCacheRaw = localStorage.getItem('bron_map_cache');
+      if (mapCacheRaw) {
+        const mapCache = JSON.parse(mapCacheRaw);
+        if (mapCache) {
+          const keysToRemove = Object.keys(mapCache).filter(k => 
+            k.toLowerCase().includes(normalizedDomain)
+          );
+          for (const key of keysToRemove) {
+            delete mapCache[key];
+          }
+          localStorage.setItem('bron_map_cache', JSON.stringify(mapCache));
+          if (keysToRemove.length > 0) {
+            console.log(`[Domain Cache] Removed ${keysToRemove.length} map cache entries for ${normalizedDomain}`);
+          }
+        }
+      }
+    } catch {}
+    
+    console.log(`[Domain Cache] Completed removal of all cached data for ${normalizedDomain}`);
   }, [userAddedDomains, setUserAddedDomains]);
 
   // Check if cache is fresh (not expired)

@@ -581,6 +581,7 @@ const MarketingDashboard = () => {
     setSelectedDomainKey,
     setSelectedTrackedDomain: setCachedSelectedTrackedDomain,
     addUserDomain,
+    removeUserDomain,
     isCacheFresh,
   } = useDomainCache();
   
@@ -2002,19 +2003,44 @@ const MarketingDashboard = () => {
                         )}
                         {viDomains.map((domain) => {
                           const hasViTracking = trackedSet.has(domain);
+                          const isUserAdded = userAddedSet.has(domain) && !hasViTracking;
                           return (
-                            <SelectItem
-                              key={domain}
-                              value={domain}
-                              className="text-xs"
-                            >
-                              <div className="flex items-center gap-2">
-                                {hasViTracking && <Globe className="w-3.5 h-3.5 text-primary" />}
-                                <span className="truncate max-w-[300px]" title={domain}>
-                                  {domain}
-                                </span>
-                              </div>
-                            </SelectItem>
+                            <div key={domain} className="flex items-center justify-between group">
+                              <SelectItem
+                                value={domain}
+                                className="text-xs flex-1"
+                              >
+                                <div className="flex items-center gap-2">
+                                  {hasViTracking && <Globe className="w-3.5 h-3.5 text-primary" />}
+                                  <span className="truncate max-w-[250px]" title={domain}>
+                                    {domain}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              {isUserAdded && (
+                                <button
+                                  type="button"
+                                  className="p-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 rounded"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    if (confirm(`Remove "${domain}" and all its cached data?`)) {
+                                      removeUserDomain(domain);
+                                      // If this was the selected domain, clear selection
+                                      if (selectedTrackedDomain === domain || selectedGscDomain === domain) {
+                                        setSelectedTrackedDomain('');
+                                        setSelectedGscDomain(null);
+                                        setSelectedDomainKey('');
+                                      }
+                                      toast.success(`Removed ${domain} and all cached data`);
+                                    }
+                                  }}
+                                  title="Remove domain and all cached data"
+                                >
+                                  <X className="w-3 h-3 text-destructive" />
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
                         <SelectSeparator />

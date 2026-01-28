@@ -22,6 +22,7 @@ interface DomainSelectorBarProps {
   selectedDomain: string;
   onDomainChange: (domain: string) => void;
   onAddDomainClick: () => void;
+  onRemoveDomain?: (domain: string) => void;
   showTimeRange?: boolean;
   timeRange?: TimeRange;
   onTimeRangeChange?: (range: TimeRange) => void;
@@ -40,6 +41,7 @@ export function DomainSelectorBar({
   selectedDomain,
   onDomainChange,
   onAddDomainClick,
+  onRemoveDomain,
   showTimeRange = false,
   timeRange = 'live',
   onTimeRangeChange,
@@ -108,19 +110,37 @@ export function DomainSelectorBar({
 
                   {viDomains.map((domain) => {
                     const hasViTracking = trackedSet.has(domain);
+                    const isUserAdded = userAddedSet.has(domain) && !hasViTracking;
                     return (
-                      <SelectItem
-                        key={domain}
-                        value={domain}
-                        className="text-xs"
-                        indicator={hasViTracking ? (
-                          <Globe className="w-3.5 h-3.5 text-primary" />
-                        ) : undefined}
-                      >
-                        <span className="truncate max-w-[300px]" title={domain}>
-                          {domain}
-                        </span>
-                      </SelectItem>
+                      <div key={domain} className="flex items-center justify-between group">
+                        <SelectItem
+                          value={domain}
+                          className="text-xs flex-1"
+                          indicator={hasViTracking ? (
+                            <Globe className="w-3.5 h-3.5 text-primary" />
+                          ) : undefined}
+                        >
+                          <span className="truncate max-w-[250px]" title={domain}>
+                            {domain}
+                          </span>
+                        </SelectItem>
+                        {isUserAdded && onRemoveDomain && (
+                          <button
+                            type="button"
+                            className="p-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (confirm(`Remove "${domain}" and all its cached data?`)) {
+                                onRemoveDomain(domain);
+                              }
+                            }}
+                            title="Remove domain and all cached data"
+                          >
+                            <X className="w-3 h-3 text-destructive" />
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
 
