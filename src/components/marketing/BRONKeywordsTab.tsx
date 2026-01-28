@@ -385,21 +385,22 @@ export const BRONKeywordsTab = ({
   }, [keywords]);
 
   // Helper to get movement indicator for a position
+  // Colors: Blue = no movement, Yellow = down, Orange with glow = up
   const getMovementIndicator = (currentPos: number | null, initialPos: number | null) => {
     if (currentPos === null || initialPos === null) {
-      return { type: 'none' as const, color: 'text-muted-foreground', bgColor: '' };
+      return { type: 'none' as const, color: 'text-muted-foreground', bgColor: '', glow: false };
     }
     
     // Lower position number = better ranking
     if (currentPos < initialPos) {
-      // Improved - went up in rankings
-      return { type: 'up' as const, color: 'text-emerald-400', bgColor: 'text-emerald-400' };
+      // Improved - went up in rankings - bright orange with glow
+      return { type: 'up' as const, color: 'text-orange-400', bgColor: 'bg-orange-500/20', glow: true };
     } else if (currentPos > initialPos) {
-      // Declined - went down in rankings
-      return { type: 'down' as const, color: 'text-amber-400', bgColor: 'text-amber-400' };
+      // Declined - went down in rankings - yellow
+      return { type: 'down' as const, color: 'text-yellow-400', bgColor: 'bg-yellow-500/10', glow: false };
     } else {
-      // Same position
-      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'text-blue-400' };
+      // Same position - blue
+      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false };
     }
   };
 
@@ -666,7 +667,7 @@ export const BRONKeywordsTab = ({
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
                       {googlePos !== null ? (
-                        <div className={`flex items-center gap-1 ${googleMovement.color}`}>
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{googlePos}</span>
                           {googleMovement.type === 'up' && (
                             <TrendingUp className="w-3.5 h-3.5" />
@@ -687,7 +688,7 @@ export const BRONKeywordsTab = ({
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
                       {bingPos !== null ? (
-                        <div className={`flex items-center gap-1 ${bingMovement.color}`}>
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{bingPos}</span>
                           {bingMovement.type === 'up' && (
                             <TrendingUp className="w-3.5 h-3.5" />
@@ -708,7 +709,7 @@ export const BRONKeywordsTab = ({
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
                       {yahooPos !== null ? (
-                        <div className={`flex items-center gap-1 ${yahooMovement.color}`}>
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
                           <span className="text-lg font-bold">#{yahooPos}</span>
                           {yahooMovement.type === 'up' && (
                             <TrendingUp className="w-3.5 h-3.5" />
