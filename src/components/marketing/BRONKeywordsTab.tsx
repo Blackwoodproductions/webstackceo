@@ -746,10 +746,10 @@ export const BRONKeywordsTab = ({
                         </div>
                       </div>
                       {/* Article Content */}
-                      <div className="max-h-[200px] overflow-y-auto bg-background text-foreground">
+                      <div className="bg-background text-foreground">
                         <article className="p-4">
                           <div
-                            className="prose prose-sm max-w-none"
+                            className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
                             dangerouslySetInnerHTML={{
                               __html:
                                 inlineEditForms[kw.id]?.resfeedtext ||
