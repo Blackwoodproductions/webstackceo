@@ -231,9 +231,15 @@ const RankingsDisplay = memo(({
 
   return (
     <div className="flex items-center justify-center gap-1">
-      {renderRanking(googlePos, getMovementFromDelta(googleMovement))}
-      {renderRanking(bingPos, getMovementFromDelta(bingMovement))}
-      {renderRanking(yahooPos, getMovementFromDelta(yahooMovement))}
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(googlePos, getMovementFromDelta(googleMovement))}
+      </div>
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(bingPos, getMovementFromDelta(bingMovement))}
+      </div>
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(yahooPos, getMovementFromDelta(yahooMovement))}
+      </div>
     </div>
   );
 });
@@ -475,7 +481,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 5: Keyword Metrics */}
-            <div className="w-[180px] flex-shrink-0">
+            <div className="w-[140px] flex-shrink-0">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
@@ -484,7 +490,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 6: Links Display */}
-            <div className="w-[90px] flex-shrink-0 flex justify-center">
+            <div className="w-[80px] flex-shrink-0 flex justify-center">
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40">
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-semibold text-cyan-400">{linksInCount}</span>
