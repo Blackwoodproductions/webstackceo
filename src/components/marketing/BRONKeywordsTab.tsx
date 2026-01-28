@@ -272,32 +272,78 @@ export const BRONKeywordsTab = memo(({
   }, [selectedDomain, serpHistory, onFetchSerpDetail]);
 
   // Fetch keyword metrics
+  // Extract core keyword without location suffixes for national volume lookup
+  const extractCoreKeyword = useCallback((fullKeyword: string): string => {
+    let core = fullKeyword.toLowerCase().trim();
+    
+    // Common location prepositions and patterns to split on
+    const locationPatterns = [
+      / in /i, / near /i, / at /i, / for /i,
+      / port /i, / vancouver /i, / burnaby /i, / surrey /i, / richmond /i,
+      / coquitlam/i, / langley /i, / abbotsford /i, / delta /i, / maple ridge/i,
+      / bc$/i, / british columbia$/i, / canada$/i,
+      / ca$/i, / california$/i, / ny$/i, / new york$/i, / tx$/i, / texas$/i,
+      / fl$/i, / florida$/i, / il$/i, / illinois$/i, / pa$/i, / ohio$/i,
+      / los angeles/i, / san francisco/i, / seattle/i, / portland/i,
+      / chicago/i, / houston/i, / dallas/i, / miami/i, / atlanta/i,
+      / boston/i, / denver/i, / phoenix/i, / san diego/i,
+    ];
+    
+    for (const pattern of locationPatterns) {
+      const match = core.match(pattern);
+      if (match && match.index !== undefined) {
+        core = core.substring(0, match.index).trim();
+      }
+    }
+    
+    // Remove trailing "near me" variations
+    core = core.replace(/\s+near\s*me\s*$/i, '').trim();
+    
+    return core;
+  }, []);
+
   useEffect(() => {
     const fetchMetrics = async () => {
       if (keywords.length === 0) return;
       
-      const keywordTexts = keywords
-        .map(k => getKeywordDisplayText(k).split(' in ')[0].split(' Port ')[0].split(' Vancouver')[0].trim())
-        .filter(k => k && !k.startsWith('Keyword #') && k.length > 2)
-        .slice(0, 50);
+      // Extract unique core keywords (national terms without location)
+      const coreKeywordMap = new Map<string, string>(); // core -> first full keyword
       
-      if (keywordTexts.length === 0) return;
+      for (const kw of keywords) {
+        const fullText = getKeywordDisplayText(kw);
+        const coreText = extractCoreKeyword(fullText);
+        if (coreText && coreText.length > 2 && !coreText.startsWith('keyword #')) {
+          if (!coreKeywordMap.has(coreText)) {
+            coreKeywordMap.set(coreText, fullText);
+          }
+        }
+      }
+      
+      const uniqueCoreKeywords = Array.from(coreKeywordMap.keys()).slice(0, 50);
+      
+      if (uniqueCoreKeywords.length === 0) return;
+      
+      console.log('[BRON] Fetching national keyword metrics for:', uniqueCoreKeywords.slice(0, 5));
       
       setMetricsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('keyword-metrics', {
-          body: { keywords: keywordTexts }
+          body: { keywords: uniqueCoreKeywords }
         });
         
         if (!error && data?.metrics) {
-          const enrichedMetrics = { ...data.metrics };
+          // Map core keyword metrics back to all full keywords
+          const enrichedMetrics: Record<string, any> = {};
+          
           for (const kw of keywords) {
             const fullText = getKeywordDisplayText(kw).toLowerCase();
-            const coreText = fullText.split(' in ')[0].split(' port ')[0].split(' vancouver')[0].trim();
-            if (data.metrics[coreText] && !enrichedMetrics[fullText]) {
+            const coreText = extractCoreKeyword(fullText);
+            
+            if (data.metrics[coreText]) {
               enrichedMetrics[fullText] = data.metrics[coreText];
             }
           }
+          
           setKeywordMetrics(enrichedMetrics);
         }
       } catch (err) {
@@ -308,7 +354,7 @@ export const BRONKeywordsTab = memo(({
     };
     
     fetchMetrics();
-  }, [keywords]);
+  }, [keywords, extractCoreKeyword]);
 
   // Fetch PageSpeed scores
   useEffect(() => {
