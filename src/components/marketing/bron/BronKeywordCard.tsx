@@ -421,8 +421,8 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 3: Intent Badge */}
-            <div className="w-[140px] flex-shrink-0 flex justify-center">
-              <div className="bg-card border border-border/60 rounded-md px-3 py-1.5 flex items-center gap-2 justify-center">
+            <div className="w-[140px] flex-shrink-0 flex items-center justify-center">
+              <div className="w-[130px] bg-card border border-border/60 rounded-md px-3 py-1.5 flex items-center gap-2 justify-center">
                 <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                   <IntentIcon className={`w-3 h-3 ${intent.color}`} />
                 </div>
