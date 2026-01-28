@@ -30,37 +30,17 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
         // Get current user if authenticated
         const { data: { user } } = await supabase.auth.getUser();
 
-        // Idempotent session creation (React StrictMode can run effects twice in dev)
-        // ignoreDuplicates prevents 409 conflict errors from double inserts.
-        const { data: existingSession } = await (supabase
-          .from('visitor_sessions') as any)
-          .select('id, user_id')
-          .eq('session_id', sessionId.current)
-          .maybeSingle();
-
-        if (!existingSession) {
-          await (supabase.from('visitor_sessions') as any).upsert(
-            {
-              session_id: sessionId.current,
-              first_page: window.location.pathname,
-              referrer: document.referrer || null,
-              user_agent: navigator.userAgent,
-              ip_hash: null,
-              user_id: user?.id || null,
-            },
-            {
-              onConflict: 'session_id',
-              ignoreDuplicates: true,
-            }
-          );
-        }
-
-        // If user is authenticated and session row doesn't have user_id yet, update it.
-        if (user && existingSession && !existingSession.user_id) {
-          await (supabase.from('visitor_sessions') as any)
-            .update({ user_id: user.id })
-            .eq('session_id', sessionId.current);
-        }
+        // Route all writes through backend function to avoid RLS/anon write failures.
+        await supabase.functions.invoke('visitor-session-track', {
+          body: {
+            action: 'init',
+            session_id: sessionId.current,
+            first_page: window.location.pathname,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent,
+            // user_id is derived server-side from the caller JWT (if any)
+          },
+        });
         setSessionReady(true);
       } catch (error) {
         // Still mark as ready to not block the app
@@ -77,9 +57,15 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
         // Update session with user_id when user logs in
         setTimeout(async () => {
           try {
-            await (supabase.from('visitor_sessions') as any)
-              .update({ user_id: session.user.id })
-              .eq('session_id', sessionId.current);
+            await supabase.functions.invoke('visitor-session-track', {
+              body: {
+                action: 'touch',
+                session_id: sessionId.current,
+                first_page: window.location.pathname,
+                referrer: document.referrer || null,
+                user_agent: navigator.userAgent,
+              },
+            });
           } catch {
             // Silent fail
           }
@@ -90,10 +76,15 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
     // Update activity every 30 seconds
     const interval = setInterval(async () => {
       try {
-        await supabase
-          .from('visitor_sessions')
-          .update({ last_activity_at: new Date().toISOString() })
-          .eq('session_id', sessionId.current);
+        await supabase.functions.invoke('visitor-session-track', {
+          body: {
+            action: 'touch',
+            session_id: sessionId.current,
+            first_page: window.location.pathname,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent,
+          },
+        });
       } catch {
         // Silent fail
       }
@@ -122,12 +113,15 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
       }
 
       try {
-        await supabase.from('page_views').insert({
-          session_id: sessionId.current,
-          page_path: location.pathname,
-          page_title: document.title,
-          time_on_page: 0,
-          scroll_depth: 0,
+        await supabase.functions.invoke('visitor-session-track', {
+          body: {
+            action: 'page_view',
+            session_id: sessionId.current,
+            page_path: location.pathname,
+            page_title: document.title,
+            time_on_page: 0,
+            scroll_depth: 0,
+          },
         });
       } catch (error) {
         console.error('Page view tracking error:', error);
