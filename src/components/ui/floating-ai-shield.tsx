@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,6 +8,7 @@ const FloatingAIShield = memo(() => {
   const [isShieldGold, setIsShieldGold] = useState(false);
   const [topPosition, setTopPosition] = useState('78%');
   const [opacity, setOpacity] = useState(1);
+  const throttleRef = useRef(false);
 
   // Delay render until auth is stable
   useEffect(() => {
@@ -39,35 +40,42 @@ const FloatingAIShield = memo(() => {
     return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange as EventListener);
   }, []);
 
-  // Handle scroll to stop above footer and fade out
+  // Handle scroll to stop above footer and fade out (throttled)
   useEffect(() => {
     const handleScroll = () => {
-      const footer = document.querySelector('footer');
-      if (!footer) return;
+      if (throttleRef.current) return;
+      throttleRef.current = true;
+      
+      requestAnimationFrame(() => {
+        const footer = document.querySelector('footer');
+        if (!footer) {
+          throttleRef.current = false;
+          return;
+        }
 
-      const footerRect = footer.getBoundingClientRect();
-      const elementHeight = 56; // 14 * 4 = h-14
-      const buffer = 40; // Space above footer
-      const defaultTop = window.innerHeight * 0.72;
-      const fadeStartDistance = 150; // Start fading when this close to footer
-      
-      // Calculate max position (above footer)
-      const maxTop = footerRect.top - elementHeight - buffer;
-      
-      // Calculate opacity based on proximity to footer
-      const distanceToFooter = footerRect.top - defaultTop - elementHeight;
-      if (distanceToFooter < fadeStartDistance) {
-        const fadeProgress = Math.max(0, distanceToFooter / fadeStartDistance);
-        setOpacity(fadeProgress);
-      } else {
-        setOpacity(1);
-      }
-      
-      if (defaultTop > maxTop) {
-        setTopPosition(`${maxTop}px`);
-      } else {
-        setTopPosition('72%');
-      }
+        const footerRect = footer.getBoundingClientRect();
+        const elementHeight = 56;
+        const buffer = 40;
+        const defaultTop = window.innerHeight * 0.72;
+        const fadeStartDistance = 150;
+        
+        const maxTop = footerRect.top - elementHeight - buffer;
+        
+        const distanceToFooter = footerRect.top - defaultTop - elementHeight;
+        if (distanceToFooter < fadeStartDistance) {
+          const fadeProgress = Math.max(0, distanceToFooter / fadeStartDistance);
+          setOpacity(fadeProgress);
+        } else {
+          setOpacity(1);
+        }
+        
+        if (defaultTop > maxTop) {
+          setTopPosition(`${maxTop}px`);
+        } else {
+          setTopPosition('72%');
+        }
+        throttleRef.current = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
