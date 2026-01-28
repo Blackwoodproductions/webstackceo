@@ -748,10 +748,13 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 2: Keyword Text - flex grow to use available space */}
-              <div className="flex-1 min-w-[200px] max-w-[380px] pr-4">
+              {/* Column 2: Keyword Text - flex grow to use more available space */}
+              <div className="flex-1 min-w-[280px] max-w-[480px] pr-6 group/keyword">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-foreground whitespace-nowrap truncate">
+                  <h3 
+                    className="font-medium text-foreground truncate"
+                    title={keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
+                  >
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
                   {active && (
@@ -919,35 +922,39 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 6: Links - 180px */}
-              <div className="w-[180px] flex-shrink-0 flex justify-center gap-3">
-                {/* Inbound Links */}
-                <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                      <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
-                    </div>
-                    <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
+              {/* Column 6: Combined Links Button (also acts as expand indicator) */}
+              <div 
+                className={`
+                  flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all duration-200
+                  bg-gradient-to-br from-primary/10 to-primary/5 border
+                  ${expanded 
+                    ? 'border-primary/50 ring-1 ring-primary/30 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)]' 
+                    : 'border-primary/20 hover:border-primary/40 hover:bg-primary/10'
+                  }
+                `}
+              >
+                {/* Inbound */}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                    <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
                   </div>
-                  <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
+                  <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
                 </div>
                 
-                {/* Outbound Links */}
-                <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
-                      <ArrowUpRight className="w-3 h-3 text-violet-400" />
-                    </div>
-                    <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
+                {/* Divider */}
+                <div className="w-px h-5 bg-border/50" />
+                
+                {/* Outbound */}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
+                    <ArrowUpRight className="w-3 h-3 text-violet-400" />
                   </div>
-                  <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
+                  <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
                 </div>
-              </div>
-
-              {/* Column 7: Expand Arrow - 40px */}
-              <div className="w-[40px] flex-shrink-0 flex justify-center">
+                
+                {/* Expand Arrow */}
                 <ChevronRight 
-                  className={`w-5 h-5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+                  className={`w-4 h-4 transition-transform duration-150 ml-1 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
                 />
               </div>
             </div>
