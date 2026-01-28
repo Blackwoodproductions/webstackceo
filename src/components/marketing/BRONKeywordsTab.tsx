@@ -642,20 +642,15 @@ export const BRONKeywordsTab = ({
                     <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                   )}
                 </div>
-                {/* Hover tooltip with intent type */}
-                <div className="absolute left-0 top-full mt-1 opacity-0 group-hover/keyword:opacity-100 pointer-events-none z-50 transition-opacity duration-200">
-                  <div className="bg-card border border-border/60 shadow-xl rounded-lg px-3 py-2 flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
-                      <IntentIcon className={`w-4 h-4 ${intent.color}`} />
+                {/* Hover tooltip with intent type - positioned to the right */}
+                <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/keyword:opacity-100 pointer-events-none z-50 transition-opacity duration-200">
+                  <div className="bg-card border border-border/60 shadow-lg rounded-md px-2 py-1.5 flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
+                      <IntentIcon className={`w-3.5 h-3.5 ${intent.color}`} />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium text-foreground whitespace-nowrap">
-                        {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
-                      </span>
-                      <span className={`text-[10px] font-medium capitalize ${intent.color}`}>
-                        {intent.type} Intent
-                      </span>
-                    </div>
+                    <span className={`text-xs font-medium capitalize ${intent.color} whitespace-nowrap`}>
+                      {intent.type}
+                    </span>
                   </div>
                 </div>
               </div>
