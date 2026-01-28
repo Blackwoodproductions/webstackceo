@@ -3,7 +3,8 @@ import {
   Key, RefreshCw, Plus, Edit2, Trash2, RotateCcw, 
   Search, ChevronRight, Save, Eye,
   ChevronUp, FileText, Link2, Hash, 
-  Sparkles, X, BarChart3, TrendingUp, TrendingDown, Minus
+  Sparkles, X, BarChart3, TrendingUp, TrendingDown, Minus,
+  ShoppingCart, Info, Compass, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -209,6 +210,32 @@ function getMetaDescQuality(desc: string): { score: 'good' | 'warning' | 'poor';
   return { score: 'warning', label: `${len}/160 (long)` };
 }
 
+// Detect keyword intent type based on keyword text
+function getKeywordIntent(keyword: string): { type: 'transactional' | 'commercial' | 'informational' | 'navigational'; icon: typeof ShoppingCart; color: string; bgColor: string } {
+  const kw = keyword.toLowerCase();
+  
+  // Transactional keywords - user wants to buy/act now
+  const transactionalPatterns = ['buy', 'purchase', 'order', 'book', 'hire', 'get', 'download', 'subscribe', 'sign up', 'register', 'schedule', 'appointment', 'quote', 'pricing', 'cost', 'price', 'deal', 'discount', 'coupon', 'free trial'];
+  if (transactionalPatterns.some(p => kw.includes(p))) {
+    return { type: 'transactional', icon: ShoppingCart, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' };
+  }
+  
+  // Commercial keywords - user is researching before buying
+  const commercialPatterns = ['best', 'top', 'review', 'vs', 'versus', 'compare', 'comparison', 'alternative', 'affordable', 'cheap', 'premium', 'professional', 'rated', 'recommended', 'trusted'];
+  if (commercialPatterns.some(p => kw.includes(p))) {
+    return { type: 'commercial', icon: Target, color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' };
+  }
+  
+  // Navigational keywords - user looking for specific brand/page
+  const navigationalPatterns = ['login', 'sign in', 'website', 'official', 'contact', 'near me', 'location', 'address', 'hours', 'directions'];
+  if (navigationalPatterns.some(p => kw.includes(p))) {
+    return { type: 'navigational', icon: Compass, color: 'text-blue-400', bgColor: 'bg-blue-500/20 border-blue-500/30' };
+  }
+  
+  // Default to informational - user seeking information
+  return { type: 'informational', icon: Info, color: 'text-violet-400', bgColor: 'bg-violet-500/20 border-violet-500/30' };
+}
+
 export const BRONKeywordsTab = ({
   keywords,
   serpReports = [],
@@ -360,6 +387,10 @@ export const BRONKeywordsTab = ({
     const duckPos = getPosition(serpData?.duck);
     const hasRankings = googlePos !== null || bingPos !== null || yahooPos !== null || duckPos !== null;
 
+    // Get keyword intent type
+    const intent = getKeywordIntent(keywordText);
+    const IntentIcon = intent.icon;
+
     const scoreColor = (score: 'good' | 'warning' | 'poor') => ({
       good: 'text-emerald-400',
       warning: 'text-amber-400',
@@ -386,21 +417,20 @@ export const BRONKeywordsTab = ({
           `}
           style={{ contain: 'layout paint' }}
         >
-          {/* Clickable header */}
+          {/* Clickable header - simplified: keyword + intent icon */}
           <div 
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Header row */}
             <div className="flex items-center gap-3">
-              {/* Icon */}
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/20 flex items-center justify-center">
-                <Key className="w-5 h-5 text-primary" />
+              {/* Intent Type Icon */}
+              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
+                <IntentIcon className={`w-5 h-5 ${intent.color}`} />
               </div>
 
-              {/* Title & Meta */}
+              {/* Keyword Text */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground truncate">
                     {getKeywordDisplayText(kw)}
                   </h3>
@@ -408,147 +438,18 @@ export const BRONKeywordsTab = ({
                     <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                   )}
                 </div>
-                
-                {/* Target Keyword - show when different from title */}
-                {kw.keyword && kw.keywordtitle && kw.keyword.trim().toLowerCase() !== kw.keywordtitle.trim().toLowerCase() && !expanded && (
-                  <p className="text-xs text-primary font-medium truncate max-w-lg mb-0.5">
-                    Keyword: {kw.keyword}
-                  </p>
-                )}
-                
-                {/* Meta description preview */}
-                {kw.metadescription && !expanded && (
-                  <p className="text-xs text-muted-foreground line-clamp-1 max-w-lg">
-                    {kw.metadescription}
-                  </p>
-                )}
               </div>
 
-              {/* SERP Rankings - right side */}
-              {hasRankings && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {googlePos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
-                      <span className="font-semibold">Google</span>
-                      <span className="text-sm font-bold">#{googlePos}</span>
-                      {googlePos <= 10 ? (
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : googlePos <= 20 ? (
-                        <Minus className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                      )}
-                    </div>
-                  )}
-                  {bingPos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
-                      <span className="font-semibold">Bing</span>
-                      <span className="text-sm font-bold">#{bingPos}</span>
-                      {bingPos <= 10 ? (
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : bingPos <= 20 ? (
-                        <Minus className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                      )}
-                    </div>
-                  )}
-                  {yahooPos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
-                      <span className="font-semibold">Yahoo</span>
-                      <span className="text-sm font-bold">#{yahooPos}</span>
-                      {yahooPos <= 10 ? (
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : yahooPos <= 20 ? (
-                        <Minus className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                      )}
-                    </div>
-                  )}
-                  {duckPos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(duckPos).bg} ${getPositionStyle(duckPos).text} border`}>
-                      <span className="font-semibold">DuckDuckGo</span>
-                      <span className="text-sm font-bold">#{duckPos}</span>
-                      {duckPos <= 10 ? (
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : duckPos <= 20 ? (
-                        <Minus className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Status & Expand */}
+              {/* Intent Type Label + Expand */}
               <div className="flex items-center gap-3 flex-shrink-0">
-                <Badge 
-                  className={`
-                    text-[10px] px-2.5 py-0.5 rounded-full font-medium
-                    ${active 
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
-                      : deleted 
-                        ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                        : 'bg-muted/50 text-muted-foreground border border-border/50'
-                    }
-                  `}
-                >
-                  {deleted ? 'Deleted' : active ? 'Active' : 'Draft'}
-                </Badge>
+                <span className={`text-xs font-medium capitalize ${intent.color}`}>
+                  {intent.type}
+                </span>
                 <ChevronRight 
                   className={`w-5 h-5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
                 />
               </div>
             </div>
-
-            {/* Stats preview row - only when collapsed */}
-            {!expanded && (
-              <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/30">
-                {/* Word count */}
-                <div className="flex items-center gap-1.5 text-xs">
-                  <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className={wordCount > 0 ? 'text-foreground' : 'text-muted-foreground'}>
-                    {wordCount > 0 ? `${wordCount} words` : 'No content'}
-                  </span>
-                </div>
-
-                {/* Links indicator */}
-                {hasLinks && (
-                  <>
-                    <div className="w-px h-3 bg-border/50" />
-                    <div className="flex items-center gap-1 text-xs text-cyan-400">
-                      <Link2 className="w-3 h-3" />
-                      <span>Links</span>
-                    </div>
-                  </>
-                )}
-
-                {/* Last edited - pushed right */}
-                <div className="ml-auto text-[11px] text-muted-foreground">
-                  {formatDate(kw.createdDate)}
-                </div>
-              </div>
-            )}
-
-            {/* Deleted restore button */}
-            {deleted && (
-              <div className="mt-3 pt-3 border-t border-border/30">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRestore(String(kw.id));
-                  }}
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                  Restore Keyword
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* Expanded Content - simple show/hide, no animation */}
