@@ -389,21 +389,38 @@ export const BRONKeywordsTab = ({
     const fetchMetrics = async () => {
       if (keywords.length === 0) return;
       
+      // Extract clean keyword texts - remove location suffixes for API lookup
       const keywordTexts = keywords
-        .map(k => getKeywordDisplayText(k))
-        .filter(k => k && !k.startsWith('Keyword #'))
-        .slice(0, 50); // Limit to 50 keywords per batch
+        .map(k => {
+          let text = getKeywordDisplayText(k);
+          // Extract just the core keyword phrase (before any location like "Port Coquitlam")
+          // This improves matching with DataForSEO which uses generic keywords
+          return text.split(' in ')[0].split(' Port ')[0].split(' Vancouver')[0].trim();
+        })
+        .filter(k => k && !k.startsWith('Keyword #') && k.length > 2)
+        .slice(0, 50);
       
       if (keywordTexts.length === 0) return;
       
       setMetricsLoading(true);
       try {
+        console.log('Fetching metrics for keywords:', keywordTexts);
         const { data, error } = await supabase.functions.invoke('keyword-metrics', {
           body: { keywords: keywordTexts }
         });
         
         if (!error && data?.metrics) {
-          setKeywordMetrics(data.metrics);
+          console.log('Received metrics:', Object.keys(data.metrics));
+          // Also map full keyword texts to their core versions for lookup
+          const enrichedMetrics = { ...data.metrics };
+          for (const kw of keywords) {
+            const fullText = getKeywordDisplayText(kw).toLowerCase();
+            const coreText = fullText.split(' in ')[0].split(' port ')[0].split(' vancouver')[0].trim();
+            if (data.metrics[coreText] && !enrichedMetrics[fullText]) {
+              enrichedMetrics[fullText] = data.metrics[coreText];
+            }
+          }
+          setKeywordMetrics(enrichedMetrics);
         }
       } catch (err) {
         console.error('Failed to fetch keyword metrics:', err);
@@ -783,56 +800,50 @@ export const BRONKeywordsTab = ({
                   const yahooMovement = getMovementFromDelta(yahooData.movement);
                   
                   return (
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-3 gap-6 text-center">
                       {/* Google Column */}
                       <div className="flex flex-col items-center">
                         <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
-                        {googlePos !== null ? (
-                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                            <span className="text-lg font-bold">#{googlePos}</span>
-                            {googleMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                            {googleMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                            {googleMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                          </div>
-                        ) : (
-                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                          </div>
-                        )}
+                        <div className={`flex items-center justify-center gap-1 ${googleMovement.color}`}>
+                          <span className="text-xl font-bold">{googlePos !== null ? `#${googlePos}` : '—'}</span>
+                          {googlePos !== null && (
+                            <>
+                              {googleMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
+                              {googleMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
+                              {googleMovement.type === 'down' && <Activity className="w-4 h-4" />}
+                            </>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Bing Column */}
                       <div className="flex flex-col items-center">
                         <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
-                        {bingPos !== null ? (
-                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                            <span className="text-lg font-bold">#{bingPos}</span>
-                            {bingMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                            {bingMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                            {bingMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                          </div>
-                        ) : (
-                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                          </div>
-                        )}
+                        <div className={`flex items-center justify-center gap-1 ${bingMovement.color}`}>
+                          <span className="text-xl font-bold">{bingPos !== null ? `#${bingPos}` : '—'}</span>
+                          {bingPos !== null && (
+                            <>
+                              {bingMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
+                              {bingMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
+                              {bingMovement.type === 'down' && <Activity className="w-4 h-4" />}
+                            </>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Yahoo Column */}
                       <div className="flex flex-col items-center">
                         <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
-                        {yahooPos !== null ? (
-                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                            <span className="text-lg font-bold">#{yahooPos}</span>
-                            {yahooMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                            {yahooMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                            {yahooMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                          </div>
-                        ) : (
-                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                          </div>
-                        )}
+                        <div className={`flex items-center justify-center gap-1 ${yahooMovement.color}`}>
+                          <span className="text-xl font-bold">{yahooPos !== null ? `#${yahooPos}` : '—'}</span>
+                          {yahooPos !== null && (
+                            <>
+                              {yahooMovement.type === 'up' && <TrendingUp className="w-4 h-4" />}
+                              {yahooMovement.type === 'same' && <Minus className="w-4 h-4 opacity-50" />}
+                              {yahooMovement.type === 'down' && <Activity className="w-4 h-4" />}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
