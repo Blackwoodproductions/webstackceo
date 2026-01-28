@@ -68,7 +68,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpandableRow';
-import { DomainSelectorBar } from '@/components/marketing/DomainSelectorBar';
+
 import { GMBPanel } from '@/components/marketing/GMBPanel';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
 
@@ -1912,6 +1912,7 @@ const MarketingDashboard = () => {
             ))}
           </div>
         
+        {/* Row 1: Logo and User Controls */}
         <div className="relative z-10 px-8 py-3 flex items-center justify-between">
           {/* Left: Logo */}
           <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group flex-shrink-0">
@@ -1997,31 +1998,162 @@ const MarketingDashboard = () => {
             </DropdownMenu>
           </div>
         </div>
-        </header>
-      </div>
+        
+        {/* Row 2: Domain Selector - Integrated into header */}
+        <div className="relative z-10 px-8 py-2 flex items-center justify-between border-t border-border/30 bg-background/30">
+          {/* Left: Domain Selector & Time Range */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Domain Selector */}
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10">
+                <Globe className="w-4 h-4 text-primary" />
+              </div>
 
-      {/* Domain Selector Bar - Show on all tabs */}
-      <DomainSelectorBar
-        trackedDomains={trackedDomains}
-        userAddedDomains={userAddedDomains}
-        selectedDomain={selectedTrackedDomain}
-        onDomainChange={(value) => {
-          setSelectedTrackedDomain(value);
-          setSelectedDomainKey(value);
-          // Check if this domain has tracking installed
-          const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
-          setGscDomainHasTracking(hasTracking);
-        }}
-        onAddDomainClick={() => setAddDomainDialogOpen(true)}
-        showTimeRange={activeTab === 'visitor-intelligence'}
-        timeRange={diagramTimeRange}
-        onTimeRangeChange={setDiagramTimeRange}
-        customDateRange={diagramCustomDateRange}
-        onCustomDateRangeChange={setDiagramCustomDateRange}
-        showPageFilter={activeTab === 'visitor-intelligence'}
-        pageFilter={pageFilter}
-        rightContent={(
-          <>
+              <Select 
+                value={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''} 
+                onValueChange={(value) => {
+                  setSelectedTrackedDomain(value);
+                  setSelectedDomainKey(value);
+                  const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
+                  setGscDomainHasTracking(hasTracking);
+                }}
+              >
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50">
+                  <SelectValue placeholder="Select domain" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px]">
+                  {(() => {
+                    const trackedSet = new Set(trackedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
+                    const userAddedSet = new Set(userAddedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
+                    const viDomains = [...new Set([...trackedSet, ...userAddedSet])].filter(Boolean);
+                    
+                    return (
+                      <>
+                        {viDomains.length === 0 && (
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                            No domains yet
+                          </div>
+                        )}
+                        {viDomains.map((domain) => {
+                          const hasViTracking = trackedSet.has(domain);
+                          return (
+                            <SelectItem
+                              key={domain}
+                              value={domain}
+                              className="text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                {hasViTracking && <Globe className="w-3.5 h-3.5 text-primary" />}
+                                <span className="truncate max-w-[300px]" title={domain}>
+                                  {domain}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                        <SelectSeparator />
+                        <div 
+                          className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddDomainDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add domain
+                        </div>
+                      </>
+                    );
+                  })()}
+                </SelectContent>
+              </Select>
+              
+              {/* Live indicator */}
+              <span className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                LIVE
+              </span>
+            </div>
+
+            <div className="w-px h-5 bg-border/50" />
+            
+            {/* Time Range Selector - only on VI tab */}
+            {activeTab === 'visitor-intelligence' && (
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-primary" />
+                <Select value={diagramTimeRange} onValueChange={(value: TimeRange) => setDiagramTimeRange(value)}>
+                  <SelectTrigger className="w-[130px] h-7 text-sm bg-background/80 border-border/50">
+                    <SelectValue placeholder="Range" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50">
+                    <SelectItem value="live">Last 24h</SelectItem>
+                    <SelectItem value="yesterday">Yesterday</SelectItem>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="6months">6 Months</SelectItem>
+                    <SelectItem value="1year">Year</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {/* Custom date range pickers */}
+                {diagramTimeRange === 'custom' && (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3 bg-background/80", !diagramCustomDateRange?.from && "text-muted-foreground")}>
+                          {diagramCustomDateRange?.from ? format(diagramCustomDateRange.from, "MMM d, yyyy") : "Start date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover/95 backdrop-blur-sm border border-border z-50" align="start">
+                        <Calendar 
+                          mode="single" 
+                          selected={diagramCustomDateRange?.from} 
+                          onSelect={(date) => setDiagramCustomDateRange({ ...diagramCustomDateRange, from: date, to: diagramCustomDateRange?.to })} 
+                          initialFocus 
+                          className="p-3 pointer-events-auto" 
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <span className="text-sm text-muted-foreground">to</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className={cn("h-7 text-sm px-3 bg-background/80", !diagramCustomDateRange?.to && "text-muted-foreground")}>
+                          {diagramCustomDateRange?.to ? format(diagramCustomDateRange.to, "MMM d, yyyy") : "End date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover/95 backdrop-blur-sm border border-border z-50" align="start">
+                        <Calendar 
+                          mode="single" 
+                          selected={diagramCustomDateRange?.to} 
+                          onSelect={(date) => setDiagramCustomDateRange({ from: diagramCustomDateRange?.from, to: date })} 
+                          initialFocus 
+                          className="p-3 pointer-events-auto" 
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+                
+                {/* Page filter badge */}
+                {pageFilter && (
+                  <Badge variant="secondary" className="flex items-center gap-2 px-2 py-0.5 h-7 bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                    <Filter className="w-3 h-3" />
+                    {pageFilter === '/' ? 'Homepage' : pageFilter}
+                    <button onClick={() => setPageFilter(null)} className="ml-1 hover:bg-purple-500/30 rounded p-0.5 transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* Free SEO Audit / Case Study Pill */}
             {selectedTrackedDomain && (
               <Button
@@ -2029,10 +2161,8 @@ const MarketingDashboard = () => {
                 onClick={() => {
                   const cleanDomain = selectedTrackedDomain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
                   if (savedAuditForDomain) {
-                    // Navigate to case study page
                     navigate(`/case-study/${encodeURIComponent(cleanDomain)}`);
                   } else {
-                    // Run audit first, then navigate
                     triggerAutoAudit(cleanDomain);
                     navigate(`/audit/${encodeURIComponent(cleanDomain)}`);
                   }
@@ -2108,10 +2238,10 @@ const MarketingDashboard = () => {
                 </Select>
               </div>
             )}
-          </>
-        )}
-      />
-
+          </div>
+        </div>
+        </header>
+      </div>
       {/* Main Layout - Only show for Visitor Intelligence tab */}
       {activeTab === 'visitor-intelligence' && (
       <div className="relative max-w-[1480px] mx-auto group/main">
