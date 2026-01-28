@@ -188,15 +188,78 @@ function saveCachedPages(domain: string, pages: BronPage[]) {
 }
 
 // ─── Keyword Data Cache ───
-const KEYWORD_CACHE_KEY = 'bron_keywords_cache';
+// NOTE: V1 stored ALL domains under one key which could exceed localStorage quota and
+// prevent newer domains from being cached (leading to slow domain switching).
+// V2 stores each domain in its own key and keeps a small index for eviction.
+const KEYWORD_CACHE_KEY = 'bron_keywords_cache'; // legacy (v1)
+const KEYWORD_CACHE_V2_PREFIX = 'bron_keywords_cache_v2_';
+const KEYWORD_CACHE_V2_INDEX_KEY = 'bron_keywords_cache_v2_index';
 
 interface KeywordCacheEntry {
   keywords: BronKeyword[];
   cachedAt: number;
 }
 
+interface KeywordCacheIndexEntry {
+  cachedAt: number;
+  count: number;
+}
+
+function getKeywordV2Key(domain: string) {
+  return `${KEYWORD_CACHE_V2_PREFIX}${domain}`;
+}
+
+function loadKeywordV2Index(): Record<string, KeywordCacheIndexEntry> {
+  try {
+    const raw = localStorage.getItem(KEYWORD_CACHE_V2_INDEX_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, KeywordCacheIndexEntry>;
+  } catch {
+    return {};
+  }
+}
+
+function saveKeywordV2Index(index: Record<string, KeywordCacheIndexEntry>) {
+  try {
+    localStorage.setItem(KEYWORD_CACHE_V2_INDEX_KEY, JSON.stringify(index));
+  } catch {
+    // Best-effort; index not strictly required for cache reads
+  }
+}
+
+function evictOldestKeywordV2Entries(index: Record<string, KeywordCacheIndexEntry>, keepDomain?: string) {
+  const domains = Object.keys(index);
+  if (domains.length <= MAX_CACHED_DOMAINS) return;
+
+  const sorted = domains
+    .filter((d) => d !== keepDomain)
+    .sort((a, b) => (index[a]?.cachedAt ?? 0) - (index[b]?.cachedAt ?? 0));
+
+  while (Object.keys(index).length > MAX_CACHED_DOMAINS && sorted.length > 0) {
+    const oldest = sorted.shift();
+    if (!oldest) break;
+    try {
+      localStorage.removeItem(getKeywordV2Key(oldest));
+    } catch {
+      // ignore
+    }
+    delete index[oldest];
+  }
+}
+
 function loadCachedKeywords(domain: string): BronKeyword[] | null {
   try {
+    // Prefer V2 per-domain cache
+    const v2Raw = localStorage.getItem(getKeywordV2Key(domain));
+    if (v2Raw) {
+      const entry = JSON.parse(v2Raw) as KeywordCacheEntry;
+      if (entry && (Date.now() - entry.cachedAt) <= CACHE_MAX_AGE) {
+        console.log(`[BRON] Using cached keywords for ${domain} (${entry.keywords.length} keywords)`);
+        return entry.keywords;
+      }
+    }
+
+    // Fallback to legacy V1 map (migration happens on save)
     const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
@@ -211,34 +274,73 @@ function loadCachedKeywords(domain: string): BronKeyword[] | null {
 }
 
 function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
-  try {
-    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
-    const parsed = cached ? JSON.parse(cached) as Record<string, KeywordCacheEntry> : {};
-    
-    const domains = Object.keys(parsed);
-    if (domains.length >= MAX_CACHED_DOMAINS && !parsed[domain]) {
-      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
-      delete parsed[oldest];
+  const entry: KeywordCacheEntry = { keywords, cachedAt: Date.now() };
+  const index = loadKeywordV2Index();
+  index[domain] = { cachedAt: entry.cachedAt, count: keywords.length };
+
+  // Ensure we keep at most N domains
+  evictOldestKeywordV2Entries(index, domain);
+
+  // Try to write; if quota is exceeded, evict more and retry.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      localStorage.setItem(getKeywordV2Key(domain), JSON.stringify(entry));
+      saveKeywordV2Index(index);
+      console.log(`[BRON] Cached ${keywords.length} keywords for ${domain}`);
+      return;
+    } catch (e) {
+      // Evict one more oldest entry and retry
+      const candidates = Object.keys(index)
+        .filter((d) => d !== domain)
+        .sort((a, b) => (index[a]?.cachedAt ?? 0) - (index[b]?.cachedAt ?? 0));
+
+      const victim = candidates[0];
+      if (!victim) {
+        console.warn('[BRON] Failed to save keyword cache (no eviction candidates):', e);
+        return;
+      }
+
+      try {
+        localStorage.removeItem(getKeywordV2Key(victim));
+      } catch {
+        // ignore
+      }
+      delete index[victim];
     }
-    
-    parsed[domain] = { keywords, cachedAt: Date.now() };
-    localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(parsed));
-    console.log(`[BRON] Cached ${keywords.length} keywords for ${domain}`);
-  } catch (e) {
-    console.warn('[BRON] Failed to save keyword cache:', e);
   }
+
+  console.warn('[BRON] Failed to save keyword cache after retries');
 }
 
 export function invalidateKeywordCache(domain: string) {
   try {
-    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
-    if (!cached) return;
-    const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
-    if (parsed[domain]) {
-      delete parsed[domain];
-      localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(parsed));
-      console.log(`[BRON] Invalidated keyword cache for ${domain}`);
+    // V2
+    try {
+      localStorage.removeItem(getKeywordV2Key(domain));
+    } catch {
+      // ignore
     }
+    const index = loadKeywordV2Index();
+    if (index[domain]) {
+      delete index[domain];
+      saveKeywordV2Index(index);
+    }
+
+    // Legacy V1 best-effort cleanup
+    const cached = localStorage.getItem(KEYWORD_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
+      if (parsed[domain]) {
+        delete parsed[domain];
+        try {
+          localStorage.setItem(KEYWORD_CACHE_KEY, JSON.stringify(parsed));
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    console.log(`[BRON] Invalidated keyword cache for ${domain}`);
   } catch (e) {
     console.warn('[BRON] Failed to invalidate keyword cache:', e);
   }
