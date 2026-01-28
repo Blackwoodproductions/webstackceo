@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
@@ -228,11 +227,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6" style={{ contain: "layout style paint" }}>
       {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
         <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
@@ -463,69 +458,67 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
 
-        <AnimatePresence mode="wait">
-          <TabsContent value="domains" className="mt-0">
-            <BRONDomainsTab 
-              domains={bronApi.domains}
-              isLoading={bronApi.isLoading}
-              onRefresh={bronApi.fetchDomains}
-              onUpdate={bronApi.updateDomain}
-              onDelete={bronApi.deleteDomain}
-              onRestore={bronApi.restoreDomain}
-            />
-          </TabsContent>
+        <TabsContent value="domains" className="mt-0">
+          <BRONDomainsTab 
+            domains={bronApi.domains}
+            isLoading={bronApi.isLoading}
+            onRefresh={bronApi.fetchDomains}
+            onUpdate={bronApi.updateDomain}
+            onDelete={bronApi.deleteDomain}
+            onRestore={bronApi.restoreDomain}
+          />
+        </TabsContent>
 
-          <TabsContent value="keywords" className="mt-0">
-            <BRONKeywordsTab 
-              keywords={bronApi.keywords}
-              serpReports={bronApi.serpReports}
-              serpHistory={bronApi.serpHistory}
-              linksIn={bronApi.linksIn}
-              linksOut={bronApi.linksOut}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
-              onAdd={bronApi.addKeyword}
-              onUpdate={bronApi.updateKeyword}
-              onDelete={bronApi.deleteKeyword}
-              onRestore={bronApi.restoreKeyword}
-              onFetchSerpDetail={bronApi.fetchSerpDetail}
-            />
-          </TabsContent>
+        <TabsContent value="keywords" className="mt-0">
+          <BRONKeywordsTab 
+            keywords={bronApi.keywords}
+            serpReports={bronApi.serpReports}
+            serpHistory={bronApi.serpHistory}
+            linksIn={bronApi.linksIn}
+            linksOut={bronApi.linksOut}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
+            onAdd={bronApi.addKeyword}
+            onUpdate={bronApi.updateKeyword}
+            onDelete={bronApi.deleteKeyword}
+            onRestore={bronApi.restoreKeyword}
+            onFetchSerpDetail={bronApi.fetchSerpDetail}
+          />
+        </TabsContent>
 
-          <TabsContent value="content" className="mt-0">
-            <BRONContentTab 
-              pages={bronApi.pages}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => selectedDomain && bronApi.fetchPages(selectedDomain)}
-            />
-          </TabsContent>
+        <TabsContent value="content" className="mt-0">
+          <BRONContentTab 
+            pages={bronApi.pages}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => selectedDomain && bronApi.fetchPages(selectedDomain)}
+          />
+        </TabsContent>
 
-          <TabsContent value="serp" className="mt-0">
-            <BRONSerpTab 
-              serpReports={bronApi.serpReports}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain)}
-            />
-          </TabsContent>
+        <TabsContent value="serp" className="mt-0">
+          <BRONSerpTab 
+            serpReports={bronApi.serpReports}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain)}
+          />
+        </TabsContent>
 
-          <TabsContent value="links" className="mt-0">
-            <BRONLinksTab 
-              linksIn={bronApi.linksIn}
-              linksOut={bronApi.linksOut}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
-              onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
-              errorIn={bronApi.linksInError}
-              errorOut={bronApi.linksOutError}
-            />
-          </TabsContent>
-        </AnimatePresence>
+        <TabsContent value="links" className="mt-0">
+          <BRONLinksTab 
+            linksIn={bronApi.linksIn}
+            linksOut={bronApi.linksOut}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
+            onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
+            errorIn={bronApi.linksInError}
+            errorOut={bronApi.linksOutError}
+          />
+        </TabsContent>
       </Tabs>
-    </motion.div>
+    </div>
   );
 };
 
@@ -548,10 +541,9 @@ const StatCard = ({ icon: Icon, label, value, color }: StatCardProps) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+    <div
       className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-3 ${colorClasses[color]}`}
+      style={{ contain: "layout style paint" }}
     >
       <div className="flex items-center justify-between">
         <div>
@@ -562,7 +554,7 @@ const StatCard = ({ icon: Icon, label, value, color }: StatCardProps) => {
           <Icon className="w-4 h-4" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -598,11 +590,10 @@ const ActionCard = ({ icon: Icon, title, description, color, onClick, active }: 
   const styles = colorClasses[color];
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <div
       onClick={onClick}
-      className={`relative cursor-pointer rounded-xl border-2 ${styles.border} bg-card/50 backdrop-blur-sm p-4 transition-all duration-200`}
+      className={`relative cursor-pointer rounded-xl border-2 ${styles.border} bg-card/50 backdrop-blur-sm p-4 transition-colors duration-200`}
+      style={{ contain: "layout style paint" }}
     >
       <div className="flex items-start gap-3">
         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${styles.icon} flex items-center justify-center flex-shrink-0`}>
@@ -616,7 +607,7 @@ const ActionCard = ({ icon: Icon, title, description, color, onClick, active }: 
       {active && (
         <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1/3 h-1 rounded-full ${styles.glow}`} />
       )}
-    </motion.div>
+    </div>
   );
 };
 
