@@ -494,132 +494,135 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/60" />
       </div>
 
-      {/* Compact Header */}
-      <header className="relative flex items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500/5 via-transparent to-green-500/5 border border-blue-500/20 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
-            <MapPin className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Google Business Profile</h2>
-            <p className="text-xs text-muted-foreground">Manage listings, reviews & local SEO → Boost Map Pack rankings</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {accessToken && matchingLocation ? (
-            <>
-              <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
-                <GoogleBusinessIcon /><span className="ml-1.5">Connected</span>
-              </Badge>
-              <motion.span
-                className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Radio className="w-2 h-2" />LIVE
-              </motion.span>
-              <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleDisconnect} className="h-7 text-muted-foreground hover:text-destructive">
-                <LogOut className="w-3.5 h-3.5" />
-              </Button>
-            </>
-          ) : accessToken && isCheckingAccount ? (
-            <>
-              <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
-                <Loader2 className="w-3 h-3 mr-1 animate-spin" />Checking...
-              </Badge>
-            </>
-          ) : accessToken ? (
-            <>
-              <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
-                <AlertTriangle className="w-3 h-3 mr-1" />No Listing Found
-              </Badge>
-              <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
-                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </Button>
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] border-green-500/30 bg-green-500/10 text-green-400">1,000+ CEOs</Badge>
-              <Badge variant="outline" className="text-[10px] border-blue-500/30 bg-blue-500/10 text-blue-400">Local SEO</Badge>
+      {/* Compact Header + Verification Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Left: Header */}
+        <header className="relative flex items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-blue-500/5 via-transparent to-green-500/5 border border-blue-500/20 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <MapPin className="w-6 h-6 text-white" />
             </div>
-          )}
-        </div>
-      </header>
-
-      {/* Domain Ownership Verification Section - Always show when connected */}
-      {!isCheckingAccount && accessToken && selectedDomain && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-2"
-        >
-          {/* Verified Owner - Has GMB Listing */}
-          {ownershipStatus.isOwner === true && matchingLocation && (
-            <Alert className="border-green-500/30 bg-green-500/10">
-              <UserCheck className="h-4 w-4 text-green-500" />
-              <AlertDescription className="text-sm flex items-center gap-2">
-                <span className="font-semibold text-green-400">Verified Owner: </span>
-                Your Google account ({googleProfile?.email}) manages this business listing.
-                <Badge variant="outline" className="ml-2 text-green-400 border-green-500/30 bg-green-500/10 text-[10px]">
-                  <CheckCircle className="w-3 h-3 mr-1" />GMB Verified
+            <div>
+              <h2 className="text-lg font-bold">Google Business Profile</h2>
+              <p className="text-xs text-muted-foreground">Manage listings, reviews & local SEO → Boost Map Pack rankings</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {accessToken && matchingLocation ? (
+              <>
+                <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
+                  <GoogleBusinessIcon /><span className="ml-1.5">Connected</span>
                 </Badge>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Verified by Email Domain Match */}
-          {ownershipStatus.isOwner === true && ownershipStatus.verifiedBy === 'email' && !matchingLocation && (
-            <Alert className="border-blue-500/30 bg-blue-500/10">
-              <UserCheck className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-sm flex items-center gap-2">
-                <span className="font-semibold text-blue-400">Domain Match: </span>
-                Your email domain matches {selectedDomain}. You can claim this listing.
-                <Badge variant="outline" className="ml-2 text-blue-400 border-blue-500/30 bg-blue-500/10 text-[10px]">
-                  <CheckCircle className="w-3 h-3 mr-1" />Email Verified
-                </Badge>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Ownership Warning - User has other listings but not this domain */}
-          {ownershipStatus.isOwner === false && (
-            <Alert className="border-amber-500/30 bg-amber-500/10">
-              <ShieldAlert className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-sm">
-                <span className="font-semibold text-amber-400">Ownership Warning: </span>
-                {ownershipStatus.message}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* No Listings Found - Unknown ownership */}
-          {ownershipStatus.isOwner === null && !matchingLocation && (
-            <Alert className="border-blue-500/30 bg-blue-500/10">
-              <Info className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-sm flex items-center justify-between gap-4">
-                <div>
-                  <span className="font-semibold text-blue-400">Verification Status: </span>
-                  {ownershipStatus.message || `No GMB listings found for ${selectedDomain}. Connect your Google account to verify ownership and add a listing.`}
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefresh} 
-                  disabled={isRefreshing}
-                  className="shrink-0 border-blue-500/30 hover:bg-blue-500/10 text-blue-400"
+                <motion.span
+                  className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Re-check
+                  <Radio className="w-2 h-2" />LIVE
+                </motion.span>
+                <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-        </motion.div>
-      )}
+                <Button variant="ghost" size="sm" onClick={handleDisconnect} className="h-7 text-muted-foreground hover:text-destructive">
+                  <LogOut className="w-3.5 h-3.5" />
+                </Button>
+              </>
+            ) : accessToken && isCheckingAccount ? (
+              <>
+                <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />Checking...
+                </Badge>
+              </>
+            ) : accessToken ? (
+              <>
+                <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                  <AlertTriangle className="w-3 h-3 mr-1" />No Listing Found
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7">
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] border-green-500/30 bg-green-500/10 text-green-400">1,000+ CEOs</Badge>
+                <Badge variant="outline" className="text-[10px] border-blue-500/30 bg-blue-500/10 text-blue-400">Local SEO</Badge>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Right: Domain Ownership Verification */}
+        {!isCheckingAccount && accessToken && selectedDomain && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-stretch"
+          >
+            {/* Verified Owner - Has GMB Listing */}
+            {ownershipStatus.isOwner === true && matchingLocation && (
+              <Alert className="border-green-500/30 bg-green-500/10 flex-1">
+                <UserCheck className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-sm flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-green-400">Verified Owner: </span>
+                  <span className="text-xs">Your Google account ({googleProfile?.email}) manages this listing.</span>
+                  <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10 text-[10px]">
+                    <CheckCircle className="w-3 h-3 mr-1" />GMB Verified
+                  </Badge>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Verified by Email Domain Match */}
+            {ownershipStatus.isOwner === true && ownershipStatus.verifiedBy === 'email' && !matchingLocation && (
+              <Alert className="border-blue-500/30 bg-blue-500/10 flex-1">
+                <UserCheck className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-sm flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-blue-400">Domain Match: </span>
+                  <span className="text-xs">Your email domain matches {selectedDomain}. You can claim this listing.</span>
+                  <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10 text-[10px]">
+                    <CheckCircle className="w-3 h-3 mr-1" />Email Verified
+                  </Badge>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Ownership Warning - User has other listings but not this domain */}
+            {ownershipStatus.isOwner === false && (
+              <Alert className="border-amber-500/30 bg-amber-500/10 flex-1">
+                <ShieldAlert className="h-4 w-4 text-amber-500" />
+                <AlertDescription className="text-xs">
+                  <span className="font-semibold text-amber-400">Ownership Warning: </span>
+                  {ownershipStatus.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* No Listings Found - Unknown ownership */}
+            {ownershipStatus.isOwner === null && !matchingLocation && (
+              <Alert className="border-blue-500/30 bg-blue-500/10 flex-1">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-xs flex items-center justify-between gap-3">
+                  <div>
+                    <span className="font-semibold text-blue-400">Verification Status: </span>
+                    {ownershipStatus.message || `No GMB listings found. You may need to claim ${selectedDomain} on Google Maps.`}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefresh} 
+                    disabled={isRefreshing}
+                    className="shrink-0 border-blue-500/30 hover:bg-blue-500/10 text-blue-400 h-7"
+                  >
+                    <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Re-check
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+          </motion.div>
+        )}
+      </div>
 
       {/* Loading State */}
       {isCheckingAccount ? (
