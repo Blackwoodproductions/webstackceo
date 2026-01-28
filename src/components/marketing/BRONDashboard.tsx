@@ -136,6 +136,16 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     }
   }, [bronApi.isAuthenticated]);
 
+  // Keep BRON hook in sync with the header domain selector.
+  // This hydrates cached results immediately (or clears), preventing the UI from
+  // showing results from a previously selected domain.
+  useEffect(() => {
+    if (!bronApi.isAuthenticated) return;
+    bronApi.selectDomain(selectedDomain ?? null);
+    // Note: bronApi methods are stable; avoid depending on the whole object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bronApi.isAuthenticated, selectedDomain]);
+
   // Load domain-specific data when domain changes
   // IMPORTANT: Don't reset data before fetching - let cache serve instantly
   useEffect(() => {
