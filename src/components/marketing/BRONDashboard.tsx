@@ -177,12 +177,25 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     }
   }, []);
 
-  // Load initial data
+  // Load initial data and prefetch keywords for all domains in background
   useEffect(() => {
     if (bronApi.isAuthenticated) {
-      bronApi.fetchDomains();
+      bronApi.fetchDomains().then(() => {
+        // After domains load, prefetch keywords for all domains in background
+        // This enables instant domain switching by pre-populating the cache
+        if (bronApi.domains.length > 0) {
+          bronApi.prefetchKeywordsForDomains(bronApi.domains);
+        }
+      });
     }
   }, [bronApi.isAuthenticated]);
+  
+  // Trigger prefetch when domains list updates (in case fetchDomains resolved after effect ran)
+  useEffect(() => {
+    if (bronApi.isAuthenticated && bronApi.domains.length > 0) {
+      bronApi.prefetchKeywordsForDomains(bronApi.domains);
+    }
+  }, [bronApi.isAuthenticated, bronApi.domains]);
 
   // Keep BRON hook in sync with the header domain selector.
   // This hydrates cached results immediately (or clears), preventing the UI from
