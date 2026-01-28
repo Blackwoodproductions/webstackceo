@@ -363,8 +363,8 @@ export const BRONKeywordsTab = memo(({
     );
   }, [mergedKeywords, searchQuery]);
 
-  // Group keywords
-  const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
+  // Group keywords (with 24-hour cache per domain)
+  const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords, selectedDomain), [filteredKeywords, selectedDomain]);
 
   // Remove “grey” tracking-only rows from the UI (still counted in stats)
   const displayClusters = useMemo(

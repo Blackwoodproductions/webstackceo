@@ -5,6 +5,10 @@ import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
 export const PAGESPEED_CACHE_KEY = 'bron_pagespeed_cache';
 export const PAGESPEED_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
+// LocalStorage key for Keyword Cluster cache
+export const CLUSTER_CACHE_KEY = 'bron_cluster_cache';
+export const CLUSTER_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
 // PageSpeed score cache type
 export interface PageSpeedScore {
   mobileScore: number;
@@ -13,6 +17,19 @@ export interface PageSpeedScore {
   updating?: boolean;
   error?: boolean;
   cachedAt?: number;
+}
+
+// Cluster cache type
+interface ClusterCacheEntry {
+  keywordIds: string[]; // Sorted list of keyword IDs for comparison
+  clusters: SerializedCluster[];
+  cachedAt: number;
+}
+
+interface SerializedCluster {
+  parentId: string | number;
+  parentKeyword: BronKeyword;
+  childIds: (string | number)[];
 }
 
 // Load cached PageSpeed scores from localStorage
@@ -49,6 +66,76 @@ export function saveCachedPageSpeedScores(scores: Record<string, PageSpeedScore>
     localStorage.setItem(PAGESPEED_CACHE_KEY, JSON.stringify(toSave));
   } catch (e) {
     console.warn('Failed to save PageSpeed cache:', e);
+  }
+}
+
+// Generate a signature from keyword IDs for cache comparison
+function getKeywordSignature(keywords: BronKeyword[]): string[] {
+  return keywords.map(kw => String(kw.id)).sort();
+}
+
+// Check if two sorted ID arrays are equal
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+// Load cached clusters from localStorage
+function loadCachedClusters(): Record<string, ClusterCacheEntry> {
+  try {
+    const cached = localStorage.getItem(CLUSTER_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const now = Date.now();
+      const valid: Record<string, ClusterCacheEntry> = {};
+      for (const [domain, entry] of Object.entries(parsed)) {
+        const e = entry as ClusterCacheEntry;
+        if (e.cachedAt && (now - e.cachedAt) < CLUSTER_CACHE_MAX_AGE) {
+          valid[domain] = e;
+        }
+      }
+      return valid;
+    }
+  } catch (e) {
+    console.warn('Failed to load cluster cache:', e);
+  }
+  return {};
+}
+
+// Save clusters to localStorage
+function saveCachedClusters(cache: Record<string, ClusterCacheEntry>) {
+  try {
+    localStorage.setItem(CLUSTER_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    console.warn('Failed to save cluster cache:', e);
+  }
+}
+
+// Reconstruct clusters from cache using current keyword objects
+function reconstructClustersFromCache(
+  cached: SerializedCluster[],
+  keywordMap: Map<string, BronKeyword>
+): KeywordCluster[] | null {
+  try {
+    const clusters: KeywordCluster[] = [];
+    for (const sc of cached) {
+      const parent = keywordMap.get(String(sc.parentId)) || sc.parentKeyword;
+      if (!parent) return null; // Cache invalid
+      
+      const children: BronKeyword[] = [];
+      for (const childId of sc.childIds) {
+        const child = keywordMap.get(String(childId));
+        if (child) children.push(child);
+      }
+      
+      clusters.push({ parent, children, parentId: sc.parentId });
+    }
+    return clusters;
+  } catch {
+    return null;
   }
 }
 
@@ -108,11 +195,37 @@ function calculateWordSimilarity(words1: string[], words2: string[]): number {
 // Group keywords by topic similarity
 // SEOM/BRON packages have explicit parent_keyword_id relationships from the API
 // Other packages use similarity-based clustering as a fallback
-export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
+// Uses 24-hour localStorage cache, invalidated when keyword IDs change
+export function groupKeywords(keywords: BronKeyword[], domain?: string): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
-  // ─── Phase 0: Cache getKeywordDisplayText for every keyword ───
-  // This avoids repeated expensive HTML parsing & regex operations.
+  // Build keyword lookup map first (needed for cache reconstruction)
+  const keywordById = new Map<string, BronKeyword>();
+  for (const kw of keywords) {
+    keywordById.set(String(kw.id), kw);
+  }
+  
+  // ─── Cache Check ───
+  const cacheKey = domain || 'default';
+  const currentSignature = getKeywordSignature(keywords);
+  
+  try {
+    const clusterCache = loadCachedClusters();
+    const cached = clusterCache[cacheKey];
+    
+    if (cached && arraysEqual(cached.keywordIds, currentSignature)) {
+      // Cache hit - reconstruct clusters with current keyword objects
+      const reconstructed = reconstructClustersFromCache(cached.clusters, keywordById);
+      if (reconstructed && reconstructed.length > 0) {
+        return reconstructed;
+      }
+    }
+  } catch (e) {
+    // Cache read failed, proceed with fresh computation
+  }
+  
+  // ─── Fresh Computation ───
+  // Cache getKeywordDisplayText for every keyword
   const textCache = new Map<number | string, string>();
   const getText = (kw: BronKeyword): string => {
     let t = textCache.get(kw.id);
@@ -136,12 +249,6 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   }
   
   const clusters: KeywordCluster[] = [];
-  
-  // Build a lookup map: keyword ID -> keyword object (use single canonical key)
-  const keywordById = new Map<string, BronKeyword>();
-  for (const kw of contentKeywords) {
-    keywordById.set(String(kw.id), kw);
-  }
   
   // Build parent-child relationships
   const parentChildMap = new Map<string, BronKeyword[]>();
@@ -263,6 +370,26 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   trackingOnlyKeywords.sort((a, b) => getText(a).localeCompare(getText(b)));
   for (const kw of trackingOnlyKeywords) {
     clusters.push({ parent: kw, children: [], parentId: kw.id });
+  }
+  
+  // ─── Save to Cache ───
+  try {
+    const clusterCache = loadCachedClusters();
+    const serialized: SerializedCluster[] = clusters.map(c => ({
+      parentId: c.parentId,
+      parentKeyword: c.parent,
+      childIds: c.children.map(ch => ch.id),
+    }));
+    
+    clusterCache[cacheKey] = {
+      keywordIds: currentSignature,
+      clusters: serialized,
+      cachedAt: Date.now(),
+    };
+    
+    saveCachedClusters(clusterCache);
+  } catch (e) {
+    // Cache write failed, continue without caching
   }
   
   return clusters;
