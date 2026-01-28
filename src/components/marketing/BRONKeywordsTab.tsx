@@ -302,9 +302,12 @@ export const BRONKeywordsTab = memo(({
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
-  // Initialize based on whether we already have keywords (from cache)
-  const [hasReceivedData, setHasReceivedData] = useState(() => keywords.length > 0);
+  // NOTE: We remove the hasReceivedData state entirely and use keywords.length directly
+  // This prevents any flash between domain switch and cache hydration
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
+  
+  // Derive "has data" from keywords length directly - no intermediate state needed
+  const hasReceivedData = keywords.length > 0;
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -388,24 +391,13 @@ export const BRONKeywordsTab = memo(({
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
   const trackingKeywords = mergedKeywords.filter(k => k.status === 'tracking_only' || String(k.id).startsWith('serp_'));
 
-  // Reset fetched URLs when domain changes, but preserve hasReceivedData if keywords exist (from cache)
+  // Reset fetched URLs when domain changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       fetchedUrlsRef.current = new Set();
-      // Only reset hasReceivedData if we don't have cached keywords for the new domain
-      // The keywords prop will be hydrated from cache synchronously by useBronApi.selectDomain
-      // so if keywords.length > 0, we already have cached data to show
-      setHasReceivedData(keywords.length > 0);
       prevDomainRef.current = selectedDomain;
     }
-  }, [selectedDomain, keywords.length]);
-
-  // Mark data as received when keywords arrive
-  useEffect(() => {
-    if (keywords.length > 0 && selectedDomain) {
-      setHasReceivedData(true);
-    }
-  }, [keywords.length, selectedDomain]);
+  }, [selectedDomain]);
 
   // Fetch initial positions from SERP history
   useEffect(() => {
