@@ -56,6 +56,9 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   // Avoid duplicate link loads and UI thrash when domainInfo arrives (id changes).
   const linksRequestedForDomainRef = useRef<string | null>(null);
 
+  // Ensure background keyword prefetch runs only once per auth session.
+  const keywordPrefetchStartedRef = useRef(false);
+
   // Verify authentication on mount with timeout protection
   useEffect(() => {
     let mounted = true;
@@ -177,24 +180,52 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     }
   }, []);
 
-  // Load initial data and prefetch keywords for all domains in background
+  // Load initial data
   useEffect(() => {
     if (bronApi.isAuthenticated) {
-      bronApi.fetchDomains().then(() => {
-        // After domains load, prefetch keywords for all domains in background
-        // This enables instant domain switching by pre-populating the cache
-        if (bronApi.domains.length > 0) {
-          bronApi.prefetchKeywordsForDomains(bronApi.domains);
-        }
-      });
+      bronApi.fetchDomains();
     }
   }, [bronApi.isAuthenticated]);
-  
-  // Trigger prefetch when domains list updates (in case fetchDomains resolved after effect ran)
+
+  // Prefetch keywords for all domains (idle + once) to avoid competing with active loads.
   useEffect(() => {
-    if (bronApi.isAuthenticated && bronApi.domains.length > 0) {
+    if (!bronApi.isAuthenticated) return;
+    if (keywordPrefetchStartedRef.current) return;
+    if (bronApi.domains.length === 0) return;
+
+    // Respect data-saver / low bandwidth.
+    const connection = (navigator as any)?.connection;
+    if (connection?.saveData) return;
+
+    keywordPrefetchStartedRef.current = true;
+
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+
+    const run = () => {
+      if (cancelled) return;
+      if (document.visibilityState !== "visible") return;
       bronApi.prefetchKeywordsForDomains(bronApi.domains);
+    };
+
+    // Schedule when the browser is idle so it doesn't delay the user's immediate domain switch.
+    const ric = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout?: number }) => number)
+      | undefined;
+    const cic = (window as any).cancelIdleCallback as ((id: number) => void) | undefined;
+
+    if (typeof ric === "function") {
+      idleId = ric(run, { timeout: 4000 });
+    } else {
+      timeoutId = window.setTimeout(run, 1200);
     }
+
+    return () => {
+      cancelled = true;
+      if (idleId != null && typeof cic === "function") cic(idleId);
+      if (timeoutId != null) window.clearTimeout(timeoutId);
+    };
   }, [bronApi.isAuthenticated, bronApi.domains]);
 
   // Keep BRON hook in sync with the header domain selector.

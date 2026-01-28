@@ -648,6 +648,9 @@ export function useBronApi(): UseBronApiReturn {
   // to reliably route requests to the selected domain.
   const activeDomainRef = useRef<string | null>(null);
 
+  // Prevent concurrent background prefetch runs from saturating the API/network.
+  const keywordPrefetchInFlightRef = useRef(false);
+
   const normalizeDomainKey = useCallback((input: string) => {
     return (input || '')
       .toLowerCase()
@@ -1561,6 +1564,10 @@ export function useBronApi(): UseBronApiReturn {
   // Prefetch keywords for all domains in background to enable instant domain switching.
   // This runs after initial auth without blocking the UI - it populates cache silently.
   const prefetchKeywordsForDomains = useCallback(async (domainList: BronDomain[]) => {
+    if (keywordPrefetchInFlightRef.current) return;
+    keywordPrefetchInFlightRef.current = true;
+
+    try {
     const domainsToFetch = domainList
       .filter(d => !d.is_deleted && d.domain)
       .map(d => normalizeDomainKey(d.domain));
@@ -1614,6 +1621,9 @@ export function useBronApi(): UseBronApiReturn {
     }
 
     console.log('[BRON] Background keyword prefetch complete');
+    } finally {
+      keywordPrefetchInFlightRef.current = false;
+    }
   }, [callApi, normalizeDomainKey]);
 
   return {
