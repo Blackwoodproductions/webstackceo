@@ -633,12 +633,17 @@ export function useBronApi(): UseBronApiReturn {
         return data;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        const errMsg = lastError.message.toLowerCase();
         console.error(`BRON API call error (attempt ${attempt + 1}/${retries + 1}):`, err);
         
-        // Only retry on network/timeout errors, not on 4xx errors
-        const isRetryable = lastError.message.includes('timed out') || 
-                           lastError.message.includes('network') ||
-                           lastError.message.includes('fetch');
+        // Retry on network/timeout/transient errors
+        const isRetryable = errMsg.includes('timed out') || 
+                           errMsg.includes('timeout') ||
+                           errMsg.includes('network') ||
+                           errMsg.includes('fetch') ||
+                           errMsg.includes('failed to send') ||
+                           errMsg.includes('aborted') ||
+                           errMsg.includes('connection');
         
         if (!isRetryable || attempt >= retries) {
           // Ensure the action is always present in surfaced errors
@@ -649,6 +654,7 @@ export function useBronApi(): UseBronApiReturn {
         }
         
         // Exponential backoff: 1s, 2s
+        console.log(`[BRON] Retrying ${action} in ${(attempt + 1)}s...`);
         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
       }
     }
