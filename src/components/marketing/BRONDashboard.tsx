@@ -187,7 +187,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     }
   }, [bronApi.isAuthenticated]);
 
-  // Prefetch keywords for all domains (idle + once) to avoid competing with active loads.
+  // Prefetch keywords for all domains immediately after domains load.
+  // This runs once per session to pre-warm cache for instant domain switching.
   useEffect(() => {
     if (!bronApi.isAuthenticated) return;
     if (keywordPrefetchStartedRef.current) return;
@@ -199,32 +200,15 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
 
     keywordPrefetchStartedRef.current = true;
 
-    let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-
-    const run = () => {
-      if (cancelled) return;
-      if (document.visibilityState !== "visible") return;
-      bronApi.prefetchKeywordsForDomains(bronApi.domains);
-    };
-
-    // Schedule when the browser is idle so it doesn't delay the user's immediate domain switch.
-    const ric = (window as any).requestIdleCallback as
-      | ((cb: () => void, opts?: { timeout?: number }) => number)
-      | undefined;
-    const cic = (window as any).cancelIdleCallback as ((id: number) => void) | undefined;
-
-    if (typeof ric === "function") {
-      idleId = ric(run, { timeout: 4000 });
-    } else {
-      timeoutId = window.setTimeout(run, 1200);
-    }
+    // Start prefetch immediately (short delay to let active domain load first)
+    const timeoutId = window.setTimeout(() => {
+      if (document.visibilityState === "visible") {
+        bronApi.prefetchKeywordsForDomains(bronApi.domains);
+      }
+    }, 500);
 
     return () => {
-      cancelled = true;
-      if (idleId != null && typeof cic === "function") cic(idleId);
-      if (timeoutId != null) window.clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
     };
   }, [bronApi.isAuthenticated, bronApi.domains]);
 
