@@ -844,10 +844,12 @@ export const BRONKeywordsTab = ({
                   const isUpdating = pageSpeed?.updating;
                   const hasError = pageSpeed?.error && !isUpdating;
                   const score = pageSpeed?.mobileScore || 0;
+                  const isPending = !pageSpeed || (score === 0 && !hasError && !isLoadingSpeed && !isUpdating);
                   
                   // Circular gauge colors
                   const getGaugeColor = () => {
-                    if (isLoadingSpeed || hasError || score === 0) return { stroke: 'stroke-muted-foreground/30', text: 'text-muted-foreground', glow: '' };
+                    if (isLoadingSpeed || isPending) return { stroke: 'stroke-cyan-500/40', text: 'text-cyan-400', glow: '' };
+                    if (hasError) return { stroke: 'stroke-muted-foreground/30', text: 'text-muted-foreground', glow: '' };
                     if (score >= 90) return { stroke: 'stroke-emerald-500', text: 'text-emerald-400', glow: 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]' };
                     if (score >= 50) return { stroke: 'stroke-amber-500', text: 'text-amber-400', glow: 'drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]' };
                     return { stroke: 'stroke-red-500', text: 'text-red-400', glow: 'drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]' };
@@ -855,13 +857,13 @@ export const BRONKeywordsTab = ({
                   
                   const colors = getGaugeColor();
                   const circumference = 2 * Math.PI * 18; // radius = 18
-                  const progress = hasError || isLoadingSpeed ? 0 : (score / 100);
+                  const progress = hasError || isLoadingSpeed || isPending ? 0 : (score / 100);
                   const strokeDashoffset = circumference * (1 - progress);
                   
                   return (
                     <div 
                       className="relative w-12 h-12 flex items-center justify-center"
-                      title={isUpdating ? 'Updating PageSpeed score...' : `PageSpeed Score: ${score}/100 (Mobile)`}
+                      title={isUpdating ? 'Updating PageSpeed score...' : isPending ? 'Waiting for PageSpeed data...' : `PageSpeed Score: ${score}/100 (Mobile)`}
                     >
                       {/* Background circle */}
                       <svg className="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
@@ -874,24 +876,38 @@ export const BRONKeywordsTab = ({
                           strokeWidth="3"
                           className="text-muted/30"
                         />
-                        {/* Progress arc */}
-                        <circle
-                          cx="22"
-                          cy="22"
-                          r="18"
-                          fill="none"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          className={`${colors.stroke} ${colors.glow} transition-all duration-500`}
-                          strokeDasharray={circumference}
-                          strokeDashoffset={strokeDashoffset}
-                        />
+                        {/* Progress arc - show spinning animation for pending/loading */}
+                        {(isLoadingSpeed || isPending) ? (
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r="18"
+                            fill="none"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            className="stroke-cyan-500/50 animate-spin origin-center"
+                            style={{ animationDuration: '2s', transformOrigin: '22px 22px' }}
+                            strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
+                          />
+                        ) : (
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r="18"
+                            fill="none"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            className={`${colors.stroke} ${colors.glow} transition-all duration-500`}
+                            strokeDasharray={circumference}
+                            strokeDashoffset={strokeDashoffset}
+                          />
+                        )}
                       </svg>
                       
                       {/* Center content */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        {isLoadingSpeed ? (
-                          <Gauge className="w-4 h-4 text-muted-foreground animate-pulse" />
+                        {(isLoadingSpeed || isPending) ? (
+                          <Gauge className="w-4 h-4 text-cyan-400/70 animate-pulse" />
                         ) : (
                           <span className={`text-sm font-bold ${colors.text}`}>
                             {hasError ? '—' : score}
