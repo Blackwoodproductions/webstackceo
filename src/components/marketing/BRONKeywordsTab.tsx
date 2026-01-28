@@ -182,7 +182,6 @@ function getPositionStyle(position: number | null): { bg: string; text: string; 
 
 // Check if keyword is a supporting page (child)
 function isSupporting(kw: BronKeyword): boolean {
-  // Check various possible fields that might indicate supporting page status
   if (kw.is_supporting === true || kw.is_supporting === 1) return true;
   if (kw.bubblefeed === true || kw.bubblefeed === 1) return true;
   if (kw.parent_keyword_id) return true;
@@ -196,20 +195,17 @@ function calculateKeywordSimilarity(kw1: string, kw2: string): number {
   
   if (words1.length === 0 || words2.length === 0) return 0;
   
-  // Count common words
   const commonWords = words1.filter(w => words2.includes(w));
-  
-  // Score based on overlap ratio (use the smaller set as denominator)
   const overlap = commonWords.length / Math.min(words1.length, words2.length);
   
-  // Bonus for matching location words (e.g., "Port Coquitlam")
+  // Bonus for matching location words
   const locationWords = ['port', 'coquitlam', 'vancouver', 'burnaby', 'surrey', 'richmond', 'langley', 'abbotsford'];
   const hasMatchingLocation = commonWords.some(w => locationWords.includes(w));
   
   return hasMatchingLocation ? overlap * 1.2 : overlap;
 }
 
-// Find the best parent keyword for a supporting keyword using text similarity
+// Find the best parent keyword for a supporting keyword
 function findBestParent(
   child: BronKeyword, 
   mainKeywords: BronKeyword[], 
@@ -222,13 +218,9 @@ function findBestParent(
   
   for (const parent of mainKeywords) {
     const parentText = getKeywordDisplayText(parent).toLowerCase();
-    
-    // Skip if same keyword
     if (parent.id === child.id) continue;
     
     const score = calculateKeywordSimilarity(childText, parentText);
-    
-    // Prefer parents where child contains parent keywords (child is more specific)
     if (score > bestScore) {
       bestScore = score;
       bestMatch = parent;
@@ -238,8 +230,15 @@ function findBestParent(
   return bestMatch;
 }
 
+// Result type for grouped keywords - includes relationship metadata
+interface KeywordCluster {
+  parent: BronKeyword;
+  children: BronKeyword[];
+  parentId: number | string;
+}
+
 // Group keywords by parent-child relationship (API-based or similarity-based)
-function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
+function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
   // Separate main keywords from supporting keywords
@@ -270,7 +269,7 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
     }
   }
   
-  // Second pass: Use text similarity to match orphaned supporting keywords
+  // Second pass: Use text similarity for orphaned supporting keywords
   const orphanedChildren = supportingKeywords.filter(c => !usedChildren.has(c.id));
   
   for (const child of orphanedChildren) {
@@ -285,7 +284,7 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
   }
   
   // Build groups - sort main keywords alphabetically
-  const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
+  const groups: KeywordCluster[] = [];
   
   mainKeywords.sort((a, b) => 
     getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
@@ -293,24 +292,23 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
   
   for (const parent of mainKeywords) {
     const allChildren = parentChildMap.get(parent.id) || [];
-    // Sort children alphabetically and LIMIT TO 2 supporting pages per main keyword
+    // Sort children and limit to 2 per main keyword
     allChildren.sort((a, b) => 
       getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
     );
-    // Enforce cluster of 3: 1 main + max 2 supporting
     const children = allChildren.slice(0, 2);
-    groups.push({ parent, children });
+    groups.push({ parent, children, parentId: parent.id });
     
-    // Any excess children beyond 2 become orphaned and will be standalone
+    // Excess children become orphaned
     for (let i = 2; i < allChildren.length; i++) {
       usedChildren.delete(allChildren[i].id);
     }
   }
   
-  // Add any truly orphaned supporting keywords (no parent found) as standalone entries
+  // Add orphaned supporting keywords as standalone
   for (const child of supportingKeywords) {
     if (!usedChildren.has(child.id)) {
-      groups.push({ parent: child, children: [] });
+      groups.push({ parent: child, children: [], parentId: child.id });
     }
   }
   
@@ -952,51 +950,49 @@ export const BRONKeywordsTab = ({
       poor: 'bg-red-500/10 border-red-500/20',
     }[score]);
 
+    // Build URL for this keyword (used for PageSpeed lookups)
+    const getKeywordUrl = () => {
+      if (kw.linkouturl) return kw.linkouturl;
+      if (selectedDomain) {
+        const keywordSlug = keywordText
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+        return `https://${selectedDomain}/${keywordSlug}`;
+      }
+      return null;
+    };
+    const keywordUrl = getKeywordUrl();
+    const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : null;
+
     return (
       <div
         key={kw.id}
         className={`${deleted ? 'opacity-50' : ''}`}
-        style={{ 
-          contain: 'layout style',
-          willChange: 'auto'
-        }}
+        style={{ contain: 'layout style' }}
       >
-        {/* Card container - GPU-isolated for stability */}
+        {/* Card container */}
         <div 
           className={`
             rounded-xl border overflow-hidden
-            ${isNested ? 'border-l-2 border-l-primary/50' : ''}
+            ${isNested ? 'border-l-2 border-l-cyan-500/50 ml-2' : ''}
             ${isTrackingOnly 
               ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : '')
               : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50')
             }
           `}
-          style={{ 
-            contain: 'layout paint style',
-            transform: 'translateZ(0)'
-          }}
+          style={{ contain: 'layout paint style' }}
         >
-          {/* Clickable header - stable, no hover transitions to prevent layout thrashing */}
+          {/* Clickable header */}
           <div 
             className="p-4 cursor-pointer overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Fixed Column Layout for Perfect Alignment */}
-            <div className="flex items-center w-full justify-between" style={{ minWidth: '1100px' }}>
-              {/* Column 1: Page Speed Gauge - 70px (Real Google PageSpeed Data) */}
+            {/* Fixed Column Layout */}
+            <div className="flex items-center w-full justify-between" style={{ minWidth: '1050px' }}>
+              {/* Column 1: Page Speed Gauge - 70px */}
               <div className="w-[70px] flex-shrink-0 flex justify-center">
                 {(() => {
-                  // Build URL for this keyword
-                  let url = kw.linkouturl;
-                  if (!url && selectedDomain) {
-                    const keywordSlug = keywordText
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-|-$/g, '');
-                    url = `https://${selectedDomain}/${keywordSlug}`;
-                  }
-                  
-                  const pageSpeed = url ? pageSpeedScores[url] : null;
                   const isLoadingSpeed = pageSpeed?.loading;
                   const isUpdating = pageSpeed?.updating;
                   const hasError = pageSpeed?.error && !isUpdating;
@@ -2082,22 +2078,13 @@ export const BRONKeywordsTab = ({
             </div>
           </Card>
         ) : (
-          groupedKeywords.map(({ parent, children }) => (
-            <div key={parent.id} className="space-y-1">
-              {/* Parent keyword card - pass cluster child count, not nested */}
+          groupedKeywords.map(({ parent, children, parentId }) => (
+            <div key={parentId} className="space-y-1">
+              {/* Parent keyword card */}
               {renderKeywordCard(parent, children.length, false)}
               
-              {/* Clustered children - no outer margin, use internal indentation */}
-              {children.length > 0 && (
-                <div className="space-y-1">
-                  {/* Child keyword cards - marked as nested for internal indentation */}
-                  {children.map((child) => (
-                    <div key={child.id} className="relative">
-                      {renderKeywordCard(child, 0, true)}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Clustered children - minimal indent via ml-2 in card */}
+              {children.map((child) => renderKeywordCard(child, 0, true))}
             </div>
           ))
         )}
