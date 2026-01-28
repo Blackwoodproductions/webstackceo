@@ -707,10 +707,10 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Fixed Column Layout for Perfect Alignment */}
-            <div className="flex items-center min-w-max">
-              {/* Column 1: Page Speed Indicator - 60px (Real Google PageSpeed Data) */}
-              <div className="w-[60px] flex-shrink-0">
+            {/* Fixed Column Layout for Perfect Alignment - spread evenly */}
+            <div className="flex items-center justify-between w-full gap-6">
+              {/* Column 1: Page Speed Indicator - 70px (Real Google PageSpeed Data) */}
+              <div className="w-[70px] flex-shrink-0">
                 {(() => {
                   // Build URL for this keyword
                   let url = kw.linkouturl;
@@ -748,8 +748,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 2: Keyword Text - 280px */}
-              <div className="w-[280px] flex-shrink-0 pr-4">
+              {/* Column 2: Keyword Text - flex grow to use available space */}
+              <div className="flex-1 min-w-[200px] max-w-[380px] pr-4">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground whitespace-nowrap truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -760,9 +760,9 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Column 3: Intent Badge - 120px */}
-              <div className="w-[120px] flex-shrink-0 flex justify-center">
-                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 justify-center">
+              {/* Column 3: Intent Badge - 140px */}
+              <div className="w-[140px] flex-shrink-0 flex justify-center">
+                <div className="bg-card border border-border/60 rounded-md px-3 py-1.5 flex items-center gap-2 justify-center">
                   <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                     <IntentIcon className={`w-3 h-3 ${intent.color}`} />
                   </div>
@@ -772,8 +772,8 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Column 4: SERP Rankings - 280px */}
-              <div className="w-[280px] flex-shrink-0">
+              {/* Column 4: SERP Rankings - 300px */}
+              <div className="w-[300px] flex-shrink-0">
                 {(() => {
                   const googleMovement = getMovementFromDelta(googleData.movement);
                   const bingMovement = getMovementFromDelta(bingData.movement);
@@ -836,8 +836,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 5: Keyword Metrics - 240px */}
-              <div className="w-[240px] flex-shrink-0">
+              {/* Column 5: Keyword Metrics - 280px */}
+              <div className="w-[280px] flex-shrink-0">
                 {(() => {
                   const metrics = keywordMetrics[keywordText.toLowerCase()];
                   
@@ -919,8 +919,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 6: Links - 160px */}
-              <div className="w-[160px] flex-shrink-0 flex justify-center gap-2">
+              {/* Column 6: Links - 180px */}
+              <div className="w-[180px] flex-shrink-0 flex justify-center gap-3">
                 {/* Inbound Links */}
                 <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
                   <div className="flex items-center gap-1.5">
@@ -944,8 +944,8 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Column 7: Expand Arrow - 32px */}
-              <div className="w-[32px] flex-shrink-0 flex justify-center">
+              {/* Column 7: Expand Arrow - 40px */}
+              <div className="w-[40px] flex-shrink-0 flex justify-center">
                 <ChevronRight 
                   className={`w-5 h-5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
                 />
