@@ -177,16 +177,16 @@ const RankingsDisplay = memo(({
   yahooMovement: number;
 }) => {
   const getPositionColor = (movement: ReturnType<typeof getMovementFromDelta>) => {
-    if (movement.type === 'up') return 'text-emerald-500';
-    if (movement.type === 'down') return 'text-red-500';
-    return 'text-foreground';
+    if (movement.type === 'up') return 'text-emerald-400';
+    if (movement.type === 'down') return 'text-red-400';
+    return 'text-muted-foreground';
   };
 
   const renderRanking = (label: string, pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
     <div className="flex flex-col items-center w-[70px]">
       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</span>
       <div className="flex items-center justify-center gap-1 h-7">
-        <span className={`text-xl font-bold ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground'}`}>
+        <span className={`text-xl font-medium ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
           {pos !== null ? `#${pos}` : '—'}
         </span>
         {pos !== null && movement.delta !== 0 && (
