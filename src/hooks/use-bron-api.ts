@@ -50,7 +50,6 @@ export interface BronKeyword {
   parent_keyword_id?: number | string;
   is_supporting?: boolean | number;
   bubblefeed?: boolean | number;
-  bubblefeedid?: number | string; // Parent keyword ID for supporting keywords
   cluster_id?: number | string;
   // Legacy fields for compatibility
   domain?: string;

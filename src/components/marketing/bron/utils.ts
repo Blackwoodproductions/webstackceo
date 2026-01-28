@@ -86,9 +86,25 @@ export interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by bubblefeedid from BRON/SEOM API
-// Main keywords have NO bubblefeedid field (or it's null/undefined/0)
-// Supporting keywords have bubblefeedid that matches the id of their main keyword
+// Calculate text similarity between keywords
+function calculateKeywordSimilarity(kw1: string, kw2: string): number {
+  const words1 = kw1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const words2 = kw2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  
+  if (words1.length === 0 || words2.length === 0) return 0;
+  
+  const commonWords = words1.filter(w => words2.includes(w));
+  const overlap = commonWords.length / Math.min(words1.length, words2.length);
+  
+  const locationWords = ['port', 'coquitlam', 'vancouver', 'burnaby', 'surrey', 'richmond', 'langley', 'abbotsford'];
+  const hasMatchingLocation = commonWords.some(w => locationWords.includes(w));
+  
+  return hasMatchingLocation ? overlap * 1.2 : overlap;
+}
+
+// Group keywords by topic similarity
+// SEOM/BRON packages have explicit parent_keyword_id relationships from the API
+// Other packages use similarity-based clustering as a fallback
 export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -106,93 +122,112 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Index all keywords by ID for quick lookup
-  const keywordById = new Map<string, BronKeyword>();
-  for (const kw of contentKeywords) {
-    keywordById.set(String(kw.id), kw);
-  }
-  
-  // Separate main keywords (no bubblefeedid) from supporting keywords (has bubblefeedid)
-  const mainKeywords: BronKeyword[] = [];
-  const supportingKeywords: BronKeyword[] = [];
+  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
+  // Also check is_supporting and bubblefeed flags
+  const hasExplicitParent = new Map<number | string, number | string>();
+  const isExplicitSupporting = new Set<number | string>();
   
   for (const kw of contentKeywords) {
-    // Check for bubblefeedid field (the actual API field name)
-    const bubblefeedid = (kw as any).bubblefeedid;
-    // Main keywords have no bubblefeedid (undefined, null, 0, or empty)
-    const hasBubblefeedId = bubblefeedid !== undefined && 
-                            bubblefeedid !== null && 
-                            bubblefeedid !== 0 && 
-                            String(bubblefeedid) !== '0' && 
-                            String(bubblefeedid) !== '';
-    
-    if (hasBubblefeedId) {
-      supportingKeywords.push(kw);
-    } else {
-      mainKeywords.push(kw);
+    // Check parent_keyword_id first
+    if (kw.parent_keyword_id) {
+      hasExplicitParent.set(kw.id, kw.parent_keyword_id);
+      isExplicitSupporting.add(kw.id);
     }
-  }
-  
-  // Build parent-child map: bubblefeedid value -> array of supporting keywords
-  const childrenByParentId = new Map<string, BronKeyword[]>();
-  const assignedChildren = new Set<string>();
-  
-  for (const kw of supportingKeywords) {
-    const parentId = String((kw as any).bubblefeedid);
-    // Only assign if the parent actually exists as a main keyword
-    if (keywordById.has(parentId)) {
-      if (!childrenByParentId.has(parentId)) {
-        childrenByParentId.set(parentId, []);
-      }
-      childrenByParentId.get(parentId)!.push(kw);
-      assignedChildren.add(String(kw.id));
+    // Also check is_supporting and bubblefeed flags
+    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
+      isExplicitSupporting.add(kw.id);
     }
   }
   
   // Log clustering info for debugging
-  console.log('[BRON Clustering] bubblefeedid relationships:', {
+  console.log('[BRON Clustering] API relationships detected:', {
+    hasExplicitParents: hasExplicitParent.size,
+    isSupportingCount: isExplicitSupporting.size,
     totalContentKeywords: contentKeywords.length,
-    mainKeywords: mainKeywords.length,
-    supportingKeywords: supportingKeywords.length,
-    assignedToParents: assignedChildren.size,
-    orphanedSupporting: supportingKeywords.length - assignedChildren.size,
-    sample: contentKeywords.slice(0, 5).map(kw => ({
-      id: kw.id,
-      keyword: getKeywordDisplayText(kw).slice(0, 30),
-      bubblefeedid: (kw as any).bubblefeedid,
-      isMain: !(kw as any).bubblefeedid,
-    })),
+    usingApiClustering: hasExplicitParent.size > 0,
   });
   
-  // Create clusters for main keywords with their children
-  for (const kw of mainKeywords) {
-    const children = childrenByParentId.get(String(kw.id)) || [];
+  if (hasExplicitParent.size > 0) {
+    // Use explicit API relationships (SEOM/BRON packages)
+    const parentChildMap = new Map<number | string, BronKeyword[]>();
+    const assignedAsChild = new Set<number | string>();
     
-    // Sort children alphabetically
-    children.sort((a, b) => 
-      getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
-    );
+    for (const kw of contentKeywords) {
+      if (hasExplicitParent.has(kw.id)) {
+        const parentId = hasExplicitParent.get(kw.id)!;
+        if (!parentChildMap.has(parentId)) {
+          parentChildMap.set(parentId, []);
+        }
+        parentChildMap.get(parentId)!.push(kw);
+        assignedAsChild.add(kw.id);
+      }
+    }
     
-    clusters.push({ 
-      parent: kw, 
-      children, 
-      parentId: kw.id 
-    });
-  }
-  
-  // Add orphaned supporting keywords (bubblefeed points to non-existent parent) as standalone
-  for (const kw of supportingKeywords) {
-    if (!assignedChildren.has(String(kw.id))) {
-      clusters.push({ parent: kw, children: [], parentId: kw.id });
+    // Create clusters from parents with their children (max 2 per cluster)
+    for (const kw of contentKeywords) {
+      if (!assignedAsChild.has(kw.id)) {
+        const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
+        clusters.push({ parent: kw, children, parentId: kw.id });
+      }
+    }
+  } else {
+    // Topic-based similarity clustering
+    const keywordsWithLength = contentKeywords.map(kw => ({
+      kw,
+      text: getKeywordDisplayText(kw),
+      wordCount: getKeywordDisplayText(kw).split(/\s+/).length
+    }));
+    
+    keywordsWithLength.sort((a, b) => a.wordCount - b.wordCount || a.text.localeCompare(b.text));
+    
+    const assigned = new Set<number | string>();
+    const mainKeywords: BronKeyword[] = [];
+    const supportingPool: BronKeyword[] = [];
+    
+    const targetMainCount = Math.ceil(contentKeywords.length / 3);
+    
+    for (let i = 0; i < keywordsWithLength.length; i++) {
+      if (mainKeywords.length < targetMainCount && i % 3 === 0) {
+        mainKeywords.push(keywordsWithLength[i].kw);
+      } else {
+        supportingPool.push(keywordsWithLength[i].kw);
+      }
+    }
+    
+    for (const main of mainKeywords) {
+      const mainText = getKeywordDisplayText(main);
+      
+      const scored = supportingPool
+        .filter(s => !assigned.has(s.id))
+        .map(s => ({
+          kw: s,
+          score: calculateKeywordSimilarity(mainText, getKeywordDisplayText(s))
+        }))
+        .sort((a, b) => b.score - a.score);
+      
+      const children: BronKeyword[] = [];
+      for (let i = 0; i < Math.min(2, scored.length); i++) {
+        if (scored[i].score >= 0.3) {
+          children.push(scored[i].kw);
+          assigned.add(scored[i].kw.id);
+        }
+      }
+      
+      clusters.push({ parent: main, children, parentId: main.id });
+      assigned.add(main.id);
+    }
+    
+    for (const s of supportingPool) {
+      if (!assigned.has(s.id)) {
+        clusters.push({ parent: s, children: [], parentId: s.id });
+      }
     }
   }
   
-  // Sort clusters alphabetically by parent keyword text
   clusters.sort((a, b) => 
     getKeywordDisplayText(a.parent).localeCompare(getKeywordDisplayText(b.parent))
   );
   
-  // Add tracking-only keywords as standalone items at the end
   trackingOnlyKeywords.sort((a, b) => 
     getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
   );
