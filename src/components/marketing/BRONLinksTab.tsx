@@ -125,21 +125,18 @@ export const BRONLinksTab = ({
             </div>
           ) : (linkType === "in" ? errorIn : errorOut) ? (
             <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-destructive/10 flex items-center justify-center">
-                <Link2 className="w-6 h-6 text-destructive/60" />
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Link2 className="w-6 h-6 text-amber-500/60" />
               </div>
-              <p className="text-foreground font-medium mb-1">Unable to load {linkType === "in" ? "inbound" : "outbound"} links</p>
-              <p className="text-sm text-muted-foreground mb-2 max-w-md mx-auto">
-                {linkType === "in" ? errorIn : errorOut}
-              </p>
-              <p className="text-xs text-muted-foreground/70 mb-4">
-                Link analysis may not be available for all domains. Try again or check back later.
+              <p className="text-foreground font-medium mb-1">Link data temporarily unavailable</p>
+              <p className="text-sm text-muted-foreground mb-2 max-w-sm mx-auto">
+                The external link analysis service is experiencing issues. This usually resolves within a few minutes.
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                className="border-primary/30 hover:bg-primary/10"
+                className="border-amber-500/30 hover:bg-amber-500/10"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
