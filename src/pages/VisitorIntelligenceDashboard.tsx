@@ -3531,18 +3531,24 @@ f.parentNode.insertBefore(j,f);
               onSubscriptionChange={setCadeHasSubscription}
             />
 
-            {/* Platform Connection Section - Only show when CADE subscription is active */}
-            {cadeHasSubscription && (
-              <CADEPlatformConnect 
-                domain={selectedTrackedDomain || selectedDomainKey} 
-                onConnectionComplete={(platform) => {
-                  toast.success(`Successfully connected to ${platform}!`);
-                }}
-              />
+            {/* Platform Connection Section - Only show AFTER dashboard loads and subscription is confirmed */}
+            {cadeHasSubscription && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <CADEPlatformConnect 
+                  domain={selectedTrackedDomain || selectedDomainKey} 
+                  onConnectionComplete={(platform) => {
+                    toast.success(`Successfully connected to ${platform}!`);
+                  }}
+                />
+              </motion.div>
             )}
 
-            {/* How It Works Section - Collapsible, closed by default */}
-            <Collapsible defaultOpen={false}>
+            {/* How It Works Section - Auto-shown, collapsed by default for active users */}
+            <Collapsible defaultOpen={true}>
               <CollapsibleTrigger className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-primary transition-colors group w-full">
                 <ChevronDown className="w-5 h-5 transition-transform group-data-[state=open]:rotate-180" />
                 How CADE Works
