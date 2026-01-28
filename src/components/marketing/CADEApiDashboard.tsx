@@ -91,17 +91,55 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const [domainOpen, setDomainOpen] = useState(true);
   const [faqsOpen, setFaqsOpen] = useState(false);
 
-  const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
-    const { data, error } = await supabase.functions.invoke("cade-api", {
-      body: { action, domain, params },
-    });
+  const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, retries = 2) => {
+    const cacheKey = `cade_${action}_${domain || "global"}`;
     
-    if (error) {
-      console.error(`[CADE] ${action} error:`, error);
-      throw new Error(error.message || `Failed to fetch ${action}`);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await supabase.functions.invoke("cade-api", {
+          body: { action, domain, params },
+        });
+        
+        if (error) {
+          // If it's a timeout or network error and we have retries left, retry
+          if (attempt < retries && (error.message?.includes("timeout") || error.message?.includes("504"))) {
+            console.warn(`[CADE] ${action} attempt ${attempt + 1} failed, retrying...`);
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // Exponential backoff
+            continue;
+          }
+          throw new Error(error.message || `Failed to fetch ${action}`);
+        }
+        
+        // Cache successful responses for quick fallback
+        if (data && !data.error) {
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
+          } catch { /* ignore storage errors */ }
+        }
+        
+        return data;
+      } catch (err) {
+        if (attempt < retries) {
+          console.warn(`[CADE] ${action} attempt ${attempt + 1} failed, retrying...`);
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+        
+        // On final failure, try to return cached data if recent (< 5 min)
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const { data: cachedData, ts } = JSON.parse(cached);
+            if (Date.now() - ts < 5 * 60 * 1000) {
+              console.log(`[CADE] Using cached ${action} data`);
+              return cachedData;
+            }
+          }
+        } catch { /* ignore */ }
+        
+        throw err;
+      }
     }
-    
-    return data;
   }, [domain]);
 
   // Check subscription via BRON API - same pattern as SocialPanel
@@ -459,6 +497,8 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   }
 
   if (error && !health && !subscription) {
+    const isTimeoutError = error.includes("timeout") || error.includes("504") || error.includes("slow");
+    
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -468,16 +508,24 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         <div className="flex items-start gap-4">
           <AlertTriangle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-semibold text-red-600">Failed to Connect to CADE API</h4>
-            <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            <h4 className="font-semibold text-red-600">Connection Error</h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isTimeoutError 
+                ? "The CADE API is responding slowly. This can happen during high-traffic periods. Please try again."
+                : `Failed to connect to CADE API`}
+            </p>
+            {!isTimeoutError && error && (
+              <p className="text-xs text-muted-foreground/70 mt-1 font-mono">{error}</p>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
-              className="mt-3"
+              className="mt-3 gap-2"
               onClick={handleRefresh}
+              disabled={isRefreshing}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Retry
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Retry Connection
             </Button>
           </div>
         </div>
