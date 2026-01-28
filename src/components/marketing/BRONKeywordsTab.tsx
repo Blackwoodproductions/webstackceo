@@ -956,26 +956,32 @@ export const BRONKeywordsTab = ({
       <div
         key={kw.id}
         className={`${deleted ? 'opacity-50' : ''}`}
-        style={{ contain: 'layout' }}
+        style={{ 
+          contain: 'layout style',
+          willChange: 'auto'
+        }}
       >
-        {/* Card container - different styling for tracking-only keywords and nested/supporting keywords */}
+        {/* Card container - GPU-isolated for stability */}
         <div 
           className={`
-            rounded-xl border overflow-hidden transition-colors duration-150
+            rounded-xl border overflow-hidden
             ${isNested ? 'border-l-2 border-l-primary/50' : ''}
             ${isTrackingOnly 
-              ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : ' hover:border-amber-500/30')
-              : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50 hover:border-primary/30')
+              ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : '')
+              : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50')
             }
           `}
-          style={{ contain: 'layout paint' }}
+          style={{ 
+            contain: 'layout paint style',
+            transform: 'translateZ(0)'
+          }}
         >
-          {/* Clickable header - keyword + rankings + intent icon */}
+          {/* Clickable header - stable, no hover transitions to prevent layout thrashing */}
           <div 
-            className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
+            className="p-4 cursor-pointer overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Fixed Column Layout for Perfect Alignment - using fixed widths to maintain alignment across nested cards */}
+            {/* Fixed Column Layout for Perfect Alignment */}
             <div className="flex items-center w-full justify-between" style={{ minWidth: '1100px' }}>
               {/* Column 1: Page Speed Gauge - 70px (Real Google PageSpeed Data) */}
               <div className="w-[70px] flex-shrink-0 flex justify-center">
@@ -1300,11 +1306,15 @@ export const BRONKeywordsTab = ({
             </div>
           </div>
 
-          {/* Expanded Content - Redesigned Nested System */}
+          {/* Expanded Content - GPU-isolated for stability */}
           {expanded && (
             <div 
-              className={`border-t ${isTrackingOnly ? 'border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-muted/30' : 'border-primary/20 bg-gradient-to-b from-card/80 to-muted/30'}`}
-              style={{ contain: 'layout paint' }}
+              className={`border-t ${isTrackingOnly ? 'border-amber-500/20 bg-amber-500/5' : 'border-primary/20 bg-card/60'}`}
+              style={{ 
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)'
+              }}
             >
               {/* Tracking Only Keywords - Simplified View */}
               {isTrackingOnly ? (
@@ -1410,9 +1420,9 @@ export const BRONKeywordsTab = ({
 
                 {/* Nested Tabs Grid */}
                 <div className="space-y-2">
-                  {/* Tab 1: Relevant Business Citations */}
-                  <details open className="group rounded-xl border border-cyan-500/30 overflow-hidden bg-gradient-to-br from-cyan-500/5 to-transparent shadow-sm">
-                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-cyan-500/10 transition-colors">
+                  {/* Tab 1: Relevant Business Citations - simplified styling */}
+                  <details open className="rounded-xl border border-cyan-500/30 overflow-hidden bg-cyan-500/5">
+                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-cyan-500/10">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
                           <Link2 className="w-4 h-4 text-cyan-400" />
@@ -1429,7 +1439,7 @@ export const BRONKeywordsTab = ({
                           </div>
                         </div>
                       </div>
-                      <ChevronUp className="w-5 h-5 text-cyan-400 transition-transform duration-200 group-[[open]]:rotate-0 group-[&:not([open])]:rotate-180" />
+                      <ChevronUp className="w-5 h-5 text-cyan-400" />
                     </summary>
                     <div className="p-4 border-t border-cyan-500/20 bg-card/50">
                       {/* Compact Citation Link Analytics */}
@@ -1680,9 +1690,9 @@ export const BRONKeywordsTab = ({
                   </div>
                 </details>
 
-                  {/* Tab 2: Keyword Content */}
-                  <details className="group rounded-xl border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5 shadow-sm">
-                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-primary/10 transition-colors">
+                  {/* Tab 2: Keyword Content - simplified styling */}
+                  <details className="rounded-xl border border-primary/30 overflow-hidden bg-primary/5">
+                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-primary/10">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
                           <FileText className="w-4 h-4 text-primary" />
@@ -1699,7 +1709,7 @@ export const BRONKeywordsTab = ({
                           </div>
                         </div>
                       </div>
-                      <ChevronUp className="w-5 h-5 text-primary transition-transform duration-200 group-[[open]]:rotate-0 group-[&:not([open])]:rotate-180" />
+                      <ChevronUp className="w-5 h-5 text-primary" />
                     </summary>
                     <div className="border-t border-primary/20 p-4 bg-card/50">
                     {/* Two-column layout for compact form */}
