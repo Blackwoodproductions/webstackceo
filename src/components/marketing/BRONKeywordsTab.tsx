@@ -824,8 +824,8 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Fixed Column Layout for Perfect Alignment - spread evenly */}
-            <div className="flex items-center justify-between w-full gap-6">
+            {/* Fixed Column Layout for Perfect Alignment */}
+            <div className="flex items-center w-full gap-4">
               {/* Column 1: Page Speed Gauge - 70px (Real Google PageSpeed Data) */}
               <div className="w-[70px] flex-shrink-0 flex justify-center">
                 {(() => {
