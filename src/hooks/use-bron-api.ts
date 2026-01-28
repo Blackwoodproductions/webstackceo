@@ -542,6 +542,10 @@ export function useBronApi(): UseBronApiReturn {
   const linksInReqIdRef = useRef(0);
   const linksOutReqIdRef = useRef(0);
 
+  // Track latest link payloads per domain so we can save a complete cache entry
+  // when either direction returns (prevents re-hitting API on every domain switch).
+  const linksBufferRef = useRef<Record<string, { in: BronLink[] | null; out: BronLink[] | null }>>({});
+
   // Replace boolean "isLoading" toggles with a robust pending counter.
   const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
     setPendingCount((p) => p + 1);
@@ -1227,29 +1231,12 @@ export function useBronApi(): UseBronApiReturn {
       const cached = loadCachedLinks(domain);
       if (cached) {
         setLinksIn(cached.linksIn);
-        // Also set linksOut if it's in cache
-        if (cached.linksOut.length > 0) {
-          setLinksOut(cached.linksOut);
-        }
-        
-        // Background refresh to check for changes
-        callApi("getLinksIn", { domain, domain_id: domainId }).then(result => {
-          if (reqId !== linksInReqIdRef.current) return;
-          if (result?.success && result.data) {
-            const links = Array.isArray(result.data)
-              ? result.data
-              : (result.data.links || result.data.items || []);
-            const freshLinks = Array.isArray(links) ? links : [];
-            
-            // Only update if count changed (simple change detection)
-            if (freshLinks.length !== cached.linksIn.length) {
-              console.log(`[BRON] Links-in changed for ${domain} (${cached.linksIn.length} -> ${freshLinks.length})`);
-              setLinksIn(freshLinks);
-              // Re-save cache with fresh in links but keep existing out links
-              saveCachedLinks(domain, freshLinks, cached.linksOut);
-            }
-          }
-        }).catch(err => console.warn('[BRON] Background links-in check failed:', err));
+
+        // Keep both directions in sync when cached entry exists (even if empty)
+        setLinksOut(cached.linksOut);
+
+        // Prime buffer so subsequent single-direction updates can re-cache cleanly
+        linksBufferRef.current[domain] = { in: cached.linksIn, out: cached.linksOut };
         
         return; // Served from cache
       }
@@ -1267,8 +1254,13 @@ export function useBronApi(): UseBronApiReturn {
           const freshLinks = Array.isArray(links) ? links : [];
           console.log(`[BRON] Links-in result: ${freshLinks.length} links`);
           setLinksIn(freshLinks);
-          
-          // Cache will be saved when linksOut is also fetched
+
+          const prev = linksBufferRef.current[domain] || { in: null, out: null };
+          const next = { ...prev, in: freshLinks };
+          linksBufferRef.current[domain] = next;
+          if (next.in !== null && next.out !== null) {
+            saveCachedLinks(domain, next.in, next.out);
+          }
         } else if (result?.error) {
           setLinksInError(result.error || "Failed to fetch inbound links");
         }
@@ -1288,31 +1280,12 @@ export function useBronApi(): UseBronApiReturn {
     // Try cache first (unless forcing refresh)
     if (!forceRefresh) {
       const cached = loadCachedLinks(domain);
-      if (cached && cached.linksOut.length > 0) {
+
+      if (cached) {
         setLinksOut(cached.linksOut);
-        // Also set linksIn if it's in cache
-        if (cached.linksIn.length > 0) {
-          setLinksIn(cached.linksIn);
-        }
-        
-        // Background refresh to check for changes
-        callApi("getLinksOut", { domain, domain_id: domainId }).then(result => {
-          if (reqId !== linksOutReqIdRef.current) return;
-          if (result?.success && result.data) {
-            const links = Array.isArray(result.data)
-              ? result.data
-              : (result.data.links || result.data.items || []);
-            const freshLinks = Array.isArray(links) ? links : [];
-            
-            // Only update if count changed
-            if (freshLinks.length !== cached.linksOut.length) {
-              console.log(`[BRON] Links-out changed for ${domain} (${cached.linksOut.length} -> ${freshLinks.length})`);
-              setLinksOut(freshLinks);
-              // Re-save cache with fresh out links but keep existing in links
-              saveCachedLinks(domain, cached.linksIn, freshLinks);
-            }
-          }
-        }).catch(err => console.warn('[BRON] Background links-out check failed:', err));
+        setLinksIn(cached.linksIn);
+
+        linksBufferRef.current[domain] = { in: cached.linksIn, out: cached.linksOut };
         
         return; // Served from cache
       }
@@ -1330,6 +1303,13 @@ export function useBronApi(): UseBronApiReturn {
           const freshLinks = Array.isArray(links) ? links : [];
           console.log(`[BRON] Links-out result: ${freshLinks.length} links`);
           setLinksOut(freshLinks);
+
+          const prev = linksBufferRef.current[domain] || { in: null, out: null };
+          const next = { ...prev, out: freshLinks };
+          linksBufferRef.current[domain] = next;
+          if (next.in !== null && next.out !== null) {
+            saveCachedLinks(domain, next.in, next.out);
+          }
         } else if (result?.error) {
           setLinksOutError(result.error || "Failed to fetch outbound links");
         }

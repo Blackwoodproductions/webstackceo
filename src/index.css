@@ -147,13 +147,6 @@
     transition-timing-function: ease-out;
   }
 
-  /* Ensure borders and box-shadows never animate */
-  html *,
-  html *::before,
-  html *::after {
-    border-color: inherit;
-  }
-
   /* Disable ALL transitions for elements marked as no-theme-transition */
   html [data-no-theme-transition],
   html [data-no-theme-transition] *,
@@ -166,7 +159,6 @@
   button, input, select, textarea, [role="button"], 
   .glass-card, .card, [class*="border"], [class*="rounded"] {
     transition-property: background-color, color, fill, stroke, opacity, transform;
-    border-transition: none;
   }
 
   body {
