@@ -187,25 +187,28 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     return () => window.clearTimeout(timeoutId);
   }, [bronApi.isAuthenticated, bronApi.domains]);
 
-  // Sync domain selection with header selector
+  // Sync domain selection with header selector IMMEDIATELY (not waiting for auth)
+  // This ensures cache is hydrated synchronously on mount/domain switch
   useEffect(() => {
-    if (bronApi.isAuthenticated) {
-      bronApi.selectDomain(selectedDomain ?? null);
-    }
-  }, [bronApi.isAuthenticated, selectedDomain]);
+    bronApi.selectDomain(selectedDomain ?? null);
+  }, [selectedDomain]);
 
-  // Load domain-specific data
+  // Load domain-specific data (only fetch from API when authenticated)
+  // Cache is already hydrated by selectDomain above
   useEffect(() => {
     let cancelled = false;
     
-    if (!bronApi.isAuthenticated || !selectedDomain) return;
+    if (!selectedDomain) return;
 
     linksRequestedForDomainRef.current = null;
     setScreenshotUrl(null);
 
     getExistingScreenshot(selectedDomain);
 
-    // Fire all fetches in parallel
+    // Only fetch from API when authenticated
+    if (!bronApi.isAuthenticated) return;
+
+    // Fire all fetches in parallel (these will return from cache instantly if available)
     bronApi.fetchDomain(selectedDomain).then((info) => {
       if (!cancelled && info) setDomainInfo(info);
     });
