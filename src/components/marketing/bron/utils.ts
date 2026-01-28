@@ -121,54 +121,91 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   }
   
   const clusters: KeywordCluster[] = [];
-  
-  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
-  // Also check is_supporting and bubblefeed flags
-  const hasExplicitParent = new Map<number | string, number | string>();
-  const isExplicitSupporting = new Set<number | string>();
-  
+
+  const isSupporting = (kw: BronKeyword) =>
+    kw.is_supporting === true ||
+    kw.is_supporting === 1 ||
+    kw.bubblefeed === true ||
+    kw.bubblefeed === 1;
+
+  const normalizeRelId = (v: unknown): string | null => {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    if (!s || s === '0' || s.toLowerCase() === 'null' || s.toLowerCase() === 'undefined') return null;
+    return s;
+  };
+
+  // Prefer API-driven clustering when available:
+  // 1) cluster_id groups (common for BRON/SEOM packages)
+  // 2) parent_keyword_id hierarchy
+  const clusterMap = new Map<string, BronKeyword[]>();
   for (const kw of contentKeywords) {
-    // Check parent_keyword_id first
-    if (kw.parent_keyword_id) {
-      hasExplicitParent.set(kw.id, kw.parent_keyword_id);
-      isExplicitSupporting.add(kw.id);
-    }
-    // Also check is_supporting and bubblefeed flags
-    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
-      isExplicitSupporting.add(kw.id);
+    const cid = normalizeRelId((kw as any).cluster_id);
+    if (cid) {
+      if (!clusterMap.has(cid)) clusterMap.set(cid, []);
+      clusterMap.get(cid)!.push(kw);
     }
   }
-  
-  // Log clustering info for debugging
-  console.log('[BRON Clustering] API relationships detected:', {
-    hasExplicitParents: hasExplicitParent.size,
-    isSupportingCount: isExplicitSupporting.size,
-    totalContentKeywords: contentKeywords.length,
-    usingApiClustering: hasExplicitParent.size > 0,
-  });
-  
-  if (hasExplicitParent.size > 0) {
-    // Use explicit API relationships (SEOM/BRON packages)
-    const parentChildMap = new Map<number | string, BronKeyword[]>();
-    const assignedAsChild = new Set<number | string>();
-    
-    for (const kw of contentKeywords) {
-      if (hasExplicitParent.has(kw.id)) {
-        const parentId = hasExplicitParent.get(kw.id)!;
-        if (!parentChildMap.has(parentId)) {
-          parentChildMap.set(parentId, []);
-        }
-        parentChildMap.get(parentId)!.push(kw);
-        assignedAsChild.add(kw.id);
+
+  const hasClusterIds = clusterMap.size > 0;
+
+  // Build parent map (works even when cluster_id is missing)
+  const parentChildMap = new Map<string, BronKeyword[]>();
+  const assignedAsChild = new Set<string>();
+  for (const kw of contentKeywords) {
+    const pid = normalizeRelId((kw as any).parent_keyword_id);
+    if (!pid) continue;
+    if (!parentChildMap.has(pid)) parentChildMap.set(pid, []);
+    parentChildMap.get(pid)!.push(kw);
+    assignedAsChild.add(String(kw.id));
+  }
+
+  const assigned = new Set<string>();
+
+  // If the API provides *any* clustering signals (cluster_id or parent_keyword_id), use them.
+  // Otherwise, fall back to similarity clustering.
+  if (hasClusterIds || parentChildMap.size > 0) {
+    if (hasClusterIds) {
+      // Cluster by cluster_id first.
+      for (const [, members] of clusterMap) {
+        const sorted = [...members].sort((a, b) => getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b)));
+
+        const parent = sorted.find((k) => !isSupporting(k)) || sorted[0];
+
+        const children = sorted
+          .filter((k) => String(k.id) !== String(parent.id))
+          .filter((k) => isSupporting(k) || !sorted.some((x) => isSupporting(x)))
+          .slice(0, 2);
+
+        clusters.push({ parent, children, parentId: parent.id });
+        assigned.add(String(parent.id));
+        for (const c of children) assigned.add(String(c.id));
       }
     }
-    
-    // Create clusters from parents with their children (max 2 per cluster)
+
+    // Attach parent_keyword_id children for any remaining unassigned keywords.
+    // (This also handles packages that only send parent_keyword_id but no cluster_id.)
     for (const kw of contentKeywords) {
-      if (!assignedAsChild.has(kw.id)) {
-        const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
-        clusters.push({ parent: kw, children, parentId: kw.id });
-      }
+      const id = String(kw.id);
+      if (assigned.has(id)) continue;
+      if (assignedAsChild.has(id)) continue;
+
+      const children = (parentChildMap.get(id) || [])
+        .filter((c) => !assigned.has(String(c.id)))
+        .sort((a, b) => getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b)))
+        .slice(0, 2);
+
+      clusters.push({ parent: kw, children, parentId: kw.id });
+      assigned.add(id);
+      for (const c of children) assigned.add(String(c.id));
+    }
+
+    // Any leftover content keywords (not in a cluster_id group and not attached via parent_keyword_id)
+    for (const kw of contentKeywords) {
+      const id = String(kw.id);
+      if (assigned.has(id)) continue;
+      clusters.push({ parent: kw, children: [], parentId: kw.id });
+      assigned.add(id);
     }
   } else {
     // Topic-based similarity clustering
@@ -177,15 +214,15 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       text: getKeywordDisplayText(kw),
       wordCount: getKeywordDisplayText(kw).split(/\s+/).length
     }));
-    
+
     keywordsWithLength.sort((a, b) => a.wordCount - b.wordCount || a.text.localeCompare(b.text));
-    
-    const assigned = new Set<number | string>();
+
+    const assignedSim = new Set<string>();
     const mainKeywords: BronKeyword[] = [];
     const supportingPool: BronKeyword[] = [];
-    
+
     const targetMainCount = Math.ceil(contentKeywords.length / 3);
-    
+
     for (let i = 0; i < keywordsWithLength.length; i++) {
       if (mainKeywords.length < targetMainCount && i % 3 === 0) {
         mainKeywords.push(keywordsWithLength[i].kw);
@@ -193,32 +230,32 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
         supportingPool.push(keywordsWithLength[i].kw);
       }
     }
-    
+
     for (const main of mainKeywords) {
       const mainText = getKeywordDisplayText(main);
-      
+
       const scored = supportingPool
-        .filter(s => !assigned.has(s.id))
+        .filter(s => !assignedSim.has(String(s.id)))
         .map(s => ({
           kw: s,
           score: calculateKeywordSimilarity(mainText, getKeywordDisplayText(s))
         }))
         .sort((a, b) => b.score - a.score);
-      
+
       const children: BronKeyword[] = [];
       for (let i = 0; i < Math.min(2, scored.length); i++) {
         if (scored[i].score >= 0.3) {
           children.push(scored[i].kw);
-          assigned.add(scored[i].kw.id);
+          assignedSim.add(String(scored[i].kw.id));
         }
       }
-      
+
       clusters.push({ parent: main, children, parentId: main.id });
-      assigned.add(main.id);
+      assignedSim.add(String(main.id));
     }
-    
+
     for (const s of supportingPool) {
-      if (!assigned.has(s.id)) {
+      if (!assignedSim.has(String(s.id))) {
         clusters.push({ parent: s, children: [], parentId: s.id });
       }
     }
