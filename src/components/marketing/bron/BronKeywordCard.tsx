@@ -101,7 +101,7 @@ function getMovementFromDelta(movement: number) {
   return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false, delta: 0 };
 }
 
-// PageSpeed Gauge Component - memoized
+// PageSpeed Gauge Component - memoized with stable rendering
 const PageSpeedGauge = memo(({ score, loading, updating, error }: { 
   score: number; 
   loading?: boolean; 
@@ -113,9 +113,9 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   const getGaugeColor = () => {
     if (loading || isPending) return { stroke: 'stroke-cyan-500/40', text: 'text-cyan-400', glow: '' };
     if (error) return { stroke: 'stroke-muted-foreground/30', text: 'text-muted-foreground', glow: '' };
-    if (score >= 90) return { stroke: 'stroke-emerald-500', text: 'text-emerald-400', glow: 'drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]' };
-    if (score >= 50) return { stroke: 'stroke-amber-500', text: 'text-amber-400', glow: 'drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]' };
-    return { stroke: 'stroke-red-500', text: 'text-red-400', glow: 'drop-shadow-[0_0_6px_rgba(239,68,68,0.5)]' };
+    if (score >= 90) return { stroke: 'stroke-emerald-500', text: 'text-emerald-400', glow: '' };
+    if (score >= 50) return { stroke: 'stroke-amber-500', text: 'text-amber-400', glow: '' };
+    return { stroke: 'stroke-red-500', text: 'text-red-400', glow: '' };
   };
   
   const colors = getGaugeColor();
@@ -127,6 +127,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
     <div 
       className="relative w-12 h-12 flex items-center justify-center"
       title={updating ? 'Updating...' : isPending ? 'Loading...' : `Score: ${score}/100`}
+      style={{ contain: 'strict' }}
     >
       <svg className="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
         <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
@@ -134,16 +135,14 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
           <circle
             cx="22" cy="22" r="18" fill="none" strokeWidth="3" strokeLinecap="round"
             className="stroke-cyan-500/50"
-            style={{ animation: 'spin 2s linear infinite', transformOrigin: '22px 22px' }}
             strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
           />
         ) : (
           <circle
             cx="22" cy="22" r="18" fill="none" strokeWidth="3" strokeLinecap="round"
-            className={`${colors.stroke} ${colors.glow}`}
+            className={colors.stroke}
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
           />
         )}
       </svg>
@@ -156,7 +155,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
       </div>
       {updating && (
         <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-cyan-500/90 flex items-center justify-center">
-          <RefreshCw className="w-2.5 h-2.5 text-white animate-spin" />
+          <RefreshCw className="w-2.5 h-2.5 text-white" />
         </div>
       )}
     </div>
@@ -309,18 +308,19 @@ export const BronKeywordCard = memo(({
   return (
     <div
       className={deleted ? 'opacity-50' : ''}
-      style={{ contain: 'layout style paint' }}
+      style={{ contain: 'layout style paint', willChange: 'auto' }}
     >
       <div 
         className={`
           rounded-xl border overflow-hidden
           ${isNested 
-            ? 'border-l-2 border-l-blue-500/50 ml-2 bg-blue-500/5 border-blue-500/20' + (isExpanded ? ' ring-1 ring-blue-500/40' : '')
+            ? 'border-l-2 border-l-blue-500/50 ml-2 bg-blue-500/5 border-blue-500/20'
             : isTrackingOnly 
-              ? 'bg-amber-500/5 border-amber-500/20' + (isExpanded ? ' ring-1 ring-amber-500/40' : '')
-              : 'bg-orange-500/5 border-orange-500/20' + (isExpanded ? ' ring-1 ring-orange-500/40' : ' border-orange-500/30')
+              ? 'bg-amber-500/5 border-amber-500/20'
+              : 'bg-orange-500/5 border-orange-500/20 border-orange-500/30'
           }
         `}
+        style={{ contain: 'content' }}
       >
         {/* Header - Clickable */}
         <div className="p-4 cursor-pointer overflow-x-auto" onClick={onToggleExpand}>
@@ -433,10 +433,10 @@ export const BronKeywordCard = memo(({
 
             {/* Column 7: Expand/Collapse */}
             <div className="w-[40px] flex-shrink-0 flex justify-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 isExpanded 
                   ? 'bg-primary/20 text-primary' 
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                  : 'bg-muted/50 text-muted-foreground'
               }`}>
                 {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </div>

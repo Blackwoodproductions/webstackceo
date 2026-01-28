@@ -67,9 +67,9 @@ export const BronKeywordExpanded = memo(({
   if (isTrackingOnly) {
     return (
       <div 
-        className="border-t border-amber-500/20 p-6 bg-gradient-to-b from-amber-500/5 to-transparent"
+        className="border-t border-amber-500/20 p-6 bg-amber-500/5"
         onClick={(e) => e.stopPropagation()}
-        style={{ contain: 'layout paint' }}
+        style={{ contain: 'layout style paint' }}
       >
         <div className="text-center py-8">
           <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
@@ -97,9 +97,9 @@ export const BronKeywordExpanded = memo(({
 
   return (
     <div 
-      className="border-t border-border/30 p-6 bg-gradient-to-b from-background/50 to-transparent space-y-4"
+      className="border-t border-border/30 p-6 bg-background/50 space-y-4"
       onClick={(e) => e.stopPropagation()}
-      style={{ contain: 'layout paint' }}
+      style={{ contain: 'layout style paint' }}
     >
       {/* Content Preview & Actions */}
       <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/30">

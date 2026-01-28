@@ -120,7 +120,7 @@ const KeywordListItem = memo(({
     const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
     
     return (
-      <div key={kw.id} style={{ contain: 'layout style' }}>
+      <div key={kw.id} style={{ contain: 'layout style paint' }}>
         <BronKeywordCard
           keyword={kw}
           serpData={serpData}
@@ -160,7 +160,7 @@ const KeywordListItem = memo(({
   };
 
   return (
-    <div className="space-y-2" style={{ contain: 'layout' }}>
+    <div className="space-y-2" style={{ contain: 'layout style paint' }}>
       {renderKeyword(cluster.parent, false, cluster.children.length)}
       {cluster.children.map(child => renderKeyword(child, true))}
     </div>
