@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, forwardRef } from "react";
+import { memo, useState, useEffect, useRef, forwardRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,6 +10,7 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isEmbedMode = searchParams.get('embed') === 'true';
+  const throttleRef = useRef(false);
 
   // Hide on admin/dashboard pages and in embed mode
   const hiddenPaths = ['/visitor-intelligence-dashboard', '/admin', '/auth'];
@@ -49,31 +50,41 @@ const FloatingCodeBox = memo(forwardRef<HTMLDivElement>(function FloatingCodeBox
     return () => window.removeEventListener('logoGoldChange', handleLogoGoldChange);
   }, []);
 
-  // Handle scroll to stop above footer
+  // Handle scroll to stop above footer (throttled)
   useEffect(() => {
     const handleScroll = () => {
-      try {
-        const footer = document.querySelector('footer');
-        if (!footer) return;
+      if (throttleRef.current) return;
+      throttleRef.current = true;
+      
+      requestAnimationFrame(() => {
+        try {
+          const footer = document.querySelector('footer');
+          if (!footer) {
+            throttleRef.current = false;
+            return;
+          }
 
-        const footerRect = footer.getBoundingClientRect();
-        const elementHeight = 80; // 20 * 4 = h-20
-        const buffer = 40; // Space above footer
-        const defaultTop = 128; // 8rem = 128px
+          const footerRect = footer.getBoundingClientRect();
+          const elementHeight = 80;
+          const buffer = 40;
+          const defaultTop = 128;
 
-        // Calculate max position (above footer)
-        const maxTop = footerRect.top - elementHeight - buffer;
-        if (!Number.isFinite(maxTop)) return;
+          const maxTop = footerRect.top - elementHeight - buffer;
+          if (!Number.isFinite(maxTop)) {
+            throttleRef.current = false;
+            return;
+          }
 
-        if (defaultTop > maxTop) {
-          // Element would overlap footer, cap it
-          setTopPosition(`${maxTop}px`);
-        } else {
-          setTopPosition('8rem');
+          if (defaultTop > maxTop) {
+            setTopPosition(`${maxTop}px`);
+          } else {
+            setTopPosition('8rem');
+          }
+        } catch {
+          // Never allow this non-critical widget to crash the page.
         }
-      } catch {
-        // Never allow this non-critical widget to crash the page.
-      }
+        throttleRef.current = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

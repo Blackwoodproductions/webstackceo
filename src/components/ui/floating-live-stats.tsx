@@ -28,61 +28,71 @@ const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveS
     return () => clearTimeout(timer);
   }, [shouldShow, authLoading]);
 
-  // Position relative to AI shield - always stay above it
+  // Throttle ref for scroll performance
+  const throttleRef = useRef(false);
+
+  // Position relative to AI shield - always stay above it (throttled)
   useEffect(() => {
     if (!shouldShow || !isVisible) return;
 
     const handlePosition = () => {
-      const container = containerRef.current;
-      const aiShield = document.querySelector('[data-floating-ai-shield]');
-      const footer = document.querySelector('footer');
+      if (throttleRef.current) return;
+      throttleRef.current = true;
       
-      if (!container) return;
-
-      // Fade out when footer/newsletter enters view to avoid overlapping it
-      if (footer) {
-        const footerRect = footer.getBoundingClientRect();
-        const fadeStart = window.innerHeight * 0.7;
-        const fadeEnd = window.innerHeight * 0.5;
-
-        if (footerRect.top < fadeStart) {
-          const t = (footerRect.top - fadeEnd) / (fadeStart - fadeEnd);
-          setOpacity(Math.max(0, Math.min(1, t)));
-        } else {
-          setOpacity(1);
-        }
-      }
-
-      const containerHeight = container.offsetHeight || 90;
-      const gap = 24; // Gap between stats and AI shield
-      const defaultTop = window.innerHeight * 0.38; // Below section indicator at 15%
-      const minTop = 200; // Below section indicator
-      const footerBuffer = 24; // keep off footer/newsletter area
-
-      // Compute max allowed top so the stats container doesn't overlap footer/newsletter
-      let maxTop = Number.POSITIVE_INFINITY;
-      if (footer) {
-        const footerRect = footer.getBoundingClientRect();
-        maxTop = footerRect.top - containerHeight - footerBuffer;
-      }
-      
-      if (aiShield) {
-        const shieldRect = aiShield.getBoundingClientRect();
-        const shieldOpacity = parseFloat(window.getComputedStyle(aiShield).opacity) || 1;
+      requestAnimationFrame(() => {
+        const container = containerRef.current;
+        const aiShield = document.querySelector('[data-floating-ai-shield]');
+        const footer = document.querySelector('footer');
         
-        // If shield is visible, ensure we stay above it
-        if (shieldOpacity >= 0.5) {
-          const statsBottomLimit = shieldRect.top - gap;
-          const requiredStatsTop = statsBottomLimit - containerHeight;
-          maxTop = Math.min(maxTop, requiredStatsTop);
+        if (!container) {
+          throttleRef.current = false;
+          return;
         }
 
-        const finalTop = Math.max(minTop, Math.min(defaultTop, maxTop));
-        setTopPosition(`${finalTop}px`);
-      } else {
-        const finalTop = Math.max(minTop, Math.min(defaultTop, maxTop));
-        setTopPosition(`${finalTop}px`);
-      }
+        // Fade out when footer/newsletter enters view to avoid overlapping it
+        if (footer) {
+          const footerRect = footer.getBoundingClientRect();
+          const fadeStart = window.innerHeight * 0.7;
+          const fadeEnd = window.innerHeight * 0.5;
+
+          if (footerRect.top < fadeStart) {
+            const t = (footerRect.top - fadeEnd) / (fadeStart - fadeEnd);
+            setOpacity(Math.max(0, Math.min(1, t)));
+          } else {
+            setOpacity(1);
+          }
+        }
+
+        const containerHeight = container.offsetHeight || 90;
+        const gap = 24;
+        const defaultTop = window.innerHeight * 0.38;
+        const minTop = 200;
+        const footerBuffer = 24;
+
+        let maxTop = Number.POSITIVE_INFINITY;
+        if (footer) {
+          const footerRect = footer.getBoundingClientRect();
+          maxTop = footerRect.top - containerHeight - footerBuffer;
+        }
+        
+        if (aiShield) {
+          const shieldRect = aiShield.getBoundingClientRect();
+          const shieldOpacity = parseFloat(window.getComputedStyle(aiShield).opacity) || 1;
+          
+          if (shieldOpacity >= 0.5) {
+            const statsBottomLimit = shieldRect.top - gap;
+            const requiredStatsTop = statsBottomLimit - containerHeight;
+            maxTop = Math.min(maxTop, requiredStatsTop);
+          }
+
+          const finalTop = Math.max(minTop, Math.min(defaultTop, maxTop));
+          setTopPosition(`${finalTop}px`);
+        } else {
+          const finalTop = Math.max(minTop, Math.min(defaultTop, maxTop));
+          setTopPosition(`${finalTop}px`);
+        }
+        throttleRef.current = false;
+      });
     };
 
     window.addEventListener('scroll', handlePosition, { passive: true });
