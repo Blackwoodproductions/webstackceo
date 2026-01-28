@@ -138,9 +138,13 @@ export const BronCitationAnalytics = memo(({
             </Button>
           )}
           <select 
-            className="bg-card border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors z-30"
+            className="bg-popover border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 z-50 cursor-pointer"
+            style={{ contain: 'layout', willChange: 'auto' }}
             value={viewMode}
-            onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
+            onChange={(e) => {
+              e.stopPropagation();
+              setViewMode(e.target.value as 'inbound' | 'outbound');
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <option value="inbound">Inbound ({linksIn.length})</option>
@@ -246,10 +250,14 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">View:</span>
                   <select
-                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20"
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer"
+                    style={{ contain: 'layout', willChange: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                     value={viewMode}
-                    onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setViewMode(e.target.value as 'inbound' | 'outbound');
+                    }}
                   >
                     <option value="inbound">Inbound ({linksIn.length})</option>
                     <option value="outbound">Outbound ({linksOut.length})</option>
@@ -258,10 +266,14 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Relevance:</span>
                   <select
-                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20"
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer"
+                    style={{ contain: 'layout', willChange: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                     value={relevanceFilter}
-                    onChange={(e) => setRelevanceFilter(e.target.value as RelevanceFilter)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setRelevanceFilter(e.target.value as RelevanceFilter);
+                    }}
                   >
                     <option value="all">All</option>
                     <option value="most">Most</option>
@@ -273,10 +285,14 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Type:</span>
                   <select 
-                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20" 
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer" 
+                    style={{ contain: 'layout', willChange: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                     value={reciprocalFilter}
-                    onChange={(e) => setReciprocalFilter(e.target.value as ReciprocalFilter)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setReciprocalFilter(e.target.value as ReciprocalFilter);
+                    }}
                   >
                     <option value="all">All ({activeLinks.length})</option>
                     <option value="reciprocal">Reciprocal</option>
