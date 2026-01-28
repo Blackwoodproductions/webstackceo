@@ -34,6 +34,7 @@ import {
   groupKeywords,
   mergeKeywordsWithSerp,
   decodeHtmlContent,
+  filterLinksForKeyword,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -101,6 +102,9 @@ const KeywordListItem = memo(({
     const serpData = findSerpForKeyword(keywordText, serpReports);
     const isExpanded = expandedIds.has(kw.id);
     
+    // Filter links for this specific keyword
+    const { keywordLinksIn, keywordLinksOut } = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
+    
     // Calculate movements
     const initial = initialPositions[keywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
     const currentGoogle = getPosition(serpData?.google);
@@ -126,8 +130,8 @@ const KeywordListItem = memo(({
           serpData={serpData}
           keywordMetrics={keywordMetrics[keywordText.toLowerCase()]}
           pageSpeedScore={pageSpeed}
-          linksInCount={linksIn.length}
-          linksOutCount={linksOut.length}
+          linksInCount={keywordLinksIn.length}
+          linksOutCount={keywordLinksOut.length}
           isExpanded={isExpanded}
           isNested={isNested}
           isTrackingOnly={isTrackingOnly}
@@ -146,8 +150,8 @@ const KeywordListItem = memo(({
             keyword={kw}
             isTrackingOnly={isTrackingOnly}
             selectedDomain={selectedDomain}
-            linksIn={linksIn}
-            linksOut={linksOut}
+            linksIn={keywordLinksIn}
+            linksOut={keywordLinksOut}
             formData={inlineEditForms[kw.id] as any}
             isSaving={savingIds.has(kw.id)}
             onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}

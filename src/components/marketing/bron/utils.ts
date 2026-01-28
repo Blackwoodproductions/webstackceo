@@ -1,4 +1,4 @@
-import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
+import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
 
 // LocalStorage key for PageSpeed cache
@@ -280,4 +280,57 @@ export function decodeHtmlContent(html: string): string {
     .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'").replace(/&mdash;/g, '—')
     .replace(/&ndash;/g, '–').replace(/&nbsp;/g, ' ');
+}
+
+// Filter links for a specific keyword based on URL matching
+// - Inbound links: `link` field contains the URL of the keyword's page (on our domain)
+// - Outbound links: Currently domain-level, not per-keyword filtered
+export function filterLinksForKeyword(
+  keyword: BronKeyword,
+  linksIn: BronLink[],
+  linksOut: BronLink[],
+  selectedDomain?: string
+): { keywordLinksIn: BronLink[]; keywordLinksOut: BronLink[] } {
+  const keywordText = getKeywordDisplayText(keyword);
+  const keywordUrl = keyword.linkouturl;
+  
+  // Generate possible URL patterns for this keyword
+  const urlPatterns: string[] = [];
+  
+  if (keywordUrl) {
+    urlPatterns.push(keywordUrl.toLowerCase());
+    // Also try without protocol
+    urlPatterns.push(keywordUrl.replace(/^https?:\/\//, '').toLowerCase());
+  }
+  
+  // Create slug from keyword text
+  const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (selectedDomain) {
+    urlPatterns.push(`${selectedDomain}/${slug}`.toLowerCase());
+    urlPatterns.push(`www.${selectedDomain}/${slug}`.toLowerCase());
+  }
+  // Also add just the slug for partial matching
+  if (slug.length > 5) {
+    urlPatterns.push(slug);
+  }
+  
+  // Filter inbound links - where the `link` field contains this keyword's page URL
+  const keywordLinksIn = linksIn.filter(link => {
+    const linkUrl = (link.link || '').toLowerCase();
+    if (!linkUrl) return false;
+    
+    // Check if the link URL matches any of our patterns
+    return urlPatterns.some(pattern => 
+      linkUrl.includes(pattern) || 
+      // Also check if the slug appears in the link path
+      (pattern === slug && linkUrl.includes(`/${slug}`))
+    );
+  });
+  
+  // Outbound links are domain-level, not per-keyword
+  // Return empty for now - they don't have per-keyword tracking in the API
+  // OR we could show all outbound links for non-tracking keywords
+  const keywordLinksOut: BronLink[] = [];
+  
+  return { keywordLinksIn, keywordLinksOut };
 }
