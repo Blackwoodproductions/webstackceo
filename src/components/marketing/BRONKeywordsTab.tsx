@@ -180,14 +180,18 @@ const KeywordListItem = memo(({
 }, (prev, next) => {
   // Custom compare: ignore Set/object identity changes and only re-render when
   // the expansion/saving/form state for IDs in THIS cluster changes.
-  if (prev.cluster !== next.cluster) return false;
+  // Cluster identity: compare by parent + child IDs, not object reference
+  if (prev.cluster.parentId !== next.cluster.parentId) return false;
+  if (prev.cluster.parent.id !== next.cluster.parent.id) return false;
+  if (prev.cluster.children.length !== next.cluster.children.length) return false;
+  for (let i = 0; i < prev.cluster.children.length; i++) {
+    if (prev.cluster.children[i].id !== next.cluster.children[i].id) return false;
+  }
   if (prev.selectedDomain !== next.selectedDomain) return false;
   if (prev.metricsLoading !== next.metricsLoading) return false;
 
   // Data references: if these change, re-render (they affect counts/metrics/UI)
   if (prev.serpReports !== next.serpReports) return false;
-  if (prev.keywordMetrics !== next.keywordMetrics) return false;
-  if (prev.pageSpeedScores !== next.pageSpeedScores) return false;
   if (prev.linksIn !== next.linksIn) return false;
   if (prev.linksOut !== next.linksOut) return false;
   if (prev.initialPositions !== next.initialPositions) return false;
@@ -196,6 +200,53 @@ const KeywordListItem = memo(({
     prev.cluster.parent.id,
     ...prev.cluster.children.map((c) => c.id),
   ];
+
+  // Only re-render a cluster when metrics/pagespeed for keywords IN THIS CLUSTER change.
+  // This prevents full-list repaint “glitching” as background fetches update unrelated rows.
+  const getUrlForKeyword = (kw: BronKeyword, domain?: string) => {
+    const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
+    if (kw.linkouturl) return kw.linkouturl;
+    if (!domain || isTrackingOnly) return null;
+    const text = getKeywordDisplayText(kw);
+    const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `https://${domain}/${slug}`;
+  };
+
+  const compareMetricsForKw = (kw: BronKeyword) => {
+    const key = getKeywordDisplayText(kw).toLowerCase();
+    const a = prev.keywordMetrics[key];
+    const b = next.keywordMetrics[key];
+    return (
+      (a?.cpc ?? null) === (b?.cpc ?? null) &&
+      (a?.competition ?? null) === (b?.competition ?? null) &&
+      (a?.competition_level ?? null) === (b?.competition_level ?? null) &&
+      (a?.search_volume ?? null) === (b?.search_volume ?? null)
+    );
+  };
+
+  const comparePageSpeedForKw = (kw: BronKeyword) => {
+    const url = getUrlForKeyword(kw, prev.selectedDomain);
+    const url2 = getUrlForKeyword(kw, next.selectedDomain);
+    // If URL changes, we must re-render (different score source)
+    if (url !== url2) return false;
+    if (!url) return true;
+    const a = prev.pageSpeedScores[url];
+    const b = next.pageSpeedScores[url];
+    return (
+      (a?.mobileScore ?? 0) === (b?.mobileScore ?? 0) &&
+      (a?.desktopScore ?? 0) === (b?.desktopScore ?? 0) &&
+      (a?.loading ?? false) === (b?.loading ?? false) &&
+      (a?.updating ?? false) === (b?.updating ?? false) &&
+      (a?.error ?? false) === (b?.error ?? false)
+    );
+  };
+
+  // Compare per-keyword subset values
+  const kws: BronKeyword[] = [prev.cluster.parent, ...prev.cluster.children];
+  for (const kw of kws) {
+    if (!compareMetricsForKw(kw)) return false;
+    if (!comparePageSpeedForKw(kw)) return false;
+  }
 
   for (const id of ids) {
     if (prev.expandedIds.has(id) !== next.expandedIds.has(id)) return false;
@@ -310,6 +361,12 @@ export const BRONKeywordsTab = memo(({
 
   // Group keywords
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
+
+  // Remove “grey” tracking-only rows from the UI (still counted in stats)
+  const displayClusters = useMemo(
+    () => groupedKeywords.filter((c) => !(c.parent.status === 'tracking_only' || String(c.parent.id).startsWith('serp_'))),
+    [groupedKeywords]
+  );
 
   // Stats
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
@@ -744,7 +801,7 @@ export const BRONKeywordsTab = memo(({
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
-          ) : groupedKeywords.length === 0 ? (
+          ) : displayClusters.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>No keywords found</p>
@@ -789,7 +846,7 @@ export const BRONKeywordsTab = memo(({
                 <div className="w-[40px] flex-shrink-0" />
               </div>
               
-              {groupedKeywords.map((cluster) => (
+              {displayClusters.map((cluster) => (
                 <KeywordListItem
                   key={cluster.parentId}
                   cluster={cluster}
