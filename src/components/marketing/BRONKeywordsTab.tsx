@@ -641,15 +641,28 @@ export const BRONKeywordsTab = ({
                 </span>
               </div>
 
-              {/* Keyword Text - with left padding for alignment */}
-              <div className="min-w-0 w-64 pl-2">
+              {/* Keyword Text - with left padding for alignment + hover expand */}
+              <div className="min-w-0 w-64 pl-2 group/keyword relative">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-foreground truncate">
+                  <h3 className="font-medium text-foreground truncate group-hover/keyword:opacity-0 transition-opacity">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
                   {active && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 group-hover/keyword:opacity-0" />
                   )}
+                </div>
+                {/* Expanded keyword on hover */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/keyword:opacity-100 pointer-events-none z-50 transition-opacity">
+                  <div className="bg-card border border-border/60 shadow-xl rounded-lg px-3 py-2 whitespace-nowrap max-w-[400px]">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">
+                        {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
+                      </span>
+                      {active && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
