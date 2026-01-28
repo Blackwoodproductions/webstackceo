@@ -409,6 +409,13 @@ export const BRONKeywordsTab = ({
                   )}
                 </div>
                 
+                {/* Target Keyword */}
+                {kw.keyword && !expanded && (
+                  <p className="text-xs text-primary font-medium truncate max-w-lg mb-0.5">
+                    {kw.keyword}
+                  </p>
+                )}
+                
                 {/* Meta description preview */}
                 {kw.metadescription && !expanded && (
                   <p className="text-xs text-muted-foreground line-clamp-1 max-w-lg">
