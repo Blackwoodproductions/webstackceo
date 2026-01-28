@@ -142,7 +142,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
   }, [domain]);
 
-  // Check subscription via BRON API - same pattern as SocialPanel
+  // Check subscription via BRON API - optimized for speed with cache-first approach
   // Returns the subscription result directly to avoid race conditions
   const checkSubscription = useCallback(async (): Promise<boolean> => {
     if (!domain) {
@@ -156,6 +156,9 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     
     try {
       console.log("[CADE] Checking subscription for domain:", domain);
+      
+      // fetchSubscription already uses cache-first approach - it returns cached data immediately
+      // and does background refresh, making this call very fast for returning users
       const subData = await fetchSubscription(domain);
       console.log("[CADE] Subscription response:", subData);
       
@@ -174,6 +177,8 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           quota_used: undefined,
           quota_limit: undefined,
         });
+        // Immediately show dashboard, data will load in background
+        setIsCheckingSubscription(false);
         return true;
       } else {
         console.log("[CADE] No valid subscription found:", { 
@@ -183,18 +188,20 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         setHasCadeSubscription(false);
         setBronSubscription(subData);
         setSubscription(null);
+        setIsCheckingSubscription(false);
         return false;
       }
     } catch (err) {
       console.error("[CADE] Subscription check error:", err);
       setHasCadeSubscription(false);
       setBronSubscription(null);
-      return false;
-    } finally {
       setIsCheckingSubscription(false);
+      return false;
     }
   }, [domain, fetchSubscription]);
 
+  // Fetch CADE system data - deferred and non-blocking
+  // This runs AFTER subscription check succeeds, so user sees dashboard immediately
   const fetchAllData = useCallback(async () => {
     if (!hasCadeSubscription) {
       setIsLoading(false);
@@ -203,17 +210,28 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     
     setError(null);
     
+    // Show the dashboard UI immediately with loading skeleton
+    // Don't block on slow CADE API calls
+    
     try {
-      // Fetch CADE system status
-      const [healthRes, workersRes, queuesRes] = await Promise.allSettled([
-        callCadeApi("health"),
-        callCadeApi("workers"),
-        callCadeApi("queues"),
+      // Use Promise.allSettled with short timeout - don't let slow endpoints block UI
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s max wait
+      
+      // Only fetch health endpoint - it's usually faster and contains summary data
+      // Workers and queues are fetched lazily when system section is expanded
+      const healthPromise = callCadeApi("health", {}, 1); // Reduce retries for faster failure
+      
+      const healthRes = await Promise.race([
+        healthPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)) // 8s timeout
       ]);
+      
+      clearTimeout(timeoutId);
 
-      // Process health
-      if (healthRes.status === "fulfilled" && healthRes.value) {
-        const healthData = healthRes.value?.data || healthRes.value;
+      // Process health data
+      if (healthRes && !healthRes.error) {
+        const healthData = healthRes?.data || healthRes;
         setHealth(healthData);
         if (healthData?.workers !== undefined) {
           setWorkers(Array(healthData.workers || 0).fill({ name: "Worker", status: "running" }));
@@ -223,37 +241,28 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           setQueues(Array.isArray(qData) ? qData : []);
         }
       }
-      
-      // Process workers
-      if (workersRes.status === "fulfilled" && !workersRes.value?.error) {
-        const workersData = workersRes.value?.data || workersRes.value;
-        if (Array.isArray(workersData)) setWorkers(workersData);
-      }
-      
-      // Process queues
-      if (queuesRes.status === "fulfilled" && !queuesRes.value?.error) {
-        const queuesData = queuesRes.value?.data || queuesRes.value;
-        if (Array.isArray(queuesData)) setQueues(queuesData);
-      }
 
-      // Fetch domain-specific data in parallel
+      // Fetch domain-specific data in background - don't block main UI
       if (domain) {
-        const [profileRes, faqsRes] = await Promise.allSettled([
-          callCadeApi("domain-profile"),
-          callCadeApi("get-faqs"),
-        ]);
-
-        if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
-          setDomainProfile(profileRes.value?.data || profileRes.value);
-        }
-        if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
-          const faqData = faqsRes.value?.data || faqsRes.value;
-          setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
-        }
+        // Domain profile and FAQs are loaded lazily when their sections are expanded
+        Promise.allSettled([
+          callCadeApi("domain-profile", {}, 1),
+          callCadeApi("get-faqs", {}, 1),
+        ]).then(([profileRes, faqsRes]) => {
+          if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
+            setDomainProfile(profileRes.value?.data || profileRes.value);
+          }
+          if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
+            const faqData = faqsRes.value?.data || faqsRes.value;
+            setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
+          }
+        }).catch(err => {
+          console.warn("[CADE] Background data fetch failed:", err);
+        });
       }
     } catch (err) {
-      console.error("[CADE] Fetch error:", err);
-      setError(err instanceof Error ? err.message : "Failed to load CADE data");
+      console.warn("[CADE] Fetch error (non-blocking):", err);
+      // Don't set error state - just log and continue showing dashboard
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -309,63 +318,54 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     return "bg-violet-500/15 text-violet-600 border-violet-500/30";
   };
 
-  // Subscription verification loading state
+  // Subscription verification loading state - optimized for speed
   if (isCheckingSubscription) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+        transition={{ duration: 0.15 }}
+        className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
       >
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           />
         </div>
         
-        <div className="relative z-10 flex flex-col items-center gap-3">
+        <div className="relative z-10 flex flex-col items-center gap-2">
           <div className="relative">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
             <motion.div
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Sparkles className="w-7 h-7 text-white" />
-            </motion.div>
-            <motion.div
-              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-md bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-md"
               animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
+              transition={{ duration: 0.8, repeat: Infinity }}
             >
-              <Loader2 className="w-3 h-3 text-white animate-spin" />
+              <Loader2 className="w-2.5 h-2.5 text-white animate-spin" />
             </motion.div>
           </div>
           
           <div className="text-center">
-            <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-              Verifying CADE Subscription
+            <p className="text-sm font-semibold text-foreground">
+              Connecting to CADE
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Checking access for <span className="font-medium text-foreground">{domain}</span>
-            </p>
+            <p className="text-xs text-muted-foreground">AI Content Automation Engine</p>
           </div>
           
-          <div className="flex items-center gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div
-                key={i}
-                className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
-                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-              />
-            ))}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Connecting
+            </span>
+            <span className="text-muted-foreground/50">→</span>
+            <span className="flex items-center gap-1.5 opacity-50">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+              Access
+            </span>
           </div>
         </div>
       </motion.div>
