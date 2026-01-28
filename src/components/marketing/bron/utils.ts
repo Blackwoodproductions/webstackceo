@@ -103,9 +103,8 @@ function calculateKeywordSimilarity(kw1: string, kw2: string): number {
 }
 
 // Group keywords by topic similarity
-// SEOM/BRON packages have nested supporting_keywords arrays in the API response
-// Other packages may use bubblefeedid, parent_keyword_id fields
-// Fallback to similarity-based clustering if no explicit relationships found
+// SEOM/BRON packages have explicit parent_keyword_id relationships from the API
+// Other packages use similarity-based clustering as a fallback
 export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -123,179 +122,104 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // ============================================================
-  // STRATEGY 1: Check for nested supporting_keywords array (BRON API)
-  // Main keywords have a supporting_keywords[] array containing their children
-  // ============================================================
-  const hasNestedSupporting = contentKeywords.some(kw => 
-    Array.isArray(kw.supporting_keywords) && kw.supporting_keywords.length > 0
-  );
+  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
+  // Also check is_supporting and bubblefeed flags
+  const hasExplicitParent = new Map<number | string, number | string>();
+  const isExplicitSupporting = new Set<number | string>();
   
-  if (hasNestedSupporting) {
-    console.log('[BRON Clustering] Using nested supporting_keywords arrays');
+  for (const kw of contentKeywords) {
+    // Check parent_keyword_id first
+    if (kw.parent_keyword_id) {
+      hasExplicitParent.set(kw.id, kw.parent_keyword_id);
+      isExplicitSupporting.add(kw.id);
+    }
+    // Also check is_supporting and bubblefeed flags
+    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
+      isExplicitSupporting.add(kw.id);
+    }
+  }
+  
+  // Log clustering info for debugging
+  console.log('[BRON Clustering] API relationships detected:', {
+    hasExplicitParents: hasExplicitParent.size,
+    isSupportingCount: isExplicitSupporting.size,
+    totalContentKeywords: contentKeywords.length,
+    usingApiClustering: hasExplicitParent.size > 0,
+  });
+  
+  if (hasExplicitParent.size > 0) {
+    // Use explicit API relationships (SEOM/BRON packages)
+    const parentChildMap = new Map<number | string, BronKeyword[]>();
+    const assignedAsChild = new Set<number | string>();
     
-    // Track which keywords are already assigned as supporting
-    const assignedAsSupporting = new Set<string>();
-    
-    // First pass: identify all supporting keyword IDs
     for (const kw of contentKeywords) {
-      if (Array.isArray(kw.supporting_keywords)) {
-        for (const child of kw.supporting_keywords) {
-          assignedAsSupporting.add(String(child.id));
+      if (hasExplicitParent.has(kw.id)) {
+        const parentId = hasExplicitParent.get(kw.id)!;
+        if (!parentChildMap.has(parentId)) {
+          parentChildMap.set(parentId, []);
         }
+        parentChildMap.get(parentId)!.push(kw);
+        assignedAsChild.add(kw.id);
       }
     }
     
-    // Second pass: create clusters from main keywords
+    // Create clusters from parents with their children (max 2 per cluster)
     for (const kw of contentKeywords) {
-      const idKey = String(kw.id);
-      
-      // Skip if this keyword is already assigned as a child
-      if (assignedAsSupporting.has(idKey)) continue;
-      
-      // Get nested supporting keywords (limit to 2)
-      const children = Array.isArray(kw.supporting_keywords) 
-        ? kw.supporting_keywords.slice(0, 2) 
-        : [];
-      
-      clusters.push({ parent: kw, children, parentId: kw.id });
+      if (!assignedAsChild.has(kw.id)) {
+        const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
+        clusters.push({ parent: kw, children, parentId: kw.id });
+      }
     }
-    
-    console.log('[BRON Clustering] Created clusters from nested arrays:', {
-      totalClusters: clusters.length,
-      clustersWithChildren: clusters.filter(c => c.children.length > 0).length,
-      totalChildren: clusters.reduce((sum, c) => sum + c.children.length, 0),
-    });
   } else {
-    // ============================================================
-    // STRATEGY 2: Check for bubblefeedid or parent_keyword_id relationships
-    // Supporting keywords have bubblefeedid = main_keyword.id
-    // ============================================================
-    const hasExplicitParent = new Map<string, string>();
-    const allIdKeys = new Set(contentKeywords.map(kw => String(kw.id)));
+    // Topic-based similarity clustering
+    const keywordsWithLength = contentKeywords.map(kw => ({
+      kw,
+      text: getKeywordDisplayText(kw),
+      wordCount: getKeywordDisplayText(kw).split(/\s+/).length
+    }));
     
-    for (const kw of contentKeywords) {
-      const idKey = String(kw.id);
-      
-      // Check bubblefeedid first (SEOM/BRON style)
-      const bubblefeedidRaw = (kw as any).bubblefeedid;
-      if (bubblefeedidRaw !== undefined && bubblefeedidRaw !== null) {
-        const parentKey = String(bubblefeedidRaw);
-        if (parentKey && parentKey !== "0" && parentKey !== idKey && allIdKeys.has(parentKey)) {
-          hasExplicitParent.set(idKey, parentKey);
-          continue;
-        }
-      }
-      
-      // Check parent_keyword_id
-      const parentRaw = (kw as any).parent_keyword_id;
-      if (parentRaw !== undefined && parentRaw !== null) {
-        const parentKey = String(parentRaw);
-        if (parentKey && parentKey !== "0" && parentKey !== idKey && allIdKeys.has(parentKey)) {
-          hasExplicitParent.set(idKey, parentKey);
-          continue;
-        }
-      }
-      
-      // Check bubblefeed (if it's an ID, not a boolean)
-      const bubbleRaw = kw.bubblefeed;
-      if (bubbleRaw !== undefined && bubbleRaw !== null) {
-        const bubbleKey = String(bubbleRaw);
-        if (bubbleKey && bubbleKey !== "0" && bubbleKey !== "true" && bubbleKey !== "false" && bubbleKey !== idKey) {
-          if (allIdKeys.has(bubbleKey)) {
-            hasExplicitParent.set(idKey, bubbleKey);
-            continue;
-          }
-        }
+    keywordsWithLength.sort((a, b) => a.wordCount - b.wordCount || a.text.localeCompare(b.text));
+    
+    const assigned = new Set<number | string>();
+    const mainKeywords: BronKeyword[] = [];
+    const supportingPool: BronKeyword[] = [];
+    
+    const targetMainCount = Math.ceil(contentKeywords.length / 3);
+    
+    for (let i = 0; i < keywordsWithLength.length; i++) {
+      if (mainKeywords.length < targetMainCount && i % 3 === 0) {
+        mainKeywords.push(keywordsWithLength[i].kw);
+      } else {
+        supportingPool.push(keywordsWithLength[i].kw);
       }
     }
     
-    console.log('[BRON Clustering] Checking explicit parent relationships:', {
-      hasExplicitParents: hasExplicitParent.size,
-      totalContentKeywords: contentKeywords.length,
-      sampleMappings: Array.from(hasExplicitParent.entries()).slice(0, 5),
-    });
+    for (const main of mainKeywords) {
+      const mainText = getKeywordDisplayText(main);
+      
+      const scored = supportingPool
+        .filter(s => !assigned.has(s.id))
+        .map(s => ({
+          kw: s,
+          score: calculateKeywordSimilarity(mainText, getKeywordDisplayText(s))
+        }))
+        .sort((a, b) => b.score - a.score);
+      
+      const children: BronKeyword[] = [];
+      for (let i = 0; i < Math.min(2, scored.length); i++) {
+        if (scored[i].score >= 0.3) {
+          children.push(scored[i].kw);
+          assigned.add(scored[i].kw.id);
+        }
+      }
+      
+      clusters.push({ parent: main, children, parentId: main.id });
+      assigned.add(main.id);
+    }
     
-    if (hasExplicitParent.size > 0) {
-      // Use explicit parent relationships
-      const parentChildMap = new Map<string, BronKeyword[]>();
-      const assignedAsChild = new Set<string>();
-      
-      for (const kw of contentKeywords) {
-        const idKey = String(kw.id);
-        if (hasExplicitParent.has(idKey)) {
-          const parentIdKey = hasExplicitParent.get(idKey)!;
-          if (!parentChildMap.has(parentIdKey)) {
-            parentChildMap.set(parentIdKey, []);
-          }
-          parentChildMap.get(parentIdKey)!.push(kw);
-          assignedAsChild.add(idKey);
-        }
-      }
-      
-      // Create clusters from parents with their children (max 2 per cluster)
-      for (const kw of contentKeywords) {
-        const idKey = String(kw.id);
-        if (!assignedAsChild.has(idKey)) {
-          const children = (parentChildMap.get(idKey) || []).slice(0, 2);
-          clusters.push({ parent: kw, children, parentId: kw.id });
-        }
-      }
-    } else {
-      // ============================================================
-      // STRATEGY 3: Topic-based similarity clustering (fallback)
-      // ============================================================
-      console.log('[BRON Clustering] No API relationships found, using similarity-based clustering');
-      
-      const keywordsWithLength = contentKeywords.map(kw => ({
-        kw,
-        text: getKeywordDisplayText(kw),
-        wordCount: getKeywordDisplayText(kw).split(/\s+/).length
-      }));
-      
-      keywordsWithLength.sort((a, b) => a.wordCount - b.wordCount || a.text.localeCompare(b.text));
-      
-      const assigned = new Set<number | string>();
-      const mainKeywords: BronKeyword[] = [];
-      const supportingPool: BronKeyword[] = [];
-      
-      const targetMainCount = Math.ceil(contentKeywords.length / 3);
-      
-      for (let i = 0; i < keywordsWithLength.length; i++) {
-        if (mainKeywords.length < targetMainCount && i % 3 === 0) {
-          mainKeywords.push(keywordsWithLength[i].kw);
-        } else {
-          supportingPool.push(keywordsWithLength[i].kw);
-        }
-      }
-      
-      for (const main of mainKeywords) {
-        const mainText = getKeywordDisplayText(main);
-        
-        const scored = supportingPool
-          .filter(s => !assigned.has(s.id))
-          .map(s => ({
-            kw: s,
-            score: calculateKeywordSimilarity(mainText, getKeywordDisplayText(s))
-          }))
-          .sort((a, b) => b.score - a.score);
-        
-        const children: BronKeyword[] = [];
-        for (let i = 0; i < Math.min(2, scored.length); i++) {
-          if (scored[i].score >= 0.3) {
-            children.push(scored[i].kw);
-            assigned.add(scored[i].kw.id);
-          }
-        }
-        
-        clusters.push({ parent: main, children, parentId: main.id });
-        assigned.add(main.id);
-      }
-      
-      for (const s of supportingPool) {
-        if (!assigned.has(s.id)) {
-          clusters.push({ parent: s, children: [], parentId: s.id });
-        }
+    for (const s of supportingPool) {
+      if (!assigned.has(s.id)) {
+        clusters.push({ parent: s, children: [], parentId: s.id });
       }
     }
   }
@@ -377,108 +301,32 @@ export function filterLinksForKeyword(
       .replace(/^https?:\/\//, "")
       .replace(/^www\./, "")
       .replace(/\/+$/, "");
-
-  const safeDecode = (v: string) => {
-    try {
-      return decodeURIComponent(v);
-    } catch {
-      return v;
-    }
-  };
-
-  const getUrlVariants = (raw?: string): string[] => {
-    if (!raw) return [];
-    const value = raw.trim();
-    if (!value) return [];
-
-    // If it's just a path ("/foo/bar"), treat it as pathname.
-    if (value.startsWith('/')) {
-      const path = value.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
-      const last = path.split('/').filter(Boolean).pop();
-      return Array.from(
-        new Set(
-          [
-            normalize(path),
-            normalize(safeDecode(path)),
-            last ? normalize(`/${last}`) : null,
-            last ? normalize(last) : null,
-          ].filter(Boolean) as string[]
-        )
-      );
-    }
-
-    // Ensure URL parsing works when protocol is omitted.
-    const maybeUrl = value.match(/^https?:\/\//i) ? value : `https://${value}`;
-    try {
-      const u = new URL(maybeUrl);
-      const host = normalize(u.host);
-      const pathname = (u.pathname || '/').replace(/\/+$/, '') || '/';
-      const hostPath = normalize(`${host}${pathname}`);
-      const decodedPath = safeDecode(pathname);
-      const last = pathname.split('/').filter(Boolean).pop();
-
-      return Array.from(
-        new Set(
-          [
-            normalize(value.split('?')[0].split('#')[0]),
-            hostPath,
-            normalize(pathname),
-            normalize(decodedPath),
-            last ? normalize(`/${last}`) : null,
-            last ? normalize(last) : null,
-          ].filter(Boolean) as string[]
-        )
-      );
-    } catch {
-      // Fallback: strip query/hash and normalize.
-      const stripped = value.split('?')[0].split('#')[0];
-      return [normalize(stripped)];
-    }
-  };
-
+  
   // Generate possible URL patterns for this keyword (normalized, protocol-less)
-  const patternSet = new Set<string>();
-  const addPatterns = (raw?: string) => {
-    for (const v of getUrlVariants(raw)) patternSet.add(v);
-  };
-
-  // 1) Prefer the explicit linkouturl from the API.
-  addPatterns(keywordUrl);
-
-  // 2) Slug from keyword text (and a stop-word-reduced variant) as fallback.
-  const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const slugNoStops = keywordText
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .filter(w => !['in', 'near', 'me', 'for', 'the', 'a', 'an', 'of', 'to', 'and'].includes(w))
-    .join(' ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  if (selectedDomain) {
-    addPatterns(`${selectedDomain}/${slug}`);
-    addPatterns(`www.${selectedDomain}/${slug}`);
-    if (slugNoStops && slugNoStops !== slug) {
-      addPatterns(`${selectedDomain}/${slugNoStops}`);
-      addPatterns(`www.${selectedDomain}/${slugNoStops}`);
-    }
+  const urlPatterns: string[] = [];
+  
+  if (keywordUrl) {
+    urlPatterns.push(normalize(keywordUrl));
   }
-  addPatterns(slug.length > 2 ? `/${slug}` : undefined);
-  addPatterns(slugNoStops && slugNoStops.length > 2 ? `/${slugNoStops}` : undefined);
-  addPatterns(slug.length > 5 ? slug : undefined);
-
-  const patterns = Array.from(patternSet);
+  
+  // Create slug from keyword text
+  const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (selectedDomain) {
+    urlPatterns.push(normalize(`${selectedDomain}/${slug}`));
+    urlPatterns.push(normalize(`www.${selectedDomain}/${slug}`));
+  }
+  // Also add path-only + slug fallbacks for partial matching
+  if (slug.length > 2) urlPatterns.push(`/${slug}`.replace(/\/+$/, ""));
+  if (slug.length > 5) urlPatterns.push(slug);
 
   const matchesKeywordUrl = (value?: string) => {
     if (!value) return false;
-    const candidates = getUrlVariants(value);
-    if (candidates.length === 0) return false;
-    return candidates.some((cand) => {
-      return patterns.some((p) => {
-        // Allow both directions because some APIs return only path/slug, others return full host+path.
-        return cand.includes(p) || p.includes(cand);
-      });
+    const normalizedValue = normalize(value);
+    if (!normalizedValue) return false;
+    return urlPatterns.some((pattern) => {
+      const p = normalize(pattern);
+      if (!p) return false;
+      return normalizedValue.includes(p);
     });
   };
   
