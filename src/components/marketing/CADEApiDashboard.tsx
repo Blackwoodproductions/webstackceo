@@ -113,31 +113,15 @@ interface CADEApiDashboardProps {
 
 export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const { fetchSubscription } = useBronApi();
-  
-  // Check cache synchronously for instant loading
-  const [cachedSub] = useState(() => domain ? getCachedSubscription(domain) : null);
-  const hasCachedSubscription = cachedSub?.has_cade === true;
-  
-  // If cache shows subscription, skip loading screen entirely
-  const [isLoading, setIsLoading] = useState(!hasCachedSubscription);
-  const [isCheckingSubscription, setIsCheckingSubscription] = useState(!hasCachedSubscription);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Subscription state - primary gate (pre-populated from cache if available)
-  const [hasCadeSubscription, setHasCadeSubscription] = useState(hasCachedSubscription);
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(cachedSub);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
-    hasCachedSubscription ? {
-      plan: cachedSub?.plan || cachedSub?.servicetype || "CADE",
-      status: cachedSub?.status || "active",
-      quota_used: undefined,
-      quota_limit: undefined,
-    } : null
-  );
-  
-  // Background sync indicator
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(hasCachedSubscription);
+  // Subscription state - primary gate
+  const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -161,14 +145,16 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         });
         
         if (error) {
+          // If it's a timeout or network error and we have retries left, retry
           if (attempt < retries && (error.message?.includes("timeout") || error.message?.includes("504"))) {
             console.warn(`[CADE] ${action} attempt ${attempt + 1} failed, retrying...`);
-            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); // Exponential backoff
             continue;
           }
           throw new Error(error.message || `Failed to fetch ${action}`);
         }
         
+        // Cache successful responses for quick fallback
         if (data && !data.error) {
           try {
             localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
@@ -200,20 +186,52 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
   }, [domain]);
 
-  // Check subscription via BRON API - optimized with cache-first
-  const checkSubscription = useCallback(async (isBackground = false): Promise<boolean> => {
+  // Check subscription via BRON API - optimized with persistent cache
+  // Returns the subscription result directly to avoid race conditions
+  const checkSubscription = useCallback(async (): Promise<boolean> => {
     if (!domain) {
       setIsCheckingSubscription(false);
       setIsLoading(false);
       return false;
     }
     
-    if (!isBackground) {
-      setIsCheckingSubscription(true);
+    setIsCheckingSubscription(true);
+    
+    // FAST PATH: Check persistent localStorage cache first (instant)
+    const cachedSub = getCachedSubscription(domain);
+    if (cachedSub && cachedSub.has_cade === true) {
+      console.log("[CADE] Using cached subscription (instant load)");
+      setHasCadeSubscription(true);
+      setBronSubscription(cachedSub);
+      setSubscription({
+        plan: cachedSub.plan || cachedSub.servicetype || "CADE",
+        status: cachedSub.status || "active",
+        quota_used: undefined,
+        quota_limit: undefined,
+      });
+      setIsCheckingSubscription(false);
+      
+      // Background refresh to update cache (non-blocking)
+      fetchSubscription(domain).then((freshData) => {
+        if (freshData) {
+          if (freshData.has_cade === true) {
+            setCachedSubscription(domain, freshData);
+            setBronSubscription(freshData);
+          } else {
+            // Subscription canceled - clear cache and update UI
+            clearCachedSubscription(domain);
+            setHasCadeSubscription(false);
+            setBronSubscription(freshData);
+          }
+        }
+      }).catch(() => { /* ignore background refresh errors */ });
+      
+      return true;
     }
     
+    // SLOW PATH: No cache, fetch from API
     try {
-      console.log("[CADE] Checking subscription for domain:", domain, isBackground ? "(background)" : "");
+      console.log("[CADE] Checking subscription for domain:", domain);
       const subData = await fetchSubscription(domain);
       console.log("[CADE] Subscription response:", subData);
       
@@ -222,7 +240,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         (subData.status === 'active' || !subData.status);
       
       if (hasValidSubscription) {
-        console.log("[CADE] Valid subscription detected, caching");
+        console.log("[CADE] Valid subscription detected, caching and showing dashboard");
         setCachedSubscription(domain, subData);
         setHasCadeSubscription(true);
         setBronSubscription(subData);
@@ -232,6 +250,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           quota_used: undefined,
           quota_limit: undefined,
         });
+        setIsCheckingSubscription(false);
         return true;
       } else {
         console.log("[CADE] No valid subscription found");
@@ -239,23 +258,20 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         setHasCadeSubscription(false);
         setBronSubscription(subData);
         setSubscription(null);
+        setIsCheckingSubscription(false);
         return false;
       }
     } catch (err) {
       console.error("[CADE] Subscription check error:", err);
-      // If we have cached subscription, keep showing the dashboard
-      if (!hasCachedSubscription) {
-        setHasCadeSubscription(false);
-        setBronSubscription(null);
-      }
-      return hasCachedSubscription;
-    } finally {
+      setHasCadeSubscription(false);
+      setBronSubscription(null);
       setIsCheckingSubscription(false);
-      setIsBackgroundSyncing(false);
+      return false;
     }
-  }, [domain, fetchSubscription, hasCachedSubscription]);
+  }, [domain, fetchSubscription]);
 
   // Fetch CADE system data - deferred and non-blocking
+  // This runs AFTER subscription check succeeds, so user sees dashboard immediately
   const fetchAllData = useCallback(async () => {
     if (!hasCadeSubscription) {
       setIsLoading(false);
@@ -264,12 +280,26 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     
     setError(null);
     
+    // Show the dashboard UI immediately with loading skeleton
+    // Don't block on slow CADE API calls
+    
     try {
+      // Use Promise.allSettled with short timeout - don't let slow endpoints block UI
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s max wait
+      
+      // Only fetch health endpoint - it's usually faster and contains summary data
+      // Workers and queues are fetched lazily when system section is expanded
+      const healthPromise = callCadeApi("health", {}, 1); // Reduce retries for faster failure
+      
       const healthRes = await Promise.race([
-        callCadeApi("health", {}, 1),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))
+        healthPromise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)) // 8s timeout
       ]);
+      
+      clearTimeout(timeoutId);
 
+      // Process health data
       if (healthRes && !healthRes.error) {
         const healthData = healthRes?.data || healthRes;
         setHealth(healthData);
@@ -282,8 +312,9 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         }
       }
 
-      // Fetch domain-specific data in background
+      // Fetch domain-specific data in background - don't block main UI
       if (domain) {
+        // Domain profile and FAQs are loaded lazily when their sections are expanded
         Promise.allSettled([
           callCadeApi("domain-profile", {}, 1),
           callCadeApi("get-faqs", {}, 1),
@@ -301,36 +332,27 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       }
     } catch (err) {
       console.warn("[CADE] Fetch error (non-blocking):", err);
+      // Don't set error state - just log and continue showing dashboard
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
   }, [callCadeApi, domain, hasCadeSubscription]);
 
-  // Check subscription on mount - cache-first approach
+  // Check subscription first when domain changes - then fetch data if valid
   useEffect(() => {
     let cancelled = false;
     
     const initDashboard = async () => {
-      // If we have cached subscription, render immediately and check in background
-      if (hasCachedSubscription) {
-        console.log("[CADE] Using cached subscription, starting data fetch");
+      const hasSubscription = await checkSubscription();
+      
+      if (cancelled) return;
+      
+      // Only fetch data if subscription is valid
+      if (hasSubscription) {
         fetchAllData();
-        
-        // Background refresh subscription
-        setIsBackgroundSyncing(true);
-        checkSubscription(true);
       } else {
-        // No cache, do full subscription check first
-        const hasSubscription = await checkSubscription(false);
-        
-        if (cancelled) return;
-        
-        if (hasSubscription) {
-          fetchAllData();
-        } else {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
     
@@ -366,9 +388,8 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     return "bg-violet-500/15 text-violet-600 border-violet-500/30";
   };
 
-  // Futuristic AI-agentic loading animation - only show when NO cache available
-  // If we have cached subscription, render the dashboard immediately with background sync
-  if (isCheckingSubscription && !hasCachedSubscription) {
+  // Futuristic AI-agentic loading animation for subscription check
+  if (isCheckingSubscription) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
@@ -652,13 +673,6 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Background sync indicator - subtle, non-blocking */}
-      {isBackgroundSyncing && (
-        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 backdrop-blur-sm">
-          <RefreshCw className="w-3 h-3 text-violet-400 animate-spin" />
-          <span className="text-xs text-violet-400">Syncing...</span>
-        </div>
-      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

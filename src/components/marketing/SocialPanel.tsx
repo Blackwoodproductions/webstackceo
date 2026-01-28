@@ -91,111 +91,25 @@ const platformConfig = {
   },
 };
 
-// Social cache for instant loading
-const SOCIAL_CACHE_KEY = 'social_profiles_cache';
-const SOCIAL_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
-
-interface SocialCacheEntry {
-  profiles: SocialProfile[];
-  hasCadeSubscription: boolean;
-  bronSubscription: BronSubscription | null;
-  cachedAt: number;
-}
-
-const loadCachedSocialData = (domain: string): SocialCacheEntry | null => {
-  try {
-    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
-    if (!cached) return null;
-    const allCaches = JSON.parse(cached) as Record<string, SocialCacheEntry>;
-    const entry = allCaches[domain];
-    if (entry && entry.cachedAt && (Date.now() - entry.cachedAt) < SOCIAL_CACHE_MAX_AGE) {
-      return entry;
-    }
-  } catch (e) {
-    console.warn('Failed to load social cache:', e);
-  }
-  return null;
-};
-
-const saveCachedSocialData = (domain: string, profiles: SocialProfile[], hasCadeSubscription: boolean, bronSubscription: BronSubscription | null) => {
-  try {
-    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
-    const allCaches: Record<string, SocialCacheEntry> = cached ? JSON.parse(cached) : {};
-    allCaches[domain] = { profiles, hasCadeSubscription, bronSubscription, cachedAt: Date.now() };
-    
-    // Prune old entries (keep max 10 domains)
-    const entries = Object.entries(allCaches);
-    if (entries.length > 10) {
-      entries.sort((a, b) => b[1].cachedAt - a[1].cachedAt);
-      const toKeep = entries.slice(0, 10);
-      const pruned: Record<string, SocialCacheEntry> = {};
-      for (const [key, val] of toKeep) {
-        pruned[key] = val;
-      }
-      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(pruned));
-    } else {
-      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(allCaches));
-    }
-  } catch (e) {
-    console.warn('Failed to save social cache:', e);
-  }
-};
-
 export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { user } = useAuth();
   const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
   const { fetchSubscription } = useBronApi();
-  
-  const [isScanning, setIsScanning] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [profiles, setProfiles] = useState<SocialProfile[]>([]);
   const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
-  const [isCheckingCade, setIsCheckingCade] = useState(true);
+  const [isCheckingCade, setIsCheckingCade] = useState(false);
   const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
-
-  // CRITICAL: Hydrate from cache synchronously when domain changes
-  // This prevents the "loading" flash when switching between domains
-  useEffect(() => {
-    if (!selectedDomain) {
-      setProfiles([]);
-      setHasCadeSubscription(false);
-      setBronSubscription(null);
-      setIsScanning(false);
-      setIsCheckingCade(false);
-      setScanComplete(false);
-      return;
-    }
-
-    // Try to load from cache SYNCHRONOUSLY
-    const cached = loadCachedSocialData(selectedDomain);
-    if (cached) {
-      console.log('[SocialPanel] Hydrating from cache for', selectedDomain);
-      setProfiles(cached.profiles);
-      setHasCadeSubscription(cached.hasCadeSubscription);
-      setBronSubscription(cached.bronSubscription);
-      setIsScanning(false);
-      setIsCheckingCade(false);
-      setScanComplete(true);
-      setIsBackgroundSyncing(true);
-    } else {
-      // No cache - will load fresh
-      setIsScanning(true);
-      setIsCheckingCade(true);
-      setScanComplete(false);
-    }
-  }, [selectedDomain]);
 
   // Check subscription via BRON API
-  const checkCadeSubscription = useCallback(async (isBackground = false) => {
+  const checkCadeSubscription = useCallback(async () => {
     if (!selectedDomain) return;
     
-    if (!isBackground) {
-      setIsCheckingCade(true);
-      setBronSubscription(null);
-    }
+    setIsCheckingCade(true);
+    setBronSubscription(null);
     try {
       const subscription = await fetchSubscription(selectedDomain);
       
@@ -206,16 +120,12 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         setHasCadeSubscription(false);
         setBronSubscription(subscription);
       }
-      return subscription;
     } catch (err) {
       console.error('Error checking BRON subscription:', err);
       setHasCadeSubscription(false);
       setBronSubscription(null);
-      return null;
     } finally {
-      if (!isBackground) {
-        setIsCheckingCade(false);
-      }
+      setIsCheckingCade(false);
     }
   }, [selectedDomain, fetchSubscription]);
 
@@ -273,42 +183,13 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     }));
   }, [connections]);
 
-  // Background refresh after cache hydration + initial scan for uncached domains
+  // Initial scan when domain changes
   useEffect(() => {
-    if (!selectedDomain) return;
-    
-    // Check if we loaded from cache (background sync will be true)
-    if (isBackgroundSyncing) {
-      // Background refresh - non-blocking
-      Promise.all([
-        scanWebsiteForSocials(),
-        checkCadeSubscription(true),
-      ]).then(([, subscription]) => {
-        // Save updated cache
-        if (profiles.length > 0) {
-          saveCachedSocialData(
-            selectedDomain, 
-            profiles, 
-            subscription?.has_cade === true && subscription?.status === 'active',
-            subscription || null
-          );
-        }
-      }).finally(() => {
-        setIsBackgroundSyncing(false);
-      });
-    } else if (isScanning) {
-      // No cache - do full scan
+    if (selectedDomain) {
       scanWebsiteForSocials();
       checkCadeSubscription();
     }
-  }, [selectedDomain, isBackgroundSyncing, isScanning]);
-  
-  // Save to cache when data updates (after scans complete)
-  useEffect(() => {
-    if (selectedDomain && scanComplete && profiles.length > 0 && !isBackgroundSyncing) {
-      saveCachedSocialData(selectedDomain, profiles, hasCadeSubscription, bronSubscription);
-    }
-  }, [selectedDomain, scanComplete, profiles, hasCadeSubscription, bronSubscription, isBackgroundSyncing]);
+  }, [selectedDomain, scanWebsiteForSocials, checkCadeSubscription]);
 
   const detectedCount = profiles.filter(p => p.detected).length;
   const connectedCount = profiles.filter(p => p.connected).length;
@@ -323,13 +204,6 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
 
   return (
     <div className="relative space-y-6">
-      {/* Background sync indicator - subtle, non-blocking */}
-      {isBackgroundSyncing && (
-        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 backdrop-blur-sm">
-          <RefreshCw className="w-3 h-3 text-pink-400 animate-spin" />
-          <span className="text-xs text-pink-400">Syncing social...</span>
-        </div>
-      )}
       <VIDashboardEffects />
       
       {/* Header with scan status and compact platform carousel */}
@@ -344,20 +218,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               <Share2 className="w-5 h-5 text-white" />
             </motion.div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold">Social Media Dashboard</h2>
-                {/* CADE Subscription Detected Badge - shows on left after dashboard loads */}
-                {hasCadeSubscription && !isCheckingCade && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8, x: -10 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/40"
-                  >
-                    <Sparkles className="w-3 h-3 text-violet-400" />
-                    <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-wide">CADE Active</span>
-                  </motion.div>
-                )}
-              </div>
+              <h2 className="text-xl font-bold">Social Media Dashboard</h2>
               <p className="text-xs text-muted-foreground">
                 Social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
               </p>

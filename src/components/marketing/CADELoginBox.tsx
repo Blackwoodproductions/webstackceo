@@ -180,25 +180,16 @@ const MODEL_TIERS = [
   { id: "premium", name: "Premium", desc: "Best quality, slower" },
 ];
 
-// Check if we have cached subscription data to show instantly
-const hasCachedSubscription = (targetDomain: string): boolean => {
-  const cached = getCachedSubscription(targetDomain);
-  return cached !== null && cached.has_cade === true;
-};
-
 export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps) => {
   const { fetchSubscription } = useBronApi();
-  
-  // Check cache synchronously to skip loading on cached hit
-  const [hasCached] = useState(() => domain ? hasCachedSubscription(domain) : false);
-  const [isLoading, setIsLoading] = useState(!hasCached);
-  const [isConnected, setIsConnected] = useState(hasCached);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(hasCached ? true : null);
-  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>(hasCached ? null : 'connecting');
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(() => domain ? getCachedSubscription(domain) : null);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(hasCached);
+  const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(null);
+  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>('connecting');
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -277,7 +268,6 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
         setIsConnected(true);
         setIsLoading(false);
         setLoadingPhase(null);
-        setIsBackgroundSyncing(true);
         
         // Background refresh for subscription changes (non-blocking)
         Promise.allSettled([
@@ -305,8 +295,6 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
               }
             }
           }
-        }).finally(() => {
-          setIsBackgroundSyncing(false);
         });
         
         return;
@@ -803,8 +791,8 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     return <Activity className="w-3.5 h-3.5" />;
   };
 
-  // Futuristic AI-agentic loading animation - only show if not cached
-  if (isLoading && !hasCached) {
+  // Futuristic AI-agentic loading animation
+  if (isLoading) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
@@ -1156,13 +1144,6 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
   // Connected Dashboard - domain has subscription
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      {/* Background sync indicator - subtle, non-blocking */}
-      {isBackgroundSyncing && (
-        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 backdrop-blur-sm">
-          <RefreshCw className="w-3 h-3 text-violet-400 animate-spin" />
-          <span className="text-xs text-violet-400">Syncing...</span>
-        </div>
-      )}
       {/* Active Domain Banner */}
       <div className="relative p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-green-500/10 to-teal-500/15 border border-emerald-500/30 overflow-hidden">
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">

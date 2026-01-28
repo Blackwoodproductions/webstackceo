@@ -194,74 +194,18 @@ const GoogleBusinessIcon = () => (
   </svg>
 );
 
-// Check for cached GMB data to show instantly
-const hasCachedGmbData = (domain: string): { cached: GmbCacheEntry | null; hasData: boolean } => {
-  const cached = loadCachedGmbData(domain);
-  return { cached, hasData: cached !== null && cached.locations.length > 0 };
-};
-
 export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const { googleProfile } = useAuth();
   
-  // Connection state - initialized from cache when available
+  // Connection state
   const [isCheckingAccount, setIsCheckingAccount] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(() => {
-    // Check for stored token
-    const gmbToken = localStorage.getItem('gmb_access_token');
-    const gmbExpiry = localStorage.getItem('gmb_token_expiry');
-    if (gmbToken && gmbExpiry && Date.now() < parseInt(gmbExpiry, 10) - 300000) {
-      return gmbToken;
-    }
-    const unifiedToken = localStorage.getItem('gsc_access_token') || localStorage.getItem('ga_access_token');
-    const unifiedExpiry = localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
-    if (unifiedToken && unifiedExpiry && Date.now() < parseInt(unifiedExpiry, 10) - 300000) {
-      return unifiedToken;
-    }
-    return null;
-  });
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<GmbAccount[]>([]);
   const [locations, setLocations] = useState<GmbLocation[]>([]);
   const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
-
-  // CRITICAL: Hydrate from cache synchronously when domain changes
-  // This prevents the "loading" flash when switching between domains
-  useEffect(() => {
-    if (!selectedDomain) {
-      setAccounts([]);
-      setLocations([]);
-      setMatchingLocation(null);
-      setIsCheckingAccount(false);
-      return;
-    }
-
-    // Try to load from cache SYNCHRONOUSLY
-    const cached = loadCachedGmbData(selectedDomain);
-    if (cached) {
-      console.log('[GMBPanel] Hydrating from cache for', selectedDomain);
-      setAccounts(cached.accounts);
-      setLocations(cached.locations);
-      setIsCheckingAccount(false);
-      setIsBackgroundSyncing(true);
-      
-      // Find matching location
-      const normalizedSelected = normalizeDomain(selectedDomain);
-      const match = cached.locations.find((loc: GmbLocation) => {
-        const locDomain = normalizeDomain(loc.websiteUri || '');
-        return locDomain === normalizedSelected || 
-               locDomain.includes(normalizedSelected) || 
-               normalizedSelected.includes(locDomain);
-      });
-      setMatchingLocation(match || null);
-    } else {
-      // No cache - will load fresh
-      setIsCheckingAccount(true);
-      setMatchingLocation(null);
-    }
-  }, [selectedDomain]);
 
   // Dashboard state
   const [activeTab, setActiveTab] = useState("overview");
@@ -346,8 +290,36 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     return null;
   }, []);
 
-  // Actual API call for GMB sync (defined first to be available for syncGmbData)
-  const syncGmbDataFromApi = useCallback(async (token: string, expirySeconds = 3600) => {
+  // Sync GMB data from API (with 24-hour cache support)
+  const syncGmbData = useCallback(async (token: string, expirySeconds = 3600, forceRefresh = false) => {
+    setIsCheckingAccount(true);
+    setSyncError(null);
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && selectedDomain) {
+      const cached = loadCachedGmbData(selectedDomain);
+      if (cached) {
+        console.log('[GMBPanel] Using cached GMB data for', selectedDomain);
+        setAccounts(cached.accounts);
+        setLocations(cached.locations);
+        
+        // Find matching location
+        const normalizedSelected = normalizeDomain(selectedDomain);
+        const match = cached.locations.find((loc: GmbLocation) => {
+          const locDomain = normalizeDomain(loc.websiteUri || '');
+          return locDomain === normalizedSelected || 
+                 locDomain.includes(normalizedSelected) || 
+                 normalizedSelected.includes(locDomain);
+        });
+        setMatchingLocation(match || null);
+        
+        localStorage.setItem('gmb_access_token', token);
+        localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
+        setIsCheckingAccount(false);
+        return;
+      }
+    }
+    
     try {
       const { data, error } = await supabase.functions.invoke('gmb-sync', {
         body: { accessToken: token, expiresInSeconds: expirySeconds, targetDomain: selectedDomain },
@@ -447,62 +419,14 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
   }, [selectedDomain]);
 
-  // Sync GMB data from API (with 24-hour cache support)
-  const syncGmbData = useCallback(async (token: string, expirySeconds = 3600, forceRefresh = false) => {
-    // Check cache first (unless force refresh)
-    if (!forceRefresh && selectedDomain) {
-      const cached = loadCachedGmbData(selectedDomain);
-      if (cached) {
-        console.log('[GMBPanel] Using cached GMB data for', selectedDomain);
-        setAccounts(cached.accounts);
-        setLocations(cached.locations);
-        
-        // Find matching location
-        const normalizedSelected = normalizeDomain(selectedDomain);
-        const match = cached.locations.find((loc: GmbLocation) => {
-          const locDomain = normalizeDomain(loc.websiteUri || '');
-          return locDomain === normalizedSelected || 
-                 locDomain.includes(normalizedSelected) || 
-                 normalizedSelected.includes(locDomain);
-        });
-        setMatchingLocation(match || null);
-        
-        localStorage.setItem('gmb_access_token', token);
-        localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
-        setIsCheckingAccount(false);
-        
-        // Background refresh - non-blocking
-        setIsBackgroundSyncing(true);
-        syncGmbDataFromApi(token, expirySeconds).finally(() => {
-          setIsBackgroundSyncing(false);
-        });
-        return;
-      }
-    }
-    
-    setIsCheckingAccount(true);
-    setSyncError(null);
-    await syncGmbDataFromApi(token, expirySeconds);
-  }, [selectedDomain, syncGmbDataFromApi]);
-
-  // Auto-connect on mount and domain changes - trigger background sync if cached
+  // Auto-connect on mount
   useEffect(() => {
     const connection = getStoredConnection();
     if (connection) {
       setAccessToken(connection.token);
       const expiry = localStorage.getItem('gmb_token_expiry') || localStorage.getItem('gsc_token_expiry') || localStorage.getItem('ga_token_expiry');
       const remainingSeconds = expiry ? Math.max(60, Math.floor((parseInt(expiry, 10) - Date.now()) / 1000)) : 3600;
-      
-      // If we already have cached data (isBackgroundSyncing is true from hydration effect)
-      // then do background API refresh
-      if (isBackgroundSyncing && locations.length > 0) {
-        syncGmbDataFromApi(connection.token, remainingSeconds).finally(() => {
-          setIsBackgroundSyncing(false);
-        });
-      } else if (!locations.length || isCheckingAccount) {
-        // No cache, do full sync
-        syncGmbData(connection.token, remainingSeconds);
-      }
+      syncGmbData(connection.token, remainingSeconds);
     } else {
       setTimeout(() => setIsCheckingAccount(false), 500);
     }
@@ -517,7 +441,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     
     window.addEventListener("google-auth-synced", handleAuthSync);
     return () => window.removeEventListener("google-auth-synced", handleAuthSync);
-  }, [getStoredConnection, syncGmbData, syncGmbDataFromApi, selectedDomain, isBackgroundSyncing]);
+  }, [getStoredConnection, syncGmbData]);
 
   // Re-check domain match when selected domain changes
   useEffect(() => {
@@ -648,13 +572,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
 
   return (
     <div className="relative space-y-3 overflow-hidden min-h-[400px]">
-      {/* Background sync indicator - subtle, non-blocking */}
-      {isBackgroundSyncing && (
-        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 backdrop-blur-sm">
-          <RefreshCw className="w-3 h-3 text-green-400 animate-spin" />
-          <span className="text-xs text-green-400">Syncing GMB...</span>
-        </div>
-      )}
       {/* Background Effects - Blue/Green theme for GMB */}
       <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
         <div
