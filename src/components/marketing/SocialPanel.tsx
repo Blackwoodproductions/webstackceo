@@ -210,15 +210,15 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
       <div className="relative z-10">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-              <motion.div 
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shrink-0"
-                animate={{ rotate: isScanning ? 360 : 0 }}
-                transition={{ duration: 2, repeat: isScanning ? Infinity : 0, ease: "linear" }}
-              >
-                <Share2 className="w-5 h-5 text-white" />
-              </motion.div>
-              <div>
-                <h2 className="text-xl font-bold">Social Signaling</h2>
+            <motion.div 
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shrink-0"
+              animate={{ rotate: isScanning ? 360 : 0 }}
+              transition={{ duration: 2, repeat: isScanning ? Infinity : 0, ease: "linear" }}
+            >
+              <Share2 className="w-5 h-5 text-white" />
+            </motion.div>
+            <div>
+              <h2 className="text-xl font-bold">Social Media Dashboard</h2>
               <p className="text-xs text-muted-foreground">
                 Social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
               </p>
@@ -637,13 +637,13 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           >
             <Card className="border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden relative">
               {/* Subscription Level Badge - Top Right */}
-              <div className="absolute top-3 right-3 z-10">
+              <div className="absolute top-0 right-0 z-10">
                 <motion.div 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30"
+                  className="flex items-center gap-2 px-4 py-2 rounded-bl-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border-l border-b border-violet-500/30"
                 >
-                  <Shield className="w-4 h-4 text-violet-400" />
+                  <Shield className="w-3.5 h-3.5 text-violet-400" />
                   <span className="text-xs font-semibold text-violet-300 uppercase tracking-wider">
                     {bronSubscription?.plan || "Pro"}
                   </span>
@@ -674,24 +674,26 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                     </div>
                   </div>
                   
-                  <Button
-                    variant={autopilotEnabled ? "default" : "outline"}
-                    onClick={() => {
-                      setAutopilotEnabled(!autopilotEnabled);
-                      toast.success(autopilotEnabled ? 'Autopilot paused' : 'Autopilot enabled');
-                    }}
-                    className={autopilotEnabled ? 'bg-gradient-to-r from-violet-500 to-purple-600' : ''}
-                  >
-                    {autopilotEnabled ? (
-                      <>
-                        <Pause className="w-4 h-4 mr-2" />Pause Autopilot
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />Enable Autopilot
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant={autopilotEnabled ? "default" : "outline"}
+                      onClick={() => {
+                        setAutopilotEnabled(!autopilotEnabled);
+                        toast.success(autopilotEnabled ? 'Autopilot paused' : 'Autopilot enabled');
+                      }}
+                      className={autopilotEnabled ? 'bg-gradient-to-r from-violet-500 to-purple-600' : ''}
+                    >
+                      {autopilotEnabled ? (
+                        <>
+                          <Pause className="w-4 h-4 mr-2" />Pause Autopilot
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />Enable Autopilot
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               
