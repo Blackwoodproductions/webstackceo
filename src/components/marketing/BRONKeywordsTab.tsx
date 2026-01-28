@@ -661,8 +661,8 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Intent badge - fixed width column */}
-              <div className="w-32 flex justify-center flex-shrink-0">
+              {/* Intent badge - fixed width column with right margin */}
+              <div className="w-32 flex justify-center flex-shrink-0 ml-4">
                 <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 w-full justify-center">
                   <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                     <IntentIcon className={`w-3 h-3 ${intent.color}`} />
@@ -681,7 +681,7 @@ export const BRONKeywordsTab = ({
                 const yahooMovement = getMovementFromDelta(yahooData.movement);
                 
                 return (
-                  <div className="flex-shrink-0 grid grid-cols-3 gap-2 text-center w-[300px]">
+                  <div className="flex-shrink-0 grid grid-cols-3 gap-2 text-center w-[300px] ml-6">
                     {/* Google Column */}
                     <div className="flex flex-col items-center">
                       <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
