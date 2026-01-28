@@ -739,73 +739,80 @@ export const BRONKeywordsTab = ({
               {/* Keyword Metrics from DataForSEO - Between Rankings and Links */}
               {(() => {
                 const metrics = keywordMetrics[keywordText.toLowerCase()];
-                if (metricsLoading) {
-                  return (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Skeleton className="h-10 w-14" />
-                      <Skeleton className="h-10 w-14" />
-                      <Skeleton className="h-10 w-14" />
-                    </div>
-                  );
-                }
-                if (!metrics) return null;
                 
-                const formatVolume = (vol: number) => {
+                const formatVolume = (vol?: number) => {
+                  if (vol === undefined || vol === null) return '—';
                   if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
                   if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
                   return String(vol);
                 };
                 
-                const getCompetitionColor = (level: string) => {
+                const getCompetitionColor = (level?: string) => {
                   switch (level?.toUpperCase()) {
                     case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
                     case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
                     case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
-                    default: return 'text-muted-foreground border-border bg-muted/50';
+                    default: return 'text-muted-foreground border-border bg-muted/30';
                   }
                 };
+
+                const getEstimatedCTR = (pos: number | null) => {
+                  if (pos === null) return null;
+                  if (pos <= 1) return '32%';
+                  if (pos <= 2) return '17%';
+                  if (pos <= 3) return '11%';
+                  if (pos <= 5) return '6%';
+                  if (pos <= 10) return '2%';
+                  return '<1%';
+                };
+
+                const ctrValue = getEstimatedCTR(googlePos);
                 
                 return (
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-6">
                     {/* Search Volume */}
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 w-14">
                       <div className="flex items-center gap-1">
                         <Users className="w-3 h-3 text-blue-400" />
-                        <span className="text-xs font-bold text-blue-400">{formatVolume(metrics.search_volume)}</span>
+                        <span className="text-xs font-bold text-blue-400">
+                          {metricsLoading ? '...' : formatVolume(metrics?.search_volume)}
+                        </span>
                       </div>
                       <span className="text-[8px] text-blue-400/70">Vol/mo</span>
                     </div>
                     
                     {/* CPC */}
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 w-14">
                       <div className="flex items-center gap-1">
                         <DollarSign className="w-3 h-3 text-emerald-400" />
-                        <span className="text-xs font-bold text-emerald-400">${metrics.cpc.toFixed(2)}</span>
+                        <span className="text-xs font-bold text-emerald-400">
+                          {metricsLoading ? '...' : metrics?.cpc !== undefined ? `$${metrics.cpc.toFixed(2)}` : '—'}
+                        </span>
                       </div>
                       <span className="text-[8px] text-emerald-400/70">CPC</span>
                     </div>
                     
                     {/* Competition/Difficulty */}
-                    <div className={`flex flex-col items-center px-2.5 py-1 rounded-lg border ${getCompetitionColor(metrics.competition_level)}`}>
+                    <div className={`flex flex-col items-center px-2.5 py-1 rounded-lg border w-14 ${getCompetitionColor(metrics?.competition_level)}`}>
                       <div className="flex items-center gap-1">
                         <Gauge className="w-3 h-3" />
-                        <span className="text-xs font-bold capitalize">{metrics.competition_level?.toLowerCase() || '—'}</span>
+                        <span className="text-xs font-bold capitalize">
+                          {metricsLoading ? '...' : metrics?.competition_level?.toLowerCase() || '—'}
+                        </span>
                       </div>
-                      <span className="text-[8px] opacity-70">Difficulty</span>
+                      <span className="text-[8px] opacity-70">Diff</span>
                     </div>
                     
-                    {/* CTR Estimate based on position */}
-                    {googlePos !== null && (
-                      <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
-                        <div className="flex items-center gap-1">
-                          <MousePointerClick className="w-3 h-3 text-violet-400" />
-                          <span className="text-xs font-bold text-violet-400">
-                            {googlePos <= 1 ? '32%' : googlePos <= 2 ? '17%' : googlePos <= 3 ? '11%' : googlePos <= 5 ? '6%' : googlePos <= 10 ? '2%' : '<1%'}
-                          </span>
-                        </div>
-                        <span className="text-[8px] text-violet-400/70">Est. CTR</span>
+                    {/* CTR Estimate based on Google position */}
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30 w-14">
+                      <div className="flex items-center gap-1">
+                        <MousePointerClick className="w-3 h-3 text-violet-400" />
+                        <span className="text-xs font-bold text-violet-400">
+                          {ctrValue || '—'}
+                        </span>
                       </div>
-                    )}
+                      <span className="text-[8px] text-violet-400/70">CTR</span>
+                    </div>
                   </div>
                 );
               })()}
