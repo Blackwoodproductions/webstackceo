@@ -844,11 +844,11 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : (isLoading || !hasReceivedData) && mergedKeywords.length === 0 ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
+          ) : mergedKeywords.length === 0 && !hasReceivedData ? (
+            // Subtle loading indicator instead of heavy skeletons - feels faster
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
+              <span className="text-sm">Loading keywords...</span>
             </div>
           ) : displayClusters.length === 0 && hasReceivedData ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -856,10 +856,10 @@ export const BRONKeywordsTab = memo(({
               <p>No keywords found</p>
             </div>
           ) : displayClusters.length === 0 ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
+            // Fallback loading
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
+              <span className="text-sm">Loading keywords...</span>
             </div>
           ) : (
             <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
