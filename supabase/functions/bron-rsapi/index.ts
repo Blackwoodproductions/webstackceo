@@ -7,6 +7,10 @@ const corsHeaders = {
 
 const BRON_API_BASE = "https://public4.imagehosting.space/api/rsapi";
 
+// Timeout for API calls (8 seconds for most, 12 for auth which can be slow)
+const DEFAULT_TIMEOUT_MS = 8000;
+const AUTH_TIMEOUT_MS = 12000;
+
 interface BronRequest {
   action: string;
   domain?: string;
@@ -19,8 +23,6 @@ interface BronRequest {
 }
 
 async function readResponseBody(res: Response): Promise<unknown> {
-  // Some BRON endpoints return plain-text (e.g. rate limit: "slow down"),
-  // so we must not assume JSON.
   const text = await res.text();
   if (!text) return null;
   try {
@@ -30,7 +32,6 @@ async function readResponseBody(res: Response): Promise<unknown> {
   }
 }
 
-// Helper to make authenticated requests to BRON API
 // Endpoints that require form-urlencoded data
 const FORM_ENCODED_ENDPOINTS = [
   "/pages",
@@ -40,14 +41,16 @@ const FORM_ENCODED_ENDPOINTS = [
   "/serp-detail",
   "/links-in",
   "/links-out",
-  "/keywords",  // List keywords endpoint also uses form data
-  "/domains",   // List domains endpoint also uses form data
+  "/keywords",
+  "/domains",
 ];
 
+// Helper to make authenticated requests to BRON API with timeout
 async function bronApiRequest(
   endpoint: string,
   method: string = "GET",
-  body?: Record<string, unknown>
+  body?: Record<string, unknown>,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<Response> {
   const apiId = Deno.env.get("BRON_API_ID");
   const apiKey = Deno.env.get("BRON_API_KEY");
@@ -56,10 +59,7 @@ async function bronApiRequest(
     throw new Error("BRON API credentials not configured");
   }
 
-  // Create Basic Auth header
   const credentials = btoa(`${apiId}:${apiKey}`);
-  
-  // Check if this endpoint needs form-urlencoded data
   const useFormData = FORM_ENCODED_ENDPOINTS.includes(endpoint);
   
   const headers: Record<string, string> = {
@@ -69,34 +69,43 @@ async function bronApiRequest(
   };
 
   const url = `${BRON_API_BASE}${endpoint}`;
-  console.log(`BRON API Request: ${method} ${url} (format: ${useFormData ? 'form' : 'json'})`);
+  console.log(`BRON API Request: ${method} ${url} (format: ${useFormData ? 'form' : 'json'}, timeout: ${timeoutMs}ms)`);
   
+  // Create AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   const options: RequestInit = {
     method,
     headers,
+    signal: controller.signal,
   };
 
   if (body && (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE")) {
     if (useFormData) {
-      // Convert to URL-encoded form data
       const formData = new URLSearchParams();
       for (const [key, value] of Object.entries(body)) {
         if (value !== undefined && value !== null) {
           formData.append(key, String(value));
         }
       }
-      const formBody = formData.toString();
-      console.log(`BRON API Request Body (form): ${formBody}`);
-      options.body = formBody;
+      options.body = formData.toString();
     } else {
-      const bodyStr = JSON.stringify(body);
-      console.log(`BRON API Request Body (json): ${bodyStr}`);
-      options.body = bodyStr;
+      options.body = JSON.stringify(body);
     }
   }
 
-  const response = await fetch(url, options);
-  return response;
+  try {
+    const response = await fetch(url, options);
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`BRON API request timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  }
 }
 
 serve(async (req) => {
@@ -108,7 +117,7 @@ serve(async (req) => {
     const body: BronRequest = await req.json();
     const { action, domain, domain_id, keyword_id, data, page, limit, include_deleted } = body;
 
-    console.log(`BRON RSAPI - Action: ${action}, Domain: ${domain || "N/A"}, DomainID: ${domain_id || "N/A"}`);
+    console.log(`BRON RSAPI - Action: ${action}, Domain: ${domain || "N/A"}`);
 
     let response: Response;
     let result: unknown;
@@ -116,14 +125,48 @@ serve(async (req) => {
     switch (action) {
       // ========== AUTHENTICATION ==========
       case "ping": {
-        response = await bronApiRequest("/ping", "GET");
+        response = await bronApiRequest("/ping", "GET", undefined, AUTH_TIMEOUT_MS);
         result = await readResponseBody(response);
         break;
       }
 
       case "verifyAuth": {
-        response = await bronApiRequest("/auth/verify", "GET");
-        result = await readResponseBody(response);
+        // Use longer timeout for auth verification since it can be slow
+        try {
+          response = await bronApiRequest("/auth/verify", "GET", undefined, AUTH_TIMEOUT_MS);
+          result = await readResponseBody(response);
+          
+          // If auth/verify doesn't exist or fails, try a simple domains call as fallback
+          if (!response.ok) {
+            console.log("Auth verify failed, trying fallback domains call");
+            const fallbackResponse = await bronApiRequest("/domains", "POST", { page: 1, limit: 1 }, AUTH_TIMEOUT_MS);
+            if (fallbackResponse.ok) {
+              // If we can list domains, auth is working
+              return new Response(
+                JSON.stringify({ success: true, data: { authenticated: true } }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            }
+            result = await readResponseBody(fallbackResponse);
+            response = fallbackResponse;
+          }
+        } catch (err) {
+          // If auth verify times out, try fallback
+          console.log("Auth verify timed out, trying fallback");
+          try {
+            const fallbackResponse = await bronApiRequest("/domains", "POST", { page: 1, limit: 1 }, AUTH_TIMEOUT_MS);
+            if (fallbackResponse.ok) {
+              return new Response(
+                JSON.stringify({ success: true, data: { authenticated: true } }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            }
+            response = fallbackResponse;
+            result = await readResponseBody(fallbackResponse);
+          } catch (fallbackErr) {
+            throw err; // Throw original error if fallback also fails
+          }
+        }
         break;
       }
 
@@ -315,7 +358,6 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // API requires 'serpid' not 'report_id'
         response = await bronApiRequest("/serp-detail", "POST", { domain, serpid: data.report_id });
         result = await readResponseBody(response);
         break;
@@ -329,19 +371,11 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // The API requires 'domain' field - domain_id is not supported
-        // Include domain_id in the payload if provided, but domain is mandatory
         const linksInPayload: Record<string, unknown> = {};
-        if (domain) {
-          linksInPayload.domain = domain;
-        }
-        if (domain_id) {
-          linksInPayload.domain_id = domain_id;
-        }
-        console.log(`BRON Links-In request payload:`, JSON.stringify(linksInPayload));
+        if (domain) linksInPayload.domain = domain;
+        if (domain_id) linksInPayload.domain_id = domain_id;
         response = await bronApiRequest("/links-in", "POST", linksInPayload);
         result = await readResponseBody(response);
-        console.log(`BRON Links-In response status: ${response.status}, result:`, JSON.stringify(result).substring(0, 500));
         break;
       }
 
@@ -352,19 +386,11 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // The API requires 'domain' field - domain_id is not supported
-        // Include domain_id in the payload if provided, but domain is mandatory
         const linksOutPayload: Record<string, unknown> = {};
-        if (domain) {
-          linksOutPayload.domain = domain;
-        }
-        if (domain_id) {
-          linksOutPayload.domain_id = domain_id;
-        }
-        console.log(`BRON Links-Out request payload:`, JSON.stringify(linksOutPayload));
+        if (domain) linksOutPayload.domain = domain;
+        if (domain_id) linksOutPayload.domain_id = domain_id;
         response = await bronApiRequest("/links-out", "POST", linksOutPayload);
         result = await readResponseBody(response);
-        console.log(`BRON Links-Out response status: ${response.status}, result:`, JSON.stringify(result).substring(0, 500));
         break;
       }
 
@@ -376,22 +402,14 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // The BRON API returns domain details including service type/subscription level
         response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}`, "GET");
         result = await readResponseBody(response);
         
-        // Extract subscription info from domain data
         const domainData = result as Record<string, unknown>;
         const serviceType = String(domainData?.servicetype || domainData?.service_type || "");
-        
-        // Known CADE subscription service type IDs (numeric)
-        // These IDs represent paid CADE subscriptions:
-        // 383 = CADE Pro, 385 = CADE Enterprise, etc.
-        // Any non-empty servicetype that is a number > 0 indicates a paid subscription
         const numericServiceType = parseInt(serviceType, 10);
         const hasCade = !isNaN(numericServiceType) && numericServiceType > 0;
         
-        // Map service type IDs to plan names
         const planNames: Record<string, string> = {
           "383": "CADE Pro",
           "385": "CADE Enterprise", 
@@ -402,17 +420,18 @@ serve(async (req) => {
         };
         const planName = planNames[serviceType] || (hasCade ? `Plan ${serviceType}` : "Free");
         
-        const subscriptionInfo = {
-          domain: domain,
-          servicetype: serviceType,
-          plan: planName,
-          status: domainData?.deleted === 1 ? "inactive" : "active",
-          has_cade: hasCade,
-          userid: domainData?.userid,
-        };
-        
         return new Response(
-          JSON.stringify({ success: true, data: subscriptionInfo }),
+          JSON.stringify({ 
+            success: true, 
+            data: {
+              domain,
+              servicetype: serviceType,
+              plan: planName,
+              status: domainData?.deleted === 1 ? "inactive" : "active",
+              has_cade: hasCade,
+              userid: domainData?.userid,
+            }
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -458,6 +477,20 @@ serve(async (req) => {
         );
     }
 
+    // Handle rate limiting (429) gracefully
+    if (response.status === 429) {
+      console.warn("BRON API rate limited - returning soft error");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Rate limited - please wait a moment",
+          rateLimited: true,
+          retryAfter: 5
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check for API errors
     if (!response.ok) {
       console.error(`BRON API error: ${response.status}`, result);
@@ -479,9 +512,16 @@ serve(async (req) => {
   } catch (error: unknown) {
     console.error("BRON RSAPI error:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    
+    // Check for timeout errors
+    const isTimeout = errorMessage.includes('timed out');
+    
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: errorMessage,
+        timeout: isTimeout,
+      }),
+      { status: isTimeout ? 504 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

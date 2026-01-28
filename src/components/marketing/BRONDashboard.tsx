@@ -33,23 +33,44 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   // Avoid duplicate link loads and UI thrash when domainInfo arrives (id changes).
   const linksRequestedForDomainRef = useRef<string | null>(null);
 
-  // Verify authentication on mount
+  // Verify authentication on mount with timeout protection
   useEffect(() => {
+    let mounted = true;
+    
     const checkAuth = async () => {
       setIsAuthenticating(true);
       setAuthError(null);
+      
+      // Add a client-side timeout for the entire auth check
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error("Connection timed out")), 15000);
+      });
+      
       try {
-        const isValid = await bronApi.verifyAuth();
+        const isValid = await Promise.race([
+          bronApi.verifyAuth(),
+          timeoutPromise
+        ]);
+        
+        if (!mounted) return;
+        
         if (!isValid) {
           setAuthError("Unable to authenticate with BRON API. Please check your API credentials.");
         }
       } catch (err) {
-        setAuthError("Failed to connect to BRON API. Please try again.");
+        if (!mounted) return;
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("[BRON Dashboard] Auth check failed:", message);
+        setAuthError(message.includes("timed out") 
+          ? "Connection timed out. The BRON API may be slow - please try again." 
+          : "Failed to connect to BRON API. Please try again.");
       } finally {
-        setIsAuthenticating(false);
+        if (mounted) setIsAuthenticating(false);
       }
     };
+    
     checkAuth();
+    return () => { mounted = false; };
   }, []);
 
   // Capture website screenshot function
