@@ -477,8 +477,8 @@ export const BronKeywordCard = memo(({
             <div className="w-[90px] flex-shrink-0 flex justify-center">
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40">
                 <div className="flex items-center gap-1">
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
                   <span className="text-xs font-semibold text-cyan-400">{linksInCount}</span>
+                  <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400" />
                 </div>
                 <div className="w-px h-4 bg-border/40" />
                 <div className="flex items-center gap-1">
