@@ -461,9 +461,15 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 2: Keyword Text */}
-            <div className="w-[380px] flex-shrink-0 pr-4">
+            {/* Column 2: Keyword Text (indent ONLY this column for supporting keywords) */}
+            <div className={`w-[380px] flex-shrink-0 pr-4 ${isNested ? 'pl-6' : ''}`}>
               <div className="flex items-center gap-2">
+                {isNested && (
+                  <span aria-hidden className="-ml-4 flex items-center gap-1.5">
+                    <span className="w-3 h-px bg-border/70" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-border/70" />
+                  </span>
+                )}
                 <h3 
                   className={`font-medium truncate max-w-[320px] ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
                   title={keywordText}
