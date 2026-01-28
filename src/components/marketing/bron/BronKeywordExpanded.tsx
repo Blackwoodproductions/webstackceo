@@ -69,6 +69,8 @@ export const BronKeywordExpanded = memo(({
       <div 
         className="border-t border-amber-500/20 p-6 bg-amber-500/5 no-theme-transition"
         onClick={(e) => e.stopPropagation()}
+        data-no-theme-transition
+        style={{ contain: 'layout style paint' }}
       >
         <div className="text-center py-8">
           <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
@@ -98,6 +100,8 @@ export const BronKeywordExpanded = memo(({
     <div 
       className="border-t border-border/30 p-4 bg-background/50 no-theme-transition"
       onClick={(e) => e.stopPropagation()}
+      data-no-theme-transition
+      style={{ contain: 'layout style paint' }}
     >
       {/* Citation Analytics with integrated actions */}
       <BronCitationAnalytics
