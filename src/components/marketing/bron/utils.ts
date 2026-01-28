@@ -103,6 +103,8 @@ function calculateKeywordSimilarity(kw1: string, kw2: string): number {
 }
 
 // Group keywords by topic similarity
+// SEOM/BRON packages have explicit parent_keyword_id relationships from the API
+// Other packages use similarity-based clustering as a fallback
 export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -120,15 +122,33 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Check for explicit parent_keyword_id relationships
+  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
+  // Also check is_supporting and bubblefeed flags
   const hasExplicitParent = new Map<number | string, number | string>();
+  const isExplicitSupporting = new Set<number | string>();
+  
   for (const kw of contentKeywords) {
+    // Check parent_keyword_id first
     if (kw.parent_keyword_id) {
       hasExplicitParent.set(kw.id, kw.parent_keyword_id);
+      isExplicitSupporting.add(kw.id);
+    }
+    // Also check is_supporting and bubblefeed flags
+    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
+      isExplicitSupporting.add(kw.id);
     }
   }
   
+  // Log clustering info for debugging
+  console.log('[BRON Clustering] API relationships detected:', {
+    hasExplicitParents: hasExplicitParent.size,
+    isSupportingCount: isExplicitSupporting.size,
+    totalContentKeywords: contentKeywords.length,
+    usingApiClustering: hasExplicitParent.size > 0,
+  });
+  
   if (hasExplicitParent.size > 0) {
+    // Use explicit API relationships (SEOM/BRON packages)
     const parentChildMap = new Map<number | string, BronKeyword[]>();
     const assignedAsChild = new Set<number | string>();
     
@@ -143,6 +163,7 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       }
     }
     
+    // Create clusters from parents with their children (max 2 per cluster)
     for (const kw of contentKeywords) {
       if (!assignedAsChild.has(kw.id)) {
         const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
