@@ -210,33 +210,6 @@ export const BRONKeywordsTab = memo(({
     [keywords, serpReports]
   );
 
-  // Log SERP data for debugging
-  useEffect(() => {
-    if (serpReports.length > 0) {
-      console.log('[BRON Keywords Tab] SERP Reports received:', {
-        count: serpReports.length,
-        sample: serpReports.slice(0, 3).map(r => ({
-          keyword: r.keyword,
-          google: r.google,
-          bing: r.bing,
-          yahoo: r.yahoo,
-        })),
-      });
-    }
-    if (keywords.length > 0) {
-      console.log('[BRON Keywords Tab] Keywords received:', {
-        count: keywords.length,
-        sample: keywords.slice(0, 3).map(k => ({
-          id: k.id,
-          keywordtitle: k.keywordtitle,
-          keyword: k.keyword,
-          metatitle: k.metatitle,
-          displayText: getKeywordDisplayText(k),
-        })),
-      });
-    }
-  }, [serpReports, keywords]);
-
   // Filter keywords
   const filteredKeywords = useMemo(() => {
     if (!searchQuery.trim()) return mergedKeywords;

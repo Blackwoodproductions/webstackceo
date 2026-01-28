@@ -514,18 +514,7 @@ export function useBronApi(): UseBronApiReturn {
         const reports = Array.isArray(result.data)
           ? result.data
           : (result.data.rankings || result.data.keywords || result.data.items || []);
-        const finalReports = Array.isArray(reports) ? reports : [];
-        console.log('[BRON] SERP Report fetched:', {
-          domain,
-          count: finalReports.length,
-          sample: finalReports.slice(0, 3).map(r => ({
-            keyword: r.keyword,
-            google: r.google,
-            bing: r.bing,
-            yahoo: r.yahoo,
-          })),
-        });
-        setSerpReports(finalReports);
+        setSerpReports(Array.isArray(reports) ? reports : []);
       }
     } catch (err) {
       toast.error("Failed to fetch SERP report");
