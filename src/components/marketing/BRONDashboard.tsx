@@ -137,6 +137,9 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       await sleep(260);
       if (cancelled) return;
       await bronApi.fetchSerpReport(selectedDomain);
+      await sleep(260);
+      if (cancelled) return;
+      await bronApi.fetchSerpList(selectedDomain);
     };
 
     loadCore();
@@ -476,6 +479,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
             <BRONKeywordsTab 
               keywords={bronApi.keywords}
               serpReports={bronApi.serpReports}
+              serpHistory={bronApi.serpHistory}
               linksIn={bronApi.linksIn}
               linksOut={bronApi.linksOut}
               selectedDomain={selectedDomain}
@@ -485,6 +489,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               onUpdate={bronApi.updateKeyword}
               onDelete={bronApi.deleteKeyword}
               onRestore={bronApi.restoreKeyword}
+              onFetchSerpDetail={bronApi.fetchSerpDetail}
             />
           </TabsContent>
 
