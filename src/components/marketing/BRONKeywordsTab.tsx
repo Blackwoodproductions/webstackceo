@@ -584,10 +584,10 @@ export const BRONKeywordsTab = ({
         >
           {/* Clickable header - keyword + rankings + intent icon */}
           <div 
-            className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100"
+            className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 min-w-max">
               {/* Page Speed Indicator - Far Left */}
               <div className="flex-shrink-0">
                 {(() => {
