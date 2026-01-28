@@ -61,22 +61,43 @@ export function findSerpForKeyword(keywordText: string, serpReports: BronSerpRep
   const exactMatch = serpReports.find(r => r.keyword?.toLowerCase().trim() === normalizedKeyword);
   if (exactMatch) return exactMatch;
   
-  // Contains match
+  // Contains match - check both directions
   const containsMatch = serpReports.find(r => {
     const serpKeyword = r.keyword?.toLowerCase().trim() || '';
+    if (!serpKeyword) return false;
     return normalizedKeyword.includes(serpKeyword) || serpKeyword.includes(normalizedKeyword);
   });
   if (containsMatch) return containsMatch;
   
-  // Word overlap match
+  // Word overlap match - more aggressive matching
   const keywordWords = normalizedKeyword.split(/\s+/).filter(w => w.length > 2);
+  let bestMatch: BronSerpReport | null = null;
+  let bestMatchCount = 0;
+  
   for (const report of serpReports) {
-    const serpWords = (report.keyword || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const serpKeyword = report.keyword?.toLowerCase() || '';
+    const serpWords = serpKeyword.split(/\s+/).filter(w => w.length > 2);
     const matchCount = keywordWords.filter(w => serpWords.includes(w)).length;
-    if (matchCount >= 2) return report;
+    
+    // Need at least 2 word matches, or if the serp keyword is short, 1 is enough
+    const minMatches = serpWords.length <= 2 ? 1 : 2;
+    if (matchCount >= minMatches && matchCount > bestMatchCount) {
+      bestMatch = report;
+      bestMatchCount = matchCount;
+    }
   }
   
-  return null;
+  // Debug logging for first few keywords when no match found
+  if (!bestMatch && serpReports.length > 0) {
+    const serpKeywordsAvailable = serpReports.slice(0, 5).map(r => r.keyword);
+    console.log('[BRON SERP Match] No match found:', {
+      searching: normalizedKeyword.slice(0, 50),
+      serpSamples: serpKeywordsAvailable,
+      serpCount: serpReports.length,
+    });
+  }
+  
+  return bestMatch;
 }
 
 // Result type for grouped keywords
