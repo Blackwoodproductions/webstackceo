@@ -343,6 +343,22 @@ export function useBronApi(): UseBronApiReturn {
           const keywordList = result.data.keywords || result.data.items || [];
           const keywords = Array.isArray(keywordList) ? keywordList : [];
           
+          // Log first page to check for parent_keyword_id relationships
+          if (page === 1 && keywords.length > 0) {
+            console.log('[BRON] Sample keyword data (checking for clustering fields):', {
+              sample: keywords.slice(0, 3).map((k: BronKeyword) => ({
+                id: k.id,
+                keyword: k.keywordtitle || k.keyword,
+                parent_keyword_id: k.parent_keyword_id,
+                is_supporting: k.is_supporting,
+                bubblefeed: k.bubblefeed,
+                cluster_id: k.cluster_id,
+              })),
+              hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
+              hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
+            });
+          }
+          
           if (keywords.length > 0) {
             allKeywords.push(...keywords);
             // Check if we got a full page (meaning there might be more)

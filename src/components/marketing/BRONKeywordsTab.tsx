@@ -1910,12 +1910,12 @@ export const BRONKeywordsTab = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Article Editor Dialog */}
+      {/* Article Editor Dialog - Fixed: removed duplicate X button, proper sizing */}
       <Dialog open={!!articleEditorId} onOpenChange={(open) => !open && setArticleEditorId(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden bg-card border-border p-0">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden bg-card border-border [&>button]:hidden">
           <div className="flex flex-col h-[85vh]">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
                   <FileText className="w-5 h-5 text-primary" />
@@ -1939,17 +1939,19 @@ export const BRONKeywordsTab = ({
               </Button>
             </div>
 
-            {/* Editor Content */}
+            {/* Editor Content - Full Height */}
             {articleEditorId && (
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Article</Label>
-                  <WysiwygEditor
-                    html={inlineEditForms[articleEditorId]?.resfeedtext || ""}
-                    onChange={(html) => updateInlineForm(articleEditorId, "resfeedtext", html)}
-                    placeholder="Paste or write your article here…"
-                  />
-                  <p className="text-xs text-muted-foreground">
+              <div className="flex-1 overflow-y-auto p-6 min-h-0">
+                <div className="h-full flex flex-col">
+                  <Label className="text-sm font-medium mb-2 shrink-0">Article</Label>
+                  <div className="flex-1 min-h-[400px]">
+                    <WysiwygEditor
+                      html={inlineEditForms[articleEditorId]?.resfeedtext || ""}
+                      onChange={(html) => updateInlineForm(articleEditorId, "resfeedtext", html)}
+                      placeholder="Paste or write your article here…"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 shrink-0">
                     {((inlineEditForms[articleEditorId]?.resfeedtext || "").length || 0).toLocaleString()} characters
                   </p>
                 </div>
@@ -1957,7 +1959,7 @@ export const BRONKeywordsTab = ({
             )}
 
             {/* Footer Actions */}
-            <div className="flex items-center justify-end gap-2 p-4 border-t border-border bg-muted/30">
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-border bg-muted/30 shrink-0">
               <Button
                 variant="outline"
                 onClick={() => setArticleEditorId(null)}
