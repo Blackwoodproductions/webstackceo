@@ -321,14 +321,49 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi, fetchDomains]);
 
+  // Fetch all keywords with automatic pagination to get complete list
   const fetchKeywords = useCallback(async (domain?: string) => {
     setIsLoading(true);
     try {
-      const result = await callApi("listKeywords", { domain, limit: 200 });
-      if (result?.success && result.data) {
-        const keywordList = result.data.keywords || result.data.items || [];
-        setKeywords(Array.isArray(keywordList) ? keywordList : []);
+      const allKeywords: BronKeyword[] = [];
+      let page = 1;
+      const pageSize = 100;
+      let hasMore = true;
+      
+      // Fetch all pages of keywords
+      while (hasMore) {
+        const result = await callApi("listKeywords", { 
+          domain, 
+          page,
+          limit: pageSize,
+          include_deleted: false 
+        });
+        
+        if (result?.success && result.data) {
+          const keywordList = result.data.keywords || result.data.items || [];
+          const keywords = Array.isArray(keywordList) ? keywordList : [];
+          
+          if (keywords.length > 0) {
+            allKeywords.push(...keywords);
+            // Check if we got a full page (meaning there might be more)
+            hasMore = keywords.length >= pageSize;
+            page++;
+            
+            // Safety limit to prevent infinite loops
+            if (page > 10) {
+              console.warn('[BRON] Reached maximum page limit (10) for keywords');
+              hasMore = false;
+            }
+          } else {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
       }
+      
+      console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
+      setKeywords(allKeywords);
     } catch (err) {
       toast.error("Failed to fetch keywords");
       console.error(err);
