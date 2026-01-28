@@ -21,7 +21,12 @@ interface ClusterCacheEntry {
 
 interface SerializedCluster {
   parentId: string | number;
-  parentKeyword: BronKeyword;
+  /**
+   * Legacy field (kept for backward compatibility).
+   * Older cache entries stored the full keyword object, which could explode localStorage size
+   * (especially when resfeedtext is present) and prevent cache writes.
+   */
+  parentKeyword?: BronKeyword;
   childIds: (string | number)[];
 }
 
@@ -368,10 +373,12 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
   // ─── Save to Cache ───
   try {
     const clusterCache = loadCachedClusters();
-    const serialized: SerializedCluster[] = clusters.map(c => ({
+    // IMPORTANT: only store IDs.
+    // Storing full keyword objects (especially resfeedtext HTML) makes the cache massive,
+    // often exceeding localStorage quota and causing repeated 3–5s reclustering.
+    const serialized: SerializedCluster[] = clusters.map((c) => ({
       parentId: c.parentId,
-      parentKeyword: c.parent,
-      childIds: c.children.map(ch => ch.id),
+      childIds: c.children.map((ch) => ch.id),
     }));
     
     clusterCache[cacheKey] = {
