@@ -315,10 +315,10 @@ export const BronKeywordCard = memo(({
         className={`
           rounded-xl border overflow-hidden
           ${isNested 
-            ? 'border-l-2 border-l-orange-500/50 ml-2 bg-orange-500/5 border-orange-500/20' + (isExpanded ? ' ring-1 ring-orange-500/40' : '')
+            ? 'border-l-2 border-l-blue-500/50 ml-2 bg-blue-500/5 border-blue-500/20' + (isExpanded ? ' ring-1 ring-blue-500/40' : '')
             : isTrackingOnly 
               ? 'bg-amber-500/5 border-amber-500/20' + (isExpanded ? ' ring-1 ring-amber-500/40' : '')
-              : 'bg-blue-500/5 border-blue-500/20' + (isExpanded ? ' ring-1 ring-blue-500/40' : ' border-blue-500/30')
+              : 'bg-orange-500/5 border-orange-500/20' + (isExpanded ? ' ring-1 ring-orange-500/40' : ' border-orange-500/30')
           }
         `}
       >
@@ -363,13 +363,13 @@ export const BronKeywordCard = memo(({
                     Tracking
                   </Badge>
                 ) : isNested ? (
-                  <Badge className="text-[9px] h-5 px-2 bg-orange-500/20 text-orange-400 border-orange-500/30 whitespace-nowrap flex-shrink-0">
+                  <Badge className="text-[9px] h-5 px-2 bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap flex-shrink-0">
                     Supporting
                   </Badge>
                 ) : (
                   <>
                     {active && (
-                      <Badge className="text-[9px] h-5 px-2 bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap flex-shrink-0">
+                      <Badge className="text-[9px] h-5 px-2 bg-orange-500/20 text-orange-400 border-orange-500/30 whitespace-nowrap flex-shrink-0">
                         Main
                       </Badge>
                     )}
