@@ -26,6 +26,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const [activeTab, setActiveTab] = useState("keywords");
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authErrorDetails, setAuthErrorDetails] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
@@ -40,6 +41,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     const checkAuth = async () => {
       setIsAuthenticating(true);
       setAuthError(null);
+      setAuthErrorDetails(null);
       
       // Add a client-side timeout for the entire auth check
       const timeoutPromise = new Promise<boolean>((_, reject) => {
@@ -56,15 +58,19 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         if (!mounted) return;
         
         if (!isValid) {
-          setAuthError("Unable to authenticate with BRON API. Please check your API credentials.");
+          setAuthError("Unable to authenticate with BRON API.");
+          setAuthErrorDetails("verifyAuth returned unauthenticated");
         }
       } catch (err) {
         if (!mounted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[BRON Dashboard] Auth check failed:", message);
-        setAuthError(message.includes("timed out") 
-          ? "Connection timed out. The BRON API may be slow - please try again." 
-          : "Failed to connect to BRON API. Please try again.");
+        if (message.toLowerCase().includes("timed out")) {
+          setAuthError("Connection timed out while contacting BRON.");
+        } else {
+          setAuthError("Failed to connect to BRON.");
+        }
+        setAuthErrorDetails(message);
       } finally {
         if (mounted) setIsAuthenticating(false);
       }
@@ -216,6 +222,28 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   }
 
   if (authError) {
+    const copyBronDiagnostics = async () => {
+      try {
+        const payload = JSON.stringify(
+          {
+            feature: "bron",
+            step: "verifyAuth",
+            domain: selectedDomain || null,
+            message: authError,
+            details: authErrorDetails,
+            url: window.location.href,
+            occurred_at: new Date().toISOString(),
+          },
+          null,
+          2
+        );
+        await navigator.clipboard.writeText(payload);
+        toast.success("Diagnostics copied");
+      } catch {
+        toast.error("Could not copy diagnostics");
+      }
+    };
+
     return (
       <Card className="border-destructive/50 bg-destructive/5">
         <CardContent className="p-8 text-center space-y-4">
@@ -224,6 +252,14 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
           </div>
           <h3 className="text-lg font-semibold text-destructive">Connection Failed</h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">{authError}</p>
+          {authErrorDetails && (
+            <div className="mx-auto max-w-2xl rounded-lg bg-muted/50 p-4 text-left">
+              <p className="text-xs text-muted-foreground mb-1">Details</p>
+              <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap break-words max-h-40 overflow-auto">
+                {authErrorDetails}
+              </pre>
+            </div>
+          )}
           <Button 
             onClick={() => window.location.reload()} 
             variant="outline"
@@ -231,6 +267,13 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry Connection
+          </Button>
+          <Button
+            onClick={copyBronDiagnostics}
+            variant="secondary"
+            className="mt-2"
+          >
+            Copy diagnostics
           </Button>
         </CardContent>
       </Card>

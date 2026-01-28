@@ -600,7 +600,7 @@ export function useBronApi(): UseBronApiReturn {
         if (error) {
           const message = await formatInvokeError(error);
           console.error("BRON API error:", error);
-          throw new Error(message);
+          throw new Error(`[BRON:${action}] ${message}`);
         }
 
         // Handle rate limiting with retry
@@ -622,6 +622,10 @@ export function useBronApi(): UseBronApiReturn {
                            lastError.message.includes('fetch');
         
         if (!isRetryable || attempt >= retries) {
+          // Ensure the action is always present in surfaced errors
+          if (!lastError.message.includes('[BRON:')) {
+            throw new Error(`[BRON:${action}] ${lastError.message}`);
+          }
           throw lastError;
         }
         
