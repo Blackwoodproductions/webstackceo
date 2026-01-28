@@ -234,6 +234,13 @@ export type Database = {
             foreignKeyName: "audit_history_audit_id_fkey"
             columns: ["audit_id"]
             isOneToOne: false
+            referencedRelation: "public_saved_audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_history_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
             referencedRelation: "saved_audits"
             referencedColumns: ["id"]
           },
@@ -1228,6 +1235,102 @@ export type Database = {
           session_id?: string | null
           started_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      public_saved_audits: {
+        Row: {
+          ahrefs_rank: number | null
+          backlinks: number | null
+          category: Database["public"]["Enums"]["audit_category"] | null
+          contact_address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          domain: string | null
+          domain_rating: number | null
+          favicon_url: string | null
+          glossary_terms: string[] | null
+          id: string | null
+          logo_url: string | null
+          organic_keywords: number | null
+          organic_traffic: number | null
+          referring_domains: number | null
+          site_description: string | null
+          site_summary: string | null
+          site_title: string | null
+          slug: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_tiktok: string | null
+          social_twitter: string | null
+          social_youtube: string | null
+          submitter_email: string | null
+          traffic_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ahrefs_rank?: number | null
+          backlinks?: number | null
+          category?: Database["public"]["Enums"]["audit_category"] | null
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          domain?: string | null
+          domain_rating?: number | null
+          favicon_url?: string | null
+          glossary_terms?: string[] | null
+          id?: string | null
+          logo_url?: string | null
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          site_description?: string | null
+          site_summary?: string | null
+          site_title?: string | null
+          slug?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          submitter_email?: never
+          traffic_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ahrefs_rank?: number | null
+          backlinks?: number | null
+          category?: Database["public"]["Enums"]["audit_category"] | null
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          domain?: string | null
+          domain_rating?: number | null
+          favicon_url?: string | null
+          glossary_terms?: string[] | null
+          id?: string | null
+          logo_url?: string | null
+          organic_keywords?: number | null
+          organic_traffic?: number | null
+          referring_domains?: number | null
+          site_description?: string | null
+          site_summary?: string | null
+          site_title?: string | null
+          slug?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_tiktok?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
+          submitter_email?: never
+          traffic_value?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
