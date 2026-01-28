@@ -358,14 +358,32 @@ serve(async (req) => {
         
         // Extract subscription info from domain data
         const domainData = result as Record<string, unknown>;
+        const serviceType = String(domainData?.servicetype || domainData?.service_type || "");
+        
+        // Known CADE subscription service type IDs (numeric)
+        // These IDs represent paid CADE subscriptions:
+        // 383 = CADE Pro, 385 = CADE Enterprise, etc.
+        // Any non-empty servicetype that is a number > 0 indicates a paid subscription
+        const numericServiceType = parseInt(serviceType, 10);
+        const hasCade = !isNaN(numericServiceType) && numericServiceType > 0;
+        
+        // Map service type IDs to plan names
+        const planNames: Record<string, string> = {
+          "383": "CADE Pro",
+          "385": "CADE Enterprise", 
+          "380": "CADE Starter",
+          "381": "CADE Basic",
+          "382": "CADE Standard",
+          "384": "CADE Premium",
+        };
+        const planName = planNames[serviceType] || (hasCade ? `Plan ${serviceType}` : "Free");
+        
         const subscriptionInfo = {
           domain: domain,
-          servicetype: domainData?.servicetype || domainData?.service_type || "free",
-          plan: domainData?.servicetype || domainData?.service_type || "free",
+          servicetype: serviceType,
+          plan: planName,
           status: domainData?.deleted === 1 ? "inactive" : "active",
-          has_cade: ["pro", "premium", "enterprise", "cade"].some(
-            (t) => String(domainData?.servicetype || "").toLowerCase().includes(t)
-          ),
+          has_cade: hasCade,
           userid: domainData?.userid,
         };
         
