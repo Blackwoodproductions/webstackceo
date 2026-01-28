@@ -168,9 +168,16 @@ const KeywordListItem = memo(({
     <div style={{ contain: 'layout style' }}>
       {renderKeyword(cluster.parent, false, cluster.children.length)}
       {cluster.children.length > 0 && (
-        <div className="border-l-2 border-hover-accent/20 ml-2">
-          {cluster.children.map(child => renderKeyword(child, true))}
-        </div>
+        <>
+          {/*
+            IMPORTANT: Do not indent the entire row for supporting keywords.
+            Indentation should affect only the keyword text column so the fixed
+            columns (PageSpeed, rankings, etc.) stay perfectly aligned.
+          */}
+          <div>
+            {cluster.children.map(child => renderKeyword(child, true))}
+          </div>
+        </>
       )}
     </div>
   );
