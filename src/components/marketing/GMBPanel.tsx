@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -196,10 +196,6 @@ const GoogleBusinessIcon = () => (
 
 export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const { googleProfile } = useAuth();
-
-  // Used to prevent “stuck loading” when Google rate limits (429) — we schedule a retry
-  // and ensure only one timer is active.
-  const retryTimerRef = useRef<number | null>(null);
   
   // Connection state
   const [isCheckingAccount, setIsCheckingAccount] = useState(true);
@@ -298,22 +294,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const syncGmbData = useCallback(async (token: string, expirySeconds = 3600, forceRefresh = false) => {
     setIsCheckingAccount(true);
     setSyncError(null);
-
-    // Respect cooldown after Google 429 to avoid repeated quota bursts.
-    if (!forceRefresh) {
-      const cooldownUntil = Number(sessionStorage.getItem('gmb_cooldown_until') || '0');
-      if (cooldownUntil && Date.now() < cooldownUntil) {
-        const remainingSeconds = Math.max(1, Math.ceil((cooldownUntil - Date.now()) / 1000));
-        setSyncError(`Google rate limit hit. Retrying automatically in ${remainingSeconds}s…`);
-
-        if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = window.setTimeout(() => {
-          syncGmbData(token, expirySeconds, true);
-        }, remainingSeconds * 1000);
-
-        return;
-      }
-    }
     
     // Check cache first (unless force refresh)
     if (!forceRefresh && selectedDomain) {
@@ -341,16 +321,9 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
     
     try {
-      // Hard client-side timeout so the UI never spins forever.
-      const invokePromise = supabase.functions.invoke('gmb-sync', {
+      const { data, error } = await supabase.functions.invoke('gmb-sync', {
         body: { accessToken: token, expiresInSeconds: expirySeconds, targetDomain: selectedDomain },
       });
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('GMB sync timed out')), 35000);
-      });
-
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
       if (error) throw new Error(error.message);
       
@@ -382,22 +355,14 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           return;
         }
         
-        if (data.isQuotaError || data.rateLimited) {
-          const retryAfterSeconds = Number(data.retryAfterSeconds || 60);
-          const cooldownUntil = Date.now() + retryAfterSeconds * 1000;
-
-          console.warn('[GMBPanel] Google API rate limited (429); scheduling retry', { retryAfterSeconds });
-          sessionStorage.setItem('gmb_cooldown_until', String(cooldownUntil));
-
-          // Surface a clear state instead of leaving the tab in an ambiguous “checking…” screen.
-          setSyncError(`Google rate limit hit. Retrying automatically in ${retryAfterSeconds}s…`);
-
-          if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
-          retryTimerRef.current = window.setTimeout(() => {
-            syncGmbData(token, expirySeconds, true);
-          }, retryAfterSeconds * 1000);
-
-          // Keep existing data if any; otherwise the UI will show the message + retry.
+        if (data.isQuotaError) {
+          // Quota exceeded - still allow access to onboarding, just show a toast
+          console.warn('[GMBPanel] API quota exceeded, showing onboarding option');
+          toast.warning('GMB API quota exceeded. You can still add a new listing.');
+          // Don't set syncError - let the UI flow to "no listing found" state
+          setAccounts([]);
+          setLocations([]);
+          setMatchingLocation(null);
           localStorage.setItem('gmb_access_token', token);
           localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
           return;
@@ -453,13 +418,6 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       setIsCheckingAccount(false);
     }
   }, [selectedDomain]);
-
-  // Cleanup scheduled retries on unmount
-  useEffect(() => {
-    return () => {
-      if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
-    };
-  }, []);
 
   // Auto-connect on mount
   useEffect(() => {

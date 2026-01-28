@@ -2,32 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const DEFAULT_TIMEOUT_MS = 15000;
-
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-function getRetryAfterSeconds(res: Response, fallbackSeconds = 60): number {
-  const header = res.headers.get("retry-after");
-  const parsed = header ? Number(header) : NaN;
-  if (!Number.isNaN(parsed) && parsed > 0) return Math.min(parsed, 10 * 60);
-  return fallbackSeconds;
-}
 
 // Simple in-memory cache with 5-minute TTL
 const cache = new Map<string, { data: any; expiresAt: number }>();
@@ -137,7 +113,7 @@ serve(async (req: Request) => {
     console.log("[gmb-sync] Fetching fresh data from Google APIs");
 
     // Fetch accounts
-    const accountsRes = await fetchWithTimeout(
+    const accountsRes = await fetch(
       "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
@@ -149,24 +125,17 @@ serve(async (req: Request) => {
       console.error(`[gmb-sync] Accounts API failed (${status}):`, body.slice(0, 500));
       
       // Return 200 with error info so frontend can handle it properly
-      const isQuotaError = status === 429;
-      const retryAfterSeconds = isQuotaError ? getRetryAfterSeconds(accountsRes, 60) : undefined;
-
       return new Response(
-        JSON.stringify({
-          success: false,
+        JSON.stringify({ 
           error: `Google Business accounts request failed (${status})`,
           status,
           details: body.slice(0, 300),
-          isQuotaError,
-          rateLimited: isQuotaError,
-          retryAfterSeconds,
+          isQuotaError: status === 429
         }),
-        {
-          // Return 200 so the web client always receives structured JSON
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { 
+          status: 200,  // Return 200 so frontend gets the structured error
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
 
@@ -195,7 +164,7 @@ serve(async (req: Request) => {
           await new Promise(r => setTimeout(r, 200));
         }
 
-        const locationsRes = await fetchWithTimeout(
+        const locationsRes = await fetch(
           `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,title,websiteUri,storefrontAddress,phoneNumbers,regularHours,categories,metadata`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
@@ -222,7 +191,7 @@ serve(async (req: Request) => {
               try {
                 await new Promise(r => setTimeout(r, 150)); // Small delay
                 
-                const reviewsRes = await fetchWithTimeout(
+                const reviewsRes = await fetch(
                   `https://mybusiness.googleapis.com/v4/${loc.name}/reviews?pageSize=10`,
                   { headers: { Authorization: `Bearer ${accessToken}` } }
                 );
@@ -260,10 +229,7 @@ serve(async (req: Request) => {
           }
         } else if (locationsRes.status === 429) {
           // If we hit quota on locations, return what we have so far
-          const retryAfterSeconds = getRetryAfterSeconds(locationsRes, 60);
-          console.warn(
-            `[gmb-sync] Hit 429 on locations for ${account.name}, returning partial data; retryAfterSeconds=${retryAfterSeconds}`,
-          );
+          console.warn(`[gmb-sync] Hit 429 on locations for ${account.name}, returning partial data`);
           break;
         } else {
           console.warn(`[gmb-sync] Failed to fetch locations for ${account.name}: ${locationsRes.status}`);
