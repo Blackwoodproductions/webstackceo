@@ -409,10 +409,10 @@ export const BRONKeywordsTab = ({
                   )}
                 </div>
                 
-                {/* Target Keyword */}
-                {kw.keyword && !expanded && (
+                {/* Target Keyword - show when different from title */}
+                {kw.keyword && kw.keywordtitle && kw.keyword.trim().toLowerCase() !== kw.keywordtitle.trim().toLowerCase() && !expanded && (
                   <p className="text-xs text-primary font-medium truncate max-w-lg mb-0.5">
-                    {kw.keyword}
+                    Keyword: {kw.keyword}
                   </p>
                 )}
                 
