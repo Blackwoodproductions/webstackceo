@@ -16,46 +16,47 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
 
-// Persistent subscription cache key
-const CADE_SUBSCRIPTION_CACHE_KEY = "cade_subscription_cache";
-const CADE_SUBSCRIPTION_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days until subscription change
+// Use BRON subscription cache (authoritative source, shared across components)
+const BRON_SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
-interface CachedSubscription {
-  data: BronSubscription;
-  domain: string;
-  timestamp: number;
+interface SubscriptionCacheEntry {
+  subscription: BronSubscription;
+  cachedAt: number;
 }
 
-const getCachedSubscription = (domain: string): BronSubscription | null => {
+const getCachedSubscription = (targetDomain: string): BronSubscription | null => {
   try {
-    const cached = localStorage.getItem(CADE_SUBSCRIPTION_CACHE_KEY);
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
     if (!cached) return null;
-    
-    const parsed: CachedSubscription = JSON.parse(cached);
-    // Validate cache: same domain, not expired, and was active
-    if (
-      parsed.domain === domain &&
-      Date.now() - parsed.timestamp < CADE_SUBSCRIPTION_CACHE_TTL &&
-      parsed.data?.has_cade === true
-    ) {
-      return parsed.data;
-    }
-    return null;
+    const parsed = JSON.parse(cached) as Record<string, SubscriptionCacheEntry>;
+    const entry = parsed[targetDomain];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[CADE] Using cached BRON subscription for ${targetDomain}`);
+    return entry.subscription;
   } catch {
     return null;
   }
 };
 
-const setCachedSubscription = (domain: string, data: BronSubscription) => {
+const setCachedSubscription = (targetDomain: string, data: BronSubscription) => {
   try {
-    const cache: CachedSubscription = { data, domain, timestamp: Date.now() };
-    localStorage.setItem(CADE_SUBSCRIPTION_CACHE_KEY, JSON.stringify(cache));
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, SubscriptionCacheEntry> : {};
+    parsed[targetDomain] = { subscription: data, cachedAt: Date.now() };
+    localStorage.setItem(BRON_SUBSCRIPTION_CACHE_KEY, JSON.stringify(parsed));
   } catch { /* ignore */ }
 };
 
-const clearCachedSubscription = () => {
+const clearCachedSubscription = (targetDomain: string) => {
   try {
-    localStorage.removeItem(CADE_SUBSCRIPTION_CACHE_KEY);
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, SubscriptionCacheEntry>;
+    if (parsed[targetDomain]) {
+      delete parsed[targetDomain];
+      localStorage.setItem(BRON_SUBSCRIPTION_CACHE_KEY, JSON.stringify(parsed));
+    }
   } catch { /* ignore */ }
 };
 
@@ -218,7 +219,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
             setBronSubscription(freshData);
           } else {
             // Subscription canceled - clear cache and update UI
-            clearCachedSubscription();
+            clearCachedSubscription(domain);
             setHasCadeSubscription(false);
             setBronSubscription(freshData);
           }
@@ -253,7 +254,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         return true;
       } else {
         console.log("[CADE] No valid subscription found");
-        clearCachedSubscription();
+        clearCachedSubscription(domain);
         setHasCadeSubscription(false);
         setBronSubscription(subData);
         setSubscription(null);
