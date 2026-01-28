@@ -49,7 +49,7 @@ export interface BronKeyword {
   // Cluster/hierarchy fields
   parent_keyword_id?: number | string;
   is_supporting?: boolean | number;
-  bubblefeed?: boolean | number;
+  bubblefeedid?: boolean | number;
   cluster_id?: number | string;
   // Legacy fields for compatibility
   domain?: string;
@@ -439,13 +439,13 @@ export function useBronApi(): UseBronApiReturn {
                   linkouturl: k.linkouturl,
                   parent_keyword_id: k.parent_keyword_id,
                   is_supporting: k.is_supporting,
-                  bubblefeed: k.bubblefeed,
+                  bubblefeedid: k.bubblefeedid,
                   cluster_id: k.cluster_id,
                   domainid: k.domainid,
                 })),
                 hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
                 hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
-                hasBubblefeed: keywords.some((k: BronKeyword) => k.bubblefeed !== undefined),
+                hasBubblefeedid: keywords.some((k: BronKeyword) => k.bubblefeedid !== undefined),
                 hasClusterId: keywords.some((k: BronKeyword) => k.cluster_id !== undefined),
               });
             }

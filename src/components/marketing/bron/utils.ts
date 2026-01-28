@@ -123,7 +123,7 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   const clusters: KeywordCluster[] = [];
   
   // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
-  // Also check is_supporting and bubblefeed flags
+  // Also check is_supporting and bubblefeedid flags
   const hasExplicitParent = new Map<number | string, number | string>();
   const isExplicitSupporting = new Set<number | string>();
   
@@ -133,8 +133,8 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       hasExplicitParent.set(kw.id, kw.parent_keyword_id);
       isExplicitSupporting.add(kw.id);
     }
-    // Also check is_supporting and bubblefeed flags
-    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
+    // Also check is_supporting and bubblefeedid flags
+    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeedid === true || kw.bubblefeedid === 1) {
       isExplicitSupporting.add(kw.id);
     }
   }
