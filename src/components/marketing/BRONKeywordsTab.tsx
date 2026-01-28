@@ -355,8 +355,11 @@ export const BRONKeywordsTab = ({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
-  // PageSpeed scores from Google API - keyed by URL (initialized from cache)
+// PageSpeed scores from Google API - keyed by URL (initialized from cache)
   const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
+  
+  // Track URLs that have been fetched this session (never refetch these)
+  const [fetchedThisSession] = useState<Set<string>>(() => new Set());
 
   // Initial keyword positions from first BRON SERP report (for movement tracking)
   interface InitialPositions {
@@ -477,13 +480,13 @@ export const BRONKeywordsTab = ({
     fetchMetrics();
   }, [keywords]);
 
-  // Fetch PageSpeed scores from Google API for keyword URLs - ALWAYS fetch on load
+  // Fetch PageSpeed scores from Google API for keyword URLs - ONLY ONCE per session
   useEffect(() => {
     const fetchPageSpeedScores = async () => {
       if (keywords.length === 0 || !selectedDomain) return;
       
-      // Get unique URLs from keywords - always fetch fresh data
-      const urlsToFetch: { url: string; keywordId: string | number; hasCache: boolean }[] = [];
+      // Collect URLs that haven't been fetched this session
+      const urlsToFetch: { url: string; keywordId: string | number }[] = [];
       
       for (const kw of keywords) {
         let url = kw.linkouturl;
@@ -497,17 +500,20 @@ export const BRONKeywordsTab = ({
         
         if (!url) continue;
         
-        const cached = pageSpeedScores[url];
-        const isAlreadyFetching = cached?.loading || cached?.updating;
+        // Skip if already fetched this session (prevents re-testing on state changes)
+        if (fetchedThisSession.has(url)) continue;
         
-        // Always fetch, but track if we have cached data to show while updating
-        if (!isAlreadyFetching) {
-          urlsToFetch.push({ 
-            url, 
-            keywordId: kw.id, 
-            hasCache: !!cached && cached.mobileScore > 0 && !cached.error
-          });
+        // Check cache - if we have valid cached data, use it and mark as fetched
+        const cached = pageSpeedScores[url];
+        if (cached && cached.mobileScore > 0 && !cached.error && !cached.loading && !cached.updating) {
+          fetchedThisSession.add(url);
+          continue;
         }
+        
+        // Skip if currently loading
+        if (cached?.loading || cached?.updating) continue;
+        
+        urlsToFetch.push({ url, keywordId: kw.id });
       }
       
       if (urlsToFetch.length === 0) return;
@@ -516,16 +522,16 @@ export const BRONKeywordsTab = ({
       const batchSize = 3;
       const urlsToProcess = urlsToFetch.slice(0, batchSize);
       
-      // Mark as updating (keep existing scores visible while updating)
+      // Mark URLs as fetched this session BEFORE starting the fetch
+      for (const { url } of urlsToProcess) {
+        fetchedThisSession.add(url);
+      }
+      
+      // Mark as loading in state
       setPageSpeedScores(prev => {
         const next = { ...prev };
-        for (const { url, hasCache } of urlsToProcess) {
-          if (hasCache && prev[url]) {
-            // Keep existing score visible, just mark as updating
-            next[url] = { ...prev[url], updating: true, loading: false };
-          } else {
-            next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
-          }
+        for (const { url } of urlsToProcess) {
+          next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
         }
         return next;
       });
@@ -558,7 +564,8 @@ export const BRONKeywordsTab = ({
             setPageSpeedScores(prev => ({
               ...prev,
               [url]: { 
-                ...prev[url], 
+                mobileScore: 0, 
+                desktopScore: 0, 
                 loading: false, 
                 updating: false, 
                 error: true 
@@ -570,7 +577,8 @@ export const BRONKeywordsTab = ({
           setPageSpeedScores(prev => ({
             ...prev,
             [url]: { 
-              ...prev[url], 
+              mobileScore: 0, 
+              desktopScore: 0, 
               loading: false, 
               updating: false, 
               error: true 
@@ -590,7 +598,8 @@ export const BRONKeywordsTab = ({
     // Start fetching after a short delay to avoid race conditions
     const timer = setTimeout(fetchPageSpeedScores, 800);
     return () => clearTimeout(timer);
-  }, [keywords, selectedDomain]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywords.length, selectedDomain]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
   const getMovementFromDelta = (movement: number) => {
     if (movement > 0) {
