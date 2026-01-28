@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocialOAuth } from '@/hooks/use-social-oauth';
+import { useBronApi, BronSubscription } from '@/hooks/use-bron-api';
 import {
   Twitter, Linkedin, Facebook, Instagram, Youtube, 
   RefreshCw, CheckCircle, AlertCircle, ExternalLink,
@@ -93,53 +94,40 @@ const platformConfig = {
 export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { user } = useAuth();
   const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
+  const { fetchSubscription } = useBronApi();
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [profiles, setProfiles] = useState<SocialProfile[]>([]);
   const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
   const [isCheckingCade, setIsCheckingCade] = useState(false);
-  const [cadeSubscription, setCadeSubscription] = useState<{ plan?: string; status?: string } | null>(null);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
-  // Check CADE subscription
+  // Check subscription via BRON API
   const checkCadeSubscription = useCallback(async () => {
     if (!selectedDomain) return;
     
     setIsCheckingCade(true);
-    setCadeSubscription(null);
+    setBronSubscription(null);
     try {
-      // Fetch both active status and subscription details in parallel
-      const [activeRes, detailRes] = await Promise.allSettled([
-        supabase.functions.invoke('cade-api', {
-          body: { action: 'subscription-active', domain: selectedDomain },
-        }),
-        supabase.functions.invoke('cade-api', {
-          body: { action: 'subscription-detail', domain: selectedDomain },
-        }),
-      ]);
+      const subscription = await fetchSubscription(selectedDomain);
       
-      const activeData = activeRes.status === 'fulfilled' ? activeRes.value.data : null;
-      const detailData = detailRes.status === 'fulfilled' ? detailRes.value.data : null;
-      
-      if (activeData && !activeData.error && (activeData.active || activeData.status === 'active')) {
+      if (subscription && subscription.has_cade && subscription.status === 'active') {
         setHasCadeSubscription(true);
-        setCadeSubscription({
-          plan: detailData?.plan || activeData?.plan || 'Pro',
-          status: detailData?.status || activeData?.status || 'active',
-        });
+        setBronSubscription(subscription);
       } else {
         setHasCadeSubscription(false);
-        setCadeSubscription(null);
+        setBronSubscription(subscription);
       }
     } catch (err) {
-      console.error('Error checking CADE subscription:', err);
+      console.error('Error checking BRON subscription:', err);
       setHasCadeSubscription(false);
-      setCadeSubscription(null);
+      setBronSubscription(null);
     } finally {
       setIsCheckingCade(false);
     }
-  }, [selectedDomain]);
+  }, [selectedDomain, fetchSubscription]);
 
   // Scan website for social links
   const scanWebsiteForSocials = useCallback(async () => {
@@ -657,10 +645,10 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                 >
                   <Shield className="w-3.5 h-3.5 text-violet-400" />
                   <span className="text-xs font-semibold text-violet-300 uppercase tracking-wider">
-                    {cadeSubscription?.plan || "Pro"}
+                    {bronSubscription?.plan || "Pro"}
                   </span>
                   <Badge className="h-5 text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                    {cadeSubscription?.status || "active"}
+                    {bronSubscription?.status || "active"}
                   </Badge>
                 </motion.div>
               </div>

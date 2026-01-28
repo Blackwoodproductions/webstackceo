@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
+import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
 
 interface SystemHealth {
@@ -67,6 +68,7 @@ interface CADEApiDashboardProps {
 }
 
 export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
+  const { fetchSubscription } = useBronApi();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const [queues, setQueues] = useState<QueueData[]>([]);
   const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   
   // Collapsible states
@@ -101,13 +104,26 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     setError(null);
     
     try {
-      // Parallelize ALL initial calls for maximum speed
-      const [healthRes, subscriptionRes, workersRes, queuesRes] = await Promise.allSettled([
+      // Use BRON API for subscription check, CADE API for system status
+      const [bronSubRes, healthRes, workersRes, queuesRes] = await Promise.allSettled([
+        domain ? fetchSubscription(domain) : Promise.resolve(null),
         callCadeApi("health"),
-        callCadeApi("subscription"),
         callCadeApi("workers"),
         callCadeApi("queues"),
       ]);
+
+      // Process BRON subscription (primary subscription source)
+      if (bronSubRes.status === "fulfilled" && bronSubRes.value) {
+        const bronData = bronSubRes.value;
+        setBronSubscription(bronData);
+        // Map BRON subscription to existing SubscriptionInfo format
+        setSubscription({
+          plan: bronData.plan || bronData.servicetype || "Free",
+          status: bronData.status || "unknown",
+          quota_used: undefined,
+          quota_limit: undefined,
+        });
+      }
 
       // Process health
       if (healthRes.status === "fulfilled" && healthRes.value) {
@@ -120,11 +136,6 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           const qData = healthData.queues;
           setQueues(Array.isArray(qData) ? qData : []);
         }
-      }
-
-      // Process subscription
-      if (subscriptionRes.status === "fulfilled" && !subscriptionRes.value?.error) {
-        setSubscription(subscriptionRes.value?.data || subscriptionRes.value);
       }
       
       // Process workers
@@ -161,7 +172,8 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [callCadeApi, domain]);
+  }, [callCadeApi, domain, fetchSubscription]);
+
 
   useEffect(() => {
     fetchAllData();
