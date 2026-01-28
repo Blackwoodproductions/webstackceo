@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -1780,6 +1780,34 @@ const MarketingDashboard = () => {
 
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
+  // Keep dashboard sticky header + domain selector from overlapping the global fixed navbar.
+  // We measure the dashboard header shell and combine it with --app-navbar-height (set by Navbar).
+  const dashboardHeaderShellRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const el = dashboardHeaderShellRef.current;
+    if (!el || typeof window === 'undefined') return;
+
+    let raf = 0;
+    const update = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const h = el.getBoundingClientRect().height;
+        document.documentElement.style.setProperty('--vi-dashboard-header-height', `${Math.round(h)}px`);
+      });
+    };
+
+    update();
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      // Reset to a safe default when leaving the page.
+      document.documentElement.style.setProperty('--vi-dashboard-header-height', '0px');
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
       <SEO 
@@ -1816,7 +1844,11 @@ const MarketingDashboard = () => {
       </div>
 
       {/* Header with integrated tabs - wrapped with animated glow effect, sticky */}
-      <div className="relative max-w-[1480px] mx-auto sticky top-0 z-50 group">
+      <div
+        ref={dashboardHeaderShellRef}
+        className="relative max-w-[1480px] mx-auto sticky z-50 group"
+        style={{ top: 'var(--app-navbar-height, 64px)' }}
+      >
         {/* Static gradient glow background - no animation for performance */}
         <div
           className="absolute -inset-[2px] rounded-t-[14px] opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-md bg-gradient-to-r from-cyan-500/40 via-violet-500/40 to-amber-500/30"

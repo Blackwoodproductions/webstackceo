@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ const Navbar = () => {
   const { resolvedTheme, setTheme } = useTheme();
   const isHomePage = location.pathname === "/";
   const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
@@ -259,6 +260,38 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Expose the real navbar height as a CSS variable so sticky in-page headers
+  // (like the dashboard header/domain selector) can avoid overlapping it.
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const el = headerRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const update = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const h = el.getBoundingClientRect().height;
+        document.documentElement.style.setProperty(
+          "--app-navbar-height",
+          `${Math.round(h)}px`
+        );
+      });
+    };
+
+    update();
+
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+    window.addEventListener("resize", update);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [isScrolled]);
+
   const toggleTheme = () => {
     const current = resolvedTheme ?? "dark";
     const next = current === "light" ? "dark" : "light";
@@ -305,6 +338,7 @@ const Navbar = () => {
   return (
     <>
     <motion.header
+      ref={headerRef}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}

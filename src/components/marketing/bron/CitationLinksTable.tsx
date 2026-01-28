@@ -23,13 +23,13 @@ export function getRelevanceLabel(tier: RelevanceTier) {
 export function getRelevanceClasses(tier: RelevanceTier) {
   switch (tier) {
     case "most":
-      return "bg-amber-500 text-amber-950";
+      return "bg-[hsl(var(--hover-accent))] text-[hsl(var(--primary-foreground))]";
     case "very":
-      return "bg-emerald-500 text-emerald-950";
+      return "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]";
     case "relevant":
-      return "bg-cyan-500 text-cyan-950";
+      return "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]";
     default:
-      return "bg-slate-500 text-slate-200";
+      return "bg-muted text-muted-foreground";
   }
 }
 
@@ -135,7 +135,10 @@ export const CitationLinksTable = memo(
         <div>
           {rows.map(({ link, tier }, idx) => (
             <CitationLinkRow
-              key={`row-${idx}-${link.domain_name || link.domain || ''}`}
+              key={
+                (link as any).id ||
+                `${link.domain_name || link.domain || ''}|${link.source_url || ''}|${link.target_url || ''}|${link.category || ''}|${link.parent_category || ''}|${idx}`
+              }
               link={link}
               tier={tier}
               keywordText={keywordText}
@@ -180,7 +183,7 @@ const CitationLinkRow = memo(
       <div 
         className={`
           grid gap-4 px-5 py-4 items-center border-b border-border/30 no-theme-transition
-          ${isHighlighted ? 'border-l-[3px] border-l-cyan-400 bg-accent/30' : 'bg-transparent'}
+          ${isHighlighted ? 'border-l-[3px] border-l-primary bg-accent/30' : 'bg-transparent'}
         `}
         style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
         data-no-theme-transition
@@ -226,8 +229,8 @@ const CitationLinkRow = memo(
           <span 
             className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${
               isEnabled
-                ? "bg-emerald-500 text-emerald-950"
-                : "bg-red-500 text-red-950"
+                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]"
             }`}
           >
             <Lock className="w-3.5 h-3.5" />
