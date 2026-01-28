@@ -184,18 +184,18 @@ const RankingsDisplay = memo(({
 
   const renderRanking = (label: string, pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
     <div className="flex flex-col items-center w-[70px]">
-      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{label}</span>
+      <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">{label}</span>
       <div className="flex items-center justify-center gap-1 h-7">
-        <span className={`text-xl font-medium ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
+        <span className={`text-lg font-normal ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
           {pos !== null ? `#${pos}` : '—'}
         </span>
         {pos !== null && movement.delta !== 0 && (
           <div className={`flex items-center gap-0.5 ${movement.color}`}>
-            {movement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-            {movement.type === 'down' && <TrendingDown className="w-3.5 h-3.5" />}
+            {movement.type === 'up' && <TrendingUp className="w-3 h-3" />}
+            {movement.type === 'down' && <TrendingDown className="w-3 h-3" />}
           </div>
         )}
-        {pos !== null && movement.delta === 0 && <Minus className="w-3 h-3 text-muted-foreground/50" />}
+        {pos !== null && movement.delta === 0 && <Minus className="w-2.5 h-2.5 text-muted-foreground/50" />}
       </div>
     </div>
   );
