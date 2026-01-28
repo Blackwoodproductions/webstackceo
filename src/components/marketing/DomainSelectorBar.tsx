@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { Globe, Plus, CalendarIcon, Filter, X, Radio } from 'lucide-react';
+import { Globe, Plus, CalendarIcon, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -65,48 +64,38 @@ export function DomainSelectorBar({
   const selectedValue = selectedDomain ? normalizeDomainKey(selectedDomain) : '';
   
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky top-[60px] z-40 max-w-[1480px] mx-auto overflow-hidden"
+    <div 
+      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky top-[60px] z-40 max-w-[1480px] mx-auto"
+      style={{ contain: 'layout style' }}
+      data-no-theme-transition
     >
-      {/* Background grid pattern */}
+      {/* Background grid pattern - static */}
       <div 
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
           backgroundSize: '24px 24px'
         }}
       />
       
-      {/* Subtle scanning line */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent pointer-events-none"
-        animate={{ x: ["-100%", "200%"] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-      />
+      {/* Top accent line - static */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent pointer-events-none" />
       
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-      
-      <div className="relative z-10 px-8 py-2 flex items-center justify-between">
+      <div className="relative z-20 px-8 py-2 flex items-center justify-between">
         {/* Left: Domain Selector & Time Range */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Domain Selector */}
           <>
             <div className="flex items-center gap-2">
-              <motion.div
-                className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10"
-                whileHover={{ scale: 1.05 }}
-              >
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10 hover:scale-105 transition-transform">
                 <Globe className="w-4 h-4 text-primary" />
-              </motion.div>
+              </div>
 
               <Select value={selectedValue} onValueChange={onDomainChange}>
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background/80 border-border/50 backdrop-blur-sm">
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover/95 backdrop-blur-sm border border-border shadow-xl z-50 max-w-[400px]">
+                <SelectContent className="bg-popover border border-border shadow-2xl z-[100] max-w-[400px]">
                   {viDomains.length === 0 && (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
                       No domains yet
@@ -145,15 +134,16 @@ export function DomainSelectorBar({
                 </SelectContent>
               </Select>
               
-              {/* Live indicator */}
-              <motion.span
+              {/* Live indicator - static for performance */}
+              <span
                 className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
               >
-                <Radio className="w-2 h-2" />
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
                 LIVE
-              </motion.span>
+              </span>
             </div>
 
             <div className="w-px h-5 bg-border/50" />
@@ -253,8 +243,8 @@ export function DomainSelectorBar({
         )}
       </div>
       
-      {/* Bottom accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-    </motion.div>
+      {/* Bottom accent line - static */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent pointer-events-none" />
+    </div>
   );
 }

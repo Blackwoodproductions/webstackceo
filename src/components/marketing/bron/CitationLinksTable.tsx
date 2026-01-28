@@ -112,7 +112,11 @@ export const CitationLinksTable = memo(
     }
 
     return (
-      <div className="rounded-lg border border-border/40 overflow-hidden bg-card no-theme-transition" data-no-theme-transition>
+      <div 
+        className="rounded-lg border border-border/40 bg-card no-theme-transition" 
+        data-no-theme-transition
+        style={{ contain: 'layout style' }}
+      >
         {/* Header - matching reference exactly */}
         <div className="bg-muted/80 px-5 py-3 border-b border-border/50 no-theme-transition">
           <div 
