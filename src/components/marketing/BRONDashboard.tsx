@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
-  MapPin, X
+  MapPin, X, Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import { BRONDomainsTab } from "./BRONDomainsTab";
 import { BRONLinksTab } from "./BRONLinksTab";
 import { BRONContentTab } from "./BRONContentTab";
 import { BRONSerpTab } from "./BRONSerpTab";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface BRONDashboardProps {
   selectedDomain?: string;
@@ -26,6 +28,8 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
 
   // Verify authentication on mount
   useEffect(() => {
@@ -46,6 +50,55 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     checkAuth();
   }, []);
 
+  // Capture website screenshot function
+  const captureScreenshot = useCallback(async (domain: string) => {
+    setIsCapturingScreenshot(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("capture-website-screenshot", {
+        body: { action: "capture", domain }
+      });
+
+      if (error) {
+        console.error("Screenshot capture error:", error);
+        return null;
+      }
+
+      if (data?.success && data?.url) {
+        // Add cache buster for fresh captures
+        const url = data.cached ? data.url : `${data.url}?t=${Date.now()}`;
+        setScreenshotUrl(url);
+        if (!data.cached) {
+          toast.success("Website screenshot captured!");
+        }
+        return url;
+      }
+      
+      return data?.fallbackUrl || null;
+    } catch (err) {
+      console.error("Failed to capture screenshot:", err);
+      return null;
+    } finally {
+      setIsCapturingScreenshot(false);
+    }
+  }, []);
+
+  // Get existing screenshot
+  const getExistingScreenshot = useCallback(async (domain: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("capture-website-screenshot", {
+        body: { action: "get", domain }
+      });
+
+      if (data?.success && data?.url) {
+        setScreenshotUrl(data.url);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Load initial data
   useEffect(() => {
     if (bronApi.isAuthenticated) {
@@ -60,6 +113,16 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
+
+      // Reset screenshot when domain changes
+      setScreenshotUrl(null);
+
+      // Check for existing screenshot first, then capture if needed
+      const hasExisting = await getExistingScreenshot(selectedDomain);
+      if (!hasExisting && !cancelled) {
+        // Capture new screenshot in background
+        captureScreenshot(selectedDomain);
+      }
 
       // Fetch domain info first
       const info = await bronApi.fetchDomain(selectedDomain);
@@ -81,7 +144,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     return () => {
       cancelled = true;
     };
-  }, [bronApi.isAuthenticated, selectedDomain]);
+  }, [bronApi.isAuthenticated, selectedDomain, captureScreenshot, getExistingScreenshot]);
 
   // Lazy-load link reports only when the Links tab is opened
   useEffect(() => {
@@ -176,24 +239,35 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               {/* LEFT: Website Screenshot with Domain Options */}
               <div className="lg:col-span-3 p-4 border-r border-border/30">
                 <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30 mb-3">
-                  {/* Primary: Use screenshot.abstractapi.com or urlbox alternative */}
+                  {isCapturingScreenshot && !screenshotUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
+                      <div className="flex flex-col items-center gap-2">
+                        <Camera className="w-6 h-6 text-cyan-500 animate-pulse" />
+                        <span className="text-xs text-muted-foreground">Capturing...</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Use stored screenshot or fallback to external services */}
                   <img 
-                    src={`https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`}
+                    src={screenshotUrl || `https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`}
                     alt={`${selectedDomain} preview`}
                     className="w-full h-full object-cover object-top"
                     loading="lazy"
                     onError={(e) => {
-                      // Fallback 1: Try thum.io
                       const target = e.currentTarget;
+                      // Only use fallbacks if we don't have a stored screenshot
+                      if (screenshotUrl) {
+                        // Stored screenshot failed, try external
+                        setScreenshotUrl(null);
+                        return;
+                      }
                       if (!target.dataset.fallback) {
                         target.dataset.fallback = "1";
                         target.src = `https://image.thum.io/get/width/400/crop/300/https://${selectedDomain}`;
                       } else if (target.dataset.fallback === "1") {
-                        // Fallback 2: Try s.wordpress.com mshots
                         target.dataset.fallback = "2";
                         target.src = `https://s.wordpress.com/mshots/v1/https%3A%2F%2F${selectedDomain}?w=400&h=300`;
                       } else {
-                        // Final fallback: Show favicon centered
                         target.dataset.fallback = "3";
                         target.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
                         target.className = "w-20 h-20 object-contain mx-auto mt-12";
@@ -201,6 +275,17 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
+                  {/* Recapture button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7 bg-background/80 hover:bg-background/90"
+                    onClick={() => captureScreenshot(selectedDomain)}
+                    disabled={isCapturingScreenshot}
+                    title="Recapture screenshot"
+                  >
+                    <Camera className={`w-3.5 h-3.5 ${isCapturingScreenshot ? 'animate-pulse' : ''}`} />
+                  </Button>
                 </div>
                 <Button 
                   variant="default" 
