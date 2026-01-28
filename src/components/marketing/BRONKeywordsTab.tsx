@@ -189,7 +189,56 @@ function isSupporting(kw: BronKeyword): boolean {
   return false;
 }
 
-// Group keywords by parent-child relationship
+// Calculate text similarity between two keywords (word overlap score)
+function calculateKeywordSimilarity(kw1: string, kw2: string): number {
+  const words1 = kw1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const words2 = kw2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  
+  if (words1.length === 0 || words2.length === 0) return 0;
+  
+  // Count common words
+  const commonWords = words1.filter(w => words2.includes(w));
+  
+  // Score based on overlap ratio (use the smaller set as denominator)
+  const overlap = commonWords.length / Math.min(words1.length, words2.length);
+  
+  // Bonus for matching location words (e.g., "Port Coquitlam")
+  const locationWords = ['port', 'coquitlam', 'vancouver', 'burnaby', 'surrey', 'richmond', 'langley', 'abbotsford'];
+  const hasMatchingLocation = commonWords.some(w => locationWords.includes(w));
+  
+  return hasMatchingLocation ? overlap * 1.2 : overlap;
+}
+
+// Find the best parent keyword for a supporting keyword using text similarity
+function findBestParent(
+  child: BronKeyword, 
+  mainKeywords: BronKeyword[], 
+  threshold: number = 0.5
+): BronKeyword | null {
+  const childText = getKeywordDisplayText(child).toLowerCase();
+  
+  let bestMatch: BronKeyword | null = null;
+  let bestScore = threshold;
+  
+  for (const parent of mainKeywords) {
+    const parentText = getKeywordDisplayText(parent).toLowerCase();
+    
+    // Skip if same keyword
+    if (parent.id === child.id) continue;
+    
+    const score = calculateKeywordSimilarity(childText, parentText);
+    
+    // Prefer parents where child contains parent keywords (child is more specific)
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = parent;
+    }
+  }
+  
+  return bestMatch;
+}
+
+// Group keywords by parent-child relationship (API-based or similarity-based)
 function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children: BronKeyword[] }[] {
   if (keywords.length === 0) return [];
   
@@ -205,36 +254,53 @@ function groupKeywords(keywords: BronKeyword[]): { parent: BronKeyword; children
     }
   }
   
-  // If we have explicit parent-child relationships via parent_keyword_id
-  const parentIdMap = new Map<string | number, BronKeyword[]>();
+  // Build parent -> children mapping
+  const parentChildMap = new Map<number | string, BronKeyword[]>();
+  const usedChildren = new Set<number | string>();
+  
+  // First pass: Use explicit parent_keyword_id relationships from API
   for (const child of supportingKeywords) {
     if (child.parent_keyword_id) {
-      const key = child.parent_keyword_id;
-      if (!parentIdMap.has(key)) {
-        parentIdMap.set(key, []);
+      const parentId = child.parent_keyword_id;
+      if (!parentChildMap.has(parentId)) {
+        parentChildMap.set(parentId, []);
       }
-      parentIdMap.get(key)!.push(child);
+      parentChildMap.get(parentId)!.push(child);
+      usedChildren.add(child.id);
     }
   }
   
-  // Build groups
-  const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
-  const usedChildren = new Set<number | string>();
+  // Second pass: Use text similarity to match orphaned supporting keywords
+  const orphanedChildren = supportingKeywords.filter(c => !usedChildren.has(c.id));
   
-  // Sort main keywords alphabetically
+  for (const child of orphanedChildren) {
+    const bestParent = findBestParent(child, mainKeywords, 0.4);
+    if (bestParent) {
+      if (!parentChildMap.has(bestParent.id)) {
+        parentChildMap.set(bestParent.id, []);
+      }
+      parentChildMap.get(bestParent.id)!.push(child);
+      usedChildren.add(child.id);
+    }
+  }
+  
+  // Build groups - sort main keywords alphabetically
+  const groups: { parent: BronKeyword; children: BronKeyword[] }[] = [];
+  
   mainKeywords.sort((a, b) => 
     getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
   );
   
   for (const parent of mainKeywords) {
-    // Get children linked to this parent
-    const linkedChildren = parentIdMap.get(parent.id) || [];
-    linkedChildren.forEach(c => usedChildren.add(c.id));
-    
-    groups.push({ parent, children: linkedChildren });
+    const children = parentChildMap.get(parent.id) || [];
+    // Sort children alphabetically too
+    children.sort((a, b) => 
+      getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
+    );
+    groups.push({ parent, children });
   }
   
-  // Add any orphaned supporting keywords as their own groups
+  // Add any truly orphaned supporting keywords (no parent found) as standalone entries
   for (const child of supportingKeywords) {
     if (!usedChildren.has(child.id)) {
       groups.push({ parent: child, children: [] });
@@ -800,13 +866,16 @@ export const BRONKeywordsTab = ({
   };
 
   // Render a keyword card - simplified, GPU-optimized
-  const renderKeywordCard = (kw: BronKeyword) => {
+  const renderKeywordCard = (kw: BronKeyword, clusterChildCount?: number) => {
     const expanded = expandedIds.has(kw.id);
     const deleted = isDeleted(kw);
     const active = isActive(kw);
     
     // Check if this is a "tracking only" keyword (from SERP without content)
     const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
+    
+    // Check if this is a supporting keyword (child in a cluster)
+    const isSupportingKeyword = isSupporting(kw);
     
     // Content preview stats - only meaningful for content keywords
     const wordCount = isTrackingOnly ? 0 : getWordCount(kw.resfeedtext || '');
@@ -986,18 +1055,34 @@ export const BRONKeywordsTab = ({
               <div className="flex-1 min-w-[280px] max-w-[480px] pr-6 group/keyword">
                 <div className="flex items-center gap-2">
                   <h3 
-                    className="font-medium text-foreground truncate"
+                    className={`font-medium truncate ${isSupportingKeyword ? 'text-foreground/80' : 'text-foreground'}`}
                     title={keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   >
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
                   </h3>
+                  {/* Badge hierarchy: Main vs Supporting vs Tracking Only */}
                   {isTrackingOnly ? (
                     <Badge className="text-[9px] h-5 bg-amber-500/20 text-amber-400 border-amber-500/30">
                       Tracking Only
                     </Badge>
-                  ) : active ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" title="Has content page" />
-                  ) : null}
+                  ) : isSupportingKeyword ? (
+                    <Badge className="text-[9px] h-5 bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                      Supporting
+                    </Badge>
+                  ) : (
+                    <>
+                      {active && (
+                        <Badge className="text-[9px] h-5 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                          Main
+                        </Badge>
+                      )}
+                      {clusterChildCount && clusterChildCount > 0 && (
+                        <Badge className="text-[9px] h-5 bg-violet-500/20 text-violet-400 border-violet-500/30">
+                          +{clusterChildCount} cluster
+                        </Badge>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1829,7 +1914,7 @@ export const BRONKeywordsTab = ({
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center">
                 <Key className="w-5 h-5 text-primary" />
               </div>
-              <div>
+                <div>
                 <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
                   Keywords
                   {selectedDomain && (
@@ -1840,19 +1925,34 @@ export const BRONKeywordsTab = ({
                   <Badge variant="secondary" className="text-xs">
                     {mergedKeywords.length} total
                   </Badge>
-                  {/* Show breakdown of content vs tracking-only */}
-                  {keywords.length > 0 && (
-                    <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                      {keywords.length} with content
-                    </Badge>
-                  )}
-                  {mergedKeywords.length - keywords.length > 0 && (
-                    <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
-                      {mergedKeywords.length - keywords.length} tracking only
-                    </Badge>
-                  )}
+                  {/* Show cluster count - main keywords that have supporting pages */}
+                  {(() => {
+                    const clustersWithChildren = groupedKeywords.filter(g => g.children.length > 0);
+                    const mainKeywordsCount = groupedKeywords.filter(g => !isSupporting(g.parent)).length;
+                    const supportingCount = groupedKeywords.reduce((acc, g) => acc + g.children.length, 0);
+                    
+                    return (
+                      <>
+                        {mainKeywordsCount > 0 && (
+                          <Badge className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                            {mainKeywordsCount} main
+                          </Badge>
+                        )}
+                        {supportingCount > 0 && (
+                          <Badge className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                            {supportingCount} supporting
+                          </Badge>
+                        )}
+                        {clustersWithChildren.length > 0 && (
+                          <Badge className="text-xs bg-violet-500/20 text-violet-400 border-violet-500/30">
+                            {clustersWithChildren.length} clusters
+                          </Badge>
+                        )}
+                      </>
+                    );
+                  })()}
                   {serpReports.length > 0 && (
-                    <Badge className="text-xs bg-violet-500/20 text-violet-400 border-violet-500/30">
+                    <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
                       <BarChart3 className="w-3 h-3 mr-1" />
                       {serpReports.length} rankings
                     </Badge>
@@ -1915,11 +2015,34 @@ export const BRONKeywordsTab = ({
           </Card>
         ) : (
           groupedKeywords.map(({ parent, children }) => (
-            <div key={parent.id} className="space-y-2">
-              {renderKeywordCard(parent)}
+            <div key={parent.id} className="space-y-1">
+              {/* Parent keyword card - pass cluster child count */}
+              {renderKeywordCard(parent, children.length)}
+              
+              {/* Clustered children - indented with visual connector */}
               {children.length > 0 && (
-                <div className="space-y-2 pl-6 border-l-2 border-primary/20 ml-5">
-                  {children.map(child => renderKeywordCard(child))}
+                <div className="relative ml-8 space-y-1">
+                  {/* Vertical connector line */}
+                  <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
+                  
+                  {/* Cluster header badge */}
+                  <div className="flex items-center gap-2 pl-4 py-1.5">
+                    <div className="w-2 h-2 rounded-full bg-primary/40 ring-2 ring-primary/20" />
+                    <span className="text-[10px] font-medium text-primary/70 uppercase tracking-wider">
+                      Supporting Pages ({children.length})
+                    </span>
+                  </div>
+                  
+                  {/* Child keyword cards */}
+                  {children.map((child) => (
+                    <div key={child.id} className="relative pl-4">
+                      {/* Horizontal connector */}
+                      <div className="absolute left-0 top-6 w-4 h-px bg-primary/30" />
+                      {/* Dot connector */}
+                      <div className="absolute left-0 top-5 w-2 h-2 rounded-full bg-primary/30 -translate-x-0.5" />
+                      {renderKeywordCard(child, 0)}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
