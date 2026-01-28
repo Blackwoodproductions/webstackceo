@@ -931,7 +931,7 @@ export const BRONKeywordsTab = memo(({
 
 
       {/* Article Editor Modal */}
-      <Dialog open={!!articleEditorId} onOpenChange={() => setArticleEditorId(null)}>
+      <Dialog open={!!articleEditorId} onOpenChange={(open) => { if (!open) setArticleEditorId(null); }}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden p-0 [&>button]:hidden">
           <div className="h-[85vh] flex flex-col">
             {/* Header with Keyword Metadata */}

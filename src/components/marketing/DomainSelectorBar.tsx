@@ -65,8 +65,11 @@ export function DomainSelectorBar({
   
   return (
     <div 
-      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky top-[60px] z-40 max-w-[1480px] mx-auto"
-      style={{ contain: 'layout style' }}
+      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky z-30 max-w-[1480px] mx-auto"
+      style={{ 
+        contain: 'layout style',
+        top: 'calc(var(--app-navbar-height, 64px) + var(--vi-dashboard-header-height, 0px))',
+      }}
       data-no-theme-transition
     >
       {/* Background grid pattern - static */}
@@ -92,10 +95,10 @@ export function DomainSelectorBar({
               </div>
 
               <Select value={selectedValue} onValueChange={onDomainChange}>
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50">
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[100] max-w-[400px]">
+                <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px] pointer-events-auto">
                   {viDomains.length === 0 && (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
                       No domains yet
