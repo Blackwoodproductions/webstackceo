@@ -124,13 +124,16 @@ export const BRONLinksTab = ({
               ))}
             </div>
           ) : (linkType === "in" ? errorIn : errorOut) ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
-                <Link2 className="w-8 h-8 text-destructive/60" />
+            <div className="text-center py-8">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Link2 className="w-6 h-6 text-destructive/60" />
               </div>
               <p className="text-foreground font-medium mb-1">Unable to load {linkType === "in" ? "inbound" : "outbound"} links</p>
-              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                The BRON API returned an error. This may be a temporary issue with the link analysis service.
+              <p className="text-sm text-muted-foreground mb-2 max-w-md mx-auto">
+                {linkType === "in" ? errorIn : errorOut}
+              </p>
+              <p className="text-xs text-muted-foreground/70 mb-4">
+                Link analysis may not be available for all domains. Try again or check back later.
               </p>
               <Button
                 variant="outline"
