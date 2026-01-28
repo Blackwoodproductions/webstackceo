@@ -1063,36 +1063,32 @@ export const BRONKeywordsTab = ({
               {/* Column 6: Combined Links Button (also acts as expand indicator) */}
               <div 
                 className={`
-                  flex items-center gap-3 px-4 py-2 rounded-xl cursor-pointer transition-all duration-200
-                  bg-gradient-to-br from-primary/10 to-primary/5 border
+                  flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all duration-200
+                  bg-card/80 border
                   ${expanded 
-                    ? 'border-primary/50 ring-1 ring-primary/30 shadow-[0_0_12px_rgba(var(--primary-rgb),0.2)]' 
-                    : 'border-primary/20 hover:border-primary/40 hover:bg-primary/10'
+                    ? 'border-primary/50 ring-1 ring-primary/30' 
+                    : 'border-border/40 hover:border-primary/40'
                   }
                 `}
               >
-                {/* Inbound */}
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                    <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
-                  </div>
-                  <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
+                {/* Inbound - arrow pointing INTO the box (right arrow) */}
+                <div className="flex items-center gap-1">
+                  <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
+                  <span className="text-xs font-semibold text-cyan-400">{linksIn.length}</span>
                 </div>
                 
                 {/* Divider */}
-                <div className="w-px h-5 bg-border/50" />
+                <div className="w-px h-4 bg-border/40" />
                 
-                {/* Outbound */}
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
-                    <ArrowUpRight className="w-3 h-3 text-violet-400" />
-                  </div>
-                  <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
+                {/* Outbound - arrow pointing OUT of the box (right arrow) */}
+                <div className="flex items-center gap-1">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-violet-400" />
+                  <span className="text-xs font-semibold text-violet-400">{linksOut.length}</span>
                 </div>
                 
                 {/* Expand Arrow */}
                 <ChevronRight 
-                  className={`w-4 h-4 transition-transform duration-150 ml-1 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+                  className={`w-3.5 h-3.5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
                 />
               </div>
             </div>
