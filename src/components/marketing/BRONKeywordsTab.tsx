@@ -237,7 +237,8 @@ interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by parent-child relationship (API-based or similarity-based)
+// Group keywords by parent-child relationship (API-based only for explicit relationships)
+// Tracking-only keywords (from SERP) should NOT be clustered by similarity
 function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -246,18 +247,22 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   const supportingKeywords: BronKeyword[] = [];
   
   for (const kw of keywords) {
-    if (isSupporting(kw)) {
+    // Only treat as supporting if it has explicit parent_keyword_id from API
+    // Don't use similarity-based clustering for SERP-only tracking keywords
+    const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
+    
+    if (!isTrackingOnly && isSupporting(kw)) {
       supportingKeywords.push(kw);
     } else {
       mainKeywords.push(kw);
     }
   }
   
-  // Build parent -> children mapping
+  // Build parent -> children mapping using ONLY explicit parent_keyword_id
   const parentChildMap = new Map<number | string, BronKeyword[]>();
   const usedChildren = new Set<number | string>();
   
-  // First pass: Use explicit parent_keyword_id relationships from API
+  // Use explicit parent_keyword_id relationships from API
   for (const child of supportingKeywords) {
     if (child.parent_keyword_id) {
       const parentId = child.parent_keyword_id;
@@ -269,11 +274,15 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     }
   }
   
-  // Second pass: Use text similarity for orphaned supporting keywords
+  // For orphaned supporting keywords (have is_supporting but no parent_keyword_id),
+  // use text similarity ONLY for content keywords, not tracking-only
   const orphanedChildren = supportingKeywords.filter(c => !usedChildren.has(c.id));
   
   for (const child of orphanedChildren) {
-    const bestParent = findBestParent(child, mainKeywords, 0.4);
+    const isTrackingOnly = child.status === 'tracking_only' || String(child.id).startsWith('serp_');
+    if (isTrackingOnly) continue; // Don't cluster tracking-only by similarity
+    
+    const bestParent = findBestParent(child, mainKeywords, 0.5);
     if (bestParent) {
       if (!parentChildMap.has(bestParent.id)) {
         parentChildMap.set(bestParent.id, []);
