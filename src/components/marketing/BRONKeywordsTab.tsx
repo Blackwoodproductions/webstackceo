@@ -97,7 +97,7 @@ const KeywordListItem = memo(({
   onSave: (kw: BronKeyword) => void;
   onOpenArticleEditor: (kw: BronKeyword) => void;
 }) => {
-  const renderKeyword = (kw: BronKeyword, isNested = false, clusterChildCount?: number) => {
+  const renderKeyword = (kw: BronKeyword, isNested = false, isMainKeyword = false, clusterChildCount?: number) => {
     const keywordText = getKeywordDisplayText(kw);
     const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
     const serpData = findSerpForKeyword(keywordText, serpReports);
@@ -136,6 +136,7 @@ const KeywordListItem = memo(({
           isExpanded={isExpanded}
           isNested={isNested}
           isTrackingOnly={isTrackingOnly}
+          isMainKeyword={isMainKeyword}
           clusterChildCount={clusterChildCount}
           selectedDomain={selectedDomain}
           googleMovement={googleMovement}
@@ -166,7 +167,8 @@ const KeywordListItem = memo(({
 
   return (
     <div style={{ contain: 'layout style' }}>
-      {renderKeyword(cluster.parent, false, cluster.children.length)}
+      {/* Parent keyword: isNested=false, isMainKeyword=true if has children */}
+      {renderKeyword(cluster.parent, false, cluster.children.length > 0, cluster.children.length)}
       {cluster.children.length > 0 && (
         <>
           {/*
@@ -175,7 +177,8 @@ const KeywordListItem = memo(({
             columns (PageSpeed, rankings, etc.) stay perfectly aligned.
           */}
           <div>
-            {cluster.children.map(child => renderKeyword(child, true))}
+            {/* Child keywords: isNested=true, isMainKeyword=false */}
+            {cluster.children.map(child => renderKeyword(child, true, false))}
           </div>
         </>
       )}
