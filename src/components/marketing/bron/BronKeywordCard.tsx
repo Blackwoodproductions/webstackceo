@@ -6,11 +6,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
-import { getKeywordDisplayText, getPosition, PageSpeedScore } from "./utils";
-
-// Re-export for backwards compatibility
-export { getKeywordDisplayText, getPosition } from "./utils";
-export type { PageSpeedScore } from "./utils";
 
 // Types
 export interface KeywordMetrics {
@@ -18,6 +13,15 @@ export interface KeywordMetrics {
   cpc: number;
   competition: number;
   competition_level: string;
+}
+
+export interface PageSpeedScore {
+  mobileScore: number;
+  desktopScore: number;
+  loading?: boolean;
+  updating?: boolean;
+  error?: boolean;
+  cachedAt?: number;
 }
 
 interface BronKeywordCardProps {
@@ -37,6 +41,34 @@ interface BronKeywordCardProps {
   yahooMovement: number;
   metricsLoading?: boolean;
   onToggleExpand: () => void;
+}
+
+// Utility functions
+export function getKeywordDisplayText(kw: BronKeyword): string {
+  if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
+  if (kw.keyword && kw.keyword.trim()) return kw.keyword;
+  if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
+  if (kw.resfeedtext) {
+    const decoded = kw.resfeedtext
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match && h1Match[1]) return h1Match[1].trim();
+  }
+  return `Keyword #${kw.id}`;
+}
+
+export function getPosition(val?: string | number): number | null {
+  if (val === undefined || val === null) return null;
+  const str = String(val).trim();
+  const match = str.match(/^(\d+)\s*([+-]\d+)?$/);
+  if (match) {
+    const position = parseInt(match[1], 10);
+    return isNaN(position) || position === 0 ? null : position;
+  }
+  const num = parseInt(str, 10);
+  return isNaN(num) || num === 0 ? null : num;
 }
 
 function getKeywordIntent(keyword: string) {
