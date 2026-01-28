@@ -237,8 +237,8 @@ interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by BRON's cluster ordering: every 3 consecutive content keywords form a cluster
-// (1 main + 2 supporting). This matches how BRON organizes keyword clusters.
+// Group keywords using topic similarity: main keywords are paired with their 2 most similar
+// supporting keywords based on word overlap. This ensures semantic clustering.
 // Tracking-only keywords (from SERP) remain standalone and appear after clusters.
 function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
@@ -289,25 +289,64 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       }
     }
   } else {
-    // Use sequential grouping: every 3 content keywords = 1 cluster (1 main + 2 supporting)
-    // Sort content keywords alphabetically first to ensure consistent ordering
-    contentKeywords.sort((a, b) => 
-      getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
-    );
+    // Use topic-based similarity clustering
+    // Identify main keywords (shorter, more generic terms) vs supporting (longer, more specific)
+    const keywordsWithLength = contentKeywords.map(kw => ({
+      kw,
+      text: getKeywordDisplayText(kw),
+      wordCount: getKeywordDisplayText(kw).split(/\s+/).length
+    }));
     
-    // Group every 3 keywords: first is main, next 2 are supporting
-    for (let i = 0; i < contentKeywords.length; i += 3) {
-      const parent = contentKeywords[i];
+    // Sort by word count (shorter = more likely to be main keyword)
+    keywordsWithLength.sort((a, b) => a.wordCount - b.wordCount || a.text.localeCompare(b.text));
+    
+    const assigned = new Set<number | string>();
+    const mainKeywords: BronKeyword[] = [];
+    const supportingPool: BronKeyword[] = [];
+    
+    // Every 3rd keyword (by word count order) becomes a main keyword
+    // This ensures we have enough main keywords for 1:2 ratio
+    const targetMainCount = Math.ceil(contentKeywords.length / 3);
+    
+    for (let i = 0; i < keywordsWithLength.length; i++) {
+      if (mainKeywords.length < targetMainCount && i % 3 === 0) {
+        mainKeywords.push(keywordsWithLength[i].kw);
+      } else {
+        supportingPool.push(keywordsWithLength[i].kw);
+      }
+    }
+    
+    // For each main keyword, find 2 most similar supporting keywords
+    for (const main of mainKeywords) {
+      const mainText = getKeywordDisplayText(main);
+      
+      // Score all unassigned supporting keywords by similarity
+      const scored = supportingPool
+        .filter(s => !assigned.has(s.id))
+        .map(s => ({
+          kw: s,
+          score: calculateKeywordSimilarity(mainText, getKeywordDisplayText(s))
+        }))
+        .sort((a, b) => b.score - a.score);
+      
+      // Take top 2 most similar
       const children: BronKeyword[] = [];
-      
-      if (i + 1 < contentKeywords.length) {
-        children.push(contentKeywords[i + 1]);
+      for (let i = 0; i < Math.min(2, scored.length); i++) {
+        if (scored[i].score >= 0.3) { // Minimum similarity threshold
+          children.push(scored[i].kw);
+          assigned.add(scored[i].kw.id);
+        }
       }
-      if (i + 2 < contentKeywords.length) {
-        children.push(contentKeywords[i + 2]);
-      }
       
-      clusters.push({ parent, children, parentId: parent.id });
+      clusters.push({ parent: main, children, parentId: main.id });
+      assigned.add(main.id);
+    }
+    
+    // Any remaining unassigned supporting keywords become standalone
+    for (const s of supportingPool) {
+      if (!assigned.has(s.id)) {
+        clusters.push({ parent: s, children: [], parentId: s.id });
+      }
     }
   }
   
