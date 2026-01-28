@@ -477,14 +477,13 @@ export const BRONKeywordsTab = ({
     fetchMetrics();
   }, [keywords]);
 
-  // Fetch PageSpeed scores from Google API for keyword URLs
+  // Fetch PageSpeed scores from Google API for keyword URLs - ALWAYS fetch on load
   useEffect(() => {
     const fetchPageSpeedScores = async () => {
       if (keywords.length === 0 || !selectedDomain) return;
       
-      // Get unique URLs from keywords
+      // Get unique URLs from keywords - always fetch fresh data
       const urlsToFetch: { url: string; keywordId: string | number; hasCache: boolean }[] = [];
-      const now = Date.now();
       
       for (const kw of keywords) {
         let url = kw.linkouturl;
@@ -499,15 +498,14 @@ export const BRONKeywordsTab = ({
         if (!url) continue;
         
         const cached = pageSpeedScores[url];
-        const isCacheExpired = !cached?.cachedAt || (now - cached.cachedAt) > PAGESPEED_CACHE_MAX_AGE;
-        const needsFetch = !cached || cached.error || isCacheExpired;
         const isAlreadyFetching = cached?.loading || cached?.updating;
         
-        if (needsFetch && !isAlreadyFetching) {
+        // Always fetch, but track if we have cached data to show while updating
+        if (!isAlreadyFetching) {
           urlsToFetch.push({ 
             url, 
             keywordId: kw.id, 
-            hasCache: !!cached && cached.mobileScore > 0 
+            hasCache: !!cached && cached.mobileScore > 0 && !cached.error
           });
         }
       }
@@ -518,7 +516,7 @@ export const BRONKeywordsTab = ({
       const batchSize = 3;
       const urlsToProcess = urlsToFetch.slice(0, batchSize);
       
-      // Mark as loading or updating (keep existing scores visible while updating)
+      // Mark as updating (keep existing scores visible while updating)
       setPageSpeedScores(prev => {
         const next = { ...prev };
         for (const { url, hasCache } of urlsToProcess) {
@@ -582,10 +580,15 @@ export const BRONKeywordsTab = ({
       });
       
       await Promise.all(fetchPromises);
+      
+      // If there are more URLs to fetch, schedule next batch
+      if (urlsToFetch.length > batchSize) {
+        setTimeout(fetchPageSpeedScores, 2000);
+      }
     };
     
-    // Debounce the fetch to avoid too many API calls
-    const timer = setTimeout(fetchPageSpeedScores, 1500);
+    // Start fetching after a short delay to avoid race conditions
+    const timer = setTimeout(fetchPageSpeedScores, 800);
     return () => clearTimeout(timer);
   }, [keywords, selectedDomain]);
   // Colors: Blue = no movement (0), Yellow = down (negative), Orange with glow = up (positive)
