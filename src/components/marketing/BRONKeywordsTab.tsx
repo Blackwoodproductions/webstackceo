@@ -237,91 +237,118 @@ interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by parent-child relationship (API-based only for explicit relationships)
-// Tracking-only keywords (from SERP) should NOT be clustered by similarity
+// Group keywords by clustering similar content keywords together
+// Strategy: For each content keyword, find the 2 most similar content keywords as children
+// Tracking-only keywords (from SERP) remain standalone and are NOT clustered
 function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
-  // Separate main keywords from supporting keywords
-  const mainKeywords: BronKeyword[] = [];
-  const supportingKeywords: BronKeyword[] = [];
+  // Separate content keywords from tracking-only keywords
+  const contentKeywords: BronKeyword[] = [];
+  const trackingOnlyKeywords: BronKeyword[] = [];
   
   for (const kw of keywords) {
-    // Only treat as supporting if it has explicit parent_keyword_id from API
-    // Don't use similarity-based clustering for SERP-only tracking keywords
     const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
-    
-    if (!isTrackingOnly && isSupporting(kw)) {
-      supportingKeywords.push(kw);
+    if (isTrackingOnly) {
+      trackingOnlyKeywords.push(kw);
     } else {
-      mainKeywords.push(kw);
+      contentKeywords.push(kw);
     }
   }
   
-  // Build parent -> children mapping using ONLY explicit parent_keyword_id
-  const parentChildMap = new Map<number | string, BronKeyword[]>();
-  const usedChildren = new Set<number | string>();
+  // Build clusters from content keywords using similarity
+  // Each content keyword will try to "claim" the 2 most similar keywords as children
+  const assignedAsChild = new Set<number | string>();
+  const clusters: KeywordCluster[] = [];
   
-  // Use explicit parent_keyword_id relationships from API
-  for (const child of supportingKeywords) {
-    if (child.parent_keyword_id) {
-      const parentId = child.parent_keyword_id;
-      if (!parentChildMap.has(parentId)) {
-        parentChildMap.set(parentId, []);
-      }
-      parentChildMap.get(parentId)!.push(child);
-      usedChildren.add(child.id);
+  // First, check if API provides explicit parent_keyword_id relationships
+  const hasExplicitParent = new Map<number | string, number | string>();
+  for (const kw of contentKeywords) {
+    if (kw.parent_keyword_id) {
+      hasExplicitParent.set(kw.id, kw.parent_keyword_id);
     }
   }
   
-  // For orphaned supporting keywords (have is_supporting but no parent_keyword_id),
-  // use text similarity ONLY for content keywords, not tracking-only
-  const orphanedChildren = supportingKeywords.filter(c => !usedChildren.has(c.id));
-  
-  for (const child of orphanedChildren) {
-    const isTrackingOnly = child.status === 'tracking_only' || String(child.id).startsWith('serp_');
-    if (isTrackingOnly) continue; // Don't cluster tracking-only by similarity
+  // If we have explicit relationships, use them
+  if (hasExplicitParent.size > 0) {
+    const parentChildMap = new Map<number | string, BronKeyword[]>();
     
-    const bestParent = findBestParent(child, mainKeywords, 0.5);
-    if (bestParent) {
-      if (!parentChildMap.has(bestParent.id)) {
-        parentChildMap.set(bestParent.id, []);
+    for (const kw of contentKeywords) {
+      if (hasExplicitParent.has(kw.id)) {
+        const parentId = hasExplicitParent.get(kw.id)!;
+        if (!parentChildMap.has(parentId)) {
+          parentChildMap.set(parentId, []);
+        }
+        parentChildMap.get(parentId)!.push(kw);
+        assignedAsChild.add(kw.id);
       }
-      parentChildMap.get(bestParent.id)!.push(child);
-      usedChildren.add(child.id);
+    }
+    
+    // Build clusters from explicit relationships
+    for (const kw of contentKeywords) {
+      if (!assignedAsChild.has(kw.id)) {
+        const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
+        clusters.push({ parent: kw, children, parentId: kw.id });
+      }
+    }
+  } else {
+    // No explicit relationships - use text similarity clustering
+    // Sort by keyword text length (longer = more specific = likely a child)
+    const sortedBySpecificity = [...contentKeywords].sort((a, b) => {
+      const aText = getKeywordDisplayText(a);
+      const bText = getKeywordDisplayText(b);
+      return aText.length - bText.length; // Shorter first (more generic = parent)
+    });
+    
+    for (const parent of sortedBySpecificity) {
+      // Skip if already assigned as a child
+      if (assignedAsChild.has(parent.id)) continue;
+      
+      // Find the 2 most similar keywords that haven't been assigned yet
+      const parentText = getKeywordDisplayText(parent);
+      const candidates: { kw: BronKeyword; score: number }[] = [];
+      
+      for (const candidate of contentKeywords) {
+        if (candidate.id === parent.id) continue;
+        if (assignedAsChild.has(candidate.id)) continue;
+        
+        const candidateText = getKeywordDisplayText(candidate);
+        const score = calculateKeywordSimilarity(parentText, candidateText);
+        
+        // Only consider if there's meaningful overlap (threshold 0.4)
+        if (score >= 0.4) {
+          candidates.push({ kw: candidate, score });
+        }
+      }
+      
+      // Sort by score descending and take top 2
+      candidates.sort((a, b) => b.score - a.score);
+      const children = candidates.slice(0, 2).map(c => c.kw);
+      
+      // Mark children as assigned
+      for (const child of children) {
+        assignedAsChild.add(child.id);
+      }
+      
+      clusters.push({ parent, children, parentId: parent.id });
     }
   }
   
-  // Build groups - sort main keywords alphabetically
-  const groups: KeywordCluster[] = [];
+  // Sort clusters alphabetically by parent keyword
+  clusters.sort((a, b) => 
+    getKeywordDisplayText(a.parent).localeCompare(getKeywordDisplayText(b.parent))
+  );
   
-  mainKeywords.sort((a, b) => 
+  // Add tracking-only keywords as standalone entries (sorted alphabetically)
+  trackingOnlyKeywords.sort((a, b) => 
     getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
   );
   
-  for (const parent of mainKeywords) {
-    const allChildren = parentChildMap.get(parent.id) || [];
-    // Sort children and limit to 2 per main keyword
-    allChildren.sort((a, b) => 
-      getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
-    );
-    const children = allChildren.slice(0, 2);
-    groups.push({ parent, children, parentId: parent.id });
-    
-    // Excess children become orphaned
-    for (let i = 2; i < allChildren.length; i++) {
-      usedChildren.delete(allChildren[i].id);
-    }
+  for (const kw of trackingOnlyKeywords) {
+    clusters.push({ parent: kw, children: [], parentId: kw.id });
   }
   
-  // Add orphaned supporting keywords as standalone
-  for (const child of supportingKeywords) {
-    if (!usedChildren.has(child.id)) {
-      groups.push({ parent: child, children: [], parentId: child.id });
-    }
-  }
-  
-  return groups;
+  return clusters;
 }
 
 // Extract keyword display text
