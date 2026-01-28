@@ -197,6 +197,17 @@ const KEYWORD_CACHE_KEY = 'bron_keywords_cache'; // legacy (v1)
 const KEYWORD_CACHE_V2_PREFIX = 'bron_keywords_cache_v2_';
 const KEYWORD_CACHE_V2_INDEX_KEY = 'bron_keywords_cache_v2_index';
 
+// ─── In-Memory Keyword Cache ───
+// Avoids re-parsing large localStorage JSON on every domain switch (major perf gain for 150+ keyword domains)
+// Key: domain, Value: { keywords, cachedAt, localStorageLoadedAt }
+interface KeywordMemoryCacheEntry {
+  keywords: BronKeyword[];
+  cachedAt: number;
+  localStorageLoadedAt: number;
+}
+const keywordMemoryCache = new Map<string, KeywordMemoryCacheEntry>();
+const KEYWORD_MEMORY_TTL = 60 * 1000; // 1 minute before re-checking localStorage
+
 interface KeywordCacheEntry {
   keywords: BronKeyword[];
   cachedAt: number;
@@ -246,19 +257,38 @@ function evictOldestKeywordV2Entries(index: Record<string, KeywordCacheIndexEntr
       // ignore
     }
     delete index[oldest];
+    // Also evict from memory cache
+    keywordMemoryCache.delete(oldest);
   }
 }
 
 function loadCachedKeywords(domain: string): BronKeyword[] | null {
   const startTime = performance.now();
+  const now = Date.now();
+  
+  // ─── Fast Path: Check memory cache first ───
+  const memEntry = keywordMemoryCache.get(domain);
+  if (memEntry && (now - memEntry.localStorageLoadedAt) < KEYWORD_MEMORY_TTL) {
+    // Memory cache is still fresh - no need to touch localStorage
+    const elapsed = (performance.now() - startTime).toFixed(1);
+    console.log(`[BRON] Memory cache HIT for ${domain}: ${memEntry.keywords.length} keywords in ${elapsed}ms`);
+    return memEntry.keywords;
+  }
+  
   try {
     // Prefer V2 per-domain cache
     const v2Raw = localStorage.getItem(getKeywordV2Key(domain));
     if (v2Raw) {
       const entry = JSON.parse(v2Raw) as KeywordCacheEntry;
-      if (entry && (Date.now() - entry.cachedAt) <= CACHE_MAX_AGE) {
+      if (entry && (now - entry.cachedAt) <= CACHE_MAX_AGE) {
         const elapsed = (performance.now() - startTime).toFixed(1);
         console.log(`[BRON] Cache HIT for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
+        // Store in memory cache for fast subsequent access
+        keywordMemoryCache.set(domain, {
+          keywords: entry.keywords,
+          cachedAt: entry.cachedAt,
+          localStorageLoadedAt: now,
+        });
         return entry.keywords;
       }
     }
@@ -271,12 +301,18 @@ function loadCachedKeywords(domain: string): BronKeyword[] | null {
     }
     const parsed = JSON.parse(cached) as Record<string, KeywordCacheEntry>;
     const entry = parsed[domain];
-    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) {
+    if (!entry || (now - entry.cachedAt) > CACHE_MAX_AGE) {
       console.log(`[BRON] Cache MISS for ${domain}: entry expired or not found`);
       return null;
     }
     const elapsed = (performance.now() - startTime).toFixed(1);
     console.log(`[BRON] Cache HIT (legacy) for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
+    // Store in memory cache
+    keywordMemoryCache.set(domain, {
+      keywords: entry.keywords,
+      cachedAt: entry.cachedAt,
+      localStorageLoadedAt: now,
+    });
     return entry.keywords;
   } catch (e) {
     console.warn('[BRON] Failed to load keyword cache:', e);
@@ -285,12 +321,20 @@ function loadCachedKeywords(domain: string): BronKeyword[] | null {
 }
 
 function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
-  const entry: KeywordCacheEntry = { keywords, cachedAt: Date.now() };
+  const now = Date.now();
+  const entry: KeywordCacheEntry = { keywords, cachedAt: now };
   const index = loadKeywordV2Index();
   index[domain] = { cachedAt: entry.cachedAt, count: keywords.length };
 
   // Ensure we keep at most N domains
   evictOldestKeywordV2Entries(index, domain);
+
+  // ─── Update memory cache immediately ───
+  keywordMemoryCache.set(domain, {
+    keywords,
+    cachedAt: now,
+    localStorageLoadedAt: now,
+  });
 
   // Try to write; if quota is exceeded, evict more and retry.
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -317,6 +361,7 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
         // ignore
       }
       delete index[victim];
+      keywordMemoryCache.delete(victim);
     }
   }
 
@@ -325,6 +370,9 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
 
 export function invalidateKeywordCache(domain: string) {
   try {
+    // ─── Clear memory cache first ───
+    keywordMemoryCache.delete(domain);
+    
     // V2
     try {
       localStorage.removeItem(getKeywordV2Key(domain));

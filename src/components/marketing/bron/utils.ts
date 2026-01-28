@@ -12,6 +12,16 @@ export const PAGESPEED_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 export const CLUSTER_CACHE_KEY = 'bron_cluster_cache';
 export const CLUSTER_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
+// ─── In-Memory Cache for Cluster Data ───
+// This prevents re-parsing localStorage on every render (major perf gain for 150+ keyword domains)
+let clusterMemoryCache: Record<string, ClusterCacheEntry> | null = null;
+let clusterMemoryCacheLoadedAt = 0;
+const MEMORY_CACHE_TTL = 60 * 1000; // 1 minute in-memory, fallback to localStorage
+
+// ─── In-Memory Signature Cache ───
+// Prevents re-sorting keyword IDs on every render
+const signatureCache = new Map<string, { ids: string[]; keywordCount: number }>();
+
 // Cluster cache type
 interface ClusterCacheEntry {
   keywordIds: string[]; // Sorted list of keyword IDs for comparison
@@ -68,8 +78,20 @@ export function saveCachedPageSpeedScores(scores: Record<string, PageSpeedScore>
 }
 
 // Generate a signature from keyword IDs for cache comparison
-function getKeywordSignature(keywords: BronKeyword[]): string[] {
-  return keywords.map(kw => String(kw.id)).sort();
+// Uses in-memory cache to avoid re-sorting on every render
+function getKeywordSignature(keywords: BronKeyword[], domain?: string): string[] {
+  const cacheKey = domain || 'default';
+  const cached = signatureCache.get(cacheKey);
+  
+  // If count matches, signature is likely unchanged (fast path)
+  if (cached && cached.keywordCount === keywords.length) {
+    return cached.ids;
+  }
+  
+  // Compute fresh signature
+  const ids = keywords.map(kw => String(kw.id)).sort();
+  signatureCache.set(cacheKey, { ids, keywordCount: keywords.length });
+  return ids;
 }
 
 // Check if two sorted ID arrays are equal
@@ -81,13 +103,19 @@ function arraysEqual(a: string[], b: string[]): boolean {
   return true;
 }
 
-// Load cached clusters from localStorage
+// Load cached clusters - uses in-memory cache to avoid repeated localStorage parsing
 function loadCachedClusters(): Record<string, ClusterCacheEntry> {
+  const now = Date.now();
+  
+  // Return memory cache if still valid
+  if (clusterMemoryCache && (now - clusterMemoryCacheLoadedAt) < MEMORY_CACHE_TTL) {
+    return clusterMemoryCache;
+  }
+  
   try {
     const cached = localStorage.getItem(CLUSTER_CACHE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      const now = Date.now();
       const valid: Record<string, ClusterCacheEntry> = {};
       for (const [domain, entry] of Object.entries(parsed)) {
         const e = entry as ClusterCacheEntry;
@@ -95,18 +123,27 @@ function loadCachedClusters(): Record<string, ClusterCacheEntry> {
           valid[domain] = e;
         }
       }
+      // Update memory cache
+      clusterMemoryCache = valid;
+      clusterMemoryCacheLoadedAt = now;
       return valid;
     }
   } catch (e) {
     console.warn('Failed to load cluster cache:', e);
   }
+  
+  clusterMemoryCache = {};
+  clusterMemoryCacheLoadedAt = now;
   return {};
 }
 
-// Save clusters to localStorage
+// Save clusters to localStorage and update memory cache
 function saveCachedClusters(cache: Record<string, ClusterCacheEntry>) {
   try {
     localStorage.setItem(CLUSTER_CACHE_KEY, JSON.stringify(cache));
+    // Update memory cache too
+    clusterMemoryCache = cache;
+    clusterMemoryCacheLoadedAt = Date.now();
   } catch (e) {
     console.warn('Failed to save cluster cache:', e);
   }
@@ -205,7 +242,7 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
   
   // ─── Cache Check ───
   const cacheKey = domain || 'default';
-  const currentSignature = getKeywordSignature(keywords);
+  const currentSignature = getKeywordSignature(keywords, cacheKey);
   
   try {
     const clusterCache = loadCachedClusters();
