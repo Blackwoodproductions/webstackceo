@@ -592,8 +592,10 @@ export const BRONKeywordsTab = memo(({
     }
   };
 
-  // Get keyword for article editor
-  const editorKeyword = articleEditorId ? mergedKeywords.find(k => k.id === articleEditorId) : null;
+  // Get keyword for article editor - normalize ID comparison
+  const editorKeyword = articleEditorId 
+    ? mergedKeywords.find(k => String(k.id) === String(articleEditorId)) 
+    : null;
 
   return (
     <div style={{ contain: 'layout' }}>

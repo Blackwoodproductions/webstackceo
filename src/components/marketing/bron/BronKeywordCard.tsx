@@ -59,6 +59,12 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
   if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text;
   if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase;
   
+  // SEOM/BRON supporting keywords may have keyword_name or target_keyword
+  if (typeof kwAny.keyword_name === 'string' && kwAny.keyword_name.trim()) return kwAny.keyword_name;
+  if (typeof kwAny.target_keyword === 'string' && kwAny.target_keyword.trim()) return kwAny.target_keyword;
+  if (typeof kwAny.primary_keyword === 'string' && kwAny.primary_keyword.trim()) return kwAny.primary_keyword;
+  if (typeof kwAny.page_keyword === 'string' && kwAny.page_keyword.trim()) return kwAny.page_keyword;
+  
   // Check linkouturl for keyword slug
   if (kw.linkouturl) {
     // Extract last path segment as keyword hint
@@ -66,6 +72,21 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
     const lastSegment = urlPath.split('/').pop();
     if (lastSegment && lastSegment.length > 2) {
       // Convert slug to readable text: "best-dentist-port-coquitlam" -> "Best Dentist Port Coquitlam"
+      const readable = lastSegment
+        .replace(/-/g, ' ')
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+      if (readable.length > 3) return readable;
+    }
+  }
+  
+  // Check url field as fallback
+  if (kw.url) {
+    const urlPath = kw.url.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
+    const lastSegment = urlPath.split('/').pop();
+    if (lastSegment && lastSegment.length > 2) {
       const readable = lastSegment
         .replace(/-/g, ' ')
         .replace(/_/g, ' ')
@@ -88,7 +109,9 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
     if (titleMatch && titleMatch[1]) return titleMatch[1].trim();
   }
   
-  return `Keyword #${kw.id}`;
+  // LAST RESORT: Use keyword name from the keyword object itself - DO NOT use ID
+  // If we truly cannot find a name, show a generic placeholder but NOT the ID
+  return kw.keywordtitle || kw.keyword || kw.metatitle || 'Untitled Keyword';
 }
 
 export function getPosition(val?: string | number): number | null {
