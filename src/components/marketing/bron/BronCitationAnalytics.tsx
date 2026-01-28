@@ -194,9 +194,21 @@ export const BronCitationAnalytics = memo(({
               {/* Filters */}
               <div className="flex items-center gap-4 mb-4 flex-wrap">
                 <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">View:</span>
+                  <select
+                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20"
+                    onClick={(e) => e.stopPropagation()}
+                    value={viewMode}
+                    onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
+                  >
+                    <option value="inbound">Inbound Links ({linksIn.length})</option>
+                    <option value="outbound">Outbound Links ({linksOut.length})</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Relevance:</span>
                   <select
-                    className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground"
+                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20"
                     onClick={(e) => e.stopPropagation()}
                     value={relevanceFilter}
                     onChange={(e) => setRelevanceFilter(e.target.value as RelevanceFilter)}
@@ -211,7 +223,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Reciprocal:</span>
                   <select 
-                    className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground" 
+                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20" 
                     onClick={(e) => e.stopPropagation()}
                     value={reciprocalFilter}
                     onChange={(e) => setReciprocalFilter(e.target.value as ReciprocalFilter)}
