@@ -122,25 +122,48 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
-  // Also check is_supporting and bubblefeed flags
+  // Check for explicit parent relationships (SEOM/BRON packages)
+  // Priority:
+  //   1. parent_keyword_id - explicit parent ID field
+  //   2. bubblefeed - in SEOM/BRON, this is the ID of the main/parent keyword (not a boolean!)
   // IMPORTANT: normalize IDs to strings because some BRON packages return
   // `parent_keyword_id` as a string while `id` is a number (or vice-versa).
   const hasExplicitParent = new Map<string, string>();
   const isExplicitSupporting = new Set<string>();
   
+  // Build a set of all keyword IDs for validation
+  const allIdKeys = new Set(contentKeywords.map(kw => String(kw.id)));
+  
   for (const kw of contentKeywords) {
     const idKey = String(kw.id);
-    // Check parent_keyword_id first
-    // Some packages send 0/"0" when unset, so treat that as empty.
+    
+    // 1. Check parent_keyword_id first
     const parentRaw = (kw as any).parent_keyword_id;
     const parentKey = parentRaw !== undefined && parentRaw !== null ? String(parentRaw) : "";
-    if (parentKey && parentKey !== "0") {
+    if (parentKey && parentKey !== "0" && parentKey !== idKey) {
       hasExplicitParent.set(idKey, parentKey);
       isExplicitSupporting.add(idKey);
+      continue;
     }
-    // Also check is_supporting and bubblefeed flags
-    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeed === true || kw.bubblefeed === 1) {
+    
+    // 2. Check bubblefeed - in SEOM/BRON this is the PARENT's ID (not a boolean)
+    // Supporting keywords have bubblefeed = main_keyword.id
+    const bubbleRaw = kw.bubblefeed;
+    if (bubbleRaw !== undefined && bubbleRaw !== null) {
+      const bubbleKey = String(bubbleRaw);
+      // If bubblefeed is a valid ID that exists and is not this keyword's own ID, use it as parent
+      if (bubbleKey && bubbleKey !== "0" && bubbleKey !== "true" && bubbleKey !== "false" && bubbleKey !== idKey) {
+        // Verify the parent exists in our keyword list
+        if (allIdKeys.has(bubbleKey)) {
+          hasExplicitParent.set(idKey, bubbleKey);
+          isExplicitSupporting.add(idKey);
+          continue;
+        }
+      }
+    }
+    
+    // 3. Check is_supporting flag (boolean) - marks as supporting but no specific parent
+    if (kw.is_supporting === true || kw.is_supporting === 1) {
       isExplicitSupporting.add(idKey);
     }
   }
@@ -151,6 +174,7 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     isSupportingCount: isExplicitSupporting.size,
     totalContentKeywords: contentKeywords.length,
     usingApiClustering: hasExplicitParent.size > 0,
+    sampleParentMappings: Array.from(hasExplicitParent.entries()).slice(0, 5),
   });
   
   if (hasExplicitParent.size > 0) {
