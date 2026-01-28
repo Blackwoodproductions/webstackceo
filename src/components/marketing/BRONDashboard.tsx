@@ -65,12 +65,22 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         if (!mounted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[BRON Dashboard] Auth check failed:", message);
+        
+        // Check for specific error types and provide helpful messages
         if (message.toLowerCase().includes("timed out")) {
           setAuthError("Connection timed out while contacting BRON.");
+          setAuthErrorDetails("The BRON API is responding slowly. Please try again.");
+        } else if (message.toLowerCase().includes("failed to send") || message.toLowerCase().includes("fetch")) {
+          // Network error - likely transient, don't show scary error
+          setAuthError("Connection temporarily unavailable.");
+          setAuthErrorDetails("Please check your internet connection and try again.");
+        } else if (message.toLowerCase().includes("credentials") || message.toLowerCase().includes("configured")) {
+          setAuthError("BRON API configuration error.");
+          setAuthErrorDetails(message);
         } else {
           setAuthError("Failed to connect to BRON.");
+          setAuthErrorDetails(message);
         }
-        setAuthErrorDetails(message);
       } finally {
         if (mounted) setIsAuthenticating(false);
       }
