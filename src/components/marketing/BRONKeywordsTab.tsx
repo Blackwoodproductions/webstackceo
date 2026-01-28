@@ -61,6 +61,7 @@ interface InitialPositions {
 }
 
 // Memoized keyword list item wrapper
+// IMPORTANT: Expansion should only re-render the affected cluster, not the entire list.
 const KeywordListItem = memo(({
   cluster,
   serpReports,
@@ -173,6 +174,33 @@ const KeywordListItem = memo(({
       )}
     </div>
   );
+}, (prev, next) => {
+  // Custom compare: ignore Set/object identity changes and only re-render when
+  // the expansion/saving/form state for IDs in THIS cluster changes.
+  if (prev.cluster !== next.cluster) return false;
+  if (prev.selectedDomain !== next.selectedDomain) return false;
+  if (prev.metricsLoading !== next.metricsLoading) return false;
+
+  // Data references: if these change, re-render (they affect counts/metrics/UI)
+  if (prev.serpReports !== next.serpReports) return false;
+  if (prev.keywordMetrics !== next.keywordMetrics) return false;
+  if (prev.pageSpeedScores !== next.pageSpeedScores) return false;
+  if (prev.linksIn !== next.linksIn) return false;
+  if (prev.linksOut !== next.linksOut) return false;
+  if (prev.initialPositions !== next.initialPositions) return false;
+
+  const ids: Array<string | number> = [
+    prev.cluster.parent.id,
+    ...prev.cluster.children.map((c) => c.id),
+  ];
+
+  for (const id of ids) {
+    if (prev.expandedIds.has(id) !== next.expandedIds.has(id)) return false;
+    if ((prev.inlineEditForms as any)[id] !== (next.inlineEditForms as any)[id]) return false;
+    if (prev.savingIds.has(id) !== next.savingIds.has(id)) return false;
+  }
+
+  return true;
 });
 KeywordListItem.displayName = 'KeywordListItem';
 

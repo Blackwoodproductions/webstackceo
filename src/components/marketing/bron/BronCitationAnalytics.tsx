@@ -83,11 +83,9 @@ export const BronCitationAnalytics = memo(({
   
   return (
     <div 
-      className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-card/80 via-card/60 to-cyan-950/20 overflow-hidden backdrop-blur-sm"
-      style={{ 
-        contain: 'layout style paint',
-        willChange: 'auto',
-      }}
+      data-no-theme-transition
+      className="rounded-xl border border-border/60 bg-card/60 overflow-hidden"
+      style={{ contain: 'layout paint' }}
     >
       {/* Header - compact */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-transparent">
@@ -137,10 +135,10 @@ export const BronCitationAnalytics = memo(({
                 <DonutChart 
                   size="lg"
                   segments={[
-                    { value: relevanceBreakdown.less, color: '#3B82F6' },
-                    { value: relevanceBreakdown.relevant, color: '#8B5CF6' },
-                    { value: relevanceBreakdown.very, color: '#22C55E' },
-                    { value: relevanceBreakdown.most, color: '#F59E0B' },
+                    { value: relevanceBreakdown.less, color: `hsl(var(--muted-foreground))` },
+                    { value: relevanceBreakdown.relevant, color: `hsl(var(--accent))` },
+                    { value: relevanceBreakdown.very, color: `hsl(var(--primary))` },
+                    { value: relevanceBreakdown.most, color: `hsl(var(--hover-accent))` },
                   ]}
                   total={Math.max(activeLinks.length, 1)}
                   centerTop={`${activeLinks.length}`}
@@ -152,10 +150,10 @@ export const BronCitationAnalytics = memo(({
                   <Legend
                     compact
                     items={[
-                      { colorClassName: 'bg-amber-400', label: 'Most', value: relevanceBreakdown.most },
-                      { colorClassName: 'bg-emerald-400', label: 'Very', value: relevanceBreakdown.very },
-                      { colorClassName: 'bg-violet-400', label: 'Relevant', value: relevanceBreakdown.relevant },
-                      { colorClassName: 'bg-blue-400', label: 'Less', value: relevanceBreakdown.less },
+                      { colorClassName: 'bg-[hsl(var(--hover-accent))]', label: 'Most', value: relevanceBreakdown.most },
+                      { colorClassName: 'bg-[hsl(var(--primary))]', label: 'Very', value: relevanceBreakdown.very },
+                      { colorClassName: 'bg-[hsl(var(--accent))]', label: 'Relevant', value: relevanceBreakdown.relevant },
+                      { colorClassName: 'bg-[hsl(var(--muted-foreground))]', label: 'Less', value: relevanceBreakdown.less },
                     ]}
                   />
                 </div>
@@ -167,8 +165,8 @@ export const BronCitationAnalytics = memo(({
                 <DonutChart 
                   size="lg"
                   segments={[
-                    { value: reciprocalCount, color: '#22C55E' },
-                    { value: oneWayCount, color: '#3B82F6' },
+                    { value: reciprocalCount, color: `hsl(var(--primary))` },
+                    { value: oneWayCount, color: `hsl(var(--chart-value))` },
                   ]}
                   total={Math.max(totalLinks, 1)}
                   centerTop={`${reciprocalPercent}%`}
@@ -180,8 +178,8 @@ export const BronCitationAnalytics = memo(({
                   <Legend
                     compact
                     items={[
-                      { colorClassName: 'bg-emerald-400', label: 'Reciprocal', value: reciprocalCount },
-                      { colorClassName: 'bg-blue-400', label: 'One Way', value: oneWayCount },
+                      { colorClassName: 'bg-[hsl(var(--primary))]', label: 'Reciprocal', value: reciprocalCount },
+                      { colorClassName: 'bg-[hsl(var(--chart-value))]', label: 'One Way', value: oneWayCount },
                     ]}
                   />
                 </div>
