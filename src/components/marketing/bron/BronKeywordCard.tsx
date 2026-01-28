@@ -389,10 +389,10 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 2: Keyword Text */}
-            <div className="w-[320px] flex-shrink-0 pr-4">
+            <div className="w-[380px] flex-shrink-0 pr-4">
               <div className="flex items-center gap-2">
                 <h3 
-                  className={`font-medium truncate max-w-[180px] ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
+                  className={`font-medium truncate max-w-[320px] ${isNested ? 'text-foreground/80' : 'text-foreground'}`}
                   title={keywordText}
                 >
                   {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
