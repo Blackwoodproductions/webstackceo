@@ -12,21 +12,7 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
-  errorId: string | null;
-  showDetails: boolean;
 }
-
-type StoredErrorReport = {
-  id: string;
-  occurred_at: string;
-  url: string;
-  user_agent: string;
-  message: string;
-  stack?: string;
-  component_stack?: string;
-};
-
-const LAST_ERROR_STORAGE_KEY = 'webstack_last_error_v1';
 
 /**
  * Error Boundary component that catches JavaScript errors anywhere in the child
@@ -35,7 +21,7 @@ const LAST_ERROR_STORAGE_KEY = 'webstack_last_error_v1';
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null, errorId: null, showDetails: false };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -43,59 +29,16 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    const errorId = `err_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
-
-    console.error(`[ErrorBoundary] (${errorId}) Caught error:`, error, errorInfo);
-    this.setState({ errorInfo, errorId });
-
-    // Persist a copyable diagnostic payload (helps debug user-reported crash loops)
-    try {
-      const report: StoredErrorReport = {
-        id: errorId,
-        occurred_at: new Date().toISOString(),
-        url: window.location.href,
-        user_agent: navigator.userAgent,
-        message: error?.message || 'Unknown error',
-        stack: error?.stack,
-        component_stack: errorInfo?.componentStack || undefined,
-      };
-      localStorage.setItem(LAST_ERROR_STORAGE_KEY, JSON.stringify(report));
-    } catch {
-      // ignore
-    }
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    this.setState({ errorInfo });
+    
+    // You could send this to an error reporting service
+    // logErrorToService(error, errorInfo);
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null, errorId: null, showDetails: false });
+    this.setState({ hasError: false, error: null, errorInfo: null });
     this.props.onReset?.();
-  };
-
-  handleToggleDetails = () => {
-    this.setState((s) => ({ showDetails: !s.showDetails }));
-  };
-
-  handleCopyDiagnostics = async () => {
-    try {
-      const raw = localStorage.getItem(LAST_ERROR_STORAGE_KEY);
-      const fallback = JSON.stringify(
-        {
-          id: this.state.errorId,
-          occurred_at: new Date().toISOString(),
-          url: window.location.href,
-          message: this.state.error?.message,
-          stack: this.state.error?.stack,
-          component_stack: this.state.errorInfo?.componentStack,
-        },
-        null,
-        2
-      );
-
-      const payload = raw || fallback;
-      await navigator.clipboard.writeText(payload);
-      console.info('[ErrorBoundary] Copied diagnostics to clipboard');
-    } catch (e) {
-      console.warn('[ErrorBoundary] Failed to copy diagnostics:', e);
-    }
   };
 
   handleGoHome = () => {
@@ -124,46 +67,24 @@ class ErrorBoundary extends Component<Props, State> {
               <p className="text-sm text-muted-foreground">
                 We encountered an unexpected error. This has been logged and we'll look into it.
               </p>
-              {this.state.errorId && (
-                <p className="text-xs text-muted-foreground">
-                  Error ID: <span className="font-mono text-foreground/80">{this.state.errorId}</span>
-                </p>
-              )}
             </div>
 
-            {/* Details (toggle; always available so we can diagnose in production) */}
-            {this.state.error && (this.state.showDetails || import.meta.env.DEV) && (
-              <div className="p-4 rounded-lg bg-muted/50 text-left overflow-auto max-h-60">
+            {/* Error Details (development only) */}
+            {import.meta.env.DEV && this.state.error && (
+              <div className="p-4 rounded-lg bg-muted/50 text-left overflow-auto max-h-40">
                 <p className="text-xs font-mono text-destructive break-words">
                   {this.state.error.message}
                 </p>
-                {this.state.error.stack && (
-                  <pre className="text-xs font-mono text-muted-foreground mt-2 whitespace-pre-wrap">
-                    {this.state.error.stack.slice(0, 1200)}
-                  </pre>
-                )}
                 {this.state.errorInfo?.componentStack && (
                   <pre className="text-xs font-mono text-muted-foreground mt-2 whitespace-pre-wrap">
-                    {this.state.errorInfo.componentStack.slice(0, 1200)}
+                    {this.state.errorInfo.componentStack.slice(0, 500)}
                   </pre>
                 )}
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                onClick={this.handleCopyDiagnostics}
-              >
-                Copy diagnostics
-              </Button>
-              <Button
-                variant="outline"
-                onClick={this.handleToggleDetails}
-              >
-                {this.state.showDetails ? 'Hide details' : 'Show details'}
-              </Button>
+            <div className="flex items-center justify-center gap-3">
               <Button
                 variant="outline"
                 onClick={this.handleGoHome}

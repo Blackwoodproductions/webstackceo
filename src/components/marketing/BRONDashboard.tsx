@@ -26,7 +26,6 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const [activeTab, setActiveTab] = useState("keywords");
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authErrorDetails, setAuthErrorDetails] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
@@ -41,7 +40,6 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     const checkAuth = async () => {
       setIsAuthenticating(true);
       setAuthError(null);
-      setAuthErrorDetails(null);
       
       // Add a client-side timeout for the entire auth check
       const timeoutPromise = new Promise<boolean>((_, reject) => {
@@ -58,29 +56,15 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         if (!mounted) return;
         
         if (!isValid) {
-          setAuthError("Unable to authenticate with BRON API.");
-          setAuthErrorDetails("verifyAuth returned unauthenticated");
+          setAuthError("Unable to authenticate with BRON API. Please check your API credentials.");
         }
       } catch (err) {
         if (!mounted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[BRON Dashboard] Auth check failed:", message);
-        
-        // Check for specific error types and provide helpful messages
-        if (message.toLowerCase().includes("timed out")) {
-          setAuthError("Connection timed out while contacting BRON.");
-          setAuthErrorDetails("The BRON API is responding slowly. Please try again.");
-        } else if (message.toLowerCase().includes("failed to send") || message.toLowerCase().includes("fetch")) {
-          // Network error - likely transient, don't show scary error
-          setAuthError("Connection temporarily unavailable.");
-          setAuthErrorDetails("Please check your internet connection and try again.");
-        } else if (message.toLowerCase().includes("credentials") || message.toLowerCase().includes("configured")) {
-          setAuthError("BRON API configuration error.");
-          setAuthErrorDetails(message);
-        } else {
-          setAuthError("Failed to connect to BRON.");
-          setAuthErrorDetails(message);
-        }
+        setAuthError(message.includes("timed out") 
+          ? "Connection timed out. The BRON API may be slow - please try again." 
+          : "Failed to connect to BRON API. Please try again.");
       } finally {
         if (mounted) setIsAuthenticating(false);
       }
@@ -145,16 +129,6 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
       bronApi.fetchDomains();
     }
   }, [bronApi.isAuthenticated]);
-
-  // Keep BRON hook in sync with the header domain selector.
-  // This hydrates cached results immediately (or clears), preventing the UI from
-  // showing results from a previously selected domain.
-  useEffect(() => {
-    if (!bronApi.isAuthenticated) return;
-    bronApi.selectDomain(selectedDomain ?? null);
-    // Note: bronApi methods are stable; avoid depending on the whole object.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bronApi.isAuthenticated, selectedDomain]);
 
   // Load domain-specific data when domain changes
   // IMPORTANT: Don't reset data before fetching - let cache serve instantly
@@ -227,11 +201,65 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
-  // Derived data and stable callbacks (MUST be above any conditional returns)
-  // Otherwise React will throw "Rendered more hooks than during the previous render".
+  if (isAuthenticating) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 space-y-4">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
+          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white animate-spin motion-reduce:animate-none" />
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardContent className="p-8 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
+            <X className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-destructive">Connection Failed</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">{authError}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="mt-4"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry Connection
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Generate Google Maps embed URL from address
+  const getGoogleMapsEmbedUrl = (address?: string) => {
+    if (!address) return null;
+    const encoded = encodeURIComponent(address);
+    return `https://www.google.com/maps?q=${encoded}&output=embed`;
+  };
+
+  // Get service package name based on servicetype
+  const getPackageName = (serviceType?: string) => {
+    const packages: Record<string, string> = {
+      "383": "SEOM 60",
+      "380": "SEOM 30",
+      "381": "SEOM 45",
+      "382": "SEOM Premium",
+    };
+    return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
+  };
+
+  // Calculate domain info progress (keywords count out of target)
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
 
   // Stabilize data references to prevent child component re-renders
+  // These useMemo calls ensure the same array reference is passed if content hasn't changed
   const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
   const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
   const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
@@ -277,97 +305,6 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const handleRefreshLinksOut = useCallback(() => {
     if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
   }, [selectedDomain]);
-
-  if (isAuthenticating) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
-          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-white animate-spin motion-reduce:animate-none" />
-          </div>
-        </div>
-        <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
-      </div>
-    );
-  }
-
-  if (authError) {
-    const copyBronDiagnostics = async () => {
-      try {
-        const payload = JSON.stringify(
-          {
-            feature: "bron",
-            step: "verifyAuth",
-            domain: selectedDomain || null,
-            message: authError,
-            details: authErrorDetails,
-            url: window.location.href,
-            occurred_at: new Date().toISOString(),
-          },
-          null,
-          2
-        );
-        await navigator.clipboard.writeText(payload);
-        toast.success("Diagnostics copied");
-      } catch {
-        toast.error("Could not copy diagnostics");
-      }
-    };
-
-    return (
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="p-8 text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
-            <X className="w-8 h-8 text-destructive" />
-          </div>
-          <h3 className="text-lg font-semibold text-destructive">Connection Failed</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">{authError}</p>
-          {authErrorDetails && (
-            <div className="mx-auto max-w-2xl rounded-lg bg-muted/50 p-4 text-left">
-              <p className="text-xs text-muted-foreground mb-1">Details</p>
-              <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap break-words max-h-40 overflow-auto">
-                {authErrorDetails}
-              </pre>
-            </div>
-          )}
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-            className="mt-4"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry Connection
-          </Button>
-          <Button
-            onClick={copyBronDiagnostics}
-            variant="secondary"
-            className="mt-2"
-          >
-            Copy diagnostics
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Generate Google Maps embed URL from address
-  const getGoogleMapsEmbedUrl = (address?: string) => {
-    if (!address) return null;
-    const encoded = encodeURIComponent(address);
-    return `https://www.google.com/maps?q=${encoded}&output=embed`;
-  };
-
-  // Get service package name based on servicetype
-  const getPackageName = (serviceType?: string) => {
-    const packages: Record<string, string> = {
-      "383": "SEOM 60",
-      "380": "SEOM 30",
-      "381": "SEOM 45",
-      "382": "SEOM Premium",
-    };
-    return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
-  };
 
   return (
     <div 

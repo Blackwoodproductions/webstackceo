@@ -327,9 +327,9 @@ serve(async (req) => {
       console.log(`[CADE API] Request body: ${postBody.substring(0, 200)}`);
     }
 
-    // Increased timeout to 25 seconds for slow CADE API responses
+    // Add timeout for faster failure (8 seconds)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     fetchOptions.signal = controller.signal;
 
     let response: Response;
