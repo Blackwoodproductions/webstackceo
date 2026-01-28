@@ -3,7 +3,7 @@ import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
 
 // LocalStorage key for PageSpeed cache
 export const PAGESPEED_CACHE_KEY = 'bron_pagespeed_cache';
-export const PAGESPEED_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const PAGESPEED_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 // PageSpeed score cache type
 export interface PageSpeedScore {

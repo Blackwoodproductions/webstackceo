@@ -153,34 +153,43 @@ function getMovementFromDelta(movement: number) {
   return { type: 'same' as const, color: 'text-muted-foreground', bgColor: 'bg-muted/20', delta: 0 };
 }
 
-// PageSpeed Gauge Component - static rendering (no animations to prevent flicker)
+// PageSpeed Gauge Component - fully static, no animations, no transforms that could cause reflow
 const PageSpeedGauge = memo(({ score, loading, updating, error }: { 
   score: number; 
   loading?: boolean; 
   updating?: boolean; 
   error?: boolean;
 }) => {
-  const isPending = score === 0 && !error && !loading && !updating;
+  // Once we have a valid cached score, display it immediately without any loading states
+  const hasValidScore = score > 0 && !error;
+  const showLoading = loading && !hasValidScore;
+  const showPending = !hasValidScore && !loading && !error;
   
   const getGaugeColor = () => {
-    if (loading || isPending) return { stroke: '#22d3ee', text: 'text-cyan-400' }; // cyan-400
-    if (error) return { stroke: '#6b7280', text: 'text-muted-foreground' }; // gray-500
-    if (score >= 90) return { stroke: '#10b981', text: 'text-emerald-400' }; // emerald-500
-    if (score >= 50) return { stroke: '#f59e0b', text: 'text-amber-400' }; // amber-500
-    return { stroke: '#ef4444', text: 'text-red-400' }; // red-500
+    if (showLoading || showPending) return { stroke: 'hsl(var(--muted))', text: 'text-muted-foreground' };
+    if (error) return { stroke: 'hsl(var(--muted))', text: 'text-muted-foreground' };
+    if (score >= 90) return { stroke: '#10b981', text: 'text-emerald-400' };
+    if (score >= 50) return { stroke: '#f59e0b', text: 'text-amber-400' };
+    return { stroke: '#ef4444', text: 'text-red-400' };
   };
   
   const colors = getGaugeColor();
   const circumference = 2 * Math.PI * 18;
-  const progress = error || loading || isPending ? 0 : (score / 100);
+  const progress = hasValidScore ? score / 100 : 0;
   const strokeDashoffset = circumference * (1 - progress);
   
   return (
     <div 
       className="relative w-12 h-12 flex items-center justify-center"
-      title={updating ? 'Updating...' : isPending ? 'Pending...' : `Score: ${score}/100`}
+      style={{ contain: 'strict' }}
+      title={updating ? 'Updating...' : showPending ? 'Pending...' : `Score: ${score}/100`}
     >
-      <svg className="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
+      <svg 
+        width="48" 
+        height="48" 
+        viewBox="0 0 44 44"
+        style={{ transform: 'rotate(-90deg)' }}
+      >
         {/* Background circle */}
         <circle 
           cx="22" cy="22" r="18" 
@@ -188,28 +197,40 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
           stroke="hsl(var(--muted) / 0.3)" 
           strokeWidth="3" 
         />
-        {/* Progress circle - no animation */}
+        {/* Progress circle - static, no CSS transitions */}
         <circle
           cx="22" cy="22" r="18" 
           fill="none" 
           strokeWidth="3" 
           strokeLinecap="round"
-          stroke={loading || isPending ? 'hsl(var(--muted) / 0.5)' : colors.stroke}
+          stroke={colors.stroke}
           strokeDasharray={circumference}
-          strokeDashoffset={loading || isPending ? circumference * 0.75 : strokeDashoffset}
+          strokeDashoffset={strokeDashoffset}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        {(loading || isPending) ? (
-          <span className="text-xs text-muted-foreground">...</span>
+        {showLoading || showPending ? (
+          <span className="text-xs text-muted-foreground">—</span>
         ) : (
           <span className={`text-sm font-bold ${colors.text}`}>{error ? '—' : score}</span>
         )}
       </div>
-      {updating && (
-        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-cyan-500 border border-background" />
+      {/* Small dot indicator when background update in progress */}
+      {updating && hasValidScore && (
+        <div 
+          className="absolute w-2 h-2 rounded-full bg-cyan-500" 
+          style={{ top: 0, right: 0 }}
+        />
       )}
     </div>
+  );
+}, (prev, next) => {
+  // Custom comparison: only re-render when these specific props change
+  return (
+    prev.score === next.score &&
+    prev.loading === next.loading &&
+    prev.updating === next.updating &&
+    prev.error === next.error
   );
 });
 PageSpeedGauge.displayName = 'PageSpeedGauge';
