@@ -86,6 +86,80 @@ interface GMBPanelProps {
   selectedDomain: string | null;
 }
 
+// GMB Cache constants
+const GMB_CACHE_KEY = 'gmb_data_cache';
+const GMB_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface GmbCacheEntry {
+  accounts: GmbAccount[];
+  locations: GmbLocation[];
+  locationHash: string; // Hash of location names for change detection
+  cachedAt: number;
+}
+
+// Generate a simple hash from location data to detect changes
+function generateLocationHash(locations: GmbLocation[]): string {
+  if (!locations || locations.length === 0) return '';
+  // Use location names + website URIs as the signature
+  const sig = locations.map(l => `${l.name}|${l.title}|${l.websiteUri || ''}`).sort().join('::');
+  // Simple hash
+  let hash = 0;
+  for (let i = 0; i < sig.length; i++) {
+    const chr = sig.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return hash.toString(36);
+}
+
+// Load cached GMB data
+function loadCachedGmbData(domain: string): GmbCacheEntry | null {
+  try {
+    const cached = localStorage.getItem(GMB_CACHE_KEY);
+    if (cached) {
+      const allCaches = JSON.parse(cached) as Record<string, GmbCacheEntry>;
+      const entry = allCaches[domain];
+      if (entry && entry.cachedAt && (Date.now() - entry.cachedAt) < GMB_CACHE_MAX_AGE) {
+        return entry;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load GMB cache:', e);
+  }
+  return null;
+}
+
+// Save GMB data to cache
+function saveCachedGmbData(domain: string, accounts: GmbAccount[], locations: GmbLocation[]) {
+  try {
+    const cached = localStorage.getItem(GMB_CACHE_KEY);
+    const allCaches: Record<string, GmbCacheEntry> = cached ? JSON.parse(cached) : {};
+    
+    allCaches[domain] = {
+      accounts,
+      locations,
+      locationHash: generateLocationHash(locations),
+      cachedAt: Date.now(),
+    };
+    
+    // Prune old entries (keep max 10 domains)
+    const entries = Object.entries(allCaches);
+    if (entries.length > 10) {
+      entries.sort((a, b) => b[1].cachedAt - a[1].cachedAt);
+      const toKeep = entries.slice(0, 10);
+      const pruned: Record<string, GmbCacheEntry> = {};
+      for (const [key, val] of toKeep) {
+        pruned[key] = val;
+      }
+      localStorage.setItem(GMB_CACHE_KEY, JSON.stringify(pruned));
+    } else {
+      localStorage.setItem(GMB_CACHE_KEY, JSON.stringify(allCaches));
+    }
+  } catch (e) {
+    console.warn('Failed to save GMB cache:', e);
+  }
+}
+
 function normalizeDomain(url: string): string {
   return (url || '')
     .toLowerCase()
@@ -216,10 +290,35 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     return null;
   }, []);
 
-  // Sync GMB data from API
-  const syncGmbData = useCallback(async (token: string, expirySeconds = 3600) => {
+  // Sync GMB data from API (with 24-hour cache support)
+  const syncGmbData = useCallback(async (token: string, expirySeconds = 3600, forceRefresh = false) => {
     setIsCheckingAccount(true);
     setSyncError(null);
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh && selectedDomain) {
+      const cached = loadCachedGmbData(selectedDomain);
+      if (cached) {
+        console.log('[GMBPanel] Using cached GMB data for', selectedDomain);
+        setAccounts(cached.accounts);
+        setLocations(cached.locations);
+        
+        // Find matching location
+        const normalizedSelected = normalizeDomain(selectedDomain);
+        const match = cached.locations.find((loc: GmbLocation) => {
+          const locDomain = normalizeDomain(loc.websiteUri || '');
+          return locDomain === normalizedSelected || 
+                 locDomain.includes(normalizedSelected) || 
+                 normalizedSelected.includes(locDomain);
+        });
+        setMatchingLocation(match || null);
+        
+        localStorage.setItem('gmb_access_token', token);
+        localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
+        setIsCheckingAccount(false);
+        return;
+      }
+    }
     
     try {
       const { data, error } = await supabase.functions.invoke('gmb-sync', {
@@ -281,6 +380,11 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       
       localStorage.setItem('gmb_access_token', token);
       localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
+      
+      // Save to cache
+      if (selectedDomain) {
+        saveCachedGmbData(selectedDomain, fetchedAccounts, fetchedLocations);
+      }
       
       // Check if selected domain matches any location
       if (selectedDomain) {
@@ -373,7 +477,8 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     const token = getStoredConnection()?.token;
     if (!token) return;
     setIsRefreshing(true);
-    await syncGmbData(token);
+    // Force refresh bypasses cache
+    await syncGmbData(token, 3600, true);
     setIsRefreshing(false);
     toast.success('GMB data refreshed');
   }, [getStoredConnection, syncGmbData]);
