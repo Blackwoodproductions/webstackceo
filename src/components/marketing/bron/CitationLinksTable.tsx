@@ -23,13 +23,13 @@ export function getRelevanceLabel(tier: RelevanceTier) {
 export function getRelevanceClasses(tier: RelevanceTier) {
   switch (tier) {
     case "most":
-      return "bg-amber-500 text-amber-950 font-semibold";
+      return "bg-amber-500 text-amber-950";
     case "very":
-      return "bg-emerald-500 text-emerald-950 font-semibold";
+      return "bg-emerald-500 text-emerald-950";
     case "relevant":
-      return "bg-cyan-500 text-cyan-950 font-semibold";
+      return "bg-cyan-500 text-cyan-950";
     default:
-      return "bg-slate-500 text-slate-950 font-semibold";
+      return "bg-slate-500 text-slate-200";
   }
 }
 
@@ -112,15 +112,12 @@ export const CitationLinksTable = memo(
     }
 
     return (
-      <div 
-        className="rounded-lg border border-border/50 overflow-hidden bg-card/50"
-        style={{ contain: 'layout style' }}
-      >
-        {/* Header - matching reference design */}
-        <div className="bg-slate-800/80 px-4 py-3 border-b border-border/50">
+      <div className="rounded-lg border border-border/40 overflow-hidden bg-slate-900/60">
+        {/* Header - matching reference exactly */}
+        <div className="bg-slate-800/90 px-5 py-3 border-b border-slate-700/50">
           <div 
-            className="grid gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider"
-            style={{ gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr 0.8fr' }}
+            className="grid gap-4 text-[13px] font-semibold text-slate-300"
+            style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
           >
             <span>Domain-Keyword</span>
             <span className="text-center">Category</span>
@@ -130,22 +127,21 @@ export const CitationLinksTable = memo(
           </div>
         </div>
 
-        {/* All rows - show all, no scroll */}
-        <div style={{ contain: 'layout' }}>
+        {/* Rows - static, no animations */}
+        <div>
           {rows.map(({ link, tier }, idx) => (
             <CitationLinkRow
-              key={`citation-${idx}-${link.domain_name || link.domain || link.link || ""}`}
+              key={`row-${idx}-${link.domain_name || link.domain || ''}`}
               link={link}
               tier={tier}
               keywordText={keywordText}
-              viewMode={viewMode}
-              isHighlighted={idx === 3} // Highlight 4th row like in reference
+              isHighlighted={idx === 2}
             />
           ))}
         </div>
 
-        {/* Footer with count */}
-        <div className="px-4 py-2 text-xs text-muted-foreground text-center border-t border-border/30 bg-slate-800/40">
+        {/* Footer */}
+        <div className="px-5 py-2.5 text-xs text-slate-400 text-center border-t border-slate-700/40 bg-slate-800/50">
           Showing {rows.length} of {links.length} link partners
         </div>
       </div>
@@ -159,13 +155,11 @@ const CitationLinkRow = memo(
     link,
     tier,
     keywordText,
-    viewMode,
     isHighlighted = false,
   }: {
     link: BronLink;
     tier: RelevanceTier;
     keywordText: string;
-    viewMode: "inbound" | "outbound";
     isHighlighted?: boolean;
   }) => {
     const isReciprocal = link.reciprocal === "yes";
@@ -173,7 +167,7 @@ const CitationLinkRow = memo(
 
     const displayDomain = link.domain_name || link.domain || "";
 
-    // Build category display: "Parent / Child" format
+    // Category display: "Parent / Child" format matching reference
     const categoryDisplay = (link.parent_category || "").trim() && (link.category || "").trim()
       ? `${link.parent_category} / ${link.category}`
       : (link.category || link.parent_category || "General");
@@ -181,60 +175,57 @@ const CitationLinkRow = memo(
     return (
       <div 
         className={`
-          grid gap-4 px-4 py-3 items-center border-b border-border/20 transition-colors
-          ${isHighlighted ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400' : 'hover:bg-slate-800/30'}
+          grid gap-4 px-5 py-4 items-center border-b border-slate-700/30
+          ${isHighlighted ? 'border-l-[3px] border-l-cyan-400 bg-slate-800/30' : 'bg-transparent'}
         `}
-        style={{ 
-          gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr 0.8fr',
-          contain: 'layout style',
-        }}
+        style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
       >
         {/* Domain-Keyword Column */}
         <div className="min-w-0">
-          <div className="font-medium text-foreground text-sm truncate" title={displayDomain}>
+          <div className="font-medium text-slate-100 text-[14px] truncate" title={displayDomain}>
             {displayDomain || "Unknown Domain"}
           </div>
-          <div className="text-xs text-muted-foreground italic truncate mt-0.5" title={keywordText}>
-            {keywordText.length > 40 ? `${keywordText.slice(0, 40)}...` : keywordText}
+          <div className="text-[13px] text-slate-400 italic truncate mt-0.5" title={keywordText}>
+            {keywordText.length > 50 ? `${keywordText.slice(0, 50)}...` : keywordText}
           </div>
         </div>
 
-        {/* Category Column - Dark blue pill like reference */}
+        {/* Category Column - Dark slate pill with centered multiline text */}
         <div className="flex justify-center">
           <span 
-            className="inline-flex items-center justify-center px-3 py-1.5 rounded-md text-[11px] font-medium text-center bg-slate-700 text-slate-200 border border-slate-600 max-w-full"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-md text-[12px] font-medium text-center bg-slate-700/90 text-slate-200 leading-snug max-w-[220px]"
             title={categoryDisplay}
           >
-            <span className="truncate">{categoryDisplay}</span>
+            <span className="text-center">{categoryDisplay}</span>
           </span>
         </div>
 
         {/* Reciprocal Column */}
         <div className="text-center">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-[14px] text-slate-400 italic">
             {isReciprocal ? "Yes" : "No"}
           </span>
         </div>
 
-        {/* Relevance Column - Colored badge like reference */}
+        {/* Relevance Column - Colored badge */}
         <div className="flex justify-center">
           <span 
-            className={`inline-flex items-center justify-center px-3 py-1 rounded text-[10px] uppercase tracking-wide ${getRelevanceClasses(tier)}`}
+            className={`inline-flex items-center justify-center px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${getRelevanceClasses(tier)}`}
           >
             {getRelevanceLabel(tier)}
           </span>
         </div>
 
-        {/* Actions Column - Green ENABLED button like reference */}
+        {/* Actions Column - Green ENABLED button */}
         <div className="flex justify-center">
           <span 
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold uppercase tracking-wide ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${
               isEnabled
                 ? "bg-emerald-500 text-emerald-950"
                 : "bg-red-500 text-red-950"
             }`}
           >
-            <Lock className="w-3 h-3" />
+            <Lock className="w-3.5 h-3.5" />
             {isEnabled ? "ENABLED" : "DISABLED"}
           </span>
         </div>
