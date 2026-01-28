@@ -411,29 +411,12 @@ export const BronKeywordCard = memo(({
                   </a>
                 )}
                 
-                {/* Badges container - fixed width to ensure alignment */}
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {isTrackingOnly ? (
-                    <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
-                      Tracking
-                    </Badge>
-                  ) : isNested ? (
-                    <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
-                      Supporting
-                    </Badge>
-                  ) : (
-                    <>
-                      <Badge className="text-[9px] h-5 px-2 bg-primary/20 text-primary border-primary/30 whitespace-nowrap">
-                        Main
-                      </Badge>
-                      {clusterChildCount !== undefined && clusterChildCount > 0 && (
-                        <Badge className="text-[9px] h-5 px-2 bg-violet-500/20 text-violet-400 border-violet-500/30 whitespace-nowrap">
-                          +{clusterChildCount}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </div>
+                {/* Only show tracking badge for tracking-only keywords */}
+                {isTrackingOnly && (
+                  <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap">
+                    Tracking
+                  </Badge>
+                )}
               </div>
             </div>
 
