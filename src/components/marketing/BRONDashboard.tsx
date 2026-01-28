@@ -21,15 +21,37 @@ interface BRONDashboardProps {
   selectedDomain?: string;
 }
 
+// Check if we have cached data to show instantly
+const DOMAINS_CACHE_KEY = 'bron_domains_cache';
+const hasCachedData = () => {
+  try {
+    const cached = localStorage.getItem(DOMAINS_CACHE_KEY);
+    if (!cached) return false;
+    const entry = JSON.parse(cached);
+    const isValid = entry?.domains?.length > 0 && 
+      (Date.now() - entry.cachedAt) < 24 * 60 * 60 * 1000;
+    return isValid;
+  } catch {
+    return false;
+  }
+};
+
 export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const bronApi = useBronApi();
   const [activeTab, setActiveTab] = useState("keywords");
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  
+  // Check cache synchronously to determine initial state
+  const [hasCached] = useState(() => hasCachedData());
+  // If we have cached data, skip the loading screen entirely
+  const [isAuthenticating, setIsAuthenticating] = useState(!hasCached);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authErrorDetails, setAuthErrorDetails] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+  
+  // Background auth status for when we have cache but still need to verify
+  const [isBackgroundAuthenticating, setIsBackgroundAuthenticating] = useState(hasCached);
 
   // Avoid duplicate link loads and UI thrash when domainInfo arrives (id changes).
   const linksRequestedForDomainRef = useRef<string | null>(null);
@@ -39,7 +61,12 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     let mounted = true;
     
     const checkAuth = async () => {
-      setIsAuthenticating(true);
+      // If we have cached data, run auth check in background
+      if (hasCached) {
+        setIsBackgroundAuthenticating(true);
+      } else {
+        setIsAuthenticating(true);
+      }
       setAuthError(null);
       setAuthErrorDetails(null);
       
@@ -58,37 +85,48 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         if (!mounted) return;
         
         if (!isValid) {
-          setAuthError("Unable to authenticate with BRON API.");
-          setAuthErrorDetails("verifyAuth returned unauthenticated");
+          // Only show error if we don't have cached data to fall back on
+          if (!hasCached) {
+            setAuthError("Unable to authenticate with BRON API.");
+            setAuthErrorDetails("verifyAuth returned unauthenticated");
+          } else {
+            console.log("[BRON Dashboard] Auth failed but serving cached data");
+          }
         }
       } catch (err) {
         if (!mounted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[BRON Dashboard] Auth check failed:", message);
         
-        // Check for specific error types and provide helpful messages
-        if (message.toLowerCase().includes("timed out")) {
-          setAuthError("Connection timed out while contacting BRON.");
-          setAuthErrorDetails("The BRON API is responding slowly. Please try again.");
-        } else if (message.toLowerCase().includes("failed to send") || message.toLowerCase().includes("fetch")) {
-          // Network error - likely transient, don't show scary error
-          setAuthError("Connection temporarily unavailable.");
-          setAuthErrorDetails("Please check your internet connection and try again.");
-        } else if (message.toLowerCase().includes("credentials") || message.toLowerCase().includes("configured")) {
-          setAuthError("BRON API configuration error.");
-          setAuthErrorDetails(message);
+        // Only show errors if we don't have cached data
+        if (!hasCached) {
+          if (message.toLowerCase().includes("timed out")) {
+            setAuthError("Connection timed out while contacting BRON.");
+            setAuthErrorDetails("The BRON API is responding slowly. Please try again.");
+          } else if (message.toLowerCase().includes("failed to send") || message.toLowerCase().includes("fetch")) {
+            setAuthError("Connection temporarily unavailable.");
+            setAuthErrorDetails("Please check your internet connection and try again.");
+          } else if (message.toLowerCase().includes("credentials") || message.toLowerCase().includes("configured")) {
+            setAuthError("BRON API configuration error.");
+            setAuthErrorDetails(message);
+          } else {
+            setAuthError("Failed to connect to BRON.");
+            setAuthErrorDetails(message);
+          }
         } else {
-          setAuthError("Failed to connect to BRON.");
-          setAuthErrorDetails(message);
+          console.log("[BRON Dashboard] Auth error but serving cached data:", message);
         }
       } finally {
-        if (mounted) setIsAuthenticating(false);
+        if (mounted) {
+          setIsAuthenticating(false);
+          setIsBackgroundAuthenticating(false);
+        }
       }
     };
     
     checkAuth();
     return () => { mounted = false; };
-  }, []);
+  }, [hasCached]);
 
   // Capture website screenshot function
   const captureScreenshot = useCallback(async (domain: string) => {
@@ -278,7 +316,9 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
   }, [selectedDomain]);
 
-  if (isAuthenticating) {
+  // Only show loading if we DON'T have cached data
+  // If we have cache, render the dashboard immediately while auth happens in background
+  if (isAuthenticating && !hasCached) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <div className="relative">
@@ -292,7 +332,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     );
   }
 
-  if (authError) {
+  // Only show auth error screen if we don't have cached data to fall back on
+  if (authError && !hasCached) {
     const copyBronDiagnostics = async () => {
       try {
         const payload = JSON.stringify(
@@ -372,9 +413,16 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   return (
     <div 
       className="space-y-6 no-theme-transition" 
-      style={{ contain: "layout style" }}
+      style={{ contain: "layout style paint" }}
       data-no-theme-transition
     >
+      {/* Background sync indicator - subtle, non-blocking */}
+      {isBackgroundAuthenticating && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-sm">
+          <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin" />
+          <span className="text-xs text-cyan-400">Syncing...</span>
+        </div>
+      )}
       {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
         <Card 
