@@ -499,6 +499,12 @@ export interface UseBronApiReturn {
   linksOut: BronLink[];
   linksInError: string | null;
   linksOutError: string | null;
+  /**
+   * Set the currently selected domain for BRON.
+   * Hydrates cached domain data immediately (or clears state) so UI does not
+   * show results from a previously selected domain.
+   */
+  selectDomain: (domain: string | null) => void;
   verifyAuth: () => Promise<boolean>;
   fetchDomains: () => Promise<void>;
   fetchDomain: (domain: string) => Promise<BronDomain | null>;
@@ -533,6 +539,19 @@ export function useBronApi(): UseBronApiReturn {
   const [linksOut, setLinksOut] = useState<BronLink[]>([]);
   const [linksInError, setLinksInError] = useState<string | null>(null);
   const [linksOutError, setLinksOutError] = useState<string | null>(null);
+
+  // Active domain chosen in the header domain selector.
+  // This allows optional-domain methods (like fetchKeywords/addKeyword, etc.)
+  // to reliably route requests to the selected domain.
+  const activeDomainRef = useRef<string | null>(null);
+
+  const normalizeDomainKey = useCallback((input: string) => {
+    return (input || '')
+      .toLowerCase()
+      .trim()
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .split('/')[0];
+  }, []);
 
   // Prevent stale async responses (domain switching / rapid tab changes)
   const keywordsReqIdRef = useRef(0);
@@ -600,7 +619,7 @@ export function useBronApi(): UseBronApiReturn {
         if (error) {
           const message = await formatInvokeError(error);
           console.error("BRON API error:", error);
-          throw new Error(message);
+          throw new Error(`[BRON:${action}] ${message}`);
         }
 
         // Handle rate limiting with retry
@@ -614,18 +633,28 @@ export function useBronApi(): UseBronApiReturn {
         return data;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
+        const errMsg = lastError.message.toLowerCase();
         console.error(`BRON API call error (attempt ${attempt + 1}/${retries + 1}):`, err);
         
-        // Only retry on network/timeout errors, not on 4xx errors
-        const isRetryable = lastError.message.includes('timed out') || 
-                           lastError.message.includes('network') ||
-                           lastError.message.includes('fetch');
+        // Retry on network/timeout/transient errors
+        const isRetryable = errMsg.includes('timed out') || 
+                           errMsg.includes('timeout') ||
+                           errMsg.includes('network') ||
+                           errMsg.includes('fetch') ||
+                           errMsg.includes('failed to send') ||
+                           errMsg.includes('aborted') ||
+                           errMsg.includes('connection');
         
         if (!isRetryable || attempt >= retries) {
+          // Ensure the action is always present in surfaced errors
+          if (!lastError.message.includes('[BRON:')) {
+            throw new Error(`[BRON:${action}] ${lastError.message}`);
+          }
           throw lastError;
         }
         
         // Exponential backoff: 1s, 2s
+        console.log(`[BRON] Retrying ${action} in ${(attempt + 1)}s...`);
         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
       }
     }
@@ -633,19 +662,77 @@ export function useBronApi(): UseBronApiReturn {
     throw lastError || new Error("BRON API call failed");
   }, [formatInvokeError]);
 
+  // When the header domain selector changes, hydrate this domain's cached data
+  // immediately (or clear) to prevent mismatched UI/data.
+  const selectDomain = useCallback((domain: string | null) => {
+    // Invalidate any in-flight responses so they can't clobber the new domain.
+    keywordsReqIdRef.current += 1;
+    pagesReqIdRef.current += 1;
+    serpReportReqIdRef.current += 1;
+    serpListReqIdRef.current += 1;
+    linksInReqIdRef.current += 1;
+    linksOutReqIdRef.current += 1;
+
+    const key = domain ? normalizeDomainKey(domain) : null;
+    activeDomainRef.current = key;
+
+    setLinksInError(null);
+    setLinksOutError(null);
+
+    if (!key) {
+      setKeywords([]);
+      setPages([]);
+      setSerpReports([]);
+      setSerpHistory([]);
+      setLinksIn([]);
+      setLinksOut([]);
+      return;
+    }
+
+    // Hydrate caches synchronously.
+    setKeywords(loadCachedKeywords(key) || []);
+    setPages(loadCachedPages(key) || []);
+
+    const cachedSerp = loadCachedSerp(key);
+    setSerpReports(cachedSerp?.serpReports || []);
+    setSerpHistory(cachedSerp?.serpHistory || []);
+
+    const cachedLinks = loadCachedLinks(key);
+    setLinksIn(cachedLinks?.linksIn || []);
+    setLinksOut(cachedLinks?.linksOut || []);
+
+    if (cachedLinks) {
+      linksBufferRef.current[key] = { in: cachedLinks.linksIn, out: cachedLinks.linksOut };
+    } else {
+      linksBufferRef.current[key] = { in: null, out: null };
+    }
+  }, [normalizeDomainKey]);
+
   const verifyAuth = useCallback(async (): Promise<boolean> => {
     return withPending(async () => {
       try {
         console.log("[BRON] Starting auth verification...");
         // Auth check with 2 retries (total 3 attempts) for better reliability
         const result = await callApi("verifyAuth", {}, 2);
-        console.log("[BRON] Auth result:", result);
+        console.log("[BRON] Auth result:", JSON.stringify(result, null, 2));
         
         // Check for success - the API returns success: true with data containing status
-        const authenticated = result?.success === true && 
-          (result?.data?.status === "authenticated" || result?.data?.authenticated === true);
+        // Also accept top-level status for backwards compatibility
+        const dataStatus = result?.data?.status;
+        const dataAuthenticated = result?.data?.authenticated;
+        const topLevelStatus = result?.status;
         
-        console.log("[BRON] Authenticated:", authenticated);
+        const authenticated = result?.success === true && 
+          (dataStatus === "authenticated" || dataAuthenticated === true || topLevelStatus === "authenticated");
+        
+        console.log("[BRON] Auth check breakdown:", {
+          success: result?.success,
+          dataStatus,
+          dataAuthenticated,
+          topLevelStatus,
+          authenticated,
+        });
+        
         setIsAuthenticated(authenticated);
         return authenticated;
       } catch (err) {
@@ -837,17 +924,24 @@ export function useBronApi(): UseBronApiReturn {
   // Fetch all keywords with automatic pagination to get complete list
   // Uses 24-hour localStorage cache per domain with background refresh
   const fetchKeywords = useCallback(async (domain?: string, forceRefresh = false) => {
+    const domainKey = domain ? normalizeDomainKey(domain) : activeDomainRef.current;
+    if (!domainKey) {
+      console.warn('[BRON] fetchKeywords called without a selected domain');
+      toast.error('Please select a domain first');
+      return;
+    }
+
     const reqId = ++keywordsReqIdRef.current;
     
     // Check cache first (unless force refresh)
-    if (domain && !forceRefresh) {
-      const cached = loadCachedKeywords(domain);
+    if (!forceRefresh) {
+      const cached = loadCachedKeywords(domainKey);
       if (cached) {
         setKeywords(cached);
         
         // Background refresh to check for changes (count-based)
         const localReqId = reqId;
-        callApi("listKeywords", { domain, page: 1, limit: 100, include_deleted: false })
+        callApi("listKeywords", { domain: domainKey, page: 1, limit: 100, include_deleted: false })
           .then(async (result) => {
             if (localReqId !== keywordsReqIdRef.current) return;
             if (result?.success && result.data) {
@@ -862,14 +956,14 @@ export function useBronApi(): UseBronApiReturn {
                 : firstPageCount !== cachedCount; // If counts differ
               
               if (needsRefresh) {
-                console.log(`[BRON] Keywords changed for ${domain}, refreshing...`);
+                console.log(`[BRON] Keywords changed for ${domainKey}, refreshing...`);
                 // Full refresh in background
                 const allKeywords: BronKeyword[] = [];
                 let page = 1;
                 let hasMore = true;
                 
                 while (hasMore && page <= 10) {
-                  const pageResult = await callApi("listKeywords", { domain, page, limit: 100, include_deleted: false });
+                  const pageResult = await callApi("listKeywords", { domain: domainKey, page, limit: 100, include_deleted: false });
                   if (localReqId !== keywordsReqIdRef.current) return;
                   if (pageResult?.success && pageResult.data) {
                     const keywords = pageResult.data.keywords || pageResult.data.items || [];
@@ -887,7 +981,7 @@ export function useBronApi(): UseBronApiReturn {
                 
                 if (localReqId === keywordsReqIdRef.current && allKeywords.length > 0) {
                   setKeywords(allKeywords);
-                  saveCachedKeywords(domain, allKeywords);
+                  saveCachedKeywords(domainKey, allKeywords);
                 }
               }
             }
@@ -908,7 +1002,7 @@ export function useBronApi(): UseBronApiReturn {
         // Fetch all pages of keywords
         while (hasMore) {
           const result = await callApi("listKeywords", {
-            domain,
+            domain: domainKey,
             page,
             limit: pageSize,
             include_deleted: false,
@@ -945,8 +1039,8 @@ export function useBronApi(): UseBronApiReturn {
         setKeywords(allKeywords);
         
         // Save to cache
-        if (domain && allKeywords.length > 0) {
-          saveCachedKeywords(domain, allKeywords);
+        if (allKeywords.length > 0) {
+          saveCachedKeywords(domainKey, allKeywords);
         }
       } catch (err) {
         if (reqId !== keywordsReqIdRef.current) return;
@@ -954,7 +1048,7 @@ export function useBronApi(): UseBronApiReturn {
         console.error(err);
       }
     });
-  }, [callApi, withPending]);
+  }, [callApi, normalizeDomainKey, withPending]);
 
   const addKeyword = useCallback(async (data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
@@ -962,7 +1056,8 @@ export function useBronApi(): UseBronApiReturn {
         const result = await callApi("addKeyword", { data });
         if (result?.success) {
           // Invalidate cache so next fetch gets fresh data
-          if (domain) invalidateKeywordCache(domain);
+          const domainKey = domain ? normalizeDomainKey(domain) : activeDomainRef.current;
+          if (domainKey) invalidateKeywordCache(domainKey);
           toast.success("Keyword added successfully");
           return true;
         }
@@ -973,7 +1068,7 @@ export function useBronApi(): UseBronApiReturn {
         return false;
       }
     });
-  }, [callApi, withPending]);
+  }, [callApi, normalizeDomainKey, withPending]);
 
   const updateKeyword = useCallback(async (keywordId: string, data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
@@ -981,7 +1076,8 @@ export function useBronApi(): UseBronApiReturn {
         const result = await callApi("updateKeyword", { keyword_id: keywordId, data });
         if (result?.success) {
           // Invalidate cache so next fetch gets fresh data
-          if (domain) invalidateKeywordCache(domain);
+          const domainKey = domain ? normalizeDomainKey(domain) : activeDomainRef.current;
+          if (domainKey) invalidateKeywordCache(domainKey);
           toast.success("Keyword updated successfully");
           return true;
         }
@@ -992,7 +1088,7 @@ export function useBronApi(): UseBronApiReturn {
         return false;
       }
     });
-  }, [callApi, withPending]);
+  }, [callApi, normalizeDomainKey, withPending]);
 
   const deleteKeyword = useCallback(async (keywordId: string, domain?: string): Promise<boolean> => {
     return withPending(async () => {
@@ -1000,7 +1096,8 @@ export function useBronApi(): UseBronApiReturn {
         const result = await callApi("deleteKeyword", { keyword_id: keywordId });
         if (result?.success) {
           // Invalidate cache so next fetch gets fresh data
-          if (domain) invalidateKeywordCache(domain);
+          const domainKey = domain ? normalizeDomainKey(domain) : activeDomainRef.current;
+          if (domainKey) invalidateKeywordCache(domainKey);
           toast.success("Keyword deleted");
           return true;
         }
@@ -1011,7 +1108,7 @@ export function useBronApi(): UseBronApiReturn {
         return false;
       }
     });
-  }, [callApi, withPending]);
+  }, [callApi, normalizeDomainKey, withPending]);
 
   const restoreKeyword = useCallback(async (keywordId: string, domain?: string): Promise<boolean> => {
     return withPending(async () => {
@@ -1019,7 +1116,8 @@ export function useBronApi(): UseBronApiReturn {
         const result = await callApi("restoreKeyword", { keyword_id: keywordId });
         if (result?.success) {
           // Invalidate cache so next fetch gets fresh data
-          if (domain) invalidateKeywordCache(domain);
+          const domainKey = domain ? normalizeDomainKey(domain) : activeDomainRef.current;
+          if (domainKey) invalidateKeywordCache(domainKey);
           toast.success("Keyword restored");
           return true;
         }
@@ -1030,7 +1128,7 @@ export function useBronApi(): UseBronApiReturn {
         return false;
       }
     });
-  }, [callApi, withPending]);
+  }, [callApi, normalizeDomainKey, withPending]);
 
   // Fetch pages with caching
   const fetchPages = useCallback(async (domain: string, forceRefresh = false) => {
@@ -1369,6 +1467,7 @@ export function useBronApi(): UseBronApiReturn {
     linksOut,
     linksInError,
     linksOutError,
+    selectDomain,
     verifyAuth,
     fetchDomains,
     fetchDomain,

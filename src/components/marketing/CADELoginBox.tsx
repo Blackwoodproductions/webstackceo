@@ -6,7 +6,7 @@ import {
   Cpu, BarChart3, Globe, RefreshCw, 
   HelpCircle, Zap, FileText, Clock,
   Search, Link2, TrendingUp, Target, Layers, Bot, Newspaper,
-  Wand2, ListChecks,
+  Wand2, ListChecks, Brain,
   CheckCircle, XCircle, Timer, Rocket, PenTool, BookOpen,
   Upload, Trash2, Settings, Copy, Send, Lock, ChevronRight, Edit, X, Save, Eye, ExternalLink
 } from "lucide-react";
@@ -119,6 +119,52 @@ interface CADELoginBoxProps {
   onSubscriptionChange?: (hasSubscription: boolean) => void;
 }
 
+// Use BRON subscription cache (authoritative source, shared across components)
+// This matches the cache key used in use-bron-api.ts for consistency
+const BRON_SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface SubscriptionCacheEntry {
+  subscription: BronSubscription;
+  cachedAt: number;
+}
+
+const getCachedSubscription = (targetDomain: string): BronSubscription | null => {
+  try {
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, SubscriptionCacheEntry>;
+    const entry = parsed[targetDomain];
+    if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    console.log(`[CADELoginBox] Using cached BRON subscription for ${targetDomain}`);
+    return entry.subscription;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedSubscription = (targetDomain: string, data: BronSubscription) => {
+  try {
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, SubscriptionCacheEntry> : {};
+    parsed[targetDomain] = { subscription: data, cachedAt: Date.now() };
+    localStorage.setItem(BRON_SUBSCRIPTION_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[CADELoginBox] Cached subscription for ${targetDomain}`);
+  } catch { /* ignore */ }
+};
+
+const clearCachedSubscription = (targetDomain: string) => {
+  try {
+    const cached = localStorage.getItem(BRON_SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, SubscriptionCacheEntry>;
+    if (parsed[targetDomain]) {
+      delete parsed[targetDomain];
+      localStorage.setItem(BRON_SUBSCRIPTION_CACHE_KEY, JSON.stringify(parsed));
+    }
+  } catch { /* ignore */ }
+};
+
 const CONTENT_TYPES = [
   { id: "blog", name: "Blog Article", icon: FileText, desc: "Long-form SEO-optimized content", color: "from-blue-500 to-cyan-500" },
   { id: "pillar", name: "Pillar Page", icon: Layers, desc: "Comprehensive topic hub pages", color: "from-violet-500 to-purple-500" },
@@ -134,16 +180,25 @@ const MODEL_TIERS = [
   { id: "premium", name: "Premium", desc: "Best quality, slower" },
 ];
 
+// Check if we have cached subscription data to show instantly
+const hasCachedSubscription = (targetDomain: string): boolean => {
+  const cached = getCachedSubscription(targetDomain);
+  return cached !== null && cached.has_cade === true;
+};
+
 export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps) => {
   const { fetchSubscription } = useBronApi();
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
+  
+  // Check cache synchronously to skip loading on cached hit
+  const [hasCached] = useState(() => domain ? hasCachedSubscription(domain) : false);
+  const [isLoading, setIsLoading] = useState(!hasCached);
+  const [isConnected, setIsConnected] = useState(hasCached);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(null);
-  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>('connecting');
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
+  const [domainHasSubscription, setDomainHasSubscription] = useState<boolean | null>(hasCached ? true : null);
+  const [loadingPhase, setLoadingPhase] = useState<'connecting' | 'subscription' | null>(hasCached ? null : 'connecting');
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(() => domain ? getCachedSubscription(domain) : null);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(hasCached);
 
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
@@ -197,26 +252,81 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     return data;
   }, [domain]);
 
-  // Optimized: Parallel connection + subscription check
+  // Optimized: Parallel connection + subscription check with persistent cache
   useEffect(() => {
     const initializeConnection = async () => {
+      if (!domain) {
+        setDomainHasSubscription(null);
+        setSubscription(null);
+        setBronSubscription(null);
+        setIsLoading(false);
+        setLoadingPhase(null);
+        return;
+      }
+
+      // FAST PATH: Check persistent cache first (instant)
+      const cachedSub = getCachedSubscription(domain);
+      if (cachedSub && cachedSub.has_cade === true) {
+        console.log("[CADELoginBox] Using cached subscription (instant load)");
+        setDomainHasSubscription(true);
+        setBronSubscription(cachedSub);
+        setSubscription({
+          plan: cachedSub.plan || cachedSub.servicetype,
+          status: cachedSub.status || "active",
+        });
+        setIsConnected(true);
+        setIsLoading(false);
+        setLoadingPhase(null);
+        setIsBackgroundSyncing(true);
+        
+        // Background refresh for subscription changes (non-blocking)
+        Promise.allSettled([
+          callCadeApi("health"),
+          fetchSubscription(domain),
+        ]).then(([healthRes, subRes]) => {
+          if (healthRes.status === 'fulfilled') {
+            const hData = healthRes.value;
+            const isHealthy = hData?.success === true || hData?.data?.status === "healthy" || hData?.status === "healthy";
+            if (isHealthy) {
+              setHealth(hData.data || hData);
+            }
+          }
+          if (subRes.status === 'fulfilled') {
+            const freshSub = subRes.value;
+            if (freshSub) {
+              if (freshSub.has_cade === true) {
+                setCachedSubscription(domain, freshSub);
+                setBronSubscription(freshSub);
+              } else {
+                // Subscription canceled
+                clearCachedSubscription(domain);
+                setDomainHasSubscription(false);
+                setBronSubscription(freshSub);
+              }
+            }
+          }
+        }).finally(() => {
+          setIsBackgroundSyncing(false);
+        });
+        
+        return;
+      }
+
+      // SLOW PATH: No cache, do full check
       setIsLoading(true);
       setLoadingPhase('connecting');
       setError(null);
       setBronSubscription(null);
 
       try {
-        // Run CADE health check and BRON entitlement check in parallel
-        // IMPORTANT: Use the same CADE entitlement logic as the Social Signals tab.
         const [healthResult, bronSubResult] = await Promise.allSettled([
           callCadeApi("health"),
-          domain ? fetchSubscription(domain) : Promise.resolve(null),
+          fetchSubscription(domain),
         ]);
 
-        // Process health check - be very permissive about what we consider "healthy"
+        // Process health check
         if (healthResult.status === 'fulfilled') {
           const healthRes = healthResult.value;
-          // Check multiple possible success indicators
           const isHealthy = 
             healthRes?.success === true || 
             healthRes?.message === "success" ||
@@ -244,32 +354,24 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
           return;
         }
 
-        // Process BRON entitlement check (authoritative for CADE access)
+        // Process BRON entitlement check
         setLoadingPhase('subscription');
-
-        if (!domain) {
-          setDomainHasSubscription(null);
-          setSubscription(null);
-          setBronSubscription(null);
-          return;
-        }
 
         if (bronSubResult.status === 'fulfilled') {
           const bronSub = bronSubResult.value;
           setBronSubscription(bronSub);
 
-          // Match Social Signals logic exactly
           const hasEntitlement = Boolean(bronSub && bronSub.has_cade && bronSub.status === 'active');
           setDomainHasSubscription(hasEntitlement);
 
-          // Seed plan/status so header UI can render immediately; detailed quotas come from CADE API later.
-          if (bronSub) {
-            setSubscription((prev) => ({
-              ...prev,
-              plan: bronSub.plan || bronSub.servicetype || prev?.plan,
-              status: bronSub.status || prev?.status,
-            }));
+          if (hasEntitlement && bronSub) {
+            setCachedSubscription(domain, bronSub);
+            setSubscription({
+              plan: bronSub.plan || bronSub.servicetype,
+              status: bronSub.status || "active",
+            });
           } else {
+            clearCachedSubscription(domain);
             setSubscription(null);
           }
         } else {
@@ -701,41 +803,137 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
     return <Activity className="w-3.5 h-3.5" />;
   };
 
-  // Unified loading state - shows current phase
-  if (isLoading) {
+  // Futuristic AI-agentic loading animation - only show if not cached
+  if (isLoading && !hasCached) {
     return (
-      <div className="flex items-center justify-center p-12 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30">
-        <div className="flex flex-col items-center gap-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-cyan-500/10 border border-violet-500/30 overflow-hidden"
+      >
+        {/* Animated background grid */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div 
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
+            }}
+          />
+          <motion.div
+            className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500 to-transparent"
+            animate={{ y: [0, 200, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute -top-32 -right-32 w-64 h-64 bg-gradient-to-bl from-violet-500/30 via-purple-500/20 to-transparent rounded-full blur-3xl"
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute -bottom-32 -left-32 w-64 h-64 bg-gradient-to-tr from-cyan-500/20 via-blue-500/10 to-transparent rounded-full blur-3xl"
+            animate={{ opacity: [0.2, 0.4, 0.2], scale: [1, 1.15, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          {/* AI Brain icon with orbiting particles */}
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30">
-              <Bot className="w-8 h-8 text-white" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg">
-              <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
-            </div>
+            <motion.div
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-violet-500/40"
+              animate={{ 
+                boxShadow: [
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.4)",
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.7)",
+                  "0 10px 40px -10px rgba(139, 92, 246, 0.4)"
+                ]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Brain className="w-8 h-8 text-white" />
+            </motion.div>
+            
+            {/* Orbiting particles */}
+            <motion.div
+              className="absolute top-1/2 left-1/2 w-24 h-24 -translate-x-1/2 -translate-y-1/2"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="absolute top-0 left-1/2 w-2 h-2 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 -translate-x-1/2" />
+              <div className="absolute bottom-0 left-1/2 w-1.5 h-1.5 rounded-full bg-violet-400 shadow-lg shadow-violet-400/50 -translate-x-1/2" />
+            </motion.div>
+            <motion.div
+              className="absolute top-1/2 left-1/2 w-20 h-20 -translate-x-1/2 -translate-y-1/2"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              <div className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-amber-400 shadow-lg shadow-amber-400/50" />
+            </motion.div>
           </div>
+          
           <div className="text-center">
-            <p className="text-lg font-semibold">
-              {loadingPhase === 'subscription' ? 'Verifying Access' : 'Connecting to CADE'}
-            </p>
-            <p className="text-sm text-muted-foreground">
+            <motion.p 
+              className="text-base font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              {loadingPhase === 'subscription' ? 'Verifying Access' : 'Initializing AI Agent'}
+            </motion.p>
+            <p className="text-xs text-muted-foreground mt-1">
               {loadingPhase === 'subscription' 
-                ? `Checking subscription for ${domain}...` 
-                : 'AI Content Automation Engine'}
+                ? `Checking subscription for ${domain}` 
+                : 'CADE Content Automation Engine'}
             </p>
           </div>
-          {/* Progress indicator */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className={loadingPhase === 'connecting' ? 'text-violet-400 font-medium' : 'text-green-400'}>
-              {loadingPhase === 'connecting' ? '● Connecting' : '✓ Connected'}
-            </span>
-            <span className="text-muted-foreground/50">→</span>
-            <span className={loadingPhase === 'subscription' ? 'text-violet-400 font-medium' : 'text-muted-foreground/50'}>
-              {loadingPhase === 'subscription' ? '● Verifying' : '○ Access'}
-            </span>
+          
+          {/* Progress steps */}
+          <div className="flex items-center gap-2 text-xs">
+            <motion.span 
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full border ${
+                loadingPhase === 'connecting' 
+                  ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' 
+                  : 'bg-green-500/10 text-green-500 border-green-500/20'
+              }`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <motion.span 
+                className={`w-1.5 h-1.5 rounded-full ${loadingPhase === 'connecting' ? 'bg-violet-400' : 'bg-green-500'}`}
+                animate={loadingPhase === 'connecting' ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+              {loadingPhase === 'connecting' ? 'Connecting' : '✓ Connected'}
+            </motion.span>
+            <motion.span 
+              className="text-muted-foreground/40"
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              →
+            </motion.span>
+            <motion.span 
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full border ${
+                loadingPhase === 'subscription' 
+                  ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' 
+                  : 'bg-muted/30 text-muted-foreground/50 border-border'
+              }`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: loadingPhase === 'subscription' ? 1 : 0.5, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.span 
+                className={`w-1.5 h-1.5 rounded-full ${loadingPhase === 'subscription' ? 'bg-violet-400' : 'bg-muted-foreground/30'}`}
+                animate={loadingPhase === 'subscription' ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              />
+              {loadingPhase === 'subscription' ? 'Verifying' : 'Access'}
+            </motion.span>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -958,6 +1156,13 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
   // Connected Dashboard - domain has subscription
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      {/* Background sync indicator - subtle, non-blocking */}
+      {isBackgroundSyncing && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 backdrop-blur-sm">
+          <RefreshCw className="w-3 h-3 text-violet-400 animate-spin" />
+          <span className="text-xs text-violet-400">Syncing...</span>
+        </div>
+      )}
       {/* Active Domain Banner */}
       <div className="relative p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-green-500/10 to-teal-500/15 border border-emerald-500/30 overflow-hidden">
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">

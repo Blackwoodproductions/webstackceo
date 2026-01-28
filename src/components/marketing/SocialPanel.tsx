@@ -91,25 +91,82 @@ const platformConfig = {
   },
 };
 
+// Social cache for instant loading
+const SOCIAL_CACHE_KEY = 'social_profiles_cache';
+const SOCIAL_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface SocialCacheEntry {
+  profiles: SocialProfile[];
+  hasCadeSubscription: boolean;
+  bronSubscription: BronSubscription | null;
+  cachedAt: number;
+}
+
+const loadCachedSocialData = (domain: string): SocialCacheEntry | null => {
+  try {
+    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
+    if (!cached) return null;
+    const allCaches = JSON.parse(cached) as Record<string, SocialCacheEntry>;
+    const entry = allCaches[domain];
+    if (entry && entry.cachedAt && (Date.now() - entry.cachedAt) < SOCIAL_CACHE_MAX_AGE) {
+      return entry;
+    }
+  } catch (e) {
+    console.warn('Failed to load social cache:', e);
+  }
+  return null;
+};
+
+const saveCachedSocialData = (domain: string, profiles: SocialProfile[], hasCadeSubscription: boolean, bronSubscription: BronSubscription | null) => {
+  try {
+    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
+    const allCaches: Record<string, SocialCacheEntry> = cached ? JSON.parse(cached) : {};
+    allCaches[domain] = { profiles, hasCadeSubscription, bronSubscription, cachedAt: Date.now() };
+    
+    // Prune old entries (keep max 10 domains)
+    const entries = Object.entries(allCaches);
+    if (entries.length > 10) {
+      entries.sort((a, b) => b[1].cachedAt - a[1].cachedAt);
+      const toKeep = entries.slice(0, 10);
+      const pruned: Record<string, SocialCacheEntry> = {};
+      for (const [key, val] of toKeep) {
+        pruned[key] = val;
+      }
+      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(pruned));
+    } else {
+      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(allCaches));
+    }
+  } catch (e) {
+    console.warn('Failed to save social cache:', e);
+  }
+};
+
 export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { user } = useAuth();
   const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
   const { fetchSubscription } = useBronApi();
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanComplete, setScanComplete] = useState(false);
-  const [profiles, setProfiles] = useState<SocialProfile[]>([]);
-  const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
-  const [isCheckingCade, setIsCheckingCade] = useState(false);
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
+  
+  // Check cache synchronously for instant loading
+  const [cachedData] = useState(() => selectedDomain ? loadCachedSocialData(selectedDomain) : null);
+  
+  const [isScanning, setIsScanning] = useState(!cachedData);
+  const [scanComplete, setScanComplete] = useState(!!cachedData);
+  const [profiles, setProfiles] = useState<SocialProfile[]>(cachedData?.profiles || []);
+  const [hasCadeSubscription, setHasCadeSubscription] = useState(cachedData?.hasCadeSubscription || false);
+  const [isCheckingCade, setIsCheckingCade] = useState(!cachedData);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(cachedData?.bronSubscription || null);
   const [autopilotEnabled, setAutopilotEnabled] = useState(false);
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(!!cachedData);
 
   // Check subscription via BRON API
-  const checkCadeSubscription = useCallback(async () => {
+  const checkCadeSubscription = useCallback(async (isBackground = false) => {
     if (!selectedDomain) return;
     
-    setIsCheckingCade(true);
-    setBronSubscription(null);
+    if (!isBackground) {
+      setIsCheckingCade(true);
+      setBronSubscription(null);
+    }
     try {
       const subscription = await fetchSubscription(selectedDomain);
       
@@ -120,12 +177,16 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         setHasCadeSubscription(false);
         setBronSubscription(subscription);
       }
+      return subscription;
     } catch (err) {
       console.error('Error checking BRON subscription:', err);
       setHasCadeSubscription(false);
       setBronSubscription(null);
+      return null;
     } finally {
-      setIsCheckingCade(false);
+      if (!isBackground) {
+        setIsCheckingCade(false);
+      }
     }
   }, [selectedDomain, fetchSubscription]);
 
@@ -186,10 +247,39 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   // Initial scan when domain changes
   useEffect(() => {
     if (selectedDomain) {
-      scanWebsiteForSocials();
-      checkCadeSubscription();
+      // If we have cached data, do background refresh
+      if (cachedData) {
+        setIsBackgroundSyncing(true);
+        Promise.all([
+          scanWebsiteForSocials(),
+          checkCadeSubscription(true),
+        ]).then(([, subscription]) => {
+          // Save updated cache
+          if (profiles.length > 0) {
+            saveCachedSocialData(
+              selectedDomain, 
+              profiles, 
+              subscription?.has_cade === true && subscription?.status === 'active',
+              subscription || null
+            );
+          }
+        }).finally(() => {
+          setIsBackgroundSyncing(false);
+        });
+      } else {
+        // No cache, do full scan
+        scanWebsiteForSocials();
+        checkCadeSubscription();
+      }
     }
-  }, [selectedDomain, scanWebsiteForSocials, checkCadeSubscription]);
+  }, [selectedDomain]);
+  
+  // Save to cache when data updates (after scans complete)
+  useEffect(() => {
+    if (selectedDomain && scanComplete && profiles.length > 0 && !isBackgroundSyncing) {
+      saveCachedSocialData(selectedDomain, profiles, hasCadeSubscription, bronSubscription);
+    }
+  }, [selectedDomain, scanComplete, profiles, hasCadeSubscription, bronSubscription, isBackgroundSyncing]);
 
   const detectedCount = profiles.filter(p => p.detected).length;
   const connectedCount = profiles.filter(p => p.connected).length;
@@ -204,6 +294,13 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
 
   return (
     <div className="relative space-y-6">
+      {/* Background sync indicator - subtle, non-blocking */}
+      {isBackgroundSyncing && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 backdrop-blur-sm">
+          <RefreshCw className="w-3 h-3 text-pink-400 animate-spin" />
+          <span className="text-xs text-pink-400">Syncing social...</span>
+        </div>
+      )}
       <VIDashboardEffects />
       
       {/* Header with scan status and compact platform carousel */}
@@ -218,7 +315,20 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               <Share2 className="w-5 h-5 text-white" />
             </motion.div>
             <div>
-              <h2 className="text-xl font-bold">Social Media Dashboard</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold">Social Media Dashboard</h2>
+                {/* CADE Subscription Detected Badge - shows on left after dashboard loads */}
+                {hasCadeSubscription && !isCheckingCade && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/40"
+                  >
+                    <Sparkles className="w-3 h-3 text-violet-400" />
+                    <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-wide">CADE Active</span>
+                  </motion.div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
               </p>

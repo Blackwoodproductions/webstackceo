@@ -21,14 +21,37 @@ interface BRONDashboardProps {
   selectedDomain?: string;
 }
 
+// Check if we have cached data to show instantly
+const DOMAINS_CACHE_KEY = 'bron_domains_cache';
+const hasCachedData = () => {
+  try {
+    const cached = localStorage.getItem(DOMAINS_CACHE_KEY);
+    if (!cached) return false;
+    const entry = JSON.parse(cached);
+    const isValid = entry?.domains?.length > 0 && 
+      (Date.now() - entry.cachedAt) < 24 * 60 * 60 * 1000;
+    return isValid;
+  } catch {
+    return false;
+  }
+};
+
 export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const bronApi = useBronApi();
   const [activeTab, setActiveTab] = useState("keywords");
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
+  
+  // Check cache synchronously to determine initial state
+  const [hasCached] = useState(() => hasCachedData());
+  // If we have cached data, skip the loading screen entirely
+  const [isAuthenticating, setIsAuthenticating] = useState(!hasCached);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authErrorDetails, setAuthErrorDetails] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+  
+  // Background auth status for when we have cache but still need to verify
+  const [isBackgroundAuthenticating, setIsBackgroundAuthenticating] = useState(hasCached);
 
   // Avoid duplicate link loads and UI thrash when domainInfo arrives (id changes).
   const linksRequestedForDomainRef = useRef<string | null>(null);
@@ -38,8 +61,14 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     let mounted = true;
     
     const checkAuth = async () => {
-      setIsAuthenticating(true);
+      // If we have cached data, run auth check in background
+      if (hasCached) {
+        setIsBackgroundAuthenticating(true);
+      } else {
+        setIsAuthenticating(true);
+      }
       setAuthError(null);
+      setAuthErrorDetails(null);
       
       // Add a client-side timeout for the entire auth check
       const timeoutPromise = new Promise<boolean>((_, reject) => {
@@ -56,23 +85,48 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         if (!mounted) return;
         
         if (!isValid) {
-          setAuthError("Unable to authenticate with BRON API. Please check your API credentials.");
+          // Only show error if we don't have cached data to fall back on
+          if (!hasCached) {
+            setAuthError("Unable to authenticate with BRON API.");
+            setAuthErrorDetails("verifyAuth returned unauthenticated");
+          } else {
+            console.log("[BRON Dashboard] Auth failed but serving cached data");
+          }
         }
       } catch (err) {
         if (!mounted) return;
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[BRON Dashboard] Auth check failed:", message);
-        setAuthError(message.includes("timed out") 
-          ? "Connection timed out. The BRON API may be slow - please try again." 
-          : "Failed to connect to BRON API. Please try again.");
+        
+        // Only show errors if we don't have cached data
+        if (!hasCached) {
+          if (message.toLowerCase().includes("timed out")) {
+            setAuthError("Connection timed out while contacting BRON.");
+            setAuthErrorDetails("The BRON API is responding slowly. Please try again.");
+          } else if (message.toLowerCase().includes("failed to send") || message.toLowerCase().includes("fetch")) {
+            setAuthError("Connection temporarily unavailable.");
+            setAuthErrorDetails("Please check your internet connection and try again.");
+          } else if (message.toLowerCase().includes("credentials") || message.toLowerCase().includes("configured")) {
+            setAuthError("BRON API configuration error.");
+            setAuthErrorDetails(message);
+          } else {
+            setAuthError("Failed to connect to BRON.");
+            setAuthErrorDetails(message);
+          }
+        } else {
+          console.log("[BRON Dashboard] Auth error but serving cached data:", message);
+        }
       } finally {
-        if (mounted) setIsAuthenticating(false);
+        if (mounted) {
+          setIsAuthenticating(false);
+          setIsBackgroundAuthenticating(false);
+        }
       }
     };
     
     checkAuth();
     return () => { mounted = false; };
-  }, []);
+  }, [hasCached]);
 
   // Capture website screenshot function
   const captureScreenshot = useCallback(async (domain: string) => {
@@ -129,6 +183,16 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
       bronApi.fetchDomains();
     }
   }, [bronApi.isAuthenticated]);
+
+  // Keep BRON hook in sync with the header domain selector.
+  // This hydrates cached results immediately (or clears), preventing the UI from
+  // showing results from a previously selected domain.
+  useEffect(() => {
+    if (!bronApi.isAuthenticated) return;
+    bronApi.selectDomain(selectedDomain ?? null);
+    // Note: bronApi methods are stable; avoid depending on the whole object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bronApi.isAuthenticated, selectedDomain]);
 
   // Load domain-specific data when domain changes
   // IMPORTANT: Don't reset data before fetching - let cache serve instantly
@@ -201,65 +265,11 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
-  if (isAuthenticating) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
-          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-white animate-spin motion-reduce:animate-none" />
-          </div>
-        </div>
-        <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
-      </div>
-    );
-  }
-
-  if (authError) {
-    return (
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="p-8 text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
-            <X className="w-8 h-8 text-destructive" />
-          </div>
-          <h3 className="text-lg font-semibold text-destructive">Connection Failed</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">{authError}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-            className="mt-4"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry Connection
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Generate Google Maps embed URL from address
-  const getGoogleMapsEmbedUrl = (address?: string) => {
-    if (!address) return null;
-    const encoded = encodeURIComponent(address);
-    return `https://www.google.com/maps?q=${encoded}&output=embed`;
-  };
-
-  // Get service package name based on servicetype
-  const getPackageName = (serviceType?: string) => {
-    const packages: Record<string, string> = {
-      "383": "SEOM 60",
-      "380": "SEOM 30",
-      "381": "SEOM 45",
-      "382": "SEOM Premium",
-    };
-    return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
-  };
-
-  // Calculate domain info progress (keywords count out of target)
+  // Derived data and stable callbacks (MUST be above any conditional returns)
+  // Otherwise React will throw "Rendered more hooks than during the previous render".
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
 
   // Stabilize data references to prevent child component re-renders
-  // These useMemo calls ensure the same array reference is passed if content hasn't changed
   const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
   const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
   const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
@@ -306,12 +316,113 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
   }, [selectedDomain]);
 
+  // Only show loading if we DON'T have cached data
+  // If we have cache, render the dashboard immediately while auth happens in background
+  if (isAuthenticating && !hasCached) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 space-y-4">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
+          <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white animate-spin motion-reduce:animate-none" />
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
+      </div>
+    );
+  }
+
+  // Only show auth error screen if we don't have cached data to fall back on
+  if (authError && !hasCached) {
+    const copyBronDiagnostics = async () => {
+      try {
+        const payload = JSON.stringify(
+          {
+            feature: "bron",
+            step: "verifyAuth",
+            domain: selectedDomain || null,
+            message: authError,
+            details: authErrorDetails,
+            url: window.location.href,
+            occurred_at: new Date().toISOString(),
+          },
+          null,
+          2
+        );
+        await navigator.clipboard.writeText(payload);
+        toast.success("Diagnostics copied");
+      } catch {
+        toast.error("Could not copy diagnostics");
+      }
+    };
+
+    return (
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardContent className="p-8 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
+            <X className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-destructive">Connection Failed</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">{authError}</p>
+          {authErrorDetails && (
+            <div className="mx-auto max-w-2xl rounded-lg bg-muted/50 p-4 text-left">
+              <p className="text-xs text-muted-foreground mb-1">Details</p>
+              <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap break-words max-h-40 overflow-auto">
+                {authErrorDetails}
+              </pre>
+            </div>
+          )}
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="mt-4"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry Connection
+          </Button>
+          <Button
+            onClick={copyBronDiagnostics}
+            variant="secondary"
+            className="mt-2"
+          >
+            Copy diagnostics
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Generate Google Maps embed URL from address
+  const getGoogleMapsEmbedUrl = (address?: string) => {
+    if (!address) return null;
+    const encoded = encodeURIComponent(address);
+    return `https://www.google.com/maps?q=${encoded}&output=embed`;
+  };
+
+  // Get service package name based on servicetype
+  const getPackageName = (serviceType?: string) => {
+    const packages: Record<string, string> = {
+      "383": "SEOM 60",
+      "380": "SEOM 30",
+      "381": "SEOM 45",
+      "382": "SEOM Premium",
+    };
+    return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
+  };
+
   return (
     <div 
       className="space-y-6 no-theme-transition" 
-      style={{ contain: "layout style" }}
+      style={{ contain: "layout style paint" }}
       data-no-theme-transition
     >
+      {/* Background sync indicator - subtle, non-blocking */}
+      {isBackgroundAuthenticating && (
+        <div className="fixed top-20 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-sm">
+          <RefreshCw className="w-3 h-3 text-cyan-400 animate-spin" />
+          <span className="text-xs text-cyan-400">Syncing...</span>
+        </div>
+      )}
       {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
         <Card 
