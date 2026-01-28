@@ -128,6 +128,52 @@ serve(async (req) => {
         postBody = JSON.stringify({ domain, ...params });
         break;
 
+      case "list-content":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for list-content" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = `/content/?domain=${encodeURIComponent(domain)}`;
+        if (params?.page) endpoint += `&page=${params.page}`;
+        if (params?.limit) endpoint += `&limit=${params.limit}`;
+        if (params?.status) endpoint += `&status=${params.status}`;
+        break;
+
+      case "get-content":
+        if (!params?.content_id) {
+          return new Response(
+            JSON.stringify({ error: "content_id is required for get-content" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = `/content/${encodeURIComponent(params.content_id)}`;
+        break;
+
+      case "update-content":
+        if (!params?.content_id) {
+          return new Response(
+            JSON.stringify({ error: "content_id is required for update-content" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "PATCH";
+        endpoint = `/content/${encodeURIComponent(params.content_id)}`;
+        postBody = JSON.stringify({ ...params, content_id: undefined });
+        break;
+
+      case "delete-content":
+        if (!params?.content_id) {
+          return new Response(
+            JSON.stringify({ error: "content_id is required for delete-content" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "DELETE";
+        endpoint = `/content/${encodeURIComponent(params.content_id)}`;
+        break;
+
       case "generate-content-bulk":
         method = "POST";
         endpoint = "/content/bulk";
@@ -168,10 +214,49 @@ serve(async (req) => {
         endpoint = `/content/faq?domain=${encodeURIComponent(domain)}`;
         break;
 
+      case "update-faq":
+        if (!params?.faq_id) {
+          return new Response(
+            JSON.stringify({ error: "faq_id is required for update-faq" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "PATCH";
+        endpoint = `/content/faq/${encodeURIComponent(params.faq_id)}`;
+        postBody = JSON.stringify({ ...params, faq_id: undefined });
+        break;
+
+      case "delete-faq":
+        if (!params?.faq_id) {
+          return new Response(
+            JSON.stringify({ error: "faq_id is required for delete-faq" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "DELETE";
+        endpoint = `/content/faq/${encodeURIComponent(params.faq_id)}`;
+        break;
+
       case "generate-faq-bulk":
         method = "POST";
         endpoint = "/content/faq/bulk";
         postBody = JSON.stringify({ ...params });
+        break;
+
+      // === PLATFORM CONNECTION ENDPOINTS ===
+      case "list-platforms":
+        endpoint = "/publication/platforms";
+        break;
+
+      case "connect-platform":
+        method = "POST";
+        endpoint = "/publication/connect";
+        postBody = JSON.stringify({ domain, ...params });
+        break;
+
+      case "disconnect-platform":
+        method = "DELETE";
+        endpoint = `/publication/disconnect/${encodeURIComponent(params?.platform_id || "")}`;
         break;
 
       // === CONTENT PUBLISHING ENDPOINTS ===
