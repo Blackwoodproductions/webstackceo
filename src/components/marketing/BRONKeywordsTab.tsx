@@ -423,9 +423,14 @@ export const BRONKeywordsTab = ({
             onClick={() => expandKeyword(kw)}
           >
             <div className="flex items-center gap-3">
-              {/* Intent Type Icon */}
-              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
-                <IntentIcon className={`w-5 h-5 ${intent.color}`} />
+              {/* Intent Type Icon + Label */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className={`w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
+                  <IntentIcon className={`w-5 h-5 ${intent.color}`} />
+                </div>
+                <span className={`text-[10px] font-medium capitalize ${intent.color}`}>
+                  {intent.type}
+                </span>
               </div>
 
               {/* Keyword Text - only show keyword portion (before colon if present) */}
@@ -465,15 +470,10 @@ export const BRONKeywordsTab = ({
                 </div>
               )}
 
-              {/* Intent Type Label + Expand */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`text-xs font-medium capitalize ${intent.color}`}>
-                  {intent.type}
-                </span>
-                <ChevronRight 
-                  className={`w-5 h-5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
-                />
-              </div>
+              {/* Expand Arrow */}
+              <ChevronRight 
+                className={`w-5 h-5 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+              />
             </div>
           </div>
 
