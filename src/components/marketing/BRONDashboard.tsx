@@ -148,18 +148,22 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain, captureScreenshot, getExistingScreenshot]);
 
-  // Lazy-load link reports only when the Links tab is opened
+  // Load link reports when the Links or Keywords tab is opened
   useEffect(() => {
     let cancelled = false;
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const loadLinks = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
-      if (activeTab !== "links") return;
+      // Load links for both Links tab AND Keywords tab (for per-keyword citation display)
+      if (activeTab !== "links" && activeTab !== "keywords") return;
+      
+      // Don't reload if we already have data
+      if (bronApi.linksIn.length > 0 && bronApi.linksOut.length > 0) return;
 
       // Use domain ID if available (preferred by the API)
       const domainId = domainInfo?.id;
-      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}`);
+      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}, tab: ${activeTab}`);
       
       await bronApi.fetchLinksIn(selectedDomain, domainId);
       await sleep(260);
@@ -171,7 +175,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     return () => {
       cancelled = true;
     };
-  }, [bronApi.isAuthenticated, selectedDomain, activeTab, domainInfo?.id]);
+  }, [bronApi.isAuthenticated, selectedDomain, activeTab, domainInfo?.id, bronApi.linksIn.length, bronApi.linksOut.length]);
 
   if (isAuthenticating) {
     return (
