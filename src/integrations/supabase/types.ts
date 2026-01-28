@@ -594,6 +594,48 @@ export type Database = {
         }
         Relationships: []
       }
+      keyword_ranking_history: {
+        Row: {
+          bing_position: number | null
+          competition_level: string | null
+          cpc: number | null
+          domain: string
+          google_position: number | null
+          id: string
+          keyword: string
+          search_volume: number | null
+          snapshot_at: string
+          source: string | null
+          yahoo_position: number | null
+        }
+        Insert: {
+          bing_position?: number | null
+          competition_level?: string | null
+          cpc?: number | null
+          domain: string
+          google_position?: number | null
+          id?: string
+          keyword: string
+          search_volume?: number | null
+          snapshot_at?: string
+          source?: string | null
+          yahoo_position?: number | null
+        }
+        Update: {
+          bing_position?: number | null
+          competition_level?: string | null
+          cpc?: number | null
+          domain?: string
+          google_position?: number | null
+          id?: string
+          keyword?: string
+          search_volume?: number | null
+          snapshot_at?: string
+          source?: string | null
+          yahoo_position?: number | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           annual_revenue: string | null
