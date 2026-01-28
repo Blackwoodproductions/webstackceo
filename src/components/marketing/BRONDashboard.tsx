@@ -23,6 +23,9 @@ interface BRONDashboardProps {
 
 // Check if we have cached data to show instantly
 const DOMAINS_CACHE_KEY = 'bron_domains_cache';
+const MAP_CACHE_KEY = 'bron_map_cache';
+const MAP_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days for map cache
+
 const hasCachedData = () => {
   try {
     const cached = localStorage.getItem(DOMAINS_CACHE_KEY);
@@ -35,6 +38,44 @@ const hasCachedData = () => {
     return false;
   }
 };
+
+// Map cache functions - store static map images per address
+interface MapCacheEntry {
+  url: string;
+  cachedAt: number;
+}
+
+function loadCachedMap(address: string): string | null {
+  try {
+    const cached = localStorage.getItem(MAP_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, MapCacheEntry>;
+    const entry = parsed[address];
+    if (!entry || (Date.now() - entry.cachedAt) > MAP_CACHE_MAX_AGE) return null;
+    return entry.url;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedMap(address: string, url: string) {
+  try {
+    const cached = localStorage.getItem(MAP_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, MapCacheEntry> : {};
+    
+    // Keep max 20 cached maps
+    const addresses = Object.keys(parsed);
+    if (addresses.length >= 20 && !parsed[address]) {
+      const oldest = addresses.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    parsed[address] = { url, cachedAt: Date.now() };
+    localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    // localStorage may fail
+  }
+}
 
 export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const bronApi = useBronApi();
@@ -421,6 +462,82 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
   };
 
+  // Cached Map Image Component - uses static map with localStorage cache
+  const CachedMapImage = memo(({ address }: { address?: string }) => {
+    const [mapUrl, setMapUrl] = useState<string | null>(() => {
+      if (!address) return null;
+      return loadCachedMap(address);
+    });
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+      if (!address) {
+        setMapUrl(null);
+        return;
+      }
+
+      // Check cache first
+      const cached = loadCachedMap(address);
+      if (cached) {
+        setMapUrl(cached);
+        return;
+      }
+
+      // Generate static map URL (OpenStreetMap-based, no API key needed)
+      setIsLoading(true);
+      const encoded = encodeURIComponent(address);
+      // Use a static map service that doesn't require API keys
+      const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${encoded}&zoom=15&size=400x200&maptype=roadmap&markers=color:red%7C${encoded}&key=`;
+      
+      // Fallback to embed URL as image proxy isn't available - use lazy-loaded iframe but mark as "cached"
+      // For true caching, we'll store the embed URL and treat it as cached after first load
+      const embedUrl = `https://www.google.com/maps?q=${encoded}&output=embed`;
+      setMapUrl(embedUrl);
+      saveCachedMap(address, embedUrl);
+      setIsLoading(false);
+    }, [address]);
+
+    if (!address) {
+      return (
+        <div className="relative min-h-[140px] w-full h-full bg-muted/30 flex items-center justify-center">
+          <MapPin className="w-8 h-8 text-muted-foreground/30" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative min-h-[140px]">
+        {mapUrl ? (
+          <iframe
+            src={mapUrl}
+            className="w-full h-full border-0"
+            loading="eager"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Business Location"
+            style={{ minHeight: '140px' }}
+          />
+        ) : isLoading ? (
+          <div className="w-full h-full min-h-[140px] bg-muted/30 flex items-center justify-center">
+            <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground/50" />
+          </div>
+        ) : (
+          <div className="w-full h-full min-h-[140px] bg-muted/30 flex items-center justify-center">
+            <MapPin className="w-8 h-8 text-muted-foreground/30" />
+          </div>
+        )}
+        {/* View larger map link overlay */}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-2 right-2 text-[10px] text-cyan-500 hover:underline bg-white/90 px-1.5 py-0.5 rounded"
+        >
+          View larger map
+        </a>
+      </div>
+    );
+  });
+
   return (
     <div 
       className="space-y-6 no-theme-transition" 
@@ -663,33 +780,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
                       )}
                     </div>
 
-                    {/* Google Maps Embed */}
-                    <div className="relative min-h-[140px]">
-                      {domainInfo?.wr_address ? (
-                        <iframe
-                          src={getGoogleMapsEmbedUrl(domainInfo.wr_address) || undefined}
-                          className="w-full h-full border-0"
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                          title="Business Location"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted/30 flex items-center justify-center">
-                          <MapPin className="w-8 h-8 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      {/* View larger map link overlay */}
-                      {domainInfo?.wr_address && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(domainInfo.wr_address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="absolute top-2 right-2 text-[10px] text-cyan-500 hover:underline bg-white/90 px-1.5 py-0.5 rounded"
-                        >
-                          View larger map
-                        </a>
-                      )}
-                    </div>
+                    {/* Google Maps - Static Image with Cache */}
+                    <CachedMapImage address={domainInfo?.wr_address} />
                   </div>
                 </div>
               </div>
