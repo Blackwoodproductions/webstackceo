@@ -131,6 +131,38 @@ export function useBronApi(): UseBronApiReturn {
   const [linksInError, setLinksInError] = useState<string | null>(null);
   const [linksOutError, setLinksOutError] = useState<string | null>(null);
 
+  const formatInvokeError = useCallback(async (error: unknown): Promise<string> => {
+    const fallback = error instanceof Error ? error.message : "Request failed";
+
+    // supabase-js function errors often include a Response in `context`
+    const context = (error as { context?: Response })?.context;
+    if (!context) return fallback;
+
+    try {
+      const contentType = context.headers.get("content-type") || "";
+      const status = context.status;
+
+      if (contentType.includes("application/json")) {
+        const body = (await context.json()) as any;
+        const detail =
+          body?.details?.detail ||
+          body?.details?.message ||
+          body?.detail ||
+          body?.message ||
+          body?.error;
+
+        if (detail) return `BRON API error (${status}): ${String(detail)}`;
+        return `BRON API error (${status})`;
+      }
+
+      const text = await context.text();
+      if (text) return `BRON API error (${status}): ${text}`;
+      return `BRON API error (${status})`;
+    } catch {
+      return fallback;
+    }
+  }, []);
+
   const callApi = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
     try {
       const { data, error } = await supabase.functions.invoke("bron-rsapi", {
@@ -138,8 +170,9 @@ export function useBronApi(): UseBronApiReturn {
       });
 
       if (error) {
+        const message = await formatInvokeError(error);
         console.error("BRON API error:", error);
-        throw new Error(error.message || "API call failed");
+        throw new Error(message);
       }
 
       return data;
@@ -147,7 +180,7 @@ export function useBronApi(): UseBronApiReturn {
       console.error("BRON API call error:", err);
       throw err;
     }
-  }, []);
+  }, [formatInvokeError]);
 
   const verifyAuth = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
