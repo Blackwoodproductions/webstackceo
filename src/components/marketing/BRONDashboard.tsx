@@ -427,36 +427,31 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
         </Card>
       )}
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <ActionCard
-          icon={BarChart3}
-          title="Keyword Content"
-          description="Manage your target keywords and edit content to optimize search visibility."
-          color="cyan"
-          onClick={() => setActiveTab("keywords")}
-          active={activeTab === "keywords"}
-        />
-        <ActionCard
-          icon={Link2}
-          title="Citation Links"
-          description="Build quality backlinks and manage citations to boost your site's authority."
-          color="violet"
-          onClick={() => setActiveTab("links")}
-          active={activeTab === "links"}
-        />
-        <ActionCard
-          icon={TrendingUp}
-          title="Ranking/Analytics"
-          description="Track search engine rankings and monitor your campaign progress."
-          color="primary"
-          onClick={() => setActiveTab("serp")}
-          active={activeTab === "serp"}
-        />
-      </div>
-
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        {/* Info Cards Header - merged into keywords section */}
+        {activeTab === "keywords" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <InfoCard
+              icon={BarChart3}
+              title="Keyword Content"
+              description="Manage your target keywords and edit content to optimize search visibility."
+              color="cyan"
+            />
+            <InfoCard
+              icon={Link2}
+              title="Citation Links"
+              description="Build quality backlinks and manage citations to boost your site's authority."
+              color="violet"
+            />
+            <InfoCard
+              icon={TrendingUp}
+              title="Ranking/Analytics"
+              description="Track search engine rankings and monitor your campaign progress."
+              color="primary"
+            />
+          </div>
+        )}
 
         <TabsContent value="domains" className="mt-0">
           <BRONDomainsTab 
@@ -552,6 +547,50 @@ const StatCard = ({ icon: Icon, label, value, color }: StatCardProps) => {
         </div>
         <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center`}>
           <Icon className="w-4 h-4" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Info Card Component (non-clickable)
+interface InfoCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  color: "cyan" | "violet" | "primary";
+}
+
+const InfoCard = ({ icon: Icon, title, description, color }: InfoCardProps) => {
+  const colorClasses: Record<string, { border: string; icon: string }> = {
+    cyan: { 
+      border: "border-cyan-500/30", 
+      icon: "from-cyan-500/30 to-cyan-600/20 text-cyan-400",
+    },
+    violet: { 
+      border: "border-violet-500/30", 
+      icon: "from-violet-500/30 to-violet-600/20 text-violet-400",
+    },
+    primary: { 
+      border: "border-primary/30", 
+      icon: "from-primary/30 to-primary/20 text-primary",
+    },
+  };
+
+  const styles = colorClasses[color];
+
+  return (
+    <div
+      className={`relative rounded-xl border ${styles.border} bg-card/50 backdrop-blur-sm p-4`}
+      style={{ contain: "layout style paint" }}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${styles.icon} flex items-center justify-center flex-shrink-0`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm mb-1">{title}</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
         </div>
       </div>
     </div>
