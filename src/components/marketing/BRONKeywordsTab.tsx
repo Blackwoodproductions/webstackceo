@@ -434,7 +434,7 @@ export const BRONKeywordsTab = ({
               </div>
 
               {/* Keyword Text - only show keyword portion (before colon if present) */}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -445,30 +445,34 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* SERP Rankings */}
-              {hasRankings && (
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {googlePos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
-                      <span className="font-semibold">Google</span>
-                      <span className="text-sm font-bold">#{googlePos}</span>
-                      {googlePos <= 10 ? (
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : googlePos <= 20 ? (
-                        <Minus className="w-3.5 h-3.5 text-amber-400" />
-                      ) : (
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                      )}
-                    </div>
-                  )}
-                  {bingPos !== null && (
-                    <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
-                      <span className="font-semibold">Bing</span>
-                      <span className="text-sm font-bold">#{bingPos}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* SERP Rankings - Centered */}
+              <div className="flex-1 flex items-center justify-center gap-2">
+                {googlePos !== null && (
+                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
+                    <span className="font-semibold">Google</span>
+                    <span className="text-sm font-bold">#{googlePos}</span>
+                    {googlePos <= 10 ? (
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : googlePos <= 20 ? (
+                      <Minus className="w-3.5 h-3.5 text-amber-400" />
+                    ) : (
+                      <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                    )}
+                  </div>
+                )}
+                {bingPos !== null && (
+                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
+                    <span className="font-semibold">Bing</span>
+                    <span className="text-sm font-bold">#{bingPos}</span>
+                  </div>
+                )}
+                {yahooPos !== null && (
+                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
+                    <span className="font-semibold">Yahoo</span>
+                    <span className="text-sm font-bold">#{yahooPos}</span>
+                  </div>
+                )}
+              </div>
 
               {/* Expand Arrow */}
               <ChevronRight 
