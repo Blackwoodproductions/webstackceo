@@ -391,7 +391,7 @@ export function filterLinksForKeyword(
   
   // Links Out: Links FROM our domain TO other domains
   // BRON returns these with `link` pointing to OUR page (contains topic/keyword slug)
-  const keywordLinksOut = linksOut.filter((link) => {
+  let keywordLinksOut = linksOut.filter((link) => {
     return (
       matchesKeywordToken(link.link) ||
       matchesKeywordToken(link.source_url) ||
@@ -405,7 +405,7 @@ export function filterLinksForKeyword(
   // Links In: Links TO our domain FROM other domains
   // BRON returns these with `link` pointing to the REFERRER's page
   // Try to match if there's a target_url that contains our keyword
-  const keywordLinksIn = linksIn.filter((link) => {
+  let keywordLinksIn = linksIn.filter((link) => {
     return (
       matchesKeywordToken(link.link) ||
       matchesKeywordToken(link.source_url) ||
@@ -415,11 +415,11 @@ export function filterLinksForKeyword(
     );
   });
 
-  // IMPORTANT: BRON's links-in response is often domain-level (referrer pages) and
+  // IMPORTANT: BRON's link responses are often domain-level (referrer pages) and
   // may not include a target_url back to the specific keyword page.
   // If strict matching yields zero, fall back to category-based matching using
-  // categories present in this keyword's outbound links. If we still can't
-  // determine relevance, show all inbound links so the UI isn't empty.
+  // categories present in this keyword's data. If we still can't
+  // determine relevance, show all links so the UI isn't empty.
   const normalizeCategory = (value?: string) =>
     (value || "")
       .replace(/&amp;/g, "&")
@@ -427,8 +427,37 @@ export function filterLinksForKeyword(
       .trim()
       .toLowerCase();
 
-  let keywordLinksInFinal = keywordLinksIn;
-  if (keywordLinksInFinal.length === 0 && linksIn.length > 0) {
+  // Build a category set from the keyword itself if available
+  const keywordCategorySet = new Set<string>();
+  const kwAny = keyword as unknown as Record<string, unknown>;
+  if (typeof kwAny.category === 'string' && kwAny.category) {
+    keywordCategorySet.add(normalizeCategory(kwAny.category));
+  }
+  if (typeof kwAny.parent_category === 'string' && kwAny.parent_category) {
+    keywordCategorySet.add(normalizeCategory(kwAny.parent_category));
+  }
+
+  // Fallback for outbound links: if strict matching yields zero, try category-based or show all
+  if (keywordLinksOut.length === 0 && linksOut.length > 0) {
+    if (keywordCategorySet.size > 0) {
+      const byCategory = linksOut.filter((l) => {
+        const cat = normalizeCategory(l.category);
+        const parent = normalizeCategory(l.parent_category);
+        return (
+          (cat && keywordCategorySet.has(cat)) ||
+          (parent && keywordCategorySet.has(parent))
+        );
+      });
+      keywordLinksOut = byCategory.length > 0 ? byCategory : linksOut;
+    } else {
+      // No category info available - show all outbound links
+      keywordLinksOut = linksOut;
+    }
+  }
+
+  // Fallback for inbound links
+  if (keywordLinksIn.length === 0 && linksIn.length > 0) {
+    // First try using categories from outbound links
     const outboundCategorySet = new Set<string>();
     for (const l of keywordLinksOut) {
       const cat = normalizeCategory(l.category);
@@ -448,11 +477,11 @@ export function filterLinksForKeyword(
           (parent && cat && outboundCategorySet.has(`${parent}/${cat}`))
         );
       });
-      keywordLinksInFinal = byCategory.length > 0 ? byCategory : linksIn;
+      keywordLinksIn = byCategory.length > 0 ? byCategory : linksIn;
     } else {
-      keywordLinksInFinal = linksIn;
+      keywordLinksIn = linksIn;
     }
   }
   
-  return { keywordLinksIn: keywordLinksInFinal, keywordLinksOut };
+  return { keywordLinksIn, keywordLinksOut };
 }
