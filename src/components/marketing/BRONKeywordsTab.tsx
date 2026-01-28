@@ -302,8 +302,9 @@ export const BRONKeywordsTab = memo(({
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
-  const [hasReceivedData, setHasReceivedData] = useState(false);
-  const prevDomainRef = useRef<string | undefined>(undefined);
+  // Initialize based on whether we already have keywords (from cache)
+  const [hasReceivedData, setHasReceivedData] = useState(() => keywords.length > 0);
+  const prevDomainRef = useRef<string | undefined>(selectedDomain);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -387,14 +388,17 @@ export const BRONKeywordsTab = memo(({
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
   const trackingKeywords = mergedKeywords.filter(k => k.status === 'tracking_only' || String(k.id).startsWith('serp_'));
 
-  // Reset fetched URLs and hasReceivedData when domain changes
+  // Reset fetched URLs when domain changes, but preserve hasReceivedData if keywords exist (from cache)
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       fetchedUrlsRef.current = new Set();
-      setHasReceivedData(false);
+      // Only reset hasReceivedData if we don't have cached keywords for the new domain
+      // The keywords prop will be hydrated from cache synchronously by useBronApi.selectDomain
+      // so if keywords.length > 0, we already have cached data to show
+      setHasReceivedData(keywords.length > 0);
       prevDomainRef.current = selectedDomain;
     }
-  }, [selectedDomain]);
+  }, [selectedDomain, keywords.length]);
 
   // Mark data as received when keywords arrive
   useEffect(() => {
