@@ -124,7 +124,7 @@ const KeywordListItem = memo(({
     const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
     
     return (
-      <div key={kw.id} style={{ contain: 'layout style paint' }}>
+      <div key={kw.id} style={{ contain: 'layout style' }}>
         <BronKeywordCard
           keyword={kw}
           serpData={serpData}
@@ -164,7 +164,7 @@ const KeywordListItem = memo(({
   };
 
   return (
-    <div style={{ contain: 'layout style paint' }}>
+    <div style={{ contain: 'layout style' }}>
       {renderKeyword(cluster.parent, false, cluster.children.length)}
       {cluster.children.length > 0 && (
         <div className="border-l-2 border-hover-accent/20 ml-2">
@@ -662,7 +662,7 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : isLoading && keywords.length === 0 ? (
+          ) : mergedKeywords.length === 0 && isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-20 w-full" />
