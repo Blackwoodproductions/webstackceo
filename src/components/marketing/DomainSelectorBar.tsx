@@ -65,10 +65,11 @@ export function DomainSelectorBar({
   
   return (
     <div 
-      className="relative border-x border-border bg-gradient-to-r from-card via-card/98 to-primary/5 sticky z-30 max-w-[1480px] mx-auto"
+      className="relative border-x border-b border-border bg-card sticky z-40 max-w-[1480px] mx-auto"
       style={{ 
         contain: 'layout style',
         top: 'calc(var(--app-navbar-height, 64px) + var(--vi-dashboard-header-height, 0px))',
+        background: 'hsl(var(--card))',
       }}
       data-no-theme-transition
     >
