@@ -111,8 +111,6 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   // Load domain-specific data when domain changes
   useEffect(() => {
     let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
 
@@ -122,31 +120,28 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       setScreenshotUrl(null);
       setDomainInfo(null);
 
-      // Check for existing screenshot first, then capture if needed
-      const hasExisting = await getExistingScreenshot(selectedDomain);
-      if (!hasExisting && !cancelled) {
-        // Capture new screenshot in background
-        captureScreenshot(selectedDomain);
-      }
+      // Check for existing screenshot in background (don't block)
+      getExistingScreenshot(selectedDomain).then((hasExisting) => {
+        if (!hasExisting && !cancelled) {
+          captureScreenshot(selectedDomain);
+        }
+      });
 
-      // Fetch domain info first
+      // Fetch domain info first (needed for ID-based link fetching)
       const info = await bronApi.fetchDomain(selectedDomain);
       if (!cancelled && info) setDomainInfo(info);
 
-      // Fetch keywords immediately (no delay for first critical data)
+      // Fetch all critical data in parallel for faster loading
       if (cancelled) return;
-      await bronApi.fetchKeywords(selectedDomain);
+      await Promise.all([
+        bronApi.fetchKeywords(selectedDomain),
+        bronApi.fetchSerpReport(selectedDomain),
+        bronApi.fetchSerpList(selectedDomain),
+      ]);
       
-      // Stagger remaining requests
-      await sleep(150);
+      // Fetch pages separately (lower priority)
       if (cancelled) return;
-      await bronApi.fetchPages(selectedDomain);
-      await sleep(150);
-      if (cancelled) return;
-      await bronApi.fetchSerpReport(selectedDomain);
-      await sleep(150);
-      if (cancelled) return;
-      await bronApi.fetchSerpList(selectedDomain);
+      bronApi.fetchPages(selectedDomain);
     };
 
     loadCore();
@@ -156,38 +151,33 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain, captureScreenshot, getExistingScreenshot]);
 
-  // Load link reports when the Links or Keywords tab is opened
+  // Load link reports eagerly (in parallel) for faster dashboard loading
   useEffect(() => {
     let cancelled = false;
-    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
     const loadLinks = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
-      // Load links for both Links tab AND Keywords tab (for per-keyword citation display)
-      if (activeTab !== "links" && activeTab !== "keywords") return;
-      
-      // Don't reload if we already have data
-      if (bronApi.linksIn.length > 0 && bronApi.linksOut.length > 0) return;
 
-      // Prevent duplicate requests (domainInfo.id changes can re-trigger this effect)
+      // Prevent duplicate requests for the same domain
       if (linksRequestedForDomainRef.current === selectedDomain) return;
       linksRequestedForDomainRef.current = selectedDomain;
 
       // Use domain ID if available (preferred by the API)
       const domainId = domainInfo?.id;
-      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}, tab: ${activeTab}`);
+      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}`);
       
-      await bronApi.fetchLinksIn(selectedDomain, domainId);
-      await sleep(260);
-      if (cancelled) return;
-      await bronApi.fetchLinksOut(selectedDomain, domainId);
+      // Fetch both link types in parallel for faster loading
+      await Promise.all([
+        bronApi.fetchLinksIn(selectedDomain, domainId),
+        bronApi.fetchLinksOut(selectedDomain, domainId),
+      ]);
     };
 
     loadLinks();
     return () => {
       cancelled = true;
     };
-  }, [bronApi.isAuthenticated, selectedDomain, activeTab, domainInfo?.id, bronApi.linksIn.length, bronApi.linksOut.length]);
+  }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
   if (isAuthenticating) {
     return (
