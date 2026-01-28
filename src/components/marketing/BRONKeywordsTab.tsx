@@ -521,7 +521,7 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100"
             onClick={() => expandKeyword(kw)}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {/* Page Speed Indicator - Far Left */}
               <div className="flex-shrink-0">
                 {(() => {
@@ -559,8 +559,8 @@ export const BRONKeywordsTab = ({
                 </span>
               </div>
 
-              {/* Keyword Text - only show keyword portion (before colon if present) */}
-              <div className="min-w-0 max-w-md">
+              {/* Keyword Text - with left padding for alignment */}
+              <div className="min-w-0 w-64 pl-2">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -571,33 +571,46 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* SERP Rankings - Right after keyword */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {googlePos !== null && (
-                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
-                    <span className="font-semibold">Google</span>
-                    <span className="text-sm font-bold">#{googlePos}</span>
-                    {googlePos <= 10 ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : googlePos <= 20 ? (
-                      <Minus className="w-3.5 h-3.5 text-amber-400" />
-                    ) : (
-                      <TrendingDown className="w-3.5 h-3.5 text-red-400" />
-                    )}
-                  </div>
-                )}
-                {bingPos !== null && (
-                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(bingPos).bg} ${getPositionStyle(bingPos).text} border`}>
-                    <span className="font-semibold">Bing</span>
-                    <span className="text-sm font-bold">#{bingPos}</span>
-                  </div>
-                )}
-                {yahooPos !== null && (
-                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(yahooPos).bg} ${getPositionStyle(yahooPos).text} border`}>
-                    <span className="font-semibold">Yahoo</span>
-                    <span className="text-sm font-bold">#{yahooPos}</span>
-                  </div>
-                )}
+              {/* SERP Rankings - 3 Column Layout with Headers */}
+              <div className="flex-shrink-0 grid grid-cols-3 gap-4 text-center min-w-[180px]">
+                {/* Google Column */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
+                  {googlePos !== null ? (
+                    <div className={`flex items-center gap-1 ${getPositionStyle(googlePos).text}`}>
+                      <span className="text-lg font-bold">#{googlePos}</span>
+                      {googlePos <= 10 ? (
+                        <TrendingUp className="w-3 h-3 text-emerald-400" />
+                      ) : googlePos <= 20 ? (
+                        <Minus className="w-3 h-3 text-amber-400" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3 text-red-400" />
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                  )}
+                </div>
+                
+                {/* Bing Column */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
+                  {bingPos !== null ? (
+                    <span className={`text-lg font-bold ${getPositionStyle(bingPos).text}`}>#{bingPos}</span>
+                  ) : (
+                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                  )}
+                </div>
+                
+                {/* Yahoo Column */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
+                  {yahooPos !== null ? (
+                    <span className={`text-lg font-bold ${getPositionStyle(yahooPos).text}`}>#{yahooPos}</span>
+                  ) : (
+                    <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                  )}
+                </div>
               </div>
 
               {/* Keyword Metrics from DataForSEO - Between Rankings and Links */}
