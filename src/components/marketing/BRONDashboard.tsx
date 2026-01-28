@@ -43,7 +43,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
       
       // Add a client-side timeout for the entire auth check
       const timeoutPromise = new Promise<boolean>((_, reject) => {
-        setTimeout(() => reject(new Error("Connection timed out")), 15000);
+        // Keep this higher than the backend auth timeout (can be slow)
+        setTimeout(() => reject(new Error("Connection timed out")), 35000);
       });
       
       try {
