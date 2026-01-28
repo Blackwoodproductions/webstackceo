@@ -46,6 +46,10 @@ export interface BronKeyword {
   resfb?: string;
   resfeedtext?: string; // HTML content
   createdDate?: string;
+  // Additional title fields from supporting keywords
+  restitle?: string; // Title field used in supporting keywords
+  resshorttext?: string; // Short description
+  resfulltext?: string; // Full content
   // Cluster/hierarchy fields
   parent_keyword_id?: number | string;
   is_supporting?: boolean | number;

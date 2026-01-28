@@ -125,7 +125,7 @@ const KeywordListItem = memo(({
     const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
     
     return (
-      <div key={kw.id} style={{ contain: 'layout style' }}>
+      <div key={kw.id} style={{ contain: 'layout style paint' }}>
         <BronKeywordCard
           keyword={kw}
           serpData={serpData}
@@ -166,21 +166,14 @@ const KeywordListItem = memo(({
   };
 
   return (
-    <div style={{ contain: 'layout style' }}>
+    <div style={{ contain: 'layout style paint' }}>
       {/* Parent keyword: isNested=false, isMainKeyword=true if has children */}
       {renderKeyword(cluster.parent, false, cluster.children.length > 0, cluster.children.length)}
       {cluster.children.length > 0 && (
-        <>
-          {/*
-            IMPORTANT: Do not indent the entire row for supporting keywords.
-            Indentation should affect only the keyword text column so the fixed
-            columns (PageSpeed, rankings, etc.) stay perfectly aligned.
-          */}
-          <div>
-            {/* Child keywords: isNested=true, isMainKeyword=false */}
-            {cluster.children.map(child => renderKeyword(child, true, false))}
-          </div>
-        </>
+        <div style={{ contain: 'layout style' }}>
+          {/* Child keywords: isNested=true, isMainKeyword=false */}
+          {cluster.children.map(child => renderKeyword(child, true, false))}
+        </div>
       )}
     </div>
   );

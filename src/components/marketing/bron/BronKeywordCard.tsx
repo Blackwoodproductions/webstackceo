@@ -48,20 +48,24 @@ interface BronKeywordCardProps {
 export function getKeywordDisplayText(kw: BronKeyword): string {
   // Check all possible text fields from BRON API
   // Different BRON packages may use different field names
+  
+  // Primary fields
   if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle;
   if (kw.keyword && kw.keyword.trim()) return kw.keyword;
   if (kw.metatitle && kw.metatitle.trim()) return kw.metatitle;
   
-  // Some BRON packages use 'title' or 'name' fields
+  // restitle is commonly used for supporting keywords
   const kwAny = kw as unknown as Record<string, unknown>;
+  if (typeof kwAny.restitle === 'string' && kwAny.restitle.trim()) return kwAny.restitle;
+  
+  // Other possible title fields
   if (typeof kwAny.title === 'string' && kwAny.title.trim()) return kwAny.title;
   if (typeof kwAny.name === 'string' && kwAny.name.trim()) return kwAny.name;
   if (typeof kwAny.keyword_text === 'string' && kwAny.keyword_text.trim()) return kwAny.keyword_text;
   if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text;
   if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase;
   
-  // Try to extract from resfeedtext HTML content FIRST (before URL fallback)
-  // This is the primary source for domains like seolocal.it.com
+  // Try to extract from resfeedtext HTML content
   if (kw.resfeedtext) {
     const decoded = kw.resfeedtext
       .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
@@ -69,16 +73,12 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
       .replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
       .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—');
     
-    // Try h3 first (common in BRON content), then h1, then h2, then title
-    const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
-    if (h3Match && h3Match[1] && h3Match[1].trim().length > 3) {
-      const title = h3Match[1].trim();
-      // Clean up common prefixes like "Benefits of", "Guide to", etc.
-      return title;
-    }
-    
+    // Try h1 first (main title), then h3, h2, title
     const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
     if (h1Match && h1Match[1] && h1Match[1].trim().length > 3) return h1Match[1].trim();
+    
+    const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
+    if (h3Match && h3Match[1] && h3Match[1].trim().length > 3) return h3Match[1].trim();
     
     const h2Match = decoded.match(/<h2[^>]*>([^<]+)<\/h2>/i);
     if (h2Match && h2Match[1] && h2Match[1].trim().length > 3) return h2Match[1].trim();
@@ -89,13 +89,11 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
   
   // Check linkouturl for keyword slug
   if (kw.linkouturl) {
-    // Extract last path segment as keyword hint
     const urlPath = kw.linkouturl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
     const lastSegment = urlPath.split('/').pop();
     if (lastSegment && lastSegment.length > 2) {
-      // Remove trailing ID pattern like "-568071bc"
-      const cleanedSegment = lastSegment.replace(/-\d+bc$/, '');
-      // Convert slug to readable text: "best-dentist-port-coquitlam" -> "Best Dentist Port Coquitlam"
+      // Remove trailing ID pattern like "-15134" or "-568071bc"
+      const cleanedSegment = lastSegment.replace(/-\d+bc$/, '').replace(/-\d+$/, '');
       const readable = cleanedSegment
         .replace(/-/g, ' ')
         .replace(/_/g, ' ')
@@ -437,7 +435,7 @@ export const BronKeywordCard = memo(({
   return (
     <div
       className={deleted ? 'opacity-50' : ''}
-      style={{ contain: 'layout style', willChange: 'auto' }}
+      style={{ contain: 'layout style paint' }}
     >
       <div 
         className={`
