@@ -233,33 +233,61 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, []);
 
-  const callApi = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
-    try {
-      const { data, error } = await supabase.functions.invoke("bron-rsapi", {
-        body: { action, ...params },
-      });
+  const callApi = useCallback(async (action: string, params: Record<string, unknown> = {}, retries = 2) => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const { data, error } = await supabase.functions.invoke("bron-rsapi", {
+          body: { action, ...params },
+        });
 
-      if (error) {
-        const message = await formatInvokeError(error);
-        console.error("BRON API error:", error);
-        throw new Error(message);
+        if (error) {
+          const message = await formatInvokeError(error);
+          console.error("BRON API error:", error);
+          throw new Error(message);
+        }
+
+        // Handle rate limiting with retry
+        if (data?.rateLimited && attempt < retries) {
+          const waitTime = (data?.retryAfter || 3) * 1000;
+          console.log(`[BRON] Rate limited, waiting ${waitTime}ms before retry...`);
+          await new Promise(r => setTimeout(r, waitTime));
+          continue;
+        }
+
+        return data;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.error(`BRON API call error (attempt ${attempt + 1}/${retries + 1}):`, err);
+        
+        // Only retry on network/timeout errors, not on 4xx errors
+        const isRetryable = lastError.message.includes('timed out') || 
+                           lastError.message.includes('network') ||
+                           lastError.message.includes('fetch');
+        
+        if (!isRetryable || attempt >= retries) {
+          throw lastError;
+        }
+        
+        // Exponential backoff: 1s, 2s
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
       }
-
-      return data;
-    } catch (err) {
-      console.error("BRON API call error:", err);
-      throw err;
     }
+    
+    throw lastError || new Error("BRON API call failed");
   }, [formatInvokeError]);
 
   const verifyAuth = useCallback(async (): Promise<boolean> => {
     return withPending(async () => {
       try {
-        const result = await callApi("verifyAuth");
+        // Quick auth check with 1 retry
+        const result = await callApi("verifyAuth", {}, 1);
         const authenticated = result?.success === true;
         setIsAuthenticated(authenticated);
         return authenticated;
-      } catch {
+      } catch (err) {
+        console.warn("[BRON] Auth verification failed:", err);
         setIsAuthenticated(false);
         return false;
       }
