@@ -213,13 +213,24 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
           domain ? fetchSubscription(domain) : Promise.resolve(null),
         ]);
 
-        // Process health check
+        // Process health check - be very permissive about what we consider "healthy"
         if (healthResult.status === 'fulfilled') {
           const healthRes = healthResult.value;
-          if (healthRes?.success || healthRes?.data?.status === "healthy" || healthRes?.status === "healthy" || healthRes?.status === "ok") {
+          // Check multiple possible success indicators
+          const isHealthy = 
+            healthRes?.success === true || 
+            healthRes?.message === "success" ||
+            healthRes?.data?.status === "healthy" || 
+            healthRes?.status === "healthy" || 
+            healthRes?.status === "ok" ||
+            healthRes?.status_code === 200 ||
+            (healthRes?.data && !healthRes?.error);
+          
+          if (isHealthy) {
             setIsConnected(true);
             setHealth(healthRes.data || healthRes);
           } else {
+            console.error("[CADE] Health check returned unhealthy:", healthRes);
             setError("CADE API is not responding properly");
             setIsLoading(false);
             setLoadingPhase(null);
