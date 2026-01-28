@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 // Extended scopes for all Google services including Site Verification
 const EXTENDED_GOOGLE_SCOPES = [
@@ -14,6 +15,11 @@ const EXTENDED_GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/adwords',
   'https://www.googleapis.com/auth/business.manage',
 ].join(' ');
+
+// Token refresh buffer - refresh 10 minutes before expiry
+const TOKEN_REFRESH_BUFFER_MS = 10 * 60 * 1000;
+// Check interval - every 2 minutes
+const TOKEN_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
 interface GoogleProfile {
   name?: string;
@@ -32,6 +38,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   checkGoogleTokenValidity: () => boolean;
+  refreshGoogleToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +63,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [googleProfile, setGoogleProfile] = useState<GoogleProfile | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isReauthPending, setIsReauthPending] = useState(false);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isRefreshingRef = useRef(false);
+
+  // Get token expiry time from localStorage
+  const getTokenExpiry = useCallback((): number | null => {
+    const tokenKeys = ['unified_google_expiry', 'gsc_token_expiry', 'ga_token_expiry'];
+    for (const key of tokenKeys) {
+      const expiryVal = localStorage.getItem(key);
+      if (expiryVal) {
+        return parseInt(expiryVal, 10);
+      }
+    }
+    return null;
+  }, []);
 
   // Check if Google tokens are still valid
   const checkGoogleTokenValidity = useCallback((): boolean => {
@@ -71,14 +92,121 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       if (tokenVal && expiryVal) {
         const expiryTime = parseInt(expiryVal, 10);
-        // Token valid if more than 5 minutes remaining
-        if (Date.now() < expiryTime - 300000) {
+        // Token valid if more than 1 minute remaining
+        if (Date.now() < expiryTime - 60000) {
           return true;
         }
       }
     }
     return false;
   }, []);
+
+  // Refresh Google token using refresh_token from database
+  const refreshGoogleToken = useCallback(async (): Promise<boolean> => {
+    if (isRefreshingRef.current || !user?.id) return false;
+    isRefreshingRef.current = true;
+    
+    try {
+      console.log('[AuthContext] Attempting to refresh Google token...');
+      
+      // Get refresh token from database
+      const { data: tokenData, error } = await supabase
+        .from('oauth_tokens')
+        .select('refresh_token, access_token')
+        .eq('user_id', user.id)
+        .eq('provider', 'google')
+        .single();
+
+      if (error || !tokenData?.refresh_token) {
+        console.log('[AuthContext] No refresh token available, requiring re-auth');
+        return false;
+      }
+
+      // Call edge function to refresh the token
+      const response = await supabase.functions.invoke('google-oauth-token', {
+        body: {
+          refreshToken: tokenData.refresh_token,
+          grantType: 'refresh_token'
+        }
+      });
+
+      if (response.error || !response.data?.access_token) {
+        console.error('[AuthContext] Token refresh failed:', response.error);
+        return false;
+      }
+
+      const newAccessToken = response.data.access_token;
+      const expiresIn = response.data.expires_in || 3600;
+      const newExpiry = Date.now() + (expiresIn * 1000);
+      const expiryStr = newExpiry.toString();
+
+      // Update localStorage with new tokens
+      localStorage.setItem('unified_google_token', newAccessToken);
+      localStorage.setItem('unified_google_expiry', expiryStr);
+      localStorage.setItem('ga_access_token', newAccessToken);
+      localStorage.setItem('ga_token_expiry', expiryStr);
+      localStorage.setItem('gsc_access_token', newAccessToken);
+      localStorage.setItem('gsc_token_expiry', expiryStr);
+      localStorage.setItem('google_ads_access_token', newAccessToken);
+      localStorage.setItem('google_ads_token_expiry', expiryStr);
+      localStorage.setItem('gmb_access_token', newAccessToken);
+      localStorage.setItem('gmb_token_expiry', expiryStr);
+
+      // Update database
+      await supabase
+        .from('oauth_tokens')
+        .update({
+          access_token: newAccessToken,
+          expires_at: new Date(newExpiry).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+        .eq('provider', 'google');
+
+      console.log('[AuthContext] Token refreshed successfully, expires in', expiresIn, 'seconds');
+      setIsGoogleConnected(true);
+      setIsReauthPending(false);
+
+      // Dispatch sync event
+      window.dispatchEvent(new CustomEvent('google-auth-synced', {
+        detail: { access_token: newAccessToken, expiry: newExpiry }
+      }));
+
+      return true;
+    } catch (err) {
+      console.error('[AuthContext] Token refresh error:', err);
+      return false;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [user?.id]);
+
+  // Schedule automatic token refresh before expiry
+  const scheduleTokenRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+
+    const expiry = getTokenExpiry();
+    if (!expiry) return;
+
+    const timeUntilRefresh = expiry - Date.now() - TOKEN_REFRESH_BUFFER_MS;
+    
+    if (timeUntilRefresh > 0) {
+      console.log('[AuthContext] Scheduling token refresh in', Math.round(timeUntilRefresh / 60000), 'minutes');
+      refreshTimeoutRef.current = setTimeout(async () => {
+        const success = await refreshGoogleToken();
+        if (success) {
+          scheduleTokenRefresh(); // Schedule next refresh
+        }
+      }, timeUntilRefresh);
+    } else if (timeUntilRefresh > -TOKEN_REFRESH_BUFFER_MS) {
+      // Token is about to expire, refresh now
+      refreshGoogleToken().then(success => {
+        if (success) scheduleTokenRefresh();
+      });
+    }
+  }, [getTokenExpiry, refreshGoogleToken]);
 
   // Sync Google tokens to localStorage and database
   const syncGoogleTokens = useCallback(async (session: Session) => {
@@ -138,10 +266,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       window.dispatchEvent(new CustomEvent('google-auth-synced', {
         detail: { access_token: session.provider_token, expiry: expiryTime }
       }));
+
+      // Schedule automatic token refresh
+      scheduleTokenRefresh();
     } catch (err) {
       console.error('[AuthContext] Failed to store token in database:', err);
     }
-  }, []);
+  }, [scheduleTokenRefresh]);
 
   // Check admin status
   const checkAdminStatus = useCallback(async (userId: string) => {
@@ -153,7 +284,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, []);
 
-  // Load stored profile and check initial token validity
+  // Load stored profile, check initial token validity, and schedule refresh
   useEffect(() => {
     const storedProfile = localStorage.getItem('unified_google_profile');
     if (storedProfile) {
@@ -164,30 +295,65 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }
     // Check initial Google connection status
-    setIsGoogleConnected(checkGoogleTokenValidity());
-  }, [checkGoogleTokenValidity]);
+    const isValid = checkGoogleTokenValidity();
+    setIsGoogleConnected(isValid);
+    
+    // If connected, schedule automatic token refresh
+    if (isValid) {
+      scheduleTokenRefresh();
+    }
+  }, [checkGoogleTokenValidity, scheduleTokenRefresh]);
 
-  // Periodic token validity check - triggers re-auth when tokens expire
+  // Periodic token validity check - triggers refresh or re-auth when tokens expire
   useEffect(() => {
-    const checkInterval = setInterval(() => {
+    const checkInterval = setInterval(async () => {
       const isValid = checkGoogleTokenValidity();
       const wasConnected = isGoogleConnected;
       
       if (wasConnected && !isValid && !isReauthPending) {
-        console.log('[AuthContext] Google tokens expired - triggering re-auth');
-        setIsGoogleConnected(false);
-        setIsReauthPending(true);
+        console.log('[AuthContext] Google tokens expiring - attempting refresh...');
         
-        // Dispatch event for components to react
-        window.dispatchEvent(new CustomEvent('google-auth-expired'));
+        // Try to refresh first
+        const refreshed = await refreshGoogleToken();
+        
+        if (!refreshed) {
+          console.log('[AuthContext] Refresh failed - prompting for re-auth');
+          setIsGoogleConnected(false);
+          setIsReauthPending(true);
+          
+          // Clear expired tokens
+          ['unified_google_token', 'unified_google_expiry', 'ga_access_token', 
+           'ga_token_expiry', 'gsc_access_token', 'gsc_token_expiry',
+           'google_ads_access_token', 'google_ads_token_expiry',
+           'gmb_access_token', 'gmb_token_expiry'].forEach(key => localStorage.removeItem(key));
+          
+          // Show toast prompting re-login
+          toast({
+            title: "Google Session Expired",
+            description: "Please sign in again to continue using Google services.",
+            variant: "destructive",
+          });
+          
+          // Dispatch event for components to react
+          window.dispatchEvent(new CustomEvent('google-auth-expired'));
+        }
       } else if (isValid && !wasConnected) {
         setIsGoogleConnected(true);
         setIsReauthPending(false);
       }
-    }, 30000); // Check every 30 seconds
+    }, TOKEN_CHECK_INTERVAL_MS);
 
     return () => clearInterval(checkInterval);
-  }, [checkGoogleTokenValidity, isGoogleConnected, isReauthPending]);
+  }, [checkGoogleTokenValidity, isGoogleConnected, isReauthPending, refreshGoogleToken]);
+
+  // Cleanup scheduled refresh on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize auth state
   useEffect(() => {
@@ -330,6 +496,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signOut,
     refreshSession,
     checkGoogleTokenValidity,
+    refreshGoogleToken,
   };
 
   return (
