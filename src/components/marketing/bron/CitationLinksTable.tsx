@@ -112,11 +112,11 @@ export const CitationLinksTable = memo(
     }
 
     return (
-      <div className="rounded-lg border border-border/40 overflow-hidden bg-slate-900/60">
+      <div className="rounded-lg border border-border/40 overflow-hidden bg-card">
         {/* Header - matching reference exactly */}
-        <div className="bg-slate-800/90 px-5 py-3 border-b border-slate-700/50">
+        <div className="bg-muted/80 px-5 py-3 border-b border-border/50">
           <div 
-            className="grid gap-4 text-[13px] font-semibold text-slate-300"
+            className="grid gap-4 text-[13px] font-semibold text-muted-foreground"
             style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
           >
             <span>Domain-Keyword</span>
@@ -141,7 +141,7 @@ export const CitationLinksTable = memo(
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-2.5 text-xs text-slate-400 text-center border-t border-slate-700/40 bg-slate-800/50">
+        <div className="px-5 py-2.5 text-xs text-muted-foreground text-center border-t border-border/40 bg-muted/50">
           Showing {rows.length} of {links.length} link partners
         </div>
       </div>
@@ -175,25 +175,25 @@ const CitationLinkRow = memo(
     return (
       <div 
         className={`
-          grid gap-4 px-5 py-4 items-center border-b border-slate-700/30
-          ${isHighlighted ? 'border-l-[3px] border-l-cyan-400 bg-slate-800/30' : 'bg-transparent'}
+          grid gap-4 px-5 py-4 items-center border-b border-border/30
+          ${isHighlighted ? 'border-l-[3px] border-l-cyan-400 bg-accent/30' : 'bg-transparent'}
         `}
         style={{ gridTemplateColumns: '1.8fr 1.6fr 0.8fr 1fr 0.9fr' }}
       >
         {/* Domain-Keyword Column */}
         <div className="min-w-0">
-          <div className="font-medium text-slate-100 text-[14px] truncate" title={displayDomain}>
+          <div className="font-medium text-foreground text-[14px] truncate" title={displayDomain}>
             {displayDomain || "Unknown Domain"}
           </div>
-          <div className="text-[13px] text-slate-400 italic truncate mt-0.5" title={keywordText}>
+          <div className="text-[13px] text-muted-foreground italic truncate mt-0.5" title={keywordText}>
             {keywordText.length > 50 ? `${keywordText.slice(0, 50)}...` : keywordText}
           </div>
         </div>
 
-        {/* Category Column - Dark slate pill with centered multiline text */}
+        {/* Category Column - themed pill with centered multiline text */}
         <div className="flex justify-center">
           <span 
-            className="inline-flex items-center justify-center px-4 py-2 rounded-md text-[12px] font-medium text-center bg-slate-700/90 text-slate-200 leading-snug max-w-[220px]"
+            className="inline-flex items-center justify-center px-4 py-2 rounded-md text-[12px] font-medium text-center bg-muted text-muted-foreground leading-snug max-w-[220px]"
             title={categoryDisplay}
           >
             <span className="text-center">{categoryDisplay}</span>
@@ -202,7 +202,7 @@ const CitationLinkRow = memo(
 
         {/* Reciprocal Column */}
         <div className="text-center">
-          <span className="text-[14px] text-slate-400 italic">
+          <span className="text-[14px] text-muted-foreground italic">
             {isReciprocal ? "Yes" : "No"}
           </span>
         </div>
