@@ -93,8 +93,8 @@ export const BronCitationAnalytics = memo(({
   return (
     <div 
       data-no-theme-transition
-      className="rounded-xl border border-border/60 bg-card/60 overflow-hidden"
-      style={{ contain: 'layout paint' }}
+      className="rounded-xl border border-border/60 bg-card/60"
+      style={{ contain: 'layout style' }}
     >
       {/* Header - compact with Save/Edit buttons */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-transparent">
@@ -138,8 +138,7 @@ export const BronCitationAnalytics = memo(({
             </Button>
           )}
           <select 
-            className="bg-popover border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 z-50 cursor-pointer"
-            style={{ contain: 'layout', willChange: 'auto' }}
+            className="bg-popover border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 cursor-pointer relative"
             value={viewMode}
             onChange={(e) => {
               e.stopPropagation();
@@ -250,8 +249,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">View:</span>
                   <select
-                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer"
-                    style={{ contain: 'layout', willChange: 'auto' }}
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground cursor-pointer"
                     onClick={(e) => e.stopPropagation()}
                     value={viewMode}
                     onChange={(e) => {
@@ -266,8 +264,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Relevance:</span>
                   <select
-                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer"
-                    style={{ contain: 'layout', willChange: 'auto' }}
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground cursor-pointer"
                     onClick={(e) => e.stopPropagation()}
                     value={relevanceFilter}
                     onChange={(e) => {
@@ -285,8 +282,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Type:</span>
                   <select 
-                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-50 cursor-pointer" 
-                    style={{ contain: 'layout', willChange: 'auto' }}
+                    className="bg-popover border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground cursor-pointer" 
                     onClick={(e) => e.stopPropagation()}
                     value={reciprocalFilter}
                     onChange={(e) => {
