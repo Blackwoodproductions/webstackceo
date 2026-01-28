@@ -182,7 +182,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   
   return (
     <div 
-      className="relative w-12 h-12 flex items-center justify-center"
+      className="relative w-12 h-12 flex items-center justify-center shrink-0"
       style={{ contain: 'layout paint' }}
       title={updating ? 'Updating...' : showPending ? 'Pending...' : `Score: ${score}/100`}
     >
@@ -452,7 +452,7 @@ export const BronKeywordCard = memo(({
         <div className="p-4 cursor-pointer overflow-x-auto" onClick={onToggleExpand}>
           <div className="flex items-center w-full justify-between" style={{ minWidth: '1050px' }}>
             {/* Column 1: Page Speed Gauge */}
-            <div className="w-[70px] flex-shrink-0 flex justify-center">
+            <div className="w-[70px] flex-shrink-0 flex items-center justify-center">
               <PageSpeedGauge 
                 score={pageSpeedScore?.mobileScore || 0}
                 loading={pageSpeedScore?.loading}

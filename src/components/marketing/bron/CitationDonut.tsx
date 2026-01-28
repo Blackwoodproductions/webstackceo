@@ -33,20 +33,22 @@ export const DonutChart = memo(({
     <div 
       className={`relative ${config.container}`}
       style={{ 
-        contain: 'layout style paint',
-        willChange: 'auto',
+        contain: 'layout paint',
       }}
+      data-no-theme-transition
     >
-      {/* Outer glow ring */}
-      <div 
-        className="absolute inset-0 rounded-full opacity-30"
+      {/* Outer ring (no blur filter — prevents GPU jank on mount) */}
+      <div
+        className="absolute inset-0 rounded-full opacity-20"
         style={{
-          background: `conic-gradient(from 0deg, ${segments.map((s, i) => `${s.color} ${i * (100 / segments.length)}%`).join(', ')}, ${segments[0]?.color || '#3B82F6'} 100%)`,
-          filter: 'blur(12px)',
+          background: `conic-gradient(from 0deg, ${segments
+            .map((s, i) => `${s.color} ${i * (100 / segments.length)}%`)
+            .join(', ')}, ${segments[0]?.color || 'hsl(var(--primary))'} 100%)`,
         }}
       />
       
-      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 relative z-10">
+      <svg viewBox="0 0 100 100" className="w-full h-full relative z-10" aria-hidden="true">
+        <g transform="rotate(-90 50 50)">
         {/* Background track */}
         <circle
           cx="50"
@@ -77,9 +79,7 @@ export const DonutChart = memo(({
               strokeDasharray={strokeDasharray}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{
-                filter: `drop-shadow(0 0 6px ${seg.color}50)`,
-              }}
+              // No per-segment filters (prevents expensive repaints)
             />
           );
         })}
@@ -92,6 +92,7 @@ export const DonutChart = memo(({
             <stop offset="100%" stopColor="hsl(var(--background))" stopOpacity="0.9" />
           </radialGradient>
         </defs>
+        </g>
       </svg>
       
       <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
