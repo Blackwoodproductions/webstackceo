@@ -311,6 +311,11 @@ export const BRONKeywordsTab = memo(({
   // Derive "has data" from keywords length directly - no intermediate state needed
   const hasReceivedData = keywords.length > 0;
   
+  // Debug: Log when keywords prop changes
+  useEffect(() => {
+    console.log(`[BRON KeywordsTab] Received ${keywords.length} keywords for domain: ${selectedDomain}`);
+  }, [keywords.length, selectedDomain]);
+  
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
   // Keep latest Set/object state in refs so callbacks can stay stable (prevents
