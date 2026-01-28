@@ -385,10 +385,15 @@ export const BRONKeywordsTab = ({
   }, [keywords]);
 
   // Helper to get movement indicator for a position
-  // Colors: Blue = no movement, Yellow = down, Orange with glow = up
+  // Colors: Blue = no movement/no data, Yellow = down, Orange with glow = up
   const getMovementIndicator = (currentPos: number | null, initialPos: number | null) => {
-    if (currentPos === null || initialPos === null) {
+    if (currentPos === null) {
       return { type: 'none' as const, color: 'text-muted-foreground', bgColor: '', glow: false };
+    }
+    
+    // If no historical data, default to blue (no movement known)
+    if (initialPos === null) {
+      return { type: 'same' as const, color: 'text-blue-400', bgColor: 'bg-blue-500/10', glow: false };
     }
     
     // Lower position number = better ranking
