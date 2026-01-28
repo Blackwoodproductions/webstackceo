@@ -29,7 +29,7 @@ export const BronCitationAnalytics = memo(({
   const oneWayCount = totalLinks - reciprocalCount;
   
   return (
-    <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden">
+    <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden" style={{ contain: 'layout style paint' }}>
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-border/30">
         <div className="flex items-center gap-2">
