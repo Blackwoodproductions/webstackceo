@@ -156,8 +156,8 @@ export interface UseBronApiReturn {
   fetchSerpReport: (domain: string) => Promise<void>;
   fetchSerpList: (domain: string) => Promise<void>;
   fetchSerpDetail: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
-  fetchLinksIn: (domain: string) => Promise<void>;
-  fetchLinksOut: (domain: string) => Promise<void>;
+  fetchLinksIn: (domain: string, domainId?: number | string) => Promise<void>;
+  fetchLinksOut: (domain: string, domainId?: number | string) => Promise<void>;
 }
 
 export function useBronApi(): UseBronApiReturn {
@@ -561,16 +561,18 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
-  const fetchLinksIn = useCallback(async (domain: string) => {
+  const fetchLinksIn = useCallback(async (domain: string, domainId?: number | string) => {
     setIsLoading(true);
     setLinksInError(null);
     try {
-      const result = await callApi("getLinksIn", { domain });
+      console.log(`[BRON] Fetching links-in for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
+      const result = await callApi("getLinksIn", { domain, domain_id: domainId });
       if (result?.success && result.data) {
         // API returns array directly or nested
         const links = Array.isArray(result.data)
           ? result.data
           : (result.data.links || result.data.items || []);
+        console.log(`[BRON] Links-in result: ${Array.isArray(links) ? links.length : 0} links`);
         setLinksIn(Array.isArray(links) ? links : []);
       } else if (result?.error) {
         setLinksInError(result.error || "Failed to fetch inbound links");
@@ -584,16 +586,18 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
-  const fetchLinksOut = useCallback(async (domain: string) => {
+  const fetchLinksOut = useCallback(async (domain: string, domainId?: number | string) => {
     setIsLoading(true);
     setLinksOutError(null);
     try {
-      const result = await callApi("getLinksOut", { domain });
+      console.log(`[BRON] Fetching links-out for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
+      const result = await callApi("getLinksOut", { domain, domain_id: domainId });
       if (result?.success && result.data) {
         // API returns array directly or nested
         const links = Array.isArray(result.data)
           ? result.data
           : (result.data.links || result.data.items || []);
+        console.log(`[BRON] Links-out result: ${Array.isArray(links) ? links.length : 0} links`);
         setLinksOut(Array.isArray(links) ? links : []);
       } else if (result?.error) {
         setLinksOutError(result.error || "Failed to fetch outbound links");

@@ -157,17 +157,21 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
       if (activeTab !== "links") return;
 
-      await bronApi.fetchLinksIn(selectedDomain);
+      // Use domain ID if available (preferred by the API)
+      const domainId = domainInfo?.id;
+      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}`);
+      
+      await bronApi.fetchLinksIn(selectedDomain, domainId);
       await sleep(260);
       if (cancelled) return;
-      await bronApi.fetchLinksOut(selectedDomain);
+      await bronApi.fetchLinksOut(selectedDomain, domainId);
     };
 
     loadLinks();
     return () => {
       cancelled = true;
     };
-  }, [bronApi.isAuthenticated, selectedDomain, activeTab]);
+  }, [bronApi.isAuthenticated, selectedDomain, activeTab, domainInfo?.id]);
 
   if (isAuthenticating) {
     return (
