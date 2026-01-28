@@ -101,7 +101,7 @@ export const BronCitationAnalytics = memo(({
           </span>
         </div>
         <select 
-          className="bg-card/80 border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors"
+          className="bg-card border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors z-30"
           value={viewMode}
           onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
           onClick={(e) => e.stopPropagation()}
@@ -208,7 +208,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">View:</span>
                   <select
-                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground"
+                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20"
                     onClick={(e) => e.stopPropagation()}
                     value={viewMode}
                     onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
@@ -220,7 +220,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Relevance:</span>
                   <select
-                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground"
+                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20"
                     onClick={(e) => e.stopPropagation()}
                     value={relevanceFilter}
                     onChange={(e) => setRelevanceFilter(e.target.value as RelevanceFilter)}
@@ -235,7 +235,7 @@ export const BronCitationAnalytics = memo(({
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] text-muted-foreground">Type:</span>
                   <select 
-                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground" 
+                    className="bg-card border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground z-20" 
                     onClick={(e) => e.stopPropagation()}
                     value={reciprocalFilter}
                     onChange={(e) => setReciprocalFilter(e.target.value as ReciprocalFilter)}

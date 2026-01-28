@@ -119,7 +119,10 @@ export const CitationLinksTable = memo(
       >
         {/* Header */}
         <div className="bg-muted/30 px-3 py-2 border-b border-border/50">
-          <div className="grid grid-cols-5 gap-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <div 
+            className="grid grid-cols-5 gap-2 text-[9px] font-semibold text-muted-foreground uppercase tracking-wider"
+            style={{ contain: 'layout' }}
+          >
             <span>Domain–Keyword</span>
             <span>Category</span>
             <span className="text-center">Reciprocal</span>
@@ -129,7 +132,10 @@ export const CitationLinksTable = memo(
         </div>
 
         {/* All rows - no scroll, show all */}
-        <div className="divide-y divide-border/30">
+        <div 
+          className="divide-y divide-border/30"
+          style={{ contain: 'layout' }}
+        >
           {rows.map(({ link, tier }, idx) => (
             <CitationLinkRow
               key={`citation-${idx}-${link.domain_name || link.domain || link.link || ""}`}

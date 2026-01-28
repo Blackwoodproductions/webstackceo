@@ -415,7 +415,7 @@ export const BronKeywordCard = memo(({
   return (
     <div
       className={deleted ? 'opacity-50' : ''}
-      style={{ contain: 'layout style paint', willChange: 'auto' }}
+      style={{ contain: 'layout style', willChange: 'auto' }}
     >
       <div 
         className={`
@@ -427,7 +427,7 @@ export const BronKeywordCard = memo(({
               : 'bg-primary/10 border-primary/25'
           }
         `}
-        style={{ contain: 'content' }}
+        style={{ contain: 'layout style' }}
       >
         {/* Header - Clickable */}
         <div className="p-4 cursor-pointer overflow-x-auto" onClick={onToggleExpand}>
