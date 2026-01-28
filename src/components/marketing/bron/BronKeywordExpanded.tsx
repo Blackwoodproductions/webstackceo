@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Edit2, Save, FileText, Sparkles } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronLink } from "@/hooks/use-bron-api";
 import { BronCitationAnalytics } from "./BronCitationAnalytics";
@@ -96,49 +96,19 @@ export const BronKeywordExpanded = memo(({
 
   return (
     <div 
-      className="border-t border-border/30 p-6 bg-background/50 space-y-4 no-theme-transition"
+      className="border-t border-border/30 p-4 bg-background/50 no-theme-transition"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Content Preview & Actions */}
-      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/30">
-        <div className="flex items-center gap-3">
-          <FileText className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium">Article Content</p>
-            <p className="text-xs text-muted-foreground">
-              {wordCount > 0 ? `${wordCount} words` : 'No content yet'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onSave}
-            disabled={isSaving}
-            className="h-8"
-          >
-            <Save className={`w-3.5 h-3.5 mr-1 ${isSaving ? 'animate-spin' : ''}`} />
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-          <Button
-            size="sm"
-            variant="default"
-            onClick={onOpenArticleEditor}
-            className="h-8"
-          >
-            <Edit2 className="w-3.5 h-3.5 mr-1" />
-            Edit
-          </Button>
-        </div>
-      </div>
-
-      {/* Citation Analytics - Only show cluster-related links */}
+      {/* Citation Analytics with integrated actions */}
       <BronCitationAnalytics
         keywordId={kw.id}
         keywordText={keywordText}
         linksIn={linksIn}
         linksOut={linksOut}
+        wordCount={wordCount}
+        isSaving={isSaving}
+        onSave={onSave}
+        onOpenArticleEditor={onOpenArticleEditor}
       />
     </div>
   );
