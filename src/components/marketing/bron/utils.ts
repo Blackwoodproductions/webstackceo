@@ -122,20 +122,57 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Check for explicit parent_keyword_id relationships (SEOM/BRON packages)
-  // Also check is_supporting and bubblefeedid flags
+  // Build parent-child relationships using multiple methods:
+  // 1. bubblefeedid: Supporting keywords have bubblefeedid pointing to parent's ID
+  // 2. supporting_keywords array: Parent keywords may have this array populated
+  // 3. parent_keyword_id: Legacy explicit relationship field
   const hasExplicitParent = new Map<number | string, number | string>();
   const isExplicitSupporting = new Set<number | string>();
+  const parentChildMap = new Map<number | string, BronKeyword[]>();
   
+  // First pass: Check bubblefeedid relationships (primary method from BRON API)
   for (const kw of contentKeywords) {
-    // Check parent_keyword_id first
-    if (kw.parent_keyword_id) {
+    // bubblefeedid is a numeric ID pointing to the parent keyword
+    if (kw.bubblefeedid && typeof kw.bubblefeedid !== 'boolean') {
+      const parentId = kw.bubblefeedid;
+      hasExplicitParent.set(kw.id, parentId);
+      isExplicitSupporting.add(kw.id);
+      
+      if (!parentChildMap.has(parentId)) {
+        parentChildMap.set(parentId, []);
+      }
+      parentChildMap.get(parentId)!.push(kw);
+    }
+    // Fallback: Check parent_keyword_id
+    else if (kw.parent_keyword_id) {
       hasExplicitParent.set(kw.id, kw.parent_keyword_id);
       isExplicitSupporting.add(kw.id);
+      
+      if (!parentChildMap.has(kw.parent_keyword_id)) {
+        parentChildMap.set(kw.parent_keyword_id, []);
+      }
+      parentChildMap.get(kw.parent_keyword_id)!.push(kw);
     }
-    // Also check is_supporting and bubblefeedid flags
-    else if (kw.is_supporting === true || kw.is_supporting === 1 || kw.bubblefeedid === true || kw.bubblefeedid === 1) {
-      isExplicitSupporting.add(kw.id);
+  }
+  
+  // Second pass: Check supporting_keywords arrays on parent keywords
+  for (const kw of contentKeywords) {
+    if (kw.supporting_keywords && Array.isArray(kw.supporting_keywords)) {
+      for (const supportingKw of kw.supporting_keywords) {
+        if (supportingKw.id && !hasExplicitParent.has(supportingKw.id)) {
+          hasExplicitParent.set(supportingKw.id, kw.id);
+          isExplicitSupporting.add(supportingKw.id);
+          
+          if (!parentChildMap.has(kw.id)) {
+            parentChildMap.set(kw.id, []);
+          }
+          // Find the actual keyword object from contentKeywords
+          const actualKw = contentKeywords.find(k => k.id === supportingKw.id);
+          if (actualKw) {
+            parentChildMap.get(kw.id)!.push(actualKw);
+          }
+        }
+      }
     }
   }
   
@@ -145,21 +182,16 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     isSupportingCount: isExplicitSupporting.size,
     totalContentKeywords: contentKeywords.length,
     usingApiClustering: hasExplicitParent.size > 0,
+    parentChildMapSize: parentChildMap.size,
   });
   
   if (hasExplicitParent.size > 0) {
-    // Use explicit API relationships (SEOM/BRON packages)
-    const parentChildMap = new Map<number | string, BronKeyword[]>();
+    // Use explicit API relationships (BRON packages with bubblefeedid)
     const assignedAsChild = new Set<number | string>();
     
-    for (const kw of contentKeywords) {
-      if (hasExplicitParent.has(kw.id)) {
-        const parentId = hasExplicitParent.get(kw.id)!;
-        if (!parentChildMap.has(parentId)) {
-          parentChildMap.set(parentId, []);
-        }
-        parentChildMap.get(parentId)!.push(kw);
-        assignedAsChild.add(kw.id);
+    for (const [, children] of parentChildMap) {
+      for (const child of children) {
+        assignedAsChild.add(child.id);
       }
     }
     
