@@ -153,7 +153,7 @@ function getMovementFromDelta(movement: number) {
   return { type: 'same' as const, color: 'text-muted-foreground', bgColor: 'bg-muted/20', delta: 0 };
 }
 
-// PageSpeed Gauge Component - fully static, no animations, no transforms that could cause reflow
+// PageSpeed Gauge Component - fully static (no CSS transforms/animations)
 const PageSpeedGauge = memo(({ score, loading, updating, error }: { 
   score: number; 
   loading?: boolean; 
@@ -166,11 +166,13 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   const showPending = !hasValidScore && !loading && !error;
   
   const getGaugeColor = () => {
-    if (showLoading || showPending) return { stroke: 'hsl(var(--muted))', text: 'text-muted-foreground' };
-    if (error) return { stroke: 'hsl(var(--muted))', text: 'text-muted-foreground' };
-    if (score >= 90) return { stroke: '#10b981', text: 'text-emerald-400' };
-    if (score >= 50) return { stroke: '#f59e0b', text: 'text-amber-400' };
-    return { stroke: '#ef4444', text: 'text-red-400' };
+    // Use design tokens only (HSL). No hard-coded colors.
+    if (showLoading || showPending || error) {
+      return { stroke: 'hsl(var(--muted))', textClass: 'text-muted-foreground' };
+    }
+    if (score >= 90) return { stroke: 'hsl(var(--primary))', textClass: 'text-foreground' };
+    if (score >= 50) return { stroke: 'hsl(var(--accent))', textClass: 'text-foreground' };
+    return { stroke: 'hsl(var(--destructive))', textClass: 'text-foreground' };
   };
   
   const colors = getGaugeColor();
@@ -181,47 +183,43 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   return (
     <div 
       className="relative w-12 h-12 flex items-center justify-center"
-      style={{ contain: 'strict' }}
+      style={{ contain: 'layout paint' }}
       title={updating ? 'Updating...' : showPending ? 'Pending...' : `Score: ${score}/100`}
     >
-      <svg 
-        width="48" 
-        height="48" 
-        viewBox="0 0 44 44"
-        style={{ transform: 'rotate(-90deg)' }}
-      >
-        {/* Background circle */}
-        <circle 
-          cx="22" cy="22" r="18" 
-          fill="none" 
-          stroke="hsl(var(--muted) / 0.3)" 
-          strokeWidth="3" 
-        />
-        {/* Progress circle - static, no CSS transitions */}
-        <circle
-          cx="22" cy="22" r="18" 
-          fill="none" 
-          strokeWidth="3" 
-          strokeLinecap="round"
-          stroke={colors.stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-        />
+      <svg width="48" height="48" viewBox="0 0 44 44" aria-hidden="true">
+        {/* Rotate via SVG attribute (not CSS transform) to avoid transform-driven repaints */}
+        <g transform="rotate(-90 22 22)">
+          {/* Background circle */}
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            stroke="hsl(var(--muted) / 0.3)"
+            strokeWidth="3"
+          />
+          {/* Progress circle - static, no transitions */}
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            strokeWidth="3"
+            strokeLinecap="round"
+            stroke={colors.stroke}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+          />
+        </g>
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         {showLoading || showPending ? (
           <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          <span className={`text-sm font-bold ${colors.text}`}>{error ? '—' : score}</span>
+          <span className={`text-sm font-bold ${colors.textClass}`}>{error ? '—' : score}</span>
         )}
       </div>
-      {/* Small dot indicator when background update in progress */}
-      {updating && hasValidScore && (
-        <div 
-          className="absolute w-2 h-2 rounded-full bg-cyan-500" 
-          style={{ top: 0, right: 0 }}
-        />
-      )}
+      {/* Intentionally no animated "updating" indicator to avoid flicker/jank */}
     </div>
   );
 }, (prev, next) => {
