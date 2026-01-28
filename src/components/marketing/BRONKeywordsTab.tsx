@@ -237,9 +237,9 @@ interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by clustering similar content keywords together
-// Strategy: For each content keyword, find the 2 most similar content keywords as children
-// Tracking-only keywords (from SERP) remain standalone and are NOT clustered
+// Group keywords by BRON's cluster ordering: every 3 consecutive content keywords form a cluster
+// (1 main + 2 supporting). This matches how BRON organizes keyword clusters.
+// Tracking-only keywords (from SERP) remain standalone and appear after clusters.
 function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -256,12 +256,9 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     }
   }
   
-  // Build clusters from content keywords using similarity
-  // Each content keyword will try to "claim" the 2 most similar keywords as children
-  const assignedAsChild = new Set<number | string>();
   const clusters: KeywordCluster[] = [];
   
-  // First, check if API provides explicit parent_keyword_id relationships
+  // First check if API provides explicit parent_keyword_id relationships
   const hasExplicitParent = new Map<number | string, number | string>();
   for (const kw of contentKeywords) {
     if (kw.parent_keyword_id) {
@@ -269,9 +266,10 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
     }
   }
   
-  // If we have explicit relationships, use them
   if (hasExplicitParent.size > 0) {
+    // Use explicit API relationships
     const parentChildMap = new Map<number | string, BronKeyword[]>();
+    const assignedAsChild = new Set<number | string>();
     
     for (const kw of contentKeywords) {
       if (hasExplicitParent.has(kw.id)) {
@@ -284,7 +282,6 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       }
     }
     
-    // Build clusters from explicit relationships
     for (const kw of contentKeywords) {
       if (!assignedAsChild.has(kw.id)) {
         const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
@@ -292,42 +289,22 @@ function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       }
     }
   } else {
-    // No explicit relationships - use text similarity clustering
-    // Sort by keyword text length (longer = more specific = likely a child)
-    const sortedBySpecificity = [...contentKeywords].sort((a, b) => {
-      const aText = getKeywordDisplayText(a);
-      const bText = getKeywordDisplayText(b);
-      return aText.length - bText.length; // Shorter first (more generic = parent)
-    });
+    // Use sequential grouping: every 3 content keywords = 1 cluster (1 main + 2 supporting)
+    // Sort content keywords alphabetically first to ensure consistent ordering
+    contentKeywords.sort((a, b) => 
+      getKeywordDisplayText(a).localeCompare(getKeywordDisplayText(b))
+    );
     
-    for (const parent of sortedBySpecificity) {
-      // Skip if already assigned as a child
-      if (assignedAsChild.has(parent.id)) continue;
+    // Group every 3 keywords: first is main, next 2 are supporting
+    for (let i = 0; i < contentKeywords.length; i += 3) {
+      const parent = contentKeywords[i];
+      const children: BronKeyword[] = [];
       
-      // Find the 2 most similar keywords that haven't been assigned yet
-      const parentText = getKeywordDisplayText(parent);
-      const candidates: { kw: BronKeyword; score: number }[] = [];
-      
-      for (const candidate of contentKeywords) {
-        if (candidate.id === parent.id) continue;
-        if (assignedAsChild.has(candidate.id)) continue;
-        
-        const candidateText = getKeywordDisplayText(candidate);
-        const score = calculateKeywordSimilarity(parentText, candidateText);
-        
-        // Only consider if there's meaningful overlap (threshold 0.4)
-        if (score >= 0.4) {
-          candidates.push({ kw: candidate, score });
-        }
+      if (i + 1 < contentKeywords.length) {
+        children.push(contentKeywords[i + 1]);
       }
-      
-      // Sort by score descending and take top 2
-      candidates.sort((a, b) => b.score - a.score);
-      const children = candidates.slice(0, 2).map(c => c.kw);
-      
-      // Mark children as assigned
-      for (const child of children) {
-        assignedAsChild.add(child.id);
+      if (i + 2 < contentKeywords.length) {
+        children.push(contentKeywords[i + 2]);
       }
       
       clusters.push({ parent, children, parentId: parent.id });
@@ -1007,14 +984,15 @@ export const BRONKeywordsTab = ({
         className={`${deleted ? 'opacity-50' : ''}`}
         style={{ contain: 'layout style' }}
       >
-        {/* Card container */}
+        {/* Card container - supporting keywords use orange theme */}
         <div 
           className={`
             rounded-xl border overflow-hidden
-            ${isNested ? 'border-l-2 border-l-cyan-500/50 ml-2' : ''}
-            ${isTrackingOnly 
-              ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : '')
-              : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50')
+            ${isNested 
+              ? 'border-l-2 border-l-orange-500/50 ml-2 bg-orange-500/5 border-orange-500/20' + (expanded ? ' ring-1 ring-orange-500/40' : '')
+              : isTrackingOnly 
+                ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : '')
+                : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50')
             }
           `}
           style={{ contain: 'layout paint style' }}
@@ -1157,8 +1135,8 @@ export const BRONKeywordsTab = ({
                     <Badge className="text-[9px] h-5 px-2 bg-amber-500/20 text-amber-400 border-amber-500/30 whitespace-nowrap flex-shrink-0">
                       Tracking
                     </Badge>
-                  ) : isSupportingKeyword ? (
-                    <Badge className="text-[9px] h-5 px-2 bg-cyan-500/20 text-cyan-400 border-cyan-500/30 whitespace-nowrap flex-shrink-0">
+                  ) : isNested ? (
+                    <Badge className="text-[9px] h-5 px-2 bg-orange-500/20 text-orange-400 border-orange-500/30 whitespace-nowrap flex-shrink-0">
                       Supporting
                     </Badge>
                   ) : (
