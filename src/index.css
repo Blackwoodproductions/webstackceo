@@ -136,14 +136,14 @@
     scroll-behavior: smooth;
   }
 
-  /* Theme transition */
+  /* Theme transition - only background and text colors, not borders/shadows */
   html,
   html *,
   html *::before,
   html *::after {
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-    transition-duration: 300ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-property: background-color, color, fill, stroke;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
   }
 
   /* Disable transitions for elements that shouldn't animate */
