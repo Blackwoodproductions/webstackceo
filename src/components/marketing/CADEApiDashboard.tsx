@@ -4,7 +4,7 @@ import {
   Activity, AlertTriangle, CheckCircle2, Clock, FileText,
   Globe, HelpCircle, Loader2, RefreshCw, Server, Sparkles,
   Target, TrendingUp, Users, Zap, ChevronDown, ChevronRight,
-  Database, Cpu, BarChart3
+  Database, Cpu, BarChart3, Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,16 +70,20 @@ interface CADEApiDashboardProps {
 export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const { fetchSubscription } = useBronApi();
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Subscription state - primary gate
+  const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
+  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   
   // API Data States
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [workers, setWorkers] = useState<WorkerData[]>([]);
   const [queues, setQueues] = useState<QueueData[]>([]);
   const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   
   // Collapsible states
@@ -100,30 +104,58 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     return data;
   }, [domain]);
 
+  // Check subscription via BRON API - same pattern as SocialPanel
+  const checkSubscription = useCallback(async () => {
+    if (!domain) {
+      setIsCheckingSubscription(false);
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsCheckingSubscription(true);
+    setBronSubscription(null);
+    
+    try {
+      const subData = await fetchSubscription(domain);
+      
+      if (subData && subData.has_cade && subData.status === 'active') {
+        setHasCadeSubscription(true);
+        setBronSubscription(subData);
+        setSubscription({
+          plan: subData.plan || subData.servicetype || "CADE",
+          status: subData.status || "active",
+          quota_used: undefined,
+          quota_limit: undefined,
+        });
+      } else {
+        setHasCadeSubscription(false);
+        setBronSubscription(subData);
+        setSubscription(null);
+      }
+    } catch (err) {
+      console.error("[CADE] Subscription check error:", err);
+      setHasCadeSubscription(false);
+      setBronSubscription(null);
+    } finally {
+      setIsCheckingSubscription(false);
+    }
+  }, [domain, fetchSubscription]);
+
   const fetchAllData = useCallback(async () => {
+    if (!hasCadeSubscription) {
+      setIsLoading(false);
+      return;
+    }
+    
     setError(null);
     
     try {
-      // Use BRON API for subscription check, CADE API for system status
-      const [bronSubRes, healthRes, workersRes, queuesRes] = await Promise.allSettled([
-        domain ? fetchSubscription(domain) : Promise.resolve(null),
+      // Fetch CADE system status
+      const [healthRes, workersRes, queuesRes] = await Promise.allSettled([
         callCadeApi("health"),
         callCadeApi("workers"),
         callCadeApi("queues"),
       ]);
-
-      // Process BRON subscription (primary subscription source)
-      if (bronSubRes.status === "fulfilled" && bronSubRes.value) {
-        const bronData = bronSubRes.value;
-        setBronSubscription(bronData);
-        // Map BRON subscription to existing SubscriptionInfo format
-        setSubscription({
-          plan: bronData.plan || bronData.servicetype || "Free",
-          status: bronData.status || "unknown",
-          quota_used: undefined,
-          quota_limit: undefined,
-        });
-      }
 
       // Process health
       if (healthRes.status === "fulfilled" && healthRes.value) {
@@ -150,7 +182,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         if (Array.isArray(queuesData)) setQueues(queuesData);
       }
 
-      // Fetch domain-specific data in parallel if domain is provided
+      // Fetch domain-specific data in parallel
       if (domain) {
         const [profileRes, faqsRes] = await Promise.allSettled([
           callCadeApi("domain-profile"),
@@ -172,16 +204,29 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [callCadeApi, domain, fetchSubscription]);
+  }, [callCadeApi, domain, hasCadeSubscription]);
 
-
+  // Check subscription first when domain changes
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    checkSubscription();
+  }, [checkSubscription]);
+
+  // Then fetch dashboard data if subscription is valid
+  useEffect(() => {
+    if (!isCheckingSubscription && hasCadeSubscription) {
+      fetchAllData();
+    } else if (!isCheckingSubscription && !hasCadeSubscription) {
+      setIsLoading(false);
+    }
+  }, [isCheckingSubscription, hasCadeSubscription, fetchAllData]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    fetchAllData();
+    checkSubscription().then(() => {
+      if (hasCadeSubscription) {
+        fetchAllData();
+      }
+    });
     toast.success("Refreshing CADE data...");
   };
 
@@ -199,6 +244,173 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     }
     return "bg-violet-500/15 text-violet-600 border-violet-500/30";
   };
+
+  // Subscription verification loading state
+  if (isCheckingSubscription) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative p-8 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden"
+      >
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute -top-20 -right-20 w-40 h-40 bg-violet-500/20 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"
+            animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="relative">
+            <motion.div
+              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-xl shadow-violet-500/30"
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Sparkles className="w-7 h-7 text-white" />
+            </motion.div>
+            <motion.div
+              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Loader2 className="w-3 h-3 text-white animate-spin" />
+            </motion.div>
+          </div>
+          
+          <div className="text-center">
+            <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
+              Verifying CADE Subscription
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Checking access for <span className="font-medium text-foreground">{domain}</span>
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // No CADE subscription - show sales pitch
+  if (!hasCadeSubscription) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        <Card className="border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <motion.div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            />
+          </div>
+          
+          <CardHeader className="relative z-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/30"
+                >
+                  <Sparkles className="w-7 h-7 text-white" />
+                </motion.div>
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    Unlock CADE Content Automation
+                    <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
+                      AI-Powered
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                    CADE automates your entire content workflow—from keyword research to publishing. 
+                    Generate SEO-optimized articles, FAQs, and social posts automatically.
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg"
+                onClick={() => window.open('https://seosara.ai/pricing', '_blank')}
+              >
+                <Rocket className="w-4 h-4 mr-2" />
+                Subscribe to CADE
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="relative z-10 space-y-6">
+            {/* 5-Step Workflow */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {[
+                { step: "1", title: "Analyze", desc: "AI scans top competitors", icon: Target },
+                { step: "2", title: "Generate", desc: "Create superior content", icon: FileText },
+                { step: "3", title: "Match CSS", desc: "Native site styling", icon: Zap },
+                { step: "4", title: "Inner Links", desc: "Automatic linking", icon: Globe },
+                { step: "5", title: "Publish", desc: "One-click deploy", icon: Rocket },
+              ].map((item, i) => (
+                <motion.div
+                  key={item.step}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative p-4 rounded-xl bg-background/50 border border-violet-500/20 text-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center mx-auto mb-2 shadow-lg">
+                    <item.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="font-semibold text-sm text-violet-500">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+            
+            {/* Feature highlights */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { value: "7", label: "Content Types", desc: "Articles, FAQs, Guides..." },
+                { value: "30+", label: "Articles/Month", desc: "Automated publishing" },
+                { value: "120+", label: "Hours Saved", desc: "Per month" },
+                { value: "$8.5K", label: "Cost Savings", desc: "vs. agency rates" },
+              ].map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1 }}
+                  className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/10 text-center"
+                >
+                  <p className="text-2xl font-bold text-violet-500">{stat.value}</p>
+                  <p className="text-xs font-medium">{stat.label}</p>
+                  <p className="text-[10px] text-muted-foreground">{stat.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
 
   if (isLoading) {
     return (
