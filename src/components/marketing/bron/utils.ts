@@ -122,88 +122,89 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Build parent-child relationships using multiple methods:
-  // 1. bubblefeedid: Supporting keywords have bubblefeedid pointing to parent's ID
-  // 2. supporting_keywords array: Parent keywords may have this array populated
-  // 3. parent_keyword_id: Legacy explicit relationship field
-  const hasExplicitParent = new Map<number | string, number | string>();
-  const isExplicitSupporting = new Set<number | string>();
-  const parentChildMap = new Map<number | string, BronKeyword[]>();
-  
-  // First pass: Check bubblefeedid relationships (primary method from BRON API)
+  // Build a lookup map: keyword ID -> keyword object
+  // This allows us to find parent keywords when a child has bubblefeedid pointing to it
+  const keywordById = new Map<number | string, BronKeyword>();
   for (const kw of contentKeywords) {
-    // bubblefeedid is a numeric ID pointing to the parent keyword
-    if (kw.bubblefeedid && typeof kw.bubblefeedid !== 'boolean') {
-      const parentId = kw.bubblefeedid;
-      hasExplicitParent.set(kw.id, parentId);
-      isExplicitSupporting.add(kw.id);
-      
-      if (!parentChildMap.has(parentId)) {
-        parentChildMap.set(parentId, []);
-      }
-      parentChildMap.get(parentId)!.push(kw);
-    }
-    // Fallback: Check parent_keyword_id
-    else if (kw.parent_keyword_id) {
-      hasExplicitParent.set(kw.id, kw.parent_keyword_id);
-      isExplicitSupporting.add(kw.id);
-      
-      if (!parentChildMap.has(kw.parent_keyword_id)) {
-        parentChildMap.set(kw.parent_keyword_id, []);
-      }
-      parentChildMap.get(kw.parent_keyword_id)!.push(kw);
+    // Store by both string and number versions to handle type mismatches
+    keywordById.set(kw.id, kw);
+    keywordById.set(String(kw.id), kw);
+    if (typeof kw.id === 'string' && !isNaN(Number(kw.id))) {
+      keywordById.set(Number(kw.id), kw);
     }
   }
   
-  // Second pass: Check supporting_keywords arrays on parent keywords
+  // Build parent-child relationships using bubblefeedid:
+  // A supporting keyword has bubblefeedid = parent keyword's ID
+  // Example: Supporting keyword ID 15134 has bubblefeedid: 582231
+  //          Parent keyword "Best Dentist in Port Coquitlam" has ID: 582231
+  const parentChildMap = new Map<number | string, BronKeyword[]>();
+  const childIds = new Set<number | string>();
+  
   for (const kw of contentKeywords) {
-    if (kw.supporting_keywords && Array.isArray(kw.supporting_keywords)) {
-      for (const supportingKw of kw.supporting_keywords) {
-        if (supportingKw.id && !hasExplicitParent.has(supportingKw.id)) {
-          hasExplicitParent.set(supportingKw.id, kw.id);
-          isExplicitSupporting.add(supportingKw.id);
-          
-          if (!parentChildMap.has(kw.id)) {
-            parentChildMap.set(kw.id, []);
-          }
-          // Find the actual keyword object from contentKeywords
-          const actualKw = contentKeywords.find(k => k.id === supportingKw.id);
-          if (actualKw) {
-            parentChildMap.get(kw.id)!.push(actualKw);
-          }
+    // Check if this keyword has a bubblefeedid pointing to a parent
+    const bubbleId = kw.bubblefeedid;
+    
+    if (bubbleId && typeof bubbleId !== 'boolean') {
+      // This keyword is a CHILD - its bubblefeedid points to its parent
+      const parentId = bubbleId;
+      
+      // Verify the parent exists in our keyword list
+      const parentExists = keywordById.has(parentId) || keywordById.has(String(parentId));
+      
+      if (parentExists) {
+        childIds.add(kw.id);
+        
+        const normalizedParentId = keywordById.has(parentId) ? parentId : String(parentId);
+        if (!parentChildMap.has(normalizedParentId)) {
+          parentChildMap.set(normalizedParentId, []);
         }
+        parentChildMap.get(normalizedParentId)!.push(kw);
+        
+        console.log(`[BRON Clustering] Found child: "${getKeywordDisplayText(kw)}" (ID: ${kw.id}) -> parent ID: ${parentId}`);
+      }
+    }
+    
+    // Fallback: Check parent_keyword_id
+    else if (kw.parent_keyword_id) {
+      const parentId = kw.parent_keyword_id;
+      const parentExists = keywordById.has(parentId) || keywordById.has(String(parentId));
+      
+      if (parentExists) {
+        childIds.add(kw.id);
+        
+        const normalizedParentId = keywordById.has(parentId) ? parentId : String(parentId);
+        if (!parentChildMap.has(normalizedParentId)) {
+          parentChildMap.set(normalizedParentId, []);
+        }
+        parentChildMap.get(normalizedParentId)!.push(kw);
       }
     }
   }
   
   // Log clustering info for debugging
   console.log('[BRON Clustering] API relationships detected:', {
-    hasExplicitParents: hasExplicitParent.size,
-    isSupportingCount: isExplicitSupporting.size,
     totalContentKeywords: contentKeywords.length,
-    usingApiClustering: hasExplicitParent.size > 0,
-    parentChildMapSize: parentChildMap.size,
+    childrenFound: childIds.size,
+    parentCount: parentChildMap.size,
+    parentIds: Array.from(parentChildMap.keys()),
   });
   
-  if (hasExplicitParent.size > 0) {
+  if (childIds.size > 0) {
     // Use explicit API relationships (BRON packages with bubblefeedid)
-    const assignedAsChild = new Set<number | string>();
-    
-    for (const [, children] of parentChildMap) {
-      for (const child of children) {
-        assignedAsChild.add(child.id);
-      }
-    }
-    
-    // Create clusters from parents with their children (max 2 per cluster)
+    // Create clusters: parents first (those with children), then standalone keywords
     for (const kw of contentKeywords) {
-      if (!assignedAsChild.has(kw.id)) {
-        const children = (parentChildMap.get(kw.id) || []).slice(0, 2);
-        clusters.push({ parent: kw, children, parentId: kw.id });
-      }
+      // Skip if this keyword is a child of another
+      if (childIds.has(kw.id)) continue;
+      
+      // Check if this keyword has children (try both original ID and string version)
+      let children = parentChildMap.get(kw.id) || parentChildMap.get(String(kw.id)) || [];
+      children = children.slice(0, 2); // Max 2 supporting keywords per cluster
+      
+      clusters.push({ parent: kw, children, parentId: kw.id });
     }
   } else {
-    // Topic-based similarity clustering
+    // Topic-based similarity clustering (fallback when no bubblefeedid relationships)
     const keywordsWithLength = contentKeywords.map(kw => ({
       kw,
       text: getKeywordDisplayText(kw),
