@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
@@ -28,8 +28,16 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  // Store screenshots per domain so we don't blank/reload images on unrelated re-renders.
+  const [screenshotByDomain, setScreenshotByDomain] = useState<Record<string, string>>({});
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+
+  const screenshotUrl = selectedDomain ? (screenshotByDomain[selectedDomain] ?? null) : null;
+
+  const handleDeleteDisabled = useCallback(async () => {
+    toast.error("Delete is disabled in the BRON panel");
+    return false;
+  }, []);
 
   // Verify authentication on mount
   useEffect(() => {
@@ -66,7 +74,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       if (data?.success && data?.url) {
         // Add cache buster for fresh captures
         const url = data.cached ? data.url : `${data.url}?t=${Date.now()}`;
-        setScreenshotUrl(url);
+        setScreenshotByDomain((prev) => ({ ...prev, [domain]: url }));
         if (!data.cached) {
           toast.success("Website screenshot captured!");
         }
@@ -90,7 +98,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       });
 
       if (data?.success && data?.url) {
-        setScreenshotUrl(data.url);
+        setScreenshotByDomain((prev) => ({ ...prev, [domain]: data.url }));
         return true;
       }
       return false;
@@ -113,9 +121,6 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
-
-      // Reset screenshot when domain changes
-      setScreenshotUrl(null);
 
       // Check for existing screenshot first, then capture if needed
       const hasExisting = await getExistingScreenshot(selectedDomain);
@@ -207,11 +212,19 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   }
 
   // Generate Google Maps embed URL from address
-  const getGoogleMapsEmbedUrl = (address?: string) => {
-    if (!address) return null;
-    const encoded = encodeURIComponent(address);
+  const mapsEmbedSrc = useMemo(() => {
+    if (!domainInfo?.wr_address) return null;
+    const encoded = encodeURIComponent(domainInfo.wr_address);
     return `https://www.google.com/maps?q=${encoded}&output=embed`;
-  };
+  }, [domainInfo?.wr_address]);
+
+  const screenshotSrc = useMemo(() => {
+    if (!selectedDomain) return null;
+    return (
+      screenshotUrl ||
+      `https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`
+    );
+  }, [selectedDomain, screenshotUrl]);
 
   // Get service package name based on servicetype
   const getPackageName = (serviceType?: string) => {
@@ -258,7 +271,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                   )}
                   {/* Use stored screenshot or fallback to external services */}
                   <img 
-                    src={screenshotUrl || `https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`}
+                    src={screenshotSrc || undefined}
                     alt={`${selectedDomain} preview`}
                     className="w-full h-full object-cover object-top"
                     loading="lazy"
@@ -267,7 +280,13 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                       // Only use fallbacks if we don't have a stored screenshot
                       if (screenshotUrl) {
                         // Stored screenshot failed, try external
-                        setScreenshotUrl(null);
+                        if (selectedDomain) {
+                          setScreenshotByDomain((prev) => {
+                            const next = { ...prev };
+                            delete next[selectedDomain];
+                            return next;
+                          });
+                        }
                         return;
                       }
                       if (!target.dataset.fallback) {
@@ -399,9 +418,9 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
                     {/* Google Maps Embed */}
                     <div className="relative min-h-[140px]">
-                      {domainInfo?.wr_address ? (
+                      {mapsEmbedSrc ? (
                         <iframe
-                          src={getGoogleMapsEmbedUrl(domainInfo.wr_address) || undefined}
+                          src={mapsEmbedSrc}
                           className="w-full h-full border-0"
                           loading="lazy"
                           referrerPolicy="no-referrer-when-downgrade"
@@ -462,68 +481,65 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsContent value="domains" className="mt-0">
+          <BRONDomainsTab 
+            domains={bronApi.domains}
+            isLoading={bronApi.isLoading}
+            onRefresh={bronApi.fetchDomains}
+            onUpdate={bronApi.updateDomain}
+            onDelete={handleDeleteDisabled}
+            onRestore={bronApi.restoreDomain}
+          />
+        </TabsContent>
 
-        <AnimatePresence mode="wait">
-          <TabsContent value="domains" className="mt-0">
-            <BRONDomainsTab 
-              domains={bronApi.domains}
-              isLoading={bronApi.isLoading}
-              onRefresh={bronApi.fetchDomains}
-              onUpdate={bronApi.updateDomain}
-              onDelete={bronApi.deleteDomain}
-              onRestore={bronApi.restoreDomain}
-            />
-          </TabsContent>
+        <TabsContent value="keywords" className="mt-0">
+          <BRONKeywordsTab 
+            keywords={bronApi.keywords}
+            serpReports={bronApi.serpReports}
+            serpHistory={bronApi.serpHistory}
+            linksIn={bronApi.linksIn}
+            linksOut={bronApi.linksOut}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
+            onAdd={bronApi.addKeyword}
+            onUpdate={bronApi.updateKeyword}
+            onDelete={handleDeleteDisabled}
+            onRestore={bronApi.restoreKeyword}
+            onFetchSerpDetail={bronApi.fetchSerpDetail}
+          />
+        </TabsContent>
 
-          <TabsContent value="keywords" className="mt-0">
-            <BRONKeywordsTab 
-              keywords={bronApi.keywords}
-              serpReports={bronApi.serpReports}
-              serpHistory={bronApi.serpHistory}
-              linksIn={bronApi.linksIn}
-              linksOut={bronApi.linksOut}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => bronApi.fetchKeywords(selectedDomain)}
-              onAdd={bronApi.addKeyword}
-              onUpdate={bronApi.updateKeyword}
-              onDelete={bronApi.deleteKeyword}
-              onRestore={bronApi.restoreKeyword}
-              onFetchSerpDetail={bronApi.fetchSerpDetail}
-            />
-          </TabsContent>
+        <TabsContent value="content" className="mt-0">
+          <BRONContentTab 
+            pages={bronApi.pages}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => selectedDomain && bronApi.fetchPages(selectedDomain)}
+          />
+        </TabsContent>
 
-          <TabsContent value="content" className="mt-0">
-            <BRONContentTab 
-              pages={bronApi.pages}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => selectedDomain && bronApi.fetchPages(selectedDomain)}
-            />
-          </TabsContent>
+        <TabsContent value="serp" className="mt-0">
+          <BRONSerpTab 
+            serpReports={bronApi.serpReports}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain)}
+          />
+        </TabsContent>
 
-          <TabsContent value="serp" className="mt-0">
-            <BRONSerpTab 
-              serpReports={bronApi.serpReports}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain)}
-            />
-          </TabsContent>
-
-          <TabsContent value="links" className="mt-0">
-            <BRONLinksTab 
-              linksIn={bronApi.linksIn}
-              linksOut={bronApi.linksOut}
-              selectedDomain={selectedDomain}
-              isLoading={bronApi.isLoading}
-              onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
-              onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
-              errorIn={bronApi.linksInError}
-              errorOut={bronApi.linksOutError}
-            />
-          </TabsContent>
-        </AnimatePresence>
+        <TabsContent value="links" className="mt-0">
+          <BRONLinksTab 
+            linksIn={bronApi.linksIn}
+            linksOut={bronApi.linksOut}
+            selectedDomain={selectedDomain}
+            isLoading={bronApi.isLoading}
+            onRefreshIn={() => selectedDomain && bronApi.fetchLinksIn(selectedDomain)}
+            onRefreshOut={() => selectedDomain && bronApi.fetchLinksOut(selectedDomain)}
+            errorIn={bronApi.linksInError}
+            errorOut={bronApi.linksOutError}
+          />
+        </TabsContent>
       </Tabs>
     </motion.div>
   );
