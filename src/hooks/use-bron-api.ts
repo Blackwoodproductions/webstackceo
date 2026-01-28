@@ -823,7 +823,7 @@ export function useBronApi(): UseBronApiReturn {
   }, [callApi, fetchDomains, withPending]);
 
   // Fetch all keywords with automatic pagination to get complete list
-  // Uses 24-hour localStorage cache per domain
+  // Uses 24-hour localStorage cache per domain with background refresh
   const fetchKeywords = useCallback(async (domain?: string, forceRefresh = false) => {
     const reqId = ++keywordsReqIdRef.current;
     
@@ -832,8 +832,57 @@ export function useBronApi(): UseBronApiReturn {
       const cached = loadCachedKeywords(domain);
       if (cached) {
         setKeywords(cached);
-        // Return early - data is served from cache
-        return;
+        
+        // Background refresh to check for changes (count-based)
+        const localReqId = reqId;
+        callApi("listKeywords", { domain, page: 1, limit: 100, include_deleted: false })
+          .then(async (result) => {
+            if (localReqId !== keywordsReqIdRef.current) return;
+            if (result?.success && result.data) {
+              const firstPageKeywords = result.data.keywords || result.data.items || [];
+              const firstPageCount = Array.isArray(firstPageKeywords) ? firstPageKeywords.length : 0;
+              
+              // If first page is full (100), there might be more - check total
+              // Simple heuristic: if cached count differs significantly, refresh
+              const cachedCount = cached.length;
+              const needsRefresh = firstPageCount === 100 
+                ? cachedCount < 100 // If we had less than 100, but now first page is full
+                : firstPageCount !== cachedCount; // If counts differ
+              
+              if (needsRefresh) {
+                console.log(`[BRON] Keywords changed for ${domain}, refreshing...`);
+                // Full refresh in background
+                const allKeywords: BronKeyword[] = [];
+                let page = 1;
+                let hasMore = true;
+                
+                while (hasMore && page <= 10) {
+                  const pageResult = await callApi("listKeywords", { domain, page, limit: 100, include_deleted: false });
+                  if (localReqId !== keywordsReqIdRef.current) return;
+                  if (pageResult?.success && pageResult.data) {
+                    const keywords = pageResult.data.keywords || pageResult.data.items || [];
+                    if (Array.isArray(keywords) && keywords.length > 0) {
+                      allKeywords.push(...keywords);
+                      hasMore = keywords.length >= 100;
+                      page++;
+                    } else {
+                      hasMore = false;
+                    }
+                  } else {
+                    hasMore = false;
+                  }
+                }
+                
+                if (localReqId === keywordsReqIdRef.current && allKeywords.length > 0) {
+                  setKeywords(allKeywords);
+                  saveCachedKeywords(domain, allKeywords);
+                }
+              }
+            }
+          })
+          .catch(err => console.warn('[BRON] Background keywords check failed:', err));
+        
+        return; // Served from cache immediately
       }
     }
     
