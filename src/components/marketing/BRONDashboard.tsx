@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Loader2, Globe, Key, FileText, BarChart3, Link2, ArrowUpRight, 
-  ArrowDownLeft, RefreshCw, ExternalLink, TrendingUp, ChevronDown,
-  MapPin, Phone, Calendar, Package, Tag, X
+  Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
+  ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
+  MapPin, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useBronApi, BronDomain } from "@/hooks/use-bron-api";
 import { BRONKeywordsTab } from "./BRONKeywordsTab";
@@ -140,121 +140,186 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     );
   }
 
+  // Generate Google Maps embed URL from address
+  const getGoogleMapsEmbedUrl = (address?: string) => {
+    if (!address) return null;
+    const encoded = encodeURIComponent(address);
+    return `https://www.google.com/maps?q=${encoded}&output=embed`;
+  };
+
+  // Get service package name based on servicetype
+  const getPackageName = (serviceType?: string) => {
+    const packages: Record<string, string> = {
+      "383": "SEOM 60",
+      "380": "SEOM 30",
+      "381": "SEOM 45",
+      "382": "SEOM Premium",
+    };
+    return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
+  };
+
+  // Calculate domain info progress (keywords count out of target)
+  const keywordProgress = Math.min(bronApi.keywords.length, 37);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Domain Profile Section */}
+      {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Domain Preview & Info Card */}
-          <Card className="lg:col-span-2 overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-0">
-              <div className="flex flex-col md:flex-row">
-                {/* Website Preview */}
-                <div className="w-full md:w-64 flex-shrink-0 p-4">
-                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30">
-                    <img 
-                      src={`https://image.thum.io/get/width/400/crop/300/${selectedDomain}`}
-                      alt={`${selectedDomain} preview`}
-                      className="w-full h-full object-cover object-top"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
-                        e.currentTarget.className = "w-16 h-16 object-contain mx-auto mt-8";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="w-full text-xs bg-primary/90 hover:bg-primary text-primary-foreground"
-                        onClick={() => window.open(`https://${selectedDomain}`, '_blank')}
-                      >
-                        <ExternalLink className="w-3 h-3 mr-1" />
-                        Visit Site
-                      </Button>
-                    </div>
-                  </div>
+        <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+              
+              {/* LEFT: Website Screenshot with Domain Options */}
+              <div className="lg:col-span-3 p-4 border-r border-border/30">
+                <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30 mb-3">
+                  <img 
+                    src={`https://image.thum.io/get/width/400/crop/300/${selectedDomain}`}
+                    alt={`${selectedDomain} preview`}
+                    className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
+                      e.currentTarget.className = "w-16 h-16 object-contain mx-auto mt-8";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
                 </div>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
+                  onClick={() => window.open(`https://${selectedDomain}`, '_blank')}
+                >
+                  <span className="mr-2">⋮</span>
+                  Domain Options
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
 
-                {/* Domain Info */}
-                <div className="flex-1 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=32`}
-                      alt="favicon"
-                      className="w-5 h-5"
-                    />
-                    <h3 className="font-semibold text-lg">{selectedDomain}</h3>
+              {/* MIDDLE: Domain Info Fields */}
+              <div className="lg:col-span-4 p-4 border-r border-border/30">
+                <div className="space-y-3">
+                  {/* Domain Info Progress */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground text-sm min-w-[110px]">Domain Info :</span>
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="flex-1 h-8 bg-secondary/50 rounded border border-border/50 flex items-center px-3">
+                        <span className="text-sm">{keywordProgress}/37</span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">0%</Badge>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground min-w-[100px]">Domain Status:</span>
-                      <Badge variant={domainInfo?.status === 'active' || !domainInfo?.deleted ? 'default' : 'secondary'} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                        LIVE
-                      </Badge>
-                    </div>
+                  {/* Domain Status */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground text-sm min-w-[110px]">Domain Status :</span>
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-secondary/80 text-foreground border-border/50"
+                    >
+                      LIVE
+                    </Badge>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground min-w-[100px]">Keywords:</span>
-                      <span className="font-medium">{bronApi.keywords.length}</span>
-                    </div>
+                  {/* Package */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground text-sm min-w-[110px]">Package :</span>
+                    <span className="text-sm font-medium">{getPackageName(domainInfo?.servicetype)}</span>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground min-w-[100px]">Content Pages:</span>
-                      <span className="font-medium">{bronApi.pages.length}</span>
-                    </div>
+                  {/* Last Feed Check */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground text-sm min-w-[110px]">Last Feed Check :</span>
+                    <span className="text-sm font-medium">
+                      {domainInfo?.updated_at 
+                        ? new Date(domainInfo.updated_at).toLocaleDateString()
+                        : "1 month ago"}
+                    </span>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground min-w-[100px]">SERP Reports:</span>
-                      <span className="font-medium">{bronApi.serpReports.length}</span>
-                    </div>
-
-                    {domainInfo?.created_at && (
-                      <div className="flex items-center gap-2 col-span-full">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Added:</span>
-                        <span className="font-medium">{new Date(domainInfo.created_at).toLocaleDateString()}</span>
-                      </div>
-                    )}
+                  {/* Domain Category */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-muted-foreground text-sm min-w-[110px]">Domain Category :</span>
+                    <span className="text-sm font-medium">
+                      {domainInfo?.wr_name ? `${domainInfo.wr_name.split(' ').slice(-1)[0]} Services` : "Business Services"}
+                    </span>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard 
-              icon={Key} 
-              label="Keywords"
-              value={bronApi.keywords.length}
-              color="violet"
-            />
-            <StatCard 
-              icon={FileText} 
-              label="Pages"
-              value={bronApi.pages.length}
-              color="blue"
-            />
-            <StatCard 
-              icon={ArrowDownLeft} 
-              label="Inbound"
-              value={bronApi.linksIn.length}
-              color="emerald"
-            />
-            <StatCard 
-              icon={ArrowUpRight} 
-              label="Outbound"
-              value={bronApi.linksOut.length}
-              color="amber"
-            />
-          </div>
-        </div>
+              {/* RIGHT: Google My Business Card with Map */}
+              <div className="lg:col-span-5 p-4">
+                <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10 overflow-hidden h-full">
+                  {/* GMB Header */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-background/50 border-b border-cyan-500/20">
+                    <MapPin className="w-4 h-4 text-red-500" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Google My Business
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-0 h-[calc(100%-36px)]">
+                    {/* Business Info */}
+                    <div className="p-3 space-y-2 border-r border-cyan-500/20">
+                      <h4 className="font-semibold text-sm">
+                        {domainInfo?.wr_name || selectedDomain}
+                      </h4>
+                      {domainInfo?.wr_address && (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {domainInfo.wr_address}
+                        </p>
+                      )}
+                      {domainInfo?.wr_phone && (
+                        <p className="text-xs text-muted-foreground">
+                          {domainInfo.wr_phone}
+                        </p>
+                      )}
+                      <a 
+                        href={`https://${selectedDomain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:underline"
+                      >
+                        {selectedDomain}
+                      </a>
+                    </div>
+
+                    {/* Google Maps Embed */}
+                    <div className="relative min-h-[140px]">
+                      {domainInfo?.wr_address ? (
+                        <iframe
+                          src={getGoogleMapsEmbedUrl(domainInfo.wr_address) || undefined}
+                          className="w-full h-full border-0"
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          title="Business Location"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+                          <MapPin className="w-8 h-8 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      {/* View larger map link overlay */}
+                      {domainInfo?.wr_address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(domainInfo.wr_address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-2 right-2 text-[10px] text-cyan-500 hover:underline bg-white/90 px-1.5 py-0.5 rounded"
+                        >
+                          View larger map
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Action Cards */}
