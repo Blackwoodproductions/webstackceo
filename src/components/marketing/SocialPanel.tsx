@@ -315,7 +315,20 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               <Share2 className="w-5 h-5 text-white" />
             </motion.div>
             <div>
-              <h2 className="text-xl font-bold">Social Media Dashboard</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold">Social Media Dashboard</h2>
+                {/* CADE Subscription Detected Badge - shows on left after dashboard loads */}
+                {hasCadeSubscription && !isCheckingCade && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/40"
+                  >
+                    <Sparkles className="w-3 h-3 text-violet-400" />
+                    <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-wide">CADE Active</span>
+                  </motion.div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Social signals for <span className="font-medium text-foreground">{selectedDomain}</span>
               </p>
