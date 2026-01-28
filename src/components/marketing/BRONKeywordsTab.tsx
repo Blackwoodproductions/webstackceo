@@ -557,218 +557,198 @@ export const BRONKeywordsTab = ({
               className="border-t border-border/30 bg-muted/20"
               style={{ contain: 'layout paint' }}
             >
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Edit2 className="w-4 h-4 text-primary" />
-                    Edit Keyword Settings
-                  </span>
+              <div className="p-4">
+                {/* Header with metadata inline */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <Edit2 className="w-3.5 h-3.5 text-primary" />
+                      <span className="font-medium text-foreground">Edit Keyword</span>
+                    </span>
+                    <span className="text-muted-foreground">ID: <span className="font-mono">{kw.id}</span></span>
+                    <Badge variant={active ? 'default' : 'secondary'} className="text-[10px]">
+                      {active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <span className="text-muted-foreground">{formatDate(kw.createdDate)}</span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
                       expandKeyword(kw);
                     }}
                   >
-                    <ChevronUp className="w-3.5 h-3.5 mr-1" />
+                    <ChevronUp className="w-3 h-3 mr-1" />
                     Collapse
                   </Button>
                 </div>
 
-                {/* Content area - single column */}
-                <div className="space-y-4">
-                  {/* Keyword Info Section */}
-                  <div className="p-3 rounded-lg bg-card border border-border/50">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Keyword Information</h4>
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Keyword Title</Label>
-                        <Input
-                          value={inlineEditForms[kw.id]?.keywordtitle || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
-                          placeholder="Primary keyword..."
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">ID:</span>{' '}
-                          <span className="font-mono">{kw.id}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Domain ID:</span>{' '}
-                          <span className="font-mono">{kw.domainid}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Status:</span>{' '}
-                          <Badge variant={active ? 'default' : 'secondary'} className="text-[10px] ml-1">
-                            {active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Created:</span>{' '}
-                          <span>{formatDate(kw.createdDate)}</span>
-                        </div>
-                      </div>
+                {/* Two-column layout for compact form */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+                  {/* Left Column: Keyword & SEO */}
+                  <div className="space-y-3">
+                    {/* Keyword Title */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Keyword Title</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                        placeholder="Primary keyword..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
                     </div>
-                  </div>
 
-                  {/* SEO Meta Section */}
-                  <div className="p-3 rounded-lg bg-card border border-border/50">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">SEO Meta Tags</h4>
-                      {/* Quality indicators */}
-                      <div className="flex items-center gap-2">
-                        <div className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${scoreBg(metaTitleQuality.score)}`}>
-                          <Hash className={`w-3 h-3 ${scoreColor(metaTitleQuality.score)}`} />
-                          <span className={scoreColor(metaTitleQuality.score)}>Title: {metaTitleQuality.label}</span>
-                        </div>
-                        <div className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${scoreBg(metaDescQuality.score)}`}>
-                          <Sparkles className={`w-3 h-3 ${scoreColor(metaDescQuality.score)}`} />
-                          <span className={scoreColor(metaDescQuality.score)}>Desc: {metaDescQuality.label}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
+                    {/* Meta Title */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
                         <Label className="text-xs">Meta Title</Label>
-                        <Input
-                          value={inlineEditForms[kw.id]?.metatitle || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
-                          placeholder="Page title for search engines..."
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metatitle || '').length}/60 characters</p>
+                        <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaTitleQuality.score)}`}>
+                          <Hash className={`w-2.5 h-2.5 ${scoreColor(metaTitleQuality.score)}`} />
+                          <span className={scoreColor(metaTitleQuality.score)}>{(inlineEditForms[kw.id]?.metatitle || '').length}/60</span>
+                        </div>
                       </div>
-                      <div className="space-y-1.5">
+                      <Input
+                        value={inlineEditForms[kw.id]?.metatitle || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                        placeholder="Page title for search engines..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
+                    </div>
+
+                    {/* Meta Description */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
                         <Label className="text-xs">Meta Description</Label>
-                        <Textarea
-                          value={inlineEditForms[kw.id]?.metadescription || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
-                          placeholder="Page description for search results..."
-                          rows={3}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <p className="text-[10px] text-muted-foreground">{(inlineEditForms[kw.id]?.metadescription || '').length}/160 characters</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Links & Resources Section */}
-                  <div className="p-3 rounded-lg bg-card border border-border/50">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Links & Resources</h4>
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Target URL (Link Out)</Label>
-                        <Input
-                          value={inlineEditForms[kw.id]?.linkouturl || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
-                          placeholder="https://example.com/page"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Resource Address</Label>
-                        <Input
-                          value={inlineEditForms[kw.id]?.resaddress || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
-                          placeholder="Physical address or location..."
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Facebook Page URL</Label>
-                        <Input
-                          value={inlineEditForms[kw.id]?.resfb || ''}
-                          onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
-                          placeholder="https://facebook.com/..."
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Edit Article Button */}
-                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-sm font-medium text-foreground mb-1">Article Content</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {getWordCount(kw.resfeedtext || '')} words • Click to edit in full-screen editor
-                        </p>
-                      </div>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Ensure the edit buffer is initialized before opening the editor.
-                          setInlineEditForms((prev) =>
-                            prev[kw.id]
-                              ? prev
-                              : {
-                                  ...prev,
-                                  [kw.id]: {
-                                    keywordtitle: kw.keywordtitle || kw.keyword || "",
-                                    metatitle: kw.metatitle || "",
-                                    metadescription: kw.metadescription || "",
-                                    resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
-                                    linkouturl: kw.linkouturl || "",
-                                    resaddress: kw.resaddress || "",
-                                    resfb: kw.resfb || "",
-                                  },
-                                },
-                          );
-                          setArticleEditorId(kw.id);
-                        }}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Edit Article
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Rendered Article Preview */}
-                  <div className="p-3 rounded-lg bg-card border border-border/50">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
-                      <Eye className="w-3 h-3" />
-                      Article Preview
-                    </h4>
-                    <div className="rounded-lg border border-border overflow-hidden">
-                      {/* Browser Chrome */}
-                      <div className="bg-muted/60 px-3 py-1.5 flex items-center gap-2 border-b border-border">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-destructive/50" />
-                          <div className="w-2 h-2 rounded-full bg-secondary" />
-                          <div className="w-2 h-2 rounded-full bg-primary/50" />
-                        </div>
-                        <div className="flex-1 mx-2">
-                          <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
-                            {selectedDomain || "example.com"}/article
-                          </div>
+                        <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaDescQuality.score)}`}>
+                          <Sparkles className={`w-2.5 h-2.5 ${scoreColor(metaDescQuality.score)}`} />
+                          <span className={scoreColor(metaDescQuality.score)}>{(inlineEditForms[kw.id]?.metadescription || '').length}/160</span>
                         </div>
                       </div>
-                      {/* Article Content */}
-                      <div className="bg-background text-foreground">
-                        <article className="p-4">
-                          <div
-                            className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                inlineEditForms[kw.id]?.resfeedtext ||
-                                decodeHtmlContent(kw.resfeedtext || "") ||
-                                "<p><em>No article content yet…</em></p>",
-                            }}
-                          />
-                        </article>
-                      </div>
+                      <Textarea
+                        value={inlineEditForms[kw.id]?.metadescription || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                        placeholder="Page description for search results..."
+                        rows={2}
+                        onClick={(e) => e.stopPropagation()}
+                        className="resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Column: Links */}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Target URL (Link Out)</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.linkouturl || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                        placeholder="https://example.com/page"
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Resource Address</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.resaddress || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                        placeholder="Physical address or location..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Facebook Page URL</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.resfb || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                        placeholder="https://facebook.com/..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
                     </div>
                   </div>
                 </div>
+
+                {/* Article Section - compact row */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20 mb-3">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground">Article Content</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {getWordCount(kw.resfeedtext || '')} words
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setInlineEditForms((prev) =>
+                        prev[kw.id]
+                          ? prev
+                          : {
+                              ...prev,
+                              [kw.id]: {
+                                keywordtitle: kw.keywordtitle || kw.keyword || "",
+                                metatitle: kw.metatitle || "",
+                                metadescription: kw.metadescription || "",
+                                resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
+                                linkouturl: kw.linkouturl || "",
+                                resaddress: kw.resaddress || "",
+                                resfb: kw.resfb || "",
+                              },
+                            },
+                      );
+                      setArticleEditorId(kw.id);
+                    }}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </div>
+
+                {/* Article Preview - collapsible, starts collapsed */}
+                <details className="mb-3 rounded-lg border border-border/50 overflow-hidden">
+                  <summary className="flex items-center gap-2 p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/30">
+                    <Eye className="w-3 h-3" />
+                    Article Preview
+                  </summary>
+                  <div className="border-t border-border">
+                    <div className="bg-muted/60 px-3 py-1 flex items-center gap-2 border-b border-border">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-destructive/50" />
+                        <div className="w-2 h-2 rounded-full bg-secondary" />
+                        <div className="w-2 h-2 rounded-full bg-primary/50" />
+                      </div>
+                      <div className="flex-1 mx-2">
+                        <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
+                          {selectedDomain || "example.com"}/article
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-background text-foreground max-h-[300px] overflow-y-auto">
+                      <article className="p-4">
+                        <div
+                          className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              inlineEditForms[kw.id]?.resfeedtext ||
+                              decodeHtmlContent(kw.resfeedtext || "") ||
+                              "<p><em>No article content yet…</em></p>",
+                          }}
+                        />
+                      </article>
+                    </div>
+                  </div>
+                </details>
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
