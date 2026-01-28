@@ -621,11 +621,11 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            <div className="flex items-center gap-4 min-w-max">
-              {/* Page Speed Indicator - Far Left */}
-              <div className="flex-shrink-0">
+            {/* Fixed Column Layout for Perfect Alignment */}
+            <div className="flex items-center min-w-max">
+              {/* Column 1: Page Speed Indicator - 60px */}
+              <div className="w-[60px] flex-shrink-0">
                 {(() => {
-                  // Simulated page speed score based on keyword optimization
                   const hasContent = wordCount > 300;
                   const hasMetaTitle = !!kw.metatitle;
                   const hasMetaDesc = !!kw.metadescription;
@@ -649,8 +649,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Keyword Text - no wrap */}
-              <div className="min-w-0 max-w-[320px] pl-2 flex-shrink-0">
+              {/* Column 2: Keyword Text - 280px */}
+              <div className="w-[280px] flex-shrink-0 pr-4">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground whitespace-nowrap truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -661,9 +661,9 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Intent badge - fixed width column with right margin */}
-              <div className="w-32 flex justify-center flex-shrink-0 ml-4">
-                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 w-full justify-center">
+              {/* Column 3: Intent Badge - 120px */}
+              <div className="w-[120px] flex-shrink-0 flex justify-center">
+                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 justify-center">
                   <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                     <IntentIcon className={`w-3 h-3 ${intent.color}`} />
                   </div>
@@ -673,186 +673,184 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* SERP Rankings - 3 Column Layout with Headers + Movement Indicators */}
-              {(() => {
-                // Use movement from SERP data directly
-                const googleMovement = getMovementFromDelta(googleData.movement);
-                const bingMovement = getMovementFromDelta(bingData.movement);
-                const yahooMovement = getMovementFromDelta(yahooData.movement);
-                
-                return (
-                  <div className="flex-shrink-0 grid grid-cols-3 gap-2 text-center w-[300px] ml-6">
-                    {/* Google Column */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
-                      {googlePos !== null ? (
-                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                          <span className="text-lg font-bold">#{googlePos}</span>
-                          {googleMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                          {googleMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                          {googleMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                        </div>
-                      ) : (
-                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Bing Column */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
-                      {bingPos !== null ? (
-                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                          <span className="text-lg font-bold">#{bingPos}</span>
-                          {bingMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                          {bingMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                          {bingMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                        </div>
-                      ) : (
-                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Yahoo Column */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
-                      {yahooPos !== null ? (
-                        <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
-                          <span className="text-lg font-bold">#{yahooPos}</span>
-                          {yahooMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
-                          {yahooMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
-                          {yahooMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
-                        </div>
-                      ) : (
-                        <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
-                          <span className="text-lg font-bold text-muted-foreground/50">—</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Keyword Metrics from DataForSEO - Between Rankings and Links */}
-              {(() => {
-                const metrics = keywordMetrics[keywordText.toLowerCase()];
-                
-                const formatVolume = (vol?: number) => {
-                  if (vol === undefined || vol === null) return '—';
-                  if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
-                  if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
-                  return String(vol);
-                };
-                
-                const getCompetitionColor = (level?: string) => {
-                  switch (level?.toUpperCase()) {
-                    case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-                    case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-                    case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
-                    default: return 'text-muted-foreground border-border bg-muted/30';
-                  }
-                };
-
-                const getEstimatedCTR = (pos: number | null) => {
-                  if (pos === null) return null;
-                  if (pos <= 1) return '32%';
-                  if (pos <= 2) return '17%';
-                  if (pos <= 3) return '11%';
-                  if (pos <= 5) return '6%';
-                  if (pos <= 10) return '2%';
-                  return '<1%';
-                };
-
-                const ctrValue = getEstimatedCTR(googlePos);
-                
-                return (
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-6">
-                    {/* Search Volume */}
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 w-14">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-3 h-3 text-blue-400" />
-                        <span className="text-xs font-bold text-blue-400">
-                          {metricsLoading ? '...' : formatVolume(metrics?.search_volume)}
-                        </span>
+              {/* Column 4: SERP Rankings - 280px */}
+              <div className="w-[280px] flex-shrink-0">
+                {(() => {
+                  const googleMovement = getMovementFromDelta(googleData.movement);
+                  const bingMovement = getMovementFromDelta(bingData.movement);
+                  const yahooMovement = getMovementFromDelta(yahooData.movement);
+                  
+                  return (
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {/* Google Column */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Google</span>
+                        {googlePos !== null ? (
+                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${googleMovement.color} ${googleMovement.bgColor} ${googleMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                            <span className="text-lg font-bold">#{googlePos}</span>
+                            {googleMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                            {googleMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                            {googleMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
+                          </div>
+                        ) : (
+                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[8px] text-blue-400/70">Vol/mo</span>
-                    </div>
-                    
-                    {/* CPC */}
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 w-14">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3 text-emerald-400" />
-                        <span className="text-xs font-bold text-emerald-400">
-                          {metricsLoading ? '...' : metrics?.cpc !== undefined ? `$${metrics.cpc.toFixed(2)}` : '—'}
-                        </span>
+                      
+                      {/* Bing Column */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Bing</span>
+                        {bingPos !== null ? (
+                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${bingMovement.color} ${bingMovement.bgColor} ${bingMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                            <span className="text-lg font-bold">#{bingPos}</span>
+                            {bingMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                            {bingMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                            {bingMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
+                          </div>
+                        ) : (
+                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[8px] text-emerald-400/70">CPC</span>
-                    </div>
-                    
-                    {/* Competition/Difficulty */}
-                    <div className={`flex flex-col items-center px-2.5 py-1 rounded-lg border w-14 ${getCompetitionColor(metrics?.competition_level)}`}>
-                      <div className="flex items-center gap-1">
-                        <Gauge className="w-3 h-3" />
-                        <span className="text-xs font-bold capitalize">
-                          {metricsLoading ? '...' : metrics?.competition_level?.toLowerCase() || '—'}
-                        </span>
+                      
+                      {/* Yahoo Column */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Yahoo</span>
+                        {yahooPos !== null ? (
+                          <div className={`flex items-center justify-center gap-1 w-20 py-1.5 rounded-lg ${yahooMovement.color} ${yahooMovement.bgColor} ${yahooMovement.glow ? 'shadow-[0_0_12px_rgba(251,146,60,0.5)] ring-1 ring-orange-400/50' : ''}`}>
+                            <span className="text-lg font-bold">#{yahooPos}</span>
+                            {yahooMovement.type === 'up' && <TrendingUp className="w-3.5 h-3.5" />}
+                            {yahooMovement.type === 'same' && <Minus className="w-3.5 h-3.5" />}
+                            {yahooMovement.type === 'down' && <Activity className="w-3.5 h-3.5" />}
+                          </div>
+                        ) : (
+                          <div className="w-20 py-1.5 rounded-lg bg-muted/30 flex items-center justify-center">
+                            <span className="text-lg font-bold text-muted-foreground/50">—</span>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-[8px] opacity-70">Diff</span>
                     </div>
-                    
-                    {/* CTR Estimate based on Google position */}
-                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30 w-14">
-                      <div className="flex items-center gap-1">
-                        <MousePointerClick className="w-3 h-3 text-violet-400" />
-                        <span className="text-xs font-bold text-violet-400">
-                          {ctrValue || '—'}
-                        </span>
-                      </div>
-                      <span className="text-[8px] text-violet-400/70">CTR</span>
-                    </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
+              </div>
 
-              {/* Spacer */}
-              <div className="flex-1" />
+              {/* Column 5: Keyword Metrics - 240px */}
+              <div className="w-[240px] flex-shrink-0">
+                {(() => {
+                  const metrics = keywordMetrics[keywordText.toLowerCase()];
+                  
+                  const formatVolume = (vol?: number) => {
+                    if (vol === undefined || vol === null) return '—';
+                    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+                    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+                    return String(vol);
+                  };
+                  
+                  const getCompetitionColor = (level?: string) => {
+                    switch (level?.toUpperCase()) {
+                      case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
+                      case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+                      case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
+                      default: return 'text-muted-foreground border-border bg-muted/30';
+                    }
+                  };
 
-              {/* Right Side: Links */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+                  const getEstimatedCTR = (pos: number | null) => {
+                    if (pos === null) return null;
+                    if (pos <= 1) return '32%';
+                    if (pos <= 2) return '17%';
+                    if (pos <= 3) return '11%';
+                    if (pos <= 5) return '6%';
+                    if (pos <= 10) return '2%';
+                    return '<1%';
+                  };
+
+                  const ctrValue = getEstimatedCTR(googlePos);
+                  
+                  return (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {/* Search Volume */}
+                      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                        <div className="flex items-center gap-0.5">
+                          <Users className="w-2.5 h-2.5 text-blue-400" />
+                          <span className="text-[10px] font-bold text-blue-400">
+                            {metricsLoading ? '...' : formatVolume(metrics?.search_volume)}
+                          </span>
+                        </div>
+                        <span className="text-[7px] text-blue-400/70">Vol/mo</span>
+                      </div>
+                      
+                      {/* CPC */}
+                      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                        <div className="flex items-center gap-0.5">
+                          <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
+                          <span className="text-[10px] font-bold text-emerald-400">
+                            {metricsLoading ? '...' : metrics?.cpc !== undefined ? `$${metrics.cpc.toFixed(0)}` : '—'}
+                          </span>
+                        </div>
+                        <span className="text-[7px] text-emerald-400/70">CPC</span>
+                      </div>
+                      
+                      {/* Competition/Difficulty */}
+                      <div className={`flex flex-col items-center px-1 py-1 rounded-lg border ${getCompetitionColor(metrics?.competition_level)}`}>
+                        <div className="flex items-center gap-0.5">
+                          <Gauge className="w-2.5 h-2.5" />
+                          <span className="text-[10px] font-bold capitalize">
+                            {metricsLoading ? '...' : metrics?.competition_level?.slice(0, 3).toLowerCase() || '—'}
+                          </span>
+                        </div>
+                        <span className="text-[7px] opacity-70">Diff</span>
+                      </div>
+                      
+                      {/* CTR Estimate */}
+                      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
+                        <div className="flex items-center gap-0.5">
+                          <MousePointerClick className="w-2.5 h-2.5 text-violet-400" />
+                          <span className="text-[10px] font-bold text-violet-400">
+                            {ctrValue || '—'}
+                          </span>
+                        </div>
+                        <span className="text-[7px] text-violet-400/70">CTR</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Column 6: Links - 160px */}
+              <div className="w-[160px] flex-shrink-0 flex justify-center gap-2">
                 {/* Inbound Links */}
-                <div className="relative group">
-                  <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                        <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
+                <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
                     </div>
-                    <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
+                    <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
                   </div>
+                  <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
                 </div>
                 
                 {/* Outbound Links */}
-                <div className="relative group">
-                  <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20 hover:border-violet-500/40 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
-                        <ArrowUpRight className="w-3 h-3 text-violet-400" />
-                      </div>
-                      <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
+                <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
+                      <ArrowUpRight className="w-3 h-3 text-violet-400" />
                     </div>
-                    <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
+                    <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
                   </div>
+                  <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
                 </div>
               </div>
 
-              {/* Expand Arrow */}
-              <ChevronRight 
-                className={`w-5 h-5 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
-              />
+              {/* Column 7: Expand Arrow - 32px */}
+              <div className="w-[32px] flex-shrink-0 flex justify-center">
+                <ChevronRight 
+                  className={`w-5 h-5 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+                />
+              </div>
             </div>
           </div>
 
