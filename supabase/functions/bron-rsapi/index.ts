@@ -7,9 +7,9 @@ const corsHeaders = {
 
 const BRON_API_BASE = "https://public4.imagehosting.space/api/rsapi";
 
-// Timeout for API calls (8 seconds for most, 12 for auth which can be slow)
-const DEFAULT_TIMEOUT_MS = 8000;
-const AUTH_TIMEOUT_MS = 12000;
+// Timeout for API calls (increased for reliability - BRON API can be slow)
+const DEFAULT_TIMEOUT_MS = 25000; // 25 seconds for most operations
+const AUTH_TIMEOUT_MS = 30000; // 30 seconds for auth which can be slow
 
 interface BronRequest {
   action: string;
