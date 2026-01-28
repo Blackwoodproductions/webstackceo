@@ -176,16 +176,31 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               {/* LEFT: Website Screenshot with Domain Options */}
               <div className="lg:col-span-3 p-4 border-r border-border/30">
                 <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30 mb-3">
+                  {/* Primary: Use screenshot.abstractapi.com or urlbox alternative */}
                   <img 
-                    src={`https://image.thum.io/get/width/400/crop/300/${selectedDomain}`}
+                    src={`https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`}
                     alt={`${selectedDomain} preview`}
                     className="w-full h-full object-cover object-top"
+                    loading="lazy"
                     onError={(e) => {
-                      e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
-                      e.currentTarget.className = "w-16 h-16 object-contain mx-auto mt-8";
+                      // Fallback 1: Try thum.io
+                      const target = e.currentTarget;
+                      if (!target.dataset.fallback) {
+                        target.dataset.fallback = "1";
+                        target.src = `https://image.thum.io/get/width/400/crop/300/https://${selectedDomain}`;
+                      } else if (target.dataset.fallback === "1") {
+                        // Fallback 2: Try s.wordpress.com mshots
+                        target.dataset.fallback = "2";
+                        target.src = `https://s.wordpress.com/mshots/v1/https%3A%2F%2F${selectedDomain}?w=400&h=300`;
+                      } else {
+                        // Final fallback: Show favicon centered
+                        target.dataset.fallback = "3";
+                        target.src = `https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`;
+                        target.className = "w-20 h-20 object-contain mx-auto mt-12";
+                      }
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
                 </div>
                 <Button 
                   variant="default" 
