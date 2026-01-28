@@ -1,5 +1,5 @@
 import { memo, useState, useMemo } from "react";
-import { Link2, TrendingUp } from "lucide-react";
+import { Link2, TrendingUp, Sparkles } from "lucide-react";
 import { BronLink } from "@/hooks/use-bron-api";
 import { DonutChart, Legend } from "./CitationDonut";
 import {
@@ -36,8 +36,6 @@ export const BronCitationAnalytics = memo(({
       .trim()
       .toLowerCase();
 
-  // Build a set of categories for this keyword based on its outbound links.
-  // Used to score inbound relevance.
   const keywordCategorySet = useMemo(() => {
     const set = new Set<string>();
     for (const l of linksOut) {
@@ -50,7 +48,6 @@ export const BronCitationAnalytics = memo(({
     return set;
   }, [linksOut]);
   
-  // Calculate actual reciprocal counts from API data
   const { reciprocalCount, oneWayCount } = useMemo(() => {
     const allLinks = [...linksIn, ...linksOut];
     let reciprocal = 0;
@@ -67,7 +64,6 @@ export const BronCitationAnalytics = memo(({
     return { reciprocalCount: reciprocal, oneWayCount: oneWay };
   }, [linksIn, linksOut]);
   
-  // Relevance breakdown for the active view
   const relevanceBreakdown = useMemo(() => {
     const counts: Record<'most' | 'very' | 'relevant' | 'less', number> = {
       most: 0,
@@ -82,20 +78,30 @@ export const BronCitationAnalytics = memo(({
     return counts;
   }, [activeLinks, keywordText, keywordCategorySet]);
   
-  // Calculate percentages
   const reciprocalPercent = totalLinks > 0 ? Math.round((reciprocalCount / totalLinks) * 100) : 0;
   const oneWayPercent = 100 - reciprocalPercent;
   
   return (
-    <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden" style={{ contain: 'layout style paint' }}>
-      {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b border-border/30">
+    <div 
+      className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-card/80 via-card/60 to-cyan-950/20 overflow-hidden backdrop-blur-sm"
+      style={{ 
+        contain: 'layout style paint',
+        willChange: 'auto',
+      }}
+    >
+      {/* Header - compact */}
+      <div className="px-4 py-2.5 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-transparent">
         <div className="flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-semibold">Citation Analytics</span>
+          <div className="relative">
+            <Link2 className="w-4 h-4 text-cyan-400" />
+            <Sparkles className="w-2 h-2 text-cyan-300 absolute -top-0.5 -right-0.5" />
+          </div>
+          <span className="text-sm font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+            Citation Analytics
+          </span>
         </div>
         <select 
-          className="bg-muted/50 border border-border/50 rounded-md px-3 py-1.5 text-xs text-foreground"
+          className="bg-card/80 border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors"
           value={viewMode}
           onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
           onClick={(e) => e.stopPropagation()}
@@ -105,132 +111,138 @@ export const BronCitationAnalytics = memo(({
         </select>
       </div>
       
-      {/* Content */}
-      <div className="p-6">
-        <div className="text-center mb-6">
-          <h3 className="text-base font-semibold text-foreground">Citation Link Analytics</h3>
-          <p className="text-xs text-muted-foreground">Content sharing overview and relevance analysis</p>
-        </div>
-        
+      {/* Content - more compact */}
+      <div className="p-4">
         {totalLinks === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Link2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium">No citation links found for this keyword</p>
-            <p className="text-xs mt-1">Links will appear here when the BRON network has citations pointing to this page</p>
+          <div className="text-center py-6 text-muted-foreground">
+            <Link2 className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm font-medium">No citation links found</p>
+            <p className="text-xs mt-1">Links will appear when the BRON network has citations</p>
           </div>
         ) : (
           <>
-            {/* Donut Charts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-              {/* Relevance */}
-              <div>
-                <h4 className="text-sm font-medium text-center mb-4">
-                  {viewMode === 'inbound' ? 'Inbound' : 'Outbound'} Links by Relevance
+            {/* Header */}
+            <div className="text-center mb-4">
+              <h3 className="text-sm font-semibold text-foreground">Citation Link Analytics</h3>
+              <p className="text-[10px] text-muted-foreground">Content sharing overview and relevance analysis</p>
+            </div>
+            
+            {/* Donut Charts - side by side, larger */}
+            <div className="flex items-start justify-center gap-8 mb-4">
+              {/* Relevance Chart */}
+              <div className="flex flex-col items-center">
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                  {viewMode === 'inbound' ? 'Inbound' : 'Outbound'} by Relevance
                 </h4>
-                <div className="flex justify-center mb-4">
-                  <DonutChart 
-                    segments={[
-                      { value: relevanceBreakdown.less, color: '#3B82F6' },
-                      { value: relevanceBreakdown.relevant, color: '#8B5CF6' },
-                      { value: relevanceBreakdown.very, color: '#22C55E' },
-                      { value: relevanceBreakdown.most, color: '#CA8A04' },
+                <DonutChart 
+                  size="lg"
+                  segments={[
+                    { value: relevanceBreakdown.less, color: '#3B82F6' },
+                    { value: relevanceBreakdown.relevant, color: '#8B5CF6' },
+                    { value: relevanceBreakdown.very, color: '#22C55E' },
+                    { value: relevanceBreakdown.most, color: '#F59E0B' },
+                  ]}
+                  total={Math.max(activeLinks.length, 1)}
+                  centerTop={`${activeLinks.length}`}
+                  centerBottom="links"
+                  centerTopClassName="text-cyan-400"
+                  centerBottomClassName="text-muted-foreground"
+                />
+                <div className="mt-2">
+                  <Legend
+                    compact
+                    items={[
+                      { colorClassName: 'bg-amber-400', label: 'Most', value: relevanceBreakdown.most },
+                      { colorClassName: 'bg-emerald-400', label: 'Very', value: relevanceBreakdown.very },
+                      { colorClassName: 'bg-violet-400', label: 'Relevant', value: relevanceBreakdown.relevant },
+                      { colorClassName: 'bg-blue-400', label: 'Less', value: relevanceBreakdown.less },
                     ]}
-                    total={totalLinks || 1}
-                    centerTop={`${activeLinks.length}`}
-                    centerBottom="links"
-                    centerTopClassName="text-primary"
-                    centerBottomClassName="text-muted-foreground"
                   />
                 </div>
-                <Legend
-                  items={[
-                    { colorClassName: 'bg-blue-400', label: 'Less Relevant', value: relevanceBreakdown.less },
-                    { colorClassName: 'bg-violet-400', label: 'Relevant', value: relevanceBreakdown.relevant },
-                    { colorClassName: 'bg-emerald-400', label: 'Very Relevant', value: relevanceBreakdown.very },
-                    { colorClassName: 'bg-amber-400', label: 'Most Relevant', value: relevanceBreakdown.most },
-                  ]}
-                />
               </div>
               
-              {/* Link Relationship Types */}
-              <div>
-                <h4 className="text-sm font-medium text-center mb-4">Link Relationship Types</h4>
-                <div className="flex justify-center mb-4">
-                  <DonutChart 
-                    segments={[
-                      { value: reciprocalCount, color: '#22C55E' },
-                      { value: oneWayCount, color: '#3B82F6' },
+              {/* Relationship Types Chart */}
+              <div className="flex flex-col items-center">
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">Link Relationships</h4>
+                <DonutChart 
+                  size="lg"
+                  segments={[
+                    { value: reciprocalCount, color: '#22C55E' },
+                    { value: oneWayCount, color: '#3B82F6' },
+                  ]}
+                  total={Math.max(totalLinks, 1)}
+                  centerTop={`${reciprocalPercent}%`}
+                  centerBottom={`${oneWayPercent}%`}
+                  centerTopClassName="text-emerald-400"
+                  centerBottomClassName="text-blue-400"
+                />
+                <div className="mt-2">
+                  <Legend
+                    compact
+                    items={[
+                      { colorClassName: 'bg-emerald-400', label: 'Reciprocal', value: reciprocalCount },
+                      { colorClassName: 'bg-blue-400', label: 'One Way', value: oneWayCount },
                     ]}
-                    total={totalLinks || 1}
-                    centerTop={`${reciprocalPercent}%`}
-                    centerBottom={`${oneWayPercent}%`}
-                    centerTopClassName="text-primary"
-                    centerBottomClassName="text-muted-foreground"
                   />
                 </div>
-                <Legend
-                  items={[
-                    { colorClassName: 'bg-emerald-400', label: 'Reciprocal', value: reciprocalCount },
-                    { colorClassName: 'bg-blue-400', label: 'One Way', value: oneWayCount },
-                  ]}
-                />
               </div>
             </div>
             
-            {/* Summary */}
-            <div className="text-center py-3 border-t border-b border-border/30 mb-6">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold">Total: {totalLinks} citations</span>
+            {/* Summary - compact */}
+            <div className="text-center py-2 border-t border-b border-cyan-500/20 mb-4 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent">
+              <p className="text-xs text-foreground">
+                <span className="font-semibold text-cyan-400">Total: {totalLinks} citations</span>
                 <span className="text-muted-foreground"> ({reciprocalCount} reciprocal)</span>
-                <TrendingUp className="inline w-4 h-4 ml-1 text-emerald-400" />
+                <TrendingUp className="inline w-3 h-3 ml-1 text-emerald-400" />
               </p>
-              <p className="text-xs text-muted-foreground">Citation links overview and statistics</p>
             </div>
             
-            {/* Links Table */}
+            {/* Links Table Section */}
             <div>
-              <h4 className="text-sm font-semibold mb-3">Your Citation Links</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold text-foreground">Your Citation Links</h4>
+              </div>
               
-              {/* Filters */}
-              <div className="flex items-center gap-4 mb-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">View:</span>
+              {/* Compact Filters */}
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground">View:</span>
                   <select
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20"
+                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground"
                     onClick={(e) => e.stopPropagation()}
                     value={viewMode}
                     onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
                   >
-                    <option value="inbound">Inbound Links ({linksIn.length})</option>
-                    <option value="outbound">Outbound Links ({linksOut.length})</option>
+                    <option value="inbound">Inbound ({linksIn.length})</option>
+                    <option value="outbound">Outbound ({linksOut.length})</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Relevance:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground">Relevance:</span>
                   <select
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20"
+                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground"
                     onClick={(e) => e.stopPropagation()}
                     value={relevanceFilter}
                     onChange={(e) => setRelevanceFilter(e.target.value as RelevanceFilter)}
                   >
-                    <option value="all">All Relevance</option>
-                    <option value="most">Most Relevant</option>
-                    <option value="very">Very Relevant</option>
+                    <option value="all">All</option>
+                    <option value="most">Most</option>
+                    <option value="very">Very</option>
                     <option value="relevant">Relevant</option>
-                    <option value="less">Less Relevant</option>
+                    <option value="less">Less</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Reciprocal:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground">Type:</span>
                   <select 
-                    className="bg-card border border-border rounded-md px-3 py-1.5 text-xs text-foreground z-20" 
+                    className="bg-card/80 border border-border/50 rounded-md px-2 py-1 text-[10px] text-foreground" 
                     onClick={(e) => e.stopPropagation()}
                     value={reciprocalFilter}
                     onChange={(e) => setReciprocalFilter(e.target.value as ReciprocalFilter)}
                   >
-                    <option value="all">All Types ({activeLinks.length})</option>
-                    <option value="reciprocal">Reciprocal Only</option>
-                    <option value="one-way">One Way Only</option>
+                    <option value="all">All ({activeLinks.length})</option>
+                    <option value="reciprocal">Reciprocal</option>
+                    <option value="one-way">One Way</option>
                   </select>
                 </div>
               </div>
