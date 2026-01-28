@@ -103,7 +103,7 @@ function getMovementFromDelta(movement: number) {
   return { type: 'same' as const, color: 'text-muted-foreground', bgColor: 'bg-muted/20', delta: 0 };
 }
 
-// PageSpeed Gauge Component - memoized with stable rendering
+// PageSpeed Gauge Component - static rendering (no animations to prevent flicker)
 const PageSpeedGauge = memo(({ score, loading, updating, error }: { 
   score: number; 
   loading?: boolean; 
@@ -113,11 +113,11 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   const isPending = score === 0 && !error && !loading && !updating;
   
   const getGaugeColor = () => {
-    if (loading || isPending) return { stroke: 'stroke-cyan-500/40', text: 'text-cyan-400', glow: '' };
-    if (error) return { stroke: 'stroke-muted-foreground/30', text: 'text-muted-foreground', glow: '' };
-    if (score >= 90) return { stroke: 'stroke-emerald-500', text: 'text-emerald-400', glow: '' };
-    if (score >= 50) return { stroke: 'stroke-amber-500', text: 'text-amber-400', glow: '' };
-    return { stroke: 'stroke-red-500', text: 'text-red-400', glow: '' };
+    if (loading || isPending) return { stroke: '#22d3ee', text: 'text-cyan-400' }; // cyan-400
+    if (error) return { stroke: '#6b7280', text: 'text-muted-foreground' }; // gray-500
+    if (score >= 90) return { stroke: '#10b981', text: 'text-emerald-400' }; // emerald-500
+    if (score >= 50) return { stroke: '#f59e0b', text: 'text-amber-400' }; // amber-500
+    return { stroke: '#ef4444', text: 'text-red-400' }; // red-500
   };
   
   const colors = getGaugeColor();
@@ -128,37 +128,36 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
   return (
     <div 
       className="relative w-12 h-12 flex items-center justify-center"
-      title={updating ? 'Updating...' : isPending ? 'Loading...' : `Score: ${score}/100`}
-      style={{ contain: 'strict' }}
+      title={updating ? 'Updating...' : isPending ? 'Pending...' : `Score: ${score}/100`}
     >
       <svg className="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted/30" />
-        {(loading || isPending) ? (
-          <circle
-            cx="22" cy="22" r="18" fill="none" strokeWidth="3" strokeLinecap="round"
-            className="stroke-cyan-500/50"
-            strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
-          />
-        ) : (
-          <circle
-            cx="22" cy="22" r="18" fill="none" strokeWidth="3" strokeLinecap="round"
-            className={colors.stroke}
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-          />
-        )}
+        {/* Background circle */}
+        <circle 
+          cx="22" cy="22" r="18" 
+          fill="none" 
+          stroke="hsl(var(--muted) / 0.3)" 
+          strokeWidth="3" 
+        />
+        {/* Progress circle - no animation */}
+        <circle
+          cx="22" cy="22" r="18" 
+          fill="none" 
+          strokeWidth="3" 
+          strokeLinecap="round"
+          stroke={loading || isPending ? 'hsl(var(--muted) / 0.5)' : colors.stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={loading || isPending ? circumference * 0.75 : strokeDashoffset}
+        />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
         {(loading || isPending) ? (
-          <Gauge className="w-4 h-4 text-cyan-400/70" />
+          <span className="text-xs text-muted-foreground">...</span>
         ) : (
           <span className={`text-sm font-bold ${colors.text}`}>{error ? '—' : score}</span>
         )}
       </div>
       {updating && (
-        <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-cyan-500/90 flex items-center justify-center">
-          <RefreshCw className="w-2.5 h-2.5 text-white" />
-        </div>
+        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-cyan-500 border border-background" />
       )}
     </div>
   );
