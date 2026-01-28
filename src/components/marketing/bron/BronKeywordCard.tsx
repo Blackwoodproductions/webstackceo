@@ -273,6 +273,56 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
 MetricsDisplay.displayName = 'MetricsDisplay';
 
 // Main Card Component
+function areBronKeywordCardPropsEqual(prev: BronKeywordCardProps, next: BronKeywordCardProps) {
+  const sameKeyword =
+    prev.keyword.id === next.keyword.id &&
+    prev.keyword.keywordtitle === next.keyword.keywordtitle &&
+    prev.keyword.keyword === next.keyword.keyword &&
+    prev.keyword.metatitle === next.keyword.metatitle &&
+    prev.keyword.resfeedtext === next.keyword.resfeedtext &&
+    prev.keyword.deleted === next.keyword.deleted &&
+    (prev.keyword as any).is_deleted === (next.keyword as any).is_deleted &&
+    prev.keyword.active === next.keyword.active &&
+    prev.keyword.linkouturl === next.keyword.linkouturl;
+
+  const sameSerp =
+    (prev.serpData?.google ?? null) === (next.serpData?.google ?? null) &&
+    (prev.serpData?.bing ?? null) === (next.serpData?.bing ?? null) &&
+    (prev.serpData?.yahoo ?? null) === (next.serpData?.yahoo ?? null);
+
+  const sameMetrics =
+    (prev.keywordMetrics?.cpc ?? null) === (next.keywordMetrics?.cpc ?? null) &&
+    (prev.keywordMetrics?.competition ?? null) === (next.keywordMetrics?.competition ?? null) &&
+    (prev.keywordMetrics?.competition_level ?? null) ===
+      (next.keywordMetrics?.competition_level ?? null) &&
+    (prev.keywordMetrics?.search_volume ?? null) === (next.keywordMetrics?.search_volume ?? null);
+
+  const samePageSpeed =
+    (prev.pageSpeedScore?.mobileScore ?? 0) === (next.pageSpeedScore?.mobileScore ?? 0) &&
+    (prev.pageSpeedScore?.desktopScore ?? 0) === (next.pageSpeedScore?.desktopScore ?? 0) &&
+    (prev.pageSpeedScore?.loading ?? false) === (next.pageSpeedScore?.loading ?? false) &&
+    (prev.pageSpeedScore?.updating ?? false) === (next.pageSpeedScore?.updating ?? false) &&
+    (prev.pageSpeedScore?.error ?? false) === (next.pageSpeedScore?.error ?? false);
+
+  return (
+    sameKeyword &&
+    sameSerp &&
+    sameMetrics &&
+    samePageSpeed &&
+    prev.linksInCount === next.linksInCount &&
+    prev.linksOutCount === next.linksOutCount &&
+    prev.isExpanded === next.isExpanded &&
+    prev.isNested === next.isNested &&
+    prev.isTrackingOnly === next.isTrackingOnly &&
+    prev.clusterChildCount === next.clusterChildCount &&
+    prev.selectedDomain === next.selectedDomain &&
+    prev.googleMovement === next.googleMovement &&
+    prev.bingMovement === next.bingMovement &&
+    prev.yahooMovement === next.yahooMovement &&
+    prev.metricsLoading === next.metricsLoading
+  );
+}
+
 export const BronKeywordCard = memo(({
   keyword: kw,
   serpData,
@@ -321,10 +371,10 @@ export const BronKeywordCard = memo(({
         className={`
           rounded-xl border overflow-hidden
           ${isNested 
-            ? 'border-l-2 border-l-blue-500/50 ml-2 bg-blue-500/5 border-blue-500/20'
+            ? 'border-l-2 border-l-hover-accent/60 ml-2 bg-hover-accent/10 border-hover-accent/25'
             : isTrackingOnly 
-              ? 'bg-amber-500/5 border-amber-500/20'
-              : 'bg-orange-500/5 border-orange-500/20 border-orange-500/30'
+              ? 'bg-hover-accent/5 border-hover-accent/20'
+              : 'bg-primary/10 border-primary/25'
           }
         `}
         style={{ contain: 'content' }}
@@ -366,17 +416,17 @@ export const BronKeywordCard = memo(({
                 )}
                 
                 {isTrackingOnly ? (
-                  <Badge className="text-[9px] h-5 px-2 bg-amber-500/20 text-amber-400 border-amber-500/30 whitespace-nowrap flex-shrink-0">
+                   <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap flex-shrink-0">
                     Tracking
                   </Badge>
                 ) : isNested ? (
-                  <Badge className="text-[9px] h-5 px-2 bg-blue-500/20 text-blue-400 border-blue-500/30 whitespace-nowrap flex-shrink-0">
+                   <Badge className="text-[9px] h-5 px-2 bg-hover-accent/20 text-hover-accent border-hover-accent/30 whitespace-nowrap flex-shrink-0">
                     Supporting
                   </Badge>
                 ) : (
                   <>
                     {active && (
-                      <Badge className="text-[9px] h-5 px-2 bg-orange-500/20 text-orange-400 border-orange-500/30 whitespace-nowrap flex-shrink-0">
+                       <Badge className="text-[9px] h-5 px-2 bg-primary/20 text-primary border-primary/30 whitespace-nowrap flex-shrink-0">
                         Main
                       </Badge>
                     )}
@@ -453,6 +503,6 @@ export const BronKeywordCard = memo(({
       </div>
     </div>
   );
-});
+}, areBronKeywordCardPropsEqual);
 
 BronKeywordCard.displayName = 'BronKeywordCard';
