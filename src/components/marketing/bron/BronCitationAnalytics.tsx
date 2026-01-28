@@ -1,5 +1,5 @@
 import { memo, useState, useMemo } from "react";
-import { Link2, TrendingUp, Sparkles } from "lucide-react";
+import { Link2, TrendingUp, Sparkles, Save, Edit2, FileText } from "lucide-react";
 import { BronLink } from "@/hooks/use-bron-api";
 import { DonutChart, Legend } from "./CitationDonut";
 import {
@@ -8,12 +8,17 @@ import {
   type RelevanceFilter,
   type ReciprocalFilter,
 } from "./CitationLinksTable";
+import { Button } from "@/components/ui/button";
 
 interface BronCitationAnalyticsProps {
   keywordId: string | number;
   keywordText: string;
   linksIn: BronLink[];
   linksOut: BronLink[];
+  wordCount?: number;
+  isSaving?: boolean;
+  onSave?: () => void;
+  onOpenArticleEditor?: () => void;
 }
 
 export const BronCitationAnalytics = memo(({
@@ -21,6 +26,10 @@ export const BronCitationAnalytics = memo(({
   keywordText,
   linksIn,
   linksOut,
+  wordCount = 0,
+  isSaving = false,
+  onSave,
+  onOpenArticleEditor,
 }: BronCitationAnalyticsProps) => {
   const [viewMode, setViewMode] = useState<'inbound' | 'outbound'>('inbound');
   const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('all');
@@ -87,7 +96,7 @@ export const BronCitationAnalytics = memo(({
       className="rounded-xl border border-border/60 bg-card/60 overflow-hidden"
       style={{ contain: 'layout paint' }}
     >
-      {/* Header - compact */}
+      {/* Header - compact with Save/Edit buttons */}
       <div className="px-4 py-2.5 flex items-center justify-between border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-transparent">
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -97,16 +106,47 @@ export const BronCitationAnalytics = memo(({
           <span className="text-sm font-semibold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
             Citation Analytics
           </span>
+          {wordCount > 0 && (
+            <span className="text-xs text-muted-foreground ml-2">
+              <FileText className="w-3 h-3 inline mr-1" />
+              {wordCount} words
+            </span>
+          )}
         </div>
-        <select 
-          className="bg-card border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors z-30"
-          value={viewMode}
-          onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <option value="inbound">Inbound ({linksIn.length})</option>
-          <option value="outbound">Outbound ({linksOut.length})</option>
-        </select>
+        <div className="flex items-center gap-2">
+          {onSave && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => { e.stopPropagation(); onSave(); }}
+              disabled={isSaving}
+              className="h-7 text-xs"
+            >
+              <Save className={`w-3 h-3 mr-1 ${isSaving ? 'animate-spin' : ''}`} />
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          )}
+          {onOpenArticleEditor && (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={(e) => { e.stopPropagation(); onOpenArticleEditor(); }}
+              className="h-7 text-xs"
+            >
+              <Edit2 className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+          )}
+          <select 
+            className="bg-card border border-cyan-500/30 rounded-lg px-3 py-1 text-xs text-foreground hover:border-cyan-400/50 transition-colors z-30"
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value as 'inbound' | 'outbound')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="inbound">Inbound ({linksIn.length})</option>
+            <option value="outbound">Outbound ({linksOut.length})</option>
+          </select>
+        </div>
       </div>
       
       {/* Content - more compact */}
