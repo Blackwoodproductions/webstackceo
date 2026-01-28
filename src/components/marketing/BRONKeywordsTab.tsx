@@ -661,9 +661,9 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* Intent badge - centered between keyword and rankings */}
-              <div className="flex-1 flex justify-center">
-                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5">
+              {/* Intent badge - fixed width column */}
+              <div className="w-32 flex justify-center flex-shrink-0">
+                <div className="bg-card border border-border/60 rounded-md px-2 py-1 flex items-center gap-1.5 w-full justify-center">
                   <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
                     <IntentIcon className={`w-3 h-3 ${intent.color}`} />
                   </div>
