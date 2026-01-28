@@ -1128,187 +1128,291 @@ export const BRONKeywordsTab = ({
                   </Button>
                 </div>
 
-                {/* Two-column layout for compact form */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
-                  {/* Left Column: Keyword & SEO */}
-                  <div className="space-y-3">
-                    {/* Keyword Title */}
-                    <div className="space-y-1">
-                      <Label className="text-xs">Keyword Title</Label>
-                      <Input
-                        value={inlineEditForms[kw.id]?.keywordtitle || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
-                        placeholder="Primary keyword..."
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
+                {/* Collapsible Tab 1: Relevant Business Citations */}
+                <details className="mb-3 rounded-lg border border-cyan-500/30 overflow-hidden bg-gradient-to-br from-cyan-500/5 to-cyan-500/10">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-cyan-500/10 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-cyan-400" />
+                      <span className="text-sm font-medium text-foreground">Relevant Business Citations</span>
+                      <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-400">
+                        {linksIn.length + linksOut.length} links
+                      </Badge>
                     </div>
-
-                    {/* Meta Title */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Meta Title</Label>
-                        <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaTitleQuality.score)}`}>
-                          <Hash className={`w-2.5 h-2.5 ${scoreColor(metaTitleQuality.score)}`} />
-                          <span className={scoreColor(metaTitleQuality.score)}>{(inlineEditForms[kw.id]?.metatitle || '').length}/60</span>
-                        </div>
-                      </div>
-                      <Input
-                        value={inlineEditForms[kw.id]?.metatitle || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
-                        placeholder="Page title for search engines..."
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-
-                    {/* Meta Description */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Meta Description</Label>
-                        <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaDescQuality.score)}`}>
-                          <Sparkles className={`w-2.5 h-2.5 ${scoreColor(metaDescQuality.score)}`} />
-                          <span className={scoreColor(metaDescQuality.score)}>{(inlineEditForms[kw.id]?.metadescription || '').length}/160</span>
-                        </div>
-                      </div>
-                      <Textarea
-                        value={inlineEditForms[kw.id]?.metadescription || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
-                        placeholder="Page description for search results..."
-                        rows={5}
-                        onClick={(e) => e.stopPropagation()}
-                        className="resize-y min-h-[100px]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right Column: Links */}
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Target URL (Link Out)</Label>
-                      <Input
-                        value={inlineEditForms[kw.id]?.linkouturl || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
-                        placeholder="https://example.com/page"
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Resource Address</Label>
-                      <Input
-                        value={inlineEditForms[kw.id]?.resaddress || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
-                        placeholder="Physical address or location..."
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Facebook Page URL</Label>
-                      <Input
-                        value={inlineEditForms[kw.id]?.resfb || ''}
-                        onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
-                        placeholder="https://facebook.com/..."
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Historical Rankings Chart */}
-                {selectedDomain && (
-                  <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
-                    <summary className="flex items-center gap-2 p-3 text-sm font-medium text-foreground cursor-pointer hover:bg-muted/30">
-                      <BarChart3 className="w-4 h-4 text-primary" />
-                      Ranking History
-                    </summary>
-                    <div className="border-t border-border/30 p-4">
-                      <KeywordHistoryChart
-                        domain={selectedDomain}
-                        keyword={keywordText}
-                        currentGooglePosition={googlePos}
-                        currentBingPosition={bingPos}
-                        currentYahooPosition={yahooPos}
-                      />
-                    </div>
-                  </details>
-                )}
-
-                {/* Article Section - compact row */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20 mb-3">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-primary" />
-                    <div>
-                      <h4 className="text-sm font-medium text-foreground">Article Content</h4>
-                      <p className="text-xs text-muted-foreground">
-                        {getWordCount(kw.resfeedtext || '')} words
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-primary hover:bg-primary/90"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setInlineEditForms((prev) =>
-                        prev[kw.id]
-                          ? prev
-                          : {
-                              ...prev,
-                              [kw.id]: {
-                                keywordtitle: kw.keywordtitle || kw.keyword || "",
-                                metatitle: kw.metatitle || "",
-                                metadescription: kw.metadescription || "",
-                                resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
-                                linkouturl: kw.linkouturl || "",
-                                resaddress: kw.resaddress || "",
-                                resfb: kw.resfb || "",
-                              },
-                            },
-                      );
-                      setArticleEditorId(kw.id);
-                    }}
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                </div>
-
-                {/* Article Preview - collapsible, starts collapsed */}
-                <details className="mb-3 rounded-lg border border-border/50 overflow-hidden">
-                  <summary className="flex items-center gap-2 p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/30">
-                    <Eye className="w-3 h-3" />
-                    Article Preview
+                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 [details[open]_&]:rotate-90" />
                   </summary>
-                  <div className="border-t border-border">
-                    <div className="bg-muted/60 px-3 py-1 flex items-center gap-2 border-b border-border">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-destructive/50" />
-                        <div className="w-2 h-2 rounded-full bg-secondary" />
-                        <div className="w-2 h-2 rounded-full bg-primary/50" />
+                  <div className="border-t border-cyan-500/20 p-4 bg-card/50">
+                    {/* Citation Stats Summary */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                        <div className="text-xs text-cyan-400/70 uppercase tracking-wider mb-1">Inbound Citations</div>
+                        <div className="text-2xl font-bold text-cyan-400">{linksIn.length}</div>
                       </div>
-                      <div className="flex-1 mx-2">
-                        <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
-                          {selectedDomain || "example.com"}/article
+                      <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                        <div className="text-xs text-violet-400/70 uppercase tracking-wider mb-1">Outbound Links</div>
+                        <div className="text-2xl font-bold text-violet-400">{linksOut.length}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Citations Table */}
+                    {(linksIn.length > 0 || linksOut.length > 0) ? (
+                      <div className="rounded-lg border border-border/50 overflow-hidden">
+                        <div className="bg-muted/50 px-3 py-2 border-b border-border/50">
+                          <div className="grid grid-cols-4 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            <span>Domain-Keyword</span>
+                            <span>Category</span>
+                            <span className="text-center">Type</span>
+                            <span className="text-center">Status</span>
+                          </div>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto divide-y divide-border/30">
+                          {linksIn.slice(0, 10).map((link, idx) => (
+                            <div key={`in-${idx}`} className="grid grid-cols-4 gap-4 px-3 py-2.5 hover:bg-muted/30 items-center">
+                              <div>
+                                <div className="text-sm font-medium text-foreground truncate">{link.source_url || link.domain || 'Unknown'}</div>
+                                <div className="text-xs text-muted-foreground truncate">{link.anchor_text || keywordText}</div>
+                              </div>
+                              <div>
+                                <Badge variant="secondary" className="text-[9px] bg-muted/80">
+                                  {link.type || 'Citation'}
+                                </Badge>
+                              </div>
+                              <div className="text-center">
+                                <span className="text-xs text-cyan-400">Inbound</span>
+                              </div>
+                              <div className="text-center">
+                                <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                                  ACTIVE
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                          {linksOut.slice(0, 10).map((link, idx) => (
+                            <div key={`out-${idx}`} className="grid grid-cols-4 gap-4 px-3 py-2.5 hover:bg-muted/30 items-center">
+                              <div>
+                                <div className="text-sm font-medium text-foreground truncate">{link.target_url || link.domain || 'Unknown'}</div>
+                                <div className="text-xs text-muted-foreground truncate">{link.anchor_text || keywordText}</div>
+                              </div>
+                              <div>
+                                <Badge variant="secondary" className="text-[9px] bg-muted/80">
+                                  {link.type || 'Outlink'}
+                                </Badge>
+                              </div>
+                              <div className="text-center">
+                                <span className="text-xs text-violet-400">Outbound</span>
+                              </div>
+                              <div className="text-center">
+                                <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                                  ENABLED
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        No citation links found for this keyword
+                      </div>
+                    )}
+                  </div>
+                </details>
+
+                {/* Collapsible Tab 2: Keyword Content */}
+                <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
+                  <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-primary/10 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Keyword Content</span>
+                      <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                        {getWordCount(kw.resfeedtext || '')} words
+                      </Badge>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 [details[open]_&]:rotate-90" />
+                  </summary>
+                  <div className="border-t border-primary/20 p-4 bg-card/50">
+                    {/* Two-column layout for compact form */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+                      {/* Left Column: Keyword & SEO */}
+                      <div className="space-y-3">
+                        {/* Keyword Title */}
+                        <div className="space-y-1">
+                          <Label className="text-xs">Keyword Title</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                            placeholder="Primary keyword..."
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9"
+                          />
+                        </div>
+
+                        {/* Meta Title */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">Meta Title</Label>
+                            <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaTitleQuality.score)}`}>
+                              <Hash className={`w-2.5 h-2.5 ${scoreColor(metaTitleQuality.score)}`} />
+                              <span className={scoreColor(metaTitleQuality.score)}>{(inlineEditForms[kw.id]?.metatitle || '').length}/60</span>
+                            </div>
+                          </div>
+                          <Input
+                            value={inlineEditForms[kw.id]?.metatitle || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                            placeholder="Page title for search engines..."
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9"
+                          />
+                        </div>
+
+                        {/* Meta Description */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">Meta Description</Label>
+                            <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaDescQuality.score)}`}>
+                              <Sparkles className={`w-2.5 h-2.5 ${scoreColor(metaDescQuality.score)}`} />
+                              <span className={scoreColor(metaDescQuality.score)}>{(inlineEditForms[kw.id]?.metadescription || '').length}/160</span>
+                            </div>
+                          </div>
+                          <Textarea
+                            value={inlineEditForms[kw.id]?.metadescription || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                            placeholder="Page description for search results..."
+                            rows={5}
+                            onClick={(e) => e.stopPropagation()}
+                            className="resize-y min-h-[100px]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right Column: Links */}
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Target URL (Link Out)</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.linkouturl || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                            placeholder="https://example.com/page"
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Resource Address</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.resaddress || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                            placeholder="Physical address or location..."
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Facebook Page URL</Label>
+                          <Input
+                            value={inlineEditForms[kw.id]?.resfb || ''}
+                            onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                            placeholder="https://facebook.com/..."
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-9"
+                          />
                         </div>
                       </div>
                     </div>
-                    <div className="bg-background text-foreground max-h-[300px] overflow-y-auto">
-                      <article className="p-4">
-                        <div
-                          className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              inlineEditForms[kw.id]?.resfeedtext ||
-                              decodeHtmlContent(kw.resfeedtext || "") ||
-                              "<p><em>No article content yet…</em></p>",
-                          }}
-                        />
-                      </article>
+
+                    {/* Historical Rankings Chart */}
+                    {selectedDomain && (
+                      <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
+                        <summary className="flex items-center gap-2 p-3 text-sm font-medium text-foreground cursor-pointer hover:bg-muted/30">
+                          <BarChart3 className="w-4 h-4 text-primary" />
+                          Ranking History
+                        </summary>
+                        <div className="border-t border-border/30 p-4">
+                          <KeywordHistoryChart
+                            domain={selectedDomain}
+                            keyword={keywordText}
+                            currentGooglePosition={googlePos}
+                            currentBingPosition={bingPos}
+                            currentYahooPosition={yahooPos}
+                          />
+                        </div>
+                      </details>
+                    )}
+
+                    {/* Article Section - compact row */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20 mb-3">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <div>
+                          <h4 className="text-sm font-medium text-foreground">Article Content</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {getWordCount(kw.resfeedtext || '')} words
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-primary hover:bg-primary/90"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInlineEditForms((prev) =>
+                            prev[kw.id]
+                              ? prev
+                              : {
+                                  ...prev,
+                                  [kw.id]: {
+                                    keywordtitle: kw.keywordtitle || kw.keyword || "",
+                                    metatitle: kw.metatitle || "",
+                                    metadescription: kw.metadescription || "",
+                                    resfeedtext: decodeHtmlContent(kw.resfeedtext || ""),
+                                    linkouturl: kw.linkouturl || "",
+                                    resaddress: kw.resaddress || "",
+                                    resfb: kw.resfb || "",
+                                  },
+                                },
+                          );
+                          setArticleEditorId(kw.id);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
                     </div>
+
+                    {/* Article Preview - collapsible, starts collapsed */}
+                    <details className="rounded-lg border border-border/50 overflow-hidden">
+                      <summary className="flex items-center gap-2 p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/30">
+                        <Eye className="w-3 h-3" />
+                        Article Preview
+                      </summary>
+                      <div className="border-t border-border">
+                        <div className="bg-muted/60 px-3 py-1 flex items-center gap-2 border-b border-border">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-destructive/50" />
+                            <div className="w-2 h-2 rounded-full bg-secondary" />
+                            <div className="w-2 h-2 rounded-full bg-primary/50" />
+                          </div>
+                          <div className="flex-1 mx-2">
+                            <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
+                              {selectedDomain || "example.com"}/article
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-background text-foreground max-h-[300px] overflow-y-auto">
+                          <article className="p-4">
+                            <div
+                              className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
+                              dangerouslySetInnerHTML={{
+                                __html:
+                                  inlineEditForms[kw.id]?.resfeedtext ||
+                                  decodeHtmlContent(kw.resfeedtext || "") ||
+                                  "<p><em>No article content yet…</em></p>",
+                              }}
+                            />
+                          </article>
+                        </div>
+                      </div>
+                    </details>
                   </div>
                 </details>
 
