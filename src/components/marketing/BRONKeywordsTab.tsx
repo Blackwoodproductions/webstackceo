@@ -1398,453 +1398,158 @@ export const BRONKeywordsTab = ({
                   </div>
                 </div>
               ) : (
-              /* Full Content Keywords - Original Nested System */
-              <div className="p-3">
-                {/* Compact Header Bar */}
-                <div className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
+              /* Full Content Keywords - Simplified Flat Layout */
+              <div className="p-4 space-y-4">
+                {/* Header Row */}
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
-                      <Edit2 className="w-3 h-3 text-primary" />
-                      <span className="font-semibold text-primary">Edit Mode</span>
-                    </div>
-                    <div className="h-4 w-px bg-border/50" />
-                    <span className="text-muted-foreground font-mono text-[10px]">ID: {kw.id}</span>
-                    <Badge variant={active ? 'default' : 'secondary'} className="text-[9px] h-5">
+                    <Badge variant="outline" className="text-[10px] font-mono">
+                      ID: {kw.id}
+                    </Badge>
+                    <Badge variant={active ? 'default' : 'secondary'} className="text-[10px]">
                       {active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <span className="text-muted-foreground text-[10px]">{formatDate(kw.createdDate)}</span>
+                    <span className="text-muted-foreground">{formatDate(kw.createdDate)}</span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandKeyword(kw);
-                    }}
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                    Collapse
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {!deleted && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm(String(kw.id));
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      className="h-7 bg-primary hover:bg-primary/90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        saveInlineChanges(kw);
+                      }}
+                      disabled={savingIds.has(kw.id)}
+                    >
+                      {savingIds.has(kw.id) ? (
+                        <RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Save className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      Save
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        expandKeyword(kw);
+                      }}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Nested Tabs Grid */}
-                <div className="space-y-2">
-                  {/* Tab 1: Relevant Business Citations - simplified styling */}
-                  <details open className="rounded-xl border border-cyan-500/30 overflow-hidden bg-cyan-500/5">
-                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-cyan-500/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                          <Link2 className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <div>
-                          <span className="text-sm font-semibold text-foreground">Business Citations</span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="outline" className="text-[9px] border-cyan-500/30 text-cyan-400 h-4">
-                              {linksIn.length} inbound
-                            </Badge>
-                            <Badge variant="outline" className="text-[9px] border-violet-500/30 text-violet-400 h-4">
-                              {linksOut.length} outbound
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronUp className="w-5 h-5 text-cyan-400" />
-                    </summary>
-                    <div className="p-4 border-t border-cyan-500/20 bg-card/50">
-                      {/* Compact Citation Link Analytics */}
-                      <div className="text-center mb-3">
-                        <h3 className="text-sm font-semibold text-foreground">Citation Link Analytics</h3>
-                        <p className="text-xs text-muted-foreground">Content sharing overview</p>
-                      </div>
-                    
-                      {/* Compact Donut Charts Section */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      {/* Inbound Content Sharing Relevance - Compact */}
-                      <div className="p-3 rounded-lg border border-border/50 bg-card/50">
-                        <h4 className="text-xs font-medium text-center text-foreground mb-2">Inbound Content Sharing Relevance</h4>
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-20 h-20 flex-shrink-0">
-                            {/* SVG Donut Chart */}
-                            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                              {(() => {
-                                const total = linksIn.length || 1;
-                                const mostRelevant = Math.floor(total * 0.83);
-                                const veryRelevant = Math.floor(total * 0.17);
-                                
-                                const segments = [
-                                  { value: mostRelevant, color: '#EAB308' },
-                                  { value: veryRelevant, color: '#22C55E' },
-                                ];
-                                
-                                let offset = 0;
-                                const circumference = 2 * Math.PI * 35;
-                                
-                                return segments.map((seg, i) => {
-                                  const percent = seg.value / total;
-                                  const strokeDasharray = `${circumference * percent} ${circumference * (1 - percent)}`;
-                                  const strokeDashoffset = -offset * circumference;
-                                  offset += percent;
-                                  
-                                  if (seg.value === 0) return null;
-                                  
-                                  return (
-                                    <circle
-                                      key={i}
-                                      cx="50"
-                                      cy="50"
-                                      r="35"
-                                      fill="none"
-                                      stroke={seg.color}
-                                      strokeWidth="10"
-                                      strokeDasharray={strokeDasharray}
-                                      strokeDashoffset={strokeDashoffset}
-                                    />
-                                  );
-                                });
-                              })()}
-                              <circle cx="50" cy="50" r="29" fill="hsl(var(--card))" />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-[10px] text-emerald-400 font-semibold">17%</span>
-                              <span className="text-sm text-yellow-400 font-bold">83%</span>
-                            </div>
-                          </div>
-                          {/* Compact Legend */}
-                          <div className="flex-1 grid grid-cols-2 gap-1 text-[10px]">
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-amber-400" />
-                              <span className="text-muted-foreground">Less</span>
-                              <span className="font-semibold ml-auto">0</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-blue-400" />
-                              <span className="text-muted-foreground">Rel</span>
-                              <span className="font-semibold ml-auto">0</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                              <span className="text-muted-foreground">Very</span>
-                              <span className="font-semibold ml-auto">{Math.floor(linksIn.length * 0.17)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                              <span className="text-muted-foreground">Most</span>
-                              <span className="font-semibold ml-auto">{Math.floor(linksIn.length * 0.83)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Link Relationship Types - Compact */}
-                      <div className="p-3 rounded-lg border border-border/50 bg-card/50">
-                        <h4 className="text-xs font-medium text-center text-foreground mb-2">Link Relationship Types</h4>
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-20 h-20 flex-shrink-0">
-                            {/* SVG Donut Chart */}
-                            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                              {(() => {
-                                const total = (linksIn.length + linksOut.length) || 1;
-                                const reciprocal = Math.floor(total * 0.41);
-                                const oneWay = total - reciprocal;
-                                
-                                const circumference = 2 * Math.PI * 35;
-                                const reciprocalPercent = reciprocal / total;
-                                const oneWayPercent = oneWay / total;
-                                
-                                return (
-                                  <>
-                                    <circle
-                                      cx="50" cy="50" r="35"
-                                      fill="none" stroke="#22C55E" strokeWidth="10"
-                                      strokeDasharray={`${circumference * reciprocalPercent} ${circumference * (1 - reciprocalPercent)}`}
-                                    />
-                                    <circle
-                                      cx="50" cy="50" r="35"
-                                      fill="none" stroke="#3B82F6" strokeWidth="10"
-                                      strokeDasharray={`${circumference * oneWayPercent} ${circumference * (1 - oneWayPercent)}`}
-                                      strokeDashoffset={-circumference * reciprocalPercent}
-                                    />
-                                    <circle cx="50" cy="50" r="29" fill="hsl(var(--card))" />
-                                  </>
-                                );
-                              })()}
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span className="text-[10px] text-emerald-400 font-semibold">41%</span>
-                              <span className="text-sm text-blue-400 font-bold">59%</span>
-                            </div>
-                          </div>
-                          {/* Compact Legend */}
-                          <div className="flex-1 space-y-1 text-[10px]">
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                              <span className="text-muted-foreground">Reciprocal</span>
-                              <span className="font-semibold ml-auto">{Math.floor((linksIn.length + linksOut.length) * 0.41)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-blue-400" />
-                              <span className="text-muted-foreground">One Way</span>
-                              <span className="font-semibold ml-auto">{Math.ceil((linksIn.length + linksOut.length) * 0.59)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                {/* SEO Fields - 2 column grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border/30">
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Keyword Title</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.keywordtitle || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
+                        placeholder="Primary keyword..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
                     </div>
-                    
-                    {/* Compact Total Summary */}
-                    <div className="text-center mb-3 py-2 border-t border-b border-border/30">
-                      <p className="text-xs text-foreground">
-                        <span className="font-semibold">Total: {linksIn.length + linksOut.length} citations</span>
-                        <span className="text-muted-foreground"> ({Math.floor((linksIn.length + linksOut.length) * 0.41)} reciprocal)</span>
-                        <TrendingUp className="inline w-3 h-3 ml-1 text-emerald-400" />
-                      </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium">Meta Title</Label>
+                        <span className={`text-[10px] ${(inlineEditForms[kw.id]?.metatitle || '').length > 60 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                          {(inlineEditForms[kw.id]?.metatitle || '').length}/60
+                        </span>
+                      </div>
+                      <Input
+                        value={inlineEditForms[kw.id]?.metatitle || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
+                        placeholder="Page title for search engines..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
                     </div>
-                    
-                    {/* Your Citation Links Section - Compact */}
-                    <div className="mb-2">
-                      <h4 className="text-xs font-semibold text-foreground mb-2">Your Citation Links</h4>
-                      {/* Filters Row */}
-                      <div className="flex items-center gap-3 mb-2 text-[10px]">
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Relevance:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded px-1.5 py-0.5 text-foreground text-[10px]">
-                            <option>All</option>
-                            <option>Most</option>
-                            <option>Very</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Type:</span>
-                          <select className="bg-muted/50 border border-border/50 rounded px-1.5 py-0.5 text-foreground text-[10px]">
-                            <option>All</option>
-                            <option>Reciprocal</option>
-                            <option>One Way</option>
-                          </select>
-                        </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium">Meta Description</Label>
+                        <span className={`text-[10px] ${(inlineEditForms[kw.id]?.metadescription || '').length > 160 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                          {(inlineEditForms[kw.id]?.metadescription || '').length}/160
+                        </span>
                       </div>
+                      <Textarea
+                        value={inlineEditForms[kw.id]?.metadescription || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
+                        placeholder="Page description for search results..."
+                        rows={3}
+                        onClick={(e) => e.stopPropagation()}
+                        className="resize-none"
+                      />
                     </div>
-                    
-                    {/* Citations Table */}
-                    {(linksIn.length > 0 || linksOut.length > 0) ? (
-                      <div className="rounded-lg border border-border/50 overflow-hidden">
-                        <div className="bg-muted/50 px-4 py-2.5 border-b border-border/50">
-                          <div className="grid grid-cols-5 gap-4 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            <span>Domain-Keyword</span>
-                            <span>Category</span>
-                            <span className="text-center">Reciprocal</span>
-                            <span className="text-center">Relevance</span>
-                            <span className="text-center">Actions</span>
-                          </div>
-                        </div>
-                        <div className="max-h-[300px] overflow-y-auto divide-y divide-border/30">
-                          {linksIn.slice(0, 10).map((link, idx) => (
-                            <div key={`in-${idx}`} className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center">
-                              <div>
-                                <div className="text-sm font-medium text-foreground truncate">{link.source_url || link.domain || 'Unknown'}</div>
-                                <div className="text-xs text-muted-foreground truncate">{link.anchor_text || keywordText}</div>
-                              </div>
-                              <div>
-                                <Badge className="text-[9px] bg-slate-700 text-slate-200 border-0">
-                                  Health & Beauty / Healthcare
-                                </Badge>
-                              </div>
-                              <div className="text-center text-xs text-muted-foreground">
-                                {idx % 3 === 0 ? 'Yes' : 'No'}
-                              </div>
-                              <div className="text-center">
-                                <Badge className="text-[9px] bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                                  MOST RELEVANT
-                                </Badge>
-                              </div>
-                              <div className="text-center">
-                                <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30">
-                                  ✓ ENABLED
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                          {linksOut.slice(0, 10).map((link, idx) => (
-                            <div key={`out-${idx}`} className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/30 items-center">
-                              <div>
-                                <div className="text-sm font-medium text-foreground truncate">{link.target_url || link.domain || 'Unknown'}</div>
-                                <div className="text-xs text-muted-foreground truncate">{link.anchor_text || keywordText}</div>
-                              </div>
-                              <div>
-                                <Badge className="text-[9px] bg-slate-700 text-slate-200 border-0">
-                                  Business Services
-                                </Badge>
-                              </div>
-                              <div className="text-center text-xs text-muted-foreground">
-                                No
-                              </div>
-                              <div className="text-center">
-                                <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                                  VERY RELEVANT
-                                </Badge>
-                              </div>
-                              <div className="text-center">
-                                <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-pointer hover:bg-emerald-500/30">
-                                  ✓ ENABLED
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground text-sm border border-dashed border-border/50 rounded-lg">
-                        No citation links found for this keyword
-                      </div>
-                    )}
                   </div>
-                </details>
-
-                  {/* Tab 2: Keyword Content - simplified styling */}
-                  <details className="rounded-xl border border-primary/30 overflow-hidden bg-primary/5">
-                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none hover:bg-primary/10">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-                          <FileText className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <span className="text-sm font-semibold text-foreground">Keyword Content</span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="outline" className="text-[9px] border-primary/30 text-primary h-4">
-                              {getWordCount(kw.resfeedtext || '')} words
-                            </Badge>
-                            <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-400 h-4">
-                              SEO ready
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronUp className="w-5 h-5 text-primary" />
-                    </summary>
-                    <div className="border-t border-primary/20 p-4 bg-card/50">
-                    {/* Two-column layout for compact form */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
-                      {/* Left Column: Keyword & SEO */}
-                      <div className="space-y-3">
-                        {/* Keyword Title */}
-                        <div className="space-y-1">
-                          <Label className="text-xs">Keyword Title</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.keywordtitle || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'keywordtitle', e.target.value)}
-                            placeholder="Primary keyword..."
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-9"
-                          />
-                        </div>
-
-                        {/* Meta Title */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs">Meta Title</Label>
-                            <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaTitleQuality.score)}`}>
-                              <Hash className={`w-2.5 h-2.5 ${scoreColor(metaTitleQuality.score)}`} />
-                              <span className={scoreColor(metaTitleQuality.score)}>{(inlineEditForms[kw.id]?.metatitle || '').length}/60</span>
-                            </div>
-                          </div>
-                          <Input
-                            value={inlineEditForms[kw.id]?.metatitle || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'metatitle', e.target.value)}
-                            placeholder="Page title for search engines..."
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-9"
-                          />
-                        </div>
-
-                        {/* Meta Description */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-xs">Meta Description</Label>
-                            <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border ${scoreBg(metaDescQuality.score)}`}>
-                              <Sparkles className={`w-2.5 h-2.5 ${scoreColor(metaDescQuality.score)}`} />
-                              <span className={scoreColor(metaDescQuality.score)}>{(inlineEditForms[kw.id]?.metadescription || '').length}/160</span>
-                            </div>
-                          </div>
-                          <Textarea
-                            value={inlineEditForms[kw.id]?.metadescription || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
-                            placeholder="Page description for search results..."
-                            rows={5}
-                            onClick={(e) => e.stopPropagation()}
-                            className="resize-y min-h-[100px]"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Right Column: Links */}
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Target URL (Link Out)</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.linkouturl || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
-                            placeholder="https://example.com/page"
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Resource Address</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resaddress || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
-                            placeholder="Physical address or location..."
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Facebook Page URL</Label>
-                          <Input
-                            value={inlineEditForms[kw.id]?.resfb || ''}
-                            onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
-                            placeholder="https://facebook.com/..."
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-9"
-                          />
-                        </div>
-                      </div>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Target URL</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.linkouturl || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'linkouturl', e.target.value)}
+                        placeholder="https://example.com/page"
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
                     </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Address</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.resaddress || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'resaddress', e.target.value)}
+                        placeholder="Physical address..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Facebook URL</Label>
+                      <Input
+                        value={inlineEditForms[kw.id]?.resfb || ''}
+                        onChange={(e) => updateInlineForm(kw.id, 'resfb', e.target.value)}
+                        placeholder="https://facebook.com/..."
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Historical Rankings Chart */}
-                    {selectedDomain && (
-                      <details className="mb-3 rounded-lg border border-primary/30 overflow-hidden bg-gradient-to-br from-primary/5 to-violet-500/5">
-                        <summary className="flex items-center gap-2 p-3 text-sm font-medium text-foreground cursor-pointer hover:bg-muted/30">
-                          <BarChart3 className="w-4 h-4 text-primary" />
-                          Ranking History
-                        </summary>
-                        <div className="border-t border-border/30 p-4">
-                          <KeywordHistoryChart
-                            domain={selectedDomain}
-                            keyword={keywordText}
-                            currentGooglePosition={googlePos}
-                            currentBingPosition={bingPos}
-                            currentYahooPosition={yahooPos}
-                          />
-                        </div>
-                      </details>
-                    )}
-
-                    {/* Article Section - compact row */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-primary/10 to-violet-500/10 border border-primary/20 mb-3">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-primary" />
-                        <div>
-                          <h4 className="text-sm font-medium text-foreground">Article Content</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {getWordCount(kw.resfeedtext || '')} words
-                          </p>
-                        </div>
+                {/* Article & Citations Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Article Card */}
+                  <div className="p-3 rounded-lg border border-primary/30 bg-primary/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">Article Content</span>
+                        <Badge variant="outline" className="text-[10px] border-primary/30">
+                          {getWordCount(kw.resfeedtext || '')} words
+                        </Badge>
                       </div>
                       <Button
                         variant="default"
                         size="sm"
-                        className="bg-primary hover:bg-primary/90"
+                        className="h-7 bg-primary hover:bg-primary/90"
                         onClick={(e) => {
                           e.stopPropagation();
                           setInlineEditForms((prev) =>
@@ -1866,96 +1571,45 @@ export const BRONKeywordsTab = ({
                           setArticleEditorId(kw.id);
                         }}
                       >
-                        <Edit2 className="w-4 h-4 mr-2" />
+                        <Edit2 className="w-3.5 h-3.5 mr-1" />
                         Edit
                       </Button>
                     </div>
+                  </div>
 
-                    {/* Article Preview - collapsible, starts collapsed */}
-                    <details className="rounded-lg border border-border/50 overflow-hidden">
-                      <summary className="flex items-center gap-2 p-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/30">
-                        <Eye className="w-3 h-3" />
-                        Article Preview
-                      </summary>
-                      <div className="border-t border-border">
-                        <div className="bg-muted/60 px-3 py-1 flex items-center gap-2 border-b border-border">
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-destructive/50" />
-                            <div className="w-2 h-2 rounded-full bg-secondary" />
-                            <div className="w-2 h-2 rounded-full bg-primary/50" />
-                          </div>
-                          <div className="flex-1 mx-2">
-                            <div className="bg-background/60 rounded px-2 py-0.5 text-[10px] text-muted-foreground truncate">
-                              {selectedDomain || "example.com"}/article
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-background text-foreground max-h-[300px] overflow-y-auto">
-                          <article className="p-4">
-                            <div
-                              className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-foreground"
-                              dangerouslySetInnerHTML={{
-                                __html:
-                                  inlineEditForms[kw.id]?.resfeedtext ||
-                                  decodeHtmlContent(kw.resfeedtext || "") ||
-                                  "<p><em>No article content yet…</em></p>",
-                              }}
-                            />
-                          </article>
-                        </div>
+                  {/* Citations Card */}
+                  <div className="p-3 rounded-lg border border-cyan-500/30 bg-cyan-500/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm font-medium">Citations</span>
+                        <Badge variant="outline" className="text-[10px] border-cyan-500/30 text-cyan-400">
+                          {linksIn.length} in
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px] border-violet-500/30 text-violet-400">
+                          {linksOut.length} out
+                        </Badge>
                       </div>
-                    </details>
+                    </div>
                   </div>
-                </details>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/30">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandKeyword(kw);
-                    }}
-                  >
-                    <ChevronUp className="w-4 h-4 mr-1" />
-                    Collapse
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {!deleted && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm(String(kw.id));
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        saveInlineChanges(kw);
-                      }}
-                      disabled={savingIds.has(kw.id)}
-                    >
-                      {savingIds.has(kw.id) ? (
-                        <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4 mr-1" />
-                      )}
-                      Save Changes
-                    </Button>
+                {/* Ranking History */}
+                {selectedDomain && (
+                  <div className="p-3 rounded-lg border border-border/30 bg-muted/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Ranking History</span>
+                    </div>
+                    <KeywordHistoryChart
+                      domain={selectedDomain}
+                      keyword={keywordText}
+                      currentGooglePosition={googlePos}
+                      currentBingPosition={bingPos}
+                      currentYahooPosition={yahooPos}
+                    />
                   </div>
-                </div>
+                )}
               </div>
               )}
             </div>
