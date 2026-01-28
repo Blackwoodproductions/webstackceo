@@ -203,11 +203,8 @@ const hasCachedGmbData = (domain: string): { cached: GmbCacheEntry | null; hasDa
 export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const { googleProfile } = useAuth();
   
-  // Check cache synchronously to skip loading on cached hit
-  const [cachedData] = useState(() => selectedDomain ? hasCachedGmbData(selectedDomain) : { cached: null, hasData: false });
-  
-  // Connection state - start with cached data if available
-  const [isCheckingAccount, setIsCheckingAccount] = useState(!cachedData.hasData);
+  // Connection state
+  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     // Check for stored token
     const gmbToken = localStorage.getItem('gmb_access_token');
@@ -222,22 +219,13 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
     return null;
   });
-  const [accounts, setAccounts] = useState<GmbAccount[]>(cachedData.cached?.accounts || []);
-  const [locations, setLocations] = useState<GmbLocation[]>(cachedData.cached?.locations || []);
-  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(() => {
-    if (!selectedDomain || !cachedData.cached?.locations.length) return null;
-    const normalizedSelected = normalizeDomain(selectedDomain);
-    return cachedData.cached.locations.find((loc: GmbLocation) => {
-      const locDomain = normalizeDomain(loc.websiteUri || '');
-      return locDomain === normalizedSelected || 
-             locDomain.includes(normalizedSelected) || 
-             normalizedSelected.includes(locDomain);
-    }) || null;
-  });
+  const [accounts, setAccounts] = useState<GmbAccount[]>([]);
+  const [locations, setLocations] = useState<GmbLocation[]>([]);
+  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(cachedData.hasData);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
 
   // Dashboard state
   const [activeTab, setActiveTab] = useState("overview");
@@ -248,6 +236,42 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
 
   // Use the GMB API hook for all read/write operations
   const gmbApi = useGmbApi(accessToken);
+
+  // Hydrate from cache INSTANTLY when domain changes
+  useEffect(() => {
+    if (!selectedDomain) {
+      setAccounts([]);
+      setLocations([]);
+      setMatchingLocation(null);
+      return;
+    }
+
+    const cached = loadCachedGmbData(selectedDomain);
+    if (cached) {
+      console.log('[GMBPanel] Hydrating from cache for', selectedDomain);
+      setAccounts(cached.accounts);
+      setLocations(cached.locations);
+      setIsCheckingAccount(false);
+      setIsBackgroundSyncing(true); // Will sync in background
+      
+      // Find matching location
+      const normalizedSelected = normalizeDomain(selectedDomain);
+      const match = cached.locations.find((loc: GmbLocation) => {
+        const locDomain = normalizeDomain(loc.websiteUri || '');
+        return locDomain === normalizedSelected || 
+               locDomain.includes(normalizedSelected) || 
+               normalizedSelected.includes(locDomain);
+      });
+      setMatchingLocation(match || null);
+    } else {
+      // No cache - will need to fetch
+      setAccounts([]);
+      setLocations([]);
+      setMatchingLocation(null);
+      setIsCheckingAccount(true);
+      setIsBackgroundSyncing(false);
+    }
+  }, [selectedDomain]);
 
   // Check if user's Google account email domain matches selected domain
   // or if they have any GMB listing for that domain

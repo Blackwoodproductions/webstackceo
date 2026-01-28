@@ -196,16 +196,16 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
 
   // Load domain-specific data when domain changes
   // IMPORTANT: Don't reset data before fetching - let cache serve instantly
+  // NOTE: Don't use Promise.all to wait - fire fetches in parallel but don't block UI
   useEffect(() => {
     let cancelled = false;
-    const loadCore = async () => {
+    const loadCore = () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
 
       // Only reset the refs to prevent stale requests, NOT the data
       // The fetch functions will serve cached data immediately if available
       linksRequestedForDomainRef.current = null;
       setScreenshotUrl(null);
-      setDomainInfo(null);
 
       // Check for existing screenshot in background (don't block)
       getExistingScreenshot(selectedDomain).then((hasExisting) => {
@@ -214,19 +214,17 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
         }
       });
 
-      // Fetch all data in parallel - cache will be served immediately if available
-      // The fetch functions handle cache-first logic internally
-      const [info] = await Promise.all([
-        bronApi.fetchDomain(selectedDomain),
-        bronApi.fetchKeywords(selectedDomain),
-        bronApi.fetchSerpReport(selectedDomain),
-        bronApi.fetchSerpList(selectedDomain),
-      ]);
-      
-      if (!cancelled && info) setDomainInfo(info);
+      // Fire all fetches in parallel - they handle cache-first internally
+      // Each will update state immediately if cache exists, then background refresh
+      // Don't await - let each function update its own state independently
+      bronApi.fetchDomain(selectedDomain).then((info) => {
+        if (!cancelled && info) setDomainInfo(info);
+      });
+      bronApi.fetchKeywords(selectedDomain);
+      bronApi.fetchSerpReport(selectedDomain);
+      bronApi.fetchSerpList(selectedDomain);
       
       // Fetch pages separately (lower priority)
-      if (cancelled) return;
       bronApi.fetchPages(selectedDomain);
     };
 
@@ -239,30 +237,19 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
 
   // Load link reports eagerly (in parallel) for faster dashboard loading
   useEffect(() => {
-    let cancelled = false;
+    if (!bronApi.isAuthenticated || !selectedDomain) return;
 
-    const loadLinks = async () => {
-      if (!bronApi.isAuthenticated || !selectedDomain) return;
+    // Prevent duplicate requests for the same domain
+    if (linksRequestedForDomainRef.current === selectedDomain) return;
+    linksRequestedForDomainRef.current = selectedDomain;
 
-      // Prevent duplicate requests for the same domain
-      if (linksRequestedForDomainRef.current === selectedDomain) return;
-      linksRequestedForDomainRef.current = selectedDomain;
-
-      // Use domain ID if available (preferred by the API)
-      const domainId = domainInfo?.id;
-      console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}`);
-      
-      // Fetch both link types in parallel for faster loading
-      await Promise.all([
-        bronApi.fetchLinksIn(selectedDomain, domainId),
-        bronApi.fetchLinksOut(selectedDomain, domainId),
-      ]);
-    };
-
-    loadLinks();
-    return () => {
-      cancelled = true;
-    };
+    // Use domain ID if available (preferred by the API)
+    const domainId = domainInfo?.id;
+    console.log(`[BRON Dashboard] Loading links for domain: ${selectedDomain}, id: ${domainId || 'N/A'}`);
+    
+    // Fire both link fetches in parallel - don't await, let them update state independently
+    bronApi.fetchLinksIn(selectedDomain, domainId);
+    bronApi.fetchLinksOut(selectedDomain, domainId);
   }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
   // Derived data and stable callbacks (MUST be above any conditional returns)
