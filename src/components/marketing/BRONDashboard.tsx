@@ -239,11 +239,17 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
               {/* LEFT: Website Screenshot with Domain Options */}
               <div className="lg:col-span-3 p-4 border-r border-border/30">
                 <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30 mb-3">
-                  {isCapturingScreenshot && !screenshotUrl && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
-                      <div className="flex flex-col items-center gap-2">
-                        <Camera className="w-6 h-6 text-cyan-500 animate-pulse" />
-                        <span className="text-xs text-muted-foreground">Capturing...</span>
+                  {/* Loading overlay on the image box */}
+                  {isCapturingScreenshot && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-md animate-pulse" />
+                          <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium text-foreground">Capturing screenshot...</span>
                       </div>
                     </div>
                   )}
@@ -275,21 +281,18 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent pointer-events-none" />
-                  {/* Recapture button with loading state */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`absolute top-2 right-2 h-8 w-8 bg-background/90 hover:bg-background border border-border/50 shadow-sm transition-all ${isCapturingScreenshot ? 'animate-pulse' : ''}`}
-                    onClick={() => captureScreenshot(selectedDomain)}
-                    disabled={isCapturingScreenshot}
-                    title={isCapturingScreenshot ? "Capturing screenshot..." : "Recapture screenshot"}
-                  >
-                    {isCapturingScreenshot ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-cyan-500" />
-                    ) : (
+                  {/* Recapture button - only show when not loading */}
+                  {!isCapturingScreenshot && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8 bg-background/90 hover:bg-background border border-border/50 shadow-sm transition-all"
+                      onClick={() => captureScreenshot(selectedDomain)}
+                      title="Recapture screenshot"
+                    >
                       <Camera className="w-4 h-4" />
-                    )}
-                  </Button>
+                    </Button>
+                  )}
                 </div>
                 <Button 
                   variant="default" 
