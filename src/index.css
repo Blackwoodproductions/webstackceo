@@ -218,6 +218,12 @@
       linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px);
     background-size: 60px 60px;
   }
+  
+  /* BRON dashboard scroll optimization */
+  .bron-scroll-container {
+    contain: layout style;
+    will-change: scroll-position;
+  }
 }
 
 @layer utilities {

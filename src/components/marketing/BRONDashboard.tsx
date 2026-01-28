@@ -204,9 +204,9 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
         <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50 animate-pulse" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 blur-xl opacity-50" />
           <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-white animate-spin" />
+            <Loader2 className="w-8 h-8 text-white" />
           </div>
         </div>
         <p className="text-muted-foreground text-sm">Connecting to BRON API...</p>
@@ -258,24 +258,32 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
 
   return (
-    <div className="space-y-6" style={{ contain: "layout style" }}>
+    <div 
+      className="space-y-6 no-theme-transition" 
+      style={{ contain: "layout style" }}
+      data-no-theme-transition
+    >
       {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
-        <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card 
+          className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm no-theme-transition"
+          data-no-theme-transition
+          style={{ contain: 'layout style paint' }}
+        >
           <CardContent className="p-0">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
               
               {/* LEFT: Website Screenshot with Domain Options */}
               <div className="lg:col-span-3 p-4 border-r border-border/30">
                 <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border/50 bg-muted/30 mb-3">
-                  {/* Loading overlay on the image box */}
+                {/* Loading overlay on the image box */}
                   {isCapturingScreenshot && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
                       <div className="flex flex-col items-center gap-3">
                         <div className="relative">
-                          <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-md animate-pulse" />
+                          <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-md" />
                           <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            <Loader2 className="w-6 h-6 text-white" />
                           </div>
                         </div>
                         <span className="text-sm font-medium text-foreground">Capturing screenshot...</span>
