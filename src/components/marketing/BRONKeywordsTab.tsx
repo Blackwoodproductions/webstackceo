@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp } from "lucide-react";
+import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition, lazy, Suspense } from "react";
+import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BronKeyword, BronSerpReport, BronLink, BronSerpListItem } from "@/hooks/use-bron-api";
-import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+// Lazy-load the WYSIWYG editor - only loads when article editor opens
+const WysiwygEditor = lazy(() => import("@/components/marketing/WysiwygEditor"));
 import {
   loadKeywordMetricsCache,
   mergeAndSaveKeywordMetricsCache,
@@ -1087,13 +1089,20 @@ export const BRONKeywordsTab = memo(({
               )}
             </div>
             
-            {/* Editor */}
+            {/* Editor - Lazy loaded */}
             <div className="flex-1 min-h-[300px] overflow-y-auto p-4">
               {editorKeyword && inlineEditForms[editorKeyword.id] && (
-                <WysiwygEditor
-                  html={inlineEditForms[editorKeyword.id].resfeedtext || ''}
-                  onChange={(content) => handleUpdateForm(editorKeyword.id, 'resfeedtext', content)}
-                />
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-full min-h-[300px]">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading editor...</span>
+                  </div>
+                }>
+                  <WysiwygEditor
+                    html={inlineEditForms[editorKeyword.id].resfeedtext || ''}
+                    onChange={(content) => handleUpdateForm(editorKeyword.id, 'resfeedtext', content)}
+                  />
+                </Suspense>
               )}
             </div>
             
