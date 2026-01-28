@@ -878,7 +878,8 @@ export const BRONKeywordsTab = ({
   };
 
   // Render a keyword card - simplified, GPU-optimized
-  const renderKeywordCard = (kw: BronKeyword, clusterChildCount?: number) => {
+  // Now accepts isNested to control internal indentation without affecting outer column alignment
+  const renderKeywordCard = (kw: BronKeyword, clusterChildCount?: number, isNested?: boolean) => {
     const expanded = expandedIds.has(kw.id);
     const deleted = isDeleted(kw);
     const active = isActive(kw);
@@ -945,10 +946,11 @@ export const BRONKeywordsTab = ({
         className={`${deleted ? 'opacity-50' : ''}`}
         style={{ contain: 'layout' }}
       >
-        {/* Card container - different styling for tracking-only keywords */}
+        {/* Card container - different styling for tracking-only keywords and nested/supporting keywords */}
         <div 
           className={`
             rounded-xl border overflow-hidden transition-colors duration-150
+            ${isNested ? 'border-l-2 border-l-primary/50' : ''}
             ${isTrackingOnly 
               ? 'bg-amber-500/5 border-amber-500/20' + (expanded ? ' ring-1 ring-amber-500/40' : ' hover:border-amber-500/30')
               : 'bg-card/80' + (expanded ? ' ring-1 ring-primary/40 border-primary/50' : ' border-border/50 hover:border-primary/30')
@@ -961,8 +963,8 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100 overflow-x-auto"
             onClick={() => expandKeyword(kw)}
           >
-            {/* Fixed Column Layout for Perfect Alignment */}
-            <div className="flex items-center w-full gap-4">
+            {/* Fixed Column Layout for Perfect Alignment - using fixed widths to maintain alignment across nested cards */}
+            <div className="flex items-center w-full justify-between" style={{ minWidth: '1100px' }}>
               {/* Column 1: Page Speed Gauge - 70px (Real Google PageSpeed Data) */}
               <div className="w-[70px] flex-shrink-0 flex justify-center">
                 {(() => {
@@ -1063,9 +1065,9 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 2: Keyword Text + External Link - flex grow to use more available space */}
-              <div className="flex-1 min-w-[280px] max-w-[480px] pr-6 group/keyword">
-                <div className="flex items-center gap-2">
+              {/* Column 2: Keyword Text + External Link - fixed width with internal indentation for nested cards */}
+              <div className="w-[320px] flex-shrink-0 pr-4 group/keyword">
+                <div className={`flex items-center gap-2 ${isNested ? 'pl-6' : ''}`}>
                   <h3 
                     className={`font-medium truncate ${isSupportingKeyword ? 'text-foreground/80' : 'text-foreground'}`}
                     title={keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -1179,8 +1181,8 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 5: Keyword Metrics - 210px */}
-              <div className="w-[210px] flex-shrink-0 ml-6">
+              {/* Column 5: Keyword Metrics - 180px */}
+              <div className="w-[180px] flex-shrink-0">
                 {(() => {
                   const metrics = keywordMetrics[keywordText.toLowerCase()];
                   
@@ -1245,39 +1247,43 @@ export const BRONKeywordsTab = ({
                 })()}
               </div>
 
-              {/* Column 6: Combined Links Display */}
-              <div 
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40"
-              >
-                {/* Inbound - arrow pointing INTO the box (right arrow) */}
-                <div className="flex items-center gap-1">
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
-                  <span className="text-xs font-semibold text-cyan-400">{linksIn.length}</span>
-                </div>
-                
-                {/* Divider */}
-                <div className="w-px h-4 bg-border/40" />
-                
-                {/* Outbound - arrow pointing OUT of the box (right arrow) */}
-                <div className="flex items-center gap-1">
-                  <ArrowUpRight className="w-3.5 h-3.5 text-violet-400" />
-                  <span className="text-xs font-semibold text-violet-400">{linksOut.length}</span>
+              {/* Column 6: Combined Links Display - fixed width */}
+              <div className="w-[90px] flex-shrink-0 flex justify-center">
+                <div 
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40"
+                >
+                  {/* Inbound - arrow pointing INTO the box (right arrow) */}
+                  <div className="flex items-center gap-1">
+                    <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
+                    <span className="text-xs font-semibold text-cyan-400">{linksIn.length}</span>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="w-px h-4 bg-border/40" />
+                  
+                  {/* Outbound - arrow pointing OUT of the box (right arrow) */}
+                  <div className="flex items-center gap-1">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-violet-400" />
+                    <span className="text-xs font-semibold text-violet-400">{linksOut.length}</span>
+                  </div>
                 </div>
               </div>
               
-              {/* Column 7: Expand/Collapse Button - separate from links box */}
-              <div 
-                className={`
-                  flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all duration-200
-                  ${expanded 
-                    ? 'bg-primary/20 border border-primary/50' 
-                    : 'bg-card/60 border border-border/40 hover:border-primary/40 hover:bg-card/80'
-                  }
-                `}
-              >
-                <ChevronRight 
-                  className={`w-4 h-4 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
-                />
+              {/* Column 7: Expand/Collapse Button - fixed width */}
+              <div className="w-[40px] flex-shrink-0 flex justify-center">
+                <div 
+                  className={`
+                    flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all duration-200
+                    ${expanded 
+                      ? 'bg-primary/20 border border-primary/50' 
+                      : 'bg-card/60 border border-border/40 hover:border-primary/40 hover:bg-card/80'
+                    }
+                  `}
+                >
+                  <ChevronRight 
+                    className={`w-4 h-4 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -2056,31 +2062,16 @@ export const BRONKeywordsTab = ({
         ) : (
           groupedKeywords.map(({ parent, children }) => (
             <div key={parent.id} className="space-y-1">
-              {/* Parent keyword card - pass cluster child count */}
-              {renderKeywordCard(parent, children.length)}
+              {/* Parent keyword card - pass cluster child count, not nested */}
+              {renderKeywordCard(parent, children.length, false)}
               
-              {/* Clustered children - indented with visual connector */}
+              {/* Clustered children - no outer margin, use internal indentation */}
               {children.length > 0 && (
-                <div className="relative ml-8 space-y-1">
-                  {/* Vertical connector line */}
-                  <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-primary/40 via-primary/20 to-transparent" />
-                  
-                  {/* Cluster header badge */}
-                  <div className="flex items-center gap-2 pl-4 py-1.5">
-                    <div className="w-2 h-2 rounded-full bg-primary/40 ring-2 ring-primary/20" />
-                    <span className="text-[10px] font-medium text-primary/70 uppercase tracking-wider">
-                      Supporting Pages ({children.length})
-                    </span>
-                  </div>
-                  
-                  {/* Child keyword cards */}
+                <div className="space-y-1">
+                  {/* Child keyword cards - marked as nested for internal indentation */}
                   {children.map((child) => (
-                    <div key={child.id} className="relative pl-4">
-                      {/* Horizontal connector */}
-                      <div className="absolute left-0 top-6 w-4 h-px bg-primary/30" />
-                      {/* Dot connector */}
-                      <div className="absolute left-0 top-5 w-2 h-2 rounded-full bg-primary/30 -translate-x-0.5" />
-                      {renderKeywordCard(child, 0)}
+                    <div key={child.id} className="relative">
+                      {renderKeywordCard(child, 0, true)}
                     </div>
                   ))}
                 </div>
