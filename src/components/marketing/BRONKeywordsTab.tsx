@@ -15,16 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { BronKeyword, BronSerpReport, BronLink, BronSerpListItem } from "@/hooks/use-bron-api";
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,7 +188,6 @@ export const BRONKeywordsTab = memo(({
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [newKeyword, setNewKeyword] = useState("");
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
@@ -503,11 +492,6 @@ export const BRONKeywordsTab = memo(({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await onDelete(id);
-    setDeleteConfirm(null);
-    onRefresh();
-  };
 
   const saveRankingSnapshot = async () => {
     if (!selectedDomain || keywords.length === 0) return;
@@ -676,23 +660,6 @@ export const BRONKeywordsTab = memo(({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Keyword?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove the keyword from tracking. This action can be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Article Editor Modal */}
       <Dialog open={!!articleEditorId} onOpenChange={() => setArticleEditorId(null)}>
@@ -721,18 +688,6 @@ export const BRONKeywordsTab = memo(({
                       : 'No date'}
                   </span>
                   <div className="flex-1" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      setDeleteConfirm(String(editorKeyword.id));
-                      setArticleEditorId(null);
-                    }}
-                  >
-                    <X className="w-3.5 h-3.5 mr-1" />
-                    Delete
-                  </Button>
                   <Button
                     size="sm"
                     className="h-7 bg-cyan-600 hover:bg-cyan-700 text-white"
