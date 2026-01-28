@@ -522,8 +522,9 @@ export const BRONKeywordsTab = memo(({
     
     const urlsToFetch: { url: string }[] = [];
     
-    for (const kw of mergedKeywords) {
-      if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) continue;
+    // Collect URLs from all keywords including supporting keywords nested in parents
+    const collectUrls = (kw: BronKeyword) => {
+      if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) return;
       
       let url = kw.linkouturl;
       if (!url) {
@@ -531,15 +532,28 @@ export const BRONKeywordsTab = memo(({
         url = `https://${selectedDomain}/${slug}`;
       }
       
-      if (!url || fetchedUrlsRef.current.has(url)) continue;
+      if (!url || fetchedUrlsRef.current.has(url)) return;
       
-       const cached = pageSpeedScoresRef.current[url];
+      const cached = pageSpeedScoresRef.current[url];
       if (cached && cached.mobileScore > 0 && !cached.error) {
         fetchedUrlsRef.current.add(url);
-        continue;
+        return;
       }
       
       urlsToFetch.push({ url });
+    };
+    
+    for (const kw of mergedKeywords) {
+      collectUrls(kw);
+      
+      // Also collect URLs from supporting_keywords arrays (nested children)
+      if (kw.supporting_keywords && Array.isArray(kw.supporting_keywords)) {
+        for (const supportingKw of kw.supporting_keywords) {
+          if (supportingKw && supportingKw.id) {
+            collectUrls(supportingKw as BronKeyword);
+          }
+        }
+      }
     }
     
     if (urlsToFetch.length === 0) return;
