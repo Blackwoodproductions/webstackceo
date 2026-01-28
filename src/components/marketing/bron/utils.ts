@@ -86,9 +86,9 @@ export interface KeywordCluster {
   parentId: number | string;
 }
 
-// Group keywords by parent_keyword_id from BRON/SEOM API
-// Main keywords have supporting keywords nested under them based on parent_keyword_id field
-// If no parent_keyword_id relationships exist, keywords are displayed as standalone items (no similarity clustering)
+// Group keywords by bubblefeed from BRON/SEOM API
+// Main keywords have NO bubblefeed id (empty/null/undefined)
+// Supporting keywords have bubblefeed id that matches the id of their main keyword
 export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   if (keywords.length === 0) return [];
   
@@ -106,61 +106,66 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
   
   const clusters: KeywordCluster[] = [];
   
-  // Build parent-child relationships from API data
-  // parent_keyword_id indicates this keyword is a supporting keyword under that parent
-  const parentChildMap = new Map<number | string, BronKeyword[]>();
-  const assignedAsChild = new Set<number | string>();
-  const keywordById = new Map<number | string, BronKeyword>();
-  
-  // Index all keywords by ID first
+  // Index all keywords by ID for quick lookup
+  const keywordById = new Map<string, BronKeyword>();
   for (const kw of contentKeywords) {
-    keywordById.set(kw.id, kw);
-    // Also index by string version for flexible matching
     keywordById.set(String(kw.id), kw);
   }
   
-  // Find parent-child relationships
+  // Separate main keywords (no bubblefeed) from supporting keywords (has bubblefeed)
+  const mainKeywords: BronKeyword[] = [];
+  const supportingKeywords: BronKeyword[] = [];
+  
   for (const kw of contentKeywords) {
-    const parentId = kw.parent_keyword_id;
+    const bubblefeed = kw.bubblefeed;
+    // Main keywords have no bubblefeed (empty, null, undefined, 0, or empty string)
+    const hasBubblefeed = bubblefeed !== undefined && 
+                          bubblefeed !== null && 
+                          bubblefeed !== 0 && 
+                          String(bubblefeed) !== '0' && 
+                          String(bubblefeed) !== '';
     
-    // Check if this keyword has a valid parent_keyword_id that exists in our keyword set
-    if (parentId !== undefined && parentId !== null && parentId !== 0 && parentId !== '0') {
-      const parentExists = keywordById.has(parentId) || keywordById.has(String(parentId));
-      
-      if (parentExists) {
-        const normalizedParentId = keywordById.has(parentId) ? parentId : String(parentId);
-        
-        if (!parentChildMap.has(normalizedParentId)) {
-          parentChildMap.set(normalizedParentId, []);
-        }
-        parentChildMap.get(normalizedParentId)!.push(kw);
-        assignedAsChild.add(kw.id);
+    if (hasBubblefeed) {
+      supportingKeywords.push(kw);
+    } else {
+      mainKeywords.push(kw);
+    }
+  }
+  
+  // Build parent-child map: bubblefeed value -> array of supporting keywords
+  const childrenByParentId = new Map<string, BronKeyword[]>();
+  const assignedChildren = new Set<string>();
+  
+  for (const kw of supportingKeywords) {
+    const parentId = String(kw.bubblefeed);
+    // Only assign if the parent actually exists as a main keyword
+    if (keywordById.has(parentId)) {
+      if (!childrenByParentId.has(parentId)) {
+        childrenByParentId.set(parentId, []);
       }
+      childrenByParentId.get(parentId)!.push(kw);
+      assignedChildren.add(String(kw.id));
     }
   }
   
   // Log clustering info for debugging
-  console.log('[BRON Clustering] API parent_keyword_id relationships:', {
+  console.log('[BRON Clustering] Bubblefeed relationships:', {
     totalContentKeywords: contentKeywords.length,
-    keywordsWithParent: assignedAsChild.size,
-    uniqueParents: parentChildMap.size,
-    parentIds: Array.from(parentChildMap.keys()).slice(0, 5),
-    sample: contentKeywords.slice(0, 3).map(kw => ({
+    mainKeywords: mainKeywords.length,
+    supportingKeywords: supportingKeywords.length,
+    assignedToParents: assignedChildren.size,
+    orphanedSupporting: supportingKeywords.length - assignedChildren.size,
+    sample: contentKeywords.slice(0, 5).map(kw => ({
       id: kw.id,
       keyword: getKeywordDisplayText(kw).slice(0, 30),
-      parent_keyword_id: kw.parent_keyword_id,
-      is_supporting: kw.is_supporting,
       bubblefeed: kw.bubblefeed,
+      isMain: !kw.bubblefeed,
     })),
   });
   
-  // Create clusters: parents with their children nested underneath
-  for (const kw of contentKeywords) {
-    // Skip if this keyword is assigned as a child of another keyword
-    if (assignedAsChild.has(kw.id)) continue;
-    
-    // Get children for this parent (if any)
-    const children = parentChildMap.get(kw.id) || parentChildMap.get(String(kw.id)) || [];
+  // Create clusters for main keywords with their children
+  for (const kw of mainKeywords) {
+    const children = childrenByParentId.get(String(kw.id)) || [];
     
     // Sort children alphabetically
     children.sort((a, b) => 
@@ -172,6 +177,13 @@ export function groupKeywords(keywords: BronKeyword[]): KeywordCluster[] {
       children, 
       parentId: kw.id 
     });
+  }
+  
+  // Add orphaned supporting keywords (bubblefeed points to non-existent parent) as standalone
+  for (const kw of supportingKeywords) {
+    if (!assignedChildren.has(String(kw.id))) {
+      clusters.push({ parent: kw, children: [], parentId: kw.id });
+    }
   }
   
   // Sort clusters alphabetically by parent keyword text
