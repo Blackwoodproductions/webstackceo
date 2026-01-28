@@ -563,9 +563,9 @@ export const BRONKeywordsTab = ({
                         value={inlineEditForms[kw.id]?.metadescription || ''}
                         onChange={(e) => updateInlineForm(kw.id, 'metadescription', e.target.value)}
                         placeholder="Page description for search results..."
-                        rows={2}
+                        rows={5}
                         onClick={(e) => e.stopPropagation()}
-                        className="resize-none"
+                        className="resize-y min-h-[100px]"
                       />
                     </div>
                   </div>
