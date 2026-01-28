@@ -290,6 +290,10 @@ export const BRONKeywordsTab = memo(({
   const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
+  // Track if we've received data for the current domain to avoid "no keywords" flash
+  const [hasReceivedData, setHasReceivedData] = useState(false);
+  const prevDomainRef = useRef<string | undefined>(undefined);
+  
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
   // Keep latest Set/object state in refs so callbacks can stay stable (prevents
@@ -372,10 +376,21 @@ export const BRONKeywordsTab = memo(({
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
   const trackingKeywords = mergedKeywords.filter(k => k.status === 'tracking_only' || String(k.id).startsWith('serp_'));
 
-  // Reset fetched URLs when domain changes
+  // Reset fetched URLs and hasReceivedData when domain changes
   useEffect(() => {
-    fetchedUrlsRef.current = new Set();
+    if (selectedDomain !== prevDomainRef.current) {
+      fetchedUrlsRef.current = new Set();
+      setHasReceivedData(false);
+      prevDomainRef.current = selectedDomain;
+    }
   }, [selectedDomain]);
+
+  // Mark data as received when keywords arrive
+  useEffect(() => {
+    if (keywords.length > 0 && selectedDomain) {
+      setHasReceivedData(true);
+    }
+  }, [keywords.length, selectedDomain]);
 
   // Fetch initial positions from SERP history
   useEffect(() => {
@@ -795,16 +810,22 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : mergedKeywords.length === 0 && isLoading ? (
+          ) : (isLoading || !hasReceivedData) && mergedKeywords.length === 0 ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
-          ) : displayClusters.length === 0 ? (
+          ) : displayClusters.length === 0 && hasReceivedData ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>No keywords found</p>
+            </div>
+          ) : displayClusters.length === 0 ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
             </div>
           ) : (
             <div>
