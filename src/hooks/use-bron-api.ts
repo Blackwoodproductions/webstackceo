@@ -374,31 +374,47 @@ export function useBronApi(): UseBronApiReturn {
           
           // Log first page to check for all available fields
           if (page === 1 && keywords.length > 0) {
-            // Log ALL fields from first keyword to see what's available
-            console.log('[BRON] First keyword raw data (all fields):', JSON.stringify(keywords[0], null, 2));
-            console.log('[BRON] Sample keyword data (checking for clustering fields):', {
-              sample: keywords.slice(0, 5).map((k: BronKeyword) => ({
-                id: k.id,
-                keyword: k.keyword,
-                keywordtitle: k.keywordtitle,
-                metatitle: k.metatitle,
-                // Check additional potential text fields
-                title: (k as unknown as Record<string, unknown>).title,
-                name: (k as unknown as Record<string, unknown>).name,
-                keyword_text: (k as unknown as Record<string, unknown>).keyword_text,
-                text: (k as unknown as Record<string, unknown>).text,
-                linkouturl: k.linkouturl,
-                parent_keyword_id: k.parent_keyword_id,
-                is_supporting: k.is_supporting,
-                bubblefeed: k.bubblefeed,
-                cluster_id: k.cluster_id,
-                domainid: k.domainid,
-              })),
-              hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
-              hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
-              hasBubblefeed: keywords.some((k: BronKeyword) => k.bubblefeed !== undefined),
-              hasClusterId: keywords.some((k: BronKeyword) => k.cluster_id !== undefined),
+            // Log ALL fields from first 3 keywords to see what's available
+            console.log('[BRON] First 3 keywords raw data (ALL fields):');
+            keywords.slice(0, 3).forEach((k: BronKeyword, i: number) => {
+              console.log(`[BRON] Keyword ${i + 1}:`, JSON.stringify(k, null, 2));
             });
+            
+            // Log ALL unique field names across all keywords
+            const allFields = new Set<string>();
+            keywords.forEach((k: any) => {
+              Object.keys(k).forEach(key => allFields.add(key));
+            });
+            console.log('[BRON] All available fields:', Array.from(allFields).sort());
+            
+            // Check for clustering-related fields with their actual values
+            const clusteringFields = keywords.slice(0, 10).map((k: any) => ({
+              id: k.id,
+              keyword: k.keywordtitle || k.keyword || k.metatitle,
+              // All potential parent/child relationship fields
+              parent_keyword_id: k.parent_keyword_id,
+              bubblefeed: k.bubblefeed,
+              bubble_feed: k.bubble_feed,
+              bubblefeedid: k.bubblefeedid,
+              bubble_feed_id: k.bubble_feed_id,
+              parent_id: k.parent_id,
+              parentid: k.parentid,
+              main_keyword_id: k.main_keyword_id,
+              mainkeywordid: k.mainkeywordid,
+              cluster_id: k.cluster_id,
+              clusterid: k.clusterid,
+              is_supporting: k.is_supporting,
+              issupporting: k.issupporting,
+              is_main: k.is_main,
+              ismain: k.ismain,
+              type: k.type,
+              keyword_type: k.keyword_type,
+              // Check for nested children array
+              children: k.children,
+              supporting: k.supporting,
+              nested: k.nested,
+            }));
+            console.log('[BRON] Clustering fields analysis:', clusteringFields);
           }
           
           if (keywords.length > 0) {
