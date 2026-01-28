@@ -344,6 +344,37 @@ serve(async (req) => {
         break;
       }
 
+      // ========== SUBSCRIPTION ==========
+      case "getSubscription": {
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // The BRON API returns domain details including service type/subscription level
+        response = await bronApiRequest(`/domains/${encodeURIComponent(domain)}`, "GET");
+        result = await readResponseBody(response);
+        
+        // Extract subscription info from domain data
+        const domainData = result as Record<string, unknown>;
+        const subscriptionInfo = {
+          domain: domain,
+          servicetype: domainData?.servicetype || domainData?.service_type || "free",
+          plan: domainData?.servicetype || domainData?.service_type || "free",
+          status: domainData?.deleted === 1 ? "inactive" : "active",
+          has_cade: ["pro", "premium", "enterprise", "cade"].some(
+            (t) => String(domainData?.servicetype || "").toLowerCase().includes(t)
+          ),
+          userid: domainData?.userid,
+        };
+        
+        return new Response(
+          JSON.stringify({ success: true, data: subscriptionInfo }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // ========== USERS ==========
       case "listUsers": {
         response = await bronApiRequest("/users", "POST", {

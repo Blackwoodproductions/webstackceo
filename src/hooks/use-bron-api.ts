@@ -119,6 +119,15 @@ export interface BronLink {
   created_at?: string;
 }
 
+export interface BronSubscription {
+  domain: string;
+  servicetype: string;
+  plan: string;
+  status: string;
+  has_cade: boolean;
+  userid?: number;
+}
+
 export interface UseBronApiReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -134,6 +143,7 @@ export interface UseBronApiReturn {
   verifyAuth: () => Promise<boolean>;
   fetchDomains: () => Promise<void>;
   fetchDomain: (domain: string) => Promise<BronDomain | null>;
+  fetchSubscription: (domain: string) => Promise<BronSubscription | null>;
   updateDomain: (domain: string, data: Record<string, unknown>) => Promise<boolean>;
   deleteDomain: (domain: string) => Promise<boolean>;
   restoreDomain: (domain: string) => Promise<boolean>;
@@ -261,6 +271,19 @@ export function useBronApi(): UseBronApiReturn {
       return null;
     } catch (err) {
       console.error(err);
+      return null;
+    }
+  }, [callApi]);
+
+  const fetchSubscription = useCallback(async (domain: string): Promise<BronSubscription | null> => {
+    try {
+      const result = await callApi("getSubscription", { domain });
+      if (result?.success && result.data) {
+        return result.data as BronSubscription;
+      }
+      return null;
+    } catch (err) {
+      console.error("[BRON] fetchSubscription error:", err);
       return null;
     }
   }, [callApi]);
@@ -599,6 +622,7 @@ export function useBronApi(): UseBronApiReturn {
     verifyAuth,
     fetchDomains,
     fetchDomain,
+    fetchSubscription,
     updateDomain,
     deleteDomain,
     restoreDomain,
