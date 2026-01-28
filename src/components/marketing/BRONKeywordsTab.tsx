@@ -422,7 +422,7 @@ export const BRONKeywordsTab = ({
             className="p-4 cursor-pointer hover:bg-muted/30 transition-colors duration-100"
             onClick={() => expandKeyword(kw)}
           >
-            <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
+            <div className="flex items-center gap-3">
               {/* Intent Type Icon + Label */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className={`w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
@@ -434,7 +434,7 @@ export const BRONKeywordsTab = ({
               </div>
 
               {/* Keyword Text - only show keyword portion (before colon if present) */}
-              <div className="min-w-0">
+              <div className="min-w-0 max-w-md">
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-foreground truncate">
                     {keywordText.includes(':') ? keywordText.split(':')[0].trim() : keywordText}
@@ -445,8 +445,8 @@ export const BRONKeywordsTab = ({
                 </div>
               </div>
 
-              {/* SERP Rankings - Fixed width to align across all cards */}
-              <div className="flex items-center justify-end gap-2 w-[320px]">
+              {/* SERP Rankings - Right after keyword */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {googlePos !== null && (
                   <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-lg ${getPositionStyle(googlePos).bg} ${getPositionStyle(googlePos).text} border`}>
                     <span className="font-semibold">Google</span>
@@ -474,7 +474,8 @@ export const BRONKeywordsTab = ({
                 )}
               </div>
 
-              {/* Expand Arrow */}
+              {/* Spacer + Expand Arrow */}
+              <div className="flex-1" />
               <ChevronRight 
                 className={`w-5 h-5 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90 text-primary' : 'text-muted-foreground'}`} 
               />
