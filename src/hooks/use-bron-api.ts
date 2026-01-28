@@ -50,7 +50,10 @@ export interface BronKeyword {
   parent_keyword_id?: number | string;
   is_supporting?: boolean | number;
   bubblefeed?: boolean | number;
+  bubblefeedid?: number | string; // ID of the parent/main keyword
   cluster_id?: number | string;
+  // Nested supporting keywords (BRON API returns these directly on main keywords)
+  supporting_keywords?: BronKeyword[];
   // Legacy fields for compatibility
   domain?: string;
   url?: string;
