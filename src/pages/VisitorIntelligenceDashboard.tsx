@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -1734,42 +1734,8 @@ const MarketingDashboard = () => {
     }
   }, [isLoading, user, session, navigate]);
 
-  // Keep dashboard sticky header + domain selector from overlapping the global fixed navbar.
-  // We measure the dashboard header shell and combine it with --app-navbar-height (set by Navbar).
-  // IMPORTANT: This ref + useLayoutEffect MUST be declared before any conditional returns to avoid
-  // React hook ordering violations.
+  // Ref for the dashboard header (no longer used for sticky positioning)
   const dashboardHeaderShellRef = useRef<HTMLDivElement | null>(null);
-  
-  // Derive whether the full dashboard UI will render (not loading, authenticated, is admin)
-  const dashboardRendered = !isLoading && !!user && !!session && isAdmin;
-  
-  useLayoutEffect(() => {
-    // Only run when dashboard is actually rendered
-    if (!dashboardRendered) return;
-    
-    const el = dashboardHeaderShellRef.current;
-    if (!el || typeof window === 'undefined') return;
-
-    let raf = 0;
-    const update = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const h = el.getBoundingClientRect().height;
-        document.documentElement.style.setProperty('--vi-dashboard-header-height', `${Math.round(h)}px`);
-      });
-    };
-
-    update();
-    const ro = new ResizeObserver(() => update());
-    ro.observe(el);
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      ro.disconnect();
-      // Reset to a safe default when leaving the page.
-      document.documentElement.style.setProperty('--vi-dashboard-header-height', '0px');
-    };
-  }, [dashboardRendered]);
 
   if (isLoading) {
     return (
@@ -1852,11 +1818,10 @@ const MarketingDashboard = () => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-radial from-primary/8 via-violet-500/3 to-transparent" />
       </div>
 
-      {/* Header with integrated tabs - wrapped with animated glow effect, sticky */}
+      {/* Header with integrated tabs and domain selector */}
       <div
         ref={dashboardHeaderShellRef}
-        className="relative max-w-[1480px] mx-auto sticky z-50 group"
-        style={{ top: 'var(--app-navbar-height, 64px)' }}
+        className="relative max-w-[1480px] mx-auto z-40 group"
       >
         {/* Static gradient glow background - no animation for performance */}
         <div
