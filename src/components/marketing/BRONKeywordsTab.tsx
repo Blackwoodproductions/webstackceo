@@ -5,7 +5,7 @@ import {
   ChevronUp, FileText, Link2, Hash, 
   Sparkles, X, BarChart3, TrendingUp, TrendingDown, Minus,
   ShoppingCart, Info, Compass, Target, ArrowDownLeft, ArrowUpRight,
-  DollarSign, Activity, Gauge
+  DollarSign, Activity, Gauge, Zap, Users, MousePointerClick, Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -522,6 +522,33 @@ export const BRONKeywordsTab = ({
             onClick={() => expandKeyword(kw)}
           >
             <div className="flex items-center gap-3">
+              {/* Page Speed Indicator - Far Left */}
+              <div className="flex-shrink-0">
+                {(() => {
+                  // Simulated page speed score based on keyword optimization
+                  const hasContent = wordCount > 300;
+                  const hasMetaTitle = !!kw.metatitle;
+                  const hasMetaDesc = !!kw.metadescription;
+                  const hasLink = !!kw.linkouturl;
+                  const score = (hasContent ? 25 : 0) + (hasMetaTitle ? 25 : 0) + (hasMetaDesc ? 25 : 0) + (hasLink ? 25 : 0);
+                  
+                  const getSpeedColor = () => {
+                    if (score >= 75) return { ring: 'ring-emerald-500/50', bg: 'bg-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-400' };
+                    if (score >= 50) return { ring: 'ring-amber-500/50', bg: 'bg-amber-500/20', text: 'text-amber-400', icon: 'text-amber-400' };
+                    return { ring: 'ring-red-500/50', bg: 'bg-red-500/20', text: 'text-red-400', icon: 'text-red-400' };
+                  };
+                  
+                  const colors = getSpeedColor();
+                  
+                  return (
+                    <div className={`w-11 h-11 rounded-lg ${colors.bg} ring-1 ${colors.ring} flex flex-col items-center justify-center`}>
+                      <Zap className={`w-4 h-4 ${colors.icon}`} />
+                      <span className={`text-[9px] font-bold ${colors.text}`}>{score}</span>
+                    </div>
+                  );
+                })()}
+              </div>
+
               {/* Intent Type Icon + Label */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className={`w-10 h-10 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
@@ -573,101 +600,108 @@ export const BRONKeywordsTab = ({
                 )}
               </div>
 
+              {/* Keyword Metrics from DataForSEO - Between Rankings and Links */}
+              {(() => {
+                const metrics = keywordMetrics[keywordText.toLowerCase()];
+                if (metricsLoading) {
+                  return (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Skeleton className="h-10 w-14" />
+                      <Skeleton className="h-10 w-14" />
+                      <Skeleton className="h-10 w-14" />
+                    </div>
+                  );
+                }
+                if (!metrics) return null;
+                
+                const formatVolume = (vol: number) => {
+                  if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
+                  if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+                  return String(vol);
+                };
+                
+                const getCompetitionColor = (level: string) => {
+                  switch (level?.toUpperCase()) {
+                    case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
+                    case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+                    case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
+                    default: return 'text-muted-foreground border-border bg-muted/50';
+                  }
+                };
+                
+                return (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Search Volume */}
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3 text-blue-400" />
+                        <span className="text-xs font-bold text-blue-400">{formatVolume(metrics.search_volume)}</span>
+                      </div>
+                      <span className="text-[8px] text-blue-400/70">Vol/mo</span>
+                    </div>
+                    
+                    {/* CPC */}
+                    <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3 text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-400">${metrics.cpc.toFixed(2)}</span>
+                      </div>
+                      <span className="text-[8px] text-emerald-400/70">CPC</span>
+                    </div>
+                    
+                    {/* Competition/Difficulty */}
+                    <div className={`flex flex-col items-center px-2.5 py-1 rounded-lg border ${getCompetitionColor(metrics.competition_level)}`}>
+                      <div className="flex items-center gap-1">
+                        <Gauge className="w-3 h-3" />
+                        <span className="text-xs font-bold capitalize">{metrics.competition_level?.toLowerCase() || '—'}</span>
+                      </div>
+                      <span className="text-[8px] opacity-70">Difficulty</span>
+                    </div>
+                    
+                    {/* CTR Estimate based on position */}
+                    {googlePos !== null && (
+                      <div className="flex flex-col items-center px-2.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
+                        <div className="flex items-center gap-1">
+                          <MousePointerClick className="w-3 h-3 text-violet-400" />
+                          <span className="text-xs font-bold text-violet-400">
+                            {googlePos <= 1 ? '32%' : googlePos <= 2 ? '17%' : googlePos <= 3 ? '11%' : googlePos <= 5 ? '6%' : googlePos <= 10 ? '2%' : '<1%'}
+                          </span>
+                        </div>
+                        <span className="text-[8px] text-violet-400/70">Est. CTR</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Spacer */}
               <div className="flex-1" />
 
-              {/* Right Side: Keyword Metrics + Links */}
-              <div className="flex items-center gap-4 flex-shrink-0">
-                {/* Keyword Metrics from DataForSEO */}
-                {(() => {
-                  const metrics = keywordMetrics[keywordText.toLowerCase()];
-                  if (metricsLoading) {
-                    return (
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-10 w-16" />
-                        <Skeleton className="h-10 w-16" />
-                        <Skeleton className="h-10 w-16" />
+              {/* Right Side: Links */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Inbound Links */}
+                <div className="relative group">
+                  <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
                       </div>
-                    );
-                  }
-                  if (!metrics) return null;
-                  
-                  const formatVolume = (vol: number) => {
-                    if (vol >= 1000000) return `${(vol / 1000000).toFixed(1)}M`;
-                    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
-                    return String(vol);
-                  };
-                  
-                  const getCompetitionColor = (level: string) => {
-                    switch (level?.toUpperCase()) {
-                      case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-                      case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-                      case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
-                      default: return 'text-muted-foreground border-border bg-muted/50';
-                    }
-                  };
-                  
-                  return (
-                    <div className="flex items-center gap-2">
-                      {/* Search Volume */}
-                      <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                        <div className="flex items-center gap-1">
-                          <Activity className="w-3 h-3 text-blue-400" />
-                          <span className="text-xs font-bold text-blue-400">{formatVolume(metrics.search_volume)}</span>
-                        </div>
-                        <span className="text-[9px] text-blue-400/70">Volume</span>
-                      </div>
-                      
-                      {/* CPC */}
-                      <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3 text-emerald-400" />
-                          <span className="text-xs font-bold text-emerald-400">${metrics.cpc.toFixed(2)}</span>
-                        </div>
-                        <span className="text-[9px] text-emerald-400/70">CPC</span>
-                      </div>
-                      
-                      {/* Competition */}
-                      <div className={`flex flex-col items-center px-3 py-1.5 rounded-lg border ${getCompetitionColor(metrics.competition_level)}`}>
-                        <div className="flex items-center gap-1">
-                          <Gauge className="w-3 h-3" />
-                          <span className="text-xs font-bold capitalize">{metrics.competition_level?.toLowerCase() || '—'}</span>
-                        </div>
-                        <span className="text-[9px] opacity-70">Difficulty</span>
-                      </div>
+                      <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
                     </div>
-                  );
-                })()}
-
-                {/* Divider */}
-                <div className="w-px h-8 bg-border/50" />
-
-                {/* Inbound/Outbound Links - Elegant Card Style */}
-                <div className="flex items-center gap-2">
-                  {/* Inbound Links */}
-                  <div className="relative group">
-                    <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20 hover:border-cyan-500/40 transition-colors">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                          <ArrowDownLeft className="w-3 h-3 text-cyan-400" />
-                        </div>
-                        <span className="text-sm font-bold text-cyan-400">{linksIn.length}</span>
-                      </div>
-                      <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
-                    </div>
+                    <span className="text-[9px] text-cyan-400/70 mt-0.5">Inbound</span>
                   </div>
-                  
-                  {/* Outbound Links */}
-                  <div className="relative group">
-                    <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20 hover:border-violet-500/40 transition-colors">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
-                          <ArrowUpRight className="w-3 h-3 text-violet-400" />
-                        </div>
-                        <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
+                </div>
+                
+                {/* Outbound Links */}
+                <div className="relative group">
+                  <div className="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gradient-to-br from-violet-500/10 to-violet-600/5 border border-violet-500/20 hover:border-violet-500/40 transition-colors">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-violet-500/20 flex items-center justify-center">
+                        <ArrowUpRight className="w-3 h-3 text-violet-400" />
                       </div>
-                      <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
+                      <span className="text-sm font-bold text-violet-400">{linksOut.length}</span>
                     </div>
+                    <span className="text-[9px] text-violet-400/70 mt-0.5">Outbound</span>
                   </div>
                 </div>
               </div>
