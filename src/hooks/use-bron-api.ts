@@ -643,13 +643,25 @@ export function useBronApi(): UseBronApiReturn {
         console.log("[BRON] Starting auth verification...");
         // Auth check with 2 retries (total 3 attempts) for better reliability
         const result = await callApi("verifyAuth", {}, 2);
-        console.log("[BRON] Auth result:", result);
+        console.log("[BRON] Auth result:", JSON.stringify(result, null, 2));
         
         // Check for success - the API returns success: true with data containing status
-        const authenticated = result?.success === true && 
-          (result?.data?.status === "authenticated" || result?.data?.authenticated === true);
+        // Also accept top-level status for backwards compatibility
+        const dataStatus = result?.data?.status;
+        const dataAuthenticated = result?.data?.authenticated;
+        const topLevelStatus = result?.status;
         
-        console.log("[BRON] Authenticated:", authenticated);
+        const authenticated = result?.success === true && 
+          (dataStatus === "authenticated" || dataAuthenticated === true || topLevelStatus === "authenticated");
+        
+        console.log("[BRON] Auth check breakdown:", {
+          success: result?.success,
+          dataStatus,
+          dataAuthenticated,
+          topLevelStatus,
+          authenticated,
+        });
+        
         setIsAuthenticated(authenticated);
         return authenticated;
       } catch (err) {
