@@ -414,6 +414,45 @@ export function filterLinksForKeyword(
       matchesKeywordUrl(link.link)
     );
   });
+
+  // IMPORTANT: BRON's links-in response is often domain-level (referrer pages) and
+  // may not include a target_url back to the specific keyword page.
+  // If strict matching yields zero, fall back to category-based matching using
+  // categories present in this keyword's outbound links. If we still can't
+  // determine relevance, show all inbound links so the UI isn't empty.
+  const normalizeCategory = (value?: string) =>
+    (value || "")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  let keywordLinksInFinal = keywordLinksIn;
+  if (keywordLinksInFinal.length === 0 && linksIn.length > 0) {
+    const outboundCategorySet = new Set<string>();
+    for (const l of keywordLinksOut) {
+      const cat = normalizeCategory(l.category);
+      const parent = normalizeCategory(l.parent_category);
+      if (cat) outboundCategorySet.add(cat);
+      if (parent) outboundCategorySet.add(parent);
+      if (parent && cat) outboundCategorySet.add(`${parent}/${cat}`);
+    }
+
+    if (outboundCategorySet.size > 0) {
+      const byCategory = linksIn.filter((l) => {
+        const cat = normalizeCategory(l.category);
+        const parent = normalizeCategory(l.parent_category);
+        return (
+          (cat && outboundCategorySet.has(cat)) ||
+          (parent && outboundCategorySet.has(parent)) ||
+          (parent && cat && outboundCategorySet.has(`${parent}/${cat}`))
+        );
+      });
+      keywordLinksInFinal = byCategory.length > 0 ? byCategory : linksIn;
+    } else {
+      keywordLinksInFinal = linksIn;
+    }
+  }
   
-  return { keywordLinksIn, keywordLinksOut };
+  return { keywordLinksIn: keywordLinksInFinal, keywordLinksOut };
 }
