@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Loader2, Key, FileText, BarChart3, Link2, ArrowUpRight, 
   ArrowDownLeft, RefreshCw, TrendingUp, ChevronDown,
@@ -29,6 +29,9 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+
+  // Avoid duplicate link loads and UI thrash when domainInfo arrives (id changes).
+  const linksRequestedForDomainRef = useRef<string | null>(null);
 
   // Verify authentication on mount
   useEffect(() => {
@@ -115,6 +118,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
 
       // Reset all domain-specific data immediately for faster perceived switching
       bronApi.resetDomainData();
+      linksRequestedForDomainRef.current = null;
       setScreenshotUrl(null);
       setDomainInfo(null);
 
@@ -164,6 +168,10 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
       
       // Don't reload if we already have data
       if (bronApi.linksIn.length > 0 && bronApi.linksOut.length > 0) return;
+
+      // Prevent duplicate requests (domainInfo.id changes can re-trigger this effect)
+      if (linksRequestedForDomainRef.current === selectedDomain) return;
+      linksRequestedForDomainRef.current = selectedDomain;
 
       // Use domain ID if available (preferred by the API)
       const domainId = domainInfo?.id;
@@ -239,7 +247,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   const keywordProgress = Math.min(bronApi.keywords.length, 37);
 
   return (
-    <div className="space-y-6" style={{ contain: "layout style paint" }}>
+    <div className="space-y-6" style={{ contain: "layout style" }}>
       {/* Domain Profile Section - Matching Reference Design */}
       {selectedDomain && (
         <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">

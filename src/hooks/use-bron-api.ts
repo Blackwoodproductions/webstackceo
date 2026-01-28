@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -170,7 +170,8 @@ export interface UseBronApiReturn {
 }
 
 export function useBronApi(): UseBronApiReturn {
-  const [isLoading, setIsLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const isLoading = pendingCount > 0;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [domains, setDomains] = useState<BronDomain[]>([]);
   const [keywords, setKeywords] = useState<BronKeyword[]>([]);
@@ -181,6 +182,24 @@ export function useBronApi(): UseBronApiReturn {
   const [linksOut, setLinksOut] = useState<BronLink[]>([]);
   const [linksInError, setLinksInError] = useState<string | null>(null);
   const [linksOutError, setLinksOutError] = useState<string | null>(null);
+
+  // Prevent stale async responses (domain switching / rapid tab changes)
+  const keywordsReqIdRef = useRef(0);
+  const pagesReqIdRef = useRef(0);
+  const serpReportReqIdRef = useRef(0);
+  const serpListReqIdRef = useRef(0);
+  const linksInReqIdRef = useRef(0);
+  const linksOutReqIdRef = useRef(0);
+
+  // Replace boolean "isLoading" toggles with a robust pending counter.
+  const withPending = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    setPendingCount((p) => p + 1);
+    try {
+      return await fn();
+    } finally {
+      setPendingCount((p) => Math.max(0, p - 1));
+    }
+  }, []);
 
   const formatInvokeError = useCallback(async (error: unknown): Promise<string> => {
     const fallback = error instanceof Error ? error.message : "Request failed";
@@ -234,42 +253,40 @@ export function useBronApi(): UseBronApiReturn {
   }, [formatInvokeError]);
 
   const verifyAuth = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("verifyAuth");
-      const authenticated = result?.success === true;
-      setIsAuthenticated(authenticated);
-      return authenticated;
-    } catch {
-      setIsAuthenticated(false);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    return withPending(async () => {
+      try {
+        const result = await callApi("verifyAuth");
+        const authenticated = result?.success === true;
+        setIsAuthenticated(authenticated);
+        return authenticated;
+      } catch {
+        setIsAuthenticated(false);
+        return false;
+      }
+    });
+  }, [callApi, withPending]);
 
   const fetchDomains = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("listDomains", { limit: 100 });
-      if (result?.success && result.data) {
-        const rawList = result.data.domains || result.data.items || [];
-        // Normalize domain_name to domain for consistency
-        const domainList: BronDomain[] = (Array.isArray(rawList) ? rawList : []).map((d: { id?: number; domain_name?: string; domain?: string; deleted?: number; is_deleted?: boolean }) => ({
-          id: d.id,
-          domain: String(d.domain_name || d.domain || ''),
-          domain_name: d.domain_name,
-          is_deleted: d.deleted === 1 || d.is_deleted === true,
-        }));
-        setDomains(domainList);
+    return withPending(async () => {
+      try {
+        const result = await callApi("listDomains", { limit: 100 });
+        if (result?.success && result.data) {
+          const rawList = result.data.domains || result.data.items || [];
+          // Normalize domain_name to domain for consistency
+          const domainList: BronDomain[] = (Array.isArray(rawList) ? rawList : []).map((d: { id?: number; domain_name?: string; domain?: string; deleted?: number; is_deleted?: boolean }) => ({
+            id: d.id,
+            domain: String(d.domain_name || d.domain || ""),
+            domain_name: d.domain_name,
+            is_deleted: d.deleted === 1 || d.is_deleted === true,
+          }));
+          setDomains(domainList);
+        }
+      } catch (err) {
+        toast.error("Failed to fetch domains");
+        console.error(err);
       }
-    } catch (err) {
-      toast.error("Failed to fetch domains");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const fetchDomain = useCallback(async (domain: string): Promise<BronDomain | null> => {
     try {
@@ -298,269 +315,273 @@ export function useBronApi(): UseBronApiReturn {
   }, [callApi]);
 
   const updateDomain = useCallback(async (domain: string, data: Record<string, unknown>): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("updateDomain", { domain, data });
-      if (result?.success) {
-        toast.success("Domain updated successfully");
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("updateDomain", { domain, data });
+        if (result?.success) {
+          toast.success("Domain updated successfully");
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to update domain");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to update domain");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const deleteDomain = useCallback(async (domain: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("deleteDomain", { domain });
-      if (result?.success) {
-        toast.success("Domain deleted");
-        await fetchDomains();
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("deleteDomain", { domain });
+        if (result?.success) {
+          toast.success("Domain deleted");
+          await fetchDomains();
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to delete domain");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to delete domain");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi, fetchDomains]);
+    });
+  }, [callApi, fetchDomains, withPending]);
 
   const restoreDomain = useCallback(async (domain: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("restoreDomain", { domain });
-      if (result?.success) {
-        toast.success("Domain restored");
-        await fetchDomains();
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("restoreDomain", { domain });
+        if (result?.success) {
+          toast.success("Domain restored");
+          await fetchDomains();
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to restore domain");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to restore domain");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi, fetchDomains]);
+    });
+  }, [callApi, fetchDomains, withPending]);
 
   // Fetch all keywords with automatic pagination to get complete list
   const fetchKeywords = useCallback(async (domain?: string) => {
-    setIsLoading(true);
-    try {
-      const allKeywords: BronKeyword[] = [];
-      let page = 1;
-      const pageSize = 100;
-      let hasMore = true;
-      
-      // Fetch all pages of keywords
-      while (hasMore) {
-        const result = await callApi("listKeywords", { 
-          domain, 
-          page,
-          limit: pageSize,
-          include_deleted: false 
-        });
+    const reqId = ++keywordsReqIdRef.current;
+    return withPending(async () => {
+      try {
+        const allKeywords: BronKeyword[] = [];
+        let page = 1;
+        const pageSize = 100;
+        let hasMore = true;
         
-        if (result?.success && result.data) {
-          const keywordList = result.data.keywords || result.data.items || [];
-          const keywords = Array.isArray(keywordList) ? keywordList : [];
-          
-          // Log first page to check for all available fields
-          if (page === 1 && keywords.length > 0) {
-            // Log ALL fields from first keyword to see what's available
-            console.log('[BRON] First keyword raw data (all fields):', JSON.stringify(keywords[0], null, 2));
-            console.log('[BRON] Sample keyword data (checking for clustering fields):', {
-              sample: keywords.slice(0, 5).map((k: BronKeyword) => ({
-                id: k.id,
-                keyword: k.keyword,
-                keywordtitle: k.keywordtitle,
-                metatitle: k.metatitle,
-                // Check additional potential text fields
-                title: (k as unknown as Record<string, unknown>).title,
-                name: (k as unknown as Record<string, unknown>).name,
-                keyword_text: (k as unknown as Record<string, unknown>).keyword_text,
-                text: (k as unknown as Record<string, unknown>).text,
-                linkouturl: k.linkouturl,
-                parent_keyword_id: k.parent_keyword_id,
-                is_supporting: k.is_supporting,
-                bubblefeed: k.bubblefeed,
-                cluster_id: k.cluster_id,
-                domainid: k.domainid,
-              })),
-              hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
-              hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
-              hasBubblefeed: keywords.some((k: BronKeyword) => k.bubblefeed !== undefined),
-              hasClusterId: keywords.some((k: BronKeyword) => k.cluster_id !== undefined),
-            });
-          }
-          
-          if (keywords.length > 0) {
-            allKeywords.push(...keywords);
-            // Check if we got a full page (meaning there might be more)
-            hasMore = keywords.length >= pageSize;
-            page++;
-            
-            // Safety limit to prevent infinite loops
-            if (page > 10) {
-              console.warn('[BRON] Reached maximum page limit (10) for keywords');
+        // Fetch all pages of keywords
+        while (hasMore) {
+          const result = await callApi("listKeywords", {
+            domain,
+            page,
+            limit: pageSize,
+            include_deleted: false,
+          });
+
+          // Domain switched / reset while we were in-flight
+          if (reqId !== keywordsReqIdRef.current) return;
+
+          if (result?.success && result.data) {
+            const keywordList = result.data.keywords || result.data.items || [];
+            const keywords = Array.isArray(keywordList) ? keywordList : [];
+
+            // Log first page to check for all available fields
+            if (page === 1 && keywords.length > 0) {
+              // Log ALL fields from first keyword to see what's available
+              console.log('[BRON] First keyword raw data (all fields):', JSON.stringify(keywords[0], null, 2));
+              console.log('[BRON] Sample keyword data (checking for clustering fields):', {
+                sample: keywords.slice(0, 5).map((k: BronKeyword) => ({
+                  id: k.id,
+                  keyword: k.keyword,
+                  keywordtitle: k.keywordtitle,
+                  metatitle: k.metatitle,
+                  // Check additional potential text fields
+                  title: (k as unknown as Record<string, unknown>).title,
+                  name: (k as unknown as Record<string, unknown>).name,
+                  keyword_text: (k as unknown as Record<string, unknown>).keyword_text,
+                  text: (k as unknown as Record<string, unknown>).text,
+                  linkouturl: k.linkouturl,
+                  parent_keyword_id: k.parent_keyword_id,
+                  is_supporting: k.is_supporting,
+                  bubblefeed: k.bubblefeed,
+                  cluster_id: k.cluster_id,
+                  domainid: k.domainid,
+                })),
+                hasParentKeywordId: keywords.some((k: BronKeyword) => k.parent_keyword_id),
+                hasIsSupporting: keywords.some((k: BronKeyword) => k.is_supporting !== undefined),
+                hasBubblefeed: keywords.some((k: BronKeyword) => k.bubblefeed !== undefined),
+                hasClusterId: keywords.some((k: BronKeyword) => k.cluster_id !== undefined),
+              });
+            }
+
+            if (keywords.length > 0) {
+              allKeywords.push(...keywords);
+              // Check if we got a full page (meaning there might be more)
+              hasMore = keywords.length >= pageSize;
+              page++;
+
+              // Safety limit to prevent infinite loops
+              if (page > 10) {
+                console.warn('[BRON] Reached maximum page limit (10) for keywords');
+                hasMore = false;
+              }
+            } else {
               hasMore = false;
             }
           } else {
             hasMore = false;
           }
-        } else {
-          hasMore = false;
         }
+
+        if (reqId !== keywordsReqIdRef.current) return;
+        console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
+        setKeywords(allKeywords);
+      } catch (err) {
+        if (reqId !== keywordsReqIdRef.current) return;
+        toast.error("Failed to fetch keywords");
+        console.error(err);
       }
-      
-      console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
-      setKeywords(allKeywords);
-    } catch (err) {
-      toast.error("Failed to fetch keywords");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const addKeyword = useCallback(async (data: Record<string, unknown>): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("addKeyword", { data });
-      if (result?.success) {
-        toast.success("Keyword added successfully");
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("addKeyword", { data });
+        if (result?.success) {
+          toast.success("Keyword added successfully");
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to add keyword");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to add keyword");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const updateKeyword = useCallback(async (keywordId: string, data: Record<string, unknown>): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("updateKeyword", { keyword_id: keywordId, data });
-      if (result?.success) {
-        toast.success("Keyword updated successfully");
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("updateKeyword", { keyword_id: keywordId, data });
+        if (result?.success) {
+          toast.success("Keyword updated successfully");
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to update keyword");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to update keyword");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const deleteKeyword = useCallback(async (keywordId: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("deleteKeyword", { keyword_id: keywordId });
-      if (result?.success) {
-        toast.success("Keyword deleted");
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("deleteKeyword", { keyword_id: keywordId });
+        if (result?.success) {
+          toast.success("Keyword deleted");
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to delete keyword");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to delete keyword");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const restoreKeyword = useCallback(async (keywordId: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("restoreKeyword", { keyword_id: keywordId });
-      if (result?.success) {
-        toast.success("Keyword restored");
-        return true;
+    return withPending(async () => {
+      try {
+        const result = await callApi("restoreKeyword", { keyword_id: keywordId });
+        if (result?.success) {
+          toast.success("Keyword restored");
+          return true;
+        }
+        return false;
+      } catch (err) {
+        toast.error("Failed to restore keyword");
+        console.error(err);
+        return false;
       }
-      return false;
-    } catch (err) {
-      toast.error("Failed to restore keyword");
-      console.error(err);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const fetchPages = useCallback(async (domain: string) => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("getPages", { domain });
-      if (result?.success && result.data) {
-        // API returns array directly in data, or nested in pages/articles/items
-        const pageList = Array.isArray(result.data) 
-          ? result.data 
-          : (result.data.pages || result.data.articles || result.data.items || []);
-        setPages(Array.isArray(pageList) ? pageList : []);
+    const reqId = ++pagesReqIdRef.current;
+    return withPending(async () => {
+      try {
+        const result = await callApi("getPages", { domain });
+        if (reqId !== pagesReqIdRef.current) return;
+        if (result?.success && result.data) {
+          // API returns array directly in data, or nested in pages/articles/items
+          const pageList = Array.isArray(result.data)
+            ? result.data
+            : (result.data.pages || result.data.articles || result.data.items || []);
+          setPages(Array.isArray(pageList) ? pageList : []);
+        }
+      } catch (err) {
+        if (reqId !== pagesReqIdRef.current) return;
+        toast.error("Failed to fetch pages");
+        console.error(err);
       }
-    } catch (err) {
-      toast.error("Failed to fetch pages");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const fetchSerpReport = useCallback(async (domain: string) => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("getSerpReport", { domain });
-      if (result?.success && result.data) {
-        // API returns array directly or nested
-        const reports = Array.isArray(result.data)
-          ? result.data
-          : (result.data.rankings || result.data.keywords || result.data.items || []);
-        setSerpReports(Array.isArray(reports) ? reports : []);
+    const reqId = ++serpReportReqIdRef.current;
+    return withPending(async () => {
+      try {
+        const result = await callApi("getSerpReport", { domain });
+        if (reqId !== serpReportReqIdRef.current) return;
+        if (result?.success && result.data) {
+          // API returns array directly or nested
+          const reports = Array.isArray(result.data)
+            ? result.data
+            : (result.data.rankings || result.data.keywords || result.data.items || []);
+          setSerpReports(Array.isArray(reports) ? reports : []);
+        }
+      } catch (err) {
+        if (reqId !== serpReportReqIdRef.current) return;
+        toast.error("Failed to fetch SERP report");
+        console.error(err);
       }
-    } catch (err) {
-      toast.error("Failed to fetch SERP report");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   // Fetch list of historical SERP reports
   const fetchSerpList = useCallback(async (domain: string) => {
-    setIsLoading(true);
-    try {
-      const result = await callApi("getSerpList", { domain });
-      if (result?.success && result.data) {
-        // API returns array directly or nested
-        const reports = Array.isArray(result.data)
-          ? result.data
-          : (result.data.reports || result.data.items || []);
-        setSerpHistory(Array.isArray(reports) ? reports : []);
+    const reqId = ++serpListReqIdRef.current;
+    return withPending(async () => {
+      try {
+        const result = await callApi("getSerpList", { domain });
+        if (reqId !== serpListReqIdRef.current) return;
+        if (result?.success && result.data) {
+          // API returns array directly or nested
+          const reports = Array.isArray(result.data)
+            ? result.data
+            : (result.data.reports || result.data.items || []);
+          setSerpHistory(Array.isArray(reports) ? reports : []);
+        }
+      } catch (err) {
+        if (reqId !== serpListReqIdRef.current) return;
+        console.error("Failed to fetch SERP list:", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch SERP list:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   // Fetch detailed SERP data for a specific historical report
   const fetchSerpDetail = useCallback(async (domain: string, reportId: string): Promise<BronSerpReport[]> => {
@@ -581,57 +602,69 @@ export function useBronApi(): UseBronApiReturn {
   }, [callApi]);
 
   const fetchLinksIn = useCallback(async (domain: string, domainId?: number | string) => {
-    setIsLoading(true);
+    const reqId = ++linksInReqIdRef.current;
     setLinksInError(null);
-    try {
-      console.log(`[BRON] Fetching links-in for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
-      const result = await callApi("getLinksIn", { domain, domain_id: domainId });
-      if (result?.success && result.data) {
-        // API returns array directly or nested
-        const links = Array.isArray(result.data)
-          ? result.data
-          : (result.data.links || result.data.items || []);
-        console.log(`[BRON] Links-in result: ${Array.isArray(links) ? links.length : 0} links`);
-        setLinksIn(Array.isArray(links) ? links : []);
-      } else if (result?.error) {
-        setLinksInError(result.error || "Failed to fetch inbound links");
+    return withPending(async () => {
+      try {
+        console.log(`[BRON] Fetching links-in for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
+        const result = await callApi("getLinksIn", { domain, domain_id: domainId });
+        if (reqId !== linksInReqIdRef.current) return;
+        if (result?.success && result.data) {
+          // API returns array directly or nested
+          const links = Array.isArray(result.data)
+            ? result.data
+            : (result.data.links || result.data.items || []);
+          console.log(`[BRON] Links-in result: ${Array.isArray(links) ? links.length : 0} links`);
+          setLinksIn(Array.isArray(links) ? links : []);
+        } else if (result?.error) {
+          setLinksInError(result.error || "Failed to fetch inbound links");
+        }
+      } catch (err) {
+        if (reqId !== linksInReqIdRef.current) return;
+        const errorMsg = err instanceof Error ? err.message : "Failed to fetch inbound links";
+        setLinksInError(errorMsg);
+        console.error(err);
       }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to fetch inbound links";
-      setLinksInError(errorMsg);
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   const fetchLinksOut = useCallback(async (domain: string, domainId?: number | string) => {
-    setIsLoading(true);
+    const reqId = ++linksOutReqIdRef.current;
     setLinksOutError(null);
-    try {
-      console.log(`[BRON] Fetching links-out for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
-      const result = await callApi("getLinksOut", { domain, domain_id: domainId });
-      if (result?.success && result.data) {
-        // API returns array directly or nested
-        const links = Array.isArray(result.data)
-          ? result.data
-          : (result.data.links || result.data.items || []);
-        console.log(`[BRON] Links-out result: ${Array.isArray(links) ? links.length : 0} links`);
-        setLinksOut(Array.isArray(links) ? links : []);
-      } else if (result?.error) {
-        setLinksOutError(result.error || "Failed to fetch outbound links");
+    return withPending(async () => {
+      try {
+        console.log(`[BRON] Fetching links-out for domain: ${domain}, domainId: ${domainId || 'N/A'}`);
+        const result = await callApi("getLinksOut", { domain, domain_id: domainId });
+        if (reqId !== linksOutReqIdRef.current) return;
+        if (result?.success && result.data) {
+          // API returns array directly or nested
+          const links = Array.isArray(result.data)
+            ? result.data
+            : (result.data.links || result.data.items || []);
+          console.log(`[BRON] Links-out result: ${Array.isArray(links) ? links.length : 0} links`);
+          setLinksOut(Array.isArray(links) ? links : []);
+        } else if (result?.error) {
+          setLinksOutError(result.error || "Failed to fetch outbound links");
+        }
+      } catch (err) {
+        if (reqId !== linksOutReqIdRef.current) return;
+        const errorMsg = err instanceof Error ? err.message : "Failed to fetch outbound links";
+        setLinksOutError(errorMsg);
+        console.error(err);
       }
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to fetch outbound links";
-      setLinksOutError(errorMsg);
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [callApi]);
+    });
+  }, [callApi, withPending]);
 
   // Reset domain-specific data (for faster domain switching)
   const resetDomainData = useCallback(() => {
+    // Invalidate any in-flight responses so they can't clobber the new domain.
+    keywordsReqIdRef.current += 1;
+    pagesReqIdRef.current += 1;
+    serpReportReqIdRef.current += 1;
+    serpListReqIdRef.current += 1;
+    linksInReqIdRef.current += 1;
+    linksOutReqIdRef.current += 1;
+
     setKeywords([]);
     setPages([]);
     setSerpReports([]);

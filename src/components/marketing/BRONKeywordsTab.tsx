@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition } from "react";
 import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -203,10 +203,16 @@ export const BRONKeywordsTab = memo(({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
+  const pageSpeedScoresRef = useRef(pageSpeedScores);
   const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
+
+  // Keep latest scores available to async effects without adding it as a dependency (prevents loops).
+  useEffect(() => {
+    pageSpeedScoresRef.current = pageSpeedScores;
+  }, [pageSpeedScores]);
 
   // Merge keywords with SERP data
   const mergedKeywords = useMemo(() => 
@@ -377,7 +383,7 @@ export const BRONKeywordsTab = memo(({
       
       if (!url || fetchedUrlsRef.current.has(url)) continue;
       
-      const cached = pageSpeedScores[url];
+       const cached = pageSpeedScoresRef.current[url];
       if (cached && cached.mobileScore > 0 && !cached.error) {
         fetchedUrlsRef.current.add(url);
         continue;
@@ -393,17 +399,19 @@ export const BRONKeywordsTab = memo(({
         fetchedUrlsRef.current.add(url);
       }
       
-      setPageSpeedScores(prev => {
-        const next = { ...prev };
-        for (const { url } of batch) {
-          if (!next[url] || next[url].mobileScore === 0) {
-            next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
-          } else {
-            next[url] = { ...next[url], updating: true };
-          }
-        }
-        return next;
-      });
+       startTransition(() => {
+         setPageSpeedScores(prev => {
+           const next = { ...prev };
+           for (const { url } of batch) {
+             if (!next[url] || next[url].mobileScore === 0) {
+               next[url] = { mobileScore: 0, desktopScore: 0, loading: true };
+             } else {
+               next[url] = { ...next[url], updating: true };
+             }
+           }
+           return next;
+         });
+       });
 
       // Batch updates to avoid re-rendering the whole keyword list once per URL.
       const results = await Promise.all(
@@ -425,28 +433,30 @@ export const BRONKeywordsTab = memo(({
         })
       );
 
-      setPageSpeedScores(prev => {
-        const updated = { ...prev };
-        const now = Date.now();
+       startTransition(() => {
+         setPageSpeedScores(prev => {
+           const updated = { ...prev };
+           const now = Date.now();
 
-        for (const r of results) {
-          if (r.ok) {
-            updated[r.url] = {
-              mobileScore: r.mobileScore,
-              desktopScore: r.desktopScore,
-              loading: false,
-              updating: false,
-              error: false,
-              cachedAt: now,
-            };
-          } else {
-            updated[r.url] = { mobileScore: 0, desktopScore: 0, loading: false, updating: false, error: true };
-          }
-        }
+           for (const r of results) {
+             if (r.ok) {
+               updated[r.url] = {
+                 mobileScore: r.mobileScore,
+                 desktopScore: r.desktopScore,
+                 loading: false,
+                 updating: false,
+                 error: false,
+                 cachedAt: now,
+               };
+             } else {
+               updated[r.url] = { mobileScore: 0, desktopScore: 0, loading: false, updating: false, error: true };
+             }
+           }
 
-        saveCachedPageSpeedScores(updated);
-        return updated;
-      });
+           saveCachedPageSpeedScores(updated);
+           return updated;
+         });
+       });
     };
     
     const batchSize = 3;
