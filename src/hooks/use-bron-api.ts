@@ -7,12 +7,29 @@ export interface BronDomain {
   id?: number;
   domain: string;
   domain_name?: string;
-  status?: string;
+  status?: string | number;
   created_at?: string;
   updated_at?: string;
   is_deleted?: boolean;
   deleted?: number;
   settings?: Record<string, unknown>;
+  // Extended fields from API
+  domain_country?: string;
+  ishttps?: number;
+  servicetype?: string;
+  userid?: number;
+  usewww?: number;
+  wp_plugin?: number;
+  // Business/GMB fields
+  wr_name?: string;
+  wr_address?: string;
+  wr_phone?: string;
+  wr_email?: string;
+  wr_facebook?: string;
+  wr_instagram?: string;
+  wr_linkedin?: string;
+  wr_twitter?: string;
+  wr_video?: string;
 }
 
 export interface BronKeyword {
