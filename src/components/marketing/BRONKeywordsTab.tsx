@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
+import { BronKeyword, BronSerpReport, BronLink, BronSerpListItem } from "@/hooks/use-bron-api";
 import WysiwygEditor from "@/components/marketing/WysiwygEditor";
 import { KeywordHistoryChart } from "@/components/marketing/KeywordHistoryChart";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +49,7 @@ interface KeywordMetrics {
 interface BRONKeywordsTabProps {
   keywords: BronKeyword[];
   serpReports?: BronSerpReport[];
+  serpHistory?: BronSerpListItem[];
   linksIn?: BronLink[];
   linksOut?: BronLink[];
   selectedDomain?: string;
@@ -58,6 +59,7 @@ interface BRONKeywordsTabProps {
   onUpdate: (keywordId: string, data: Record<string, unknown>) => Promise<boolean>;
   onDelete: (keywordId: string) => Promise<boolean>;
   onRestore: (keywordId: string) => Promise<boolean>;
+  onFetchSerpDetail?: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
 }
 
 // Find matching SERP report for a keyword - uses flexible matching
@@ -253,6 +255,7 @@ function getKeywordIntent(keyword: string): { type: 'transactional' | 'commercia
 export const BRONKeywordsTab = ({
   keywords,
   serpReports = [],
+  serpHistory = [],
   linksIn = [],
   linksOut = [],
   selectedDomain,
@@ -262,6 +265,7 @@ export const BRONKeywordsTab = ({
   onUpdate,
   onDelete,
   onRestore,
+  onFetchSerpDetail,
 }: BRONKeywordsTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
@@ -278,7 +282,7 @@ export const BRONKeywordsTab = ({
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
   const [metricsLoading, setMetricsLoading] = useState(false);
 
-  // Initial keyword positions from first snapshot (for movement tracking)
+  // Initial keyword positions from first BRON SERP report (for movement tracking)
   interface InitialPositions {
     google: number | null;
     bing: number | null;
@@ -299,43 +303,55 @@ export const BRONKeywordsTab = ({
 
   const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords), [filteredKeywords]);
 
-  // Fetch initial positions from first snapshot for movement tracking
+  // Fetch initial positions from BRON API historical SERP reports
   useEffect(() => {
     const fetchInitialPositions = async () => {
-      if (!selectedDomain || keywords.length === 0) return;
+      if (!selectedDomain || !onFetchSerpDetail || serpHistory.length === 0) return;
       
       setInitialPositionsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('keyword_ranking_history')
-          .select('keyword, google_position, bing_position, yahoo_position, snapshot_at')
-          .eq('domain', selectedDomain)
-          .order('snapshot_at', { ascending: true });
+        // Sort serpHistory by date to get the oldest report first
+        const sortedHistory = [...serpHistory].sort((a, b) => {
+          const dateA = new Date(a.started || a.created_at || 0).getTime();
+          const dateB = new Date(b.started || b.created_at || 0).getTime();
+          return dateA - dateB;
+        });
         
-        if (!error && data && data.length > 0) {
-          // Get the first recorded position for each keyword
+        // Get the oldest report
+        const oldestReport = sortedHistory[0];
+        if (!oldestReport) return;
+        
+        const reportId = String(oldestReport.report_id || oldestReport.id);
+        console.log(`Fetching initial positions from oldest report: ${reportId}`);
+        
+        // Fetch the detailed SERP data for the oldest report
+        const oldestReportData = await onFetchSerpDetail(selectedDomain, reportId);
+        
+        if (oldestReportData && oldestReportData.length > 0) {
+          // Build initial positions map from the oldest report
           const firstPositions: Record<string, InitialPositions> = {};
-          for (const row of data) {
-            const keyLower = row.keyword.toLowerCase();
-            if (!firstPositions[keyLower]) {
+          for (const item of oldestReportData) {
+            if (item.keyword) {
+              const keyLower = item.keyword.toLowerCase();
               firstPositions[keyLower] = {
-                google: row.google_position,
-                bing: row.bing_position,
-                yahoo: row.yahoo_position,
+                google: getPosition(item.google),
+                bing: getPosition(item.bing),
+                yahoo: getPosition(item.yahoo),
               };
             }
           }
           setInitialPositions(firstPositions);
+          console.log(`Loaded initial positions for ${Object.keys(firstPositions).length} keywords`);
         }
       } catch (err) {
-        console.error('Failed to fetch initial positions:', err);
+        console.error('Failed to fetch initial positions from BRON:', err);
       } finally {
         setInitialPositionsLoading(false);
       }
     };
     
     fetchInitialPositions();
-  }, [selectedDomain, keywords]);
+  }, [selectedDomain, serpHistory, onFetchSerpDetail]);
 
   // Fetch keyword metrics from DataForSEO
   useEffect(() => {

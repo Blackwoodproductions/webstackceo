@@ -97,6 +97,17 @@ export interface BronSerpReport {
   created_at?: string;
 }
 
+// SERP List item (historical report metadata)
+export interface BronSerpListItem {
+  id: string | number;
+  report_id?: string | number;
+  domain?: string;
+  started?: string;
+  complete?: string;
+  created_at?: string;
+  status?: string;
+}
+
 
 export interface BronLink {
   source_url?: string;
@@ -115,6 +126,7 @@ export interface UseBronApiReturn {
   keywords: BronKeyword[];
   pages: BronPage[];
   serpReports: BronSerpReport[];
+  serpHistory: BronSerpListItem[];
   linksIn: BronLink[];
   linksOut: BronLink[];
   linksInError: string | null;
@@ -132,6 +144,8 @@ export interface UseBronApiReturn {
   restoreKeyword: (keywordId: string) => Promise<boolean>;
   fetchPages: (domain: string) => Promise<void>;
   fetchSerpReport: (domain: string) => Promise<void>;
+  fetchSerpList: (domain: string) => Promise<void>;
+  fetchSerpDetail: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
   fetchLinksIn: (domain: string) => Promise<void>;
   fetchLinksOut: (domain: string) => Promise<void>;
 }
@@ -143,6 +157,7 @@ export function useBronApi(): UseBronApiReturn {
   const [keywords, setKeywords] = useState<BronKeyword[]>([]);
   const [pages, setPages] = useState<BronPage[]>([]);
   const [serpReports, setSerpReports] = useState<BronSerpReport[]>([]);
+  const [serpHistory, setSerpHistory] = useState<BronSerpListItem[]>([]);
   const [linksIn, setLinksIn] = useState<BronLink[]>([]);
   const [linksOut, setLinksOut] = useState<BronLink[]>([]);
   const [linksInError, setLinksInError] = useState<string | null>(null);
@@ -432,6 +447,43 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, [callApi]);
 
+  // Fetch list of historical SERP reports
+  const fetchSerpList = useCallback(async (domain: string) => {
+    setIsLoading(true);
+    try {
+      const result = await callApi("getSerpList", { domain });
+      if (result?.success && result.data) {
+        // API returns array directly or nested
+        const reports = Array.isArray(result.data)
+          ? result.data
+          : (result.data.reports || result.data.items || []);
+        setSerpHistory(Array.isArray(reports) ? reports : []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch SERP list:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [callApi]);
+
+  // Fetch detailed SERP data for a specific historical report
+  const fetchSerpDetail = useCallback(async (domain: string, reportId: string): Promise<BronSerpReport[]> => {
+    try {
+      const result = await callApi("getSerpDetail", { domain, data: { report_id: reportId } });
+      if (result?.success && result.data) {
+        // API returns array directly or nested
+        const reports = Array.isArray(result.data)
+          ? result.data
+          : (result.data.rankings || result.data.keywords || result.data.items || []);
+        return Array.isArray(reports) ? reports : [];
+      }
+      return [];
+    } catch (err) {
+      console.error("Failed to fetch SERP detail:", err);
+      return [];
+    }
+  }, [callApi]);
+
   const fetchLinksIn = useCallback(async (domain: string) => {
     setIsLoading(true);
     setLinksInError(null);
@@ -485,6 +537,7 @@ export function useBronApi(): UseBronApiReturn {
     keywords,
     pages,
     serpReports,
+    serpHistory,
     linksIn,
     linksOut,
     linksInError,
@@ -502,6 +555,8 @@ export function useBronApi(): UseBronApiReturn {
     restoreKeyword,
     fetchPages,
     fetchSerpReport,
+    fetchSerpList,
+    fetchSerpDetail,
     fetchLinksIn,
     fetchLinksOut,
   };
