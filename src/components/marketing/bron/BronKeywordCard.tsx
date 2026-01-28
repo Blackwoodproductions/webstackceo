@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { 
   ChevronUp, ChevronDown, ArrowUpRight, ArrowDownLeft,
-  TrendingUp, TrendingDown, Minus, DollarSign, Gauge, MousePointerClick,
+  TrendingUp, TrendingDown, Minus, DollarSign, Search, MousePointerClick,
   ShoppingCart, Info, Compass, Target, RefreshCw
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -213,15 +213,6 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   googlePos: number | null;
   loading?: boolean;
 }) => {
-  const getCompetitionColor = (level?: string) => {
-    switch (level?.toUpperCase()) {
-      case 'LOW': return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-      case 'MEDIUM': return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-      case 'HIGH': return 'text-red-400 border-red-500/30 bg-red-500/10';
-      default: return 'text-muted-foreground border-border bg-muted/30';
-    }
-  };
-
   const getEstimatedCTR = (pos: number | null) => {
     if (pos === null) return null;
     if (pos <= 1) return '32%';
@@ -230,6 +221,13 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
     if (pos <= 5) return '6%';
     if (pos <= 10) return '2%';
     return '<1%';
+  };
+
+  const formatVolume = (vol?: number) => {
+    if (vol === undefined || vol === null) return '—';
+    if (vol >= 10000) return `${(vol / 1000).toFixed(0)}K`;
+    if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
+    return String(vol);
   };
 
   const ctrValue = getEstimatedCTR(googlePos);
@@ -246,14 +244,14 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
         <span className="text-[7px] text-emerald-400/70">CPC</span>
       </div>
       
-      <div className={`flex flex-col items-center px-1 py-1 rounded-lg border ${getCompetitionColor(metrics?.competition_level)}`}>
+      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
         <div className="flex items-center gap-0.5">
-          <Gauge className="w-2.5 h-2.5" />
-          <span className="text-[10px] font-bold capitalize">
-            {loading ? '...' : metrics?.competition_level?.slice(0, 3).toLowerCase() || '—'}
+          <Search className="w-2.5 h-2.5 text-cyan-400" />
+          <span className="text-[10px] font-bold text-cyan-400">
+            {loading ? '...' : formatVolume(metrics?.search_volume)}
           </span>
         </div>
-        <span className="text-[7px] opacity-70">Diff</span>
+        <span className="text-[7px] text-cyan-400/70">Vol</span>
       </div>
       
       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
