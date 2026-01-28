@@ -828,22 +828,7 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
       {/* Header with Subscription Level */}
       <div className="relative p-6 rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-fuchsia-500/10 border border-violet-500/30 overflow-hidden">
         <div className="relative z-10">
-          {/* Subscription Badge - Top Right */}
-          <div className="absolute top-0 right-0">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-bl-xl rounded-tr-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border-l border-b border-violet-500/30">
-              <Shield className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-xs font-semibold text-violet-300 uppercase tracking-wider">
-                {subscription?.plan || "Pro"}
-              </span>
-              {subscription?.status && (
-                <Badge className="h-5 text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                  {subscription.status}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-6 md:pt-0">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
@@ -866,7 +851,22 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
                 <p className="text-sm text-muted-foreground">AI-Powered Content Automation Engine</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            
+            {/* Right side: Subscription badge + Refresh button */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Subscription Badge */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+                <Shield className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-xs font-semibold text-violet-300 uppercase tracking-wider">
+                  {subscription?.plan || bronSubscription?.plan || "CADE PRO"}
+                </span>
+                {(subscription?.status || bronSubscription?.status) && (
+                  <Badge className="h-5 text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                    {subscription?.status || bronSubscription?.status}
+                  </Badge>
+                )}
+              </div>
+              
               <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-2 border-violet-500/30 hover:bg-violet-500/10">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Refresh
