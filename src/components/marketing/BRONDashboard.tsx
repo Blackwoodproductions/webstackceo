@@ -268,8 +268,9 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const stablePages = useMemo(() => bronApi.pages, [bronApi.pages]);
 
   // Stable callbacks for child components
+  // Note: bronApi methods are internally stable via refs, no need to include bronApi in deps
   const handleRefreshKeywords = useCallback(() => {
-    bronApi.fetchKeywords(selectedDomain, true);
+    if (selectedDomain) bronApi.fetchKeywords(selectedDomain, true);
   }, [selectedDomain]);
 
   const handleAddKeyword = useCallback((data: Record<string, unknown>) => {
