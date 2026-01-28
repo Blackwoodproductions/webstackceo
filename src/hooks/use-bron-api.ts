@@ -65,6 +65,76 @@ export function invalidateKeywordCache(domain: string) {
   }
 }
 
+// ─── SERP Data Cache ───
+const SERP_CACHE_KEY = 'bron_serp_cache';
+const SERP_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+interface SerpCacheEntry {
+  serpReports: BronSerpReport[];
+  serpHistory: BronSerpListItem[];
+  latestReportId: string | number | null; // Used to detect new reports
+  cachedAt: number;
+}
+
+function loadCachedSerp(domain: string): { serpReports: BronSerpReport[]; serpHistory: BronSerpListItem[]; latestReportId: string | number | null } | null {
+  try {
+    const cached = localStorage.getItem(SERP_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, SerpCacheEntry>;
+    const entry = parsed[domain];
+    if (!entry) return null;
+    const now = Date.now();
+    if ((now - entry.cachedAt) > SERP_CACHE_MAX_AGE) {
+      return null; // Cache expired
+    }
+    console.log(`[BRON] Using cached SERP data for ${domain} (${entry.serpReports.length} rankings, ${entry.serpHistory.length} reports)`);
+    return { serpReports: entry.serpReports, serpHistory: entry.serpHistory, latestReportId: entry.latestReportId };
+  } catch (e) {
+    console.warn('[BRON] Failed to load SERP cache:', e);
+    return null;
+  }
+}
+
+function saveCachedSerp(domain: string, serpReports: BronSerpReport[], serpHistory: BronSerpListItem[]) {
+  try {
+    const cached = localStorage.getItem(SERP_CACHE_KEY);
+    const parsed = cached ? JSON.parse(cached) as Record<string, SerpCacheEntry> : {};
+    
+    // Keep only last 10 domains
+    const domains = Object.keys(parsed);
+    if (domains.length >= 10 && !parsed[domain]) {
+      const oldest = domains.sort((a, b) => parsed[a].cachedAt - parsed[b].cachedAt)[0];
+      delete parsed[oldest];
+    }
+    
+    // Get the latest report ID for change detection
+    const latestReportId = serpHistory.length > 0 
+      ? (serpHistory.sort((a, b) => {
+          const dateA = new Date(a.started || a.created_at || 0).getTime();
+          const dateB = new Date(b.started || b.created_at || 0).getTime();
+          return dateB - dateA;
+        })[0]?.report_id || serpHistory[0]?.id || null)
+      : null;
+    
+    parsed[domain] = { serpReports, serpHistory, latestReportId, cachedAt: Date.now() };
+    localStorage.setItem(SERP_CACHE_KEY, JSON.stringify(parsed));
+    console.log(`[BRON] Cached SERP data for ${domain}`);
+  } catch (e) {
+    console.warn('[BRON] Failed to save SERP cache:', e);
+  }
+}
+
+function getCachedLatestReportId(domain: string): string | number | null {
+  try {
+    const cached = localStorage.getItem(SERP_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as Record<string, SerpCacheEntry>;
+    return parsed[domain]?.latestReportId || null;
+  } catch {
+    return null;
+  }
+}
+
 // Types for BRON API responses
 export interface BronDomain {
   id?: number;
@@ -230,8 +300,8 @@ export interface UseBronApiReturn {
   deleteKeyword: (keywordId: string, domain?: string) => Promise<boolean>;
   restoreKeyword: (keywordId: string, domain?: string) => Promise<boolean>;
   fetchPages: (domain: string) => Promise<void>;
-  fetchSerpReport: (domain: string) => Promise<void>;
-  fetchSerpList: (domain: string) => Promise<void>;
+  fetchSerpReport: (domain: string, forceRefresh?: boolean) => Promise<void>;
+  fetchSerpList: (domain: string, forceRefresh?: boolean) => Promise<void>;
   fetchSerpDetail: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
   fetchLinksIn: (domain: string, domainId?: number | string) => Promise<void>;
   fetchLinksOut: (domain: string, domainId?: number | string) => Promise<void>;
@@ -634,8 +704,21 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  const fetchSerpReport = useCallback(async (domain: string) => {
+  // Fetch SERP report with caching
+  // Uses cached data if available and not expired
+  const fetchSerpReport = useCallback(async (domain: string, forceRefresh = false) => {
     const reqId = ++serpReportReqIdRef.current;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = loadCachedSerp(domain);
+      if (cached && cached.serpReports.length > 0) {
+        setSerpReports(cached.serpReports);
+        setSerpHistory(cached.serpHistory);
+        return; // Use cached data
+      }
+    }
+    
     return withPending(async () => {
       try {
         const result = await callApi("getSerpReport", { domain });
@@ -645,7 +728,10 @@ export function useBronApi(): UseBronApiReturn {
           const reports = Array.isArray(result.data)
             ? result.data
             : (result.data.rankings || result.data.keywords || result.data.items || []);
-          setSerpReports(Array.isArray(reports) ? reports : []);
+          const serpReports = Array.isArray(reports) ? reports : [];
+          setSerpReports(serpReports);
+          
+          // Note: Don't save to cache here - let fetchSerpList handle it with the history
         }
       } catch (err) {
         if (reqId !== serpReportReqIdRef.current) return;
@@ -655,9 +741,63 @@ export function useBronApi(): UseBronApiReturn {
     });
   }, [callApi, withPending]);
 
-  // Fetch list of historical SERP reports
-  const fetchSerpList = useCallback(async (domain: string) => {
+  // Fetch list of historical SERP reports with smart caching
+  // Checks if a new report has been run since last cache, only fetches fresh if needed
+  const fetchSerpList = useCallback(async (domain: string, forceRefresh = false) => {
     const reqId = ++serpListReqIdRef.current;
+    
+    // Check cache first
+    const cached = loadCachedSerp(domain);
+    if (cached && !forceRefresh) {
+      // Serve from cache immediately
+      setSerpHistory(cached.serpHistory);
+      setSerpReports(cached.serpReports);
+      
+      // Background check for new reports (lightweight check)
+      // We still fetch the list to see if there's a newer report
+      callApi("getSerpList", { domain }).then(result => {
+        if (reqId !== serpListReqIdRef.current) return;
+        if (result?.success && result.data) {
+          const reports = Array.isArray(result.data)
+            ? result.data
+            : (result.data.reports || result.data.items || []);
+          const freshHistory = Array.isArray(reports) ? reports : [];
+          
+          if (freshHistory.length > 0) {
+            // Check if there's a new report by comparing latest report ID
+            const freshLatestId = freshHistory.sort((a, b) => {
+              const dateA = new Date(a.started || a.created_at || 0).getTime();
+              const dateB = new Date(b.started || b.created_at || 0).getTime();
+              return dateB - dateA;
+            })[0]?.report_id || freshHistory[0]?.id;
+            
+            if (freshLatestId && String(freshLatestId) !== String(cached.latestReportId)) {
+              console.log(`[BRON] New SERP report detected for ${domain}, refreshing data...`);
+              // New report found - fetch fresh SERP data
+              callApi("getSerpReport", { domain }).then(serpResult => {
+                if (reqId !== serpListReqIdRef.current) return;
+                if (serpResult?.success && serpResult.data) {
+                  const serpData = Array.isArray(serpResult.data)
+                    ? serpResult.data
+                    : (serpResult.data.rankings || serpResult.data.keywords || serpResult.data.items || []);
+                  const freshSerpReports = Array.isArray(serpData) ? serpData : [];
+                  
+                  setSerpReports(freshSerpReports);
+                  setSerpHistory(freshHistory);
+                  saveCachedSerp(domain, freshSerpReports, freshHistory);
+                }
+              });
+            }
+          }
+        }
+      }).catch(err => {
+        console.warn('[BRON] Background SERP check failed:', err);
+      });
+      
+      return; // Already served from cache
+    }
+    
+    // No cache - fetch fresh
     return withPending(async () => {
       try {
         const result = await callApi("getSerpList", { domain });
@@ -667,7 +807,22 @@ export function useBronApi(): UseBronApiReturn {
           const reports = Array.isArray(result.data)
             ? result.data
             : (result.data.reports || result.data.items || []);
-          setSerpHistory(Array.isArray(reports) ? reports : []);
+          const freshHistory = Array.isArray(reports) ? reports : [];
+          setSerpHistory(freshHistory);
+          
+          // Also fetch the SERP report data and cache together
+          const serpResult = await callApi("getSerpReport", { domain });
+          if (reqId !== serpListReqIdRef.current) return;
+          if (serpResult?.success && serpResult.data) {
+            const serpData = Array.isArray(serpResult.data)
+              ? serpResult.data
+              : (serpResult.data.rankings || serpResult.data.keywords || serpResult.data.items || []);
+            const freshSerpReports = Array.isArray(serpData) ? serpData : [];
+            setSerpReports(freshSerpReports);
+            
+            // Save both to cache
+            saveCachedSerp(domain, freshSerpReports, freshHistory);
+          }
         }
       } catch (err) {
         if (reqId !== serpListReqIdRef.current) return;

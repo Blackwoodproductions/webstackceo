@@ -588,7 +588,7 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
             serpReports={bronApi.serpReports}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
-            onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain)}
+            onRefresh={() => selectedDomain && bronApi.fetchSerpReport(selectedDomain, true)}
           />
         </TabsContent>
 
