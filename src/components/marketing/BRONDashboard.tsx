@@ -130,13 +130,14 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
   }, [bronApi.isAuthenticated]);
 
   // Load domain-specific data when domain changes
+  // IMPORTANT: Don't reset data before fetching - let cache serve instantly
   useEffect(() => {
     let cancelled = false;
     const loadCore = async () => {
       if (!bronApi.isAuthenticated || !selectedDomain) return;
 
-      // Reset all domain-specific data immediately for faster perceived switching
-      bronApi.resetDomainData();
+      // Only reset the refs to prevent stale requests, NOT the data
+      // The fetch functions will serve cached data immediately if available
       linksRequestedForDomainRef.current = null;
       setScreenshotUrl(null);
       setDomainInfo(null);
@@ -148,17 +149,16 @@ export const BRONDashboard = ({ selectedDomain }: BRONDashboardProps) => {
         }
       });
 
-      // Fetch domain info first (needed for ID-based link fetching)
-      const info = await bronApi.fetchDomain(selectedDomain);
-      if (!cancelled && info) setDomainInfo(info);
-
-      // Fetch all critical data in parallel for faster loading
-      if (cancelled) return;
-      await Promise.all([
+      // Fetch all data in parallel - cache will be served immediately if available
+      // The fetch functions handle cache-first logic internally
+      const [info] = await Promise.all([
+        bronApi.fetchDomain(selectedDomain),
         bronApi.fetchKeywords(selectedDomain),
         bronApi.fetchSerpReport(selectedDomain),
         bronApi.fetchSerpList(selectedDomain),
       ]);
+      
+      if (!cancelled && info) setDomainInfo(info);
       
       // Fetch pages separately (lower priority)
       if (cancelled) return;
