@@ -217,6 +217,57 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     };
   }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
+  // Derived data and stable callbacks (MUST be above any conditional returns)
+  // Otherwise React will throw "Rendered more hooks than during the previous render".
+  const keywordProgress = Math.min(bronApi.keywords.length, 37);
+
+  // Stabilize data references to prevent child component re-renders
+  const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
+  const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
+  const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
+  const stableLinksIn = useMemo(() => bronApi.linksIn, [bronApi.linksIn]);
+  const stableLinksOut = useMemo(() => bronApi.linksOut, [bronApi.linksOut]);
+  const stableDomains = useMemo(() => bronApi.domains, [bronApi.domains]);
+  const stablePages = useMemo(() => bronApi.pages, [bronApi.pages]);
+
+  // Stable callbacks for child components
+  // Note: bronApi methods are internally stable via refs, no need to include bronApi in deps
+  const handleRefreshKeywords = useCallback(() => {
+    if (selectedDomain) bronApi.fetchKeywords(selectedDomain, true);
+  }, [selectedDomain]);
+
+  const handleAddKeyword = useCallback((data: Record<string, unknown>) => {
+    return bronApi.addKeyword(data, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleUpdateKeyword = useCallback((id: string, data: Record<string, unknown>) => {
+    return bronApi.updateKeyword(id, data, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleDeleteKeyword = useCallback((id: string) => {
+    return bronApi.deleteKeyword(id, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRestoreKeyword = useCallback((id: string) => {
+    return bronApi.restoreKeyword(id, selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshPages = useCallback(() => {
+    if (selectedDomain) bronApi.fetchPages(selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshSerp = useCallback(() => {
+    if (selectedDomain) bronApi.fetchSerpReport(selectedDomain, true);
+  }, [selectedDomain]);
+
+  const handleRefreshLinksIn = useCallback(() => {
+    if (selectedDomain) bronApi.fetchLinksIn(selectedDomain);
+  }, [selectedDomain]);
+
+  const handleRefreshLinksOut = useCallback(() => {
+    if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
+  }, [selectedDomain]);
+
   if (isAuthenticating) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -307,57 +358,6 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     };
     return packages[serviceType || ""] || `Package ${serviceType || "N/A"}`;
   };
-
-  // Calculate domain info progress (keywords count out of target)
-  const keywordProgress = Math.min(bronApi.keywords.length, 37);
-
-  // Stabilize data references to prevent child component re-renders
-  // These useMemo calls ensure the same array reference is passed if content hasn't changed
-  const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
-  const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
-  const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
-  const stableLinksIn = useMemo(() => bronApi.linksIn, [bronApi.linksIn]);
-  const stableLinksOut = useMemo(() => bronApi.linksOut, [bronApi.linksOut]);
-  const stableDomains = useMemo(() => bronApi.domains, [bronApi.domains]);
-  const stablePages = useMemo(() => bronApi.pages, [bronApi.pages]);
-
-  // Stable callbacks for child components
-  // Note: bronApi methods are internally stable via refs, no need to include bronApi in deps
-  const handleRefreshKeywords = useCallback(() => {
-    if (selectedDomain) bronApi.fetchKeywords(selectedDomain, true);
-  }, [selectedDomain]);
-
-  const handleAddKeyword = useCallback((data: Record<string, unknown>) => {
-    return bronApi.addKeyword(data, selectedDomain);
-  }, [selectedDomain]);
-
-  const handleUpdateKeyword = useCallback((id: string, data: Record<string, unknown>) => {
-    return bronApi.updateKeyword(id, data, selectedDomain);
-  }, [selectedDomain]);
-
-  const handleDeleteKeyword = useCallback((id: string) => {
-    return bronApi.deleteKeyword(id, selectedDomain);
-  }, [selectedDomain]);
-
-  const handleRestoreKeyword = useCallback((id: string) => {
-    return bronApi.restoreKeyword(id, selectedDomain);
-  }, [selectedDomain]);
-
-  const handleRefreshPages = useCallback(() => {
-    if (selectedDomain) bronApi.fetchPages(selectedDomain);
-  }, [selectedDomain]);
-
-  const handleRefreshSerp = useCallback(() => {
-    if (selectedDomain) bronApi.fetchSerpReport(selectedDomain, true);
-  }, [selectedDomain]);
-
-  const handleRefreshLinksIn = useCallback(() => {
-    if (selectedDomain) bronApi.fetchLinksIn(selectedDomain);
-  }, [selectedDomain]);
-
-  const handleRefreshLinksOut = useCallback(() => {
-    if (selectedDomain) bronApi.fetchLinksOut(selectedDomain);
-  }, [selectedDomain]);
 
   return (
     <div 
