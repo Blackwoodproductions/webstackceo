@@ -59,33 +59,51 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
   if (typeof kwAny.text === 'string' && kwAny.text.trim()) return kwAny.text;
   if (typeof kwAny.phrase === 'string' && kwAny.phrase.trim()) return kwAny.phrase;
   
+  // Try to extract from resfeedtext HTML content FIRST (before URL fallback)
+  // This is the primary source for domains like seolocal.it.com
+  if (kw.resfeedtext) {
+    const decoded = kw.resfeedtext
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
+      .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—');
+    
+    // Try h3 first (common in BRON content), then h1, then h2, then title
+    const h3Match = decoded.match(/<h3[^>]*>([^<]+)<\/h3>/i);
+    if (h3Match && h3Match[1] && h3Match[1].trim().length > 3) {
+      const title = h3Match[1].trim();
+      // Clean up common prefixes like "Benefits of", "Guide to", etc.
+      return title;
+    }
+    
+    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match && h1Match[1] && h1Match[1].trim().length > 3) return h1Match[1].trim();
+    
+    const h2Match = decoded.match(/<h2[^>]*>([^<]+)<\/h2>/i);
+    if (h2Match && h2Match[1] && h2Match[1].trim().length > 3) return h2Match[1].trim();
+    
+    const titleMatch = decoded.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch && titleMatch[1] && titleMatch[1].trim().length > 3) return titleMatch[1].trim();
+  }
+  
   // Check linkouturl for keyword slug
   if (kw.linkouturl) {
     // Extract last path segment as keyword hint
     const urlPath = kw.linkouturl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
     const lastSegment = urlPath.split('/').pop();
     if (lastSegment && lastSegment.length > 2) {
+      // Remove trailing ID pattern like "-568071bc"
+      const cleanedSegment = lastSegment.replace(/-\d+bc$/, '');
       // Convert slug to readable text: "best-dentist-port-coquitlam" -> "Best Dentist Port Coquitlam"
-      const readable = lastSegment
+      const readable = cleanedSegment
         .replace(/-/g, ' ')
         .replace(/_/g, ' ')
         .split(' ')
+        .filter(w => w.length > 0)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
       if (readable.length > 3) return readable;
     }
-  }
-  
-  // Try to extract from resfeedtext HTML content
-  if (kw.resfeedtext) {
-    const decoded = kw.resfeedtext
-      .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
-    const h1Match = decoded.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1Match && h1Match[1]) return h1Match[1].trim();
-    const titleMatch = decoded.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch && titleMatch[1]) return titleMatch[1].trim();
   }
   
   return `Keyword #${kw.id}`;

@@ -110,19 +110,21 @@ export interface BronSerpListItem {
 
 
 export interface BronLink {
-  source_url?: string;
-  target_url?: string;
-  anchor_text?: string;
-  domain?: string;
-  domain_name?: string;
-  status?: string;
-  type?: string;
-  category?: string;
-  parent_category?: string;
-  link?: string; // The actual link URL from BRON API
-  reciprocal?: string; // "yes" or "no"
-  disabled?: string; // "yes" or "no"
-  created_at?: string;
+  // Fields from BRON API
+  link?: string;              // The URL (on our domain for linksOut, on referrer for linksIn)
+  domain_name?: string;       // The OTHER domain (referrer for linksIn, target for linksOut)
+  category?: string;          // Link category (e.g., "Search Engine Optimization")
+  parent_category?: string;   // Parent category (e.g., "Internet")
+  reciprocal?: string;        // "yes" or "no"
+  disabled?: string;          // "yes" or "no"
+  // Legacy/alternative field names (for compatibility)
+  source_url?: string;        // Alternative field for source URL
+  target_url?: string;        // Alternative field for target URL  
+  anchor_text?: string;       // Anchor text if available
+  domain?: string;            // Alternative field for domain
+  status?: string;            // Link status
+  type?: string;              // Link type
+  created_at?: string;        // Creation timestamp
 }
 
 export interface BronSubscription {
