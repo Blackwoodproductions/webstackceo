@@ -446,6 +446,63 @@ serve(async (req) => {
         postBody = JSON.stringify({ ...params });
         break;
 
+      case "terminate-crawl-task": {
+        if (!params?.task_id) {
+          return new Response(
+            JSON.stringify({ error: "task_id is required for terminate-crawl-task" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "POST";
+        endpoint = "/tasks/crawl/termination";
+        
+        // Seed a termination event for UI feedback
+        seedTaskEvent("CRAWL", "terminating", {
+          domain: domain || "unknown",
+          request_id: params?.request_id || params?.task_id,
+          message: "Task termination requested",
+        }).catch(() => undefined);
+        
+        postBody = JSON.stringify({ task_id: params.task_id, user_id: cadeUserId, ...params });
+        console.log(`[CADE API] Terminate crawl task: ${params.task_id}`);
+        break;
+      }
+
+      case "terminate-categorization-task": {
+        if (!params?.task_id) {
+          return new Response(
+            JSON.stringify({ error: "task_id is required for terminate-categorization-task" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "POST";
+        endpoint = "/tasks/categorization/termination";
+        
+        seedTaskEvent("CATEGORIZATION", "terminating", {
+          domain: domain || "unknown",
+          request_id: params?.request_id || params?.task_id,
+          message: "Task termination requested",
+        }).catch(() => undefined);
+        
+        postBody = JSON.stringify({ task_id: params.task_id, user_id: cadeUserId, ...params });
+        console.log(`[CADE API] Terminate categorization task: ${params.task_id}`);
+        break;
+      }
+
+      case "terminate-all-tasks": {
+        method = "POST";
+        endpoint = "/tasks/terminate-all";
+        
+        seedTaskEvent("SYSTEM", "terminating", {
+          domain: domain || "system",
+          message: "All tasks termination requested",
+        }).catch(() => undefined);
+        
+        postBody = JSON.stringify({ user_id: cadeUserId, ...params });
+        console.log(`[CADE API] Terminate all tasks for user: ${cadeUserId}`);
+        break;
+      }
+
       // === CONTENT TASKS - Additional endpoints ===
       case "content-tasks": {
         // Some deployments may not expose content task listing; keep best-effort.

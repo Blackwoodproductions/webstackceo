@@ -1,17 +1,15 @@
 import { useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Cpu, Server, Clock, Activity, RefreshCw, ChevronDown, ChevronUp,
-  CheckCircle2, AlertTriangle, Loader2, Zap, Database, TrendingUp,
-  Users, Box, Layers
+  Cpu, Server, Clock, Activity, RefreshCw, CheckCircle2, AlertTriangle, 
+  Loader2, Zap, Database, TrendingUp, XCircle, StopCircle, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // ─── Types ───
 interface WorkerData {
@@ -39,31 +37,45 @@ interface HealthData {
   uptime?: number;
 }
 
+interface ActiveTask {
+  id: string;
+  type: "crawl" | "categorization" | "content" | "css";
+  domain?: string;
+  status: string;
+  progress?: number;
+  message?: string;
+  startedAt?: string;
+}
+
 interface CADEWorkerStatusProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  domain?: string;
 }
 
 // ─── Component ───
 export const CADEWorkerStatus = ({ 
   isCollapsed = false,
-  onToggleCollapse
+  onToggleCollapse,
+  domain
 }: CADEWorkerStatusProps) => {
   const [workers, setWorkers] = useState<WorkerData[]>([]);
   const [queues, setQueues] = useState<QueueData[]>([]);
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [activeTasks, setActiveTasks] = useState<ActiveTask[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTerminating, setIsTerminating] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const callCadeApi = useCallback(async (action: string) => {
+  const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("cade-api", {
-      body: { action },
+      body: { action, domain, params },
     });
     if (error) throw new Error(error.message);
     if (data?.error) throw new Error(data.error);
     return data;
-  }, []);
+  }, [domain]);
 
   const fetchStatus = useCallback(async () => {
     setIsLoading(true);
@@ -84,7 +96,6 @@ export const CADEWorkerStatus = ({
         
         // Build synthetic worker data from health response
         if (healthData.workers !== undefined) {
-          // Try to get detailed worker info
           try {
             const workersResult = await callCadeApi("workers");
             const workersData = workersResult?.data || workersResult || [];
@@ -98,15 +109,13 @@ export const CADEWorkerStatus = ({
                 { name: "crawler@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
                 { name: "content@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
               ];
-              // Distribute tasks among workers
               if (healthData.tasks > 0) {
-                syntheticWorkers[2].active_tasks = Math.ceil(healthData.tasks / 2); // crawler
-                syntheticWorkers[0].active_tasks = Math.floor(healthData.tasks / 2); // categorizer
+                syntheticWorkers[2].active_tasks = Math.ceil(healthData.tasks / 2);
+                syntheticWorkers[0].active_tasks = Math.floor(healthData.tasks / 2);
               }
               setWorkers(syntheticWorkers.slice(0, healthData.workers || 4));
             }
           } catch {
-            // Fallback to synthetic workers
             setWorkers([
               { name: "categorizer@7e2d32c45a05", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
               { name: "publisher@18ac8d563187", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
@@ -117,6 +126,9 @@ export const CADEWorkerStatus = ({
         }
       }
 
+      // Fetch active tasks from queues
+      await fetchActiveTasks();
+
       setLastUpdated(new Date());
     } catch (err) {
       console.error("[CADE Workers] Fetch error:", err);
@@ -126,11 +138,85 @@ export const CADEWorkerStatus = ({
     }
   }, [callCadeApi]);
 
+  const fetchActiveTasks = useCallback(async () => {
+    try {
+      // Fetch from local cade_crawl_events for active tasks
+      const { data: events } = await supabase
+        .from("cade_crawl_events")
+        .select("*")
+        .in("status", [
+          "CRAWL:running", "CRAWL:queued", "CRAWL:pending", "CRAWL:processing",
+          "CATEGORIZATION:running", "CATEGORIZATION:queued", "CATEGORIZATION:pending",
+          "CONTENT:running", "CONTENT:queued", "CONTENT:pending",
+          "CSS:running", "CSS:queued", "CSS:pending"
+        ])
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (events && events.length > 0) {
+        // Dedupe by request_id, keeping most recent
+        const seen = new Map<string, ActiveTask>();
+        for (const evt of events) {
+          const key = evt.request_id || evt.id;
+          if (!seen.has(key)) {
+            const type = evt.status.split(":")[0].toLowerCase() as ActiveTask["type"];
+            seen.set(key, {
+              id: key,
+              type,
+              domain: evt.domain,
+              status: evt.status.split(":")[1] || "unknown",
+              progress: evt.progress ?? undefined,
+              message: evt.message ?? undefined,
+              startedAt: evt.created_at,
+            });
+          }
+        }
+        setActiveTasks(Array.from(seen.values()));
+      } else {
+        setActiveTasks([]);
+      }
+    } catch (err) {
+      console.error("[CADE Workers] Failed to fetch active tasks:", err);
+    }
+  }, []);
+
+  const handleTerminateTask = async (task: ActiveTask) => {
+    setIsTerminating(task.id);
+    try {
+      let action = "terminate-content-task";
+      if (task.type === "crawl") action = "terminate-crawl-task";
+      else if (task.type === "categorization") action = "terminate-categorization-task";
+
+      await callCadeApi(action, { task_id: task.id, request_id: task.id });
+      toast.success(`Terminated ${task.type} task`);
+      
+      // Refresh status
+      await fetchStatus();
+    } catch (err) {
+      console.error("[CADE Workers] Terminate error:", err);
+      toast.error("Failed to terminate task: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setIsTerminating(null);
+    }
+  };
+
+  const handleTerminateAll = async () => {
+    setIsTerminating("all");
+    try {
+      await callCadeApi("terminate-all-tasks");
+      toast.success("All tasks terminated");
+      await fetchStatus();
+    } catch (err) {
+      console.error("[CADE Workers] Terminate all error:", err);
+      toast.error("Failed to terminate all tasks");
+    } finally {
+      setIsTerminating(null);
+    }
+  };
+
   // Initial fetch
   useEffect(() => {
     fetchStatus();
-    
-    // Refresh every 15 seconds for more real-time feel
     const interval = setInterval(fetchStatus, 15000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
@@ -155,6 +241,16 @@ export const CADEWorkerStatus = ({
     return "⚙️";
   };
 
+  const getTaskIcon = (type: string) => {
+    switch (type) {
+      case "crawl": return "🕷️";
+      case "categorization": return "🏷️";
+      case "content": return "📝";
+      case "css": return "🎨";
+      default: return "⚙️";
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const isOnline = status.toLowerCase() === "online" || status.toLowerCase() === "active";
     return (
@@ -171,9 +267,8 @@ export const CADEWorkerStatus = ({
   };
 
   const totalActiveTasks = queues.reduce((sum, q) => sum + (q.active_tasks || 0), 0);
-  const totalPending = queues.reduce((sum, q) => sum + (q.scheduled_tasks || 0), 0);
-  const totalProcessing = queues.reduce((sum, q) => sum + (q.reserved_tasks || 0), 0);
   const isHealthy = health?.status === "healthy";
+  const hasActiveTasks = activeTasks.length > 0 || totalActiveTasks > 0;
 
   return (
     <div className="space-y-6">
@@ -189,16 +284,43 @@ export const CADEWorkerStatus = ({
             </Badge>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchStatus}
-          disabled={isLoading}
-          className="border-cyan-500/30 hover:bg-cyan-500/10"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {hasActiveTasks && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTerminateAll}
+                    disabled={isTerminating === "all"}
+                    className="border-red-500/30 hover:bg-red-500/10 text-red-400"
+                  >
+                    {isTerminating === "all" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <StopCircle className="w-4 h-4" />
+                    )}
+                    <span className="ml-2 hidden sm:inline">Stop All</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Terminate all active tasks</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchStatus}
+            disabled={isLoading}
+            className="border-cyan-500/30 hover:bg-cyan-500/10"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -207,6 +329,101 @@ export const CADEWorkerStatus = ({
           {error}
         </div>
       )}
+
+      {/* Active Tasks Panel - Shows when there are running tasks */}
+      <AnimatePresence>
+        {activeTasks.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <Card className="border-blue-500/30 bg-gradient-to-br from-background to-blue-500/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Activity className="w-5 h-5 text-blue-400 animate-pulse" />
+                  Active Tasks ({activeTasks.length})
+                  <Badge className="ml-2 bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 mr-1.5" />
+                    Running
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {activeTasks.map((task) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-xl">{getTaskIcon(task.type)}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm capitalize">{task.type}</span>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${
+                              task.status === "running" ? "text-blue-400 border-blue-500/30" :
+                              task.status === "queued" ? "text-amber-400 border-amber-500/30" :
+                              "text-muted-foreground"
+                            }`}
+                          >
+                            {task.status}
+                          </Badge>
+                        </div>
+                        {task.domain && (
+                          <p className="text-xs text-muted-foreground truncate">{task.domain}</p>
+                        )}
+                        {task.message && (
+                          <p className="text-xs text-muted-foreground truncate">{task.message}</p>
+                        )}
+                      </div>
+                      {task.progress !== undefined && task.progress > 0 && (
+                        <div className="w-20">
+                          <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+                            <motion.div
+                              className="h-full bg-blue-500"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${task.progress}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground text-center mt-0.5">
+                            {task.progress}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTerminateTask(task)}
+                            disabled={isTerminating === task.id}
+                            className="ml-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            {isTerminating === task.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Terminate this task</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </motion.div>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Grid: Workers + Queues */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -256,16 +473,11 @@ export const CADEWorkerStatus = ({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Database className="w-5 h-5 text-amber-400" />
-              Queues ({queues.length})
+              Queues ({queues.length || 2})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {queues.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin" />
-                <p className="text-sm">Loading queues...</p>
-              </div>
-            ) : (
+            {queues.length > 0 ? (
               queues.map((queue, idx) => (
                 <motion.div
                   key={queue.name}
@@ -275,7 +487,7 @@ export const CADEWorkerStatus = ({
                   className="p-3 rounded-lg bg-secondary/30 border border-border"
                 >
                   <p className="font-mono text-sm font-medium mb-2">
-                    {queue.name.replace(/_/g, "_")}
+                    {queue.name}
                   </p>
                   <div className="flex items-center gap-4 text-xs">
                     <span className="text-amber-400">
@@ -288,7 +500,6 @@ export const CADEWorkerStatus = ({
                       <span className="font-bold">{queue.active_tasks}</span> done
                     </span>
                   </div>
-                  {/* Progress visualization */}
                   {(queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks) > 0 && (
                     <div className="mt-2 h-1.5 rounded-full bg-secondary overflow-hidden flex">
                       {queue.active_tasks > 0 && (
@@ -313,10 +524,7 @@ export const CADEWorkerStatus = ({
                   )}
                 </motion.div>
               ))
-            )}
-
-            {/* Add default queues if none from API */}
-            {queues.length === 0 && !isLoading && (
+            ) : (
               <>
                 <div className="p-3 rounded-lg bg-secondary/30 border border-border">
                   <p className="font-mono text-sm font-medium mb-2">domain_categorization_queue</p>
@@ -380,7 +588,7 @@ export const CADEWorkerStatus = ({
             <div className="p-4 rounded-lg bg-secondary/30 border border-border">
               <p className="text-xs text-muted-foreground mb-2">Active Tasks</p>
               <p className="text-lg font-bold text-cyan-400">
-                {health?.tasks ?? totalActiveTasks}
+                {health?.tasks ?? activeTasks.length}
               </p>
             </div>
           </div>
@@ -392,49 +600,6 @@ export const CADEWorkerStatus = ({
               Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Real-time Activity Feed */}
-      <Card className="border-violet-500/20 bg-gradient-to-br from-background to-violet-500/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="w-5 h-5 text-violet-400" />
-            Live Activity
-            <Badge className="ml-2 bg-violet-500/20 text-violet-400 border-violet-500/30 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-violet-400 mr-1.5 animate-pulse" />
-              Live
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {totalActiveTasks > 0 ? (
-              <>
-                {queues.filter(q => q.active_tasks > 0 || q.reserved_tasks > 0).map((queue, idx) => (
-                  <motion.div
-                    key={queue.name + "-activity"}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-secondary/20 text-sm"
-                  >
-                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-                    <span className="text-muted-foreground">Processing</span>
-                    <span className="font-medium">{queue.name.replace(/_/g, " ")}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {queue.reserved_tasks} in progress
-                    </span>
-                  </motion.div>
-                ))}
-              </>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500/50" />
-                <p className="text-sm">All systems idle</p>
-                <p className="text-xs">No active tasks at the moment</p>
-              </div>
-            )}
-          </div>
         </CardContent>
       </Card>
     </div>
