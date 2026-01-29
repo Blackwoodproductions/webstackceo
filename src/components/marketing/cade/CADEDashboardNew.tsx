@@ -3,7 +3,7 @@ import {
   Brain, RefreshCw, Loader2, CheckCircle2, Clock, Play, Pause,
   Settings, Globe, Target, FileText, HelpCircle, Calendar, Zap,
   AlertTriangle, Sparkles, Search, Save, X, Plus, ChevronDown,
-  Activity, ExternalLink, User
+  Activity, ExternalLink, User, TrendingUp, Link2, BarChart3, Database
 } from "lucide-react";
 import { DomainContextDialog } from "./DomainContextDialog";
 import { useDomainContext } from "@/hooks/use-domain-context";
@@ -20,6 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -100,6 +105,194 @@ const setCachedSubscription = (targetDomain: string, data: BronSubscription) => 
   } catch { /* ignore */ }
 };
 
+// ─── AI Metrics Loading Card ─────────────────────────────────────────────────
+interface MetricLoadingCardProps {
+  icon: React.ElementType;
+  label: string;
+  sublabel: string;
+  color: 'cyan' | 'emerald' | 'violet' | 'amber' | 'rose' | 'blue' | 'orange' | 'purple';
+  delay: number;
+}
+
+const colorMap = {
+  cyan: { bg: 'from-cyan-500/10 to-cyan-500/5', border: 'border-cyan-500/30', icon: 'text-cyan-400', glow: 'shadow-[0_0_15px_rgba(6,182,212,0.2)]' },
+  emerald: { bg: 'from-emerald-500/10 to-emerald-500/5', border: 'border-emerald-500/30', icon: 'text-emerald-400', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.2)]' },
+  violet: { bg: 'from-violet-500/10 to-violet-500/5', border: 'border-violet-500/30', icon: 'text-violet-400', glow: 'shadow-[0_0_15px_rgba(139,92,246,0.2)]' },
+  amber: { bg: 'from-amber-500/10 to-amber-500/5', border: 'border-amber-500/30', icon: 'text-amber-400', glow: 'shadow-[0_0_15px_rgba(245,158,11,0.2)]' },
+  rose: { bg: 'from-rose-500/10 to-rose-500/5', border: 'border-rose-500/30', icon: 'text-rose-400', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.2)]' },
+  blue: { bg: 'from-blue-500/10 to-blue-500/5', border: 'border-blue-500/30', icon: 'text-blue-400', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]' },
+  orange: { bg: 'from-orange-500/10 to-orange-500/5', border: 'border-orange-500/30', icon: 'text-orange-400', glow: 'shadow-[0_0_15px_rgba(249,115,22,0.2)]' },
+  purple: { bg: 'from-purple-500/10 to-purple-500/5', border: 'border-purple-500/30', icon: 'text-purple-400', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.2)]' },
+};
+
+const MetricLoadingCard = memo(({ icon: Icon, label, sublabel, color, delay }: MetricLoadingCardProps) => {
+  const colors = colorMap[color];
+  
+  return (
+    <div 
+      className={`relative rounded-xl border ${colors.border} bg-gradient-to-br ${colors.bg} backdrop-blur-sm p-4 ${colors.glow} h-full`}
+      style={{ 
+        animation: `cade-metric-fade 3s ease-in-out infinite`,
+        animationDelay: `${delay}s`,
+        contain: 'layout style paint',
+      }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-gradient-to-r opacity-40" 
+        style={{ background: `linear-gradient(to right, ${colors.icon.includes('cyan') ? 'rgb(6,182,212)' : colors.icon.includes('emerald') ? 'rgb(16,185,129)' : 'rgb(139,92,246)'}, transparent)` }}
+      />
+      
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg bg-background/50 flex items-center justify-center flex-shrink-0`}>
+          <Icon className={`w-5 h-5 ${colors.icon}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground truncate">{label}</p>
+          <p className="text-xs text-muted-foreground truncate">{sublabel}</p>
+        </div>
+        <div 
+          className="w-5 h-5 flex items-center justify-center"
+          style={{ animation: `cade-check-appear 4s ease-out infinite`, animationDelay: `${delay + 2}s` }}
+        >
+          <CheckCircle2 className={`w-4 h-4 ${colors.icon}`} />
+        </div>
+      </div>
+      
+      <div className="mt-3 h-1 rounded-full bg-background/30 overflow-hidden">
+        <div 
+          className={`h-full rounded-full`}
+          style={{
+            width: '100%',
+            background: `linear-gradient(to right, transparent, ${colors.icon.includes('cyan') ? 'rgba(6,182,212,0.6)' : colors.icon.includes('emerald') ? 'rgba(16,185,129,0.6)' : 'rgba(139,92,246,0.6)'}, transparent)`,
+            animation: 'cade-scan 2s ease-in-out infinite',
+            animationDelay: `${delay}s`,
+          }}
+        />
+      </div>
+    </div>
+  );
+});
+MetricLoadingCard.displayName = 'MetricLoadingCard';
+
+// ─── AI Metrics Animation Component ───────────────────────────────────────────
+const CADEAIMetricsAnimation = memo(() => (
+  <div 
+    className="flex items-stretch gap-4 h-full"
+    style={{ contain: 'layout style paint' }}
+  >
+    {/* Left: Brain Icon with orbiting particles */}
+    <div className="relative w-32 flex-shrink-0 flex items-center justify-center">
+      {/* Outer glow ring */}
+      <div 
+        className="absolute inset-0 rounded-full m-auto w-24 h-24"
+        style={{
+          background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%)',
+          animation: 'cade-pulse-glow 2s ease-in-out infinite',
+        }}
+      />
+      
+      {/* Orbiting particles */}
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 rounded-full bg-primary/80"
+          style={{
+            top: '50%',
+            left: '50%',
+            transform: `rotate(${i * 90}deg) translateX(40px) translateY(-50%)`,
+            animation: `cade-orbit 3s linear infinite`,
+            animationDelay: `${i * 0.75}s`,
+          }}
+        />
+      ))}
+      
+      {/* Secondary orbit */}
+      {[0, 1, 2].map((i) => (
+        <div
+          key={`inner-${i}`}
+          className="absolute w-1.5 h-1.5 rounded-full bg-cyan-400/60"
+          style={{
+            top: '50%',
+            left: '50%',
+            transform: `rotate(${i * 120}deg) translateX(24px) translateY(-50%)`,
+            animation: `cade-orbit-reverse 2.5s linear infinite`,
+            animationDelay: `${i * 0.833}s`,
+          }}
+        />
+      ))}
+      
+      {/* Center icon container */}
+      <div className="relative flex items-center justify-center">
+        <div 
+          className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-cyan-500/20 border border-primary/30 flex items-center justify-center"
+          style={{ animation: 'cade-float 3s ease-in-out infinite' }}
+        >
+          <Brain className="w-8 h-8 text-primary" />
+        </div>
+      </div>
+      
+      {/* Sparkle accents */}
+      <Sparkles 
+        className="absolute top-2 right-2 w-3 h-3 text-amber-400" 
+        style={{ animation: 'cade-twinkle 1.5s ease-in-out infinite' }}
+      />
+      <Sparkles 
+        className="absolute bottom-4 left-2 w-2.5 h-2.5 text-cyan-400" 
+        style={{ animation: 'cade-twinkle 1.5s ease-in-out infinite 0.5s' }}
+      />
+    </div>
+    
+    {/* Right: Metrics Grid */}
+    <div className="flex-1 grid grid-cols-4 gap-3">
+      <MetricLoadingCard icon={TrendingUp} label="SERP Rankings" sublabel="Google, Bing, Yahoo" color="cyan" delay={0} />
+      <MetricLoadingCard icon={Zap} label="Page Speed" sublabel="Core Web Vitals" color="emerald" delay={0.2} />
+      <MetricLoadingCard icon={BarChart3} label="Keyword Metrics" sublabel="CPC, Difficulty, Vol" color="violet" delay={0.4} />
+      <MetricLoadingCard icon={Link2} label="Citation Links" sublabel="Inbound / Outbound" color="amber" delay={0.6} />
+      <MetricLoadingCard icon={Target} label="Search Intent" sublabel="Commercial, Informational" color="rose" delay={0.8} />
+      <MetricLoadingCard icon={Globe} label="Competitor Data" sublabel="Domain comparison" color="blue" delay={1.0} />
+      <MetricLoadingCard icon={Activity} label="Historical Trends" sublabel="Position changes" color="orange" delay={1.2} />
+      <MetricLoadingCard icon={Database} label="Cluster Analysis" sublabel="Main + Supporting" color="purple" delay={1.4} />
+    </div>
+    
+    {/* CSS Keyframes */}
+    <style>{`
+      @keyframes cade-orbit {
+        from { transform: rotate(0deg) translateX(40px) translateY(-50%); }
+        to { transform: rotate(360deg) translateX(40px) translateY(-50%); }
+      }
+      @keyframes cade-orbit-reverse {
+        from { transform: rotate(360deg) translateX(24px) translateY(-50%); }
+        to { transform: rotate(0deg) translateX(24px) translateY(-50%); }
+      }
+      @keyframes cade-pulse-glow {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.1); }
+      }
+      @keyframes cade-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+      @keyframes cade-twinkle {
+        0%, 100% { opacity: 0.4; transform: scale(0.9); }
+        50% { opacity: 1; transform: scale(1.1); }
+      }
+      @keyframes cade-scan {
+        0% { transform: translateX(-150%); }
+        100% { transform: translateX(450%); }
+      }
+      @keyframes cade-metric-fade {
+        0%, 20% { opacity: 0.6; }
+        50% { opacity: 1; }
+        80%, 100% { opacity: 0.6; }
+      }
+      @keyframes cade-check-appear {
+        0%, 70% { opacity: 0; transform: scale(0); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+    `}</style>
+  </div>
+));
+CADEAIMetricsAnimation.displayName = 'CADEAIMetricsAnimation';
+
 // ─── Section Card with Left Border ─────────────────────────────────────────
 interface SectionCardProps {
   title: string;
@@ -173,6 +366,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
   const [domainContextOpen, setDomainContextOpen] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [faqPaused, setFaqPaused] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
   
   // Account info
   const [account, setAccount] = useState({
@@ -449,6 +643,39 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           </Button>
         </div>
       </div>
+
+      {/* View AI Search Metrics - Centered Button + Inline Animation */}
+      <Collapsible open={metricsOpen} onOpenChange={setMetricsOpen}>
+        <div className="flex justify-center">
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="outline"
+              className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500 gap-2 px-6"
+            >
+              <Brain className="w-4 h-4" />
+              View AI Search Metrics
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${metricsOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2">
+          <div className="mt-4 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6" style={{ minHeight: '220px' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Search className="w-4 h-4 text-primary" />
+              <h4 className="text-lg font-semibold">Analyzing Keywords</h4>
+              {/* Scanning line effect */}
+              <div className="h-0.5 flex-1 max-w-[200px] rounded-full overflow-hidden bg-muted/30 ml-4">
+                <div 
+                  className="h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent"
+                  style={{ animation: 'cade-scan 1.5s ease-in-out infinite' }}
+                />
+              </div>
+            </div>
+            <CADEAIMetricsAnimation />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Row 1: Scheduler, Quick Actions, Account Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
