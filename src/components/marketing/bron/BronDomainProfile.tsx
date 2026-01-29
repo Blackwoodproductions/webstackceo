@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { 
-  Loader2, ChevronDown, MapPin, Camera, Pencil,
+  Loader2, ChevronDown, MapPin, Camera,
   Facebook, Linkedin, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -182,10 +182,10 @@ export const BronDomainProfile = memo(({
               <InfoRow label="Domain Info">
                 <button
                   onClick={() => setDomainContextOpen(true)}
-                  className="flex-1 flex items-center gap-2 group cursor-pointer"
+                  className="flex-1 cursor-pointer"
                 >
                   <div 
-                    className="flex-1 p-2.5 rounded-lg border transition-all duration-200
+                    className="p-2.5 rounded-lg border transition-all duration-200
                       bg-secondary/30 border-cyan-500/20
                       hover:bg-cyan-500/10 hover:border-cyan-500/40
                       shadow-[0_0_10px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
@@ -206,9 +206,6 @@ export const BronDomainProfile = memo(({
                       </Badge>
                     </div>
                     <Progress value={domainContextProgress} className="h-2" />
-                  </div>
-                  <div className="p-2 rounded-lg text-cyan-500 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-colors">
-                    <Pencil className="w-4 h-4" />
                   </div>
                 </button>
               </InfoRow>
