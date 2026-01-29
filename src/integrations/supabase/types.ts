@@ -532,6 +532,150 @@ export type Database = {
           },
         ]
       }
+      domain_contexts: {
+        Row: {
+          authors: string[] | null
+          awards_associations: string[] | null
+          brands_equipment: string[] | null
+          business_address: string | null
+          business_hours: string[] | null
+          business_model: string | null
+          business_name: string | null
+          claims_to_avoid: string[] | null
+          common_faqs: string[] | null
+          competitors: string | null
+          created_at: string
+          domain: string
+          email: string | null
+          extraction_confidence: Json | null
+          guarantees_warranties: string | null
+          id: string
+          key_phrases: string[] | null
+          licenses_certifications: string[] | null
+          local_landmarks: string[] | null
+          phone_number: string | null
+          phrases_to_avoid: string[] | null
+          point_of_view: string | null
+          pricing_approach: string | null
+          primary_city: string | null
+          primary_keyword: string | null
+          required_disclaimers: string[] | null
+          resource_sites: string[] | null
+          service_areas: string[] | null
+          service_radius: string | null
+          services_not_offered: string[] | null
+          services_offered: string[] | null
+          short_description: string | null
+          social_links: string[] | null
+          style_references: string[] | null
+          target_keywords: string[] | null
+          topics_to_avoid: string[] | null
+          topics_to_cover: string[] | null
+          trademark_guidelines: string[] | null
+          unique_selling_points: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+          writing_tone: string | null
+          year_established: number | null
+        }
+        Insert: {
+          authors?: string[] | null
+          awards_associations?: string[] | null
+          brands_equipment?: string[] | null
+          business_address?: string | null
+          business_hours?: string[] | null
+          business_model?: string | null
+          business_name?: string | null
+          claims_to_avoid?: string[] | null
+          common_faqs?: string[] | null
+          competitors?: string | null
+          created_at?: string
+          domain: string
+          email?: string | null
+          extraction_confidence?: Json | null
+          guarantees_warranties?: string | null
+          id?: string
+          key_phrases?: string[] | null
+          licenses_certifications?: string[] | null
+          local_landmarks?: string[] | null
+          phone_number?: string | null
+          phrases_to_avoid?: string[] | null
+          point_of_view?: string | null
+          pricing_approach?: string | null
+          primary_city?: string | null
+          primary_keyword?: string | null
+          required_disclaimers?: string[] | null
+          resource_sites?: string[] | null
+          service_areas?: string[] | null
+          service_radius?: string | null
+          services_not_offered?: string[] | null
+          services_offered?: string[] | null
+          short_description?: string | null
+          social_links?: string[] | null
+          style_references?: string[] | null
+          target_keywords?: string[] | null
+          topics_to_avoid?: string[] | null
+          topics_to_cover?: string[] | null
+          trademark_guidelines?: string[] | null
+          unique_selling_points?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+          writing_tone?: string | null
+          year_established?: number | null
+        }
+        Update: {
+          authors?: string[] | null
+          awards_associations?: string[] | null
+          brands_equipment?: string[] | null
+          business_address?: string | null
+          business_hours?: string[] | null
+          business_model?: string | null
+          business_name?: string | null
+          claims_to_avoid?: string[] | null
+          common_faqs?: string[] | null
+          competitors?: string | null
+          created_at?: string
+          domain?: string
+          email?: string | null
+          extraction_confidence?: Json | null
+          guarantees_warranties?: string | null
+          id?: string
+          key_phrases?: string[] | null
+          licenses_certifications?: string[] | null
+          local_landmarks?: string[] | null
+          phone_number?: string | null
+          phrases_to_avoid?: string[] | null
+          point_of_view?: string | null
+          pricing_approach?: string | null
+          primary_city?: string | null
+          primary_keyword?: string | null
+          required_disclaimers?: string[] | null
+          resource_sites?: string[] | null
+          service_areas?: string[] | null
+          service_radius?: string | null
+          services_not_offered?: string[] | null
+          services_offered?: string[] | null
+          short_description?: string | null
+          social_links?: string[] | null
+          style_references?: string[] | null
+          target_keywords?: string[] | null
+          topics_to_avoid?: string[] | null
+          topics_to_cover?: string[] | null
+          trademark_guidelines?: string[] | null
+          unique_selling_points?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          writing_tone?: string | null
+          year_established?: number | null
+        }
+        Relationships: []
+      }
       form_submissions: {
         Row: {
           created_at: string
