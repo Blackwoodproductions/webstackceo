@@ -317,22 +317,40 @@ export const BRONKeywordsTab = memo(({
   const hasEverReceivedDataRef = useRef(false);
   
   // Update last valid count when we have actual data
-  // Simple: track if loading completed for this domain at least once
   useEffect(() => {
-    if (!isLoading && selectedDomain) {
+    if (keywords.length > 0) {
+      lastValidClusterCountRef.current = keywords.length;
+    }
+  }, [keywords.length]);
+  
+  // Mark data as "received" when loading transitions from true to false
+  // This indicates the fetch has completed (regardless of whether data was found)
+  const prevIsLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    // If we transition from loading to not-loading, we've received the response
+    if (prevIsLoadingRef.current && !isLoading) {
       hasEverReceivedDataRef.current = true;
     }
-  }, [isLoading, selectedDomain]);
-
-  // Reset when domain changes
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
+  
+  // Reset the last valid count when domain actually changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
+      // Only reset if we're switching to a truly different domain
+      lastValidClusterCountRef.current = 0;
       hasEverReceivedDataRef.current = false;
       prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
   
-  // NOTE: showEmptyState and showLoadingState are defined after mergedKeywords below
+  // Derive "has data" - ONLY show "no keywords found" when:
+  // 1. We're NOT loading anymore (isLoading === false)
+  // 2. We have zero keywords
+  // 3. We've actually completed a fetch for the current domain (hasEverReceivedDataRef.current === true)
+  //    This prevents showing "no keywords" during the brief period between domain switch and data hydration
+  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
+  const hasReceivedData = keywords.length > 0 || isLoading || !hasEverReceivedDataRef.current;
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -392,10 +410,6 @@ export const BRONKeywordsTab = memo(({
     mergeKeywordsWithSerp(keywords, serpReports), 
     [keywords, serpReports]
   );
-
-  // Simple logic: show empty state only when loading is done and we have no keywords
-  const showEmptyState = !isLoading && hasEverReceivedDataRef.current && mergedKeywords.length === 0;
-  const showLoadingState = isLoading || (!hasEverReceivedDataRef.current && mergedKeywords.length === 0);
 
   // Filter keywords
   const filteredKeywords = useMemo(() => {
@@ -980,15 +994,22 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : showLoadingState ? (
+          ) : mergedKeywords.length === 0 && !hasReceivedData ? (
+            // Subtle loading indicator instead of heavy skeletons - feels faster
             <div className="flex items-center justify-center py-16 text-muted-foreground">
               <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
               <span className="text-sm">Loading keywords...</span>
             </div>
-          ) : showEmptyState || displayClusters.length === 0 ? (
+          ) : displayClusters.length === 0 && hasReceivedData ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>No keywords yet</p>
+              <p>No keywords found</p>
+            </div>
+          ) : displayClusters.length === 0 ? (
+            // Fallback loading
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
+              <span className="text-sm">Loading keywords...</span>
             </div>
           ) : (
             <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
