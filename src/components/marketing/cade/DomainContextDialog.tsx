@@ -185,6 +185,10 @@ export function DomainContextDialog({
   const currentFilledCount = calculateFilledCount(formData as DomainContext);
   const currentProgress = Math.round((currentFilledCount / TOTAL_FIELDS) * 100);
 
+  // If we already have cached/context data, don't block the UI with a full-screen loader
+  // while we fetch the latest version from the backend.
+  const showBlockingLoader = loading && currentFilledCount === 0;
+
   const renderField = (field: { key: string; label: string; type: string }) => {
     const value = formData[field.key as keyof DomainContext];
 
@@ -289,6 +293,13 @@ export function DomainContextDialog({
                 )}
                 Re-analyze
               </Button>
+
+              {!showBlockingLoader && loading && (
+                <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Syncing…</span>
+                </div>
+              )}
               <div className="text-right">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold">{currentFilledCount}/{TOTAL_FIELDS}</span>
@@ -330,7 +341,7 @@ export function DomainContextDialog({
         </AnimatePresence>
 
         {/* Content */}
-        {loading ? (
+        {showBlockingLoader ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
