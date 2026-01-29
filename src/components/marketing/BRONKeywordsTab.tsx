@@ -385,8 +385,30 @@ export const BRONKeywordsTab = memo(({
     );
   }, [mergedKeywords, searchQuery]);
 
-  // Group keywords (with 24-hour cache per domain)
-  const groupedKeywords = useMemo(() => groupKeywords(filteredKeywords, selectedDomain), [filteredKeywords, selectedDomain]);
+  // ─── Stable Cluster Memoization ───
+  // Use a ref to cache clusters and only recompute when domain or keyword IDs actually change.
+  // This prevents expensive re-clustering when array references change but content is identical.
+  const clusterCacheRef = useRef<{
+    domain: string | undefined;
+    keywordIds: string;
+    clusters: ReturnType<typeof groupKeywords>;
+  } | null>(null);
+
+  const groupedKeywords = useMemo(() => {
+    // Generate a signature from keyword IDs (fast string comparison)
+    const idSignature = filteredKeywords.map(k => k.id).join(',');
+    
+    // Check if cache is still valid
+    const cached = clusterCacheRef.current;
+    if (cached && cached.domain === selectedDomain && cached.keywordIds === idSignature) {
+      return cached.clusters;
+    }
+    
+    // Recompute clusters
+    const clusters = groupKeywords(filteredKeywords, selectedDomain);
+    clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters };
+    return clusters;
+  }, [filteredKeywords, selectedDomain]);
 
   // Remove “grey” tracking-only rows from the UI (still counted in stats)
   const displayClusters = useMemo(
@@ -398,10 +420,12 @@ export const BRONKeywordsTab = memo(({
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
   const trackingKeywords = mergedKeywords.filter(k => k.status === 'tracking_only' || String(k.id).startsWith('serp_'));
 
-  // Reset fetched URLs when domain changes
+  // Reset fetched URLs and cluster cache when domain changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       fetchedUrlsRef.current = new Set();
+      // Clear cluster cache on domain change to force fresh computation
+      clusterCacheRef.current = null;
       prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
