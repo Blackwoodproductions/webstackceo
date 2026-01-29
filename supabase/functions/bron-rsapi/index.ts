@@ -378,6 +378,13 @@ serve(async (req) => {
         if (domain_id) linksInPayload.domain_id = domain_id;
         response = await bronApiRequest("/links-in", "POST", linksInPayload);
         result = await readResponseBody(response);
+        
+        // Log first link structure to understand API response
+        if (Array.isArray(result) && result.length > 0) {
+          console.log("BRON API - First link-in structure (keys):", Object.keys(result[0]));
+        } else if (result && typeof result === 'object' && 'data' in result && Array.isArray((result as any).data) && (result as any).data.length > 0) {
+          console.log("BRON API - First link-in structure (keys):", Object.keys((result as any).data[0]));
+        }
         break;
       }
 
@@ -393,6 +400,13 @@ serve(async (req) => {
         if (domain_id) linksOutPayload.domain_id = domain_id;
         response = await bronApiRequest("/links-out", "POST", linksOutPayload);
         result = await readResponseBody(response);
+        
+        // Log first link structure to understand API response
+        if (Array.isArray(result) && result.length > 0) {
+          console.log("BRON API - First link-out structure (keys):", Object.keys(result[0]));
+        } else if (result && typeof result === 'object' && 'data' in result && Array.isArray((result as any).data) && (result as any).data.length > 0) {
+          console.log("BRON API - First link-out structure (keys):", Object.keys((result as any).data[0]));
+        }
         break;
       }
 
