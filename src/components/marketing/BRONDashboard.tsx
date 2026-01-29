@@ -260,6 +260,9 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
     }
   }, [selectedDomain]);
 
+  // Track the last domain we fetched keywords for to avoid re-fetching on tab switch
+  const keywordsFetchedForDomainRef = useRef<string | null>(null);
+
   // Load domain-specific data (only fetch from API when authenticated)
   // Cache is already hydrated by selectDomain above
   useEffect(() => {
@@ -278,7 +281,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
     // Only fetch from API when authenticated
     if (!bronApi.isAuthenticated) return;
 
-    // Fire all fetches in parallel (these will return from cache instantly if available)
+    // Fetch domain info (background, doesn't affect loading state)
     bronApi.fetchDomain(selectedDomain).then((info) => {
       if (!cancelled && info) {
         setDomainInfo(info);
@@ -286,10 +289,18 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
         saveCachedDomainInfo(selectedDomain, info as DomainInfoCacheData);
       }
     });
-    bronApi.fetchKeywords(selectedDomain);
-    bronApi.fetchSerpReport(selectedDomain);
-    bronApi.fetchSerpList(selectedDomain);
-    bronApi.fetchPages(selectedDomain);
+
+    // IMPORTANT: Only fetch keywords if we haven't already fetched for this domain
+    // This prevents the 2-second reload when switching back from another tab
+    // The cache is already hydrated by selectDomain(), so we only need network
+    // fetch on first load or when domain actually changes
+    if (keywordsFetchedForDomainRef.current !== selectedDomain) {
+      keywordsFetchedForDomainRef.current = selectedDomain;
+      bronApi.fetchKeywords(selectedDomain);
+      bronApi.fetchSerpReport(selectedDomain);
+      bronApi.fetchSerpList(selectedDomain);
+      bronApi.fetchPages(selectedDomain);
+    }
 
     return () => { cancelled = true; };
   }, [bronApi.isAuthenticated, selectedDomain, getExistingScreenshot]);
