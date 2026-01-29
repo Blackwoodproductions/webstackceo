@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 // ─── Domain Context Type ─────────────────────────────────────────────────────
 export interface DomainContext {
   id?: string;
+  user_id?: string;
+  domain?: string;
   domain_id?: string;
   verified_at?: string;
   business_name?: string;
@@ -118,9 +120,8 @@ function loadCachedContext(domain: string): DomainContext | null {
   try {
     const cached = localStorage.getItem(getCacheKey(domain));
     if (!cached) return null;
-    
+
     const { data, timestamp } = JSON.parse(cached);
-    // Check if cache is still valid
     if (Date.now() - timestamp > CACHE_TTL_MS) {
       localStorage.removeItem(getCacheKey(domain));
       return null;
@@ -133,18 +134,32 @@ function loadCachedContext(domain: string): DomainContext | null {
 
 function saveCachedContext(domain: string, context: DomainContext): void {
   try {
-    localStorage.setItem(getCacheKey(domain), JSON.stringify({
-      data: context,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(
+      getCacheKey(domain),
+      JSON.stringify({
+        data: context,
+        timestamp: Date.now(),
+      })
+    );
   } catch {
     // Ignore storage errors
   }
 }
 
+// ─── Helper: Flatten business_hours from CADE's object format to string[] ────
+function normalizeBusinessHours(hours: unknown): string[] | undefined {
+  if (!hours) return undefined;
+  if (Array.isArray(hours)) {
+    // If already strings, return as-is; if objects, flatten
+    return hours.map((h) =>
+      typeof h === "string" ? h : `${(h as { day?: string }).day ?? ""}: ${(h as { hours?: string }).hours ?? ""}`
+    );
+  }
+  return undefined;
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 export function useDomainContext(domain: string | undefined) {
-  // Initialize from cache synchronously for instant display
   const [context, setContext] = useState<DomainContext | null>(() => {
     if (!domain) return null;
     return loadCachedContext(domain);
@@ -157,12 +172,19 @@ export function useDomainContext(domain: string | undefined) {
   const [hasFetchedFromApi, setHasFetchedFromApi] = useState(false);
 
   // Update context and cache together
-  const updateContextState = useCallback((newContext: DomainContext) => {
-    setContext(newContext);
-    if (domain) {
-      saveCachedContext(domain, newContext);
-    }
-  }, [domain]);
+  const updateContextState = useCallback(
+    (newContext: DomainContext) => {
+      const normalized: DomainContext = {
+        ...newContext,
+        business_hours: normalizeBusinessHours(newContext.business_hours),
+      };
+      setContext(normalized);
+      if (domain) {
+        saveCachedContext(domain, normalized);
+      }
+    },
+    [domain]
+  );
 
   // Re-hydrate from cache when domain changes
   useEffect(() => {
@@ -177,12 +199,34 @@ export function useDomainContext(domain: string | undefined) {
     }
   }, [domain]);
 
+  // ─── Fetch from local DB first, fallback to CADE API ───────────────────────
   const fetchContext = useCallback(async () => {
     if (!domain) return;
     setLoading(true);
     setError(null);
 
     try {
+      // 1) Try local domain_contexts table (requires auth)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+
+      if (userId) {
+        const { data: localRow, error: localErr } = await supabase
+          .from("domain_contexts")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("domain", domain)
+          .maybeSingle();
+
+        if (!localErr && localRow) {
+          console.log("[useDomainContext] Loaded from local DB");
+          updateContextState(localRow as DomainContext);
+          setHasFetchedFromApi(true);
+          return;
+        }
+      }
+
+      // 2) Fallback: CADE API
       const { data, error: fnError } = await supabase.functions.invoke("cade-api", {
         body: { action: "domain-context", domain },
       });
@@ -194,12 +238,10 @@ export function useDomainContext(domain: string | undefined) {
 
       if (incoming) {
         const incomingCount = calculateFilledCount(incoming);
-        // If backend returns empty but we already have cached/extracted context, keep current.
         if (!(incomingCount === 0 && currentCount > 0)) {
           updateContextState(incoming);
         }
       } else {
-        // No backend context yet: only show empty if we don't already have cached context.
         if (currentCount === 0) setContext({});
       }
 
@@ -207,13 +249,13 @@ export function useDomainContext(domain: string | undefined) {
     } catch (err) {
       console.error("[useDomainContext] fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to load domain context");
-      // Don't wipe out cached/extracted context on transient errors.
       if (calculateFilledCount(context) === 0) setContext({});
     } finally {
       setLoading(false);
     }
   }, [domain, updateContextState, context]);
 
+  // ─── Update: Save to local DB + optional CADE API ──────────────────────────
   const updateContext = useCallback(
     async (updates: Partial<DomainContext>) => {
       if (!domain) return false;
@@ -221,17 +263,82 @@ export function useDomainContext(domain: string | undefined) {
       setError(null);
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("cade-api", {
-          body: { action: "update-domain-context", domain, params: updates },
-        });
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
 
-        if (fnError) throw fnError;
-
-        if (data?.success && data?.data) {
-          updateContextState(data.data);
-        } else if (data?.data) {
-          updateContextState(data.data);
+        if (!userId) {
+          throw new Error("You must be logged in to save domain context");
         }
+
+        // Upsert into local table
+        const payload: Record<string, unknown> = {
+          user_id: userId,
+          domain,
+          ...updates,
+          // Ensure business_hours is string[]
+          business_hours: normalizeBusinessHours(updates.business_hours),
+          // Remove fields that aren't in the DB schema
+          id: undefined,
+          domain_id: undefined,
+        };
+
+        delete payload.id;
+        delete payload.domain_id;
+
+        // Check if row exists already
+        const { data: existingRow } = await supabase
+          .from("domain_contexts")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("domain", domain)
+          .maybeSingle();
+
+        let upserted: DomainContext | null = null;
+
+        if (existingRow?.id) {
+          // Update existing row
+          const { data: updated, error: updateErr } = await supabase
+            .from("domain_contexts")
+            .update(payload as never)
+            .eq("id", existingRow.id)
+            .select()
+            .single();
+
+          if (updateErr) {
+            console.error("[useDomainContext] update error:", updateErr);
+            throw updateErr;
+          }
+          upserted = updated as DomainContext;
+        } else {
+          // Insert new row
+          const { data: inserted, error: insertErr } = await supabase
+            .from("domain_contexts")
+            .insert(payload as never)
+            .select()
+            .single();
+
+          if (insertErr) {
+            console.error("[useDomainContext] insert error:", insertErr);
+            throw insertErr;
+          }
+          upserted = inserted as DomainContext;
+        }
+
+        console.log("[useDomainContext] Saved to local DB");
+        if (upserted) updateContextState(upserted);
+
+        // Best-effort: also try CADE API (fire-and-forget)
+        supabase.functions
+          .invoke("cade-api", {
+            body: { action: "update-domain-context", domain, params: updates },
+          })
+          .then(({ error: cadeErr }) => {
+            if (cadeErr) {
+              console.warn("[useDomainContext] CADE API save failed (non-blocking):", cadeErr);
+            } else {
+              console.log("[useDomainContext] CADE API save succeeded (async)");
+            }
+          });
 
         return true;
       } catch (err) {
@@ -245,7 +352,7 @@ export function useDomainContext(domain: string | undefined) {
     [domain, updateContextState]
   );
 
-  // Auto-fill by crawling website and using AI to extract fields
+  // ─── Auto-fill via AI extraction ───────────────────────────────────────────
   const autoFillContext = useCallback(async () => {
     if (!domain) return false;
     setAutoFilling(true);
