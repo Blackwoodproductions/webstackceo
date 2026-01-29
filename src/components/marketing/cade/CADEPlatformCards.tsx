@@ -81,9 +81,9 @@ export const CADEPlatformCards = memo(({
   const [hoveredPlatform, setHoveredPlatform] = useState<string | null>(null);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex-1 flex items-center justify-end gap-4">
       {/* Platform Cards Grid */}
-      <div className="flex-1 grid grid-cols-4 gap-3 max-w-3xl">
+      <div className="grid grid-cols-4 gap-3 max-w-3xl">
         <AnimatePresence>
           {platforms.map((platform, i) => {
             const isConnected = connectedPlatforms.includes(platform.id);
