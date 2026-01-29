@@ -310,66 +310,29 @@ export const BRONKeywordsTab = memo(({
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
-  // Use refs to persist state across renders and prevent race conditions
+  // Use a ref to persist the last valid cluster count during domain transitions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
-  const lastValidCountForDomainRef = useRef<Record<string, number>>({});
-  // Track if we're in a domain-switching transition (waiting for new data)
-  const isDomainTransitionRef = useRef(false);
-  // Track timestamp when we started waiting for data (to show "no keywords" after timeout)
-  const transitionStartRef = useRef<number>(0);
-  const TRANSITION_TIMEOUT_MS = 3000; // Only show "no keywords" after 3s of waiting
+  const lastValidClusterCountRef = useRef<number>(0);
   
-  // Update last valid count when we have actual data for the current domain
+  // Update last valid count when we have actual data
   useEffect(() => {
-    if (keywords.length > 0 && selectedDomain) {
-      lastValidCountForDomainRef.current[selectedDomain] = keywords.length;
-      isDomainTransitionRef.current = false; // We have data, transition complete
+    if (keywords.length > 0) {
+      lastValidClusterCountRef.current = keywords.length;
     }
-  }, [keywords.length, selectedDomain]);
+  }, [keywords.length]);
   
-  // Detect domain transitions
+  // Derive "has data" - consider we have data if either:
+  // 1. Current keywords array has items, OR
+  // 2. We had data before and are just transitioning (prevents flash)
+  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  
+  // Reset the last valid count when domain actually changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
-      const prevDomain = prevDomainRef.current;
-      prevDomainRef.current = selectedDomain;
-      
-      // Mark as transitioning - prevents "no keywords" flash during async load
-      isDomainTransitionRef.current = true;
-      transitionStartRef.current = Date.now();
-      
-      // If we already have keywords from cache for the new domain (parent provided them), clear transition flag
-      if (keywords.length > 0) {
-        isDomainTransitionRef.current = false;
-      }
+      // Only reset if we're switching to a truly different domain
+      lastValidClusterCountRef.current = 0;
     }
-  }, [selectedDomain, keywords.length]);
-  
-  // Derive "has data" status
-  // NEVER show "no keywords found" while:
-  // 1. isLoading is true (actively fetching)
-  // 2. In a domain transition that hasn't timed out yet
-  // ONLY show "no keywords found" when:
-  // 1. Not loading AND not in transition AND keywords.length === 0
-  // 2. OR transition has been going on for > TRANSITION_TIMEOUT_MS
-  const hasReceivedData = useMemo(() => {
-    // If we have keywords, we definitely have data
-    if (keywords.length > 0) return true;
-    
-    // If still loading, assume we're waiting for data
-    if (isLoading) return true; // Don't show "no keywords" while loading
-    
-    // If in a transition and haven't timed out, assume data is coming
-    if (isDomainTransitionRef.current) {
-      const elapsed = Date.now() - transitionStartRef.current;
-      if (elapsed < TRANSITION_TIMEOUT_MS) {
-        return true; // Still waiting for transition to complete
-      }
-      // Transition timed out - show "no keywords"
-      isDomainTransitionRef.current = false;
-    }
-    
-    return false; // No data, not loading, not transitioning
-  }, [keywords.length, isLoading]);
+  }, [selectedDomain]);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
