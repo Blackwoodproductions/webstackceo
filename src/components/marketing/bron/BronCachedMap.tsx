@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { loadCachedMapEmbed, saveCachedMapEmbed } from "@/lib/persistentCache";
 
@@ -12,6 +12,9 @@ interface BronCachedMapProps {
  * Uses localStorage caching to persist map embeds across hard refreshes.
  */
 export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
   // Use a stable key based on address to avoid iframe remounting
   const mapKey = useMemo(() => address ? `map-${address}` : 'map-empty', [address]);
   
@@ -53,6 +56,28 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
       className="relative w-full h-full min-h-[220px]" 
       style={{ contain: 'layout paint' }}
     >
+      {/* Loading / fallback overlay */}
+      {(!isLoaded || hasError) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/20">
+          <div className="text-center px-4">
+            <div className="mx-auto mb-2 w-10 h-10 rounded-full bg-background/70 border border-border flex items-center justify-center">
+              <MapPin className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {hasError ? "Map unavailable" : "Loading map…"}
+            </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex mt-2 text-xs text-primary hover:underline"
+            >
+              Open in Maps
+            </a>
+          </div>
+        </div>
+      )}
+
       <iframe
         key={mapKey}
         src={embedUrl}
@@ -60,6 +85,13 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
         title="Business Location"
+        onLoad={() => {
+          setIsLoaded(true);
+          setHasError(false);
+        }}
+        onError={() => {
+          setHasError(true);
+        }}
         style={{ 
           minHeight: '220px',
           // Prevent any transform/animation interference
@@ -72,7 +104,7 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute top-2 right-2 text-[10px] text-cyan-500 hover:underline bg-white/90 px-1.5 py-0.5 rounded"
+        className="absolute top-2 right-2 z-20 text-[10px] text-primary hover:underline bg-background/90 border border-border/60 px-1.5 py-0.5 rounded"
       >
         View larger map
       </a>

@@ -309,17 +309,17 @@ export const BronDomainProfile = memo(({
 
           {/* RIGHT: Business Profile Card */}
           <div className="lg:col-span-5 p-4">
-            <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10 overflow-hidden h-full">
+            <div className="rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden h-full">
               {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 bg-background/50 border-b border-cyan-500/20">
+              <div className="flex items-center justify-between px-3 py-2 bg-background/50 border-b border-border/60">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-cyan-400" />
+                  <Building2 className="w-4 h-4 text-primary" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Business Profile
                   </span>
                 </div>
                 {domainContext?.primary_keyword && (
-                  <Badge variant="secondary" className="text-[10px] bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                  <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-primary/20">
                     <Tag className="w-3 h-3 mr-1" />
                     {domainContext.primary_keyword}
                   </Badge>
@@ -328,7 +328,7 @@ export const BronDomainProfile = memo(({
 
               <div className="grid grid-cols-7 gap-0 h-[calc(100%-36px)]">
                 {/* Business Info - 2 cols (compact) */}
-                <div className="col-span-2 p-3 space-y-2 border-r border-cyan-500/20 overflow-hidden">
+                <div className="col-span-2 p-3 space-y-2 border-r border-border/60 overflow-hidden">
                   {/* Business Name */}
                   <h4 className="font-semibold text-sm leading-tight">
                     {domainContext?.business_name || domainInfo?.wr_name || selectedDomain}
@@ -349,11 +349,11 @@ export const BronDomainProfile = memo(({
                   )}
                   
                   {/* Website */}
-                  <a 
+                  <a
                     href={`https://${selectedDomain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-cyan-400 hover:underline flex items-center gap-1.5"
+                    className="text-xs text-primary hover:underline flex items-center gap-1.5"
                   >
                     <span>🌐</span> {selectedDomain}
                   </a>
