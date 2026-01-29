@@ -86,22 +86,32 @@ export const BronDomainProfile = memo(({
     updateContext: updateDomainContext,
     autoFillContext,
     autoFilling,
+    hasFetchedFromApi,
     filledCount: domainContextFilledCount,
     totalFields: domainContextTotalFields,
     progressPercent: domainContextProgress,
   } = useDomainContext(selectedDomain);
 
-  // Fetch domain context on mount/domain change
+  // Track if we've already attempted auto-fill for this domain
+  const [hasAttemptedAutoFill, setHasAttemptedAutoFill] = useState(false);
+
+  // Reset auto-fill attempt when domain changes
+  useEffect(() => {
+    setHasAttemptedAutoFill(false);
+  }, [selectedDomain]);
+
+  // Fetch domain context on mount/domain change (will use cache first, then API)
   useEffect(() => {
     if (selectedDomain) {
       fetchDomainContext();
     }
   }, [selectedDomain, fetchDomainContext]);
 
-  // Auto-fill when a new domain is added and context is at 0%
+  // Auto-fill when a new domain is added and context is at 0% and no cache
   useEffect(() => {
     const runAutoFill = async () => {
-      if (isNewlyAddedDomain && domainContextFilledCount === 0 && !autoFilling) {
+      if (isNewlyAddedDomain && domainContextFilledCount === 0 && !autoFilling && hasFetchedFromApi && !hasAttemptedAutoFill) {
+        setHasAttemptedAutoFill(true);
         const success = await autoFillContext();
         if (success) {
           toast.success("Website analyzed! Domain info has been auto-filled.");
@@ -110,20 +120,25 @@ export const BronDomainProfile = memo(({
       }
     };
     runAutoFill();
-  }, [isNewlyAddedDomain, domainContextFilledCount, autoFilling, autoFillContext, onAutoFillComplete]);
+  }, [isNewlyAddedDomain, domainContextFilledCount, autoFilling, autoFillContext, onAutoFillComplete, hasFetchedFromApi, hasAttemptedAutoFill]);
 
-  // Handle click on domain info - auto-fill if 0%, otherwise open dialog
+  // Handle click on domain info - auto-fill only on first click when truly empty, then always open dialog
   const handleDomainInfoClick = async () => {
-    if (domainContextFilledCount === 0 && !autoFilling) {
-      // Auto-fill with AI immediately
+    // If we haven't fetched yet and showing 0%, just open dialog (cached data may exist)
+    // Only auto-fill if API confirmed 0% AND we haven't attempted before
+    if (domainContextFilledCount === 0 && !autoFilling && hasFetchedFromApi && !hasAttemptedAutoFill) {
+      setHasAttemptedAutoFill(true);
       const success = await autoFillContext();
       if (success) {
         toast.success("Website analyzed! Domain info has been auto-filled.");
+        // Open dialog after successful auto-fill to show the data
+        setDomainContextOpen(true);
       } else {
-        toast.error("Failed to auto-fill. Click again to edit manually.");
+        toast.error("Failed to auto-fill. Opening editor...");
+        setDomainContextOpen(true);
       }
     } else {
-      // Open dialog to edit
+      // Open dialog to edit (data exists or auto-fill already attempted)
       setDomainContextOpen(true);
     }
   };

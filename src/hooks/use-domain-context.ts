@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // ─── Domain Context Type ─────────────────────────────────────────────────────
@@ -106,14 +106,76 @@ export const calculateFilledCount = (context: DomainContext | null): number => {
   return DOMAIN_CONTEXT_FIELDS.filter((field) => hasValue(context[field])).length;
 };
 
+// ─── Cache Helpers ───────────────────────────────────────────────────────────
+const CACHE_PREFIX = "domain_context_";
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function getCacheKey(domain: string): string {
+  return `${CACHE_PREFIX}${domain}`;
+}
+
+function loadCachedContext(domain: string): DomainContext | null {
+  try {
+    const cached = localStorage.getItem(getCacheKey(domain));
+    if (!cached) return null;
+    
+    const { data, timestamp } = JSON.parse(cached);
+    // Check if cache is still valid
+    if (Date.now() - timestamp > CACHE_TTL_MS) {
+      localStorage.removeItem(getCacheKey(domain));
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedContext(domain: string, context: DomainContext): void {
+  try {
+    localStorage.setItem(getCacheKey(domain), JSON.stringify({
+      data: context,
+      timestamp: Date.now(),
+    }));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 export function useDomainContext(domain: string | undefined) {
-  const [context, setContext] = useState<DomainContext | null>(null);
+  // Initialize from cache synchronously for instant display
+  const [context, setContext] = useState<DomainContext | null>(() => {
+    if (!domain) return null;
+    return loadCachedContext(domain);
+  });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  const [hasFetchedFromApi, setHasFetchedFromApi] = useState(false);
+
+  // Update context and cache together
+  const updateContextState = useCallback((newContext: DomainContext) => {
+    setContext(newContext);
+    if (domain) {
+      saveCachedContext(domain, newContext);
+    }
+  }, [domain]);
+
+  // Re-hydrate from cache when domain changes
+  useEffect(() => {
+    if (domain) {
+      const cached = loadCachedContext(domain);
+      if (cached) {
+        setContext(cached);
+      } else {
+        setContext(null);
+      }
+      setHasFetchedFromApi(false);
+    }
+  }, [domain]);
 
   const fetchContext = useCallback(async () => {
     if (!domain) return;
@@ -128,13 +190,14 @@ export function useDomainContext(domain: string | undefined) {
       if (fnError) throw fnError;
 
       if (data?.success && data?.data) {
-        setContext(data.data);
+        updateContextState(data.data);
       } else if (data?.data) {
-        setContext(data.data);
+        updateContextState(data.data);
       } else {
-        // No context yet - initialize empty
+        // No context yet - initialize empty but don't cache empty
         setContext({});
       }
+      setHasFetchedFromApi(true);
     } catch (err) {
       console.error("[useDomainContext] fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to load domain context");
@@ -142,7 +205,7 @@ export function useDomainContext(domain: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [domain]);
+  }, [domain, updateContextState]);
 
   const updateContext = useCallback(
     async (updates: Partial<DomainContext>) => {
@@ -158,9 +221,9 @@ export function useDomainContext(domain: string | undefined) {
         if (fnError) throw fnError;
 
         if (data?.success && data?.data) {
-          setContext(data.data);
+          updateContextState(data.data);
         } else if (data?.data) {
-          setContext(data.data);
+          updateContextState(data.data);
         }
 
         return true;
@@ -172,7 +235,7 @@ export function useDomainContext(domain: string | undefined) {
         setSaving(false);
       }
     },
-    [domain]
+    [domain, updateContextState]
   );
 
   // Auto-fill by crawling website and using AI to extract fields
@@ -190,7 +253,7 @@ export function useDomainContext(domain: string | undefined) {
       if (fnError) throw fnError;
 
       if (data?.success && data?.data) {
-        setContext(data.data);
+        updateContextState(data.data);
         setHasAutoFilled(true);
         return true;
       } else if (data?.error) {
@@ -205,7 +268,7 @@ export function useDomainContext(domain: string | undefined) {
     } finally {
       setAutoFilling(false);
     }
-  }, [domain]);
+  }, [domain, updateContextState]);
 
   const filledCount = calculateFilledCount(context);
   const progressPercent = Math.round((filledCount / TOTAL_FIELDS) * 100);
@@ -221,6 +284,7 @@ export function useDomainContext(domain: string | undefined) {
     updateContext,
     autoFillContext,
     hasAutoFilled,
+    hasFetchedFromApi,
     filledCount,
     totalFields: TOTAL_FIELDS,
     progressPercent,
