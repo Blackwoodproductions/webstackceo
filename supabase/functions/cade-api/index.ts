@@ -169,7 +169,7 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        method = "PUT";
+        method = "POST";
         endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
         postBody = JSON.stringify({ domain, ...params });
         console.log(`[CADE API] Update domain context for: ${domain}`);
