@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { 
-  Loader2, ChevronDown, MapPin, Camera, Brain, Building2, Sparkles, Tag,
-  Facebook, Linkedin, Instagram, Twitter, Youtube
+  Loader2, ChevronDown, ChevronUp, MapPin, Camera, Brain, Building2, Sparkles, Tag,
+  Facebook, Linkedin, Instagram, Twitter, Youtube, Minimize2, Maximize2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,9 @@ import { BronCachedMap } from "./BronCachedMap";
 import { useDomainContext } from "@/hooks/use-domain-context";
 import { DomainContextDialog } from "../cade/DomainContextDialog";
 import { toast } from "sonner";
+
+// Local storage key for profile collapsed state
+const PROFILE_COLLAPSED_KEY = 'bron_profile_collapsed';
 
 interface BronDomainProfileProps {
   selectedDomain: string;
@@ -76,6 +79,24 @@ export const BronDomainProfile = memo(({
   onAutoFillComplete,
 }: BronDomainProfileProps) => {
   const [domainContextOpen, setDomainContextOpen] = useState(false);
+  
+  // Collapsible state - persisted to localStorage
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(PROFILE_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Persist collapsed state
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    try {
+      localStorage.setItem(PROFILE_COLLAPSED_KEY, String(newState));
+    } catch {}
+  };
   
   // Domain context hook for progress - share with dialog
   const {
@@ -157,8 +178,54 @@ export const BronDomainProfile = memo(({
       data-no-theme-transition
       style={{ contain: 'layout style paint' }}
     >
-      <CardContent className="p-0">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+      {/* Collapsed Header */}
+      {isCollapsed && (
+        <div 
+          className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={toggleCollapsed}
+        >
+          <div className="flex items-center gap-3">
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=32`}
+              alt=""
+              className="w-6 h-6 rounded"
+            />
+            <span className="font-medium">{selectedDomain}</span>
+            {domainInfo?.status && (
+              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
+                {domainInfo.status}
+              </Badge>
+            )}
+            {domainContext?.primary_city && (
+              <span className="text-sm text-muted-foreground">
+                <MapPin className="inline w-3 h-3 mr-1" />
+                {domainContext.primary_city}
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" className="gap-1.5">
+            <Maximize2 className="w-4 h-4" />
+            Expand
+          </Button>
+        </div>
+      )}
+
+      {/* Full Content */}
+      {!isCollapsed && (
+        <>
+          {/* Collapse button in top-right */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleCollapsed}
+            className="absolute top-2 right-2 z-10 gap-1.5 h-7 text-xs bg-background/80 hover:bg-background"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+            Minimize
+          </Button>
+          
+          <CardContent className="p-0">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
           
           {/* LEFT: Website Screenshot with Domain Options */}
           <div className="lg:col-span-3 p-4 border-r border-border/30">
@@ -430,7 +497,9 @@ export const BronDomainProfile = memo(({
             </div>
           </div>
         </div>
-      </CardContent>
+          </CardContent>
+        </>
+      )}
 
       {/* Domain Context Dialog */}
       {selectedDomain && (
