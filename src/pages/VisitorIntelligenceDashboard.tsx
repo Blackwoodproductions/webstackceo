@@ -587,6 +587,7 @@ const MarketingDashboard = () => {
   
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
   const [newDomainInput, setNewDomainInput] = useState('');
+  const [newlyAddedDomain, setNewlyAddedDomain] = useState<string | null>(null);
   
   // GSC domain tracking status
   // Single source-of-truth for the header domain selector (domain-first)
@@ -3473,7 +3474,11 @@ f.parentNode.insertBefore(j,f);
               animate={{ y: ['-100%', '200%'] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
-            <BRONPlatformConnect domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} />
+            <BRONPlatformConnect 
+              domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} 
+              isNewlyAddedDomain={newlyAddedDomain === rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)}
+              onAutoFillComplete={() => setNewlyAddedDomain(null)}
+            />
           </div>
         </div>
       )}
@@ -4116,6 +4121,7 @@ f.parentNode.insertBefore(j,f);
                       setGscDomainHasTracking(false);
                       setNewDomainInput('');
                       setAddDomainDialogOpen(false);
+                      setNewlyAddedDomain(domain);
                       // Trigger auto SEO audit
                       triggerAutoAudit(domain);
                     }
@@ -4144,6 +4150,7 @@ f.parentNode.insertBefore(j,f);
                 setGscDomainHasTracking(false);
                 setNewDomainInput('');
                 setAddDomainDialogOpen(false);
+                setNewlyAddedDomain(domain);
                 // Trigger auto SEO audit
                 triggerAutoAudit(domain);
               }

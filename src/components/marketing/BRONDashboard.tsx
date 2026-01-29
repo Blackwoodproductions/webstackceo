@@ -23,6 +23,8 @@ import {
 // ─── Types ───
 interface BRONDashboardProps {
   selectedDomain?: string;
+  isNewlyAddedDomain?: boolean;
+  onAutoFillComplete?: () => void;
 }
 
 // ─── Constants ───
@@ -45,7 +47,7 @@ const hasCachedData = (): boolean => {
 };
 
 // ─── Main Component ───
-export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
+export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoFillComplete }: BRONDashboardProps) => {
   const bronApi = useBronApi();
   const [activeTab, setActiveTab] = useState("keywords");
   
@@ -388,6 +390,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
           isCapturingScreenshot={isCapturingScreenshot}
           onCaptureScreenshot={handleCaptureScreenshot}
           onScreenshotError={handleScreenshotError}
+          isNewlyAddedDomain={isNewlyAddedDomain}
+          onAutoFillComplete={onAutoFillComplete}
         />
       )}
 
