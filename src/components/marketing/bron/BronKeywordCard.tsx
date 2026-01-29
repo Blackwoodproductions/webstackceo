@@ -498,7 +498,7 @@ export const BronKeywordCard = memo(({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-shrink-0 p-1 rounded-md hover:bg-primary/20 transition-colors"
+                    className="flex-shrink-0 p-1 rounded-md hover:bg-primary/20"
                     title={`Open ${keywordUrl}`}
                   >
                     <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
