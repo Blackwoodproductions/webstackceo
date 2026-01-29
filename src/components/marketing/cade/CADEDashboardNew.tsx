@@ -940,222 +940,114 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </div>
       </div>
 
-      {/* Row 2: Unified Command Center - Scheduler, Quick Actions, Account Status */}
-      <SectionCard title="Command Center" accentColor="cyan">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Unified Content Hub - Command Center + Content Management merged */}
+      <SectionCard title="Content Hub" accentColor="cyan">
+        <div className="space-y-5">
           
-          {/* Left Section: Scheduler with Circular Timer */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Scheduler</span>
-            </div>
+          {/* Compact Command Strip */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 rounded-xl bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5 border border-border/30">
             
-            <div className="flex items-center gap-4">
-              {/* Circular Timer Dial */}
-              <div className="relative w-24 h-24 flex-shrink-0">
+            {/* Scheduler Mini */}
+            <div className="lg:col-span-3 flex items-center gap-3">
+              <div className="relative w-14 h-14 flex-shrink-0">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                  {/* Background track */}
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-500/10" />
-                  {/* Progress arc - simulated 11hrs remaining of 12hrs */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-500/10" />
                   <circle 
-                    cx="18" cy="18" r="15" fill="none" stroke="url(#timer-gradient)" strokeWidth="3" 
-                    strokeDasharray="78 94"
+                    cx="18" cy="18" r="14" fill="none" stroke="url(#timer-gradient-compact)" strokeWidth="2.5" 
+                    strokeDasharray="73 88"
                     strokeLinecap="round"
                     className="transition-all duration-1000"
                   />
-                  {/* Inner glow */}
-                  <circle cx="18" cy="18" r="10" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-cyan-500/20" />
                   <defs>
-                    <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="timer-gradient-compact" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#22d3ee" />
-                      <stop offset="50%" stopColor="#06b6d4" />
                       <stop offset="100%" stopColor="#0891b2" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-cyan-400">11h</span>
-                  <span className="text-[10px] text-muted-foreground">26m</span>
-                </div>
-                {/* Pulsing indicator */}
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              </div>
-              
-              {/* Stats Stack */}
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                  <span className="text-xs text-muted-foreground">Status</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs font-medium text-emerald-400">Enabled</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-background/30 border border-border/30">
-                  <span className="text-xs text-muted-foreground">Frequency</span>
-                  <span className="text-xs font-medium">12hrs</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-background/30 border border-border/30">
-                  <span className="text-xs text-muted-foreground">Per Batch</span>
-                  <span className="text-xs font-medium">1 article</span>
+                  <span className="text-sm font-bold text-cyan-400">11h</span>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          {/* Center Section: Quick Actions with Activity Gauge */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Quick Actions</span>
-            </div>
-            
-            {/* Content Quota Gauge */}
-            <div className="relative p-4 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20">
-              <div className="flex items-center gap-4">
-                {/* Semi-circle gauge */}
-                <div className="relative w-20 h-12 overflow-hidden">
-                  <svg className="w-20 h-20 -translate-y-1" viewBox="0 0 36 36">
-                    <path
-                      d="M18 3 A 15 15 0 0 1 33 18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      className="text-amber-500/10"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M18 3 A 15 15 0 0 1 33 18"
-                      fill="none"
-                      stroke="url(#quota-gradient)"
-                      strokeWidth="3"
-                      strokeDasharray="23.5 23.5"
-                      strokeLinecap="round"
-                      className="transition-all duration-500"
-                    />
-                    <defs>
-                      <linearGradient id="quota-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#fbbf24" />
-                        <stop offset="100%" stopColor="#f59e0b" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-                    <span className="text-lg font-bold text-amber-400">2/2</span>
-                  </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Calendar className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] text-muted-foreground uppercase">Next Gen</span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">Weekly Quota</p>
-                  <p className="text-sm font-semibold">2 articles remaining</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs text-emerald-400 font-medium">Active</span>
+                  <span className="text-[10px] text-muted-foreground">• 12hr cycle</span>
                 </div>
               </div>
             </div>
             
-            {/* Action Controls */}
-            <div className="flex gap-2">
+            {/* Quick Generate */}
+            <div className="lg:col-span-5 flex items-center gap-3">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Quota</p>
+                  <p className="text-sm font-bold text-amber-400">2/2</p>
+                </div>
+              </div>
               <Select value={scheduleCount} onValueChange={setScheduleCount}>
-                <SelectTrigger className="flex-1 bg-background/60 border-border/50 h-10">
+                <SelectTrigger className="w-28 bg-background/60 border-border/50 h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">1 Article(s)</SelectItem>
-                  <SelectItem value="2">2 Article(s)</SelectItem>
-                  <SelectItem value="3">3 Article(s)</SelectItem>
-                  <SelectItem value="5">5 Article(s)</SelectItem>
+                  <SelectItem value="1">1 Article</SelectItem>
+                  <SelectItem value="2">2 Articles</SelectItem>
+                  <SelectItem value="3">3 Articles</SelectItem>
+                  <SelectItem value="5">5 Articles</SelectItem>
                 </SelectContent>
               </Select>
               <Button 
                 onClick={handleScheduleNow}
                 disabled={isScheduling}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6"
+                size="sm"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white h-9"
               >
                 {isScheduling ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Play className="w-4 h-4 mr-1.5" />
+                    <Play className="w-3.5 h-3.5 mr-1" />
                     Generate
                   </>
                 )}
               </Button>
             </div>
-          </div>
-          
-          {/* Right Section: Account with Auth Status Ring */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-violet-400" />
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">Account</span>
-            </div>
             
-            <div className="flex items-start gap-4">
-              {/* Auth Status Ring */}
-              <div className="relative w-16 h-16 flex-shrink-0">
+            {/* Account Mini */}
+            <div className="lg:col-span-4 flex items-center gap-3">
+              <div className="relative w-10 h-10 flex-shrink-0">
                 <svg className="w-full h-full" viewBox="0 0 36 36">
-                  {/* Outer ring */}
-                  <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="1" className="text-emerald-500/20" />
-                  {/* Inner filled ring */}
-                  <circle cx="18" cy="18" r="13" fill="none" stroke="url(#auth-gradient)" strokeWidth="2.5" className="transition-all duration-500" />
-                  {/* Pulsing core */}
-                  <circle cx="18" cy="18" r="8" fill="currentColor" className="text-emerald-500/10" />
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="url(#auth-gradient-compact)" strokeWidth="2" />
                   <defs>
-                    <linearGradient id="auth-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="auth-gradient-compact" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#34d399" />
                       <stop offset="100%" stopColor="#10b981" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
-                {/* Scanning animation */}
-                <div 
-                  className="absolute inset-0 rounded-full border-2 border-emerald-400/30"
-                  style={{ 
-                    animation: 'cade-auth-scan 2s ease-out infinite',
-                  }}
-                />
-              </div>
-              
-              {/* Account Info */}
-              <div className="flex-1 space-y-2">
-                <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                  <p className="text-[10px] text-muted-foreground uppercase">Service</p>
-                  <p className="text-sm font-bold text-violet-400">{account.serviceType}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-background/30 border border-border/30">
-                  <p className="text-[10px] text-muted-foreground uppercase truncate">{domainContext?.business_name || domain || "—"}</p>
-                  <p className="text-xs text-muted-foreground truncate">{domainContext?.email || account.email || "—"}</p>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 </div>
               </div>
-            </div>
-            
-            {/* Auth Badge */}
-            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-medium text-emerald-400">Session Active</span>
-              <span className="text-[10px] text-muted-foreground">• Last verified 2m ago</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-violet-400">{account.serviceType}</span>
+                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                    Active
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground truncate">{domainContext?.business_name || domain || "—"}</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* CSS for auth scan animation */}
-        <style>{`
-          @keyframes cade-auth-scan {
-            0% { transform: scale(1); opacity: 0.6; }
-            100% { transform: scale(1.5); opacity: 0; }
-          }
-        `}</style>
-      </SectionCard>
-
-      {/* Row 3: Content Management */}
-      <SectionCard title="Content Management" accentColor="cyan">
-        <div className="space-y-6">
-          <p className="text-muted-foreground text-sm -mt-2">
-            Manage your CADE-generated content and view scheduling information.
-          </p>
           
-          {/* Tabs */}
+          {/* Content Tabs */}
           <Tabs value={contentTab} onValueChange={setContentTab}>
             <TabsList className="bg-transparent border-b border-border/50 rounded-none p-0 h-auto">
               <TabsTrigger 
@@ -1184,41 +1076,43 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="articles" className="mt-6 space-y-6">
-              <div>
-                <h4 className="font-semibold text-base mb-2">Blog Articles</h4>
-                <p className="text-sm text-muted-foreground">
-                  Manage your CADE-generated blog articles. Filter by status to see published or draft content.
-                </p>
+            <TabsContent value="articles" className="mt-5 space-y-4">
+              {/* Compact Stats Row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
+                  <div className="text-2xl font-bold text-cyan-400">{contentStats.total}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">Total</div>
+                </div>
+                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
+                  <div className="text-2xl font-bold text-emerald-400">{contentStats.published}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">Published</div>
+                </div>
+                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
+                  <div className="text-2xl font-bold text-orange-400">{contentStats.drafts}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase">Drafts</div>
+                </div>
               </div>
               
-              {/* Stats Boxes */}
-              <div className="flex gap-4">
-                <StatBox value={contentStats.total} label="Total Articles" color="cyan" />
-                <StatBox value={contentStats.published} label="Published" color="emerald" />
-                <StatBox value={contentStats.drafts} label="Drafts" color="orange" />
+              {/* Filter & Action Row */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">Filter:</span>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-36 bg-background/60 border-border/50 h-8 text-xs">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white h-8 text-xs">
+                  View All CADE Posts
+                </Button>
               </div>
-              
-              {/* Filter */}
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-background/50 border border-border/30">
-                <span className="text-sm text-muted-foreground">Filter by status :</span>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48 bg-background/60 border-border/50">
-                    <SelectValue placeholder="All Statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* View All Button */}
-              <Button className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white">
-                View All CADE Posts
-              </Button>
             </TabsContent>
             
             <TabsContent value="faqs" className="mt-6 space-y-6">
