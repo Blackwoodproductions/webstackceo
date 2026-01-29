@@ -42,6 +42,7 @@ import {
   filterLinksForKeyword,
   BronKeywordSkeletonList,
   BronKeywordTableHeader,
+  BronHistoryDateSelector,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -307,6 +308,11 @@ export const BRONKeywordsTab = memo(({
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
   
+  // Historical date selector state
+  const [selectedHistoryReportId, setSelectedHistoryReportId] = useState<string | number | null>(null);
+  const [historicalSerpReports, setHistoricalSerpReports] = useState<BronSerpReport[]>([]);
+  const [isLoadingHistorical, setIsLoadingHistorical] = useState(false);
+  
   // Initialize metricsLoading as a Set of keyword keys that are ACTUALLY being fetched
   // This allows us to show "loading" only on keywords without cached metrics
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
@@ -399,11 +405,49 @@ export const BRONKeywordsTab = memo(({
     };
   }, []);
 
+  // Use historical SERP reports if a historical date is selected, otherwise use current
+  const activeSerpReports = selectedHistoryReportId && historicalSerpReports.length > 0
+    ? historicalSerpReports
+    : serpReports;
+
   // Merge keywords with SERP data
   const mergedKeywords = useMemo(() => 
-    mergeKeywordsWithSerp(keywords, serpReports), 
-    [keywords, serpReports]
+    mergeKeywordsWithSerp(keywords, activeSerpReports), 
+    [keywords, activeSerpReports]
   );
+  
+  // Handler for selecting historical report
+  const handleSelectHistoricalReport = useCallback(async (reportId: string | number | null) => {
+    setSelectedHistoryReportId(reportId);
+    
+    if (!reportId) {
+      // Clear historical data - revert to current
+      setHistoricalSerpReports([]);
+      return;
+    }
+    
+    if (!selectedDomain || !onFetchSerpDetail) return;
+    
+    setIsLoadingHistorical(true);
+    try {
+      const data = await onFetchSerpDetail(selectedDomain, String(reportId));
+      setHistoricalSerpReports(data || []);
+    } catch (err) {
+      console.error('Failed to fetch historical SERP data:', err);
+      toast.error('Failed to load historical rankings');
+      setHistoricalSerpReports([]);
+    } finally {
+      setIsLoadingHistorical(false);
+    }
+  }, [selectedDomain, onFetchSerpDetail]);
+  
+  // Reset historical selection when domain changes
+  useEffect(() => {
+    if (isDomainChanging) {
+      setSelectedHistoryReportId(null);
+      setHistoricalSerpReports([]);
+    }
+  }, [isDomainChanging]);
 
   // Filter keywords
   const filteredKeywords = useMemo(() => {
@@ -858,6 +902,11 @@ export const BRONKeywordsTab = memo(({
               {selectedDomain && (
                 <Badge variant="secondary" className="text-xs ml-2">{selectedDomain}</Badge>
               )}
+              {selectedHistoryReportId && (
+                <Badge className="text-xs ml-2 bg-violet-500/20 text-violet-300 border-violet-500/30">
+                  Historical View
+                </Badge>
+              )}
             </CardTitle>
             <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
               <span>Total: <strong className="text-foreground">{mergedKeywords.length}</strong></span>
@@ -865,9 +914,26 @@ export const BRONKeywordsTab = memo(({
               <span>With Content: <strong className="text-emerald-400">{contentKeywords.length}</strong></span>
               <span>•</span>
               <span>Tracking Only: <strong className="text-amber-400">{trackingKeywords.length}</strong></span>
+              {selectedHistoryReportId && historicalSerpReports.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span>Rankings from: <strong className="text-violet-400">{historicalSerpReports.length} keywords</strong></span>
+                </>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Historical Date Selector */}
+            {serpHistory.length > 0 && selectedDomain && (
+              <BronHistoryDateSelector
+                serpHistory={serpHistory}
+                selectedReportId={selectedHistoryReportId}
+                onSelectReport={handleSelectHistoricalReport}
+                isLoading={isLoadingHistorical}
+                disabled={isLoading}
+              />
+            )}
+            
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -935,7 +1001,7 @@ export const BRONKeywordsTab = memo(({
                   <KeywordListItem
                     key={cluster.parentId}
                     cluster={cluster}
-                    serpReports={serpReports}
+                    serpReports={activeSerpReports}
                     keywordMetrics={keywordMetrics}
                     pageSpeedScores={pageSpeedScores}
                     linksIn={linksIn}
