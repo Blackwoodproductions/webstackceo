@@ -654,103 +654,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
       <AIMetricsAnimation title="Analyzing Keywords" />
 
 
-      {/* Row 1: Scheduler, Quick Actions, Account Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        {/* Scheduler Card */}
-        <SectionCard title="Scheduler" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Scheduler Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Enabled</span>
-              </div>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Next Generation</p>
-              <p className="text-lg font-bold mt-0.5">11 hrs, 26 mins, 5 sec</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Generation Frequency</p>
-              <p className="font-semibold mt-0.5">12hrs</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Articles Per Batch</p>
-              <p className="font-semibold mt-0.5">1 article(s)</p>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Quick Actions Card */}
-        <SectionCard title="Quick Actions" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Schedule Content Now</p>
-              <Select value={scheduleCount} onValueChange={setScheduleCount}>
-                <SelectTrigger className="bg-background/60 border-border/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 Article(s)</SelectItem>
-                  <SelectItem value="2">2 Article(s)</SelectItem>
-                  <SelectItem value="3">3 Article(s)</SelectItem>
-                  <SelectItem value="5">5 Article(s)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button 
-              onClick={handleScheduleNow}
-              disabled={isScheduling}
-              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
-            >
-              {isScheduling ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Scheduling...
-                </>
-              ) : (
-                "Schedule Now"
-              )}
-            </Button>
-            
-            <p className="text-xs text-muted-foreground text-center">
-              Remaining this week: <span className="text-foreground font-semibold">2 of 2 articles</span>
-            </p>
-          </div>
-        </SectionCard>
-
-        {/* Account Status Card */}
-        <SectionCard title="Account Status" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Service Type</p>
-              <p className="text-lg font-bold mt-0.5">{account.serviceType}</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">User</p>
-              <p className="font-semibold mt-0.5">{domainContext?.business_name || domain || "—"}</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
-              <p className="text-muted-foreground mt-0.5">{domainContext?.email || account.email || "—"}</p>
-            </div>
-            
-            <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-              Authenticated
-              <CheckCircle2 className="w-3.5 h-3.5 ml-1.5" />
-            </Badge>
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* Row 2: Website Crawl + Live Activity Side by Side */}
+      {/* Row 1: Website Crawl + Live Activity Side by Side */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         
         {/* Website Crawl Card - 2 columns */}
@@ -1018,6 +922,102 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
             </div>
           </SectionCard>
         </div>
+      </div>
+
+      {/* Row 2: Scheduler, Quick Actions, Account Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        {/* Scheduler Card */}
+        <SectionCard title="Scheduler" accentColor="cyan">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Scheduler Status</p>
+              <div className="flex items-center gap-2 mt-1">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-400 font-medium">Enabled</span>
+              </div>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Next Generation</p>
+              <p className="text-lg font-bold mt-0.5">11 hrs, 26 mins, 5 sec</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Generation Frequency</p>
+              <p className="font-semibold mt-0.5">12hrs</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Articles Per Batch</p>
+              <p className="font-semibold mt-0.5">1 article(s)</p>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Quick Actions Card */}
+        <SectionCard title="Quick Actions" accentColor="cyan">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Schedule Content Now</p>
+              <Select value={scheduleCount} onValueChange={setScheduleCount}>
+                <SelectTrigger className="bg-background/60 border-border/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Article(s)</SelectItem>
+                  <SelectItem value="2">2 Article(s)</SelectItem>
+                  <SelectItem value="3">3 Article(s)</SelectItem>
+                  <SelectItem value="5">5 Article(s)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button 
+              onClick={handleScheduleNow}
+              disabled={isScheduling}
+              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
+            >
+              {isScheduling ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Scheduling...
+                </>
+              ) : (
+                "Schedule Now"
+              )}
+            </Button>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              Remaining this week: <span className="text-foreground font-semibold">2 of 2 articles</span>
+            </p>
+          </div>
+        </SectionCard>
+
+        {/* Account Status Card */}
+        <SectionCard title="Account Status" accentColor="cyan">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Service Type</p>
+              <p className="text-lg font-bold mt-0.5">{account.serviceType}</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">User</p>
+              <p className="font-semibold mt-0.5">{domainContext?.business_name || domain || "—"}</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
+              <p className="text-muted-foreground mt-0.5">{domainContext?.email || account.email || "—"}</p>
+            </div>
+            
+            <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+              Authenticated
+              <CheckCircle2 className="w-3.5 h-3.5 ml-1.5" />
+            </Badge>
+          </div>
+        </SectionCard>
       </div>
 
       {/* Row 3: Content Management */}
