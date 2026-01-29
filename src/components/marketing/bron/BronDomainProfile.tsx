@@ -312,72 +312,37 @@ export const BronDomainProfile = memo(({
                 )}
               </div>
 
-              <div className="grid grid-cols-5 gap-0 h-[calc(100%-36px)]">
-                {/* Business Info - 3 cols */}
-                <div className="col-span-3 p-3 space-y-2.5 border-r border-cyan-500/20 overflow-hidden">
-                  {/* Business Name & Description */}
-                  <div>
-                    <h4 className="font-semibold text-sm mb-1">
-                      {domainContext?.business_name || domainInfo?.wr_name || selectedDomain}
-                    </h4>
-                    {domainContext?.short_description ? (
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                        {domainContext.short_description}
-                      </p>
-                    ) : domainInfo?.wr_address ? (
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {domainInfo.wr_address}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  {/* Services */}
-                  {domainContext?.services_offered && domainContext.services_offered.length > 0 && (
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Services</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {domainContext.services_offered.slice(0, 4).map((service, i) => (
-                          <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/50 border-border/50">
-                            {service}
-                          </Badge>
-                        ))}
-                        {domainContext.services_offered.length > 4 && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/50 border-border/50 text-muted-foreground">
-                            +{domainContext.services_offered.length - 4}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+              <div className="grid grid-cols-7 gap-0 h-[calc(100%-36px)]">
+                {/* Business Info - 2 cols (compact) */}
+                <div className="col-span-2 p-3 space-y-2 border-r border-cyan-500/20 overflow-hidden">
+                  {/* Business Name */}
+                  <h4 className="font-semibold text-sm leading-tight">
+                    {domainContext?.business_name || domainInfo?.wr_name || selectedDomain}
+                  </h4>
+                  
+                  {/* Address */}
+                  {(domainContext?.business_address || domainInfo?.wr_address) && (
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      {domainContext?.business_address || domainInfo?.wr_address}
+                    </p>
                   )}
 
-                  {/* USP or Contact */}
-                  {domainContext?.unique_selling_points ? (
-                    <div className="pt-1 border-t border-border/30">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Unique Value</span>
-                      </div>
-                      <p className="text-xs text-foreground/80 line-clamp-2 leading-relaxed">
-                        {domainContext.unique_selling_points}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="pt-1 border-t border-border/30 space-y-1">
-                      {(domainContext?.phone_number || domainInfo?.wr_phone) && (
-                        <p className="text-xs text-muted-foreground">
-                          📞 {domainContext?.phone_number || domainInfo?.wr_phone}
-                        </p>
-                      )}
-                      <a 
-                        href={`https://${selectedDomain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-cyan-400 hover:underline block"
-                      >
-                        🌐 {selectedDomain}
-                      </a>
-                    </div>
+                  {/* Phone */}
+                  {(domainContext?.phone_number || domainInfo?.wr_phone) && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span>📞</span> {domainContext?.phone_number || domainInfo?.wr_phone}
+                    </p>
                   )}
+                  
+                  {/* Website */}
+                  <a 
+                    href={`https://${selectedDomain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-cyan-400 hover:underline flex items-center gap-1.5"
+                  >
+                    <span>🌐</span> {selectedDomain}
+                  </a>
 
                   {/* Social Media Icons */}
                   {hasSocialLinks && (
@@ -426,8 +391,8 @@ export const BronDomainProfile = memo(({
                   )}
                 </div>
 
-                {/* Google Maps - 2 cols */}
-                <div className="col-span-2">
+                {/* Google Maps - 5 cols (larger) */}
+                <div className="col-span-5">
                   <BronCachedMap address={domainContext?.business_address || domainInfo?.wr_address} domain={selectedDomain} />
                 </div>
               </div>
