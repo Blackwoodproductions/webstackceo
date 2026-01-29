@@ -3595,14 +3595,14 @@ f.parentNode.insertBefore(j,f);
               </motion.div>
             )}
 
-            {/* How It Works Section - Auto-shown, collapsed by default for active users */}
-            <Collapsible defaultOpen={true}>
-              <CollapsibleTrigger className="flex items-center gap-2 text-lg font-semibold mb-4 hover:text-primary transition-colors group w-full">
-                <ChevronDown className="w-5 h-5 transition-transform group-data-[state=open]:rotate-180" />
+            {/* How It Works Section - Minimized by default */}
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium py-2 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group w-full">
+                <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
                 How CADE Works
-                <Badge variant="outline" className="ml-2 text-[10px] text-violet-500 border-violet-500/30">Learn More</Badge>
+                <Badge variant="outline" className="ml-auto text-[10px] text-violet-500 border-violet-500/30">Learn More</Badge>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-6">
+              <CollapsibleContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                   {[
                     { 
