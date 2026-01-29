@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { 
-  Loader2, ChevronDown, MapPin, Camera,
+  Loader2, ChevronDown, MapPin, Camera, Brain,
   Facebook, Linkedin, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { BronDomain } from "@/hooks/use-bron-api";
 import { BronCachedMap } from "./BronCachedMap";
 import { useDomainContext } from "@/hooks/use-domain-context";
 import { DomainContextDialog } from "../cade/DomainContextDialog";
+import { toast } from "sonner";
 
 interface BronDomainProfileProps {
   selectedDomain: string;
@@ -75,6 +76,8 @@ export const BronDomainProfile = memo(({
   // Domain context hook for progress
   const {
     fetchContext: fetchDomainContext,
+    autoFillContext,
+    autoFilling,
     filledCount: domainContextFilledCount,
     totalFields: domainContextTotalFields,
     progressPercent: domainContextProgress,
@@ -86,6 +89,22 @@ export const BronDomainProfile = memo(({
       fetchDomainContext();
     }
   }, [selectedDomain, fetchDomainContext]);
+
+  // Handle click on domain info - auto-fill if 0%, otherwise open dialog
+  const handleDomainInfoClick = async () => {
+    if (domainContextFilledCount === 0 && !autoFilling) {
+      // Auto-fill with AI immediately
+      const success = await autoFillContext();
+      if (success) {
+        toast.success("Website analyzed! Domain info has been auto-filled.");
+      } else {
+        toast.error("Failed to auto-fill. Click again to edit manually.");
+      }
+    } else {
+      // Open dialog to edit
+      setDomainContextOpen(true);
+    }
+  };
   
   // Check if any social links exist
   const hasSocialLinks = !!(
@@ -181,31 +200,42 @@ export const BronDomainProfile = memo(({
             <div className="space-y-3 w-full">
               <InfoRow label="Domain Info">
                 <button
-                  onClick={() => setDomainContextOpen(true)}
-                  className="flex-1 cursor-pointer"
+                  onClick={handleDomainInfoClick}
+                  disabled={autoFilling}
+                  className="flex-1 cursor-pointer disabled:cursor-wait"
                 >
                   <div 
-                    className="p-2.5 rounded-lg border transition-all duration-200
+                    className={`p-2.5 rounded-lg border transition-all duration-200
                       bg-secondary/30 border-cyan-500/20
                       hover:bg-cyan-500/10 hover:border-cyan-500/40
-                      shadow-[0_0_10px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+                      shadow-[0_0_10px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]
+                      ${autoFilling ? "animate-pulse" : ""}`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium">{domainContextFilledCount}/{domainContextTotalFields}</span>
+                      {autoFilling ? (
+                        <div className="flex items-center gap-2">
+                          <Brain className="w-4 h-4 text-cyan-400 animate-pulse" />
+                          <span className="text-sm font-medium text-cyan-400">Analyzing...</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium">{domainContextFilledCount}/{domainContextTotalFields}</span>
+                      )}
                       <Badge 
                         variant="secondary" 
                         className={`text-xs ${
-                          domainContextProgress >= 80
+                          autoFilling
+                            ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                            : domainContextProgress >= 80
                             ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                             : domainContextProgress >= 50
                             ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
                             : "bg-red-500/10 text-red-400 border-red-500/30"
                         }`}
                       >
-                        {domainContextProgress}%
+                        {autoFilling ? "AI" : `${domainContextProgress}%`}
                       </Badge>
                     </div>
-                    <Progress value={domainContextProgress} className="h-2" />
+                    <Progress value={autoFilling ? 50 : domainContextProgress} className="h-2" />
                   </div>
                 </button>
               </InfoRow>
