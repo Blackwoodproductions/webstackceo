@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type CadeTaskType = "CRAWL" | "CATEGORIZATION" | "CSS" | "CONTENT" | "UNKNOWN";
@@ -19,6 +19,7 @@ export interface CadeEventTask {
   message?: string;
   error?: string;
   created_at?: string;
+  updated_at?: string; // Track the most recent update
   // Extended data from raw_payload
   categories?: string[];
   description?: string;
@@ -28,6 +29,19 @@ export interface CadeEventTask {
   tier?: string;
   domain_id?: string;
   analyze_css?: boolean;
+}
+
+export interface CadeTaskStats {
+  total: number;
+  active: number;
+  completed: number;
+  failed: number;
+  byType: {
+    crawl: number;
+    categorization: number;
+    css: number;
+    content: number;
+  };
 }
 
 const parseTypeFromStatus = (status?: string): CadeTaskType => {
@@ -181,6 +195,29 @@ export function useCadeEventTasks(domain?: string) {
     };
   }, [tasks]);
 
+  // Calculate task statistics
+  const stats = useMemo((): CadeTaskStats => {
+    const isActive = (s: string) => 
+      ["running", "processing", "pending", "queued", "in_progress"].includes(s.toLowerCase());
+    const isCompleted = (s: string) => 
+      ["completed", "done", "success"].includes(s.toLowerCase());
+    const isFailed = (s: string) => 
+      ["failed", "error"].includes(s.toLowerCase());
+
+    return {
+      total: tasks.length,
+      active: tasks.filter(t => isActive(t.statusValue)).length,
+      completed: tasks.filter(t => isCompleted(t.statusValue)).length,
+      failed: tasks.filter(t => isFailed(t.statusValue)).length,
+      byType: {
+        crawl: byType.crawl.length,
+        categorization: byType.categorization.length,
+        css: byType.css.length,
+        content: byType.content.length,
+      },
+    };
+  }, [tasks, byType]);
+
   // Latest completed categorization (has description/categories)
   const latestCategorization = useMemo(() => {
     return byType.categorization.find(
@@ -188,10 +225,29 @@ export function useCadeEventTasks(domain?: string) {
     );
   }, [byType.categorization]);
 
+  // Check if any tasks are currently active
+  const hasActiveTasks = useMemo(() => stats.active > 0, [stats.active]);
+
+  // Get the most recent active task per type
+  const activeTasksByType = useMemo(() => {
+    const isActive = (s: string) => 
+      ["running", "processing", "pending", "queued", "in_progress"].includes(s.toLowerCase());
+    
+    return {
+      crawl: byType.crawl.find(t => isActive(t.statusValue)),
+      categorization: byType.categorization.find(t => isActive(t.statusValue)),
+      css: byType.css.find(t => isActive(t.statusValue)),
+      content: byType.content.find(t => isActive(t.statusValue)),
+    };
+  }, [byType]);
+
   return {
     tasks,
     byType,
+    stats,
     latestCategorization,
+    hasActiveTasks,
+    activeTasksByType,
     isLoading,
     error,
     refresh: fetchTasks,
