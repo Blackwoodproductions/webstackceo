@@ -21,7 +21,6 @@ import {
 import { toast } from "sonner";
 import {
   DomainContext,
-  useDomainContext,
   TOTAL_FIELDS,
   calculateFilledCount,
 } from "@/hooks/use-domain-context";
@@ -30,6 +29,15 @@ interface DomainContextDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   domain: string;
+  // Pass context state and callbacks from parent
+  context: DomainContext | null;
+  loading: boolean;
+  saving: boolean;
+  autoFilling: boolean;
+  onUpdateContext: (updates: Partial<DomainContext>) => Promise<boolean>;
+  onAutoFillContext: () => Promise<boolean>;
+  filledCount: number;
+  progressPercent: number;
 }
 
 // Group fields by category for better UX
@@ -117,32 +125,24 @@ const FIELD_GROUPS = {
 
 type FieldGroupKey = keyof typeof FIELD_GROUPS;
 
-export function DomainContextDialog({ open, onOpenChange, domain }: DomainContextDialogProps) {
-  const {
-    context,
-    setContext,
-    loading,
-    saving,
-    autoFilling,
-    fetchContext,
-    updateContext,
-    autoFillContext,
-    hasAutoFilled,
-    filledCount,
-    progressPercent,
-  } = useDomainContext(domain);
+export function DomainContextDialog({ 
+  open, 
+  onOpenChange, 
+  domain,
+  context,
+  loading,
+  saving,
+  autoFilling,
+  onUpdateContext,
+  onAutoFillContext,
+  filledCount,
+  progressPercent,
+}: DomainContextDialogProps) {
 
   const [formData, setFormData] = useState<Partial<DomainContext>>({});
   const [activeTab, setActiveTab] = useState<FieldGroupKey>("business");
 
-  // Fetch on open
-  useEffect(() => {
-    if (open && domain) {
-      fetchContext();
-    }
-  }, [open, domain, fetchContext]);
-
-  // Sync form with context
+  // Sync form with context whenever context changes (including after auto-fill)
   useEffect(() => {
     if (context) {
       setFormData(context);
@@ -151,7 +151,7 @@ export function DomainContextDialog({ open, onOpenChange, domain }: DomainContex
 
   // Handle recrawl
   const handleRecrawl = async () => {
-    const success = await autoFillContext();
+    const success = await onAutoFillContext();
     if (success) {
       toast.success("Website re-analyzed! Fields have been updated.");
     } else {
@@ -173,7 +173,7 @@ export function DomainContextDialog({ open, onOpenChange, domain }: DomainContex
   };
 
   const handleSave = async () => {
-    const success = await updateContext(formData);
+    const success = await onUpdateContext(formData);
     if (success) {
       toast.success("Domain context saved successfully!");
       onOpenChange(false);

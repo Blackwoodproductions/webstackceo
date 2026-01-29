@@ -131,9 +131,15 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
   const [isScheduling, setIsScheduling] = useState(false);
   const [domainContextOpen, setDomainContextOpen] = useState(false);
 
-  // Domain context hook for progress
+  // Domain context hook for progress - shared with dialog
   const {
+    context: domainContext,
+    loading: domainContextLoading,
+    saving: domainContextSaving,
+    autoFilling: domainContextAutoFilling,
     fetchContext: fetchDomainContext,
+    updateContext: updateDomainContext,
+    autoFillContext: autoFillDomainContext,
     filledCount: domainContextFilledCount,
     totalFields: domainContextTotalFields,
     progressPercent: domainContextProgress,
@@ -833,6 +839,14 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
             }
           }}
           domain={domain}
+          context={domainContext}
+          loading={domainContextLoading}
+          saving={domainContextSaving}
+          autoFilling={domainContextAutoFilling}
+          onUpdateContext={updateDomainContext}
+          onAutoFillContext={autoFillDomainContext}
+          filledCount={domainContextFilledCount}
+          progressPercent={domainContextProgress}
         />
       )}
     </motion.div>
