@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
@@ -122,9 +123,8 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
   const [faqs, setFaqs] = useState<FAQItem[]>(cachedData?.faqs as FAQItem[] || []);
   
   // Section collapse states
-  const [contentOpen, setContentOpen] = useState(true);
-  const [faqsOpen, setFaqsOpen] = useState(true);
   const [systemOpen, setSystemOpen] = useState(false);
+  const [libraryTab, setLibraryTab] = useState("content");
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
     try {
@@ -426,7 +426,61 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
         </Card>
       </div>
 
-      {/* Crawl Control & Live Tasks - Primary Action Area */}
+      {/* Content & FAQ Libraries - Tabbed at Top */}
+      {domain && (
+        <Card className="border-violet-500/20">
+          <Tabs value={libraryTab} onValueChange={setLibraryTab} className="w-full">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <TabsList className="bg-muted/50 h-8">
+                  <TabsTrigger value="content" className="text-xs gap-1.5 h-7 px-3 data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
+                    <FileText className="w-3.5 h-3.5" />
+                    Content ({domainProfile?.content_count ?? 0})
+                  </TabsTrigger>
+                  <TabsTrigger value="faqs" className="text-xs gap-1.5 h-7 px-3 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    FAQs ({faqs.length})
+                  </TabsTrigger>
+                </TabsList>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => {
+                    if (libraryTab === "content") {
+                      toast.info("Generate article feature coming soon");
+                    } else {
+                      toast.info("Generate FAQ feature coming soon");
+                    }
+                  }}
+                >
+                  <PlusCircle className="w-3 h-3" />
+                  New
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <TabsContent value="content" className="mt-0">
+                <CADEContentManager 
+                  domain={domain} 
+                  onRefresh={handleRefresh}
+                  isCompact={true}
+                />
+              </TabsContent>
+              <TabsContent value="faqs" className="mt-0">
+                <CADEFAQManager 
+                  domain={domain}
+                  initialFaqs={faqs}
+                  onRefresh={handleRefresh}
+                  isCompact={true}
+                />
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
+      )}
+
+      {/* Crawl Control & Live Tasks - Below Libraries */}
       {domain && (
         <CADECrawlControl
           domain={domain}
@@ -442,113 +496,6 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
           onRefresh={handleRefresh}
           isCollapsed={true}
         />
-      )}
-
-      {/* Content Library Section */}
-      {domain && (
-        <Collapsible open={contentOpen} onOpenChange={setContentOpen}>
-          <Card className="border-violet-500/20">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-violet-500" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">Content Library</CardTitle>
-                      <CardDescription className="text-xs">
-                        {domainProfile?.content_count ?? 0} articles generated
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.info("Generate article feature coming soon");
-                      }}
-                    >
-                      <PlusCircle className="w-3 h-3" />
-                      New
-                    </Button>
-                    {contentOpen ? (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <CADEContentManager 
-                  domain={domain} 
-                  onRefresh={handleRefresh}
-                  isCompact={true}
-                />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      )}
-
-      {/* FAQ Library Section */}
-      {domain && (
-        <Collapsible open={faqsOpen} onOpenChange={setFaqsOpen}>
-          <Card className="border-cyan-500/20">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                      <HelpCircle className="w-4 h-4 text-cyan-500" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">FAQ Library</CardTitle>
-                      <CardDescription className="text-xs">
-                        {faqs.length} FAQs created
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.info("Generate FAQ feature coming soon");
-                      }}
-                    >
-                      <PlusCircle className="w-3 h-3" />
-                      New
-                    </Button>
-                    {faqsOpen ? (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <CADEFAQManager 
-                  domain={domain}
-                  initialFaqs={faqs}
-                  onRefresh={handleRefresh}
-                  isCompact={true}
-                />
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
       )}
 
       {/* Quick Actions Bar */}
