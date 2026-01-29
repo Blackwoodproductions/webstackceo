@@ -64,19 +64,20 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://qwnzenimkwtuaqnrcygb.supabase.co";
         const callbackUrl = `${supabaseUrl}/functions/v1/cade-crawl-callback`;
         
-        // Generate a request_id for tracking
+        // user_id and request_id are tracking parameters passed from the dashboard
+        // These are used to correlate tasks and callbacks for monitoring
+        const userId = params?.user_id;
         const requestId = params?.request_id || `crawl-${domain}-${Date.now()}`;
-        const userId = params?.user_id || "system";
         
         postBody = JSON.stringify({ 
           domain, 
           callback_url: callbackUrl,
           request_id: requestId,
-          user_id: userId,
+          ...(userId && { user_id: userId }),
           max_pages: params?.max_pages || 50,
           ...params 
         });
-        console.log(`[CADE API] Crawl request with callback: ${callbackUrl}`);
+        console.log(`[CADE API] Crawl request: user_id=${userId}, request_id=${requestId}, callback=${callbackUrl}`);
         break;
       }
 
@@ -103,7 +104,7 @@ serve(async (req) => {
         endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
         break;
 
-      case "categorize-domain":
+      case "categorize-domain": {
         if (!domain) {
           return new Response(
             JSON.stringify({ error: "Domain is required for categorize-domain" }),
@@ -112,10 +113,26 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/domain/categorize-domain";
-        postBody = JSON.stringify({ domain, ...params });
+        
+        // Build callback URL for progress updates
+        const catSupabaseUrl = Deno.env.get("SUPABASE_URL") || "https://qwnzenimkwtuaqnrcygb.supabase.co";
+        const catCallbackUrl = `${catSupabaseUrl}/functions/v1/cade-crawl-callback`;
+        
+        const catUserId = params?.user_id;
+        const catRequestId = params?.request_id || `categorize-${domain}-${Date.now()}`;
+        
+        postBody = JSON.stringify({ 
+          domain, 
+          callback_url: catCallbackUrl,
+          request_id: catRequestId,
+          ...(catUserId && { user_id: catUserId }),
+          ...params 
+        });
+        console.log(`[CADE API] Categorize request: user_id=${catUserId}, request_id=${catRequestId}`);
         break;
+      }
 
-      case "analyze-css":
+      case "analyze-css": {
         if (!domain) {
           return new Response(
             JSON.stringify({ error: "Domain is required for analyze-css" }),
@@ -124,8 +141,19 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/domain/analyze-css";
-        postBody = JSON.stringify({ domain, ...params });
+        
+        const cssUserId = params?.user_id;
+        const cssRequestId = params?.request_id || `css-${domain}-${Date.now()}`;
+        
+        postBody = JSON.stringify({ 
+          domain, 
+          request_id: cssRequestId,
+          ...(cssUserId && { user_id: cssUserId }),
+          ...params 
+        });
+        console.log(`[CADE API] CSS analyze request: user_id=${cssUserId}, request_id=${cssRequestId}`);
         break;
+      }
 
       // === SUBSCRIPTION ENDPOINTS ===
       case "subscription":
