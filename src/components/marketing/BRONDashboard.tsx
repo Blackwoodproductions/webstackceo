@@ -3,7 +3,7 @@ import { Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { useBronApi, BronDomain } from "@/hooks/use-bron-api";
+import { useBronApi, BronDomain, type UseBronApiReturn } from "@/hooks/use-bron-api";
 import { BRONKeywordsTab } from "./BRONKeywordsTab";
 import { BRONDomainsTab } from "./BRONDomainsTab";
 import { BRONLinksTab } from "./BRONLinksTab";
@@ -23,6 +23,8 @@ import {
 // ─── Types ───
 interface BRONDashboardProps {
   selectedDomain?: string;
+  /** Optional: pass a pre-existing useBronApi() instance to prevent remounting on tab switch */
+  bronApiInstance?: UseBronApiReturn;
 }
 
 // ─── Constants ───
@@ -45,8 +47,10 @@ const hasCachedData = (): boolean => {
 };
 
 // ─── Main Component ───
-export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
-  const bronApi = useBronApi();
+export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDashboardProps) => {
+  // Use passed instance if available (prevents re-mount); otherwise fallback to local hook (compat).
+  const internalBronApi = useBronApi();
+  const bronApi = bronApiInstance ?? internalBronApi;
   const [activeTab, setActiveTab] = useState("keywords");
   
   // Check cache synchronously to determine initial state
