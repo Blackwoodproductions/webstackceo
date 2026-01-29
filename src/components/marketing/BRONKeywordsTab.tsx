@@ -26,6 +26,12 @@ import {
   mergeAndSaveKeywordMetricsCache,
 } from "@/lib/bronKeywordMetricsCache";
 
+import {
+  loadKeywordClustersIndexCache,
+  saveKeywordClustersIndexCache,
+  type KeywordClusterIndex,
+} from "@/lib/bronKeywordClustersCache";
+
 // Import modular components
 import {
   BronKeywordCard,
@@ -415,10 +421,43 @@ export const BRONKeywordsTab = memo(({
     if (cached && cached.domain === selectedDomain && cached.keywordIds === idSignature) {
       return cached.clusters;
     }
+
+    // Persistent cache: avoid the expensive groupKeywords() pass on hard refresh
+    // by reusing the previously computed cluster structure (IDs only).
+    if (selectedDomain && idSignature) {
+      const cachedIndex = loadKeywordClustersIndexCache(selectedDomain, idSignature);
+      if (cachedIndex && cachedIndex.length > 0) {
+        const byId = new Map<string | number, BronKeyword>();
+        for (const kw of filteredKeywords) byId.set(kw.id, kw);
+
+        const reconstructed = cachedIndex
+          .map((c) => {
+            const parent = byId.get(c.parentId);
+            if (!parent) return null;
+            const children = c.childIds
+              .map((id) => byId.get(id))
+              .filter(Boolean) as BronKeyword[];
+            return { parent, children, parentId: c.parentId };
+          })
+          .filter(Boolean) as ReturnType<typeof groupKeywords>;
+
+        clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters: reconstructed };
+        return reconstructed;
+      }
+    }
     
     // Recompute clusters
     const clusters = groupKeywords(filteredKeywords, selectedDomain);
     clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters };
+
+    // Save a minimal cluster index for next hard refresh (IDs only, not full keyword objects)
+    if (selectedDomain && idSignature) {
+      const index: KeywordClusterIndex = clusters.map((c) => ({
+        parentId: c.parentId,
+        childIds: c.children.map((ch) => ch.id),
+      }));
+      saveKeywordClustersIndexCache(selectedDomain, idSignature, index);
+    }
     return clusters;
   }, [filteredKeywords, selectedDomain]);
 
