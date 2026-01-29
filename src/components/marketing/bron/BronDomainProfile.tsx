@@ -77,10 +77,13 @@ export const BronDomainProfile = memo(({
 }: BronDomainProfileProps) => {
   const [domainContextOpen, setDomainContextOpen] = useState(false);
   
-  // Domain context hook for progress
+  // Domain context hook for progress - share with dialog
   const {
     context: domainContext,
+    loading: domainContextLoading,
+    saving: domainContextSaving,
     fetchContext: fetchDomainContext,
+    updateContext: updateDomainContext,
     autoFillContext,
     autoFilling,
     filledCount: domainContextFilledCount,
@@ -445,6 +448,14 @@ export const BronDomainProfile = memo(({
             }
           }}
           domain={selectedDomain}
+          context={domainContext}
+          loading={domainContextLoading}
+          saving={domainContextSaving}
+          autoFilling={autoFilling}
+          onUpdateContext={updateDomainContext}
+          onAutoFillContext={autoFillContext}
+          filledCount={domainContextFilledCount}
+          progressPercent={domainContextProgress}
         />
       )}
     </Card>
