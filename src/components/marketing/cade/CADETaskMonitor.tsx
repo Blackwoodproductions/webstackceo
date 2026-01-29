@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Activity, Clock, CheckCircle2, XCircle, Loader2, RefreshCw,
-  ChevronDown, ChevronUp, Globe, Target, FileText
+  ChevronDown, ChevronUp, Globe, Target, FileText, Palette,
+  Link2, Hash, MapPin, Languages, Info, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,22 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
-
-// ─── Types ───
-interface EventBackedTask {
-  id: string;
-  domain: string;
-  status: string;
-  request_id?: string;
-  target_request_id?: string;
-  user_id?: string;
-  progress?: number;
-  pages_crawled?: number;
-  total_pages?: number;
-  created_at?: string;
-  error?: string;
-}
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCadeEventTasks, CadeEventTask } from "@/hooks/use-cade-event-tasks";
 
 interface CADETaskMonitorProps {
   domain?: string;
@@ -34,7 +21,6 @@ interface CADETaskMonitorProps {
   onToggleCollapse?: () => void;
 }
 
-// ─── Component ───
 export const CADETaskMonitor = ({ 
   domain, 
   onRefresh,
@@ -42,56 +28,50 @@ export const CADETaskMonitor = ({
   onToggleCollapse
 }: CADETaskMonitorProps) => {
   const { byType, isLoading, error, refresh } = useCadeEventTasks(domain);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
-  const crawlTasks: EventBackedTask[] = useMemo(() => byType.crawl, [byType.crawl]);
-  const categorizationTasks: EventBackedTask[] = useMemo(() => byType.categorization, [byType.categorization]);
-  const contentTasks: EventBackedTask[] = useMemo(() => byType.content, [byType.content]);
+  const crawlTasks = useMemo(() => byType.crawl, [byType.crawl]);
+  const categorizationTasks = useMemo(() => byType.categorization, [byType.categorization]);
+  const contentTasks = useMemo(() => byType.content, [byType.content]);
+  const cssTasks = useMemo(() => byType.css, [byType.css]);
 
   const handleRefresh = () => {
     refresh();
     onRefresh?.();
   };
 
-  const getStatusIcon = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-      case "done":
-      case "success":
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case "processing":
-      case "running":
-      case "in_progress":
-        return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-      case "pending":
-      case "queued":
-        return <Clock className="w-4 h-4 text-amber-500" />;
-      case "failed":
-      case "error":
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Activity className="w-4 h-4 text-muted-foreground" />;
+  const getStatusIcon = (statusValue?: string) => {
+    const s = (statusValue || "").toLowerCase();
+    if (s === "completed" || s === "done" || s === "success") {
+      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
     }
+    if (s === "processing" || s === "running" || s === "in_progress") {
+      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+    }
+    if (s === "pending" || s === "queued") {
+      return <Clock className="w-4 h-4 text-amber-500" />;
+    }
+    if (s === "failed" || s === "error") {
+      return <XCircle className="w-4 h-4 text-red-500" />;
+    }
+    return <Activity className="w-4 h-4 text-muted-foreground" />;
   };
 
-  const getStatusBadgeClass = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-      case "done":
-      case "success":
-        return "bg-green-500/15 text-green-600 border-green-500/30";
-      case "processing":
-      case "running":
-      case "in_progress":
-        return "bg-blue-500/15 text-blue-600 border-blue-500/30";
-      case "pending":
-      case "queued":
-        return "bg-amber-500/15 text-amber-600 border-amber-500/30";
-      case "failed":
-      case "error":
-        return "bg-red-500/15 text-red-600 border-red-500/30";
-      default:
-        return "bg-muted text-muted-foreground";
+  const getStatusBadgeClass = (statusValue?: string) => {
+    const s = (statusValue || "").toLowerCase();
+    if (s === "completed" || s === "done" || s === "success") {
+      return "bg-green-500/15 text-green-600 border-green-500/30";
     }
+    if (s === "processing" || s === "running" || s === "in_progress") {
+      return "bg-blue-500/15 text-blue-600 border-blue-500/30";
+    }
+    if (s === "pending" || s === "queued") {
+      return "bg-amber-500/15 text-amber-600 border-amber-500/30";
+    }
+    if (s === "failed" || s === "error") {
+      return "bg-red-500/15 text-red-600 border-red-500/30";
+    }
+    return "bg-muted text-muted-foreground";
   };
 
   const formatDate = (date?: string) => {
@@ -99,11 +79,41 @@ export const CADETaskMonitor = ({
     return new Date(date).toLocaleString();
   };
 
-  const totalActiveTasks = 
-    crawlTasks.filter(t => t.status.toLowerCase().includes("running") || t.status.toLowerCase().includes("processing") || t.status.toLowerCase().includes("pending") || t.status.toLowerCase().includes("queued")).length +
-    categorizationTasks.filter(t => t.status.toLowerCase().includes("running") || t.status.toLowerCase().includes("processing") || t.status.toLowerCase().includes("pending") || t.status.toLowerCase().includes("queued")).length;
+  const isActiveStatus = (statusValue: string) => {
+    const s = statusValue.toLowerCase();
+    return s.includes("processing") || s.includes("pending") || s.includes("running") || s.includes("queued");
+  };
 
-  const totalTasks = crawlTasks.length + categorizationTasks.length + contentTasks.length;
+  const totalActiveTasks = 
+    crawlTasks.filter(t => isActiveStatus(t.statusValue)).length +
+    categorizationTasks.filter(t => isActiveStatus(t.statusValue)).length +
+    cssTasks.filter(t => isActiveStatus(t.statusValue)).length;
+
+  const totalTasks = crawlTasks.length + categorizationTasks.length + contentTasks.length + cssTasks.length;
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "crawl": return <Globe className="w-4 h-4" />;
+      case "categorization": return <Target className="w-4 h-4" />;
+      case "content": return <FileText className="w-4 h-4" />;
+      case "css": return <Palette className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "crawl": return "Crawl";
+      case "categorization": return "Categorization";
+      case "content": return "Content";
+      case "css": return "CSS Analysis";
+      default: return type;
+    }
+  };
+
+  const toggleExpand = (taskId: string) => {
+    setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
+  };
 
   return (
     <Card className="border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5">
@@ -154,7 +164,7 @@ export const CADETaskMonitor = ({
             {isLoading && totalTasks === 0 ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+                  <div key={i} className="h-20 bg-muted/50 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : totalTasks === 0 ? (
@@ -164,73 +174,63 @@ export const CADETaskMonitor = ({
                 <p className="text-xs mt-1">Start a crawl to see tasks here</p>
               </div>
             ) : (
-              <ScrollArea className="h-[300px]">
+              <ScrollArea className="h-[400px]">
                 <div className="space-y-4">
                   {/* Crawl Tasks */}
-                  {crawlTasks.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-muted-foreground">
-                        <Globe className="w-4 h-4" />
-                        Crawl Tasks ({crawlTasks.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {crawlTasks.map((task, idx) => (
-                          <TaskRow
-                            key={task.id || idx}
-                            task={task}
-                            type="crawl"
-                            getStatusIcon={getStatusIcon}
-                            getStatusBadgeClass={getStatusBadgeClass}
-                            formatDate={formatDate}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <TaskSection
+                    title="Crawl Tasks"
+                    icon={<Globe className="w-4 h-4" />}
+                    tasks={crawlTasks}
+                    type="crawl"
+                    expandedTaskId={expandedTaskId}
+                    onToggleExpand={toggleExpand}
+                    getStatusIcon={getStatusIcon}
+                    getStatusBadgeClass={getStatusBadgeClass}
+                    formatDate={formatDate}
+                    isActiveStatus={isActiveStatus}
+                  />
 
                   {/* Categorization Tasks */}
-                  {categorizationTasks.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-muted-foreground">
-                        <Target className="w-4 h-4" />
-                        Categorization Tasks ({categorizationTasks.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {categorizationTasks.map((task, idx) => (
-                          <TaskRow
-                            key={task.id || idx}
-                            task={task}
-                            type="categorization"
-                            getStatusIcon={getStatusIcon}
-                            getStatusBadgeClass={getStatusBadgeClass}
-                            formatDate={formatDate}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <TaskSection
+                    title="Categorization Tasks"
+                    icon={<Target className="w-4 h-4" />}
+                    tasks={categorizationTasks}
+                    type="categorization"
+                    expandedTaskId={expandedTaskId}
+                    onToggleExpand={toggleExpand}
+                    getStatusIcon={getStatusIcon}
+                    getStatusBadgeClass={getStatusBadgeClass}
+                    formatDate={formatDate}
+                    isActiveStatus={isActiveStatus}
+                  />
+
+                  {/* CSS Tasks */}
+                  <TaskSection
+                    title="CSS Analysis Tasks"
+                    icon={<Palette className="w-4 h-4" />}
+                    tasks={cssTasks}
+                    type="css"
+                    expandedTaskId={expandedTaskId}
+                    onToggleExpand={toggleExpand}
+                    getStatusIcon={getStatusIcon}
+                    getStatusBadgeClass={getStatusBadgeClass}
+                    formatDate={formatDate}
+                    isActiveStatus={isActiveStatus}
+                  />
 
                   {/* Content Tasks */}
-                  {contentTasks.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-muted-foreground">
-                        <FileText className="w-4 h-4" />
-                        Content Tasks ({contentTasks.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {contentTasks.map((task, idx) => (
-                          <TaskRow
-                            key={task.id || idx}
-                            task={task}
-                            type="content"
-                            getStatusIcon={getStatusIcon}
-                            getStatusBadgeClass={getStatusBadgeClass}
-                            formatDate={formatDate}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <TaskSection
+                    title="Content Tasks"
+                    icon={<FileText className="w-4 h-4" />}
+                    tasks={contentTasks}
+                    type="content"
+                    expandedTaskId={expandedTaskId}
+                    onToggleExpand={toggleExpand}
+                    getStatusIcon={getStatusIcon}
+                    getStatusBadgeClass={getStatusBadgeClass}
+                    formatDate={formatDate}
+                    isActiveStatus={isActiveStatus}
+                  />
                 </div>
               </ScrollArea>
             )}
@@ -241,65 +241,258 @@ export const CADETaskMonitor = ({
   );
 };
 
-// ─── Task Row Component ───
-interface TaskRowProps {
-  task: EventBackedTask;
-  type: "crawl" | "categorization" | "content";
+// ─── Task Section Component ───
+interface TaskSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  tasks: CadeEventTask[];
+  type: string;
+  expandedTaskId: string | null;
+  onToggleExpand: (id: string) => void;
   getStatusIcon: (status?: string) => React.ReactNode;
   getStatusBadgeClass: (status?: string) => string;
   formatDate: (date?: string) => string;
+  isActiveStatus: (status: string) => boolean;
 }
 
-const TaskRow = ({ task, type, getStatusIcon, getStatusBadgeClass, formatDate }: TaskRowProps) => {
-  const statusLower = (task.status || "").toLowerCase();
-  const isActive =
-    statusLower.includes("processing") ||
-    statusLower.includes("pending") ||
-    statusLower.includes("running") ||
-    statusLower.includes("queued");
+const TaskSection = ({
+  title,
+  icon,
+  tasks,
+  type,
+  expandedTaskId,
+  onToggleExpand,
+  getStatusIcon,
+  getStatusBadgeClass,
+  formatDate,
+  isActiveStatus,
+}: TaskSectionProps) => {
+  if (tasks.length === 0) return null;
+
+  return (
+    <div>
+      <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-muted-foreground">
+        {icon}
+        {title} ({tasks.length})
+      </h4>
+      <div className="space-y-2">
+        {tasks.map((task, idx) => (
+          <TaskRow
+            key={task.id || idx}
+            task={task}
+            type={type}
+            isExpanded={expandedTaskId === task.id}
+            onToggleExpand={() => onToggleExpand(task.id)}
+            getStatusIcon={getStatusIcon}
+            getStatusBadgeClass={getStatusBadgeClass}
+            formatDate={formatDate}
+            isActiveStatus={isActiveStatus}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Task Row Component ───
+interface TaskRowProps {
+  task: CadeEventTask;
+  type: string;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  getStatusIcon: (status?: string) => React.ReactNode;
+  getStatusBadgeClass: (status?: string) => string;
+  formatDate: (date?: string) => string;
+  isActiveStatus: (status: string) => boolean;
+}
+
+const TaskRow = ({ 
+  task, 
+  type, 
+  isExpanded, 
+  onToggleExpand, 
+  getStatusIcon, 
+  getStatusBadgeClass, 
+  formatDate,
+  isActiveStatus 
+}: TaskRowProps) => {
+  const isActive = isActiveStatus(task.statusValue);
+  const hasExtendedInfo = task.message || task.categories || task.description || task.request_id || task.current_url;
   
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className="p-3 rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 transition-colors"
+      className="rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 transition-colors overflow-hidden"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          {getStatusIcon(task.status)}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-sm truncate">
-                {task.domain || "Unknown"}
-              </span>
-              <Badge className={`text-xs ${getStatusBadgeClass(task.status)}`}>
-                {task.status}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-              {type === "crawl" && task.pages_crawled !== undefined && (
-                <span>{task.pages_crawled} / {task.total_pages || "?"} pages</span>
-              )}
-              <span>{formatDate(task.created_at)}</span>
+      {/* Main row - clickable to expand */}
+      <div 
+        className={`p-3 ${hasExtendedInfo ? "cursor-pointer" : ""}`}
+        onClick={hasExtendedInfo ? onToggleExpand : undefined}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {getStatusIcon(task.statusValue)}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-sm truncate">
+                  {task.domain || "Unknown"}
+                </span>
+                <Badge className={`text-xs ${getStatusBadgeClass(task.statusValue)}`}>
+                  {task.statusValue}
+                </Badge>
+                {task.tier && (
+                  <Badge variant="outline" className="text-xs">
+                    {task.tier}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                {type === "crawl" && task.pages_crawled !== undefined && (
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    {task.pages_crawled} / {task.total_pages || "?"} pages
+                  </span>
+                )}
+                {task.current_url && isActive && (
+                  <span className="flex items-center gap-1 truncate max-w-[200px]">
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    {task.current_url}
+                  </span>
+                )}
+                {task.message && (
+                  <span className="flex items-center gap-1 truncate max-w-[250px]">
+                    <Info className="w-3 h-3 flex-shrink-0" />
+                    {task.message}
+                  </span>
+                )}
+                <span>{formatDate(task.created_at)}</span>
+              </div>
             </div>
           </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Progress for crawl tasks */}
+            {type === "crawl" && task.progress !== undefined && isActive && (
+              <div className="w-20">
+                <Progress value={task.progress} className="h-1.5" />
+              </div>
+            )}
+            {hasExtendedInfo && (
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+            )}
+          </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Progress for crawl tasks */}
-          {type === "crawl" && task.progress !== undefined && isActive && (
-            <div className="w-20">
-              <Progress value={task.progress} className="h-1.5" />
-            </div>
-          )}
-        </div>
+
+        {/* Error message */}
+        {task.error && (
+          <div className="mt-2 p-2 rounded bg-red-500/10 text-xs text-red-400">
+            {task.error}
+          </div>
+        )}
       </div>
 
-      {/* Error message */}
-      {task.error && (
-        <div className="mt-2 p-2 rounded bg-red-500/10 text-xs text-red-400">
-          {task.error}
-        </div>
+      {/* Expanded details */}
+      {isExpanded && hasExtendedInfo && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="border-t border-border bg-muted/20"
+        >
+          <div className="p-3 space-y-3 text-xs">
+            {/* Tracking IDs */}
+            <div className="flex flex-wrap gap-2">
+              {task.request_id && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="font-mono text-[10px] gap-1">
+                        <Hash className="w-3 h-3" />
+                        {task.request_id.slice(0, 20)}...
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-mono text-xs">request_id: {task.request_id}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {task.target_request_id && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="font-mono text-[10px] gap-1">
+                        <Link2 className="w-3 h-3" />
+                        {task.target_request_id.slice(0, 20)}...
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-mono text-xs">target_request_id: {task.target_request_id}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {task.domain_id && (
+                <Badge variant="outline" className="font-mono text-[10px] gap-1">
+                  domain_id: {task.domain_id.slice(0, 8)}...
+                </Badge>
+              )}
+            </div>
+
+            {/* Categories */}
+            {task.categories && task.categories.length > 0 && (
+              <div>
+                <span className="text-muted-foreground">Categories:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {task.categories.map((cat, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px]">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Metadata row */}
+            <div className="flex flex-wrap gap-3 text-muted-foreground">
+              {task.country && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {task.country.toUpperCase()}
+                </span>
+              )}
+              {task.language && (
+                <span className="flex items-center gap-1">
+                  <Languages className="w-3 h-3" />
+                  {task.language.toUpperCase()}
+                </span>
+              )}
+              {task.analyze_css !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Palette className="w-3 h-3" />
+                  CSS: {task.analyze_css ? "Yes" : "No"}
+                </span>
+              )}
+            </div>
+
+            {/* Competitors */}
+            {task.competitors && (
+              <div>
+                <span className="text-muted-foreground">Competitors:</span>
+                <p className="mt-1 text-foreground">{task.competitors}</p>
+              </div>
+            )}
+
+            {/* Description */}
+            {task.description && (
+              <div>
+                <span className="text-muted-foreground">Description:</span>
+                <p className="mt-1 text-foreground line-clamp-4">{task.description}</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
       )}
     </motion.div>
   );
