@@ -117,6 +117,7 @@ interface CADEApiDashboardProps {
   domain?: string;
 }
 
+// CADE Dashboard v2 - Consolidated view
 export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const { fetchSubscription } = useBronApi();
   
