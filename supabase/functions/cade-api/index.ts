@@ -310,9 +310,15 @@ serve(async (req) => {
 
     const url = `${CADE_API_BASE}${endpoint}`;
     console.log(`[CADE API] Fetching: ${method} ${url}`);
+    
+    // Debug: Log key format (first 8 chars) to verify it's being picked up
+    console.log(`[CADE API] Using API key starting with: ${apiKey.substring(0, 8)}...`);
 
+    // Try both header formats - some APIs prefer lowercase
     const headers: Record<string, string> = {
       "X-API-Key": apiKey,
+      "x-api-key": apiKey,
+      "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
