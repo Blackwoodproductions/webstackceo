@@ -657,116 +657,59 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
             <p className="text-white/70 text-sm">AI-Powered content generation and SEO Optimization</p>
           </div>
           
-          {/* Center: Website Connections - Full Width */}
+          {/* Center: Platform Connection Cards - Full Width */}
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center gap-6 px-8 py-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shadow-[0_0_20px_rgba(255,255,255,0.05)] min-w-[500px]">
-              <span className="text-sm text-white/70 uppercase tracking-widest font-medium">Connections</span>
-              <div className="w-px h-10 bg-white/20" />
-              <div className="flex items-center gap-4">
-                {/* Facebook */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('facebook')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('facebook'))
-                      ? 'bg-[#1877F2]/20 hover:bg-[#1877F2]/40 shadow-[0_0_20px_rgba(24,119,242,0.3)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" fill="#1877F2" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            <div className="grid grid-cols-4 gap-3 w-full max-w-3xl">
+              {/* WordPress */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-sky-400 flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.158 12.786l-2.698 7.84c.806.236 1.657.365 2.54.365 1.047 0 2.051-.18 2.986-.51a.485.485 0 01-.042-.08l-2.786-7.615zm-4.358-3.25c.043-.32.072-.664.072-1.035 0-.823-.154-1.416-.293-1.879-.181-.597-.376-1.1-.376-1.699 0-.667.506-1.286 1.22-1.286.032 0 .062.004.093.006A8.967 8.967 0 003.91 7.95l.096.002c.784 0 2-.095 2-.095.405-.024.452.571.048.618 0 0-.407.048-.859.071l2.735 8.137 1.643-4.928-1.169-3.209c-.405-.023-.788-.071-.788-.071-.405-.024-.357-.642.048-.618 0 0 1.24.095 1.976.095.784 0 2-.095 2-.095.405-.024.452.571.048.618 0 0-.407.048-.86.071l2.716 8.073.75-2.504zM12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm6.157 9.984c0 .71-.263 1.515-.607 2.649l-2.433 7.028c2.367-1.38 3.959-3.945 3.959-6.877 0-1.396-.361-2.709-.993-3.852.047.332.074.692.074 1.052z"/>
                   </svg>
-                </a>
-                {/* Instagram */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('instagram')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('instagram'))
-                      ? 'bg-gradient-to-br from-[#F58529]/20 via-[#DD2A7B]/20 to-[#8134AF]/20 hover:from-[#F58529]/40 hover:via-[#DD2A7B]/40 hover:to-[#8134AF]/40 shadow-[0_0_20px_rgba(221,42,123,0.3)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24">
-                    <defs>
-                      <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#F58529"/>
-                        <stop offset="50%" stopColor="#DD2A7B"/>
-                        <stop offset="100%" stopColor="#8134AF"/>
-                      </linearGradient>
-                    </defs>
-                    <path fill="url(#instagram-gradient)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-white font-medium text-sm">WordPress</span>
+                  <p className="text-white/50 text-xs truncate">Auto-publish posts</p>
+                </div>
+              </div>
+              
+              {/* Shopify */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-400 flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.756c-.022-.142-.153-.239-.294-.253-.143-.013-3.139-.232-3.139-.232s-2.075-2.013-2.298-2.236c-.224-.224-.663-.156-.832-.106-.024.007-.426.131-.902.281-.488-.158-1.073-.326-1.737-.49-.498-1.527-1.378-2.857-2.919-2.857-.084 0-.17.006-.259.019C7.168.243 6.786 0 6.333 0c-1.988 0-2.937 2.485-3.235 3.749-.929.288-1.59.492-1.675.52-.507.159-.523.175-.589.654-.049.357-1.398 10.771-1.398 10.771l11.166 2.096zM9.167 8.085v-.234c0-.766-.021-1.351-.056-1.808.429.054.853.143 1.269.266-.249.813-.648 1.529-1.213 1.776zM8.066 2.797c.05-.006.099-.011.148-.011.431 0 .767.202 1.011.607.003.014.006.029.008.043-.359-.108-.731-.208-1.115-.297a4.69 4.69 0 01-.052-.342zm.89 2.154c-.32-.098-.653-.189-.996-.272a6.65 6.65 0 01.252-.869c.219-.538.548-.96 1.087-1.023-.135.599-.258 1.405-.343 2.164z"/>
                   </svg>
-                </a>
-                {/* LinkedIn */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('linkedin')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('linkedin'))
-                      ? 'bg-[#0A66C2]/20 hover:bg-[#0A66C2]/40 shadow-[0_0_20px_rgba(10,102,194,0.3)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" fill="#0A66C2" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-white font-medium text-sm">Shopify</span>
+                  <p className="text-white/50 text-xs truncate">Product content</p>
+                </div>
+              </div>
+              
+              {/* Wix */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4.2 7.998c-.458 0-.807.246-.974.59-.114.233-.149.434-.177.745l-.708 8.25s-.025.267-.133.433c-.107.166-.3.284-.57.284-.32 0-.538-.168-.63-.345-.087-.172-.11-.393-.11-.393L0 7.998h2.4l.35 4.084s.023.261.11.393c.092.177.31.345.63.345.27 0 .463-.118.57-.284.108-.166.133-.433.133-.433l.35-4.084h1.8l.35 4.084s.025.267.133.433c.107.166.3.284.57.284.32 0 .538-.168.63-.345.087-.132.11-.393.11-.393l.35-4.084H10l-.898 9.564s-.023.221-.11.393c-.092.177-.31.345-.63.345-.27 0-.463-.118-.57-.284-.108-.166-.133-.433-.133-.433l-.708-8.25c-.028-.311-.063-.512-.177-.745-.167-.344-.516-.59-.974-.59-.46 0-.807.246-.974.59-.114.233-.149.434-.177.745l-.708 8.25s-.025.267-.133.433c-.107.166-.3.284-.57.284z"/>
                   </svg>
-                </a>
-                {/* Twitter/X */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('twitter') || l.includes('x.com')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('twitter') || l.includes('x.com'))
-                      ? 'bg-white/20 hover:bg-white/40 shadow-[0_0_20px_rgba(255,255,255,0.2)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" fill="white" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-white font-medium text-sm">Wix</span>
+                  <p className="text-white/50 text-xs truncate">Dynamic pages</p>
+                </div>
+              </div>
+              
+              {/* Lovable */}
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-400 flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
                   </svg>
-                </a>
-                {/* YouTube */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('youtube')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('youtube'))
-                      ? 'bg-[#FF0000]/20 hover:bg-[#FF0000]/40 shadow-[0_0_20px_rgba(255,0,0,0.3)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" fill="#FF0000" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                </a>
-                {/* TikTok */}
-                <a 
-                  href={domainContext?.social_links?.find((l: string) => l.includes('tiktok')) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                    domainContext?.social_links?.some((l: string) => l.includes('tiktok'))
-                      ? 'bg-white/20 hover:bg-white/40 shadow-[0_0_20px_rgba(255,255,255,0.2)]'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24">
-                    <defs>
-                      <linearGradient id="tiktok-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#69C9D0"/>
-                        <stop offset="50%" stopColor="#EE1D52"/>
-                        <stop offset="100%" stopColor="#EE1D52"/>
-                      </linearGradient>
-                    </defs>
-                    <path fill="url(#tiktok-gradient)" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
-                  </svg>
-                </a>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-white font-medium text-sm">Lovable</span>
+                  <p className="text-white/50 text-xs truncate">Real-time stream</p>
+                </div>
               </div>
             </div>
           </div>
