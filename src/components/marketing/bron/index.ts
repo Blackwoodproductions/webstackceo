@@ -5,4 +5,5 @@ export { BronCitationAnalytics } from "./BronCitationAnalytics";
 export { BronCachedMap } from "./BronCachedMap";
 export { BronDomainProfile } from "./BronDomainProfile";
 export { BronKeywordsInfoCards, InfoCard } from "./BronInfoCards";
+export { extractKeywordFromLink } from "./CitationLinksTable";
 export * from "./utils";
