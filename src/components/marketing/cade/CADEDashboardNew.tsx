@@ -10,11 +10,6 @@ import { useDomainContext } from "@/hooks/use-domain-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -655,19 +650,10 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </div>
       </div>
 
-      {/* AI Search Metrics - Collapsible, open by default */}
-      <Collapsible defaultOpen className="space-y-0">
-        <div className="flex items-center justify-between mb-2">
-          <CollapsibleTrigger className="flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity">
-            <Search className="w-4 h-4 text-primary" />
-            <h4 className="text-lg font-semibold">AI Search Metrics</h4>
-            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-          <AIMetricsAnimation title="" />
-        </CollapsibleContent>
-      </Collapsible>
+      {/* AI Search Metrics - Only show while loading */}
+      {isLoading && (
+        <AIMetricsAnimation title="Analyzing Content Data" />
+      )}
 
 
       {/* Row 1: Website Crawl + Live Activity Side by Side */}
