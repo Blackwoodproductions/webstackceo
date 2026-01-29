@@ -285,7 +285,7 @@ export const BronDomainProfile = memo(({
                 </div>
 
                 {/* Google Maps */}
-                <BronCachedMap address={domainInfo?.wr_address} />
+                <BronCachedMap address={domainInfo?.wr_address} domain={selectedDomain} />
               </div>
             </div>
           </div>
