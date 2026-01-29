@@ -1088,7 +1088,23 @@ export const BRONKeywordsTab = memo(({
           </div>
         )}
         
-        <CardContent className={compactMode ? "px-4 py-2" : ""}>
+        <CardContent className={`relative ${compactMode ? "px-4 py-2" : ""}`}>
+          {/* Loading Historical Data Overlay */}
+          {isLoadingHistorical && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+              <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-card/90 border border-violet-500/30 shadow-lg">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full border-3 border-violet-500/20 border-t-violet-500 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-violet-400 animate-spin" style={{ animationDirection: 'reverse' }} />
+                  </div>
+                </div>
+                <p className="text-sm font-medium text-foreground">Loading Historical Rankings</p>
+                <p className="text-xs text-muted-foreground">Fetching report data...</p>
+              </div>
+            </div>
+          )}
+          
           {!selectedDomain ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
