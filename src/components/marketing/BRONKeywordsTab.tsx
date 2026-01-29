@@ -45,6 +45,7 @@ import {
   BronHistoryDateSelector,
   BronQuickFilters,
   QuickFilterType,
+  BronClusterCard,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -70,221 +71,6 @@ interface InitialPositions {
   bing: number | null;
   yahoo: number | null;
 }
-
-// Memoized keyword list item wrapper
-// IMPORTANT: Expansion should only re-render the affected cluster, not the entire list.
-const KeywordListItem = memo(({
-  cluster,
-  serpReports,
-  keywordMetrics,
-  pageSpeedScores,
-  linksIn,
-  linksOut,
-  selectedDomain,
-  expandedIds,
-  initialPositions,
-  metricsLoadingKeys,
-  inlineEditForms,
-  savingIds,
-  compactMode,
-  onToggleExpand,
-  onUpdateForm,
-  onSave,
-  onOpenArticleEditor,
-  onToggleLink,
-}: {
-  cluster: { parent: BronKeyword; children: BronKeyword[]; parentId: number | string };
-  serpReports: BronSerpReport[];
-  keywordMetrics: Record<string, KeywordMetrics>;
-  pageSpeedScores: Record<string, PageSpeedScore>;
-  linksIn: BronLink[];
-  linksOut: BronLink[];
-  selectedDomain?: string;
-  expandedIds: Set<number | string>;
-  initialPositions: Record<string, InitialPositions>;
-  metricsLoadingKeys: Set<string>;
-  inlineEditForms: Record<string | number, Record<string, string>>;
-  savingIds: Set<number | string>;
-  compactMode?: boolean;
-  onToggleExpand: (kw: BronKeyword) => void;
-  onUpdateForm: (id: number | string, field: string, value: string) => void;
-  onSave: (kw: BronKeyword) => void;
-  onOpenArticleEditor: (kw: BronKeyword) => void;
-  onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
-}) => {
-  const renderKeyword = (kw: BronKeyword, isNested = false, isMainKeyword = false, clusterChildCount?: number) => {
-    const keywordText = getKeywordDisplayText(kw);
-    const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
-    const serpData = findSerpForKeyword(keywordText, serpReports);
-    const isExpanded = expandedIds.has(kw.id);
-    
-    // Filter links for this specific keyword
-    const { keywordLinksIn, keywordLinksOut } = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
-    
-    // Calculate movements
-    const initial = initialPositions[keywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
-    const currentGoogle = getPosition(serpData?.google);
-    const currentBing = getPosition(serpData?.bing);
-    const currentYahoo = getPosition(serpData?.yahoo);
-    
-    const googleMovement = initial.google && currentGoogle ? initial.google - currentGoogle : 0;
-    const bingMovement = initial.bing && currentBing ? initial.bing - currentBing : 0;
-    const yahooMovement = initial.yahoo && currentYahoo ? initial.yahoo - currentYahoo : 0;
-    
-    // Get PageSpeed URL
-    let keywordUrl = kw.linkouturl;
-    if (!keywordUrl && selectedDomain && !isTrackingOnly) {
-      const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      keywordUrl = `https://${selectedDomain}/${slug}`;
-    }
-    const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
-    
-    return (
-      <div 
-        key={kw.id} 
-        className="no-theme-transition"
-        style={{ contain: 'layout style' }}
-        data-no-theme-transition
-      >
-        <BronKeywordCard
-          keyword={kw}
-          serpData={serpData}
-          keywordMetrics={keywordMetrics[keywordText.toLowerCase()]}
-          pageSpeedScore={pageSpeed}
-          linksInCount={keywordLinksIn.length}
-          linksOutCount={keywordLinksOut.length}
-          isExpanded={isExpanded}
-          isNested={isNested}
-          isTrackingOnly={isTrackingOnly}
-          isMainKeyword={isMainKeyword}
-          clusterChildCount={clusterChildCount}
-          selectedDomain={selectedDomain}
-          googleMovement={googleMovement}
-          bingMovement={bingMovement}
-          yahooMovement={yahooMovement}
-          metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
-          onToggleExpand={() => onToggleExpand(kw)}
-        />
-        
-        {/* Expanded content - only render when expanded AND form is ready */}
-        {isExpanded && inlineEditForms[kw.id] && (
-          <div style={{ contain: 'layout style paint' }}>
-            <BronKeywordExpanded
-              keyword={kw}
-              isTrackingOnly={isTrackingOnly}
-              selectedDomain={selectedDomain}
-              linksIn={keywordLinksIn}
-              linksOut={keywordLinksOut}
-              formData={inlineEditForms[kw.id] as any}
-              isSaving={savingIds.has(kw.id)}
-              onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}
-              onSave={() => onSave(kw)}
-              onOpenArticleEditor={() => onOpenArticleEditor(kw)}
-              onToggleLink={onToggleLink}
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div style={{ contain: 'layout style paint' }}>
-      {/* Parent keyword: isNested=false, isMainKeyword=true if has children */}
-      {renderKeyword(cluster.parent, false, cluster.children.length > 0, cluster.children.length)}
-      {cluster.children.length > 0 && (
-        <div style={{ contain: 'layout style' }}>
-          {/* Child keywords: isNested=true, isMainKeyword=false */}
-          {cluster.children.map(child => renderKeyword(child, true, false))}
-        </div>
-      )}
-    </div>
-  );
-}, (prev, next) => {
-  // Custom compare: ignore Set/object identity changes and only re-render when
-  // the expansion/saving/form state for IDs in THIS cluster changes.
-  // Cluster identity: compare by parent + child IDs, not object reference
-  if (prev.cluster.parentId !== next.cluster.parentId) return false;
-  if (prev.cluster.parent.id !== next.cluster.parent.id) return false;
-  if (prev.cluster.children.length !== next.cluster.children.length) return false;
-  for (let i = 0; i < prev.cluster.children.length; i++) {
-    if (prev.cluster.children[i].id !== next.cluster.children[i].id) return false;
-  }
-  if (prev.selectedDomain !== next.selectedDomain) return false;
-  // For metricsLoadingKeys, compare whether any keyword in THIS cluster is loading
-  // This is done below in the per-keyword loop
-
-  // Data references: if these change, re-render (they affect counts/metrics/UI)
-  if (prev.serpReports !== next.serpReports) return false;
-  if (prev.linksIn !== next.linksIn) return false;
-  if (prev.linksOut !== next.linksOut) return false;
-  if (prev.initialPositions !== next.initialPositions) return false;
-
-  const ids: Array<string | number> = [
-    prev.cluster.parent.id,
-    ...prev.cluster.children.map((c) => c.id),
-  ];
-
-  // Only re-render a cluster when metrics/pagespeed for keywords IN THIS CLUSTER change.
-  // This prevents full-list repaint “glitching” as background fetches update unrelated rows.
-  const getUrlForKeyword = (kw: BronKeyword, domain?: string) => {
-    const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
-    if (kw.linkouturl) return kw.linkouturl;
-    if (!domain || isTrackingOnly) return null;
-    const text = getKeywordDisplayText(kw);
-    const slug = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    return `https://${domain}/${slug}`;
-  };
-
-  const compareMetricsForKw = (kw: BronKeyword) => {
-    const key = getKeywordDisplayText(kw).toLowerCase();
-    const a = prev.keywordMetrics[key];
-    const b = next.keywordMetrics[key];
-    return (
-      (a?.cpc ?? null) === (b?.cpc ?? null) &&
-      (a?.competition ?? null) === (b?.competition ?? null) &&
-      (a?.competition_level ?? null) === (b?.competition_level ?? null) &&
-      (a?.search_volume ?? null) === (b?.search_volume ?? null)
-    );
-  };
-
-  const comparePageSpeedForKw = (kw: BronKeyword) => {
-    const url = getUrlForKeyword(kw, prev.selectedDomain);
-    const url2 = getUrlForKeyword(kw, next.selectedDomain);
-    // If URL changes, we must re-render (different score source)
-    if (url !== url2) return false;
-    if (!url) return true;
-    const a = prev.pageSpeedScores[url];
-    const b = next.pageSpeedScores[url];
-    return (
-      (a?.mobileScore ?? 0) === (b?.mobileScore ?? 0) &&
-      (a?.desktopScore ?? 0) === (b?.desktopScore ?? 0) &&
-      (a?.loading ?? false) === (b?.loading ?? false) &&
-      (a?.updating ?? false) === (b?.updating ?? false) &&
-      (a?.error ?? false) === (b?.error ?? false)
-    );
-  };
-
-  // Compare per-keyword subset values
-  const kws: BronKeyword[] = [prev.cluster.parent, ...prev.cluster.children];
-  for (const kw of kws) {
-    if (!compareMetricsForKw(kw)) return false;
-    if (!comparePageSpeedForKw(kw)) return false;
-    
-    // Check if loading state changed for this keyword
-    const kwText = getKeywordDisplayText(kw).toLowerCase();
-    if (prev.metricsLoadingKeys.has(kwText) !== next.metricsLoadingKeys.has(kwText)) return false;
-  }
-
-  for (const id of ids) {
-    if (prev.expandedIds.has(id) !== next.expandedIds.has(id)) return false;
-    if ((prev.inlineEditForms as any)[id] !== (next.inlineEditForms as any)[id]) return false;
-    if (prev.savingIds.has(id) !== next.savingIds.has(id)) return false;
-  }
-
-  return true;
-});
-KeywordListItem.displayName = 'KeywordListItem';
 
 // Main component
 export const BRONKeywordsTab = memo(({
@@ -1122,13 +908,13 @@ export const BRONKeywordsTab = memo(({
             // Fallback static skeleton
             <BronKeywordSkeletonList count={5} />
           ) : (
-            <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
+            <div className="no-theme-transition space-y-3" data-no-theme-transition style={{ contain: 'layout style' }}>
               {/* Column Headers Row - extracted to shared component */}
               <BronKeywordTableHeader />
               {/* Keyword list with containment for scroll performance */}
-              <div style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+              <div className="space-y-4" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
                 {displayClusters.map((cluster) => (
-                  <KeywordListItem
+                  <BronClusterCard
                     key={cluster.parentId}
                     cluster={cluster}
                     serpReports={activeSerpReports}

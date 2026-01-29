@@ -10,4 +10,5 @@ export { BronKeywordSkeleton, BronKeywordTableHeader, BronKeywordSkeletonList, B
 export { BronHistoryDateSelector } from "./BronHistoryDateSelector";
 export { BronQuickFilters } from "./BronQuickFilters";
 export type { QuickFilterType } from "./BronQuickFilters";
+export { BronClusterCard } from "./BronClusterCard";
 export * from "./utils";
