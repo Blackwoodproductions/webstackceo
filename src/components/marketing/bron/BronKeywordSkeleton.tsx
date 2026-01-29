@@ -1,9 +1,11 @@
 import { memo } from "react";
 import { Brain, Sparkles, Search, TrendingUp, Globe, Link2, Target, BarChart3, Zap, Activity, Database, CheckCircle2 } from "lucide-react";
+import { AIMetricsAnimation } from "@/components/ui/ai-metrics-animation";
 
 /**
  * AI-themed loading animation for keyword analysis with detailed metrics display
  * Uses CSS animations only (no JS timers) for performance
+ * @deprecated Use AIMetricsAnimation from ui/ai-metrics-animation instead
  */
 export const BronAILoadingAnimation = memo(() => (
   <div 
@@ -383,11 +385,11 @@ BronKeywordTableHeader.displayName = 'BronKeywordTableHeader';
  */
 export const BronKeywordSkeletonList = memo(({ count = 8 }: { count?: number }) => (
   <div style={{ contain: 'layout style paint' }}>
-    {/* AI Animation hero */}
-    <BronAILoadingAnimation />
+    {/* AI Animation hero - using shared component for consistency with CADE */}
+    <AIMetricsAnimation title="Analyzing Keywords" />
     
     {/* Faded skeleton rows below for context */}
-    <div className="space-y-2 opacity-40">
+    <div className="space-y-2 opacity-40 mt-4">
       <BronKeywordTableHeader />
       {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
         <BronKeywordSkeleton key={i} index={i} />
