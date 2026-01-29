@@ -313,59 +313,33 @@ export const BRONKeywordsTab = memo(({
   // Use a ref to persist the last valid cluster count during domain transitions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
   const lastValidClusterCountRef = useRef<number>(0);
-  
-  // Transition timeout: prevent "No keywords found" flash during domain switch/hydration
-  // The UI should show "Loading..." for at least this long after a domain change.
-  const TRANSITION_TIMEOUT_MS = 3000;
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const transitionTimerRef = useRef<number | null>(null);
+  // Track if we're still waiting for initial data load from parent (prevents premature "no keywords")
+  const hasEverReceivedDataRef = useRef(false);
   
   // Update last valid count when we have actual data
   useEffect(() => {
     if (keywords.length > 0) {
       lastValidClusterCountRef.current = keywords.length;
-      // Data arrived - cancel transition timer and mark as done
-      setIsTransitioning(false);
-      if (transitionTimerRef.current) {
-        window.clearTimeout(transitionTimerRef.current);
-        transitionTimerRef.current = null;
-      }
+      hasEverReceivedDataRef.current = true;
     }
   }, [keywords.length]);
   
-  // Derive "has data" - consider we have data if either:
-  // 1. Current keywords array has items, OR
-  // 2. We had data before and are just transitioning (prevents flash)
-  // BUT: if we're in a transition period, always show loading
-  const hasReceivedData = !isTransitioning && (keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0));
+  // Derive "has data" - ONLY consider data "received" if:
+  // 1. We actually have keywords now, OR
+  // 2. We're the same domain and previously had keywords AND not still loading
+  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
+  const hasReceivedData = keywords.length > 0 || 
+    (!isLoading && hasEverReceivedDataRef.current && prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
   
-  // Reset the last valid count when domain actually changes and start transition timer
+  // Reset the last valid count when domain actually changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       // Only reset if we're switching to a truly different domain
       lastValidClusterCountRef.current = 0;
+      hasEverReceivedDataRef.current = false;
       prevDomainRef.current = selectedDomain;
-      
-      // Start transition: show loading for a grace period
-      setIsTransitioning(true);
-      if (transitionTimerRef.current) {
-        window.clearTimeout(transitionTimerRef.current);
-      }
-      transitionTimerRef.current = window.setTimeout(() => {
-        setIsTransitioning(false);
-        transitionTimerRef.current = null;
-      }, TRANSITION_TIMEOUT_MS);
     }
   }, [selectedDomain]);
-  
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (transitionTimerRef.current) {
-        window.clearTimeout(transitionTimerRef.current);
-      }
-    };
-  }, []);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
