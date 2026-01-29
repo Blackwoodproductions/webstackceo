@@ -575,10 +575,20 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
         toast.success(`${contentType} generation started!`);
         fetchAllData();
       } else {
-        toast.error(res?.error || "Failed to start content generation");
+        const errMsg = res?.error || "";
+        if (errMsg.toLowerCase().includes("wordpress") || errMsg.toLowerCase().includes("username") || errMsg.toLowerCase().includes("password")) {
+          toast.error("Please connect your WordPress platform first before generating content");
+        } else {
+          toast.error(errMsg || "Failed to start content generation");
+        }
       }
-    } catch (err) {
-      toast.error("Failed to generate content");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "";
+      if (errMsg.toLowerCase().includes("wordpress") || errMsg.toLowerCase().includes("username") || errMsg.toLowerCase().includes("password")) {
+        toast.error("Please connect your WordPress platform first before generating content");
+      } else {
+        toast.error("Failed to generate content");
+      }
     } finally {
       setGeneratingContent(null);
     }
