@@ -407,8 +407,11 @@ export const BronDomainProfile = memo(({
                 </div>
 
                 {/* Google Maps - 5 cols (larger) */}
-                <div className="col-span-5">
-                  <BronCachedMap address={domainContext?.business_address || domainInfo?.wr_address} domain={selectedDomain} />
+                <div className="col-span-5 h-full min-h-[220px]">
+                  <BronCachedMap
+                    address={domainContext?.business_address || domainInfo?.wr_address}
+                    domain={selectedDomain}
+                  />
                 </div>
               </div>
             </div>

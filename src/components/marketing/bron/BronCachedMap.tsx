@@ -42,7 +42,7 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
 
   if (!address || !embedUrl) {
     return (
-      <div className="relative min-h-[140px] w-full h-full bg-muted/30 flex items-center justify-center">
+      <div className="relative w-full h-full min-h-[220px] bg-muted/30 flex items-center justify-center">
         <MapPin className="w-8 h-8 text-muted-foreground/30" />
       </div>
     );
@@ -50,18 +50,18 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
 
   return (
     <div 
-      className="relative min-h-[140px]" 
+      className="relative w-full h-full min-h-[220px]" 
       style={{ contain: 'layout paint' }}
     >
       <iframe
         key={mapKey}
         src={embedUrl}
-        className="w-full h-full border-0"
+        className="absolute inset-0 w-full h-full border-0"
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
         title="Business Location"
         style={{ 
-          minHeight: '140px',
+          minHeight: '220px',
           // Prevent any transform/animation interference
           transform: 'translateZ(0)',
           willChange: 'auto'
