@@ -26,6 +26,7 @@ interface BronKeywordExpandedProps {
   onUpdateForm: (field: string, value: string) => void;
   onSave: () => void;
   onOpenArticleEditor: () => void;
+  onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
 }
 
 // Helper functions
@@ -59,6 +60,7 @@ export const BronKeywordExpanded = memo(({
   onUpdateForm,
   onSave,
   onOpenArticleEditor,
+  onToggleLink,
 }: BronKeywordExpandedProps) => {
   const keywordText = getKeywordDisplayText(kw);
   const wordCount = getWordCount(formData.resfeedtext);
@@ -109,10 +111,12 @@ export const BronKeywordExpanded = memo(({
         keywordText={keywordText}
         linksIn={linksIn}
         linksOut={linksOut}
+        domain={selectedDomain}
         wordCount={wordCount}
         isSaving={isSaving}
         onSave={onSave}
         onOpenArticleEditor={onOpenArticleEditor}
+        onToggleLink={onToggleLink}
       />
     </div>
   );

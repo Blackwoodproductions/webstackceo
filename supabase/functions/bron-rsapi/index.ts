@@ -396,6 +396,73 @@ serve(async (req) => {
         break;
       }
 
+      // ========== LINK MANAGEMENT ==========
+      case "updateLink": {
+        // Update a link's properties (e.g., disabled status)
+        // BRON API uses /links/{link_id} with PATCH
+        if (!data?.link_id) {
+          return new Response(
+            JSON.stringify({ error: "link_id is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const linkId = data.link_id;
+        const updateData = { ...data };
+        delete updateData.link_id; // Remove from body, it goes in URL
+        
+        console.log(`BRON API - Updating link ${linkId} with data:`, updateData);
+        response = await bronApiRequest(`/links/${linkId}`, "PATCH", updateData);
+        result = await readResponseBody(response);
+        break;
+      }
+
+      case "toggleLink": {
+        // Toggle link enabled/disabled status
+        // BRON API expects: disabled = "yes" | "no"
+        if (!data?.link_id) {
+          return new Response(
+            JSON.stringify({ error: "link_id is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const toggleLinkId = data.link_id;
+        const currentDisabled = data.current_disabled === "yes";
+        const newDisabled = currentDisabled ? "no" : "yes";
+        
+        console.log(`BRON API - Toggling link ${toggleLinkId}: disabled ${currentDisabled ? '"yes"' : '"no"'} -> "${newDisabled}"`);
+        response = await bronApiRequest(`/links/${toggleLinkId}`, "PATCH", { disabled: newDisabled });
+        result = await readResponseBody(response);
+        
+        // Return the new state in the response
+        if (response.ok) {
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: { 
+                ...(typeof result === 'object' && result !== null ? result : {}),
+                link_id: toggleLinkId,
+                disabled: newDisabled 
+              }
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        break;
+      }
+
+      case "deleteLink": {
+        // Delete a link
+        if (!data?.link_id) {
+          return new Response(
+            JSON.stringify({ error: "link_id is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        response = await bronApiRequest(`/links/${data.link_id}`, "DELETE");
+        result = await readResponseBody(response);
+        break;
+      }
+
       // ========== SUBSCRIPTION ==========
       case "getSubscription": {
         if (!domain) {

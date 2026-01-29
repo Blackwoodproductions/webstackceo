@@ -562,6 +562,21 @@ function saveCachedLinks(domain: string, linksIn: BronLink[], linksOut: BronLink
   }
 }
 
+function invalidateLinkCache(domain: string) {
+  try {
+    const cached = localStorage.getItem(LINKS_CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, LinksCacheEntry>;
+    if (parsed[domain]) {
+      delete parsed[domain];
+      localStorage.setItem(LINKS_CACHE_KEY, JSON.stringify(parsed));
+      console.log(`[BRON] Invalidated link cache for ${domain}`);
+    }
+  } catch (e) {
+    console.warn('[BRON] Failed to invalidate link cache:', e);
+  }
+}
+
 // Types for BRON API responses
 export interface BronDomain {
   id?: number;
@@ -676,6 +691,9 @@ export interface BronSerpListItem {
 
 
 export interface BronLink {
+  // Core ID field (needed for updates)
+  id?: string | number;         // Link ID for API operations
+  link_id?: string | number;    // Alternative ID field
   // Fields from BRON API
   link?: string;              // The URL (on our domain for linksOut, on referrer for linksIn)
   domain_name?: string;       // The OTHER domain (referrer for linksIn, target for linksOut)
@@ -738,6 +756,7 @@ export interface UseBronApiReturn {
   fetchSerpDetail: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
   fetchLinksIn: (domain: string, domainId?: number | string) => Promise<void>;
   fetchLinksOut: (domain: string, domainId?: number | string) => Promise<void>;
+  toggleLink: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
   resetDomainData: () => void;
   prefetchKeywordsForDomains: (domainList: BronDomain[]) => Promise<void>;
 }
@@ -1848,6 +1867,55 @@ export function useBronApi(): UseBronApiReturn {
     }
   }, []);
 
+  // Toggle link enabled/disabled status
+  const toggleLink = useCallback(async (linkId: string | number, currentDisabled: string, domain: string): Promise<boolean> => {
+    return withPending(async () => {
+      try {
+        console.log(`[BRON] Toggling link ${linkId} (currently disabled: ${currentDisabled}) for domain ${domain}`);
+        const result = await callApi("toggleLink", { 
+          data: { 
+            link_id: linkId, 
+            current_disabled: currentDisabled 
+          } 
+        });
+        
+        if (result?.success) {
+          const newDisabled = result.data?.disabled || (currentDisabled === "yes" ? "no" : "yes");
+          
+          // Update local state optimistically
+          setLinksIn(prev => prev.map(link => {
+            const id = link.id || link.link_id;
+            if (String(id) === String(linkId)) {
+              return { ...link, disabled: newDisabled };
+            }
+            return link;
+          }));
+          
+          setLinksOut(prev => prev.map(link => {
+            const id = link.id || link.link_id;
+            if (String(id) === String(linkId)) {
+              return { ...link, disabled: newDisabled };
+            }
+            return link;
+          }));
+          
+          // Invalidate cache so next fetch gets fresh data
+          invalidateLinkCache(domain);
+          
+          toast.success(newDisabled === "yes" ? "Link disabled" : "Link enabled");
+          return true;
+        } else {
+          toast.error(result?.error || "Failed to toggle link");
+          return false;
+        }
+      } catch (err) {
+        toast.error("Failed to toggle link status");
+        console.error('[BRON] Toggle link error:', err);
+        return false;
+      }
+    });
+  }, [callApi, withPending]);
+
   // Reset domain-specific data (for faster domain switching)
   const resetDomainData = useCallback(() => {
     // Invalidate any in-flight responses so they can't clobber the new domain.
@@ -1950,6 +2018,7 @@ export function useBronApi(): UseBronApiReturn {
     fetchSerpDetail,
     fetchLinksIn,
     fetchLinksOut,
+    toggleLink,
     resetDomainData,
     prefetchKeywordsForDomains,
   };

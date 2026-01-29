@@ -15,10 +15,12 @@ interface BronCitationAnalyticsProps {
   keywordText: string;
   linksIn: BronLink[];
   linksOut: BronLink[];
+  domain?: string;
   wordCount?: number;
   isSaving?: boolean;
   onSave?: () => void;
   onOpenArticleEditor?: () => void;
+  onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
 }
 
 export const BronCitationAnalytics = memo(({
@@ -26,10 +28,12 @@ export const BronCitationAnalytics = memo(({
   keywordText,
   linksIn,
   linksOut,
+  domain,
   wordCount = 0,
   isSaving = false,
   onSave,
   onOpenArticleEditor,
+  onToggleLink,
 }: BronCitationAnalyticsProps) => {
   const [viewMode, setViewMode] = useState<'inbound' | 'outbound'>('inbound');
   const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('all');
@@ -304,6 +308,8 @@ export const BronCitationAnalytics = memo(({
                 reciprocalFilter={reciprocalFilter}
                 relevanceFilter={relevanceFilter}
                 keywordCategorySet={keywordCategorySet}
+                domain={domain}
+                onToggleLink={domain && onToggleLink ? (linkId, currentDisabled) => onToggleLink(linkId, currentDisabled, domain) : undefined}
               />
             </div>
           </>

@@ -1,5 +1,5 @@
-import { memo, useMemo } from "react";
-import { Lock, ExternalLink } from "lucide-react";
+import { memo, useMemo, useState } from "react";
+import { Lock, Unlock, Loader2 } from "lucide-react";
 import type { BronLink } from "@/hooks/use-bron-api";
 
 export type RelevanceFilter = "all" | "most" | "very" | "relevant" | "less";
@@ -126,6 +126,8 @@ export const CitationLinksTable = memo(
     reciprocalFilter,
     relevanceFilter,
     keywordCategorySet,
+    domain,
+    onToggleLink,
   }: {
     keywordText: string;
     links: BronLink[];
@@ -133,6 +135,8 @@ export const CitationLinksTable = memo(
     reciprocalFilter: ReciprocalFilter;
     relevanceFilter: RelevanceFilter;
     keywordCategorySet: Set<string>;
+    domain?: string;
+    onToggleLink?: (linkId: string | number, currentDisabled: string) => Promise<boolean>;
   }) => {
     const rows = useMemo(() => {
       return links
@@ -187,6 +191,7 @@ export const CitationLinksTable = memo(
               link={link}
               tier={tier}
               isHighlighted={idx === 2}
+              onToggle={onToggleLink}
             />
           ))}
         </div>
@@ -206,11 +211,14 @@ const CitationLinkRow = memo(
     link,
     tier,
     isHighlighted = false,
+    onToggle,
   }: {
     link: BronLink;
     tier: RelevanceTier;
     isHighlighted?: boolean;
+    onToggle?: (linkId: string | number, currentDisabled: string) => Promise<boolean>;
   }) => {
+    const [isToggling, setIsToggling] = useState(false);
     const isReciprocal = link.reciprocal === "yes";
     const isEnabled = link.disabled !== "yes";
 
@@ -227,6 +235,20 @@ const CitationLinkRow = memo(
     
     // Get the link URL for external link
     const linkUrl = link.link || link.source_url || link.target_url;
+    
+    // Get link ID for toggle
+    const linkId = link.id || link.link_id;
+    const canToggle = !!linkId && !!onToggle;
+
+    const handleToggle = async () => {
+      if (!canToggle || isToggling) return;
+      setIsToggling(true);
+      try {
+        await onToggle(linkId!, link.disabled || "no");
+      } finally {
+        setIsToggling(false);
+      }
+    };
 
     return (
       <div 
@@ -280,18 +302,27 @@ const CitationLinkRow = memo(
           </span>
         </div>
 
-        {/* Actions Column - Green ENABLED button */}
+        {/* Actions Column - Clickable ENABLED/DISABLED button */}
         <div className="flex justify-center">
-          <span 
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${
+          <button 
+            onClick={handleToggle}
+            disabled={!canToggle || isToggling}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide transition-all ${
               isEnabled
-                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]"
-            }`}
+                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary)/0.9)]"
+                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive)/0.9)]"
+            } ${canToggle ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-70'} ${isToggling ? 'opacity-70' : ''}`}
+            title={canToggle ? (isEnabled ? "Click to disable link" : "Click to enable link") : "Link ID not available"}
           >
-            <Lock className="w-3.5 h-3.5" />
+            {isToggling ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isEnabled ? (
+              <Lock className="w-3.5 h-3.5" />
+            ) : (
+              <Unlock className="w-3.5 h-3.5" />
+            )}
             {isEnabled ? "ENABLED" : "DISABLED"}
-          </span>
+          </button>
         </div>
       </div>
     );
