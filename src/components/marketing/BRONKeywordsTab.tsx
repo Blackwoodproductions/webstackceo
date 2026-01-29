@@ -304,17 +304,29 @@ export const BRONKeywordsTab = memo(({
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
-  // NOTE: We remove the hasReceivedData state entirely and use keywords.length directly
-  // This prevents any flash between domain switch and cache hydration
+  // Use a ref to persist the last valid cluster count during domain transitions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
+  const lastValidClusterCountRef = useRef<number>(0);
   
-  // Derive "has data" from keywords length directly - no intermediate state needed
-  const hasReceivedData = keywords.length > 0;
-  
-  // Debug: Log when keywords prop changes
+  // Update last valid count when we have actual data
   useEffect(() => {
-    console.log(`[BRON KeywordsTab] Received ${keywords.length} keywords for domain: ${selectedDomain}`);
-  }, [keywords.length, selectedDomain]);
+    if (keywords.length > 0) {
+      lastValidClusterCountRef.current = keywords.length;
+    }
+  }, [keywords.length]);
+  
+  // Derive "has data" - consider we have data if either:
+  // 1. Current keywords array has items, OR
+  // 2. We had data before and are just transitioning (prevents flash)
+  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  
+  // Reset the last valid count when domain actually changes
+  useEffect(() => {
+    if (selectedDomain !== prevDomainRef.current) {
+      // Only reset if we're switching to a truly different domain
+      lastValidClusterCountRef.current = 0;
+    }
+  }, [selectedDomain]);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -932,7 +944,7 @@ export const BRONKeywordsTab = memo(({
                 <div className="w-[40px] flex-shrink-0" />
               </div>
               {/* Keyword list with containment for scroll performance */}
-              <div style={{ contain: 'layout style' }}>
+              <div style={{ contain: 'layout style', contentVisibility: 'auto' }}>
                 {displayClusters.map((cluster) => (
                   <KeywordListItem
                     key={cluster.parentId}
