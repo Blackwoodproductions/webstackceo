@@ -296,7 +296,7 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   };
 
   const formatVolume = (vol?: number) => {
-    if (vol === undefined || vol === null) return '—';
+    if (vol === undefined || vol === null) return null;
     if (vol >= 10000) return `${(vol / 1000).toFixed(0)}K`;
     if (vol >= 1000) return `${(vol / 1000).toFixed(1)}K`;
     return String(vol);
@@ -304,13 +304,27 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
 
   const ctrValue = getEstimatedCTR(googlePos);
   
+  // Check if we have ANY cached metrics - if so, show them immediately
+  const hasCachedCpc = metrics?.cpc !== undefined && metrics.cpc !== null;
+  const hasCachedVolume = metrics?.search_volume !== undefined && metrics.search_volume !== null;
+  
+  // Only show loading indicator if: loading is true AND we don't have cached data
+  const showCpcLoading = loading && !hasCachedCpc;
+  const showVolLoading = loading && !hasCachedVolume;
+  
   return (
     <div className="grid grid-cols-3 gap-1.5">
       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
         <div className="flex items-center gap-0.5">
           <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
           <span className="text-[10px] font-bold text-emerald-400">
-            {loading ? '...' : metrics?.cpc !== undefined ? `$${metrics.cpc.toFixed(0)}` : '—'}
+            {showCpcLoading ? (
+              <span className="opacity-60 animate-pulse">...</span>
+            ) : hasCachedCpc ? (
+              `$${metrics!.cpc.toFixed(0)}`
+            ) : (
+              '—'
+            )}
           </span>
         </div>
         <span className="text-[7px] text-emerald-400/70">CPC</span>
@@ -320,7 +334,13 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
         <div className="flex items-center gap-0.5">
           <Search className="w-2.5 h-2.5 text-cyan-400" />
           <span className="text-[10px] font-bold text-cyan-400">
-            {loading ? '...' : formatVolume(metrics?.search_volume)}
+            {showVolLoading ? (
+              <span className="opacity-60 animate-pulse">...</span>
+            ) : hasCachedVolume ? (
+              formatVolume(metrics!.search_volume)
+            ) : (
+              '—'
+            )}
           </span>
         </div>
         <span className="text-[7px] text-cyan-400/70">Vol</span>
