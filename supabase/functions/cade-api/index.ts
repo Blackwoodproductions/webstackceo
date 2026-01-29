@@ -5,7 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
+// Use staging environment - same as Postman
+const CADE_API_BASE = "https://seo-acg-api.stg.seosara.ai/api/v1";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -69,7 +70,19 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+        // Use /domain/profile endpoint per API docs
         endpoint = `/domain/profile?domain=${encodeURIComponent(domain)}`;
+        break;
+
+      case "domain-context":
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for domain-context" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Separate endpoint for intake data
+        endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
         break;
 
       case "categorize-domain":

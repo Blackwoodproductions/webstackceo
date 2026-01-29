@@ -194,14 +194,23 @@ export const CADEFAQManager = ({ domain, initialFaqs = [], onRefresh }: CADEFAQM
   const handleGenerateFaqs = async () => {
     setIsGenerating(true);
     try {
+      // Note: CADE API requires platform and domain_content_id for FAQ generation
+      // This indicates content must be generated first before FAQs
       await callCadeApi("generate-faq", {
-        count: 5, // Generate 5 FAQs
+        platform: "wordpress",
       });
       toast.success("FAQ generation started! New FAQs will appear shortly.");
       setTimeout(fetchFaqs, 3000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[CADE FAQ] Generate error:", err);
-      toast.error("Failed to generate FAQs");
+      const errMsg = err instanceof Error ? err.message : "Failed to generate FAQs";
+      if (errMsg.includes("domain_content_id") || errMsg.includes("not found")) {
+        toast.error("Generate content first, then FAQs can be created for it");
+      } else if (errMsg.includes("platform") || errMsg.includes("WordPress")) {
+        toast.error("Connect your publishing platform first");
+      } else {
+        toast.error(errMsg);
+      }
     } finally {
       setIsGenerating(false);
     }

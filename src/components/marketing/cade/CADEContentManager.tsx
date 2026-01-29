@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Search, RefreshCw, Edit3, Trash2, Eye, Save, X,
@@ -83,21 +83,27 @@ export const CADEContentManager = ({ domain, onRefresh }: CADEContentManagerProp
     if (!domain) return;
     setIsLoading(true);
     try {
-      const result = await callCadeApi("list-content", { limit: 50 });
-      const items = result?.data || result?.items || result || [];
-      setContent(Array.isArray(items) ? items : []);
-    } catch (err) {
+      // Note: CADE API doesn't have a list-content endpoint
+      // Content is generated and published directly to platforms
+      // For now, show placeholder - in future could fetch from crawl status
+      const result = await callCadeApi("domain-context");
+      if (result?.data) {
+        // Use domain context to show some info
+        setContent([]);
+      }
+    } catch (err: unknown) {
       console.error("[CADE Content] Fetch error:", err);
-      toast.error("Failed to load content");
+      // Silently handle - domain may not be crawled yet
+      setContent([]);
     } finally {
       setIsLoading(false);
     }
   }, [callCadeApi, domain]);
 
   // Initial load
-  useState(() => {
+  useEffect(() => {
     if (domain) fetchContent();
-  });
+  }, [domain, fetchContent]);
 
   const handleRefresh = () => {
     fetchContent();
@@ -166,16 +172,24 @@ export const CADEContentManager = ({ domain, onRefresh }: CADEContentManagerProp
     try {
       await callCadeApi("generate-content", {
         keyword: generateKeyword.trim(),
-        type: "article",
+        content_type: "blog",
+        platform: "wordpress", // Required by CADE API
+        model_tier: "standard",
+        auto_publish: false,
       });
       toast.success("Content generation started! It may take a few minutes.");
       setShowGenerate(false);
       setGenerateKeyword("");
       // Refresh after a delay to show new content
       setTimeout(fetchContent, 5000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[CADE Content] Generate error:", err);
-      toast.error("Failed to start content generation");
+      const errMsg = err instanceof Error ? err.message : "Failed to start content generation";
+      if (errMsg.includes("not found") || errMsg.includes("crawl")) {
+        toast.error("Please crawl the domain first before generating content");
+      } else {
+        toast.error(errMsg);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -486,6 +500,13 @@ export const CADEContentManager = ({ domain, onRefresh }: CADEContentManagerProp
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400 mb-1">Requirements:</p>
+              <ul className="text-muted-foreground text-xs space-y-1 list-disc list-inside">
+                <li>Domain must be crawled first (use Crawl tab)</li>
+                <li>Platform must be connected for publishing</li>
+              </ul>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="gen-keyword">Target Keyword</Label>
               <Input
