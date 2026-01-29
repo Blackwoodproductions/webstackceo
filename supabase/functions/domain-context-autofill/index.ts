@@ -254,7 +254,7 @@ serve(async (req) => {
         const cadeResponse = await fetch(
           `https://seo-acg-api.stg.seosara.ai/api/v1/domain/context?domain=${encodeURIComponent(domain)}`,
           {
-            method: "PUT",
+            method: "POST",
             headers: {
               "X-API-Key": cadeApiKey,
               "Content-Type": "application/json",
