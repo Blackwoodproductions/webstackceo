@@ -19,13 +19,15 @@ interface CADETaskMonitorProps {
   onRefresh?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isEmbedded?: boolean;
 }
 
 export const CADETaskMonitor = ({ 
   domain, 
   onRefresh,
   isCollapsed = false,
-  onToggleCollapse
+  onToggleCollapse,
+  isEmbedded = false
 }: CADETaskMonitorProps) => {
   const { byType, isLoading, error, refresh } = useCadeEventTasks(domain);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -115,6 +117,118 @@ export const CADETaskMonitor = ({
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId);
   };
 
+  const innerContent = (
+    <>
+      {error && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
+      {isLoading && totalTasks === 0 ? (
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-12 bg-muted/50 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      ) : totalTasks === 0 ? (
+        <div className="text-center py-3 text-muted-foreground">
+          <Activity className="w-6 h-6 mx-auto mb-1 opacity-30" />
+          <p className="text-xs">No tasks found</p>
+        </div>
+      ) : (
+        <ScrollArea className={isEmbedded ? "h-[140px]" : "h-[200px]"}>
+          <div className="space-y-2">
+            {/* Crawl Tasks */}
+            <TaskSection
+              title="Crawl Tasks"
+              icon={<Globe className="w-4 h-4" />}
+              tasks={crawlTasks}
+              type="crawl"
+              expandedTaskId={expandedTaskId}
+              onToggleExpand={toggleExpand}
+              getStatusIcon={getStatusIcon}
+              getStatusBadgeClass={getStatusBadgeClass}
+              formatDate={formatDate}
+              isActiveStatus={isActiveStatus}
+            />
+
+            {/* Categorization Tasks */}
+            <TaskSection
+              title="Categorization Tasks"
+              icon={<Target className="w-4 h-4" />}
+              tasks={categorizationTasks}
+              type="categorization"
+              expandedTaskId={expandedTaskId}
+              onToggleExpand={toggleExpand}
+              getStatusIcon={getStatusIcon}
+              getStatusBadgeClass={getStatusBadgeClass}
+              formatDate={formatDate}
+              isActiveStatus={isActiveStatus}
+            />
+
+            {/* CSS Tasks */}
+            <TaskSection
+              title="CSS Analysis Tasks"
+              icon={<Palette className="w-4 h-4" />}
+              tasks={cssTasks}
+              type="css"
+              expandedTaskId={expandedTaskId}
+              onToggleExpand={toggleExpand}
+              getStatusIcon={getStatusIcon}
+              getStatusBadgeClass={getStatusBadgeClass}
+              formatDate={formatDate}
+              isActiveStatus={isActiveStatus}
+            />
+
+            {/* Content Tasks */}
+            <TaskSection
+              title="Content Tasks"
+              icon={<FileText className="w-4 h-4" />}
+              tasks={contentTasks}
+              type="content"
+              expandedTaskId={expandedTaskId}
+              onToggleExpand={toggleExpand}
+              getStatusIcon={getStatusIcon}
+              getStatusBadgeClass={getStatusBadgeClass}
+              formatDate={formatDate}
+              isActiveStatus={isActiveStatus}
+            />
+          </div>
+        </ScrollArea>
+      )}
+    </>
+  );
+
+  // Embedded mode: simplified header + content without Card wrapper
+  if (isEmbedded) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <Activity className="w-4 h-4 text-blue-400" />
+            Task History
+            {totalActiveTasks > 0 && (
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px] py-0">
+                {totalActiveTasks} active
+              </Badge>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="h-6 w-6 p-0"
+          >
+            <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        {innerContent}
+      </div>
+    );
+  }
+
   return (
     <Card className="border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5">
       <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
@@ -155,85 +269,7 @@ export const CADETaskMonitor = ({
 
         <CollapsibleContent>
           <CardContent className="space-y-3 pt-0 pb-3">
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
-                {error}
-              </div>
-            )}
-
-            {isLoading && totalTasks === 0 ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 bg-muted/50 rounded-lg animate-pulse" />
-                ))}
-              </div>
-            ) : totalTasks === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-xs">No tasks found</p>
-                <p className="text-[10px] mt-0.5">Start a crawl to see tasks here</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[200px]">
-                <div className="space-y-3">
-                  {/* Crawl Tasks */}
-                  <TaskSection
-                    title="Crawl Tasks"
-                    icon={<Globe className="w-4 h-4" />}
-                    tasks={crawlTasks}
-                    type="crawl"
-                    expandedTaskId={expandedTaskId}
-                    onToggleExpand={toggleExpand}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeClass={getStatusBadgeClass}
-                    formatDate={formatDate}
-                    isActiveStatus={isActiveStatus}
-                  />
-
-                  {/* Categorization Tasks */}
-                  <TaskSection
-                    title="Categorization Tasks"
-                    icon={<Target className="w-4 h-4" />}
-                    tasks={categorizationTasks}
-                    type="categorization"
-                    expandedTaskId={expandedTaskId}
-                    onToggleExpand={toggleExpand}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeClass={getStatusBadgeClass}
-                    formatDate={formatDate}
-                    isActiveStatus={isActiveStatus}
-                  />
-
-                  {/* CSS Tasks */}
-                  <TaskSection
-                    title="CSS Analysis Tasks"
-                    icon={<Palette className="w-4 h-4" />}
-                    tasks={cssTasks}
-                    type="css"
-                    expandedTaskId={expandedTaskId}
-                    onToggleExpand={toggleExpand}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeClass={getStatusBadgeClass}
-                    formatDate={formatDate}
-                    isActiveStatus={isActiveStatus}
-                  />
-
-                  {/* Content Tasks */}
-                  <TaskSection
-                    title="Content Tasks"
-                    icon={<FileText className="w-4 h-4" />}
-                    tasks={contentTasks}
-                    type="content"
-                    expandedTaskId={expandedTaskId}
-                    onToggleExpand={toggleExpand}
-                    getStatusIcon={getStatusIcon}
-                    getStatusBadgeClass={getStatusBadgeClass}
-                    formatDate={formatDate}
-                    isActiveStatus={isActiveStatus}
-                  />
-                </div>
-              </ScrollArea>
-            )}
+            {innerContent}
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

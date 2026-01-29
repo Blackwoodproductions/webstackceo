@@ -56,9 +56,10 @@ interface CADECrawlControlProps {
   domainProfile?: DomainProfile | null;
   onRefresh?: () => void;
   onTaskStarted?: (taskId: string) => void;
+  isEmbedded?: boolean;
 }
 
-export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStarted }: CADECrawlControlProps) => {
+export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStarted, isEmbedded = false }: CADECrawlControlProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCrawling, setIsCrawling] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
@@ -484,30 +485,9 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     }
   };
 
-  return (
-    <Card className="border-green-500/20 bg-gradient-to-br from-background to-green-500/5">
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Globe className="w-4 h-4 text-green-400" />
-          Domain Intelligence
-          {domainProfile?.status && (
-            <Badge className="text-[10px] py-0" variant="secondary">
-              {getStatusIcon(domainProfile.status)}
-              <span className="ml-1">{domainProfile.status}</span>
-            </Badge>
-          )}
-        </CardTitle>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => { onRefresh?.(); refreshEvents(); }}
-          disabled={isLoading}
-          className="h-7 w-7 p-0"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-        </Button>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-0 pb-4 px-4">
+  // Embedded mode: render without outer Card wrapper
+  const content = (
+    <div className={isEmbedded ? "space-y-3" : "space-y-3 pt-0 pb-4 px-4"}>
         {/* Live Task Window - Primary focus when tasks are active OR button was just clicked */}
         <AnimatePresence>
           {(hasActiveTasks || isCrawling || isCategorizing || isAnalyzingCss) && (
@@ -1101,6 +1081,39 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
             CSS
           </Button>
         </div>
+      </div>
+    );
+
+  // Return either embedded or wrapped version
+  if (isEmbedded) {
+    return content;
+  }
+
+  return (
+    <Card className="border-green-500/20 bg-gradient-to-br from-background to-green-500/5">
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Globe className="w-4 h-4 text-green-400" />
+          Domain Intelligence
+          {domainProfile?.status && (
+            <Badge className="text-[10px] py-0" variant="secondary">
+              {getStatusIcon(domainProfile.status)}
+              <span className="ml-1">{domainProfile.status}</span>
+            </Badge>
+          )}
+        </CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => { onRefresh?.(); refreshEvents(); }}
+          disabled={isLoading}
+          className="h-7 w-7 p-0"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+        </Button>
+      </CardHeader>
+      <CardContent className="pt-0 pb-4 px-4">
+        {content}
       </CardContent>
     </Card>
   );

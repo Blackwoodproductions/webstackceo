@@ -390,20 +390,24 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
         </Badge>
       </div>
 
-      {/* Content & FAQ Libraries - Tabbed at Top */}
+      {/* Unified Dashboard Tabs - Content, FAQs, Crawl & Analysis */}
       {domain && (
         <Card className="border-violet-500/20">
           <Tabs value={libraryTab} onValueChange={setLibraryTab} className="w-full">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+            <CardHeader className="pb-2 pt-3">
+              <div className="flex items-center justify-between gap-2">
                 <TabsList className="bg-muted/50 h-8">
-                  <TabsTrigger value="content" className="text-xs gap-1.5 h-7 px-3 data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
+                  <TabsTrigger value="content" className="text-xs gap-1.5 h-7 px-2.5 data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
                     <FileText className="w-3.5 h-3.5" />
                     Content ({domainProfile?.content_count ?? 0})
                   </TabsTrigger>
-                  <TabsTrigger value="faqs" className="text-xs gap-1.5 h-7 px-3 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                  <TabsTrigger value="faqs" className="text-xs gap-1.5 h-7 px-2.5 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
                     <HelpCircle className="w-3.5 h-3.5" />
                     FAQs ({faqs.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="crawl" className="text-xs gap-1.5 h-7 px-2.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400">
+                    <Globe className="w-3.5 h-3.5" />
+                    Crawl
                   </TabsTrigger>
                 </TabsList>
                 <Button
@@ -413,17 +417,19 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
                   onClick={() => {
                     if (libraryTab === "content") {
                       toast.info("Generate article feature coming soon");
-                    } else {
+                    } else if (libraryTab === "faqs") {
                       toast.info("Generate FAQ feature coming soon");
+                    } else {
+                      toast.info("Start crawl from the panel below");
                     }
                   }}
                 >
                   <PlusCircle className="w-3 h-3" />
-                  New
+                  {libraryTab === "content" ? "Article" : libraryTab === "faqs" ? "FAQ" : "Crawl"}
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 pb-3">
               <TabsContent value="content" className="mt-0">
                 <CADEContentManager 
                   domain={domain} 
@@ -439,27 +445,23 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
                   isCompact={true}
                 />
               </TabsContent>
+              <TabsContent value="crawl" className="mt-0 space-y-3">
+                <CADECrawlControl
+                  domain={domain}
+                  domainProfile={domainProfile}
+                  onRefresh={handleRefresh}
+                  isEmbedded={true}
+                />
+                <CADETaskMonitor
+                  domain={domain}
+                  onRefresh={handleRefresh}
+                  isCollapsed={false}
+                  isEmbedded={true}
+                />
+              </TabsContent>
             </CardContent>
           </Tabs>
         </Card>
-      )}
-
-      {/* Crawl Control & Live Tasks - Below Libraries */}
-      {domain && (
-        <CADECrawlControl
-          domain={domain}
-          domainProfile={domainProfile}
-          onRefresh={handleRefresh}
-        />
-      )}
-
-      {/* Live Task Monitor - Collapsed by default for compact view */}
-      {domain && (
-        <CADETaskMonitor
-          domain={domain}
-          onRefresh={handleRefresh}
-          isCollapsed={true}
-        />
       )}
 
       {/* Quick Actions Bar - Compact inline */}
