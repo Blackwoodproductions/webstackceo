@@ -310,8 +310,19 @@ const SectionCard = memo(({ title, children, accentColor = "cyan", className = "
     blue: "border-l-blue-500",
   };
   
+  const glowStyles: Record<string, React.CSSProperties> = {
+    cyan: { boxShadow: '-8px 0 30px -5px rgba(6, 182, 212, 0.25), 0 0 15px -5px rgba(6, 182, 212, 0.1)' },
+    orange: { boxShadow: '-8px 0 30px -5px rgba(249, 115, 22, 0.25), 0 0 15px -5px rgba(249, 115, 22, 0.1)' },
+    violet: { boxShadow: '-8px 0 30px -5px rgba(139, 92, 246, 0.25), 0 0 15px -5px rgba(139, 92, 246, 0.1)' },
+    emerald: { boxShadow: '-8px 0 30px -5px rgba(16, 185, 129, 0.25), 0 0 15px -5px rgba(16, 185, 129, 0.1)' },
+    blue: { boxShadow: '-8px 0 30px -5px rgba(59, 130, 246, 0.25), 0 0 15px -5px rgba(59, 130, 246, 0.1)' },
+  };
+  
   return (
-    <Card className={`bg-card/50 border border-border/50 border-l-4 ${borderColors[accentColor]} ${className}`}>
+    <Card 
+      className={`bg-card/50 border border-border/50 border-l-4 ${borderColors[accentColor]} ${className}`}
+      style={glowStyles[accentColor]}
+    >
       <CardContent className="p-5">
         <h3 className="font-semibold text-base mb-4">{title}</h3>
         {children}
