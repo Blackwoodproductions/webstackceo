@@ -435,12 +435,12 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
         />
       )}
 
-      {/* Live Task Monitor */}
+      {/* Live Task Monitor - Collapsed by default for compact view */}
       {domain && (
         <CADETaskMonitor
           domain={domain}
           onRefresh={handleRefresh}
-          isCollapsed={false}
+          isCollapsed={true}
         />
       )}
 
