@@ -1,13 +1,16 @@
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import { 
-  Loader2, ChevronDown, MapPin, Camera,
+  Loader2, ChevronDown, MapPin, Camera, Pencil,
   Facebook, Linkedin, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { BronDomain } from "@/hooks/use-bron-api";
 import { BronCachedMap } from "./BronCachedMap";
+import { useDomainContext } from "@/hooks/use-domain-context";
+import { DomainContextDialog } from "../cade/DomainContextDialog";
 
 interface BronDomainProfileProps {
   selectedDomain: string;
@@ -67,7 +70,22 @@ export const BronDomainProfile = memo(({
   onCaptureScreenshot,
   onScreenshotError,
 }: BronDomainProfileProps) => {
-  const keywordProgress = Math.min(keywordCount, 37);
+  const [domainContextOpen, setDomainContextOpen] = useState(false);
+  
+  // Domain context hook for progress
+  const {
+    fetchContext: fetchDomainContext,
+    filledCount: domainContextFilledCount,
+    totalFields: domainContextTotalFields,
+    progressPercent: domainContextProgress,
+  } = useDomainContext(selectedDomain);
+
+  // Fetch domain context on mount/domain change
+  useEffect(() => {
+    if (selectedDomain) {
+      fetchDomainContext();
+    }
+  }, [selectedDomain, fetchDomainContext]);
   
   // Check if any social links exist
   const hasSocialLinks = !!(
@@ -163,10 +181,32 @@ export const BronDomainProfile = memo(({
             <div className="space-y-3 w-full">
               <InfoRow label="Domain Info">
                 <div className="flex-1 flex items-center gap-2">
-                  <div className="flex-1 h-8 bg-secondary/50 rounded border border-border/50 flex items-center px-3">
-                    <span className="text-sm">{keywordProgress}/37</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium">{domainContextFilledCount}/{domainContextTotalFields}</span>
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs ${
+                          domainContextProgress >= 80
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : domainContextProgress >= 50
+                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            : "bg-red-500/10 text-red-400 border-red-500/30"
+                        }`}
+                      >
+                        {domainContextProgress}%
+                      </Badge>
+                    </div>
+                    <Progress value={domainContextProgress} className="h-2" />
                   </div>
-                  <Badge variant="secondary" className="text-xs">0%</Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDomainContextOpen(true)}
+                    className="h-8 px-2 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </InfoRow>
 
@@ -291,6 +331,21 @@ export const BronDomainProfile = memo(({
           </div>
         </div>
       </CardContent>
+
+      {/* Domain Context Dialog */}
+      {selectedDomain && (
+        <DomainContextDialog
+          open={domainContextOpen}
+          onOpenChange={(open) => {
+            setDomainContextOpen(open);
+            if (!open) {
+              // Refresh context when dialog closes
+              fetchDomainContext();
+            }
+          }}
+          domain={selectedDomain}
+        />
+      )}
     </Card>
   );
 });
