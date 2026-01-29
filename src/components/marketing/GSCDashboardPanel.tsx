@@ -32,6 +32,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  loadCachedGscData,
+  saveCachedGscData,
+  type GscCacheData
+} from "@/lib/persistentCache";
+import {
   AreaChart,
   Area,
   XAxis,

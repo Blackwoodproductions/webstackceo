@@ -16,6 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  loadCachedPpcData,
+  saveCachedPpcData,
+  type PpcCacheData
+} from "@/lib/persistentCache";
 
 interface CampaignData {
   id: string;

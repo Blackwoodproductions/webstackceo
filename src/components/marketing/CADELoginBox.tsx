@@ -22,6 +22,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useBronApi, type BronSubscription } from "@/hooks/use-bron-api";
+import {
+  loadCachedCadeData,
+  saveCachedCadeData,
+  type CadeCacheData
+} from "@/lib/persistentCache";
 
 interface SystemHealth {
   status?: string;
@@ -189,8 +194,9 @@ const hasCachedSubscription = (targetDomain: string): boolean => {
 export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps) => {
   const { fetchSubscription } = useBronApi();
   
-  // Check cache synchronously to skip loading on cached hit
-  const [hasCached] = useState(() => domain ? hasCachedSubscription(domain) : false);
+  // Check persistent cache synchronously for instant load
+  const [cachedData] = useState(() => domain ? loadCachedCadeData(domain) : null);
+  const [hasCached] = useState(() => domain ? (cachedData?.isConnected || hasCachedSubscription(domain)) : false);
   const [isLoading, setIsLoading] = useState(!hasCached);
   const [isConnected, setIsConnected] = useState(hasCached);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -200,16 +206,16 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
   const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(() => domain ? getCachedSubscription(domain) : null);
   const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(hasCached);
 
-  // API Data States
+  // API Data States (hydrate from persistent cache)
   const [health, setHealth] = useState<SystemHealth | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(null);
-  const [faqs, setFaqs] = useState<FAQItem[]>([]);
-  const [contentList, setContentList] = useState<ContentItem[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedData?.subscription || null);
+  const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(cachedData?.domainProfile || null);
+  const [faqs, setFaqs] = useState<FAQItem[]>(cachedData?.faqs as FAQItem[] || []);
+  const [contentList, setContentList] = useState<ContentItem[]>(cachedData?.contentList as ContentItem[] || []);
   const [crawlTasks, setCrawlTasks] = useState<TaskItem[]>([]);
   const [categorizationTasks, setCategorizationTasks] = useState<TaskItem[]>([]);
-  const [queues, setQueues] = useState<QueueInfo[]>([]);
-  const [workers, setWorkers] = useState<WorkerInfo[]>([]);
+  const [queues, setQueues] = useState<QueueInfo[]>(cachedData?.queues as QueueInfo[] || []);
+  const [workers, setWorkers] = useState<WorkerInfo[]>(cachedData?.workers as WorkerInfo[] || []);
 
   // UI States
   const [activeTab, setActiveTab] = useState("overview");

@@ -26,6 +26,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  loadCachedGaData,
+  saveCachedGaData,
+  type GaCacheData
+} from "@/lib/persistentCache";
+import {
   ResponsiveContainer,
   AreaChart,
   Area,
