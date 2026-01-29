@@ -1047,9 +1047,28 @@ export function useBronApi(): UseBronApiReturn {
     }
 
     // Hydrate caches synchronously.
+    // IMPORTANT: For large domains, loadCachedKeywords may return null to avoid blocking.
+    // In that case, do NOT set keywords to [] - let fetchKeywords handle async loading.
     const cachedKeywords = loadCachedKeywords(key);
-    console.log(`[BRON] selectDomain: setting ${cachedKeywords?.length ?? 0} keywords from cache`);
-    setKeywords(cachedKeywords || []);
+    if (cachedKeywords !== null) {
+      console.log(`[BRON] selectDomain: setting ${cachedKeywords.length} keywords from cache`);
+      setKeywords(cachedKeywords);
+    } else {
+      // Don't clear keywords here - triggers "no keywords" flash.
+      // Instead, trigger async IDB load immediately.
+      console.log(`[BRON] selectDomain: no sync cache for ${key}, loading from IDB...`);
+      const localReqId = keywordsReqIdRef.current;
+      loadKeywordsFromIdb<BronKeyword[]>(key, CACHE_MAX_AGE).then((idbKeywords) => {
+        // Only set if this is still the active domain request
+        if (localReqId === keywordsReqIdRef.current && idbKeywords && idbKeywords.length > 0) {
+          console.log(`[BRON] selectDomain: loaded ${idbKeywords.length} keywords from IDB`);
+          setKeywords(idbKeywords);
+        }
+      }).catch(() => {
+        // IDB failed - fetchKeywords will handle network fetch
+      });
+    }
+    
     setPages(loadCachedPages(key) || []);
 
     const cachedSerp = loadCachedSerp(key);
