@@ -111,7 +111,9 @@ export function useDomainContext(domain: string | undefined) {
   const [context, setContext] = useState<DomainContext | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoFilling, setAutoFilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
   const fetchContext = useCallback(async () => {
     if (!domain) return;
@@ -173,16 +175,52 @@ export function useDomainContext(domain: string | undefined) {
     [domain]
   );
 
+  // Auto-fill by crawling website and using AI to extract fields
+  const autoFillContext = useCallback(async () => {
+    if (!domain) return false;
+    setAutoFilling(true);
+    setError(null);
+
+    try {
+      console.log("[useDomainContext] Starting auto-fill for:", domain);
+      const { data, error: fnError } = await supabase.functions.invoke("domain-context-autofill", {
+        body: { domain },
+      });
+
+      if (fnError) throw fnError;
+
+      if (data?.success && data?.data) {
+        setContext(data.data);
+        setHasAutoFilled(true);
+        return true;
+      } else if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return false;
+    } catch (err) {
+      console.error("[useDomainContext] auto-fill error:", err);
+      setError(err instanceof Error ? err.message : "Failed to auto-fill domain context");
+      return false;
+    } finally {
+      setAutoFilling(false);
+    }
+  }, [domain]);
+
   const filledCount = calculateFilledCount(context);
   const progressPercent = Math.round((filledCount / TOTAL_FIELDS) * 100);
 
   return {
     context,
+    setContext,
     loading,
     saving,
+    autoFilling,
     error,
     fetchContext,
     updateContext,
+    autoFillContext,
+    hasAutoFilled,
     filledCount,
     totalFields: TOTAL_FIELDS,
     progressPercent,
