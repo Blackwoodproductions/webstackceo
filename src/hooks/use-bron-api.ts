@@ -759,6 +759,8 @@ export interface BronSubscription {
 export interface UseBronApiReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** True when hydrating keywords after domain switch - prevents "No keywords" flash */
+  isKeywordHydrating: boolean;
   domains: BronDomain[];
   keywords: BronKeyword[];
   pages: BronPage[];
@@ -879,6 +881,8 @@ export function useBronApi(): UseBronApiReturn {
   const [linksOut, setLinksOut] = useState<BronLink[]>(initialCache.linksOut);
   const [linksInError, setLinksInError] = useState<string | null>(null);
   const [linksOutError, setLinksOutError] = useState<string | null>(null);
+  // Track keyword hydration state to prevent "No keywords" flash during transitions
+  const [isKeywordHydrating, setIsKeywordHydrating] = useState(false);
 
   // Active domain chosen in the header domain selector.
   // This allows optional-domain methods (like fetchKeywords/addKeyword, etc.)
@@ -1020,6 +1024,13 @@ export function useBronApi(): UseBronApiReturn {
     linksOutReqIdRef.current += 1;
 
     const key = domain ? normalizeDomainKey(domain) : null;
+    
+    // Early exit if selecting the same domain - no state changes needed
+    if (key === activeDomainRef.current) {
+      console.log(`[BRON] selectDomain: same domain, skipping`);
+      return;
+    }
+    
     activeDomainRef.current = key;
 
     // Persist selected domain for instant hydration on hard refresh
@@ -1037,6 +1048,7 @@ export function useBronApi(): UseBronApiReturn {
     setLinksOutError(null);
 
     if (!key) {
+      setIsKeywordHydrating(false);
       setKeywords([]);
       setPages([]);
       setSerpReports([]);
@@ -1046,10 +1058,24 @@ export function useBronApi(): UseBronApiReturn {
       return;
     }
 
+    // Signal that we're hydrating keywords - prevents "No keywords" flash
+    setIsKeywordHydrating(true);
+
     // Hydrate caches synchronously.
     const cachedKeywords = loadCachedKeywords(key);
     console.log(`[BRON] selectDomain: setting ${cachedKeywords?.length ?? 0} keywords from cache`);
-    setKeywords(cachedKeywords || []);
+    
+    // Only clear if we have NO cached data - otherwise keep previous data visible during transition
+    if (cachedKeywords && cachedKeywords.length > 0) {
+      setKeywords(cachedKeywords);
+      setIsKeywordHydrating(false);
+    } else {
+      // Clear keywords but keep hydrating state true to show loading indicator
+      setKeywords([]);
+      // Set a timeout to clear hydrating state - allows background fetch to complete
+      setTimeout(() => setIsKeywordHydrating(false), 3000);
+    }
+    
     setPages(loadCachedPages(key) || []);
 
     const cachedSerp = loadCachedSerp(key);
@@ -1065,6 +1091,9 @@ export function useBronApi(): UseBronApiReturn {
     } else {
       linksBufferRef.current[key] = { in: null, out: null };
     }
+    
+    const elapsed = (performance.now() - selectStart).toFixed(1);
+    console.log(`[BRON] selectDomain completed in ${elapsed}ms`);
   }, [normalizeDomainKey]);
 
   const verifyAuth = useCallback(async (): Promise<boolean> => {
@@ -1297,6 +1326,7 @@ export function useBronApi(): UseBronApiReturn {
       const cached = loadCachedKeywords(domainKey);
       if (cached) {
         setKeywords(cached);
+        setIsKeywordHydrating(false); // Clear hydrating state immediately
         
         // Background refresh to check for changes (count-based)
         const localReqId = reqId;
@@ -1355,6 +1385,7 @@ export function useBronApi(): UseBronApiReturn {
         const idbCached = await loadKeywordsFromIdb<BronKeyword[]>(domainKey, CACHE_MAX_AGE);
         if (idbCached && idbCached.length > 0 && reqId === keywordsReqIdRef.current) {
           setKeywords(idbCached);
+          setIsKeywordHydrating(false); // Clear hydrating state
           // Ensure a small preview exists for the next hard refresh.
           saveCachedKeywordsPreview(domainKey, idbCached);
 
@@ -1434,6 +1465,7 @@ export function useBronApi(): UseBronApiReturn {
 
           allKeywords.push(...firstPageKeywords);
           setKeywords(firstPageKeywords);
+          setIsKeywordHydrating(false); // Clear hydrating state as soon as we have data
           if (firstPageKeywords.length > 0) {
             // Cache something immediately so switching away/back doesn't incur the full delay again.
             saveCachedKeywords(domainKey, firstPageKeywords);
@@ -1443,6 +1475,7 @@ export function useBronApi(): UseBronApiReturn {
           page = 2;
         } else {
           hasMore = false;
+          setIsKeywordHydrating(false); // Clear even on empty result
         }
         
         // Fetch remaining pages (if any)
@@ -1493,6 +1526,7 @@ export function useBronApi(): UseBronApiReturn {
         if (reqId !== keywordsReqIdRef.current) return;
         // Don't toast on background fetch failures - just log
         console.warn('[BRON] Background keyword fetch failed:', err);
+        setIsKeywordHydrating(false); // Clear hydrating state on error too
       }
     })();
   }, [callApi, normalizeDomainKey]);
@@ -1956,6 +1990,7 @@ export function useBronApi(): UseBronApiReturn {
   return {
     isLoading,
     isAuthenticated,
+    isKeywordHydrating,
     domains,
     keywords,
     pages,

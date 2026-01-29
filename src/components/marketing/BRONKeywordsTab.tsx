@@ -57,6 +57,8 @@ interface BRONKeywordsTabProps {
   linksOut?: BronLink[];
   selectedDomain?: string;
   isLoading: boolean;
+  /** True when hydrating keywords - prevents "No keywords" flash during domain switch */
+  isKeywordHydrating?: boolean;
   onRefresh: () => void;
   onAdd: (data: Record<string, unknown>) => Promise<boolean>;
   onUpdate: (keywordId: string, data: Record<string, unknown>) => Promise<boolean>;
@@ -286,6 +288,7 @@ export const BRONKeywordsTab = memo(({
   linksOut = [],
   selectedDomain,
   isLoading,
+  isKeywordHydrating = false,
   onRefresh,
   onAdd,
   onUpdate,
@@ -323,8 +326,9 @@ export const BRONKeywordsTab = memo(({
   
   // Derive "has data" - consider we have data if either:
   // 1. Current keywords array has items, OR
-  // 2. We had data before and are just transitioning (prevents flash)
-  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // 2. We're still hydrating (prevents "No keywords" flash), OR
+  // 3. We had data before and are just transitioning (prevents flash)
+  const hasReceivedData = keywords.length > 0 || isKeywordHydrating || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
   
   // Reset the last valid count when domain actually changes
   useEffect(() => {
