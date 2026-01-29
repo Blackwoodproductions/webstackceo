@@ -568,6 +568,7 @@ export const CADELoginBox = ({ domain, onSubscriptionChange }: CADELoginBoxProps
         content_type: contentType,
         model_tier: selectedModelTier,
         keyword: contentKeyword || undefined,
+        platform: "wordpress", // Required by CADE API
         auto_publish: false 
       });
       if (res?.success || res?.task_id || res?.content_id) {
