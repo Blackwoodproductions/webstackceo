@@ -180,9 +180,17 @@ export const BronDomainProfile = memo(({
           <div className="lg:col-span-4 p-4 border-r border-border/30 flex items-center">
             <div className="space-y-3 w-full">
               <InfoRow label="Domain Info">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
+                <button
+                  onClick={() => setDomainContextOpen(true)}
+                  className="flex-1 flex items-center gap-2 group cursor-pointer"
+                >
+                  <div 
+                    className="flex-1 p-2.5 rounded-lg border transition-all duration-200
+                      bg-secondary/30 border-cyan-500/20
+                      hover:bg-cyan-500/10 hover:border-cyan-500/40
+                      shadow-[0_0_10px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-medium">{domainContextFilledCount}/{domainContextTotalFields}</span>
                       <Badge 
                         variant="secondary" 
@@ -199,15 +207,10 @@ export const BronDomainProfile = memo(({
                     </div>
                     <Progress value={domainContextProgress} className="h-2" />
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDomainContextOpen(true)}
-                    className="h-8 px-2 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
+                  <div className="p-2 rounded-lg text-cyan-500 group-hover:text-cyan-400 group-hover:bg-cyan-500/10 transition-colors">
+                    <Pencil className="w-4 h-4" />
+                  </div>
+                </button>
               </InfoRow>
 
               <InfoRow label="Domain Status">
