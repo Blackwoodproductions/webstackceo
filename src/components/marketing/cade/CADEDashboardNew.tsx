@@ -124,6 +124,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
   const [faqStats, setFaqStats] = useState<FAQStats>({ total: 0, status: "up_to_date" });
   const [contentTab, setContentTab] = useState("articles");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [scheduleCount, setScheduleCount] = useState("1");
+  const [isScheduling, setIsScheduling] = useState(false);
 
   // Crawl state from tasks
   const crawlTask = activeTasksByType.crawl;
@@ -276,9 +278,37 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     toast.success(faqStats.status === "paused" ? "FAQ generation resumed" : "FAQ generation paused");
   };
 
-  const handleScheduleContent = async (count: number) => {
-    toast.info(`Scheduling ${count} article(s)...`);
-    // Future: call API
+  const handleScheduleNow = async () => {
+    if (!domain) {
+      toast.error("Please select a domain first");
+      return;
+    }
+    setIsScheduling(true);
+    try {
+      const count = parseInt(scheduleCount);
+      // Call CADE API to generate content
+      await callCadeApi("generate-content", {
+        keyword: "auto",
+        content_type: "blog",
+        platform: "wordpress",
+        count: count,
+        auto_publish: false,
+      });
+      toast.success(`Scheduled ${count} article(s) for generation!`);
+      refreshTasks();
+    } catch (err) {
+      console.error("[CADE] Schedule error:", err);
+      const errMsg = err instanceof Error ? err.message : "Failed to schedule content";
+      if (errMsg.toLowerCase().includes("wordpress") || errMsg.toLowerCase().includes("platform")) {
+        toast.error("Please connect your WordPress platform first");
+      } else if (errMsg.includes("crawl")) {
+        toast.error("Please crawl the domain first");
+      } else {
+        toast.error(errMsg);
+      }
+    } finally {
+      setIsScheduling(false);
+    }
   };
 
   // Loading state
@@ -403,7 +433,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           <CardContent className="space-y-3">
             <div>
               <span className="text-xs text-muted-foreground uppercase tracking-wide">Schedule Content Now</span>
-              <Select defaultValue="1" onValueChange={(v) => handleScheduleContent(parseInt(v))}>
+              <Select value={scheduleCount} onValueChange={setScheduleCount}>
                 <SelectTrigger className="mt-1.5 bg-secondary/50">
                   <SelectValue />
                 </SelectTrigger>
@@ -415,8 +445,19 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 text-white">
-              Schedule Now
+            <Button 
+              onClick={handleScheduleNow}
+              disabled={isScheduling}
+              className="w-full bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-600 hover:to-violet-600 text-white"
+            >
+              {isScheduling ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Scheduling...
+                </>
+              ) : (
+                "Schedule Now"
+              )}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
               Remaining this week: <span className="text-foreground font-medium">2 of 2 articles</span>
