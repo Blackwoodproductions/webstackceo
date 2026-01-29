@@ -110,20 +110,25 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
             message?: string;
           };
           
+          const normalizedStatus = (event.status || "").toString();
+          const statusValue = normalizedStatus.includes(":")
+            ? normalizedStatus.split(":").pop()
+            : normalizedStatus;
+
           setCrawlTask(prev => ({
-            ...prev,
-            status: event.status,
+            ...(prev ?? {}),
+            status: normalizedStatus,
             progress: event.progress,
             pages_crawled: event.pages_crawled,
             total_pages: event.total_pages,
             error: event.error_message,
           }));
 
-          if (event.status === "completed" || event.status === "done") {
+          if (statusValue === "completed" || statusValue === "done") {
             setIsCrawling(false);
             toast.success("Crawl completed successfully!");
             onRefresh?.();
-          } else if (event.status === "failed" || event.status === "error") {
+          } else if (statusValue === "failed" || statusValue === "error") {
             setIsCrawling(false);
             toast.error("Crawl failed: " + (event.error_message || event.message || "Unknown error"));
             onRefresh?.();

@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Use production environment
@@ -11,7 +13,7 @@ const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -30,6 +32,50 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const normalizeCadeUserId = (value: unknown): number => {
+      // CADE task endpoints validate user_id as an integer.
+      // We default to 1 for dashboard-wide task visibility.
+      if (typeof value === "number" && Number.isFinite(value)) return Math.trunc(value);
+      if (typeof value === "string") {
+        const n = Number.parseInt(value, 10);
+        if (Number.isFinite(n)) return n;
+      }
+      return 1;
+    };
+
+    const cadeUserId = normalizeCadeUserId(params?.cade_user_id ?? params?.user_id);
+
+    // Used to seed task rows in our database so the dashboard shows tasks immediately.
+    const seedTaskEvent = async (task: string, status: string, payload: Record<string, unknown>) => {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        await supabase.from("cade_crawl_events").insert({
+          domain: String(payload.domain ?? domain ?? `task:${task}`),
+          request_id: (payload.request_id as string | undefined) ?? null,
+          user_id: (payload.user_id as string | undefined) ?? null,
+          status: `${task}:${status}`,
+          progress: (payload.progress as number | undefined) ?? null,
+          pages_crawled: (payload.pages_crawled as number | undefined) ?? null,
+          total_pages: (payload.total_pages as number | undefined) ?? null,
+          current_url: (payload.current_url as string | undefined) ?? null,
+          error_message: (payload.error_message as string | undefined) ?? null,
+          message: (payload.message as string | undefined) ?? null,
+          raw_payload: {
+            source: "dashboard",
+            task,
+            status,
+            ...payload,
+          },
+        });
+      } catch (e) {
+        // Non-blocking: task seeding is best-effort
+        console.warn("[CADE API] Failed to seed task event:", e);
+      }
+    };
 
     let endpoint = "";
     let method = "GET";
@@ -64,20 +110,32 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://qwnzenimkwtuaqnrcygb.supabase.co";
         const callbackUrl = `${supabaseUrl}/functions/v1/cade-crawl-callback`;
         
-        // user_id and request_id are tracking parameters passed from the dashboard
-        // These are used to correlate tasks and callbacks for monitoring
-        const userId = params?.user_id;
+        // request_id correlates tasks and callbacks in the dashboard.
+        // user_id must be an integer for CADE task listing endpoints.
         const requestId = params?.request_id || `crawl-${domain}-${Date.now()}`;
+        const targetRequestId = params?.target_request_id;
+
+        // Seed a local task event so the dashboard shows a task instantly.
+        // Track dashboard-level user_id (string) separately from CADE's integer user_id.
+        seedTaskEvent("CRAWL", "queued", {
+          domain,
+          request_id: requestId,
+          target_request_id: targetRequestId,
+          user_id: typeof params?.user_id === "string" ? params.user_id : undefined,
+          progress: 0,
+          message: "Crawl requested",
+        }).catch(() => undefined);
         
         postBody = JSON.stringify({ 
           domain, 
           callback_url: callbackUrl,
           request_id: requestId,
-          ...(userId && { user_id: userId }),
+          user_id: cadeUserId,
+          ...(targetRequestId ? { target_request_id: targetRequestId } : {}),
           max_pages: params?.max_pages || 50,
           ...params 
         });
-        console.log(`[CADE API] Crawl request: user_id=${userId}, request_id=${requestId}, callback=${callbackUrl}`);
+        console.log(`[CADE API] Crawl request: user_id=${cadeUserId}, request_id=${requestId}, callback=${callbackUrl}`);
         break;
       }
 
@@ -118,17 +176,26 @@ serve(async (req) => {
         const catSupabaseUrl = Deno.env.get("SUPABASE_URL") || "https://qwnzenimkwtuaqnrcygb.supabase.co";
         const catCallbackUrl = `${catSupabaseUrl}/functions/v1/cade-crawl-callback`;
         
-        const catUserId = params?.user_id;
         const catRequestId = params?.request_id || `categorize-${domain}-${Date.now()}`;
+        const catTargetRequestId = params?.target_request_id;
+
+        seedTaskEvent("CATEGORIZATION", "queued", {
+          domain,
+          request_id: catRequestId,
+          target_request_id: catTargetRequestId,
+          user_id: typeof params?.user_id === "string" ? params.user_id : undefined,
+          message: "Categorization requested",
+        }).catch(() => undefined);
         
         postBody = JSON.stringify({ 
           domain, 
           callback_url: catCallbackUrl,
           request_id: catRequestId,
-          ...(catUserId && { user_id: catUserId }),
+          user_id: cadeUserId,
+          ...(catTargetRequestId ? { target_request_id: catTargetRequestId } : {}),
           ...params 
         });
-        console.log(`[CADE API] Categorize request: user_id=${catUserId}, request_id=${catRequestId}`);
+        console.log(`[CADE API] Categorize request: user_id=${cadeUserId}, request_id=${catRequestId}`);
         break;
       }
 
@@ -142,16 +209,25 @@ serve(async (req) => {
         method = "POST";
         endpoint = "/domain/analyze-css";
         
-        const cssUserId = params?.user_id;
         const cssRequestId = params?.request_id || `css-${domain}-${Date.now()}`;
+        const cssTargetRequestId = params?.target_request_id;
+
+        seedTaskEvent("CSS", "queued", {
+          domain,
+          request_id: cssRequestId,
+          target_request_id: cssTargetRequestId,
+          user_id: typeof params?.user_id === "string" ? params.user_id : undefined,
+          message: "CSS analysis requested",
+        }).catch(() => undefined);
         
         postBody = JSON.stringify({ 
           domain, 
           request_id: cssRequestId,
-          ...(cssUserId && { user_id: cssUserId }),
+          user_id: cadeUserId,
+          ...(cssTargetRequestId ? { target_request_id: cssTargetRequestId } : {}),
           ...params 
         });
-        console.log(`[CADE API] CSS analyze request: user_id=${cssUserId}, request_id=${cssRequestId}`);
+        console.log(`[CADE API] CSS analyze request: user_id=${cadeUserId}, request_id=${cssRequestId}`);
         break;
       }
 
@@ -330,10 +406,8 @@ serve(async (req) => {
       // Note: Task endpoints require user_id as a query parameter (integer)
       case "crawl-tasks": {
         endpoint = "/tasks/crawl/crawl-all";
-        // Add user_id if provided (required by API)
-        if (params?.user_id) {
-          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        // API requires user_id and validates integer
+        endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
 
@@ -344,18 +418,14 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/tasks/crawl/crawl?task_id=${encodeURIComponent(params.task_id)}`;
-        if (params?.user_id) {
-          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        // CADE returns status_url like: /tasks/crawl?task_id=...
+        endpoint = `/tasks/crawl?task_id=${encodeURIComponent(String(params.task_id))}`;
         break;
       }
 
       case "categorization-tasks": {
         endpoint = "/tasks/categorization/categorization-all";
-        if (params?.user_id) {
-          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
 
@@ -366,10 +436,7 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/tasks/categorization/categorization?task_id=${encodeURIComponent(params.task_id)}`;
-        if (params?.user_id) {
-          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        endpoint = `/tasks/categorization?task_id=${encodeURIComponent(String(params.task_id))}`;
         break;
       }
 
@@ -381,10 +448,9 @@ serve(async (req) => {
 
       // === CONTENT TASKS - Additional endpoints ===
       case "content-tasks": {
-        endpoint = "/tasks/content/content-all";
-        if (params?.user_id) {
-          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        // Some deployments may not expose content task listing; keep best-effort.
+        endpoint = "/tasks/content-all";
+        endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
 
@@ -395,10 +461,7 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/tasks/content/content?task_id=${encodeURIComponent(params.task_id)}`;
-        if (params?.user_id) {
-          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
-        }
+        endpoint = `/tasks/content?task_id=${encodeURIComponent(String(params.task_id))}&user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
 
