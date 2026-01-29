@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe, RefreshCw, Play, Loader2, CheckCircle2, AlertTriangle,
@@ -30,6 +30,7 @@ interface CrawlTask {
   task_id?: string;
   request_id?: string;
   status?: string;
+  status_url?: string;
   progress?: number;
   pages_crawled?: number;
   total_pages?: number;
@@ -55,6 +56,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const [crawlTask, setCrawlTask] = useState<CrawlTask | null>(null);
   const [showCategorizationDetails, setShowCategorizationDetails] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get latest data from events with stats
   const { 
@@ -145,6 +147,76 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
 
   // NOTE: Categorization and CSS states are now synced in the unified effect above
 
+  // Poll crawl status when we have a task_id
+  useEffect(() => {
+    if (!crawlTask?.task_id || !isCrawling) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      return;
+    }
+
+    const pollStatus = async () => {
+      try {
+        console.log("[CADE Poll] Fetching status for task:", crawlTask.task_id);
+        const result = await callCadeApi("crawl-task-status", { 
+          task_id: crawlTask.task_id 
+        });
+        
+        const statusData = result?.data || result;
+        console.log("[CADE Poll] Status response:", statusData);
+        
+        if (statusData) {
+          setCrawlTask(prev => ({
+            ...prev,
+            status: statusData.status,
+            progress: statusData.progress ?? prev?.progress,
+            pages_crawled: statusData.pages_crawled ?? statusData.crawled_pages ?? prev?.pages_crawled,
+            total_pages: statusData.total_pages ?? prev?.total_pages,
+            current_url: statusData.current_url ?? prev?.current_url,
+            message: statusData.message ?? prev?.message,
+          }));
+
+          // Check if completed
+          const status = (statusData.status || "").toUpperCase();
+          if (status === "COMPLETED" || status === "DONE" || status === "SUCCESS") {
+            setIsCrawling(false);
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            toast.success("Crawl completed!");
+            onRefresh?.();
+            refreshEvents();
+          } else if (status === "FAILED" || status === "ERROR") {
+            setIsCrawling(false);
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            toast.error("Crawl failed: " + (statusData.error || statusData.message || "Unknown error"));
+            refreshEvents();
+          }
+        }
+      } catch (err) {
+        console.error("[CADE Poll] Status fetch error:", err);
+        // Don't stop polling on error - might be temporary
+      }
+    };
+
+    // Poll immediately and then every 3 seconds
+    pollStatus();
+    pollingRef.current = setInterval(pollStatus, 3000);
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [crawlTask?.task_id, isCrawling, callCadeApi, onRefresh, refreshEvents]);
+
   const handleStartCrawl = async () => {
     if (!domain) return;
     setIsCrawling(true);
@@ -157,13 +229,22 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         request_id: requestId,
       });
       const task = result?.data || result;
-      setCrawlTask({ ...task, request_id: requestId });
+      
+      // Store task info including status_url and task_id for polling
+      setCrawlTask({ 
+        ...task, 
+        request_id: requestId,
+        started_at: new Date().toISOString(),
+        status: task?.status || "PENDING",
+      });
+      
+      console.log("[CADE Crawl] Task started:", task);
       
       if (task?.task_id || requestId) {
         onTaskStarted?.(task?.task_id || requestId);
       }
       
-      toast.success("Crawl started! Watch the progress below.");
+      toast.success("Crawl started! Polling for updates...");
       refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Start error:", err);
@@ -317,12 +398,14 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Live Task Monitor</h3>
-                      <p className="text-xs text-muted-foreground">Real-time updates via callbacks</p>
+                      <p className="text-xs text-muted-foreground">
+                        {crawlTask?.task_id ? `Polling task ${crawlTask.task_id.slice(0, 8)}...` : "Real-time updates via callbacks"}
+                      </p>
                     </div>
                   </div>
                   <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
                     <Zap className="w-3 h-3 mr-1" />
-                    {stats.active > 0 ? `${stats.active} Active` : "Processing..."}
+                    {crawlTask?.status || (stats.active > 0 ? `${stats.active} Active` : "Processing...")}
                   </Badge>
                 </div>
 
@@ -344,16 +427,16 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                       <div className="flex items-center gap-2">
                         <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {activeTasksByType.crawl?.statusValue || "starting"}
+                          {crawlTask?.status || activeTasksByType.crawl?.statusValue || "starting"}
                         </Badge>
-                        {activeTasksByType.crawl && (
+                        {(activeTasksByType.crawl || crawlTask?.task_id) && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleTerminateTask("crawl", activeTasksByType.crawl!.id)}
+                                  onClick={() => handleTerminateTask("crawl", activeTasksByType.crawl?.id || crawlTask?.task_id || "")}
                                   disabled={isTerminating}
                                   className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                 >
