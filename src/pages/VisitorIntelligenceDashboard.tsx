@@ -44,7 +44,7 @@ import { BRONExtendedSection, CADEExtendedSection, SocialSignalsExtendedSection,
 import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
-import { CADELoginBox } from '@/components/marketing/CADELoginBox';
+import { CADEApiDashboard } from '@/components/marketing/CADEApiDashboard';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
 import { SocialPanel } from '@/components/marketing/SocialPanel';
 import {
@@ -3570,8 +3570,8 @@ f.parentNode.insertBefore(j,f);
             )}
 
             {/* CADE API Login & Dashboard */}
-            <CADELoginBox 
-              domain={selectedTrackedDomain || selectedDomainKey} 
+            <CADEApiDashboard
+              domain={selectedTrackedDomain || selectedDomainKey}
               onSubscriptionChange={setCadeHasSubscription}
             />
 
