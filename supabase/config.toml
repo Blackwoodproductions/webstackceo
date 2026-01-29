@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.aggregate-changelog]
 verify_jwt = false
+
+[functions.domain-context-autofill]
+verify_jwt = false
