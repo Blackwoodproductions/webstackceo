@@ -236,7 +236,7 @@ export const BronClusterCard = memo(({
   // Cluster card with header and children
   return (
     <div 
-      className="rounded-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-500/5 overflow-hidden"
+      className="relative rounded-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-500/5 overflow-hidden"
       style={{ contain: 'layout style paint' }}
     >
       {/* Cluster Header */}
