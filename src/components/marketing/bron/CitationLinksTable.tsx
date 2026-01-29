@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Lock } from "lucide-react";
+import { Lock, ExternalLink } from "lucide-react";
 import type { BronLink } from "@/hooks/use-bron-api";
 
 export type RelevanceFilter = "all" | "most" | "very" | "relevant" | "less";
@@ -54,6 +54,51 @@ function categoryWordOverlap(keywordText: string, categoryText: string) {
   if (kw.length === 0 || cat.length === 0) return 0;
   const set = new Set(cat);
   return kw.filter((w) => set.has(w)).length;
+}
+
+/**
+ * Extract a keyword/topic text from a BRON link URL.
+ * Example: "https://seolocal.it.com/local-seo-for-dentists-575290bc/" -> "Local Seo For Dentists"
+ */
+export function extractKeywordFromLink(link: BronLink): string {
+  // Try to extract from the link URL
+  const url = link.link || link.source_url || link.target_url;
+  if (!url) return "";
+  
+  try {
+    // Parse the URL path
+    const urlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
+    const pathParts = urlPath.split('/').filter(p => p.length > 0);
+    
+    // Get the last segment (usually the slug)
+    const slug = pathParts[pathParts.length - 1] || '';
+    
+    // Skip if it's a query parameter URL (e.g., "?Action=2&k=something")
+    if (slug.includes('?')) {
+      const queryMatch = url.match(/[?&]k=([^&]+)/);
+      if (queryMatch) {
+        const keyword = decodeURIComponent(queryMatch[1]).replace(/-/g, ' ');
+        return capitalizeWords(keyword);
+      }
+      return "";
+    }
+    
+    // Remove trailing ID pattern like "-575290bc" or "-568071bc"
+    const cleanSlug = slug.replace(/-\d+bc$/i, '');
+    
+    // Convert slug to readable text: "local-seo-for-dentists" -> "Local Seo For Dentists"
+    const keyword = cleanSlug.replace(/-/g, ' ');
+    return capitalizeWords(keyword);
+  } catch {
+    return "";
+  }
+}
+
+function capitalizeWords(text: string): string {
+  return text
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export function scoreRelevanceTier(
@@ -141,7 +186,6 @@ export const CitationLinksTable = memo(
               }
               link={link}
               tier={tier}
-              keywordText={keywordText}
               isHighlighted={idx === 2}
             />
           ))}
@@ -161,23 +205,28 @@ const CitationLinkRow = memo(
   ({
     link,
     tier,
-    keywordText,
     isHighlighted = false,
   }: {
     link: BronLink;
     tier: RelevanceTier;
-    keywordText: string;
     isHighlighted?: boolean;
   }) => {
     const isReciprocal = link.reciprocal === "yes";
     const isEnabled = link.disabled !== "yes";
 
     const displayDomain = link.domain_name || link.domain || "";
+    
+    // Extract keyword from the link URL instead of using parent keyword
+    const linkKeyword = extractKeywordFromLink(link);
+    const displayKeyword = linkKeyword || "Link Partner";
 
     // Category display: "Parent / Child" format matching reference
     const categoryDisplay = (link.parent_category || "").trim() && (link.category || "").trim()
-      ? `${link.parent_category} / ${link.category}`
-      : (link.category || link.parent_category || "General");
+      ? `${(link.parent_category || "").replace(/&amp;/g, "&").trim()} / ${(link.category || "").replace(/&amp;/g, "&").trim()}`
+      : ((link.category || link.parent_category || "General").replace(/&amp;/g, "&").trim());
+    
+    // Get the link URL for external link
+    const linkUrl = link.link || link.source_url || link.target_url;
 
     return (
       <div 
@@ -190,11 +239,18 @@ const CitationLinkRow = memo(
       >
         {/* Domain-Keyword Column */}
         <div className="min-w-0">
-          <div className="font-medium text-foreground text-[14px] truncate" title={displayDomain}>
+          <a 
+            href={linkUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground text-[14px] truncate block hover:text-primary transition-colors"
+            title={displayDomain}
+            onClick={(e) => e.stopPropagation()}
+          >
             {displayDomain || "Unknown Domain"}
-          </div>
-          <div className="text-[13px] text-muted-foreground italic truncate mt-0.5" title={keywordText}>
-            {keywordText.length > 50 ? `${keywordText.slice(0, 50)}...` : keywordText}
+          </a>
+          <div className="text-[13px] text-cyan-400 italic truncate mt-0.5" title={displayKeyword}>
+            {displayKeyword.length > 50 ? `${displayKeyword.slice(0, 50)}...` : displayKeyword}
           </div>
         </div>
 
