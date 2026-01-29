@@ -1,4 +1,5 @@
 import * as React from "react";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 
 type WysiwygEditorProps = {
@@ -42,7 +43,15 @@ export default function WysiwygEditor({
     if (focused) return;
     const current = ref.current.innerHTML;
     const decoded = decodeHtml(html || "");
-    if (current !== decoded) ref.current.innerHTML = decoded;
+    // Sanitize HTML to prevent XSS attacks
+    const sanitized = DOMPurify.sanitize(decoded, {
+      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'b', 'em', 'i', 'u', 
+        'a', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'hr', 'table', 'thead', 'tbody', 
+        'tr', 'th', 'td', 'img', 'span', 'div', 'sub', 'sup', 'mark'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'id', 'style'],
+      ALLOW_DATA_ATTR: false,
+    });
+    if (current !== sanitized) ref.current.innerHTML = sanitized;
   }, [html, focused]);
 
   const handleInput = React.useCallback(() => {

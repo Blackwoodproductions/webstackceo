@@ -107,8 +107,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isRefreshingRef.current = true;
     
     try {
-      console.log('[AuthContext] Attempting to refresh Google token...');
-      
       // Get refresh token from database
       const { data: tokenData, error } = await supabase
         .from('oauth_tokens')
@@ -118,7 +116,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .single();
 
       if (error || !tokenData?.refresh_token) {
-        console.log('[AuthContext] No refresh token available, requiring re-auth');
         return false;
       }
 
@@ -131,7 +128,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       if (response.error || !response.data?.access_token) {
-        console.error('[AuthContext] Token refresh failed:', response.error);
+        console.error('[AuthContext] Token refresh failed');
         return false;
       }
 
@@ -163,7 +160,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         .eq('user_id', user.id)
         .eq('provider', 'google');
 
-      console.log('[AuthContext] Token refreshed successfully, expires in', expiresIn, 'seconds');
       setIsGoogleConnected(true);
       setIsReauthPending(false);
 
@@ -174,7 +170,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (err) {
-      console.error('[AuthContext] Token refresh error:', err);
+      console.error('[AuthContext] Token refresh error');
       return false;
     } finally {
       isRefreshingRef.current = false;
@@ -193,7 +189,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const timeUntilRefresh = expiry - Date.now() - TOKEN_REFRESH_BUFFER_MS;
     
     if (timeUntilRefresh > 0) {
-      console.log('[AuthContext] Scheduling token refresh in', Math.round(timeUntilRefresh / 60000), 'minutes');
       refreshTimeoutRef.current = setTimeout(async () => {
         const success = await refreshGoogleToken();
         if (success) {
@@ -311,13 +306,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const wasConnected = isGoogleConnected;
       
       if (wasConnected && !isValid && !isReauthPending) {
-        console.log('[AuthContext] Google tokens expiring - attempting refresh...');
-        
         // Try to refresh first
         const refreshed = await refreshGoogleToken();
         
         if (!refreshed) {
-          console.log('[AuthContext] Refresh failed - prompting for re-auth');
           setIsGoogleConnected(false);
           setIsReauthPending(true);
           

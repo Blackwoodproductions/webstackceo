@@ -332,8 +332,6 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
 
         if (timeRemaining > fiveMinBuffer) {
           // Token is still valid
-          console.log("[UnifiedAuth] Valid token from DB, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
-          
           syncToLocalStorage(dbTokens.accessToken, dbTokens.expiresAt.getTime(), dbTokens.scope);
           setAccessToken(dbTokens.accessToken);
           setIsAuthenticated(true);
@@ -356,7 +354,6 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
           return;
         } else if (dbTokens.refreshToken) {
           // Token expired but we have refresh token
-          console.log("[UnifiedAuth] Token expired, attempting refresh...");
           const newToken = await refreshAccessToken(dbTokens.refreshToken);
           
           if (newToken) {
@@ -383,7 +380,6 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
         const timeRemaining = expiryTime - Date.now();
 
         if (timeRemaining > 0) {
-          console.log("[UnifiedAuth] Found valid localStorage token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
           setAccessToken(storedToken);
           setIsAuthenticated(true);
           setHasGAAccess(storedScopes.includes("analytics"));
@@ -402,7 +398,6 @@ export const useUnifiedGoogleAuth = (): UseUnifiedGoogleAuthReturn => {
           setIsLoading(false);
           return;
         } else {
-          console.log("[UnifiedAuth] Stored token has expired, clearing...");
           clearAllTokens();
         }
       }

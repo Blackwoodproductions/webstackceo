@@ -462,7 +462,6 @@ export const GSCDashboardPanel = ({
         
         // If unified token found, sync to GSC keys
         if (storedToken && tokenExpiry) {
-          console.log("[GSC] Found unified token, syncing to GSC keys");
           localStorage.setItem("gsc_access_token", storedToken);
           localStorage.setItem("gsc_token_expiry", tokenExpiry);
         }
@@ -473,7 +472,6 @@ export const GSCDashboardPanel = ({
         const timeRemaining = expiryTime - Date.now();
         
         if (timeRemaining > 0) {
-          console.log("[GSC] Found valid stored token, expires in:", Math.round(timeRemaining / 1000 / 60), "minutes");
           setAccessToken(storedToken);
           setIsAuthenticated(true);
           setIsLoading(false);
@@ -485,7 +483,6 @@ export const GSCDashboardPanel = ({
           
           return true;
         } else {
-          console.log("[GSC] Stored token has expired, clearing...");
           localStorage.removeItem("gsc_access_token");
           localStorage.removeItem("gsc_token_expiry");
           localStorage.removeItem("unified_google_token");
@@ -502,7 +499,6 @@ export const GSCDashboardPanel = ({
     
     // Listen for cross-panel auth sync
     const handleAuthSync = (e: CustomEvent) => {
-      console.log("[GSC] Received auth sync from GA panel");
       setAccessToken(e.detail.access_token);
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -568,16 +564,8 @@ export const GSCDashboardPanel = ({
       setIsLoading(true);
       (async () => {
         try {
-          console.log("[GSC] Exchanging OAuth code for token...");
-          
           const tokenRes = await supabase.functions.invoke("google-oauth-token", {
             body: { code, codeVerifier: verifier, redirectUri },
-          });
-
-          console.log("[GSC] Token exchange response:", { 
-            hasError: !!tokenRes.error, 
-            hasData: !!tokenRes.data,
-            dataKeys: tokenRes.data ? Object.keys(tokenRes.data) : []
           });
 
           if (tokenRes.error) {
@@ -593,8 +581,6 @@ export const GSCDashboardPanel = ({
           if (tokenJson?.access_token) {
             const expiresIn = Number(tokenJson.expires_in ?? 3600);
             const expiry = Date.now() + expiresIn * 1000;
-            
-            console.log("[GSC] Token received, storing in localStorage (syncing to GA)...", { expiresIn, expiry: new Date(expiry) });
             
             // Store for GSC
             localStorage.setItem("gsc_access_token", tokenJson.access_token);
@@ -777,7 +763,6 @@ export const GSCDashboardPanel = ({
     setIsLoading(true);
     try {
       const redirectUri = getOAuthRedirectUri();
-      console.log("[GSC] Exchanging OAuth code for token via popup...");
       
       const tokenRes = await supabase.functions.invoke("google-oauth-token", {
         body: { code, codeVerifier: verifier, redirectUri },
@@ -795,7 +780,6 @@ export const GSCDashboardPanel = ({
 
       const expiryTime = Date.now() + (expires_in || 3600) * 1000;
       
-      console.log("[GSC] Token received via popup, storing in localStorage (syncing to GA)...");
       // Store for GSC
       localStorage.setItem("gsc_access_token", access_token);
       localStorage.setItem("gsc_token_expiry", expiryTime.toString());
@@ -825,7 +809,7 @@ export const GSCDashboardPanel = ({
           localStorage.setItem("gsc_google_profile", JSON.stringify(profile));
           window.dispatchEvent(new CustomEvent("gsc-profile-updated", { detail: { profile } }));
         } catch {
-          console.warn("[GSC] Could not decode id_token");
+          // Could not decode id_token
         }
       }
       
@@ -852,17 +836,14 @@ export const GSCDashboardPanel = ({
 
   const handleGoogleLogin = async () => {
     const clientId = getGoogleClientId();
-    console.log("[GSC] Attempting login, client ID present:", !!clientId, "ID prefix:", clientId?.substring(0, 20));
     
     if (!clientId) {
-      console.log("[GSC] No client ID found, showing dialog");
       setShowClientIdDialog(true);
       return;
     }
 
     try {
       const redirectUri = getOAuthRedirectUri();
-      console.log("[GSC] Redirect URI:", redirectUri);
       
       const verifier = generateCodeVerifier();
       localStorage.setItem("gsc_code_verifier", verifier);
@@ -878,8 +859,6 @@ export const GSCDashboardPanel = ({
       authUrl.searchParams.set("prompt", "consent");
       authUrl.searchParams.set("access_type", "online");
       authUrl.searchParams.set("state", "gsc");
-
-      console.log("[GSC] Opening OAuth popup...");
       
       // Use popup instead of redirect
       const opened = openOAuthPopup({
@@ -954,7 +933,6 @@ export const GSCDashboardPanel = ({
       // Check for authentication errors in response
       if (response.data?.error?.status === "UNAUTHENTICATED" || 
           response.data?.error?.code === 401) {
-        console.log("[GSC] Token invalid, triggering re-authentication");
         localStorage.removeItem("gsc_access_token");
         localStorage.removeItem("gsc_token_expiry");
         setAccessToken(null);
