@@ -50,7 +50,7 @@ serve(async (req) => {
         break;
 
       // === CRAWLER ENDPOINTS ===
-      case "crawl-domain":
+      case "crawl-domain": {
         if (!domain) {
           return new Response(
             JSON.stringify({ error: "Domain is required for crawl-domain" }),
@@ -59,8 +59,26 @@ serve(async (req) => {
         }
         method = "POST";
         endpoint = "/crawler/crawl-domain";
-        postBody = JSON.stringify({ domain, ...params });
+        
+        // Build callback URL for CADE to POST crawl updates
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://qwnzenimkwtuaqnrcygb.supabase.co";
+        const callbackUrl = `${supabaseUrl}/functions/v1/cade-crawl-callback`;
+        
+        // Generate a request_id for tracking
+        const requestId = params?.request_id || `crawl-${domain}-${Date.now()}`;
+        const userId = params?.user_id || "system";
+        
+        postBody = JSON.stringify({ 
+          domain, 
+          callback_url: callbackUrl,
+          request_id: requestId,
+          user_id: userId,
+          max_pages: params?.max_pages || 50,
+          ...params 
+        });
+        console.log(`[CADE API] Crawl request with callback: ${callbackUrl}`);
         break;
+      }
 
       // === DOMAIN ENDPOINTS ===
       case "domain-profile":

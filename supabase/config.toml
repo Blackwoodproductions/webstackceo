@@ -57,6 +57,9 @@ verify_jwt = false
 [functions.cade-api]
 verify_jwt = false
 
+[functions.cade-crawl-callback]
+verify_jwt = false
+
 [functions.social-oauth-token]
 verify_jwt = false
 
