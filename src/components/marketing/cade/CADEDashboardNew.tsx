@@ -358,7 +358,7 @@ StatBox.displayName = 'StatBox';
 // ─── Main Component ──────────────────────────────────────────────────────────
 export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboardNewProps) => {
   const { fetchSubscription } = useBronApi();
-  const { stats, byType, latestCategorization, activeTasksByType, refresh: refreshTasks } = useCadeEventTasks(domain);
+  const { tasks, stats, byType, latestCategorization, activeTasksByType, refresh: refreshTasks } = useCadeEventTasks(domain);
   
   // States
   const [isLoading, setIsLoading] = useState(true);
@@ -835,74 +835,90 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           </SectionCard>
         </div>
 
-        {/* Domain Information Card - 3 columns */}
+        {/* Live Activity Card - 3 columns */}
         <div className="md:col-span-3">
-          <SectionCard title="Domain Information" accentColor="cyan">
-            <div className="space-y-5">
-              {/* Competitors */}
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Competitors:</p>
-                <div className="p-3 rounded-lg bg-background/50 border border-border/30">
-                  {domainProfile?.competitors ? (
-                    <p className="text-sm">{domainProfile.competitors}</p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No competitors added yet.{" "}
-                      <button 
-                        onClick={() => setDomainContextOpen(true)}
-                        className="text-cyan-400 hover:underline"
-                      >
-                        Add competitors in Settings
-                      </button>
-                    </p>
-                  )}
+          <SectionCard title="Live Activity" accentColor="violet">
+            <div className="space-y-3 max-h-[280px] overflow-y-auto pr-2">
+              {tasks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No recent activity</p>
                 </div>
-              </div>
-
-              {/* Business Description */}
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Business Description:</p>
-                <div className="text-sm">
-                  {domainProfile?.description ? (
-                    <>
-                      <p className={descriptionExpanded ? "" : "line-clamp-3"}>
-                        {domainProfile.description}
-                      </p>
-                      {domainProfile.description.length > 200 && (
-                        <button
-                          onClick={() => setDescriptionExpanded(!descriptionExpanded)}
-                          className="text-cyan-400 hover:underline text-sm mt-1"
-                        >
-                          {descriptionExpanded ? "Show less" : "Read more"}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground">No description available.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Categories:</p>
-                <div className="flex flex-wrap gap-2">
-                  {domainProfile?.categories && domainProfile.categories.length > 0 ? (
-                    domainProfile.categories.map((cat, i) => (
-                      <Badge 
-                        key={i} 
-                        variant="outline" 
-                        className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-xs px-3 py-1"
-                      >
-                        {cat}
+              ) : (
+                tasks.slice(0, 10).map((task) => {
+                  const isActive = ["running", "processing", "pending", "queued", "in_progress"].includes(task.statusValue);
+                  const isCompleted = ["completed", "done", "success"].includes(task.statusValue);
+                  const isFailed = ["failed", "error"].includes(task.statusValue);
+                  
+                  const typeColors: Record<string, string> = {
+                    CRAWL: "text-orange-400 bg-orange-500/10 border-orange-500/30",
+                    CATEGORIZATION: "text-violet-400 bg-violet-500/10 border-violet-500/30",
+                    CSS: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+                    CONTENT: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+                    UNKNOWN: "text-muted-foreground bg-muted/10 border-border/30",
+                  };
+                  
+                  return (
+                    <div 
+                      key={task.id} 
+                      className="flex items-center gap-3 p-3 rounded-lg bg-background/30 border border-border/30"
+                    >
+                      {/* Status indicator */}
+                      <div className="flex-shrink-0">
+                        {isActive && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
+                        {isCompleted && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                        {isFailed && <AlertTriangle className="w-4 h-4 text-red-400" />}
+                        {!isActive && !isCompleted && !isFailed && <Clock className="w-4 h-4 text-muted-foreground" />}
+                      </div>
+                      
+                      {/* Type badge */}
+                      <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${typeColors[task.type]}`}>
+                        {task.type}
                       </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No categories assigned.</p>
-                  )}
-                </div>
-              </div>
+                      
+                      {/* Message */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">
+                          {task.message || task.current_url || `${task.type} ${task.statusValue}`}
+                        </p>
+                        {task.progress !== undefined && task.progress > 0 && task.progress < 100 && (
+                          <div className="mt-1 h-1 rounded-full bg-muted/30 overflow-hidden">
+                            <div 
+                              className="h-full bg-primary/60 rounded-full transition-all duration-300"
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Time */}
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                        {task.created_at ? new Date(task.created_at).toLocaleTimeString() : "—"}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
+            
+            {tasks.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between">
+                <div className="flex gap-4 text-xs text-muted-foreground">
+                  <span>Active: <span className="text-amber-400 font-medium">{stats.active}</span></span>
+                  <span>Completed: <span className="text-emerald-400 font-medium">{stats.completed}</span></span>
+                  <span>Failed: <span className="text-red-400 font-medium">{stats.failed}</span></span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={refreshTasks}
+                  className="text-xs h-7"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh
+                </Button>
+              </div>
+            )}
           </SectionCard>
         </div>
       </div>
@@ -971,6 +987,12 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               >
                 Scheduled
               </TabsTrigger>
+              <TabsTrigger 
+                value="domain-info" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:text-violet-400 data-[state=active]:bg-transparent pb-3 px-4"
+              >
+                Domain Info
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="articles" className="mt-6 space-y-6">
@@ -1035,6 +1057,87 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                 <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
                 <p>No scheduled content at this time.</p>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="domain-info" className="mt-6 space-y-6">
+              <div>
+                <h4 className="font-semibold text-base mb-2">Domain Information</h4>
+                <p className="text-sm text-muted-foreground">
+                  View and manage your domain profile, competitors, and business categories.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Competitors */}
+                <div className="p-4 rounded-xl bg-background/30 border border-border/30">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Competitors</p>
+                  {domainProfile?.competitors ? (
+                    <p className="text-sm">{domainProfile.competitors}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No competitors added yet.{" "}
+                      <button 
+                        onClick={() => setDomainContextOpen(true)}
+                        className="text-cyan-400 hover:underline"
+                      >
+                        Add competitors in Settings
+                      </button>
+                    </p>
+                  )}
+                </div>
+
+                {/* Categories */}
+                <div className="p-4 rounded-xl bg-background/30 border border-border/30">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Categories</p>
+                  <div className="flex flex-wrap gap-2">
+                    {domainProfile?.categories && domainProfile.categories.length > 0 ? (
+                      domainProfile.categories.map((cat, i) => (
+                        <Badge 
+                          key={i} 
+                          variant="outline" 
+                          className="bg-violet-500/10 border-violet-500/30 text-violet-400 text-xs px-3 py-1"
+                        >
+                          {cat}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No categories assigned.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Business Description */}
+              <div className="p-4 rounded-xl bg-background/30 border border-border/30">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Business Description</p>
+                <div className="text-sm">
+                  {domainProfile?.description ? (
+                    <>
+                      <p className={descriptionExpanded ? "" : "line-clamp-3"}>
+                        {domainProfile.description}
+                      </p>
+                      {domainProfile.description.length > 200 && (
+                        <button
+                          onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                          className="text-cyan-400 hover:underline text-sm mt-2"
+                        >
+                          {descriptionExpanded ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">No description available.</p>
+                  )}
+                </div>
+              </div>
+              
+              <Button 
+                onClick={() => setDomainContextOpen(true)}
+                className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Edit Domain Context
+              </Button>
             </TabsContent>
           </Tabs>
         </div>
