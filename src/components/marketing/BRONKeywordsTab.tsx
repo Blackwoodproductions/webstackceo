@@ -317,29 +317,22 @@ export const BRONKeywordsTab = memo(({
   const hasEverReceivedDataRef = useRef(false);
   
   // Update last valid count when we have actual data
+  // Simple: track if loading completed for this domain at least once
   useEffect(() => {
-    if (keywords.length > 0) {
-      lastValidClusterCountRef.current = keywords.length;
+    if (!isLoading && selectedDomain) {
       hasEverReceivedDataRef.current = true;
     }
-  }, [keywords.length]);
-  
-  // Derive "has data" - ONLY consider data "received" if:
-  // 1. We actually have keywords now, OR
-  // 2. We're the same domain and previously had keywords AND not still loading
-  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
-  const hasReceivedData = keywords.length > 0 || 
-    (!isLoading && hasEverReceivedDataRef.current && prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
-  
-  // Reset the last valid count when domain actually changes
+  }, [isLoading, selectedDomain]);
+
+  // Reset when domain changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
-      // Only reset if we're switching to a truly different domain
-      lastValidClusterCountRef.current = 0;
       hasEverReceivedDataRef.current = false;
       prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
+  
+  // NOTE: showEmptyState and showLoadingState are defined after mergedKeywords below
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -399,6 +392,10 @@ export const BRONKeywordsTab = memo(({
     mergeKeywordsWithSerp(keywords, serpReports), 
     [keywords, serpReports]
   );
+
+  // Simple logic: show empty state only when loading is done and we have no keywords
+  const showEmptyState = !isLoading && hasEverReceivedDataRef.current && mergedKeywords.length === 0;
+  const showLoadingState = isLoading || (!hasEverReceivedDataRef.current && mergedKeywords.length === 0);
 
   // Filter keywords
   const filteredKeywords = useMemo(() => {
@@ -983,22 +980,15 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : mergedKeywords.length === 0 && !hasReceivedData ? (
-            // Subtle loading indicator instead of heavy skeletons - feels faster
+          ) : showLoadingState ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground">
               <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
               <span className="text-sm">Loading keywords...</span>
             </div>
-          ) : displayClusters.length === 0 && hasReceivedData ? (
+          ) : showEmptyState || displayClusters.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p>No keywords found</p>
-            </div>
-          ) : displayClusters.length === 0 ? (
-            // Fallback loading
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
-              <span className="text-sm">Loading keywords...</span>
+              <p>No keywords yet</p>
             </div>
           ) : (
             <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
