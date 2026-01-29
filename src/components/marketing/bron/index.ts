@@ -6,5 +6,5 @@ export { BronCachedMap } from "./BronCachedMap";
 export { BronDomainProfile } from "./BronDomainProfile";
 export { BronKeywordsInfoCards, InfoCard } from "./BronInfoCards";
 export { extractKeywordFromLink } from "./CitationLinksTable";
-export { BronKeywordSkeleton, BronKeywordTableHeader, BronKeywordSkeletonList } from "./BronKeywordSkeleton";
+export { BronKeywordSkeleton, BronKeywordTableHeader, BronKeywordSkeletonList, BronAILoadingAnimation } from "./BronKeywordSkeleton";
 export * from "./utils";
