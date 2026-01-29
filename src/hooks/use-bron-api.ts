@@ -197,6 +197,50 @@ const KEYWORD_CACHE_KEY = 'bron_keywords_cache'; // legacy (v1)
 const KEYWORD_CACHE_V2_PREFIX = 'bron_keywords_cache_v2_';
 const KEYWORD_CACHE_V2_INDEX_KEY = 'bron_keywords_cache_v2_index';
 
+// ─── Keyword Preview Cache ───
+// Some domains have very large keyword payloads; JSON.parse of the full cache can block
+// initial paint on hard refresh. We store a small preview slice that can be hydrated
+// synchronously with minimal main-thread cost.
+const KEYWORD_PREVIEW_V1_PREFIX = 'bron_keywords_preview_v1_';
+const KEYWORD_PREVIEW_LIMIT = 80;
+
+interface KeywordPreviewEntry {
+  keywords: BronKeyword[];
+  cachedAt: number;
+  totalCount?: number;
+}
+
+function getKeywordPreviewKey(domain: string) {
+  return `${KEYWORD_PREVIEW_V1_PREFIX}${domain}`;
+}
+
+function loadCachedKeywordsPreview(domain: string): KeywordPreviewEntry | null {
+  const now = Date.now();
+  try {
+    const raw = localStorage.getItem(getKeywordPreviewKey(domain));
+    if (!raw) return null;
+    const entry = JSON.parse(raw) as KeywordPreviewEntry;
+    if (!entry?.cachedAt || !Array.isArray(entry.keywords)) return null;
+    if ((now - entry.cachedAt) > CACHE_MAX_AGE) return null;
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedKeywordsPreview(domain: string, keywords: BronKeyword[]) {
+  try {
+    const entry: KeywordPreviewEntry = {
+      keywords: keywords.slice(0, KEYWORD_PREVIEW_LIMIT),
+      cachedAt: Date.now(),
+      totalCount: keywords.length,
+    };
+    localStorage.setItem(getKeywordPreviewKey(domain), JSON.stringify(entry));
+  } catch {
+    // best-effort
+  }
+}
+
 // ─── In-Memory Keyword Cache ───
 // Avoids re-parsing large localStorage JSON on every domain switch (major perf gain for 150+ keyword domains)
 // Key: domain, Value: { keywords, cachedAt, localStorageLoadedAt }
@@ -326,6 +370,9 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
   const index = loadKeywordV2Index();
   index[domain] = { cachedAt: entry.cachedAt, count: keywords.length };
 
+  // Always keep a small preview for fast hydration after hard refresh.
+  saveCachedKeywordsPreview(domain, keywords);
+
   // Ensure we keep at most N domains
   evictOldestKeywordV2Entries(index, domain);
 
@@ -376,6 +423,13 @@ export function invalidateKeywordCache(domain: string) {
     // V2
     try {
       localStorage.removeItem(getKeywordV2Key(domain));
+    } catch {
+      // ignore
+    }
+
+    // Preview
+    try {
+      localStorage.removeItem(getKeywordPreviewKey(domain));
     } catch {
       // ignore
     }
@@ -735,12 +789,14 @@ function getInitialCacheForDomain(domain: string | null): {
   
   const normalizedDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
   
-  const cachedKeywords = loadCachedKeywords(normalizedDomain);
+  // IMPORTANT: Use preview on initial hydration to avoid blocking paint for large domains.
+  const cachedKeywordsPreview = loadCachedKeywordsPreview(normalizedDomain);
+  const cachedKeywords = cachedKeywordsPreview?.keywords ?? null;
   const cachedPages = loadCachedPages(normalizedDomain);
   const cachedSerp = loadCachedSerp(normalizedDomain);
   const cachedLinks = loadCachedLinks(normalizedDomain);
   
-  console.log(`[BRON] Initial hydration for ${normalizedDomain}: ${cachedKeywords?.length ?? 0} keywords, ${cachedSerp?.serpReports?.length ?? 0} serp reports`);
+  console.log(`[BRON] Initial hydration for ${normalizedDomain}: ${cachedKeywords?.length ?? 0} keywords (preview), ${cachedSerp?.serpReports?.length ?? 0} serp reports`);
   
   return {
     keywords: cachedKeywords || [],
@@ -939,9 +995,37 @@ export function useBronApi(): UseBronApiReturn {
     }
 
     // Hydrate caches synchronously.
-    const cachedKeywords = loadCachedKeywords(key);
-    console.log(`[BRON] selectDomain: setting ${cachedKeywords?.length ?? 0} keywords from cache`);
-    setKeywords(cachedKeywords || []);
+    // IMPORTANT: use preview first to keep domain switch + hard refresh instant.
+    const preview = loadCachedKeywordsPreview(key);
+    const previewKeywords = preview?.keywords ?? [];
+    console.log(`[BRON] selectDomain: setting ${previewKeywords.length} keywords from preview cache`);
+    setKeywords(previewKeywords);
+
+    // Prime the in-memory cache to avoid touching localStorage again during this session.
+    keywordMemoryCache.set(key, {
+      keywords: previewKeywords,
+      cachedAt: preview?.cachedAt ?? Date.now(),
+      localStorageLoadedAt: Date.now(),
+    });
+
+    // Defer full-cache parsing until after first paint.
+    const localReqId = keywordsReqIdRef.current;
+    const defer = (cb: () => void) => {
+      // requestIdleCallback is best-effort; fall back to timeout.
+      const ric = (window as any).requestIdleCallback as ((fn: () => void, opts?: any) => number) | undefined;
+      if (ric) ric(cb, { timeout: 2000 });
+      else window.setTimeout(cb, 0);
+    };
+    defer(() => {
+      // If the user switched domains since we scheduled this, do nothing.
+      if (localReqId !== keywordsReqIdRef.current) return;
+      if (activeDomainRef.current !== key) return;
+
+      const full = loadCachedKeywords(key);
+      if (!full || full.length <= previewKeywords.length) return;
+      console.log(`[BRON] selectDomain: upgraded keywords from preview (${previewKeywords.length}) -> full (${full.length})`);
+      setKeywords(full);
+    });
     setPages(loadCachedPages(key) || []);
 
     const cachedSerp = loadCachedSerp(key);
@@ -1184,35 +1268,28 @@ export function useBronApi(): UseBronApiReturn {
 
     const reqId = ++keywordsReqIdRef.current;
     
-    // Check cache first (unless force refresh)
-    if (!forceRefresh) {
-      const cached = loadCachedKeywords(domainKey);
-      if (cached) {
-        setKeywords(cached);
-        
-        // Background refresh to check for changes (count-based)
-        const localReqId = reqId;
+    const scheduleBackgroundCheck = (cachedCount: number) => {
+      const localReqId = reqId;
+
+      // Avoid doing any work immediately on hard refresh; let the UI paint first.
+      window.setTimeout(() => {
         callApi("listKeywords", { domain: domainKey, page: 1, limit: 100, include_deleted: false })
           .then(async (result) => {
             if (localReqId !== keywordsReqIdRef.current) return;
             if (result?.success && result.data) {
               const firstPageKeywords = result.data.keywords || result.data.items || [];
               const firstPageCount = Array.isArray(firstPageKeywords) ? firstPageKeywords.length : 0;
-              
-              // If first page is full (100), there might be more - check total
-              // Simple heuristic: if cached count differs significantly, refresh
-              const cachedCount = cached.length;
-              const needsRefresh = firstPageCount === 100 
-                ? cachedCount < 100 // If we had less than 100, but now first page is full
-                : firstPageCount !== cachedCount; // If counts differ
-              
+
+              const needsRefresh = firstPageCount === 100
+                ? cachedCount < 100
+                : firstPageCount !== cachedCount;
+
               if (needsRefresh) {
                 console.log(`[BRON] Keywords changed for ${domainKey}, refreshing...`);
-                // Full refresh in background
                 const allKeywords: BronKeyword[] = [];
                 let page = 1;
                 let hasMore = true;
-                
+
                 while (hasMore && page <= 10) {
                   const pageResult = await callApi("listKeywords", { domain: domainKey, page, limit: 100, include_deleted: false });
                   if (localReqId !== keywordsReqIdRef.current) return;
@@ -1229,7 +1306,7 @@ export function useBronApi(): UseBronApiReturn {
                     hasMore = false;
                   }
                 }
-                
+
                 if (localReqId === keywordsReqIdRef.current && allKeywords.length > 0) {
                   setKeywords(allKeywords);
                   saveCachedKeywords(domainKey, allKeywords);
@@ -1238,7 +1315,22 @@ export function useBronApi(): UseBronApiReturn {
             }
           })
           .catch(err => console.warn('[BRON] Background keywords check failed:', err));
-        
+      }, 1500);
+    };
+
+    // If the UI already has keywords for this domain (often from preview hydration),
+    // DO NOT parse localStorage again (can be 3-5s for very large domains).
+    if (!forceRefresh && activeDomainRef.current === domainKey && keywords.length > 0) {
+      scheduleBackgroundCheck(keywords.length);
+      return;
+    }
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = loadCachedKeywords(domainKey);
+      if (cached) {
+        setKeywords(cached);
+        scheduleBackgroundCheck(cached.length);
         return; // Served from cache immediately
       }
     }
@@ -1329,7 +1421,7 @@ export function useBronApi(): UseBronApiReturn {
         console.warn('[BRON] Background keyword fetch failed:', err);
       }
     })();
-  }, [callApi, normalizeDomainKey]);
+  }, [callApi, normalizeDomainKey, keywords]);
 
   const addKeyword = useCallback(async (data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
