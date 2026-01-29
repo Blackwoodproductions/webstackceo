@@ -217,10 +217,7 @@ function getKeywordPreviewKey(domain: string) {
 function loadCachedKeywordsPreview(domain: string): KeywordPreviewEntry | null {
   const now = Date.now();
   try {
-    // Prefer localStorage (persists across sessions); fall back to sessionStorage
-    // (can still survive a hard refresh even if localStorage is out of quota).
-    const key = getKeywordPreviewKey(domain);
-    const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+    const raw = localStorage.getItem(getKeywordPreviewKey(domain));
     if (!raw) return null;
     const entry = JSON.parse(raw) as KeywordPreviewEntry;
     if (!entry?.cachedAt || !Array.isArray(entry.keywords)) return null;
@@ -232,28 +229,15 @@ function loadCachedKeywordsPreview(domain: string): KeywordPreviewEntry | null {
 }
 
 function saveCachedKeywordsPreview(domain: string, keywords: BronKeyword[]) {
-  const entry: KeywordPreviewEntry = {
-    keywords: keywords.slice(0, KEYWORD_PREVIEW_LIMIT),
-    cachedAt: Date.now(),
-    totalCount: keywords.length,
-  };
-
-  const key = getKeywordPreviewKey(domain);
-  const payload = JSON.stringify(entry);
-
-  // Best effort: write to sessionStorage first (often has room even if localStorage is tight)
   try {
-    sessionStorage.setItem(key, payload);
+    const entry: KeywordPreviewEntry = {
+      keywords: keywords.slice(0, KEYWORD_PREVIEW_LIMIT),
+      cachedAt: Date.now(),
+      totalCount: keywords.length,
+    };
+    localStorage.setItem(getKeywordPreviewKey(domain), JSON.stringify(entry));
   } catch {
-    // ignore
-  }
-
-  // Then attempt localStorage (preferred for persistence across sessions)
-  try {
-    localStorage.setItem(key, payload);
-  } catch (e) {
-    // Helpful diagnostics for cases where localStorage quota is exceeded.
-    console.warn(`[BRON] Failed to save keyword preview cache for ${domain} (localStorage)`, e);
+    // best-effort
   }
 }
 
@@ -316,19 +300,6 @@ function evictOldestKeywordV2Entries(index: Record<string, KeywordCacheIndexEntr
     } catch {
       // ignore
     }
-
-    // Also remove previews for the evicted domain (frees a little extra + keeps things tidy)
-    try {
-      localStorage.removeItem(getKeywordPreviewKey(oldest));
-    } catch {
-      // ignore
-    }
-    try {
-      sessionStorage.removeItem(getKeywordPreviewKey(oldest));
-    } catch {
-      // ignore
-    }
-
     delete index[oldest];
     // Also evict from memory cache
     keywordMemoryCache.delete(oldest);
@@ -399,15 +370,11 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
   const index = loadKeywordV2Index();
   index[domain] = { cachedAt: entry.cachedAt, count: keywords.length };
 
-  // Ensure we keep at most N domains BEFORE attempting any writes.
-  // This maximizes the chance we can at least persist the preview.
-  evictOldestKeywordV2Entries(index, domain);
-  // Persist index best-effort (helps future eviction decisions)
-  saveKeywordV2Index(index);
-
   // Always keep a small preview for fast hydration after hard refresh.
-  // (Also written to sessionStorage as fallback.)
   saveCachedKeywordsPreview(domain, keywords);
+
+  // Ensure we keep at most N domains
+  evictOldestKeywordV2Entries(index, domain);
 
   // ─── Update memory cache immediately ───
   keywordMemoryCache.set(domain, {
@@ -416,14 +383,12 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
     localStorageLoadedAt: now,
   });
 
-  // Try to write full cache; if quota is exceeded, evict more and retry.
-  let wroteFull = false;
+  // Try to write; if quota is exceeded, evict more and retry.
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       localStorage.setItem(getKeywordV2Key(domain), JSON.stringify(entry));
       saveKeywordV2Index(index);
       console.log(`[BRON] Cached ${keywords.length} keywords for ${domain}`);
-      wroteFull = true;
       return;
     } catch (e) {
       // Evict one more oldest entry and retry
@@ -442,31 +407,12 @@ function saveCachedKeywords(domain: string, keywords: BronKeyword[]) {
       } catch {
         // ignore
       }
-
-      // Also remove preview for victim
-      try {
-        localStorage.removeItem(getKeywordPreviewKey(victim));
-      } catch {
-        // ignore
-      }
-      try {
-        sessionStorage.removeItem(getKeywordPreviewKey(victim));
-      } catch {
-        // ignore
-      }
-
       delete index[victim];
       keywordMemoryCache.delete(victim);
     }
   }
 
-  // If we could not write the full cache, make sure index doesn't lie.
-  if (!wroteFull) {
-    delete index[domain];
-    saveKeywordV2Index(index);
-  }
-
-  console.warn('[BRON] Failed to save keyword cache after retries (preview may still be available)');
+  console.warn('[BRON] Failed to save keyword cache after retries');
 }
 
 export function invalidateKeywordCache(domain: string) {
@@ -484,11 +430,6 @@ export function invalidateKeywordCache(domain: string) {
     // Preview
     try {
       localStorage.removeItem(getKeywordPreviewKey(domain));
-    } catch {
-      // ignore
-    }
-    try {
-      sessionStorage.removeItem(getKeywordPreviewKey(domain));
     } catch {
       // ignore
     }
