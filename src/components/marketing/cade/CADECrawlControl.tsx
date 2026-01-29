@@ -4,7 +4,7 @@ import {
   Globe, RefreshCw, Play, Loader2, CheckCircle2, AlertTriangle,
   Clock, FileText, Palette, Target, Activity, MapPin, Languages, 
   Users, Info, ChevronDown, ExternalLink, XCircle, StopCircle,
-  Link2, Layers, Zap
+  Link2, Layers, Zap, Terminal, Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
@@ -39,6 +40,15 @@ interface CrawlTask {
   error?: string;
   current_url?: string;
   message?: string;
+  time_remaining?: string;
+}
+
+interface ActivityLogEntry {
+  id: string;
+  timestamp: Date;
+  message: string;
+  type: "info" | "success" | "error" | "progress" | "cache";
+  data?: Record<string, unknown>;
 }
 
 interface CADECrawlControlProps {
@@ -56,10 +66,14 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const [crawlTask, setCrawlTask] = useState<CrawlTask | null>(null);
   const [showCategorizationDetails, setShowCategorizationDetails] = useState(false);
   const [isTerminating, setIsTerminating] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [showActivityLog, setShowActivityLog] = useState(true);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const activityScrollRef = useRef<HTMLDivElement>(null);
 
   // Get latest data from events with stats
   const { 
+    tasks,
     latestCategorization, 
     byType, 
     stats, 
@@ -67,6 +81,97 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     activeTasksByType,
     refresh: refreshEvents 
   } = useCadeEventTasks(domain);
+
+  // Helper to add activity log entry
+  const addActivity = useCallback((message: string, type: ActivityLogEntry["type"] = "info", data?: Record<string, unknown>) => {
+    const entry: ActivityLogEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      timestamp: new Date(),
+      message,
+      type,
+      data,
+    };
+    setActivityLog(prev => [entry, ...prev].slice(0, 50)); // Keep last 50 entries
+  }, []);
+
+  // Convert task events to activity log entries
+  useEffect(() => {
+    if (!tasks.length) return;
+    
+    // Get recent tasks (last 10 minutes)
+    const recentTasks = tasks.filter(t => {
+      if (!t.created_at) return false;
+      const taskTime = new Date(t.created_at).getTime();
+      return Date.now() - taskTime < 10 * 60 * 1000;
+    });
+
+    // Build activity entries from tasks
+    const newActivities: ActivityLogEntry[] = [];
+    
+    for (const task of recentTasks.slice(0, 20)) {
+      const taskTime = new Date(task.created_at || Date.now());
+      
+      // Determine type and message based on status
+      let type: ActivityLogEntry["type"] = "info";
+      let message = "";
+      
+      if (task.statusValue === "completed" || task.statusValue === "done") {
+        type = "success";
+        message = `Task Success: ${task.type}`;
+        if (task.pages_crawled) {
+          message = `Crawl completed: ${task.pages_crawled} pages processed`;
+        }
+        if (task.description) {
+          message = `Categorization completed: ${task.description.slice(0, 50)}...`;
+        }
+      } else if (task.statusValue === "failed" || task.statusValue === "error") {
+        type = "error";
+        message = `Task failed: ${task.type} - ${task.error || "Unknown error"}`;
+      } else if (task.statusValue === "running" || task.statusValue === "processing") {
+        type = "progress";
+        message = task.message || `${task.type} in progress...`;
+        if (task.current_url) {
+          message = `Crawling: ${task.current_url}`;
+        }
+        if (task.progress) {
+          message = `Processing progress: ${task.progress}%`;
+        }
+      } else if (task.statusValue === "queued" || task.statusValue === "pending") {
+        type = "info";
+        message = `Task starting: ${task.type}`;
+      }
+
+      // Check for cache hits in message
+      if (task.message?.includes("cache hit")) {
+        type = "cache";
+        message = task.message;
+      }
+
+      if (message) {
+        newActivities.push({
+          id: task.id + "-" + task.statusValue,
+          timestamp: taskTime,
+          message,
+          type,
+          data: {
+            task_id: task.id,
+            pages_crawled: task.pages_crawled,
+            total_pages: task.total_pages,
+            progress: task.progress,
+          },
+        });
+      }
+    }
+
+    if (newActivities.length > 0) {
+      setActivityLog(prev => {
+        // Merge and dedupe by id
+        const existing = new Set(prev.map(a => a.id));
+        const toAdd = newActivities.filter(a => !existing.has(a.id));
+        return [...toAdd, ...prev].slice(0, 50);
+      });
+    }
+  }, [tasks]);
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("cade-api", {
@@ -168,6 +273,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         console.log("[CADE Poll] Status response:", statusData);
         
         if (statusData) {
+          // Update task state
           setCrawlTask(prev => ({
             ...prev,
             status: statusData.status,
@@ -176,7 +282,20 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
             total_pages: statusData.total_pages ?? prev?.total_pages,
             current_url: statusData.current_url ?? prev?.current_url,
             message: statusData.message ?? prev?.message,
+            time_remaining: statusData.time_remaining ?? prev?.time_remaining,
           }));
+
+          // Add to activity log with time_remaining
+          if (statusData.message || statusData.time_remaining) {
+            const logMessage = statusData.time_remaining 
+              ? `Processing progress, time_remaining: ${statusData.time_remaining}`
+              : statusData.message || `Status: ${statusData.status}`;
+            addActivity(logMessage, "progress", {
+              time_remaining: statusData.time_remaining,
+              pages_crawled: statusData.pages_crawled,
+              progress: statusData.progress,
+            });
+          }
 
           // Check if completed
           const status = (statusData.status || "").toUpperCase();
@@ -186,6 +305,11 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
               clearInterval(pollingRef.current);
               pollingRef.current = null;
             }
+            addActivity(
+              `Crawl completed: ${statusData.total_pages || statusData.pages_crawled || 0} pages processed, ${statusData.successful ?? statusData.pages_crawled ?? 0} successful`, 
+              "success",
+              { total_pages: statusData.total_pages, successful: statusData.successful }
+            );
             toast.success("Crawl completed!");
             onRefresh?.();
             refreshEvents();
@@ -195,6 +319,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
               clearInterval(pollingRef.current);
               pollingRef.current = null;
             }
+            addActivity(`Crawl failed: ${statusData.error || statusData.message || "Unknown error"}`, "error");
             toast.error("Crawl failed: " + (statusData.error || statusData.message || "Unknown error"));
             refreshEvents();
           }
@@ -220,6 +345,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleStartCrawl = async () => {
     if (!domain) return;
     setIsCrawling(true);
+    addActivity(`Starting domain crawl for ${domain}`, "info");
     
     const requestId = `crawl-${domain}-${Date.now()}`;
     
@@ -239,6 +365,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
       });
       
       console.log("[CADE Crawl] Task started:", task);
+      addActivity(`Crawl task queued: ${task?.task_id || requestId}`, "info");
       
       if (task?.task_id || requestId) {
         onTaskStarted?.(task?.task_id || requestId);
@@ -248,6 +375,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
       refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Start error:", err);
+      addActivity(`Failed to start crawl: ${err instanceof Error ? err.message : "Unknown error"}`, "error");
       toast.error("Failed to start crawl");
       setIsCrawling(false);
     }
@@ -256,15 +384,18 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleCategorizeDomain = async () => {
     if (!domain) return;
     setIsCategorizing(true);
+    addActivity(`Starting domain categorization`, "info");
     
     const requestId = `categorize-${domain}-${Date.now()}`;
     
     try {
       await callCadeApi("categorize-domain", { request_id: requestId });
+      addActivity(`Queued Domain Categorization job`, "info");
       toast.success("Domain categorization started!");
       refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Categorize error:", err);
+      addActivity(`Failed to categorize domain`, "error");
       toast.error("Failed to categorize domain");
       setIsCategorizing(false);
     }
@@ -273,15 +404,18 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleAnalyzeCss = async () => {
     if (!domain) return;
     setIsAnalyzingCss(true);
+    addActivity(`Starting CSS analysis`, "info");
     
     const requestId = `css-${domain}-${Date.now()}`;
     
     try {
       await callCadeApi("analyze-css", { request_id: requestId });
+      addActivity(`Queued CSS Analysis job`, "info");
       toast.success("CSS analysis started!");
       refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] CSS analyze error:", err);
+      addActivity(`Failed to analyze CSS`, "error");
       toast.error("Failed to analyze CSS");
       setIsAnalyzingCss(false);
     }
@@ -450,13 +584,21 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Progress Bar with Time Remaining */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium text-blue-400">
-                          {activeTasksByType.crawl?.progress ?? crawlTask?.progress ?? 0}%
-                        </span>
+                        <div className="flex items-center gap-3">
+                          {crawlTask?.time_remaining && (
+                            <span className="flex items-center gap-1 text-cyan-400 font-medium">
+                              <Timer className="w-3 h-3" />
+                              {crawlTask.time_remaining} remaining
+                            </span>
+                          )}
+                          <span className="font-medium text-blue-400">
+                            {activeTasksByType.crawl?.progress ?? crawlTask?.progress ?? 0}%
+                          </span>
+                        </div>
                       </div>
                       <div className="relative h-3 rounded-full bg-secondary overflow-hidden">
                         <motion.div
@@ -471,18 +613,24 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-4 gap-2 text-center">
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-blue-400">
                           {activeTasksByType.crawl?.pages_crawled ?? crawlTask?.pages_crawled ?? 0}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">Pages Crawled</p>
+                        <p className="text-[10px] text-muted-foreground">Crawled</p>
                       </div>
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-violet-400">
                           {activeTasksByType.crawl?.total_pages ?? crawlTask?.total_pages ?? "—"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">Total Pages</p>
+                        <p className="text-[10px] text-muted-foreground">Total</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-background/50 border border-border">
+                        <p className="text-xl font-bold text-cyan-400">
+                          {crawlTask?.time_remaining || "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">ETA</p>
                       </div>
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-green-400">
@@ -490,7 +638,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                             ? Math.round((Date.now() - new Date(activeTasksByType.crawl?.created_at || crawlTask?.started_at || Date.now()).getTime()) / 1000) + "s"
                             : "—"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">Duration</p>
+                        <p className="text-[10px] text-muted-foreground">Elapsed</p>
                       </div>
                     </div>
 
@@ -593,29 +741,68 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                   </motion.div>
                 )}
 
-                {/* Recent Activity Feed - Show latest events */}
-                {byType.crawl.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border/50">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                      <Layers className="w-3 h-3" />
-                      Recent Activity
-                    </h4>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {byType.crawl.slice(0, 5).map((task) => (
-                        <div key={task.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-secondary/30">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(task.statusValue)}
-                            <span className="text-muted-foreground">Crawl</span>
-                            <Badge variant="outline" className="text-[10px] py-0">{task.statusValue}</Badge>
-                          </div>
-                          <span className="text-muted-foreground">
-                            {task.created_at ? new Date(task.created_at).toLocaleTimeString() : "—"}
-                          </span>
-                        </div>
-                      ))}
+                {/* Live Activity Log - Real-time console output */}
+                <Collapsible open={showActivityLog} onOpenChange={setShowActivityLog}>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50 cursor-pointer hover:bg-muted/20 rounded p-1 -m-1">
+                      <h4 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                        <Terminal className="w-3 h-3" />
+                        Live Activity Log
+                        {activityLog.length > 0 && (
+                          <Badge variant="outline" className="text-[10px] py-0 ml-1">
+                            {activityLog.length}
+                          </Badge>
+                        )}
+                      </h4>
+                      <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${showActivityLog ? "" : "-rotate-90"}`} />
                     </div>
-                  </div>
-                )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ScrollArea className="h-48 mt-2">
+                      <div ref={activityScrollRef} className="space-y-1 font-mono text-xs">
+                        {activityLog.length === 0 ? (
+                          <div className="text-center py-4 text-muted-foreground">
+                            <Terminal className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                            <p>Activity logs will appear here...</p>
+                          </div>
+                        ) : (
+                          activityLog.map((entry) => (
+                            <motion.div
+                              key={entry.id}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className={`flex items-start gap-2 p-1.5 rounded ${
+                                entry.type === "success" ? "bg-green-500/10 text-green-400" :
+                                entry.type === "error" ? "bg-red-500/10 text-red-400" :
+                                entry.type === "progress" ? "bg-blue-500/10 text-blue-400" :
+                                entry.type === "cache" ? "bg-amber-500/10 text-amber-400" :
+                                "bg-muted/30 text-muted-foreground"
+                              }`}
+                            >
+                              <span className="text-muted-foreground flex-shrink-0 w-16">
+                                {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </span>
+                              <span className="flex-shrink-0">
+                                {entry.type === "success" ? <CheckCircle2 className="w-3 h-3" /> :
+                                 entry.type === "error" ? <AlertTriangle className="w-3 h-3" /> :
+                                 entry.type === "progress" ? <Loader2 className="w-3 h-3 animate-spin" /> :
+                                 entry.type === "cache" ? <Zap className="w-3 h-3" /> :
+                                 <Info className="w-3 h-3" />}
+                              </span>
+                              <span className="flex-1 break-words">{entry.message}</span>
+                              {entry.data?.time_remaining && (
+                                <span className="flex items-center gap-1 text-cyan-400 flex-shrink-0">
+                                  <Timer className="w-3 h-3" />
+                                  {String(entry.data.time_remaining)}
+                                </span>
+                              )}
+                            </motion.div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </motion.div>
           )}
