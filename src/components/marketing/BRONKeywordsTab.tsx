@@ -310,35 +310,66 @@ export const BRONKeywordsTab = memo(({
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
-  // Use a ref to persist the last valid cluster count during domain transitions
+  // Use refs to persist state across renders and prevent race conditions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
-  const lastValidClusterCountRef = useRef<number>(0);
-  // Track if we're still waiting for initial data load from parent (prevents premature "no keywords")
-  const hasEverReceivedDataRef = useRef(false);
+  const lastValidCountForDomainRef = useRef<Record<string, number>>({});
+  // Track if we're in a domain-switching transition (waiting for new data)
+  const isDomainTransitionRef = useRef(false);
+  // Track timestamp when we started waiting for data (to show "no keywords" after timeout)
+  const transitionStartRef = useRef<number>(0);
+  const TRANSITION_TIMEOUT_MS = 3000; // Only show "no keywords" after 3s of waiting
   
-  // Update last valid count when we have actual data
+  // Update last valid count when we have actual data for the current domain
   useEffect(() => {
-    if (keywords.length > 0) {
-      lastValidClusterCountRef.current = keywords.length;
-      hasEverReceivedDataRef.current = true;
+    if (keywords.length > 0 && selectedDomain) {
+      lastValidCountForDomainRef.current[selectedDomain] = keywords.length;
+      isDomainTransitionRef.current = false; // We have data, transition complete
     }
-  }, [keywords.length]);
+  }, [keywords.length, selectedDomain]);
   
-  // Derive "has data" - ONLY consider data "received" if:
-  // 1. We actually have keywords now, OR
-  // 2. We're the same domain and previously had keywords AND not still loading
-  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
-  const hasReceivedData = keywords.length > 0 || 
-    (!isLoading && hasEverReceivedDataRef.current && prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
-  
-  // Reset the last valid count when domain actually changes
+  // Detect domain transitions
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
-      // Only reset if we're switching to a truly different domain
-      lastValidClusterCountRef.current = 0;
+      const prevDomain = prevDomainRef.current;
       prevDomainRef.current = selectedDomain;
+      
+      // Mark as transitioning - prevents "no keywords" flash during async load
+      isDomainTransitionRef.current = true;
+      transitionStartRef.current = Date.now();
+      
+      // If we already have keywords from cache for the new domain (parent provided them), clear transition flag
+      if (keywords.length > 0) {
+        isDomainTransitionRef.current = false;
+      }
     }
-  }, [selectedDomain]);
+  }, [selectedDomain, keywords.length]);
+  
+  // Derive "has data" status
+  // NEVER show "no keywords found" while:
+  // 1. isLoading is true (actively fetching)
+  // 2. In a domain transition that hasn't timed out yet
+  // ONLY show "no keywords found" when:
+  // 1. Not loading AND not in transition AND keywords.length === 0
+  // 2. OR transition has been going on for > TRANSITION_TIMEOUT_MS
+  const hasReceivedData = useMemo(() => {
+    // If we have keywords, we definitely have data
+    if (keywords.length > 0) return true;
+    
+    // If still loading, assume we're waiting for data
+    if (isLoading) return true; // Don't show "no keywords" while loading
+    
+    // If in a transition and haven't timed out, assume data is coming
+    if (isDomainTransitionRef.current) {
+      const elapsed = Date.now() - transitionStartRef.current;
+      if (elapsed < TRANSITION_TIMEOUT_MS) {
+        return true; // Still waiting for transition to complete
+      }
+      // Transition timed out - show "no keywords"
+      isDomainTransitionRef.current = false;
+    }
+    
+    return false; // No data, not loading, not transitioning
+  }, [keywords.length, isLoading]);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
