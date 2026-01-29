@@ -8,4 +8,6 @@ export { BronKeywordsInfoCards, InfoCard } from "./BronInfoCards";
 export { extractKeywordFromLink } from "./CitationLinksTable";
 export { BronKeywordSkeleton, BronKeywordTableHeader, BronKeywordSkeletonList, BronAILoadingAnimation } from "./BronKeywordSkeleton";
 export { BronHistoryDateSelector } from "./BronHistoryDateSelector";
+export { BronQuickFilters } from "./BronQuickFilters";
+export type { QuickFilterType } from "./BronQuickFilters";
 export * from "./utils";

@@ -43,6 +43,8 @@ import {
   BronKeywordSkeletonList,
   BronKeywordTableHeader,
   BronHistoryDateSelector,
+  BronQuickFilters,
+  QuickFilterType,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -84,6 +86,7 @@ const KeywordListItem = memo(({
   metricsLoadingKeys,
   inlineEditForms,
   savingIds,
+  compactMode,
   onToggleExpand,
   onUpdateForm,
   onSave,
@@ -102,6 +105,7 @@ const KeywordListItem = memo(({
   metricsLoadingKeys: Set<string>;
   inlineEditForms: Record<string | number, Record<string, string>>;
   savingIds: Set<number | string>;
+  compactMode?: boolean;
   onToggleExpand: (kw: BronKeyword) => void;
   onUpdateForm: (id: number | string, field: string, value: string) => void;
   onSave: (kw: BronKeyword) => void;
@@ -301,12 +305,38 @@ export const BRONKeywordsTab = memo(({
 }: BRONKeywordsTabProps) => {
   // State
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyword, setNewKeyword] = useState("");
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
+  
+  // Quick filter state
+  const [activeFilter, setActiveFilter] = useState<"all" | "top10" | "top50" | "hasContent" | "noContent" | "improved" | "dropped">("all");
+  const [compactMode, setCompactMode] = useState(() => {
+    try {
+      return localStorage.getItem('bron_compact_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+  
+  // Persist compact mode
+  useEffect(() => {
+    try {
+      localStorage.setItem('bron_compact_mode', String(compactMode));
+    } catch {}
+  }, [compactMode]);
   
   // Historical date selector state
   const [selectedHistoryReportId, setSelectedHistoryReportId] = useState<string | number | null>(null);
@@ -449,15 +479,86 @@ export const BRONKeywordsTab = memo(({
     }
   }, [isDomainChanging]);
 
-  // Filter keywords
+  // Filter keywords - with debounced search and quick filters
   const filteredKeywords = useMemo(() => {
-    if (!searchQuery.trim()) return mergedKeywords;
-    const q = searchQuery.toLowerCase();
-    return mergedKeywords.filter(k => 
-      getKeywordDisplayText(k).toLowerCase().includes(q) ||
-      (k.metadescription || '').toLowerCase().includes(q)
-    );
-  }, [mergedKeywords, searchQuery]);
+    let filtered = mergedKeywords;
+    
+    // Apply quick filter
+    if (activeFilter !== "all") {
+      filtered = filtered.filter(k => {
+        const keywordText = getKeywordDisplayText(k);
+        const serpData = findSerpForKeyword(keywordText, activeSerpReports);
+        const googlePos = getPosition(serpData?.google);
+        const hasContent = k.resfeedtext && k.resfeedtext.length > 50;
+        const isTrackingOnly = k.status === 'tracking_only' || String(k.id).startsWith('serp_');
+        
+        // Calculate movement
+        const initial = initialPositions[keywordText.toLowerCase()];
+        const movement = initial?.google && googlePos ? initial.google - googlePos : 0;
+        
+        switch (activeFilter) {
+          case "top10":
+            return googlePos !== null && googlePos <= 10;
+          case "top50":
+            return googlePos !== null && googlePos <= 50;
+          case "hasContent":
+            return hasContent && !isTrackingOnly;
+          case "noContent":
+            return !hasContent && !isTrackingOnly;
+          case "improved":
+            return movement > 0;
+          case "dropped":
+            return movement < 0;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply search filter (debounced)
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(k => 
+        getKeywordDisplayText(k).toLowerCase().includes(q) ||
+        (k.metadescription || '').toLowerCase().includes(q)
+      );
+    }
+    
+    return filtered;
+  }, [mergedKeywords, debouncedSearch, activeFilter, activeSerpReports, initialPositions]);
+  
+  // Calculate filter counts for badge display
+  const filterCounts = useMemo(() => {
+    let top10 = 0, top50 = 0, hasContent = 0, noContent = 0, improved = 0, dropped = 0;
+    
+    for (const k of mergedKeywords) {
+      const keywordText = getKeywordDisplayText(k);
+      const serpData = findSerpForKeyword(keywordText, activeSerpReports);
+      const googlePos = getPosition(serpData?.google);
+      const hasContentFlag = k.resfeedtext && k.resfeedtext.length > 50;
+      const isTrackingOnly = k.status === 'tracking_only' || String(k.id).startsWith('serp_');
+      
+      const initial = initialPositions[keywordText.toLowerCase()];
+      const movement = initial?.google && googlePos ? initial.google - googlePos : 0;
+      
+      if (googlePos !== null && googlePos <= 10) top10++;
+      if (googlePos !== null && googlePos <= 50) top50++;
+      if (hasContentFlag && !isTrackingOnly) hasContent++;
+      if (!hasContentFlag && !isTrackingOnly) noContent++;
+      if (movement > 0) improved++;
+      if (movement < 0) dropped++;
+    }
+    
+    return {
+      total: mergedKeywords.length,
+      top10,
+      top50,
+      hasContent,
+      noContent,
+      improved,
+      dropped,
+    };
+  }, [mergedKeywords, activeSerpReports, initialPositions]);
 
   // ─── Stable Cluster Memoization ───
   // Use a ref to cache clusters and only recompute when domain or keyword IDs actually change.
@@ -974,7 +1075,20 @@ export const BRONKeywordsTab = memo(({
           </div>
         </CardHeader>
         
-        <CardContent>
+        {/* Quick Filters Bar */}
+        {selectedDomain && displayClusters.length > 0 && (
+          <div className="px-6 pb-3">
+            <BronQuickFilters
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              compactMode={compactMode}
+              onCompactModeChange={setCompactMode}
+              counts={filterCounts}
+            />
+          </div>
+        )}
+        
+        <CardContent className={compactMode ? "px-4 py-2" : ""}>
           {!selectedDomain ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
@@ -1012,6 +1126,7 @@ export const BRONKeywordsTab = memo(({
                     metricsLoadingKeys={metricsLoadingKeys}
                     inlineEditForms={inlineEditForms}
                     savingIds={savingIds}
+                    compactMode={compactMode}
                     onToggleExpand={handleToggleExpand}
                     onUpdateForm={handleUpdateForm}
                     onSave={handleSave}
