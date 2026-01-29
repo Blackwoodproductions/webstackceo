@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Save, Loader2, Building2, MapPin, Phone, Mail, Globe, Pencil,
-  FileText, Target, Users, Award, Clock, MessageSquare, Sparkles,
-  RefreshCw, Wand2, Brain
+  Save, Loader2, Building2, MapPin, Phone,
+  FileText, Target, Award, MessageSquare, Sparkles,
+  RefreshCw, Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -135,37 +134,20 @@ export function DomainContextDialog({ open, onOpenChange, domain }: DomainContex
 
   const [formData, setFormData] = useState<Partial<DomainContext>>({});
   const [activeTab, setActiveTab] = useState<FieldGroupKey>("business");
-  const [showAutoFillPrompt, setShowAutoFillPrompt] = useState(false);
 
-  // Fetch on open and check if auto-fill is needed
+  // Fetch on open
   useEffect(() => {
     if (open && domain) {
       fetchContext();
     }
   }, [open, domain, fetchContext]);
 
-  // Sync form with context and check for auto-fill prompt
+  // Sync form with context
   useEffect(() => {
     if (context) {
       setFormData(context);
-      // Show auto-fill prompt if context is empty (0%)
-      const filled = calculateFilledCount(context);
-      if (filled === 0 && !hasAutoFilled && !loading) {
-        setShowAutoFillPrompt(true);
-      }
     }
-  }, [context, hasAutoFilled, loading]);
-
-  // Handle auto-fill
-  const handleAutoFill = async () => {
-    setShowAutoFillPrompt(false);
-    const success = await autoFillContext();
-    if (success) {
-      toast.success("Website analyzed! Fields have been auto-filled.");
-    } else {
-      toast.error("Failed to auto-fill. You can fill in the fields manually.");
-    }
-  };
+  }, [context]);
 
   // Handle recrawl
   const handleRecrawl = async () => {
@@ -320,48 +302,6 @@ export function DomainContextDialog({ open, onOpenChange, domain }: DomainContex
           </div>
         </DialogHeader>
 
-        {/* Auto-Fill Prompt Overlay */}
-        <AnimatePresence>
-          {showAutoFillPrompt && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="text-center max-w-md p-8"
-              >
-                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center">
-                  <Brain className="w-10 h-10 text-cyan-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Auto-Fill with AI?</h3>
-                <p className="text-muted-foreground mb-6">
-                  We can analyze your website and automatically fill in as many fields as possible. 
-                  This typically takes 10-30 seconds.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowAutoFillPrompt(false)}
-                  >
-                    Fill Manually
-                  </Button>
-                  <Button
-                    onClick={handleAutoFill}
-                    className="bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 text-white"
-                  >
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Auto-Fill with AI
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Auto-filling Overlay */}
         <AnimatePresence>
