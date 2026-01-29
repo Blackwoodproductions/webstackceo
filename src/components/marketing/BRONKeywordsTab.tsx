@@ -887,11 +887,73 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : mergedKeywords.length === 0 && !hasReceivedData ? (
-            // Subtle loading indicator instead of heavy skeletons - feels faster
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
-              <span className="text-sm">Loading keywords...</span>
+          ) : displayClusters.length === 0 && !hasReceivedData ? (
+            // Show skeleton keyword rows while loading - dashboard stays fully rendered
+            <div className="space-y-2">
+              {/* Column Headers Row - same as real content */}
+              <div className="flex items-center w-full justify-between px-4 py-2 mb-2 rounded-lg bg-card/80 border border-border/50" style={{ minWidth: '1050px' }}>
+                <div className="w-[70px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Speed</span>
+                </div>
+                <div className="w-[380px] flex-shrink-0 pr-4">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Keyword</span>
+                </div>
+                <div className="w-[140px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Intent</span>
+                </div>
+                <div className="w-[220px] flex-shrink-0 flex items-center justify-center gap-1">
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
+                  </div>
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Bing</span>
+                  </div>
+                  <div className="w-[70px] flex justify-center">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yahoo</span>
+                  </div>
+                </div>
+                <div className="w-[140px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
+                </div>
+                <div className="w-[80px] flex-shrink-0 flex justify-center">
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Links</span>
+                </div>
+                <div className="w-[40px] flex-shrink-0" />
+              </div>
+              {/* Skeleton keyword rows */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="flex items-center w-full justify-between px-4 py-3 rounded-lg bg-card/50 border border-border/30 animate-pulse"
+                  style={{ minWidth: '1050px' }}
+                >
+                  <div className="w-[70px] flex-shrink-0 flex justify-center">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                  </div>
+                  <div className="w-[380px] flex-shrink-0 pr-4">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2 mt-1.5" />
+                  </div>
+                  <div className="w-[140px] flex-shrink-0 flex justify-center">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <div className="w-[220px] flex-shrink-0 flex items-center justify-center gap-1">
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                  </div>
+                  <div className="w-[140px] flex-shrink-0 flex justify-center gap-2">
+                    <Skeleton className="w-8 h-4 rounded" />
+                    <Skeleton className="w-8 h-4 rounded" />
+                    <Skeleton className="w-8 h-4 rounded" />
+                  </div>
+                  <div className="w-[80px] flex-shrink-0 flex justify-center gap-1">
+                    <Skeleton className="w-6 h-4 rounded" />
+                    <Skeleton className="w-6 h-4 rounded" />
+                  </div>
+                  <div className="w-[40px] flex-shrink-0" />
+                </div>
+              ))}
             </div>
           ) : displayClusters.length === 0 && hasReceivedData ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -899,10 +961,38 @@ export const BRONKeywordsTab = memo(({
               <p>No keywords found</p>
             </div>
           ) : displayClusters.length === 0 ? (
-            // Fallback loading
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <RefreshCw className="w-5 h-5 mr-2 animate-spin opacity-50" />
-              <span className="text-sm">Loading keywords...</span>
+            // Fallback skeleton (same as above but for edge cases)
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="flex items-center w-full justify-between px-4 py-3 rounded-lg bg-card/50 border border-border/30 animate-pulse"
+                  style={{ minWidth: '1050px' }}
+                >
+                  <div className="w-[70px] flex-shrink-0 flex justify-center">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                  </div>
+                  <div className="w-[380px] flex-shrink-0 pr-4">
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                  <div className="w-[140px] flex-shrink-0 flex justify-center">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <div className="w-[220px] flex-shrink-0 flex items-center justify-center gap-1">
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                    <Skeleton className="w-[60px] h-6 rounded" />
+                  </div>
+                  <div className="w-[140px] flex-shrink-0 flex justify-center gap-2">
+                    <Skeleton className="w-8 h-4 rounded" />
+                    <Skeleton className="w-8 h-4 rounded" />
+                  </div>
+                  <div className="w-[80px] flex-shrink-0 flex justify-center gap-1">
+                    <Skeleton className="w-6 h-4 rounded" />
+                  </div>
+                  <div className="w-[40px] flex-shrink-0" />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
