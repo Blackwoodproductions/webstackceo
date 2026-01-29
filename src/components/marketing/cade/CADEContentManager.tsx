@@ -186,7 +186,9 @@ export const CADEContentManager = ({ domain, onRefresh, isCompact = false }: CAD
     } catch (err: unknown) {
       console.error("[CADE Content] Generate error:", err);
       const errMsg = err instanceof Error ? err.message : "Failed to start content generation";
-      if (errMsg.includes("not found") || errMsg.includes("crawl")) {
+      if (errMsg.toLowerCase().includes("wordpress") || errMsg.toLowerCase().includes("username") || errMsg.toLowerCase().includes("password")) {
+        toast.error("Please connect your WordPress platform first before generating content. Go to the 'Connect Your Website' section below.");
+      } else if (errMsg.includes("not found") || errMsg.includes("crawl")) {
         toast.error("Please crawl the domain first before generating content");
       } else {
         toast.error(errMsg);
