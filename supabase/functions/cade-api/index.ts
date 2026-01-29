@@ -299,11 +299,17 @@ serve(async (req) => {
         break;
 
       // === TASK ENDPOINTS ===
-      case "crawl-tasks":
+      // Note: Task endpoints require user_id as a query parameter (integer)
+      case "crawl-tasks": {
         endpoint = "/tasks/crawl/crawl-all";
+        // Add user_id if provided (required by API)
+        if (params?.user_id) {
+          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
+        }
         break;
+      }
 
-      case "crawl-task-status":
+      case "crawl-task-status": {
         if (!params?.task_id) {
           return new Response(
             JSON.stringify({ error: "task_id is required for crawl-task-status" }),
@@ -311,13 +317,21 @@ serve(async (req) => {
           );
         }
         endpoint = `/tasks/crawl/crawl?task_id=${encodeURIComponent(params.task_id)}`;
+        if (params?.user_id) {
+          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
+        }
         break;
+      }
 
-      case "categorization-tasks":
+      case "categorization-tasks": {
         endpoint = "/tasks/categorization/categorization-all";
+        if (params?.user_id) {
+          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
+        }
         break;
+      }
 
-      case "categorization-task-status":
+      case "categorization-task-status": {
         if (!params?.task_id) {
           return new Response(
             JSON.stringify({ error: "task_id is required for categorization-task-status" }),
@@ -325,13 +339,40 @@ serve(async (req) => {
           );
         }
         endpoint = `/tasks/categorization/categorization?task_id=${encodeURIComponent(params.task_id)}`;
+        if (params?.user_id) {
+          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
+        }
         break;
+      }
 
       case "terminate-content-task":
         method = "POST";
         endpoint = "/tasks/content/termination";
         postBody = JSON.stringify({ ...params });
         break;
+
+      // === CONTENT TASKS - Additional endpoints ===
+      case "content-tasks": {
+        endpoint = "/tasks/content/content-all";
+        if (params?.user_id) {
+          endpoint += `?user_id=${encodeURIComponent(params.user_id)}`;
+        }
+        break;
+      }
+
+      case "content-task-status": {
+        if (!params?.task_id) {
+          return new Response(
+            JSON.stringify({ error: "task_id is required for content-task-status" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = `/tasks/content/content?task_id=${encodeURIComponent(params.task_id)}`;
+        if (params?.user_id) {
+          endpoint += `&user_id=${encodeURIComponent(params.user_id)}`;
+        }
+        break;
+      }
 
       default:
         return new Response(
