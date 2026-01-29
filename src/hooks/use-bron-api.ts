@@ -691,8 +691,9 @@ export interface BronSerpListItem {
 
 
 export interface BronLink {
-  // Core ID field (needed for updates)
-  id?: string | number;         // Link ID for API operations
+  // Core ID field (needed for updates) - BRON API uses "linkid"
+  linkid?: string | number;     // Primary ID from BRON API for link operations
+  id?: string | number;         // Alternative ID field
   link_id?: string | number;    // Alternative ID field
   // Fields from BRON API
   link?: string;              // The URL (on our domain for linksOut, on referrer for linksIn)
@@ -1884,7 +1885,7 @@ export function useBronApi(): UseBronApiReturn {
           
           // Update local state optimistically
           setLinksIn(prev => prev.map(link => {
-            const id = link.id || link.link_id;
+            const id = link.linkid || link.id || link.link_id;
             if (String(id) === String(linkId)) {
               return { ...link, disabled: newDisabled };
             }
@@ -1892,7 +1893,7 @@ export function useBronApi(): UseBronApiReturn {
           }));
           
           setLinksOut(prev => prev.map(link => {
-            const id = link.id || link.link_id;
+            const id = link.linkid || link.id || link.link_id;
             if (String(id) === String(linkId)) {
               return { ...link, disabled: newDisabled };
             }

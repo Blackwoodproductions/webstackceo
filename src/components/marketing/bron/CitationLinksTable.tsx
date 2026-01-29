@@ -1,5 +1,5 @@
-import { memo, useMemo, useState } from "react";
-import { Lock, Unlock, Loader2 } from "lucide-react";
+import { memo, useMemo } from "react";
+import { Lock, Unlock } from "lucide-react";
 import type { BronLink } from "@/hooks/use-bron-api";
 
 export type RelevanceFilter = "all" | "most" | "very" | "relevant" | "less";
@@ -218,7 +218,6 @@ const CitationLinkRow = memo(
     isHighlighted?: boolean;
     onToggle?: (linkId: string | number, currentDisabled: string) => Promise<boolean>;
   }) => {
-    const [isToggling, setIsToggling] = useState(false);
     const isReciprocal = link.reciprocal === "yes";
     const isEnabled = link.disabled !== "yes";
 
@@ -235,20 +234,6 @@ const CitationLinkRow = memo(
     
     // Get the link URL for external link
     const linkUrl = link.link || link.source_url || link.target_url;
-    
-    // Get link ID for toggle
-    const linkId = link.id || link.link_id;
-    const canToggle = !!linkId && !!onToggle;
-
-    const handleToggle = async () => {
-      if (!canToggle || isToggling) return;
-      setIsToggling(true);
-      try {
-        await onToggle(linkId!, link.disabled || "no");
-      } finally {
-        setIsToggling(false);
-      }
-    };
 
     return (
       <div 
@@ -302,27 +287,23 @@ const CitationLinkRow = memo(
           </span>
         </div>
 
-        {/* Actions Column - Clickable ENABLED/DISABLED button */}
+        {/* Actions Column - Status indicator (toggle requires link ID from API) */}
         <div className="flex justify-center">
-          <button 
-            onClick={handleToggle}
-            disabled={!canToggle || isToggling}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide transition-all ${
+          <span 
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${
               isEnabled
-                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary)/0.9)]"
-                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive)/0.9)]"
-            } ${canToggle ? 'cursor-pointer hover:scale-105' : 'cursor-default opacity-70'} ${isToggling ? 'opacity-70' : ''}`}
-            title={canToggle ? (isEnabled ? "Click to disable link" : "Click to enable link") : "Link ID not available"}
+                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]"
+            }`}
+            title={isEnabled ? "Link is currently enabled" : "Link is currently disabled"}
           >
-            {isToggling ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : isEnabled ? (
+            {isEnabled ? (
               <Lock className="w-3.5 h-3.5" />
             ) : (
               <Unlock className="w-3.5 h-3.5" />
             )}
             {isEnabled ? "ENABLED" : "DISABLED"}
-          </button>
+          </span>
         </div>
       </div>
     );
