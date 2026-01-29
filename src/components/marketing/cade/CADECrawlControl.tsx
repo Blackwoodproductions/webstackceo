@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Globe, RefreshCw, Play, Loader2, CheckCircle2, AlertTriangle,
-  Clock, FileText, Palette, Target, Activity
+  Clock, FileText, Palette, Target, Activity, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,15 +30,17 @@ interface CrawlTask {
   started_at?: string;
   completed_at?: string;
   error?: string;
+  current_url?: string;
 }
 
 interface CADECrawlControlProps {
   domain?: string;
   domainProfile?: DomainProfile | null;
   onRefresh?: () => void;
+  onTaskStarted?: (taskId: string) => void;
 }
 
-export const CADECrawlControl = ({ domain, domainProfile, onRefresh }: CADECrawlControlProps) => {
+export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStarted }: CADECrawlControlProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCrawling, setIsCrawling] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
@@ -173,7 +175,13 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh }: CADECrawl
       });
       const task = result?.data || result;
       setCrawlTask(task);
-      toast.success("Crawl started! This may take a few minutes.");
+      
+      // Notify parent about the new task
+      if (task?.task_id) {
+        onTaskStarted?.(task.task_id);
+      }
+      
+      toast.success("Crawl started! Check the Task Monitor for progress.");
     } catch (err) {
       console.error("[CADE Crawl] Start error:", err);
       toast.error("Failed to start crawl");

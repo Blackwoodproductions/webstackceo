@@ -21,7 +21,7 @@ import {
   saveCachedCadeData,
   type CadeCacheData
 } from "@/lib/persistentCache";
-import { CADEContentManager, CADEFAQManager, CADECrawlControl } from "./cade";
+import { CADEContentManager, CADEFAQManager, CADECrawlControl, CADETaskMonitor, CADEWorkerStatus } from "./cade";
 
 // Use BRON subscription cache (authoritative source, shared across components)
 const BRON_SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
@@ -876,6 +876,18 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Task Monitor & Worker Status - Always visible for domain */}
+      {domain && (
+        <div className="space-y-4">
+          <CADETaskMonitor
+            domain={domain}
+            onRefresh={handleRefresh}
+            isCollapsed={false}
+          />
+          <CADEWorkerStatus isCollapsed={true} />
+        </div>
+      )}
 
       {/* Management Tabs - Content, FAQs, Crawl */}
       {domain && (
