@@ -313,13 +313,13 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   const showVolLoading = loading && !hasCachedVolume;
   
   return (
-    <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid grid-cols-3 gap-1.5" style={{ contain: 'layout style' }}>
       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
         <div className="flex items-center gap-0.5">
           <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
           <span className="text-[10px] font-bold text-emerald-400">
             {showCpcLoading ? (
-              <span className="opacity-60 animate-pulse">...</span>
+              <span className="opacity-50">...</span>
             ) : hasCachedCpc ? (
               `$${metrics!.cpc.toFixed(0)}`
             ) : (
@@ -335,7 +335,7 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
           <Search className="w-2.5 h-2.5 text-cyan-400" />
           <span className="text-[10px] font-bold text-cyan-400">
             {showVolLoading ? (
-              <span className="opacity-60 animate-pulse">...</span>
+              <span className="opacity-50">...</span>
             ) : hasCachedVolume ? (
               formatVolume(metrics!.search_volume)
             ) : (
