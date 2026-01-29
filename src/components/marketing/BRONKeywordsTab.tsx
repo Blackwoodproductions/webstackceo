@@ -313,30 +313,24 @@ export const BRONKeywordsTab = memo(({
   // Use a ref to persist the last valid cluster count during domain transitions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
   const lastValidClusterCountRef = useRef<number>(0);
-  // Track if we're still waiting for initial data load from parent (prevents premature "no keywords")
-  const hasEverReceivedDataRef = useRef(false);
   
   // Update last valid count when we have actual data
   useEffect(() => {
     if (keywords.length > 0) {
       lastValidClusterCountRef.current = keywords.length;
-      hasEverReceivedDataRef.current = true;
     }
   }, [keywords.length]);
   
-  // Derive "has data" - ONLY consider data "received" if:
-  // 1. We actually have keywords now, OR
-  // 2. We're the same domain and previously had keywords AND not still loading
-  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
-  const hasReceivedData = keywords.length > 0 || 
-    (!isLoading && hasEverReceivedDataRef.current && prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // Derive "has data" - consider we have data if either:
+  // 1. Current keywords array has items, OR
+  // 2. We had data before and are just transitioning (prevents flash)
+  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
   
   // Reset the last valid count when domain actually changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       // Only reset if we're switching to a truly different domain
       lastValidClusterCountRef.current = 0;
-      prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
   
