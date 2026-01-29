@@ -694,18 +694,81 @@ function getInitialDomains(): BronDomain[] {
   return loadCachedDomains() || [];
 }
 
+// Helper to get initial domain from URL or localStorage
+function getInitialActiveDomain(): string | null {
+  try {
+    // Check URL hash for domain parameter (e.g., #domain=example.com)
+    const hash = window.location.hash;
+    const domainMatch = hash.match(/[?&]domain=([^&]+)/);
+    if (domainMatch) {
+      return domainMatch[1].toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+    }
+    
+    // Fallback: check localStorage for last selected domain
+    const lastDomain = localStorage.getItem('bron_last_selected_domain');
+    if (lastDomain) return lastDomain;
+    
+    // Fallback: use first cached domain
+    const cached = loadCachedDomains();
+    if (cached && cached.length > 0) {
+      const firstDomain = cached[0]?.domain || cached[0]?.domain_name;
+      if (firstDomain) return firstDomain.toLowerCase();
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+// Helper to hydrate all cached data for a domain synchronously
+function getInitialCacheForDomain(domain: string | null): {
+  keywords: BronKeyword[];
+  pages: BronPage[];
+  serpReports: BronSerpReport[];
+  serpHistory: BronSerpListItem[];
+  linksIn: BronLink[];
+  linksOut: BronLink[];
+} {
+  if (!domain) {
+    return { keywords: [], pages: [], serpReports: [], serpHistory: [], linksIn: [], linksOut: [] };
+  }
+  
+  const normalizedDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+  
+  const cachedKeywords = loadCachedKeywords(normalizedDomain);
+  const cachedPages = loadCachedPages(normalizedDomain);
+  const cachedSerp = loadCachedSerp(normalizedDomain);
+  const cachedLinks = loadCachedLinks(normalizedDomain);
+  
+  console.log(`[BRON] Initial hydration for ${normalizedDomain}: ${cachedKeywords?.length ?? 0} keywords, ${cachedSerp?.serpReports?.length ?? 0} serp reports`);
+  
+  return {
+    keywords: cachedKeywords || [],
+    pages: cachedPages || [],
+    serpReports: cachedSerp?.serpReports || [],
+    serpHistory: cachedSerp?.serpHistory || [],
+    linksIn: cachedLinks?.linksIn || [],
+    linksOut: cachedLinks?.linksOut || [],
+  };
+}
+
 export function useBronApi(): UseBronApiReturn {
+  // Get initial domain synchronously BEFORE any state initialization
+  const [initialDomain] = useState(getInitialActiveDomain);
+  const [initialCache] = useState(() => getInitialCacheForDomain(initialDomain));
+  
   const [pendingCount, setPendingCount] = useState(0);
   const isLoading = pendingCount > 0;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   // Hydrate domains from cache on mount to prevent loading screen on hard refresh
   const [domains, setDomains] = useState<BronDomain[]>(getInitialDomains);
-  const [keywords, setKeywords] = useState<BronKeyword[]>([]);
-  const [pages, setPages] = useState<BronPage[]>([]);
-  const [serpReports, setSerpReports] = useState<BronSerpReport[]>([]);
-  const [serpHistory, setSerpHistory] = useState<BronSerpListItem[]>([]);
-  const [linksIn, setLinksIn] = useState<BronLink[]>([]);
-  const [linksOut, setLinksOut] = useState<BronLink[]>([]);
+  // Hydrate keywords and other data from cache synchronously
+  const [keywords, setKeywords] = useState<BronKeyword[]>(initialCache.keywords);
+  const [pages, setPages] = useState<BronPage[]>(initialCache.pages);
+  const [serpReports, setSerpReports] = useState<BronSerpReport[]>(initialCache.serpReports);
+  const [serpHistory, setSerpHistory] = useState<BronSerpListItem[]>(initialCache.serpHistory);
+  const [linksIn, setLinksIn] = useState<BronLink[]>(initialCache.linksIn);
+  const [linksOut, setLinksOut] = useState<BronLink[]>(initialCache.linksOut);
   const [linksInError, setLinksInError] = useState<string | null>(null);
   const [linksOutError, setLinksOutError] = useState<string | null>(null);
 
@@ -850,6 +913,17 @@ export function useBronApi(): UseBronApiReturn {
 
     const key = domain ? normalizeDomainKey(domain) : null;
     activeDomainRef.current = key;
+
+    // Persist selected domain for instant hydration on hard refresh
+    try {
+      if (key) {
+        localStorage.setItem('bron_last_selected_domain', key);
+      } else {
+        localStorage.removeItem('bron_last_selected_domain');
+      }
+    } catch {
+      // ignore localStorage errors
+    }
 
     setLinksInError(null);
     setLinksOutError(null);
