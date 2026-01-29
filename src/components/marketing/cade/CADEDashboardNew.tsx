@@ -6,6 +6,8 @@ import {
   Activity, ExternalLink, User, TrendingUp, Link2, BarChart3, Database
 } from "lucide-react";
 import { DomainContextDialog } from "./DomainContextDialog";
+import { CADEActivationPitch } from "./CADEActivationPitch";
+import { CADEPlatformCards } from "./CADEPlatformCards";
 import { useDomainContext } from "@/hooks/use-domain-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -588,20 +590,9 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     );
   }
 
-  // No subscription
+  // No subscription - show activation pitch
   if (!hasCadeSubscription) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-amber-400" />
-          <h3 className="text-lg font-semibold mb-2">CADE Not Activated</h3>
-          <p className="text-sm text-muted-foreground">
-            CADE (Content Automation & Distribution Engine) is not activated for {domain || 'this domain'}.
-            Contact support to enable automated content generation.
-          </p>
-        </div>
-      </div>
-    );
+    return <CADEActivationPitch domain={domain} />;
   }
 
   return (
@@ -657,72 +648,15 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
             <p className="text-white/70 text-sm">AI-Powered content generation and SEO Optimization</p>
           </div>
           
-          {/* Center: Platform Connection Cards - Full Width */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="grid grid-cols-4 gap-3 w-full max-w-3xl">
-              {/* WordPress */}
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-sky-400 flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.158 12.786l-2.698 7.84c.806.236 1.657.365 2.54.365 1.047 0 2.051-.18 2.986-.51a.485.485 0 01-.042-.08l-2.786-7.615zm-4.358-3.25c.043-.32.072-.664.072-1.035 0-.823-.154-1.416-.293-1.879-.181-.597-.376-1.1-.376-1.699 0-.667.506-1.286 1.22-1.286.032 0 .062.004.093.006A8.967 8.967 0 003.91 7.95l.096.002c.784 0 2-.095 2-.095.405-.024.452.571.048.618 0 0-.407.048-.859.071l2.735 8.137 1.643-4.928-1.169-3.209c-.405-.023-.788-.071-.788-.071-.405-.024-.357-.642.048-.618 0 0 1.24.095 1.976.095.784 0 2-.095 2-.095.405-.024.452.571.048.618 0 0-.407.048-.86.071l2.716 8.073.75-2.504zM12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm6.157 9.984c0 .71-.263 1.515-.607 2.649l-2.433 7.028c2.367-1.38 3.959-3.945 3.959-6.877 0-1.396-.361-2.709-.993-3.852.047.332.074.692.074 1.052z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-white font-medium text-sm">WordPress</span>
-                  <p className="text-white/50 text-xs truncate">Auto-publish posts</p>
-                </div>
-              </div>
-              
-              {/* Shopify */}
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-400 flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.756c-.022-.142-.153-.239-.294-.253-.143-.013-3.139-.232-3.139-.232s-2.075-2.013-2.298-2.236c-.224-.224-.663-.156-.832-.106-.024.007-.426.131-.902.281-.488-.158-1.073-.326-1.737-.49-.498-1.527-1.378-2.857-2.919-2.857-.084 0-.17.006-.259.019C7.168.243 6.786 0 6.333 0c-1.988 0-2.937 2.485-3.235 3.749-.929.288-1.59.492-1.675.52-.507.159-.523.175-.589.654-.049.357-1.398 10.771-1.398 10.771l11.166 2.096zM9.167 8.085v-.234c0-.766-.021-1.351-.056-1.808.429.054.853.143 1.269.266-.249.813-.648 1.529-1.213 1.776zM8.066 2.797c.05-.006.099-.011.148-.011.431 0 .767.202 1.011.607.003.014.006.029.008.043-.359-.108-.731-.208-1.115-.297a4.69 4.69 0 01-.052-.342zm.89 2.154c-.32-.098-.653-.189-.996-.272a6.65 6.65 0 01.252-.869c.219-.538.548-.96 1.087-1.023-.135.599-.258 1.405-.343 2.164z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-white font-medium text-sm">Shopify</span>
-                  <p className="text-white/50 text-xs truncate">Product content</p>
-                </div>
-              </div>
-              
-              {/* Wix */}
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-400 flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M4.2 7.998c-.458 0-.807.246-.974.59-.114.233-.149.434-.177.745l-.708 8.25s-.025.267-.133.433c-.107.166-.3.284-.57.284-.32 0-.538-.168-.63-.345-.087-.172-.11-.393-.11-.393L0 7.998h2.4l.35 4.084s.023.261.11.393c.092.177.31.345.63.345.27 0 .463-.118.57-.284.108-.166.133-.433.133-.433l.35-4.084h1.8l.35 4.084s.025.267.133.433c.107.166.3.284.57.284.32 0 .538-.168.63-.345.087-.132.11-.393.11-.393l.35-4.084H10l-.898 9.564s-.023.221-.11.393c-.092.177-.31.345-.63.345-.27 0-.463-.118-.57-.284-.108-.166-.133-.433-.133-.433l-.708-8.25c-.028-.311-.063-.512-.177-.745-.167-.344-.516-.59-.974-.59-.46 0-.807.246-.974.59-.114.233-.149.434-.177.745l-.708 8.25s-.025.267-.133.433c-.107.166-.3.284-.57.284z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-white font-medium text-sm">Wix</span>
-                  <p className="text-white/50 text-xs truncate">Dynamic pages</p>
-                </div>
-              </div>
-              
-              {/* Lovable */}
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-400 flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-white font-medium text-sm">Lovable</span>
-                  <p className="text-white/50 text-xs truncate">Real-time stream</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right: Settings Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white/70 hover:text-white hover:bg-white/15 rounded-xl h-11 w-11 border border-white/15 flex-shrink-0"
-            onClick={() => setDomainContextOpen(true)}
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+          {/* Center & Right: Platform Cards with Settings */}
+          <CADEPlatformCards 
+            onSettingsClick={() => setDomainContextOpen(true)}
+            connectedPlatforms={[]} // TODO: Connect to actual connection state
+            onPlatformClick={(platformId) => {
+              // Handle platform click - could open connection dialog
+              console.log("Platform clicked:", platformId);
+            }}
+          />
         </div>
       </div>
 
