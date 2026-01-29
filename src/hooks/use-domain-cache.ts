@@ -106,7 +106,13 @@ export function useDomainCache() {
 
   const [selectedTrackedDomain, setSelectedTrackedDomainState] = useState<string>(() => {
     const cached = getCache<string>('selected_tracked_domain');
-    return cached?.data || '';
+    if (cached?.data) return cached.data;
+    // Fallback to bron_last_selected_domain for cross-cache consistency
+    try {
+      const bronLast = localStorage.getItem('bron_last_selected_domain');
+      if (bronLast) return bronLast;
+    } catch {}
+    return '';
   });
 
   // Loading states
@@ -160,6 +166,12 @@ export function useDomainCache() {
   const setSelectedTrackedDomain = useCallback((domain: string) => {
     setSelectedTrackedDomainState(domain);
     setCache('selected_tracked_domain', domain);
+    // Also sync with BRON cache for instant hydration on hard refresh
+    try {
+      if (domain) {
+        localStorage.setItem('bron_last_selected_domain', domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]);
+      }
+    } catch {}
   }, []);
 
   // Add a user domain
