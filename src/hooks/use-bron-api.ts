@@ -836,6 +836,27 @@ export function useBronApi(): UseBronApiReturn {
   // Prevent concurrent background prefetch runs from saturating the API/network.
   const keywordPrefetchInFlightRef = useRef(false);
 
+  // Ensure expensive work (like large JSON.parse) never runs before the first paint.
+  // This prevents “5s until anything renders” on hard refresh for big domains.
+  const runAfterFirstPaint = useCallback((cb: () => void) => {
+    const raf = window.requestAnimationFrame?.bind(window);
+    if (!raf) {
+      window.setTimeout(cb, 0);
+      return;
+    }
+    raf(() => raf(() => cb()));
+  }, []);
+
+  const runIdleAfterPaint = useCallback((cb: () => void) => {
+    runAfterFirstPaint(() => {
+      const ric = (window as any).requestIdleCallback as
+        | ((fn: () => void, opts?: { timeout?: number }) => number)
+        | undefined;
+      if (ric) ric(cb, { timeout: 4000 });
+      else window.setTimeout(cb, 300);
+    });
+  }, [runAfterFirstPaint]);
+
   const normalizeDomainKey = useCallback((input: string) => {
     return (input || '')
       .toLowerCase()
@@ -1008,15 +1029,10 @@ export function useBronApi(): UseBronApiReturn {
       localStorageLoadedAt: Date.now(),
     });
 
-    // Defer full-cache parsing until after first paint.
+    // Defer full-cache parsing until AFTER first paint (and ideally idle time),
+    // otherwise a large cached payload can still block the initial render.
     const localReqId = keywordsReqIdRef.current;
-    const defer = (cb: () => void) => {
-      // requestIdleCallback is best-effort; fall back to timeout.
-      const ric = (window as any).requestIdleCallback as ((fn: () => void, opts?: any) => number) | undefined;
-      if (ric) ric(cb, { timeout: 2000 });
-      else window.setTimeout(cb, 0);
-    };
-    defer(() => {
+    runIdleAfterPaint(() => {
       // If the user switched domains since we scheduled this, do nothing.
       if (localReqId !== keywordsReqIdRef.current) return;
       if (activeDomainRef.current !== key) return;
@@ -1041,7 +1057,7 @@ export function useBronApi(): UseBronApiReturn {
     } else {
       linksBufferRef.current[key] = { in: null, out: null };
     }
-  }, [normalizeDomainKey]);
+  }, [normalizeDomainKey, runIdleAfterPaint]);
 
   const verifyAuth = useCallback(async (): Promise<boolean> => {
     return withPending(async () => {
@@ -1327,6 +1343,30 @@ export function useBronApi(): UseBronApiReturn {
 
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
+      // Ultra-fast path: preview cache (tiny JSON) so the list can render immediately.
+      // We DO NOT parse the full keyword cache here because it can be several MB.
+      const preview = loadCachedKeywordsPreview(domainKey);
+      if (preview?.keywords?.length) {
+        setKeywords(preview.keywords);
+        // Prime memory cache so subsequent reads avoid localStorage access.
+        keywordMemoryCache.set(domainKey, {
+          keywords: preview.keywords,
+          cachedAt: preview.cachedAt,
+          localStorageLoadedAt: Date.now(),
+        });
+        scheduleBackgroundCheck(preview.totalCount ?? preview.keywords.length);
+
+        // Best-effort upgrade to full cached list after first paint (never before).
+        const localReqId = reqId;
+        runIdleAfterPaint(() => {
+          if (localReqId !== keywordsReqIdRef.current) return;
+          if (activeDomainRef.current !== domainKey) return;
+          const full = loadCachedKeywords(domainKey);
+          if (full && full.length > preview.keywords.length) setKeywords(full);
+        });
+        return;
+      }
+
       const cached = loadCachedKeywords(domainKey);
       if (cached) {
         setKeywords(cached);
@@ -1421,7 +1461,7 @@ export function useBronApi(): UseBronApiReturn {
         console.warn('[BRON] Background keyword fetch failed:', err);
       }
     })();
-  }, [callApi, normalizeDomainKey, keywords]);
+  }, [callApi, normalizeDomainKey, keywords, runIdleAfterPaint]);
 
   const addKeyword = useCallback(async (data: Record<string, unknown>, domain?: string): Promise<boolean> => {
     return withPending(async () => {
