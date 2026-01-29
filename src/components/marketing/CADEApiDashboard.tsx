@@ -339,91 +339,55 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
-      {/* Compact Header */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border border-violet-500/20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold">CADE Dashboard</h3>
-              {health?.status && (
-                <Badge className={`text-xs ${getStatusColor(health.status)}`}>
-                  {health.status}
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">AI Content Automation Engine</p>
-          </div>
+      {/* Compact Header - Single line */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-transparent border border-violet-500/20">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
+          <Brain className="w-4 h-4 text-white" />
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30">
-            {subscription?.plan || "CADE Pro"}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <h3 className="font-semibold text-sm">CADE</h3>
+          {health?.status && (
+            <Badge className={`text-[10px] py-0 ${getStatusColor(health.status)}`}>
+              {health.status}
+            </Badge>
+          )}
+          <Badge className="text-[10px] py-0 bg-violet-500/20 text-violet-400 border-violet-500/30">
+            {subscription?.plan || "Pro"}
           </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="h-7 w-7 p-0"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+        </Button>
       </div>
 
-      {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-500/20">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Activity className="w-3.5 h-3.5 text-green-500" />
-              <span className="text-xs text-muted-foreground">Status</span>
-            </div>
-            <p className="text-lg font-bold">{health?.status || "—"}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Cpu className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-xs text-muted-foreground">Workers</span>
-            </div>
-            <p className="text-lg font-bold">{workers.length || 0}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/5 border-violet-500/20">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Globe className="w-3.5 h-3.5 text-violet-500" />
-              <span className="text-xs text-muted-foreground">Pages</span>
-            </div>
-            <p className="text-lg font-bold">{domainProfile?.crawled_pages ?? "—"}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <FileText className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs text-muted-foreground">Articles</span>
-            </div>
-            <p className="text-lg font-bold">{domainProfile?.content_count ?? 0}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-cyan-500/10 to-teal-500/5 border-cyan-500/20">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <HelpCircle className="w-3.5 h-3.5 text-cyan-500" />
-              <span className="text-xs text-muted-foreground">FAQs</span>
-            </div>
-            <p className="text-lg font-bold">{faqs.length}</p>
-          </CardContent>
-        </Card>
+      {/* Quick Stats Row - Compact */}
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="outline" className="gap-1.5 py-1.5 px-3 bg-green-500/10 border-green-500/20">
+          <Activity className="w-3 h-3 text-green-500" />
+          {health?.status || "—"}
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 py-1.5 px-3 bg-blue-500/10 border-blue-500/20">
+          <Cpu className="w-3 h-3 text-blue-500" />
+          {workers.length || 0} workers
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 py-1.5 px-3 bg-violet-500/10 border-violet-500/20">
+          <Globe className="w-3 h-3 text-violet-500" />
+          {domainProfile?.crawled_pages ?? 0} pages
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 py-1.5 px-3 bg-amber-500/10 border-amber-500/20">
+          <FileText className="w-3 h-3 text-amber-500" />
+          {domainProfile?.content_count ?? 0} articles
+        </Badge>
+        <Badge variant="outline" className="gap-1.5 py-1.5 px-3 bg-cyan-500/10 border-cyan-500/20">
+          <HelpCircle className="w-3 h-3 text-cyan-500" />
+          {faqs.length} FAQs
+        </Badge>
       </div>
 
       {/* Content & FAQ Libraries - Tabbed at Top */}
@@ -498,57 +462,47 @@ export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashbo
         />
       )}
 
-      {/* Quick Actions Bar */}
+      {/* Quick Actions Bar - Compact inline */}
       {domain && (
-        <Card className="border-muted">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-auto py-3 flex-col gap-1"
-                onClick={() => toast.info("Generate Article coming soon")}
-              >
-                <FileText className="w-4 h-4 text-violet-500" />
-                <span className="text-xs">Generate Article</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-auto py-3 flex-col gap-1"
-                onClick={() => toast.info("Generate FAQ coming soon")}
-              >
-                <HelpCircle className="w-4 h-4 text-cyan-500" />
-                <span className="text-xs">Generate FAQ</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-auto py-3 flex-col gap-1"
-                onClick={() => toast.info("Knowledge Base coming soon")}
-              >
-                <BookOpen className="w-4 h-4 text-amber-500" />
-                <span className="text-xs">Knowledge Base</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-auto py-3 flex-col gap-1"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`w-4 h-4 text-green-500 ${isRefreshing ? "animate-spin" : ""}`} />
-                <span className="text-xs">Sync Data</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => toast.info("Generate Article coming soon")}
+          >
+            <FileText className="w-3.5 h-3.5 text-violet-500" />
+            Article
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => toast.info("Generate FAQ coming soon")}
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-cyan-500" />
+            FAQ
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => toast.info("Knowledge Base coming soon")}
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+            Knowledge
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-green-500 ${isRefreshing ? "animate-spin" : ""}`} />
+            Sync
+          </Button>
+        </div>
       )}
 
       {/* System Status - Collapsed by Default */}

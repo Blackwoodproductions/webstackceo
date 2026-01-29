@@ -486,30 +486,28 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
 
   return (
     <Card className="border-green-500/20 bg-gradient-to-br from-background to-green-500/5">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Globe className="w-5 h-5 text-green-400" />
-            Crawl & Analysis
-            {domainProfile?.status && (
-              <Badge className="ml-2 text-xs" variant="secondary">
-                {getStatusIcon(domainProfile.status)}
-                <span className="ml-1">{domainProfile.status}</span>
-              </Badge>
-            )}
-          </CardTitle>
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Globe className="w-4 h-4 text-green-400" />
+          Domain Intelligence
+          {domainProfile?.status && (
+            <Badge className="text-[10px] py-0" variant="secondary">
+              {getStatusIcon(domainProfile.status)}
+              <span className="ml-1">{domainProfile.status}</span>
+            </Badge>
+          )}
+        </CardTitle>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => { onRefresh?.(); refreshEvents(); }}
           disabled={isLoading}
-          className="border-green-500/30 hover:bg-green-500/10"
+          className="h-7 w-7 p-0"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-3 pt-0 pb-4 px-4">
         {/* Live Task Window - Primary focus when tasks are active OR button was just clicked */}
         <AnimatePresence>
           {(hasActiveTasks || isCrawling || isCategorizing || isAnalyzingCss) && (
@@ -808,65 +806,45 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
           )}
         </AnimatePresence>
 
-        {/* Not Crawled State - Show when no crawl and no active tasks and not currently processing */}
+        {/* Not Crawled State - Compact prompt */}
         {!hasCrawled && !hasActiveTasks && !isCrawling && !isCategorizing && !isAnalyzingCss && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="py-12 text-center"
-          >
-            <Globe className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
-            <h3 className="text-lg font-medium mb-2">Domain hasn't been crawled yet</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Start a crawl to analyze your website structure and prepare for content generation.
-            </p>
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-dashed border-muted-foreground/30">
+            <Globe className="w-8 h-8 text-muted-foreground/50 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">No crawl data yet</p>
+              <p className="text-xs text-muted-foreground">Start a crawl to analyze your website</p>
+            </div>
             <Button
               onClick={handleStartCrawl}
               disabled={isCrawling}
-              size="lg"
-              className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              size="sm"
+              className="gap-1.5 h-8 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
             >
-              {isCrawling ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <RefreshCw className="w-5 h-5" />
-              )}
-              Start Domain Crawl
+              {isCrawling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+              Crawl
             </Button>
-          </motion.div>
+          </div>
         )}
 
-        {/* Domain Stats - Show when crawled */}
+        {/* Domain Stats - Compact inline when crawled */}
         {hasCrawled && !hasActiveTasks && domainProfile && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <FileText className="w-3 h-3" />
-                Pages Crawled
-              </div>
-              <p className="text-lg font-bold">{domainProfile.crawled_pages ?? "—"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <Target className="w-3 h-3" />
-                Category
-              </div>
-              <p className="text-lg font-bold truncate">{domainProfile.category || "Unknown"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <FileText className="w-3 h-3" />
-                Content Count
-              </div>
-              <p className="text-lg font-bold">{domainProfile.content_count ?? "—"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                <Palette className="w-3 h-3" />
-                CSS Analyzed
-              </div>
-              <p className="text-lg font-bold">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
-            </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Badge variant="outline" className="gap-1 py-1 px-2 bg-green-500/10 border-green-500/20">
+              <FileText className="w-3 h-3" />
+              {domainProfile.crawled_pages ?? 0} pages
+            </Badge>
+            <Badge variant="outline" className="gap-1 py-1 px-2 bg-blue-500/10 border-blue-500/20">
+              <Target className="w-3 h-3" />
+              {domainProfile.category || "Uncategorized"}
+            </Badge>
+            <Badge variant="outline" className="gap-1 py-1 px-2 bg-violet-500/10 border-violet-500/20">
+              <FileText className="w-3 h-3" />
+              {domainProfile.content_count ?? 0} articles
+            </Badge>
+            <Badge variant="outline" className="gap-1 py-1 px-2 bg-amber-500/10 border-amber-500/20">
+              <Palette className="w-3 h-3" />
+              CSS: {domainProfile.css_analyzed ? "✓" : "—"}
+            </Badge>
           </div>
         )}
 
@@ -979,225 +957,149 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
             </CollapsibleContent>
           </Collapsible>
         )}
-
-        {/* Last Crawl Info */}
+        {/* Last Crawl Info - Compact inline */}
         {domainProfile?.last_crawl && (
-          <div className="text-sm text-muted-foreground">
-            <Clock className="w-4 h-4 inline mr-1" />
+          <p className="text-[10px] text-muted-foreground">
+            <Clock className="w-3 h-3 inline mr-1" />
             Last crawl: {new Date(domainProfile.last_crawl).toLocaleString()}
-          </div>
+          </p>
         )}
 
-        {/* Active Tasks Panel - Shows all running/queued tasks */}
+        {/* Recent Tasks - Compact collapsible list */}
         {(byType.crawl.length > 0 || byType.categorization.length > 0 || byType.css.length > 0) && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                Recent Tasks
-              </h4>
-              <Badge variant="outline" className="text-xs">
+          <Collapsible defaultOpen={false}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium py-1.5 px-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors group w-full">
+              <Activity className="w-3.5 h-3.5 text-primary" />
+              Recent Tasks
+              <Badge variant="outline" className="ml-auto text-[10px] py-0">
                 {byType.crawl.length + byType.categorization.length + byType.css.length} total
               </Badge>
-            </div>
-            
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {/* Active Crawl Tasks */}
-              {byType.crawl.slice(0, 5).map((task) => (
-                <motion.div
+              <ChevronDown className="w-3.5 h-3.5 transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ScrollArea className="max-h-40">
+                <div className="space-y-1.5">
+              {/* Crawl Tasks - Compact rows */}
+              {byType.crawl.slice(0, 3).map((task) => (
+                <div
                   key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`p-3 rounded-lg border ${
+                  className={`flex items-center gap-2 p-2 rounded-md border text-xs ${
                     task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
-                      ? "bg-blue-500/10 border-blue-500/30"
+                      ? "bg-blue-500/10 border-blue-500/20"
                       : task.statusValue === "completed" || task.statusValue === "done"
-                      ? "bg-green-500/10 border-green-500/30"
+                      ? "bg-green-500/10 border-green-500/20"
                       : task.statusValue === "failed" || task.statusValue === "error"
-                      ? "bg-red-500/10 border-red-500/30"
+                      ? "bg-red-500/10 border-red-500/20"
                       : "bg-secondary/30 border-border"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(task.statusValue)}
-                      <span className="font-medium text-sm">Crawl</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {task.statusValue}
-                      </Badge>
-                    </div>
-                    {task.created_at && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(task.created_at).toLocaleTimeString()}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {task.progress !== undefined && task.progress > 0 && (
-                    <Progress value={task.progress} className="h-1.5 mb-2" />
+                  {getStatusIcon(task.statusValue)}
+                  <span className="font-medium">Crawl</span>
+                  <Badge variant="secondary" className="text-[10px] py-0">{task.statusValue}</Badge>
+                  {task.pages_crawled !== undefined && (
+                    <span className="text-muted-foreground">{task.pages_crawled}/{task.total_pages || "?"}</span>
                   )}
-                  
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {task.pages_crawled !== undefined && (
-                      <span>{task.pages_crawled} / {task.total_pages || "?"} pages</span>
-                    )}
-                    {task.current_url && (
-                      <span className="truncate flex-1" title={task.current_url}>
-                        <ExternalLink className="w-3 h-3 inline mr-1" />
-                        {task.current_url}
-                      </span>
-                    )}
-                    {task.message && !task.current_url && (
-                      <span className="truncate flex-1">{task.message}</span>
-                    )}
-                  </div>
-                  
-                  {task.error && (
-                    <div className="text-xs text-red-400 mt-1 truncate">
-                      <AlertTriangle className="w-3 h-3 inline mr-1" />
-                      {task.error}
-                    </div>
-                  )}
-                </motion.div>
+                  <span className="ml-auto text-muted-foreground">
+                    {task.created_at && new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               ))}
               
-              {/* Active Categorization Tasks */}
-              {byType.categorization.slice(0, 3).map((task) => (
-                <motion.div
+              {/* Categorization Tasks - Compact */}
+              {byType.categorization.slice(0, 2).map((task) => (
+                <div
                   key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`p-3 rounded-lg border ${
+                  className={`flex items-center gap-2 p-2 rounded-md border text-xs ${
                     task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
-                      ? "bg-violet-500/10 border-violet-500/30"
+                      ? "bg-violet-500/10 border-violet-500/20"
                       : task.statusValue === "completed" || task.statusValue === "done"
-                      ? "bg-green-500/10 border-green-500/30"
-                      : task.statusValue === "failed" || task.statusValue === "error"
-                      ? "bg-red-500/10 border-red-500/30"
+                      ? "bg-green-500/10 border-green-500/20"
                       : "bg-secondary/30 border-border"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(task.statusValue)}
-                      <span className="font-medium text-sm">Categorization</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {task.statusValue}
-                      </Badge>
-                    </div>
-                    {task.created_at && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(task.created_at).toLocaleTimeString()}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {task.message && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {task.message}
-                    </div>
-                  )}
-                  
+                  {getStatusIcon(task.statusValue)}
+                  <span className="font-medium">Category</span>
+                  <Badge variant="secondary" className="text-[10px] py-0">{task.statusValue}</Badge>
                   {task.categories && task.categories.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {task.categories.slice(0, 3).map((cat, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">
-                          {cat}
-                        </Badge>
-                      ))}
-                    </div>
+                    <span className="text-muted-foreground truncate">{task.categories[0]}</span>
                   )}
-                </motion.div>
+                  <span className="ml-auto text-muted-foreground">
+                    {task.created_at && new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               ))}
               
-              {/* Active CSS Tasks */}
+              {/* CSS Tasks - Compact */}
               {byType.css.slice(0, 2).map((task) => (
-                <motion.div
+                <div
                   key={task.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`p-3 rounded-lg border ${
+                  className={`flex items-center gap-2 p-2 rounded-md border text-xs ${
                     task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
-                      ? "bg-amber-500/10 border-amber-500/30"
+                      ? "bg-amber-500/10 border-amber-500/20"
                       : task.statusValue === "completed" || task.statusValue === "done"
-                      ? "bg-green-500/10 border-green-500/30"
+                      ? "bg-green-500/10 border-green-500/20"
                       : "bg-secondary/30 border-border"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(task.statusValue)}
-                      <span className="font-medium text-sm">CSS Analysis</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {task.statusValue}
-                      </Badge>
-                    </div>
-                    {task.created_at && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(task.created_at).toLocaleTimeString()}
-                      </span>
-                    )}
-                  </div>
-                  {task.message && (
-                    <div className="text-xs text-muted-foreground mt-1 truncate">
-                      {task.message}
-                    </div>
-                  )}
-                </motion.div>
+                  {getStatusIcon(task.statusValue)}
+                  <span className="font-medium">CSS</span>
+                  <Badge variant="secondary" className="text-[10px] py-0">{task.statusValue}</Badge>
+                  <span className="ml-auto text-muted-foreground">
+                    {task.created_at && new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               ))}
-            </div>
-          </div>
+                </div>
+              </ScrollArea>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Action Buttons - Compact Row */}
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={handleStartCrawl}
             disabled={isCrawling}
-            className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            size="sm"
+            className="gap-1.5 h-8 text-xs bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
           >
             {isCrawling ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Play className="w-4 h-4" />
+              <Play className="w-3.5 h-3.5" />
             )}
-            {isCrawling ? "Crawling..." : "Start Crawl"}
+            {isCrawling ? "Crawling..." : "Crawl"}
           </Button>
           
           <Button
             onClick={handleCategorizeDomain}
             disabled={isCategorizing}
             variant="outline"
-            className="gap-2 border-blue-500/30 hover:bg-blue-500/10"
+            size="sm"
+            className="gap-1.5 h-8 text-xs border-blue-500/30 hover:bg-blue-500/10"
           >
             {isCategorizing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Target className="w-4 h-4" />
+              <Target className="w-3.5 h-3.5" />
             )}
-            {isCategorizing ? "Categorizing..." : "Categorize Domain"}
+            Categorize
           </Button>
           
           <Button
             onClick={handleAnalyzeCss}
             disabled={isAnalyzingCss}
             variant="outline"
-            className="gap-2 border-violet-500/30 hover:bg-violet-500/10"
+            size="sm"
+            className="gap-1.5 h-8 text-xs border-violet-500/30 hover:bg-violet-500/10"
           >
             {isAnalyzingCss ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Palette className="w-4 h-4" />
+              <Palette className="w-3.5 h-3.5" />
             )}
-            {isAnalyzingCss ? "Analyzing..." : "Analyze CSS"}
+            CSS
           </Button>
-        </div>
-
-        {/* Help Text */}
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p><strong>Crawl:</strong> Scans your website to understand its structure and content.</p>
-          <p><strong>Categorize:</strong> Determines your business category for better content targeting.</p>
-          <p><strong>CSS Analysis:</strong> Matches generated content styling to your website.</p>
         </div>
       </CardContent>
     </Card>
