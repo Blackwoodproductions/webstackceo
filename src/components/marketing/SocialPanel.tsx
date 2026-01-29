@@ -11,6 +11,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocialOAuth } from '@/hooks/use-social-oauth';
 import { useBronApi, BronSubscription } from '@/hooks/use-bron-api';
 import {
+  loadCachedSocialProfiles,
+  saveCachedSocialProfiles,
+  type SocialCacheData
+} from '@/lib/persistentCache';
+import {
   Twitter, Linkedin, Facebook, Instagram, Youtube, 
   RefreshCw, CheckCircle, AlertCircle, ExternalLink,
   Link2, Globe, Loader2, Sparkles, Zap, Target,
@@ -91,8 +96,8 @@ const platformConfig = {
   },
 };
 
-// Social cache for instant loading
-const SOCIAL_CACHE_KEY = 'social_profiles_cache';
+// Legacy cache functions (kept for backwards compatibility during transition)
+const SOCIAL_CACHE_KEY_LEGACY = 'social_profiles_cache';
 const SOCIAL_CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 interface SocialCacheEntry {
@@ -103,8 +108,20 @@ interface SocialCacheEntry {
 }
 
 const loadCachedSocialData = (domain: string): SocialCacheEntry | null => {
+  // First try persistent cache (new system)
+  const persistent = loadCachedSocialProfiles(domain);
+  if (persistent) {
+    return {
+      profiles: persistent.profiles as SocialProfile[],
+      hasCadeSubscription: persistent.hasCadeSubscription,
+      bronSubscription: persistent.bronSubscription as BronSubscription | null,
+      cachedAt: Date.now(), // Persistent cache handles expiry internally
+    };
+  }
+  
+  // Fallback to legacy cache
   try {
-    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
+    const cached = localStorage.getItem(SOCIAL_CACHE_KEY_LEGACY);
     if (!cached) return null;
     const allCaches = JSON.parse(cached) as Record<string, SocialCacheEntry>;
     const entry = allCaches[domain];
@@ -118,8 +135,16 @@ const loadCachedSocialData = (domain: string): SocialCacheEntry | null => {
 };
 
 const saveCachedSocialData = (domain: string, profiles: SocialProfile[], hasCadeSubscription: boolean, bronSubscription: BronSubscription | null) => {
+  // Save to persistent cache (new system)
+  saveCachedSocialProfiles(domain, {
+    profiles: profiles as SocialCacheData['profiles'],
+    hasCadeSubscription,
+    bronSubscription,
+  });
+  
+  // Also save to legacy cache for backwards compatibility
   try {
-    const cached = localStorage.getItem(SOCIAL_CACHE_KEY);
+    const cached = localStorage.getItem(SOCIAL_CACHE_KEY_LEGACY);
     const allCaches: Record<string, SocialCacheEntry> = cached ? JSON.parse(cached) : {};
     allCaches[domain] = { profiles, hasCadeSubscription, bronSubscription, cachedAt: Date.now() };
     
@@ -132,9 +157,9 @@ const saveCachedSocialData = (domain: string, profiles: SocialProfile[], hasCade
       for (const [key, val] of toKeep) {
         pruned[key] = val;
       }
-      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(pruned));
+      localStorage.setItem(SOCIAL_CACHE_KEY_LEGACY, JSON.stringify(pruned));
     } else {
-      localStorage.setItem(SOCIAL_CACHE_KEY, JSON.stringify(allCaches));
+      localStorage.setItem(SOCIAL_CACHE_KEY_LEGACY, JSON.stringify(allCaches));
     }
   } catch (e) {
     console.warn('Failed to save social cache:', e);
@@ -146,7 +171,7 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const { connections, isConnecting, connect, disconnect } = useSocialOAuth();
   const { fetchSubscription } = useBronApi();
   
-  // Check cache synchronously for instant loading
+  // Check persistent cache synchronously for instant loading
   const [cachedData] = useState(() => selectedDomain ? loadCachedSocialData(selectedDomain) : null);
   
   const [isScanning, setIsScanning] = useState(!cachedData);

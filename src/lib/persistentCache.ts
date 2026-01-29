@@ -218,6 +218,142 @@ export function hasDomainInfoChanged(domain: string, newData: DomainInfoCacheDat
   return hasDataChanged(DOMAIN_INFO_CACHE_KEY, domain, newData);
 }
 
+// ─── Social Profiles Cache ───
+export const SOCIAL_CACHE_KEY = 'persistent_social_cache';
+
+export interface SocialProfileData {
+  platform: 'facebook' | 'twitter' | 'linkedin' | 'instagram' | 'youtube' | 'tiktok';
+  url: string | null;
+  detected: boolean;
+  connected: boolean;
+  username?: string;
+}
+
+export interface SocialCacheData {
+  profiles: SocialProfileData[];
+  hasCadeSubscription: boolean;
+  bronSubscription?: unknown;
+}
+
+export function loadCachedSocialProfiles(domain: string): SocialCacheData | null {
+  const entry = loadCache<SocialCacheData>(SOCIAL_CACHE_KEY, domain);
+  return entry?.data || null;
+}
+
+export function saveCachedSocialProfiles(domain: string, data: SocialCacheData): boolean {
+  return saveCache(SOCIAL_CACHE_KEY, domain, data, 25);
+}
+
+// ─── CADE Dashboard Cache ───
+export const CADE_CACHE_KEY = 'persistent_cade_cache';
+
+export interface CadeCacheData {
+  subscription?: {
+    plan?: string;
+    status?: string;
+    quota_used?: number;
+    quota_limit?: number;
+    renewal_date?: string;
+  };
+  domainProfile?: {
+    domain?: string;
+    category?: string;
+    status?: string;
+    crawled_pages?: number;
+    last_crawl?: string;
+    css_analyzed?: boolean;
+    content_count?: number;
+  };
+  faqs?: unknown[];
+  contentList?: unknown[];
+  workers?: unknown[];
+  queues?: unknown[];
+  isConnected: boolean;
+}
+
+export function loadCachedCadeData(domain: string): CadeCacheData | null {
+  const entry = loadCache<CadeCacheData>(CADE_CACHE_KEY, domain);
+  return entry?.data || null;
+}
+
+export function saveCachedCadeData(domain: string, data: CadeCacheData): boolean {
+  return saveCache(CADE_CACHE_KEY, domain, data, 15);
+}
+
+// ─── GSC (Google Search Console) Cache ───
+export const GSC_CACHE_KEY = 'persistent_gsc_cache';
+
+export interface GscCacheData {
+  siteUrl: string;
+  clicks?: number;
+  impressions?: number;
+  ctr?: number;
+  position?: number;
+  topQueries?: Array<{ query: string; clicks: number; impressions: number }>;
+  topPages?: Array<{ page: string; clicks: number; impressions: number }>;
+}
+
+export function loadCachedGscData(siteUrl: string): GscCacheData | null {
+  const entry = loadCache<GscCacheData>(GSC_CACHE_KEY, siteUrl);
+  return entry?.data || null;
+}
+
+export function saveCachedGscData(siteUrl: string, data: GscCacheData): boolean {
+  return saveCache(GSC_CACHE_KEY, siteUrl, data, 15);
+}
+
+// ─── GA (Google Analytics) Cache ───
+export const GA_CACHE_KEY = 'persistent_ga_cache';
+
+export interface GaCacheData {
+  propertyId: string;
+  activeUsers?: number;
+  totalUsers?: number;
+  sessions?: number;
+  pageViews?: number;
+  bounceRate?: number;
+  avgSessionDuration?: number;
+  topPages?: Array<{ page: string; views: number }>;
+  trafficSources?: Array<{ source: string; users: number }>;
+}
+
+export function loadCachedGaData(propertyId: string): GaCacheData | null {
+  const entry = loadCache<GaCacheData>(GA_CACHE_KEY, propertyId);
+  return entry?.data || null;
+}
+
+export function saveCachedGaData(propertyId: string, data: GaCacheData): boolean {
+  return saveCache(GA_CACHE_KEY, propertyId, data, 15);
+}
+
+// ─── PPC (Google Ads) Cache ───
+export const PPC_CACHE_KEY = 'persistent_ppc_cache';
+
+export interface PpcCacheData {
+  customerId: string;
+  campaigns?: Array<{
+    id: string;
+    name: string;
+    status: string;
+    budget?: number;
+    clicks?: number;
+    impressions?: number;
+    cost?: number;
+  }>;
+  totalSpend?: number;
+  totalClicks?: number;
+  totalImpressions?: number;
+}
+
+export function loadCachedPpcData(customerId: string): PpcCacheData | null {
+  const entry = loadCache<PpcCacheData>(PPC_CACHE_KEY, customerId);
+  return entry?.data || null;
+}
+
+export function saveCachedPpcData(customerId: string, data: PpcCacheData): boolean {
+  return saveCache(PPC_CACHE_KEY, customerId, data, 10);
+}
+
 // ─── Clear all caches for a domain ───
 export function clearDomainCache(domain: string): void {
   const cacheKeys = [
@@ -225,6 +361,11 @@ export function clearDomainCache(domain: string): void {
     MAP_CACHE_KEY,
     GMB_PERSISTENT_CACHE_KEY,
     DOMAIN_INFO_CACHE_KEY,
+    SOCIAL_CACHE_KEY,
+    CADE_CACHE_KEY,
+    GSC_CACHE_KEY,
+    GA_CACHE_KEY,
+    PPC_CACHE_KEY,
   ];
   
   for (const key of cacheKeys) {

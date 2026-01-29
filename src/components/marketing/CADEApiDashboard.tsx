@@ -15,6 +15,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
+import {
+  loadCachedCadeData,
+  saveCachedCadeData,
+  type CadeCacheData
+} from "@/lib/persistentCache";
 
 // Use BRON subscription cache (authoritative source, shared across components)
 const BRON_SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
@@ -113,22 +118,27 @@ interface CADEApiDashboardProps {
 
 export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const { fetchSubscription } = useBronApi();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
+  
+  // Load from persistent cache synchronously for instant rendering
+  const [cachedData] = useState(() => domain ? loadCachedCadeData(domain) : null);
+  
+  const [isLoading, setIsLoading] = useState(!cachedData?.isConnected);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(!cachedData?.isConnected);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Subscription state - primary gate
-  const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
+  // Subscription state - primary gate (hydrate from cache)
+  const [hasCadeSubscription, setHasCadeSubscription] = useState(cachedData?.isConnected || false);
   const [bronSubscription, setBronSubscription] = useState<BronSubscription | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedData?.subscription || null);
   
-  // API Data States
+  // API Data States (hydrate from cache)
   const [health, setHealth] = useState<SystemHealth | null>(null);
-  const [workers, setWorkers] = useState<WorkerData[]>([]);
-  const [queues, setQueues] = useState<QueueData[]>([]);
-  const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(null);
-  const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  const [workers, setWorkers] = useState<WorkerData[]>(cachedData?.workers as WorkerData[] || []);
+  const [queues, setQueues] = useState<QueueData[]>(cachedData?.queues as QueueData[] || []);
+  const [domainProfile, setDomainProfile] = useState<DomainProfile | null>(cachedData?.domainProfile || null);
+  const [faqs, setFaqs] = useState<FAQItem[]>(cachedData?.faqs as FAQItem[] || []);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(!!cachedData?.isConnected);
   
   // Collapsible states
   const [systemOpen, setSystemOpen] = useState(true);
@@ -319,12 +329,29 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
           callCadeApi("domain-profile", {}, 1),
           callCadeApi("get-faqs", {}, 1),
         ]).then(([profileRes, faqsRes]) => {
+          let profileData: DomainProfile | null = null;
+          let faqsData: FAQItem[] = [];
+          
           if (profileRes.status === "fulfilled" && !profileRes.value?.error) {
-            setDomainProfile(profileRes.value?.data || profileRes.value);
+            profileData = profileRes.value?.data || profileRes.value;
+            setDomainProfile(profileData);
           }
           if (faqsRes.status === "fulfilled" && !faqsRes.value?.error) {
             const faqData = faqsRes.value?.data || faqsRes.value;
-            setFaqs(Array.isArray(faqData) ? faqData : faqData?.faqs || []);
+            faqsData = Array.isArray(faqData) ? faqData : faqData?.faqs || [];
+            setFaqs(faqsData);
+          }
+          
+          // Save to persistent cache
+          if (domain) {
+            saveCachedCadeData(domain, {
+              subscription: subscription || undefined,
+              domainProfile: profileData || undefined,
+              faqs: faqsData,
+              workers: workers,
+              queues: queues,
+              isConnected: hasCadeSubscription,
+            });
           }
         }).catch(err => {
           console.warn("[CADE] Background data fetch failed:", err);
