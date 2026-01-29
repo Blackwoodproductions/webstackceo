@@ -52,19 +52,6 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
   const internalBronApi = useBronApi();
   const bronApi = bronApiInstance ?? internalBronApi;
   const [activeTab, setActiveTab] = useState("keywords");
-
-  const selectedDomainKey = useMemo(() => {
-    if (!selectedDomain) return null;
-    return selectedDomain
-      .toLowerCase()
-      .trim()
-      .replace(/^(https?:\/\/)?(www\.)?/, '')
-      .split('/')[0];
-  }, [selectedDomain]);
-
-  // CRITICAL: never show data from another domain (prevents cross-domain leakage on failures)
-  const isDomainInSync = Boolean(selectedDomainKey && bronApi.activeDomain === selectedDomainKey);
-  const scopedIsLoading = bronApi.isLoading || (Boolean(selectedDomainKey) && !isDomainInSync);
   
   // Check cache synchronously to determine initial state
   const [hasCached] = useState(hasCachedData);
@@ -320,13 +307,13 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
   }, [bronApi.isAuthenticated, selectedDomain, domainInfo?.id]);
 
   // ─── Memoized Data ───
-  const stableKeywords = useMemo(() => (isDomainInSync ? bronApi.keywords : []), [isDomainInSync, bronApi.keywords]);
-  const stableSerpReports = useMemo(() => (isDomainInSync ? bronApi.serpReports : []), [isDomainInSync, bronApi.serpReports]);
-  const stableSerpHistory = useMemo(() => (isDomainInSync ? bronApi.serpHistory : []), [isDomainInSync, bronApi.serpHistory]);
-  const stableLinksIn = useMemo(() => (isDomainInSync ? bronApi.linksIn : []), [isDomainInSync, bronApi.linksIn]);
-  const stableLinksOut = useMemo(() => (isDomainInSync ? bronApi.linksOut : []), [isDomainInSync, bronApi.linksOut]);
+  const stableKeywords = useMemo(() => bronApi.keywords, [bronApi.keywords]);
+  const stableSerpReports = useMemo(() => bronApi.serpReports, [bronApi.serpReports]);
+  const stableSerpHistory = useMemo(() => bronApi.serpHistory, [bronApi.serpHistory]);
+  const stableLinksIn = useMemo(() => bronApi.linksIn, [bronApi.linksIn]);
+  const stableLinksOut = useMemo(() => bronApi.linksOut, [bronApi.linksOut]);
   const stableDomains = useMemo(() => bronApi.domains, [bronApi.domains]);
-  const stablePages = useMemo(() => (isDomainInSync ? bronApi.pages : []), [isDomainInSync, bronApi.pages]);
+  const stablePages = useMemo(() => bronApi.pages, [bronApi.pages]);
 
   // ─── Stable Callbacks ───
   const handleRefreshKeywords = useCallback(() => {
@@ -434,7 +421,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
             linksIn={stableLinksIn}
             linksOut={stableLinksOut}
             selectedDomain={selectedDomain}
-            isLoading={scopedIsLoading}
+            isLoading={bronApi.isLoading}
             onRefresh={handleRefreshKeywords}
             onAdd={handleAddKeyword}
             onUpdate={handleUpdateKeyword}
@@ -448,7 +435,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
           <BRONContentTab 
             pages={stablePages}
             selectedDomain={selectedDomain}
-            isLoading={scopedIsLoading}
+            isLoading={bronApi.isLoading}
             onRefresh={handleRefreshPages}
           />
         </TabsContent>
@@ -457,7 +444,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
           <BRONSerpTab 
             serpReports={stableSerpReports}
             selectedDomain={selectedDomain}
-            isLoading={scopedIsLoading}
+            isLoading={bronApi.isLoading}
             onRefresh={handleRefreshSerp}
           />
         </TabsContent>
@@ -467,7 +454,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
             linksIn={stableLinksIn}
             linksOut={stableLinksOut}
             selectedDomain={selectedDomain}
-            isLoading={scopedIsLoading}
+            isLoading={bronApi.isLoading}
             onRefreshIn={handleRefreshLinksIn}
             onRefreshOut={handleRefreshLinksOut}
             errorIn={bronApi.linksInError}
