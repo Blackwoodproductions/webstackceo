@@ -597,7 +597,11 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No competitors added yet.{" "}
-                    <Button variant="link" className="h-auto p-0 text-cyan-500">
+                    <Button 
+                      variant="link" 
+                      className="h-auto p-0 text-cyan-500"
+                      onClick={() => toast.info("Competitor analysis coming soon! This feature will allow you to track and compare your SEO performance against competitors.")}
+                    >
                       Add competitors in Settings
                     </Button>
                   </p>
@@ -614,12 +618,33 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                     <p className="text-sm leading-relaxed line-clamp-4">
                       {domainProfile.description}
                     </p>
-                    <Button variant="link" className="h-auto p-0 text-cyan-500 mt-1">
+                    <Button 
+                      variant="link" 
+                      className="h-auto p-0 text-cyan-500 mt-1"
+                      onClick={() => toast.info(domainProfile.description, { duration: 10000 })}
+                    >
                       Read more
                     </Button>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No description available. Run categorization to generate.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No description available.{" "}
+                    <Button 
+                      variant="link" 
+                      className="h-auto p-0 text-cyan-500"
+                      onClick={async () => {
+                        try {
+                          await callCadeApi("categorize-domain");
+                          toast.success("Categorization started! Description will be generated shortly.");
+                          refreshTasks();
+                        } catch (err) {
+                          toast.error("Failed to start categorization");
+                        }
+                      }}
+                    >
+                      Run categorization to generate
+                    </Button>
+                  </p>
                 )}
               </div>
             </div>
