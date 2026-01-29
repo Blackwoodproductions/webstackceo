@@ -791,6 +791,54 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         <div className="md:col-span-2">
           <SectionCard title="Website Crawl" accentColor="orange" className="h-full">
             <div className="space-y-4 flex flex-col h-full">
+              {/* AI Animation Section - Top */}
+              <div className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-violet-500/10 border border-orange-500/20">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-14 h-14 flex-shrink-0">
+                    {/* Orbiting dots */}
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="absolute w-2 h-2 rounded-full bg-orange-400/80"
+                        style={{
+                          top: '50%',
+                          left: '50%',
+                          transform: `rotate(${i * 90}deg) translateX(24px) translateY(-50%)`,
+                          animation: `cade-orbit 3s linear infinite`,
+                          animationDelay: `${i * 0.75}s`,
+                        }}
+                      />
+                    ))}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/30 to-violet-500/30 border border-orange-500/40 flex items-center justify-center">
+                        <Search className="w-4 h-4 text-orange-400" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Content Analysis</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isCrawling ? "Processing pages..." : "Ready to analyze your website content"}
+                    </p>
+                  </div>
+                  {isCrawling && (
+                    <div className="w-10 h-10 rounded-full border-2 border-orange-500/30 border-t-orange-500 animate-spin" />
+                  )}
+                </div>
+                
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
+                    <p className="text-xl font-bold text-orange-400">{domainProfile?.crawled_pages || stats.byType.crawl || 0}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Pages Crawled</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
+                    <p className="text-xl font-bold text-violet-400">{stats.byType.categorization || 0}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Categorized</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Status Box */}
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center justify-between">
@@ -831,56 +879,6 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               <p className="text-xs text-muted-foreground text-center">
                 Update content analysis (takes several minutes)
               </p>
-              
-              {/* Crawl Stats & AI Animation */}
-              <div className="flex-1 mt-2 pt-4 border-t border-border/30">
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-center">
-                    <p className="text-2xl font-bold text-orange-400">{domainProfile?.crawled_pages || stats.byType.crawl || 0}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Pages Crawled</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-center">
-                    <p className="text-2xl font-bold text-violet-400">{stats.byType.categorization || 0}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Categorized</p>
-                  </div>
-                </div>
-                
-                {/* Mini AI Animation */}
-                <div className="relative p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-violet-500/5 border border-border/20">
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 flex-shrink-0">
-                      {/* Orbiting dots */}
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="absolute w-1.5 h-1.5 rounded-full bg-orange-400/70"
-                          style={{
-                            top: '50%',
-                            left: '50%',
-                            transform: `rotate(${i * 120}deg) translateX(16px) translateY(-50%)`,
-                            animation: `cade-orbit 2.5s linear infinite`,
-                            animationDelay: `${i * 0.833}s`,
-                          }}
-                        />
-                      ))}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500/20 to-violet-500/20 border border-orange-500/30 flex items-center justify-center">
-                          <Search className="w-3 h-3 text-orange-400" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground">Content Analysis</p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {isCrawling ? "Processing pages..." : "Ready to analyze"}
-                      </p>
-                    </div>
-                    {isCrawling && (
-                      <div className="w-8 h-8 rounded-full border-2 border-orange-500/30 border-t-orange-500 animate-spin" />
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
           </SectionCard>
         </div>
@@ -973,43 +971,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </div>
       </div>
 
-      {/* Row 3: FAQ Generation */}
-      <SectionCard title="FAQ Generation" accentColor="cyan">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Status</p>
-            <Badge className={`${faqPaused 
-              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' 
-              : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-            } px-4 py-1.5`}>
-              {faqPaused ? "Paused" : "Up to date"}
-              {!faqPaused && <CheckCircle2 className="w-4 h-4 ml-2" />}
-            </Badge>
-          </div>
-          
-          <Button
-            onClick={handleToggleFaq}
-            className={`${faqPaused 
-              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700' 
-              : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
-            } text-white min-w-[200px]`}
-          >
-            {faqPaused ? (
-              <>
-                <Play className="w-4 h-4 mr-2" />
-                Resume FAQ Generation
-              </>
-            ) : (
-              <>
-                <Pause className="w-4 h-4 mr-2" />
-                Pause FAQ Generation
-              </>
-            )}
-          </Button>
-        </div>
-      </SectionCard>
-
-      {/* Row 4: Content Management */}
+      {/* Row 3: Content Management */}
       <SectionCard title="Content Management" accentColor="cyan">
         <div className="space-y-6">
           <p className="text-muted-foreground text-sm -mt-2">
@@ -1083,6 +1045,43 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
             </TabsContent>
             
             <TabsContent value="faqs" className="mt-6 space-y-6">
+              {/* FAQ Status & Toggle */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl bg-background/30 border border-border/30">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Generation Status</p>
+                    <Badge className={`${faqPaused 
+                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' 
+                      : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                    } px-4 py-1.5`}>
+                      {faqPaused ? "Paused" : "Up to date"}
+                      {!faqPaused && <CheckCircle2 className="w-4 h-4 ml-2" />}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={handleToggleFaq}
+                  size="sm"
+                  className={`${faqPaused 
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700' 
+                    : 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600'
+                  } text-white`}
+                >
+                  {faqPaused ? (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Resume FAQ Generation
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause FAQ Generation
+                    </>
+                  )}
+                </Button>
+              </div>
+              
               <div>
                 <h4 className="font-semibold text-base mb-2">FAQ Items</h4>
                 <p className="text-sm text-muted-foreground">
