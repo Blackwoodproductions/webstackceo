@@ -26,12 +26,6 @@ import {
   mergeAndSaveKeywordMetricsCache,
 } from "@/lib/bronKeywordMetricsCache";
 
-import {
-  loadKeywordClustersIndexCache,
-  saveKeywordClustersIndexCache,
-  type KeywordClusterIndex,
-} from "@/lib/bronKeywordClustersCache";
-
 // Import modular components
 import {
   BronKeywordCard,
@@ -57,8 +51,6 @@ interface BRONKeywordsTabProps {
   linksOut?: BronLink[];
   selectedDomain?: string;
   isLoading: boolean;
-  /** True when hydrating keywords - prevents "No keywords" flash during domain switch */
-  isKeywordHydrating?: boolean;
   onRefresh: () => void;
   onAdd: (data: Record<string, unknown>) => Promise<boolean>;
   onUpdate: (keywordId: string, data: Record<string, unknown>) => Promise<boolean>;
@@ -288,7 +280,6 @@ export const BRONKeywordsTab = memo(({
   linksOut = [],
   selectedDomain,
   isLoading,
-  isKeywordHydrating = false,
   onRefresh,
   onAdd,
   onUpdate,
@@ -326,9 +317,8 @@ export const BRONKeywordsTab = memo(({
   
   // Derive "has data" - consider we have data if either:
   // 1. Current keywords array has items, OR
-  // 2. We're still hydrating (prevents "No keywords" flash), OR
-  // 3. We had data before and are just transitioning (prevents flash)
-  const hasReceivedData = keywords.length > 0 || isKeywordHydrating || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // 2. We had data before and are just transitioning (prevents flash)
+  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
   
   // Reset the last valid count when domain actually changes
   useEffect(() => {
@@ -416,104 +406,21 @@ export const BRONKeywordsTab = memo(({
     clusters: ReturnType<typeof groupKeywords>;
   } | null>(null);
 
-  // Avoid building massive strings like `ids.join(',')` for large domains.
-  // A compact hash signature is enough to detect changes.
-  const computeIdsSignature = useCallback((items: BronKeyword[]) => {
-    // FNV-1a 32-bit
-    let hash = 2166136261;
-    for (const it of items) {
-      const s = String(it.id);
-      for (let i = 0; i < s.length; i++) {
-        hash ^= s.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-      }
-      // delimiter
-      hash ^= 44;
-      hash = Math.imul(hash, 16777619);
-    }
-    return `${items.length}:${(hash >>> 0).toString(16)}`;
-  }, []);
-
   const groupedKeywords = useMemo(() => {
-    // Generate a stable signature from keyword IDs (no huge allocations)
-    const idSignature = computeIdsSignature(filteredKeywords);
+    // Generate a signature from keyword IDs (fast string comparison)
+    const idSignature = filteredKeywords.map(k => k.id).join(',');
     
     // Check if cache is still valid
     const cached = clusterCacheRef.current;
     if (cached && cached.domain === selectedDomain && cached.keywordIds === idSignature) {
       return cached.clusters;
     }
-
-    // Persistent cache: avoid the expensive groupKeywords() pass on hard refresh
-    // by reusing the previously computed cluster structure (IDs only).
-    if (selectedDomain && idSignature) {
-      const cachedIndex = loadKeywordClustersIndexCache(selectedDomain, idSignature);
-      if (cachedIndex && cachedIndex.length > 0) {
-        const byId = new Map<string | number, BronKeyword>();
-        for (const kw of filteredKeywords) byId.set(kw.id, kw);
-
-        const reconstructed = cachedIndex
-          .map((c) => {
-            const parent = byId.get(c.parentId);
-            if (!parent) return null;
-            const children = c.childIds
-              .map((id) => byId.get(id))
-              .filter(Boolean) as BronKeyword[];
-            return { parent, children, parentId: c.parentId };
-          })
-          .filter(Boolean) as ReturnType<typeof groupKeywords>;
-
-        clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters: reconstructed };
-        return reconstructed;
-      }
-    }
-
-    // Backwards-compatibility path: if signature changed between builds,
-    // reuse any cached clusters for this domain (best-effort) to avoid a full re-cluster.
-    if (selectedDomain) {
-      const looseIndex = loadKeywordClustersIndexCache(selectedDomain);
-      if (looseIndex && looseIndex.length > 0) {
-        const byId = new Map<string | number, BronKeyword>();
-        for (const kw of filteredKeywords) byId.set(kw.id, kw);
-
-        const reconstructed = looseIndex
-          .map((c) => {
-            const parent = byId.get(c.parentId);
-            if (!parent) return null;
-            const children = c.childIds
-              .map((id) => byId.get(id))
-              .filter(Boolean) as BronKeyword[];
-            return { parent, children, parentId: c.parentId };
-          })
-          .filter(Boolean) as ReturnType<typeof groupKeywords>;
-
-        if (reconstructed.length > 0) {
-          clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters: reconstructed };
-          // Persist updated signature immediately.
-          const index: KeywordClusterIndex = reconstructed.map((c) => ({
-            parentId: c.parentId,
-            childIds: c.children.map((ch) => ch.id),
-          }));
-          saveKeywordClustersIndexCache(selectedDomain, idSignature, index);
-          return reconstructed;
-        }
-      }
-    }
     
     // Recompute clusters
     const clusters = groupKeywords(filteredKeywords, selectedDomain);
     clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters };
-
-    // Save a minimal cluster index for next hard refresh (IDs only, not full keyword objects)
-    if (selectedDomain && idSignature) {
-      const index: KeywordClusterIndex = clusters.map((c) => ({
-        parentId: c.parentId,
-        childIds: c.children.map((ch) => ch.id),
-      }));
-      saveKeywordClustersIndexCache(selectedDomain, idSignature, index);
-    }
     return clusters;
-  }, [filteredKeywords, selectedDomain, computeIdsSignature]);
+  }, [filteredKeywords, selectedDomain]);
 
   // Remove “grey” tracking-only rows from the UI (still counted in stats)
   const displayClusters = useMemo(

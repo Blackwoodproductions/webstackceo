@@ -45,8 +45,7 @@ import { OnPageSEOCarousel } from '@/components/marketing/OnPageSEOCarousel';
 import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import { CADELoginBox } from '@/components/marketing/CADELoginBox';
-import { BRONDashboard } from '@/components/marketing/BRONDashboard';
-import { useBronApi } from '@/hooks/use-bron-api';
+import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
 import { SocialPanel } from '@/components/marketing/SocialPanel';
 import {
   Select,
@@ -220,9 +219,6 @@ const MarketingDashboard = () => {
   
   // Import useAuth for automatic re-login when tokens expire
   const { signInWithGoogle } = useAuth();
-
-  // Lift BRON API hook to prevent unmounting when switching tabs
-  const bronApi = useBronApi();
   
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -3448,8 +3444,8 @@ f.parentNode.insertBefore(j,f);
       )}
 
 
-      {/* BRON Tab Content - rendered always but hidden when not active to preserve state */}
-      <div className={activeTab === 'bron' ? '' : 'hidden'}>
+      {/* BRON Tab Content */}
+      {activeTab === 'bron' && (
         <div className="relative max-w-[1480px] mx-auto group/bron">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/bron:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3477,10 +3473,10 @@ f.parentNode.insertBefore(j,f);
               animate={{ y: ['-100%', '200%'] }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
-            <BRONDashboard selectedDomain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} bronApiInstance={bronApi} />
+            <BRONPlatformConnect domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} />
           </div>
         </div>
-      </div>
+      )}
 
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
