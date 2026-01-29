@@ -246,6 +246,54 @@ export type Database = {
           },
         ]
       }
+      cade_crawl_events: {
+        Row: {
+          created_at: string
+          current_url: string | null
+          domain: string
+          error_message: string | null
+          id: string
+          message: string | null
+          pages_crawled: number | null
+          progress: number | null
+          raw_payload: Json | null
+          request_id: string | null
+          status: string
+          total_pages: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_url?: string | null
+          domain: string
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          pages_crawled?: number | null
+          progress?: number | null
+          raw_payload?: Json | null
+          request_id?: string | null
+          status?: string
+          total_pages?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_url?: string | null
+          domain?: string
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          pages_crawled?: number | null
+          progress?: number | null
+          raw_payload?: Json | null
+          request_id?: string | null
+          status?: string
+          total_pages?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       changelog_entries: {
         Row: {
           aggregation_end: string | null

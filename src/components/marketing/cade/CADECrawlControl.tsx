@@ -82,7 +82,60 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh }: CADECrawl
     }
   }, [domain, checkActiveTasks]);
 
-  // Poll for task status while crawling
+  // Subscribe to realtime crawl events from callback
+  useEffect(() => {
+    if (!domain || !isCrawling) return;
+
+    // Subscribe to realtime updates from cade_crawl_events
+    const channel = supabase
+      .channel(`cade-crawl-${domain}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'cade_crawl_events',
+          filter: `domain=eq.${domain}`,
+        },
+        (payload) => {
+          console.log("[CADE Crawl] Realtime event:", payload.new);
+          const event = payload.new as {
+            status?: string;
+            progress?: number;
+            pages_crawled?: number;
+            total_pages?: number;
+            error_message?: string;
+            message?: string;
+          };
+          
+          setCrawlTask(prev => ({
+            ...prev,
+            status: event.status,
+            progress: event.progress,
+            pages_crawled: event.pages_crawled,
+            total_pages: event.total_pages,
+            error: event.error_message,
+          }));
+
+          if (event.status === "completed" || event.status === "done") {
+            setIsCrawling(false);
+            toast.success("Crawl completed successfully!");
+            onRefresh?.();
+          } else if (event.status === "failed" || event.status === "error") {
+            setIsCrawling(false);
+            toast.error("Crawl failed: " + (event.error_message || event.message || "Unknown error"));
+            onRefresh?.();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [domain, isCrawling, onRefresh]);
+
+  // Fallback poll for task status while crawling (if realtime fails)
   useEffect(() => {
     if (!isCrawling || !crawlTask?.task_id) return;
     
@@ -106,7 +159,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh }: CADECrawl
       } catch (err) {
         console.error("[CADE Crawl] Status check error:", err);
       }
-    }, 5000);
+    }, 10000); // Reduced frequency since we have realtime
     
     return () => clearInterval(interval);
   }, [isCrawling, crawlTask?.task_id, callCadeApi, onRefresh]);
