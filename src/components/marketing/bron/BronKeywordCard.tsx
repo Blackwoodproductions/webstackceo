@@ -458,15 +458,16 @@ export const BronKeywordCard = memo(({
     >
       <div 
         className={`
-          rounded-xl border overflow-hidden no-theme-transition
+          rounded-lg border overflow-hidden no-theme-transition
           ${isNested 
-            ? 'border-l-4 border-l-amber-500/70 bg-amber-500/10 border-amber-500/30'
+            ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
             : isTrackingOnly 
               ? 'bg-muted/30 border-muted-foreground/20'
               : isMainKeyword
-                ? 'border-l-4 border-l-blue-500/70 bg-blue-500/10 border-blue-500/30'
-                : 'bg-primary/10 border-primary/25'
+                ? 'bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10'
+                : 'bg-card/80 border-border/40 hover:bg-card'
           }
+          transition-colors duration-150
         `}
         style={{ contain: 'layout style' }}
       >
@@ -483,24 +484,22 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 2: Keyword Text (indent ONLY this column for supporting keywords) */}
-            <div className={`w-[380px] flex-shrink-0 pr-4 ${isNested ? 'pl-6' : ''}`}>
+            {/* Column 2: Keyword Text */}
+            <div className="w-[380px] flex-shrink-0 pr-4">
               <div className="flex items-center gap-2">
-                {/* Cluster indicator for nested/main keywords */}
-                {isNested && (
-                  <span aria-hidden className="-ml-4 flex items-center gap-1.5">
-                    <span className="w-3 h-px bg-amber-500/50" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  </span>
-                )}
-                {isMainKeyword && !isNested && (
-                  <span aria-hidden className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  </span>
-                )}
+                {/* Small colored dot indicator */}
+                <span 
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isNested 
+                      ? 'bg-amber-500' 
+                      : isMainKeyword 
+                        ? 'bg-blue-500'
+                        : 'bg-primary/60'
+                  }`} 
+                />
                 
                 <h3 
-                  className={`font-medium truncate max-w-[280px] ${
+                  className={`font-medium truncate max-w-[300px] ${
                     isNested 
                       ? 'text-amber-600 dark:text-amber-400' 
                       : isMainKeyword 
@@ -525,12 +524,7 @@ export const BronKeywordCard = memo(({
                   </a>
                 )}
                 
-                {/* Role badges */}
-                {isMainKeyword && !isNested && clusterChildCount !== undefined && clusterChildCount > 0 && (
-                  <Badge className="text-[9px] h-5 px-2 bg-blue-500/20 text-blue-500 border-blue-500/30 whitespace-nowrap">
-                    Main · {clusterChildCount}
-                  </Badge>
-                )}
+                {/* Role badges - simplified */}
                 {isNested && (
                   <Badge className="text-[9px] h-5 px-2 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 whitespace-nowrap">
                     Supporting
