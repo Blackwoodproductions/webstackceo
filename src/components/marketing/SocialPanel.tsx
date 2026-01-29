@@ -666,7 +666,51 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           transition={{ delay: 0.2 }}
         >
           <Card className="border-pink-500/20 bg-gradient-to-br from-pink-500/5 via-rose-500/5 to-purple-500/5 backdrop-blur-sm overflow-hidden">
-            <CardHeader>
+            {/* CADE Subscription Status Banner */}
+            {bronSubscription && (
+              <div className="px-6 pt-4 pb-2">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-cyan-500/10 border border-violet-500/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">CADE Subscription</span>
+                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
+                          <CheckCircle className="w-3 h-3 mr-1" />Active
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {bronSubscription.plan || 'Pro Plan'} • Social signals automation enabled
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Connected accounts</p>
+                    <p className="text-lg font-bold text-foreground">{connectedCount} <span className="text-xs font-normal text-muted-foreground">of 3</span></p>
+                  </div>
+                </div>
+                
+                {/* Waiting message when no accounts connected */}
+                {connectedCount === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    </div>
+                    <p className="text-xs text-amber-300">
+                      <span className="font-medium">Waiting for you to connect your social media accounts</span> — Once connected, CADE will automatically post new content to your profiles.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            )}
+            
+            <CardHeader className={bronSubscription ? 'pt-2' : ''}>
               <CardTitle className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
                   <Link2 className="w-5 h-5 text-white" />
