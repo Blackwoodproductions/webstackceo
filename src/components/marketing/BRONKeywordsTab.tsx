@@ -320,16 +320,19 @@ export const BRONKeywordsTab = memo(({
   useEffect(() => {
     if (keywords.length > 0) {
       lastValidClusterCountRef.current = keywords.length;
-      hasEverReceivedDataRef.current = true;
     }
   }, [keywords.length]);
   
-  // Derive "has data" - ONLY consider data "received" if:
-  // 1. We actually have keywords now, OR
-  // 2. We're the same domain and previously had keywords AND not still loading
-  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
-  const hasReceivedData = keywords.length > 0 || 
-    (!isLoading && hasEverReceivedDataRef.current && prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // Mark data as "received" when loading transitions from true to false
+  // This indicates the fetch has completed (regardless of whether data was found)
+  const prevIsLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    // If we transition from loading to not-loading, we've received the response
+    if (prevIsLoadingRef.current && !isLoading) {
+      hasEverReceivedDataRef.current = true;
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
   
   // Reset the last valid count when domain actually changes
   useEffect(() => {
@@ -340,6 +343,14 @@ export const BRONKeywordsTab = memo(({
       prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
+  
+  // Derive "has data" - ONLY show "no keywords found" when:
+  // 1. We're NOT loading anymore (isLoading === false)
+  // 2. We have zero keywords
+  // 3. We've actually completed a fetch for the current domain (hasEverReceivedDataRef.current === true)
+  //    This prevents showing "no keywords" during the brief period between domain switch and data hydration
+  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
+  const hasReceivedData = keywords.length > 0 || isLoading || !hasEverReceivedDataRef.current;
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 

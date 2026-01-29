@@ -1086,9 +1086,17 @@ export function useBronApi(): UseBronApiReturn {
           return;
         }
 
-        // Leave hydrating=true here; fetchKeywords will clear it when network completes.
-      }).catch(() => {
-        // IDB failed - fetchKeywords will handle network fetch
+        // No IDB data found - clear hydrating flag since fetchKeywords will handle network fetch
+        // This prevents the UI from being stuck in loading state if fetchKeywords also fails
+        console.log(`[BRON] selectDomain: no IDB data for ${key}, fetchKeywords will load from network`);
+        // Don't clear isKeywordHydrating here - fetchKeywords will handle it
+      }).catch((err) => {
+        // IDB failed - clear hydrating flag so UI isn't stuck, fetchKeywords will handle network fetch
+        console.warn(`[BRON] selectDomain: IDB load failed for ${key}:`, err);
+        if (localReqId === keywordsReqIdRef.current) {
+          // Only clear if no fetchKeywords call has superseded us
+          // fetchKeywords will set its own loading state
+        }
       });
     }
     
