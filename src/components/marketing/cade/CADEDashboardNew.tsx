@@ -883,90 +883,173 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           </SectionCard>
         </div>
 
-        {/* Live Activity Card - 3 columns */}
+        {/* Live Activity Mini Dashboard - 3 columns */}
         <div className="md:col-span-3">
           <SectionCard title="Live Activity" accentColor="violet" className="h-full">
-            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-2">
-              {tasks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No recent activity</p>
-                </div>
-              ) : (
-                tasks.slice(0, 10).map((task) => {
-                  const isActive = ["running", "processing", "pending", "queued", "in_progress"].includes(task.statusValue);
-                  const isCompleted = ["completed", "done", "success"].includes(task.statusValue);
-                  const isFailed = ["failed", "error"].includes(task.statusValue);
-                  
-                  const typeColors: Record<string, string> = {
-                    CRAWL: "text-orange-400 bg-orange-500/10 border-orange-500/30",
-                    CATEGORIZATION: "text-violet-400 bg-violet-500/10 border-violet-500/30",
-                    CSS: "text-blue-400 bg-blue-500/10 border-blue-500/30",
-                    CONTENT: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
-                    UNKNOWN: "text-muted-foreground bg-muted/10 border-border/30",
-                  };
-                  
-                  return (
-                    <div 
-                      key={task.id} 
-                      className="flex items-center gap-3 p-3 rounded-lg bg-background/30 border border-border/30"
-                    >
-                      {/* Status indicator */}
-                      <div className="flex-shrink-0">
-                        {isActive && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
-                        {isCompleted && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                        {isFailed && <AlertTriangle className="w-4 h-4 text-red-400" />}
-                        {!isActive && !isCompleted && !isFailed && <Clock className="w-4 h-4 text-muted-foreground" />}
-                      </div>
-                      
-                      {/* Type badge */}
-                      <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${typeColors[task.type]}`}>
-                        {task.type}
-                      </Badge>
-                      
-                      {/* Message */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">
-                          {task.message || task.current_url || `${task.type} ${task.statusValue}`}
-                        </p>
-                        {task.progress !== undefined && task.progress > 0 && task.progress < 100 && (
-                          <div className="mt-1 h-1 rounded-full bg-muted/30 overflow-hidden">
-                            <div 
-                              className="h-full bg-primary/60 rounded-full transition-all duration-300"
-                              style={{ width: `${task.progress}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Time */}
-                      <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                        {task.created_at ? new Date(task.created_at).toLocaleTimeString() : "—"}
-                      </span>
+            <div className="space-y-4">
+              {/* Dials Row */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Active Dial */}
+                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
+                  <div className="relative w-16 h-16">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500/10" />
+                      <circle 
+                        cx="18" cy="18" r="15" fill="none" stroke="url(#amber-gradient)" strokeWidth="2.5" 
+                        strokeDasharray={`${Math.min((stats.active / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                      <defs>
+                        <linearGradient id="amber-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#fbbf24" />
+                          <stop offset="100%" stopColor="#f59e0b" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold text-amber-400">{stats.active}</span>
                     </div>
-                  );
-                })
-              )}
-            </div>
-            
-            {tasks.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-border/30 flex items-center justify-between">
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Active: <span className="text-amber-400 font-medium">{stats.active}</span></span>
-                  <span>Completed: <span className="text-emerald-400 font-medium">{stats.completed}</span></span>
-                  <span>Failed: <span className="text-red-400 font-medium">{stats.failed}</span></span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Active</p>
+                  {stats.active > 0 && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  )}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={refreshTasks}
-                  className="text-xs h-7"
-                >
-                  <RefreshCw className="w-3 h-3 mr-1" />
-                  Refresh
-                </Button>
+
+                {/* Completed Dial */}
+                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border border-emerald-500/20">
+                  <div className="relative w-16 h-16">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500/10" />
+                      <circle 
+                        cx="18" cy="18" r="15" fill="none" stroke="url(#emerald-gradient)" strokeWidth="2.5" 
+                        strokeDasharray={`${Math.min((stats.completed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                      <defs>
+                        <linearGradient id="emerald-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#34d399" />
+                          <stop offset="100%" stopColor="#10b981" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold text-emerald-400">{stats.completed}</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Completed</p>
+                </div>
+
+                {/* Failed Dial */}
+                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-red-500/5 to-red-500/10 border border-red-500/20">
+                  <div className="relative w-16 h-16">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500/10" />
+                      <circle 
+                        cx="18" cy="18" r="15" fill="none" stroke="url(#red-gradient)" strokeWidth="2.5" 
+                        strokeDasharray={`${Math.min((stats.failed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                      <defs>
+                        <linearGradient id="red-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f87171" />
+                          <stop offset="100%" stopColor="#ef4444" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold text-red-400">{stats.failed}</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Failed</p>
+                </div>
               </div>
-            )}
+
+              {/* Activity by Type - Mini Bar Chart */}
+              <div className="p-3 rounded-xl bg-background/30 border border-border/30">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Activity by Type</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={refreshTasks}
+                    className="text-[10px] h-6 px-2"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Refresh
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { type: "CRAWL", color: "orange", count: stats.byType.crawl || 0 },
+                    { type: "CATEGORIZATION", color: "violet", count: stats.byType.categorization || 0 },
+                    { type: "CONTENT", color: "cyan", count: byType.content?.length || 0 },
+                    { type: "CSS", color: "blue", count: byType.css?.length || 0 },
+                  ].map((item) => {
+                    const maxCount = Math.max(stats.byType.crawl || 0, stats.byType.categorization || 0, byType.content?.length || 0, byType.css?.length || 0, 1);
+                    const percentage = (item.count / maxCount) * 100;
+                    const colorMap: Record<string, string> = {
+                      orange: "from-orange-500 to-orange-400",
+                      violet: "from-violet-500 to-purple-400",
+                      cyan: "from-cyan-500 to-cyan-400",
+                      blue: "from-blue-500 to-blue-400",
+                    };
+                    return (
+                      <div key={item.type} className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-24 truncate">{item.type}</span>
+                        <div className="flex-1 h-2 rounded-full bg-muted/20 overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full bg-gradient-to-r ${colorMap[item.color]} transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium text-${item.color}-400 w-6 text-right`}>{item.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Recent Activity Feed - Compact */}
+              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                {tasks.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <Activity className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                    <p className="text-xs">No recent activity</p>
+                  </div>
+                ) : (
+                  tasks.slice(0, 5).map((task) => {
+                    const isActive = ["running", "processing", "pending", "queued", "in_progress"].includes(task.statusValue);
+                    const isCompleted = ["completed", "done", "success"].includes(task.statusValue);
+                    const isFailed = ["failed", "error"].includes(task.statusValue);
+                    
+                    return (
+                      <div 
+                        key={task.id} 
+                        className="flex items-center gap-2 p-2 rounded-lg bg-background/20 border border-border/20"
+                      >
+                        <div className="flex-shrink-0">
+                          {isActive && <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                          {isCompleted && <div className="w-2 h-2 rounded-full bg-emerald-400" />}
+                          {isFailed && <div className="w-2 h-2 rounded-full bg-red-400" />}
+                          {!isActive && !isCompleted && !isFailed && <div className="w-2 h-2 rounded-full bg-muted-foreground" />}
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase w-16 truncate">{task.type}</span>
+                        <span className="flex-1 text-xs truncate">
+                          {task.message || task.current_url || `${task.type} ${task.statusValue}`}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
+                          {task.created_at ? new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </SectionCard>
         </div>
       </div>
