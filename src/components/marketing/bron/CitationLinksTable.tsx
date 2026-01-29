@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
-import { Lock, Unlock } from "lucide-react";
 import type { BronLink } from "@/hooks/use-bron-api";
+import { CitationLinkToggleButton } from "./CitationLinkToggleButton";
 
 export type RelevanceFilter = "all" | "most" | "very" | "relevant" | "less";
 export type ReciprocalFilter = "all" | "reciprocal" | "one-way";
@@ -219,7 +219,6 @@ const CitationLinkRow = memo(
     onToggle?: (linkId: string | number, currentDisabled: string) => Promise<boolean>;
   }) => {
     const isReciprocal = link.reciprocal === "yes";
-    const isEnabled = link.disabled !== "yes";
 
     const displayDomain = link.domain_name || link.domain || "";
     
@@ -289,21 +288,7 @@ const CitationLinkRow = memo(
 
         {/* Actions Column - Status indicator (toggle requires link ID from API) */}
         <div className="flex justify-center">
-          <span 
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide ${
-              isEnabled
-                ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                : "bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]"
-            }`}
-            title={isEnabled ? "Link is currently enabled" : "Link is currently disabled"}
-          >
-            {isEnabled ? (
-              <Lock className="w-3.5 h-3.5" />
-            ) : (
-              <Unlock className="w-3.5 h-3.5" />
-            )}
-            {isEnabled ? "ENABLED" : "DISABLED"}
-          </span>
+          <CitationLinkToggleButton link={link} onToggle={onToggle} />
         </div>
       </div>
     );
