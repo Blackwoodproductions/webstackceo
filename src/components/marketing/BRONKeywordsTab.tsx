@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition, lazy, Suspense } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2, Brain, Eye, EyeOff } from "lucide-react";
+import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,6 @@ import {
   filterLinksForKeyword,
   BronKeywordSkeletonList,
   BronKeywordTableHeader,
-  BronAILoadingAnimation,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -307,7 +306,7 @@ export const BRONKeywordsTab = memo(({
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
-  const [showAIMetrics, setShowAIMetrics] = useState(false);
+  
   // Initialize metricsLoading as a Set of keyword keys that are ACTUALLY being fetched
   // This allows us to show "loading" only on keywords without cached metrics
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
@@ -906,48 +905,10 @@ export const BRONKeywordsTab = memo(({
               <Plus className="w-4 h-4 mr-1" />
               Add
             </Button>
-            <Button
-              size="sm"
-              variant={showAIMetrics ? "default" : "outline"}
-              onClick={() => setShowAIMetrics(!showAIMetrics)}
-              className={showAIMetrics 
-                ? "bg-gradient-to-r from-cyan-500/80 to-violet-500/80 text-white border-0 hover:from-cyan-500 hover:to-violet-500" 
-                : "border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/60"
-              }
-            >
-              {showAIMetrics ? <EyeOff className="w-4 h-4 mr-1.5" /> : <Brain className="w-4 h-4 mr-1.5" />}
-              {showAIMetrics ? "Hide AI Metrics" : "View AI Search Metrics"}
-            </Button>
           </div>
         </CardHeader>
         
         <CardContent>
-          {/* AI Search Metrics Display - toggleable */}
-          {showAIMetrics && (
-            <div className="mb-6 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 overflow-hidden">
-              <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between bg-gradient-to-r from-cyan-500/10 to-violet-500/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-violet-500/20 flex items-center justify-center border border-cyan-500/30">
-                    <Brain className="w-5 h-5 text-cyan-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">AI Search Metrics Analysis</h3>
-                    <p className="text-xs text-muted-foreground">Real-time data collection across multiple sources</p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowAIMetrics(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <BronAILoadingAnimation />
-            </div>
-          )}
-          
           {!selectedDomain ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
