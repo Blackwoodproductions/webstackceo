@@ -95,9 +95,10 @@ interface FAQItem {
 
 interface CADEApiDashboardProps {
   domain?: string;
+  onSubscriptionChange?: (hasSubscription: boolean) => void;
 }
 
-export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
+export const CADEApiDashboard = ({ domain, onSubscriptionChange }: CADEApiDashboardProps) => {
   const { fetchSubscription } = useBronApi();
   
   const [cachedData] = useState(() => domain ? loadCachedCadeData(domain) : null);
@@ -108,6 +109,11 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   
   const [hasCadeSubscription, setHasCadeSubscription] = useState(cachedData?.isConnected || false);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(cachedData?.subscription || null);
+
+  // Keep parent gating state in sync (used to show/hide platform connect blocks)
+  useEffect(() => {
+    onSubscriptionChange?.(hasCadeSubscription);
+  }, [hasCadeSubscription, onSubscriptionChange]);
   
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [workers, setWorkers] = useState<WorkerData[]>(cachedData?.workers as WorkerData[] || []);
@@ -137,6 +143,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     if (!domain) {
       setIsCheckingSubscription(false);
       setIsLoading(false);
+      onSubscriptionChange?.(false);
       return false;
     }
     
@@ -145,6 +152,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
     const cachedSub = getCachedSubscription(domain);
     if (cachedSub && cachedSub.has_cade === true) {
       setHasCadeSubscription(true);
+      onSubscriptionChange?.(true);
       setSubscription({
         plan: cachedSub.plan || cachedSub.servicetype || "CADE",
         status: cachedSub.status || "active",
@@ -167,6 +175,7 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       if (hasValidSubscription) {
         setCachedSubscription(domain, subData);
         setHasCadeSubscription(true);
+        onSubscriptionChange?.(true);
         setSubscription({
           plan: subData.plan || subData.servicetype || "CADE",
           status: subData.status || "active",
@@ -176,14 +185,16 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
       }
       
       setHasCadeSubscription(false);
+      onSubscriptionChange?.(false);
       setIsCheckingSubscription(false);
       return false;
     } catch {
       setHasCadeSubscription(false);
+      onSubscriptionChange?.(false);
       setIsCheckingSubscription(false);
       return false;
     }
-  }, [domain, fetchSubscription]);
+  }, [domain, fetchSubscription, onSubscriptionChange]);
 
   const fetchAllData = useCallback(async () => {
     if (!hasCadeSubscription) {
