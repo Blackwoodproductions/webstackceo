@@ -314,25 +314,58 @@ export const BRONKeywordsTab = memo(({
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
   const lastValidClusterCountRef = useRef<number>(0);
   
+  // Transition timeout: prevent "No keywords found" flash during domain switch/hydration
+  // The UI should show "Loading..." for at least this long after a domain change.
+  const TRANSITION_TIMEOUT_MS = 3000;
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimerRef = useRef<number | null>(null);
+  
   // Update last valid count when we have actual data
   useEffect(() => {
     if (keywords.length > 0) {
       lastValidClusterCountRef.current = keywords.length;
+      // Data arrived - cancel transition timer and mark as done
+      setIsTransitioning(false);
+      if (transitionTimerRef.current) {
+        window.clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
     }
   }, [keywords.length]);
   
   // Derive "has data" - consider we have data if either:
   // 1. Current keywords array has items, OR
   // 2. We had data before and are just transitioning (prevents flash)
-  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // BUT: if we're in a transition period, always show loading
+  const hasReceivedData = !isTransitioning && (keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0));
   
-  // Reset the last valid count when domain actually changes
+  // Reset the last valid count when domain actually changes and start transition timer
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       // Only reset if we're switching to a truly different domain
       lastValidClusterCountRef.current = 0;
+      prevDomainRef.current = selectedDomain;
+      
+      // Start transition: show loading for a grace period
+      setIsTransitioning(true);
+      if (transitionTimerRef.current) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+      transitionTimerRef.current = window.setTimeout(() => {
+        setIsTransitioning(false);
+        transitionTimerRef.current = null;
+      }, TRANSITION_TIMEOUT_MS);
     }
   }, [selectedDomain]);
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, []);
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
