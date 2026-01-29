@@ -758,8 +758,8 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <ScrollArea className="h-48 mt-2">
-                      <div ref={activityScrollRef} className="space-y-1 font-mono text-xs">
+                    <ScrollArea className="h-28 mt-1">
+                      <div ref={activityScrollRef} className="space-y-0.5 font-mono text-[11px]">
                         {activityLog.length === 0 ? (
                           <div className="text-center py-4 text-muted-foreground">
                             <Terminal className="w-6 h-6 mx-auto mb-2 opacity-30" />
@@ -771,7 +771,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                               key={entry.id}
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
-                              className={`flex items-start gap-2 p-1.5 rounded ${
+                              className={`flex items-center gap-1.5 py-0.5 px-1.5 rounded text-[11px] ${
                                 entry.type === "success" ? "bg-green-500/10 text-green-400" :
                                 entry.type === "error" ? "bg-red-500/10 text-red-400" :
                                 entry.type === "progress" ? "bg-blue-500/10 text-blue-400" :
@@ -779,20 +779,20 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                                 "bg-muted/30 text-muted-foreground"
                               }`}
                             >
-                              <span className="text-muted-foreground flex-shrink-0 w-16">
+                            <span className="text-muted-foreground flex-shrink-0 w-14 text-[10px]">
                                 {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                               </span>
                               <span className="flex-shrink-0">
-                                {entry.type === "success" ? <CheckCircle2 className="w-3 h-3" /> :
-                                 entry.type === "error" ? <AlertTriangle className="w-3 h-3" /> :
-                                 entry.type === "progress" ? <Loader2 className="w-3 h-3 animate-spin" /> :
-                                 entry.type === "cache" ? <Zap className="w-3 h-3" /> :
-                                 <Info className="w-3 h-3" />}
+                                {entry.type === "success" ? <CheckCircle2 className="w-2.5 h-2.5" /> :
+                                 entry.type === "error" ? <AlertTriangle className="w-2.5 h-2.5" /> :
+                                 entry.type === "progress" ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> :
+                                 entry.type === "cache" ? <Zap className="w-2.5 h-2.5" /> :
+                                 <Info className="w-2.5 h-2.5" />}
                               </span>
                               <span className="flex-1 break-words">{entry.message}</span>
                               {entry.data?.time_remaining && (
-                                <span className="flex items-center gap-1 text-cyan-400 flex-shrink-0">
-                                  <Timer className="w-3 h-3" />
+                                <span className="flex items-center gap-0.5 text-cyan-400 flex-shrink-0 text-[10px]">
+                                  <Timer className="w-2.5 h-2.5" />
                                   {String(entry.data.time_remaining)}
                                 </span>
                               )}

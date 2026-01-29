@@ -118,7 +118,7 @@ export const CADETaskMonitor = ({
   return (
     <Card className="border-blue-500/20 bg-gradient-to-br from-background to-blue-500/5">
       <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardHeader className="flex flex-row items-center justify-between py-2 px-4">
           <CollapsibleTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -154,7 +154,7 @@ export const CADETaskMonitor = ({
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 pt-0 pb-3">
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
                 {error}
@@ -168,14 +168,14 @@ export const CADETaskMonitor = ({
                 ))}
               </div>
             ) : totalTasks === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No tasks found</p>
-                <p className="text-xs mt-1">Start a crawl to see tasks here</p>
+              <div className="text-center py-4 text-muted-foreground">
+                <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs">No tasks found</p>
+                <p className="text-[10px] mt-0.5">Start a crawl to see tasks here</p>
               </div>
             ) : (
-              <ScrollArea className="h-[400px]">
-                <div className="space-y-4">
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-3">
                   {/* Crawl Tasks */}
                   <TaskSection
                     title="Crawl Tasks"
@@ -270,12 +270,12 @@ const TaskSection = ({
   if (tasks.length === 0) return null;
 
   return (
-    <div>
-      <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-muted-foreground">
+    <div className="mb-2">
+      <h4 className="text-xs font-medium flex items-center gap-1.5 mb-1.5 text-muted-foreground">
         {icon}
         {title} ({tasks.length})
       </h4>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {tasks.map((task, idx) => (
           <TaskRow
             key={task.id || idx}
@@ -327,59 +327,39 @@ const TaskRow = ({
     >
       {/* Main row - clickable to expand */}
       <div 
-        className={`p-3 ${hasExtendedInfo ? "cursor-pointer" : ""}`}
+        className={`py-2 px-3 ${hasExtendedInfo ? "cursor-pointer" : ""}`}
         onClick={hasExtendedInfo ? onToggleExpand : undefined}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {getStatusIcon(task.statusValue)}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm truncate">
-                  {task.domain || "Unknown"}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-medium text-xs truncate">
+                  {task.type}
                 </span>
-                <Badge className={`text-xs ${getStatusBadgeClass(task.statusValue)}`}>
+                <Badge className={`text-[10px] py-0 ${getStatusBadgeClass(task.statusValue)}`}>
                   {task.statusValue}
                 </Badge>
-                {task.tier && (
-                  <Badge variant="outline" className="text-xs">
-                    {task.tier}
-                  </Badge>
-                )}
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                {type === "crawl" && task.pages_crawled !== undefined && (
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    {task.pages_crawled} / {task.total_pages || "?"} pages
-                  </span>
-                )}
-                {task.current_url && isActive && (
-                  <span className="flex items-center gap-1 truncate max-w-[200px]">
-                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    {task.current_url}
-                  </span>
-                )}
-                {task.message && (
-                  <span className="flex items-center gap-1 truncate max-w-[250px]">
-                    <Info className="w-3 h-3 flex-shrink-0" />
-                    {task.message}
-                  </span>
-                )}
-                <span>{formatDate(task.created_at)}</span>
-              </div>
+              {task.message && (
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{task.message}</p>
+              )}
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             {/* Progress for crawl tasks */}
             {type === "crawl" && task.progress !== undefined && isActive && (
-              <div className="w-20">
-                <Progress value={task.progress} className="h-1.5" />
+              <div className="w-16">
+                <Progress value={task.progress} className="h-1" />
               </div>
             )}
+            <span className="text-[10px] text-muted-foreground flex-shrink-0">
+              {formatDate(task.created_at)}
+            </span>
             {hasExtendedInfo && (
-              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
             )}
           </div>
         </div>
