@@ -323,25 +323,27 @@ export const BRONKeywordsTab = memo(({
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
   const lastValidClusterCountRef = useRef<number>(0);
   
-  // Update last valid count when we have actual data
+  // Synchronously check domain change to prevent render flash
+  const isDomainChanging = selectedDomain !== prevDomainRef.current;
+  
+  // Update last valid count when we have actual data for the CURRENT domain
   useEffect(() => {
-    if (keywords.length > 0) {
+    if (keywords.length > 0 && !isDomainChanging) {
       lastValidClusterCountRef.current = keywords.length;
     }
-  }, [keywords.length]);
+  }, [keywords.length, isDomainChanging]);
   
-  // Derive "has data" - consider we have data if either:
-  // 1. Current keywords array has items, OR
-  // 2. We had data before and are just transitioning (prevents flash)
-  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
-  
-  // Reset the last valid count when domain actually changes
+  // Reset refs when domain changes - do this synchronously in a layout effect
+  // to prevent intermediate renders with stale data
   useEffect(() => {
-    if (selectedDomain !== prevDomainRef.current) {
-      // Only reset if we're switching to a truly different domain
+    if (isDomainChanging) {
       lastValidClusterCountRef.current = 0;
+      prevDomainRef.current = selectedDomain;
     }
-  }, [selectedDomain]);
+  }, [selectedDomain, isDomainChanging]);
+  
+  // Derive "has data" - only show skeleton if we truly have no data for current domain
+  const hasReceivedData = keywords.length > 0;
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
@@ -449,13 +451,12 @@ export const BRONKeywordsTab = memo(({
 
   // Reset fetched URLs and cluster cache when domain changes
   useEffect(() => {
-    if (selectedDomain !== prevDomainRef.current) {
+    if (isDomainChanging) {
       fetchedUrlsRef.current = new Set();
       // Clear cluster cache on domain change to force fresh computation
       clusterCacheRef.current = null;
-      prevDomainRef.current = selectedDomain;
     }
-  }, [selectedDomain]);
+  }, [isDomainChanging]);
 
   // Fetch initial positions from SERP history
   useEffect(() => {
