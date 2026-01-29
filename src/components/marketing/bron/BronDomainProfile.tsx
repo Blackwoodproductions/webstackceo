@@ -110,7 +110,7 @@ export const BronDomainProfile = memo(({
   // Auto-fill when a new domain is added and context is at 0% and no cache
   useEffect(() => {
     const runAutoFill = async () => {
-      if (isNewlyAddedDomain && domainContextFilledCount === 0 && !autoFilling && hasFetchedFromApi && !hasAttemptedAutoFill) {
+      if (isNewlyAddedDomain && domainContextFilledCount === 0 && !autoFilling && !hasAttemptedAutoFill) {
         setHasAttemptedAutoFill(true);
         const success = await autoFillContext();
         if (success) {
@@ -120,18 +120,17 @@ export const BronDomainProfile = memo(({
       }
     };
     runAutoFill();
-  }, [isNewlyAddedDomain, domainContextFilledCount, autoFilling, autoFillContext, onAutoFillComplete, hasFetchedFromApi, hasAttemptedAutoFill]);
+  }, [isNewlyAddedDomain, domainContextFilledCount, autoFilling, autoFillContext, onAutoFillComplete, hasAttemptedAutoFill]);
 
   // Handle click on domain info - auto-fill only on first click when truly empty, then always open dialog
   const handleDomainInfoClick = async () => {
-    // If we haven't fetched yet and showing 0%, just open dialog (cached data may exist)
-    // Only auto-fill if API confirmed 0% AND we haven't attempted before
-    if (domainContextFilledCount === 0 && !autoFilling && hasFetchedFromApi && !hasAttemptedAutoFill) {
+    // First interaction: if empty, run scan first (no dialog). After that, open editor.
+    if (domainContextFilledCount === 0 && !autoFilling && !hasAttemptedAutoFill) {
       setHasAttemptedAutoFill(true);
       const success = await autoFillContext();
       if (success) {
         toast.success("Website analyzed! Domain info has been auto-filled.");
-        // Open dialog after successful auto-fill to show the data
+        // Open dialog after auto-fill to let user edit/save
         setDomainContextOpen(true);
       } else {
         toast.error("Failed to auto-fill. Opening editor...");
