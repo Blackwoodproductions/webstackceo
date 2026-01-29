@@ -189,23 +189,30 @@ export function useDomainContext(domain: string | undefined) {
 
       if (fnError) throw fnError;
 
-      if (data?.success && data?.data) {
-        updateContextState(data.data);
-      } else if (data?.data) {
-        updateContextState(data.data);
+      const currentCount = calculateFilledCount(context);
+      const incoming = (data?.data ?? null) as DomainContext | null;
+
+      if (incoming) {
+        const incomingCount = calculateFilledCount(incoming);
+        // If backend returns empty but we already have cached/extracted context, keep current.
+        if (!(incomingCount === 0 && currentCount > 0)) {
+          updateContextState(incoming);
+        }
       } else {
-        // No context yet - initialize empty but don't cache empty
-        setContext({});
+        // No backend context yet: only show empty if we don't already have cached context.
+        if (currentCount === 0) setContext({});
       }
+
       setHasFetchedFromApi(true);
     } catch (err) {
       console.error("[useDomainContext] fetch error:", err);
       setError(err instanceof Error ? err.message : "Failed to load domain context");
-      setContext({});
+      // Don't wipe out cached/extracted context on transient errors.
+      if (calculateFilledCount(context) === 0) setContext({});
     } finally {
       setLoading(false);
     }
-  }, [domain, updateContextState]);
+  }, [domain, updateContextState, context]);
 
   const updateContext = useCallback(
     async (updates: Partial<DomainContext>) => {
