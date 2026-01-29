@@ -135,7 +135,8 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        endpoint = `/content/?domain=${encodeURIComponent(domain)}`;
+        // Remove trailing slash - API may reject it
+        endpoint = `/content?domain=${encodeURIComponent(domain)}`;
         if (params?.page) endpoint += `&page=${params.page}`;
         if (params?.limit) endpoint += `&limit=${params.limit}`;
         if (params?.status) endpoint += `&status=${params.status}`;
