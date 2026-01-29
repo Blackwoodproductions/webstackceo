@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { 
-  Loader2, ChevronDown, MapPin, Camera, Brain,
+  Loader2, ChevronDown, MapPin, Camera, Brain, Building2, Sparkles, Tag,
   Facebook, Linkedin, Instagram, Twitter, Youtube
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ interface BronDomainProfileProps {
   isCapturingScreenshot: boolean;
   onCaptureScreenshot: () => void;
   onScreenshotError: () => void;
+  isNewlyAddedDomain?: boolean;
+  onAutoFillComplete?: () => void;
 }
 
 // Package name lookup
@@ -70,11 +72,14 @@ export const BronDomainProfile = memo(({
   isCapturingScreenshot,
   onCaptureScreenshot,
   onScreenshotError,
+  isNewlyAddedDomain,
+  onAutoFillComplete,
 }: BronDomainProfileProps) => {
   const [domainContextOpen, setDomainContextOpen] = useState(false);
   
   // Domain context hook for progress
   const {
+    context: domainContext,
     fetchContext: fetchDomainContext,
     autoFillContext,
     autoFilling,
@@ -89,6 +94,20 @@ export const BronDomainProfile = memo(({
       fetchDomainContext();
     }
   }, [selectedDomain, fetchDomainContext]);
+
+  // Auto-fill when a new domain is added and context is at 0%
+  useEffect(() => {
+    const runAutoFill = async () => {
+      if (isNewlyAddedDomain && domainContextFilledCount === 0 && !autoFilling) {
+        const success = await autoFillContext();
+        if (success) {
+          toast.success("Website analyzed! Domain info has been auto-filled.");
+        }
+        onAutoFillComplete?.();
+      }
+    };
+    runAutoFill();
+  }, [isNewlyAddedDomain, domainContextFilledCount, autoFilling, autoFillContext, onAutoFillComplete]);
 
   // Handle click on domain info - auto-fill if 0%, otherwise open dialog
   const handleDomainInfoClick = async () => {
@@ -271,45 +290,95 @@ export const BronDomainProfile = memo(({
             </div>
           </div>
 
-          {/* RIGHT: Google My Business Card with Map */}
+          {/* RIGHT: Business Profile Card */}
           <div className="lg:col-span-5 p-4">
             <div className="rounded-lg border border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-cyan-600/10 overflow-hidden h-full">
-              {/* GMB Header */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-background/50 border-b border-cyan-500/20">
-                <MapPin className="w-4 h-4 text-red-500" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Google My Business
-                </span>
+              {/* Header */}
+              <div className="flex items-center justify-between px-3 py-2 bg-background/50 border-b border-cyan-500/20">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Business Profile
+                  </span>
+                </div>
+                {domainContext?.primary_keyword && (
+                  <Badge variant="secondary" className="text-[10px] bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                    <Tag className="w-3 h-3 mr-1" />
+                    {domainContext.primary_keyword}
+                  </Badge>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-0 h-[calc(100%-36px)]">
-                {/* Business Info */}
-                <div className="p-3 space-y-2 border-r border-cyan-500/20">
-                  <h4 className="font-semibold text-sm">
-                    {domainInfo?.wr_name || selectedDomain}
-                  </h4>
-                  {domainInfo?.wr_address && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {domainInfo.wr_address}
-                    </p>
+              <div className="grid grid-cols-5 gap-0 h-[calc(100%-36px)]">
+                {/* Business Info - 3 cols */}
+                <div className="col-span-3 p-3 space-y-2.5 border-r border-cyan-500/20 overflow-hidden">
+                  {/* Business Name & Description */}
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">
+                      {domainContext?.business_name || domainInfo?.wr_name || selectedDomain}
+                    </h4>
+                    {domainContext?.short_description ? (
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        {domainContext.short_description}
+                      </p>
+                    ) : domainInfo?.wr_address ? (
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {domainInfo.wr_address}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {/* Services */}
+                  {domainContext?.services_offered && domainContext.services_offered.length > 0 && (
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Services</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {domainContext.services_offered.slice(0, 4).map((service, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/50 border-border/50">
+                            {service}
+                          </Badge>
+                        ))}
+                        {domainContext.services_offered.length > 4 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/50 border-border/50 text-muted-foreground">
+                            +{domainContext.services_offered.length - 4}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  {domainInfo?.wr_phone && (
-                    <p className="text-xs text-muted-foreground">
-                      {domainInfo.wr_phone}
-                    </p>
+
+                  {/* USP or Contact */}
+                  {domainContext?.unique_selling_points ? (
+                    <div className="pt-1 border-t border-border/30">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Unique Value</span>
+                      </div>
+                      <p className="text-xs text-foreground/80 line-clamp-2 leading-relaxed">
+                        {domainContext.unique_selling_points}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="pt-1 border-t border-border/30 space-y-1">
+                      {(domainContext?.phone_number || domainInfo?.wr_phone) && (
+                        <p className="text-xs text-muted-foreground">
+                          📞 {domainContext?.phone_number || domainInfo?.wr_phone}
+                        </p>
+                      )}
+                      <a 
+                        href={`https://${selectedDomain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:underline block"
+                      >
+                        🌐 {selectedDomain}
+                      </a>
+                    </div>
                   )}
-                  <a 
-                    href={`https://${selectedDomain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-cyan-400 hover:underline"
-                  >
-                    {selectedDomain}
-                  </a>
-                  
+
                   {/* Social Media Icons */}
                   {hasSocialLinks && (
-                    <div className="flex items-center gap-2 pt-2 mt-1 border-t border-border/30">
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/30">
                       {domainInfo?.wr_facebook && (
                         <SocialLink 
                           href={buildSocialUrl(domainInfo.wr_facebook, 'https://facebook.com/')}
@@ -354,8 +423,10 @@ export const BronDomainProfile = memo(({
                   )}
                 </div>
 
-                {/* Google Maps */}
-                <BronCachedMap address={domainInfo?.wr_address} domain={selectedDomain} />
+                {/* Google Maps - 2 cols */}
+                <div className="col-span-2">
+                  <BronCachedMap address={domainContext?.business_address || domainInfo?.wr_address} domain={selectedDomain} />
+                </div>
               </div>
             </div>
           </div>
