@@ -421,6 +421,7 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
             onDelete={handleDeleteKeyword}
             onRestore={handleRestoreKeyword}
             onFetchSerpDetail={bronApi.fetchSerpDetail}
+            onToggleLink={bronApi.toggleLink}
           />
         </TabsContent>
 

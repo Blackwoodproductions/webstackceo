@@ -57,6 +57,7 @@ interface BRONKeywordsTabProps {
   onDelete: (keywordId: string) => Promise<boolean>;
   onRestore: (keywordId: string) => Promise<boolean>;
   onFetchSerpDetail?: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
+  onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
 }
 
 // Initial positions type
@@ -85,6 +86,7 @@ const KeywordListItem = memo(({
   onUpdateForm,
   onSave,
   onOpenArticleEditor,
+  onToggleLink,
 }: {
   cluster: { parent: BronKeyword; children: BronKeyword[]; parentId: number | string };
   serpReports: BronSerpReport[];
@@ -102,6 +104,7 @@ const KeywordListItem = memo(({
   onUpdateForm: (id: number | string, field: string, value: string) => void;
   onSave: (kw: BronKeyword) => void;
   onOpenArticleEditor: (kw: BronKeyword) => void;
+  onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
 }) => {
   const renderKeyword = (kw: BronKeyword, isNested = false, isMainKeyword = false, clusterChildCount?: number) => {
     const keywordText = getKeywordDisplayText(kw);
@@ -171,6 +174,7 @@ const KeywordListItem = memo(({
               onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}
               onSave={() => onSave(kw)}
               onOpenArticleEditor={() => onOpenArticleEditor(kw)}
+              onToggleLink={onToggleLink}
             />
           </div>
         )}
@@ -291,6 +295,7 @@ export const BRONKeywordsTab = memo(({
   onDelete,
   onRestore,
   onFetchSerpDetail,
+  onToggleLink,
 }: BRONKeywordsTabProps) => {
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -1073,6 +1078,7 @@ export const BRONKeywordsTab = memo(({
                     onUpdateForm={handleUpdateForm}
                     onSave={handleSave}
                     onOpenArticleEditor={handleOpenArticleEditor}
+                    onToggleLink={onToggleLink}
                   />
                 ))}
               </div>
