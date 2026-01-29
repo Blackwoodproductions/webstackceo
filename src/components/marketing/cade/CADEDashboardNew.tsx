@@ -4,8 +4,11 @@ import {
   Brain, RefreshCw, Loader2, CheckCircle2, Clock, Play, Pause,
   Settings, Globe, Target, FileText, HelpCircle, Calendar, Zap,
   Mail, User, ExternalLink, ChevronDown, ChevronRight, LayoutGrid,
-  AlertTriangle, Sparkles
+  AlertTriangle, Sparkles, Pencil
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { DomainContextDialog } from "./DomainContextDialog";
+import { useDomainContext } from "@/hooks/use-domain-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -126,6 +129,15 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
   const [statusFilter, setStatusFilter] = useState("all");
   const [scheduleCount, setScheduleCount] = useState("1");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [domainContextOpen, setDomainContextOpen] = useState(false);
+
+  // Domain context hook for progress
+  const {
+    fetchContext: fetchDomainContext,
+    filledCount: domainContextFilledCount,
+    totalFields: domainContextTotalFields,
+    progressPercent: domainContextProgress,
+  } = useDomainContext(domain);
 
   // Crawl state from tasks
   const crawlTask = activeTasksByType.crawl;
@@ -247,8 +259,12 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     const init = async () => {
       const hasSub = await checkSubscription();
       if (cancelled) return;
-      if (hasSub) fetchData();
-      else setIsLoading(false);
+      if (hasSub) {
+        fetchData();
+        fetchDomainContext();
+      } else {
+        setIsLoading(false);
+      }
     };
     init();
     return () => { cancelled = true; };
@@ -579,104 +595,75 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           </CardContent>
         </Card>
 
-        {/* Domain Information Card */}
+        {/* Domain Information Card - with Progress */}
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <div className="w-1 h-5 bg-violet-500 rounded-full" />
-              Domain Information
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <div className="w-1 h-5 bg-violet-500 rounded-full" />
+                Domain Info
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDomainContextOpen(true)}
+                className="h-8 px-3 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10"
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                Edit
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Competitors */}
-            <div>
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Competitors:</span>
-              <div className="mt-1.5 p-3 rounded-lg bg-secondary/50 border border-border">
-                {domainProfile?.competitors ? (
-                  <p className="text-sm">{domainProfile.competitors}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No competitors added yet.{" "}
-                    <Button 
-                      variant="link" 
-                      className="h-auto p-0 text-cyan-500"
-                      onClick={() => toast.info("Competitor analysis coming soon! This feature will allow you to track and compare your SEO performance against competitors.")}
-                    >
-                      Add competitors in Settings
-                    </Button>
-                  </p>
-                )}
+            {/* Progress Display */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Domain Info :</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-bold">{domainContextFilledCount}/{domainContextTotalFields}</span>
+                  <Badge 
+                    variant="outline" 
+                    className={`px-2 py-0.5 ${
+                      domainContextProgress >= 80
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        : domainContextProgress >= 50
+                        ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                        : "bg-red-500/10 text-red-400 border-red-500/30"
+                    }`}
+                  >
+                    {domainContextProgress}%
+                  </Badge>
+                </div>
               </div>
+              <Progress value={domainContextProgress} className="h-2" />
             </div>
 
-            {/* Business Description */}
-            <div>
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Business Description:</span>
-              <div className="mt-1.5">
-                {domainProfile?.description ? (
-                  <>
-                    <p className="text-sm leading-relaxed line-clamp-4">
-                      {domainProfile.description}
-                    </p>
-                    <Button 
-                      variant="link" 
-                      className="h-auto p-0 text-cyan-500 mt-1"
-                      onClick={() => toast.info(domainProfile.description, { duration: 10000 })}
-                    >
-                      Read more
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No description available.{" "}
-                    <Button 
-                      variant="link" 
-                      className="h-auto p-0 text-cyan-500"
-                      onClick={async () => {
-                        try {
-                          await callCadeApi("categorize-domain");
-                          toast.success("Categorization started! Description will be generated shortly.");
-                          refreshTasks();
-                        } catch (err) {
-                          toast.error("Failed to start categorization");
-                        }
-                      }}
-                    >
-                      Run categorization to generate
-                    </Button>
-                  </p>
-                )}
-              </div>
+            {/* Status */}
+            <div className="flex items-center justify-between pt-2 border-t border-border/50">
+              <span className="text-sm text-muted-foreground">Domain Status :</span>
+              <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                LIVE
+              </Badge>
             </div>
 
-            {/* Categories */}
-            <div>
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Categories:</span>
-              <div className="flex flex-wrap gap-2 mt-1.5">
-                {domainProfile?.categories?.length ? (
-                  domainProfile.categories.map((cat, i) => (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-xs"
-                    >
-                      {cat}
-                    </Badge>
-                  ))
-                ) : latestCategorization?.categories?.length ? (
-                  latestCategorization.categories.map((cat, i) => (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-xs"
-                    >
-                      {cat}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-sm text-muted-foreground">No categories yet</span>
-                )}
-              </div>
+            {/* Quick Actions */}
+            <div className="pt-2 space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDomainContextOpen(true)}
+                className="w-full justify-start text-left"
+              >
+                <Target className="w-4 h-4 mr-2 text-cyan-500" />
+                <span className="flex-1">Complete domain profile</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </Button>
+              
+              {domainContextProgress < 100 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Complete your domain profile for better AI-generated content
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -833,6 +820,21 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Domain Context Dialog */}
+      {domain && (
+        <DomainContextDialog
+          open={domainContextOpen}
+          onOpenChange={(open) => {
+            setDomainContextOpen(open);
+            if (!open) {
+              // Refresh context when dialog closes
+              fetchDomainContext();
+            }
+          }}
+          domain={domain}
+        />
+      )}
     </motion.div>
   );
 };

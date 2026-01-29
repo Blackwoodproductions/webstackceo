@@ -162,6 +162,20 @@ serve(async (req) => {
         endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
         break;
 
+      case "update-domain-context": {
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for update-domain-context" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        method = "PUT";
+        endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
+        postBody = JSON.stringify({ domain, ...params });
+        console.log(`[CADE API] Update domain context for: ${domain}`);
+        break;
+      }
+
       case "categorize-domain": {
         if (!domain) {
           return new Response(
