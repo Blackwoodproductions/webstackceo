@@ -336,6 +336,7 @@ export const BRONKeywordsTab = memo(({
     if (selectedDomain !== prevDomainRef.current) {
       // Only reset if we're switching to a truly different domain
       lastValidClusterCountRef.current = 0;
+      hasEverReceivedDataRef.current = false;
       prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);

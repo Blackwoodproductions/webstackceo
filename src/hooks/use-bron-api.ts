@@ -759,6 +759,8 @@ export interface BronSubscription {
 export interface UseBronApiReturn {
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** Normalized domain key currently selected in the BRON header selector */
+  activeDomain: string | null;
   domains: BronDomain[];
   keywords: BronKeyword[];
   pages: BronPage[];
@@ -802,6 +804,14 @@ function getInitialDomains(): BronDomain[] {
   return loadCachedDomains() || [];
 }
 
+function normalizeDomainString(input: string): string {
+  return (input || '')
+    .toLowerCase()
+    .trim()
+    .replace(/^(https?:\/\/)?(www\.)?/, '')
+    .split('/')[0];
+}
+
 // Helper to get initial domain from URL or localStorage
 function getInitialActiveDomain(): string | null {
   try {
@@ -840,8 +850,8 @@ function getInitialCacheForDomain(domain: string | null): {
   if (!domain) {
     return { keywords: [], pages: [], serpReports: [], serpHistory: [], linksIn: [], linksOut: [] };
   }
-  
-  const normalizedDomain = domain.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+
+  const normalizedDomain = normalizeDomainString(domain);
   
   const cachedKeywords = loadCachedKeywords(normalizedDomain);
   const cachedPages = loadCachedPages(normalizedDomain);
@@ -864,10 +874,14 @@ export function useBronApi(): UseBronApiReturn {
   // Get initial domain synchronously BEFORE any state initialization
   const [initialDomain] = useState(getInitialActiveDomain);
   const [initialCache] = useState(() => getInitialCacheForDomain(initialDomain));
-  
+
   const [pendingCount, setPendingCount] = useState(0);
-  const isLoading = pendingCount > 0;
+  const [isKeywordHydrating, setIsKeywordHydrating] = useState(false);
+  const isLoading = pendingCount > 0 || isKeywordHydrating;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeDomain, setActiveDomain] = useState<string | null>(() =>
+    initialDomain ? normalizeDomainString(initialDomain) : null
+  );
   // Hydrate domains from cache on mount to prevent loading screen on hard refresh
   const [domains, setDomains] = useState<BronDomain[]>(getInitialDomains);
   // Hydrate keywords and other data from cache synchronously
@@ -883,17 +897,13 @@ export function useBronApi(): UseBronApiReturn {
   // Active domain chosen in the header domain selector.
   // This allows optional-domain methods (like fetchKeywords/addKeyword, etc.)
   // to reliably route requests to the selected domain.
-  const activeDomainRef = useRef<string | null>(null);
+  const activeDomainRef = useRef<string | null>(activeDomain);
 
   // Prevent concurrent background prefetch runs from saturating the API/network.
   const keywordPrefetchInFlightRef = useRef(false);
 
   const normalizeDomainKey = useCallback((input: string) => {
-    return (input || '')
-      .toLowerCase()
-      .trim()
-      .replace(/^(https?:\/\/)?(www\.)?/, '')
-      .split('/')[0];
+    return normalizeDomainString(input);
   }, []);
 
   // Prevent stale async responses (domain switching / rapid tab changes)
@@ -1021,6 +1031,7 @@ export function useBronApi(): UseBronApiReturn {
 
     const key = domain ? normalizeDomainKey(domain) : null;
     activeDomainRef.current = key;
+    setActiveDomain(key);
 
     // Persist selected domain for instant hydration on hard refresh
     try {
@@ -1038,6 +1049,7 @@ export function useBronApi(): UseBronApiReturn {
 
     if (!key) {
       setKeywords([]);
+      setIsKeywordHydrating(false);
       setPages([]);
       setSerpReports([]);
       setSerpHistory([]);
@@ -1053,17 +1065,28 @@ export function useBronApi(): UseBronApiReturn {
     if (cachedKeywords !== null) {
       console.log(`[BRON] selectDomain: setting ${cachedKeywords.length} keywords from cache`);
       setKeywords(cachedKeywords);
+      setIsKeywordHydrating(false);
     } else {
-      // Don't clear keywords here - triggers "no keywords" flash.
-      // Instead, trigger async IDB load immediately.
+      // IMPORTANT: To prevent cross-domain leakage, clear current keywords immediately.
+      // We keep a loading state to avoid a premature "no keywords" empty state.
+      setKeywords([]);
+      setIsKeywordHydrating(true);
+
+      // Trigger async IDB load immediately.
       console.log(`[BRON] selectDomain: no sync cache for ${key}, loading from IDB...`);
       const localReqId = keywordsReqIdRef.current;
       loadKeywordsFromIdb<BronKeyword[]>(key, CACHE_MAX_AGE).then((idbKeywords) => {
         // Only set if this is still the active domain request
-        if (localReqId === keywordsReqIdRef.current && idbKeywords && idbKeywords.length > 0) {
+        if (localReqId !== keywordsReqIdRef.current) return;
+
+        if (idbKeywords && idbKeywords.length > 0) {
           console.log(`[BRON] selectDomain: loaded ${idbKeywords.length} keywords from IDB`);
           setKeywords(idbKeywords);
+          setIsKeywordHydrating(false);
+          return;
         }
+
+        // Leave hydrating=true here; fetchKeywords will clear it when network completes.
       }).catch(() => {
         // IDB failed - fetchKeywords will handle network fetch
       });
@@ -1316,6 +1339,7 @@ export function useBronApi(): UseBronApiReturn {
       const cached = loadCachedKeywords(domainKey);
       if (cached) {
         setKeywords(cached);
+        setIsKeywordHydrating(false);
         
         // Background refresh to check for changes (count-based)
         const localReqId = reqId;
@@ -1374,6 +1398,7 @@ export function useBronApi(): UseBronApiReturn {
         const idbCached = await loadKeywordsFromIdb<BronKeyword[]>(domainKey, CACHE_MAX_AGE);
         if (idbCached && idbCached.length > 0 && reqId === keywordsReqIdRef.current) {
           setKeywords(idbCached);
+          setIsKeywordHydrating(false);
           // Ensure a small preview exists for the next hard refresh.
           saveCachedKeywordsPreview(domainKey, idbCached);
 
@@ -1427,6 +1452,9 @@ export function useBronApi(): UseBronApiReturn {
         // ignore IDB failures; we will fall back to network
       }
     }
+
+    // No cache available (or force refresh) - show loading until first page arrives.
+    setIsKeywordHydrating(true);
     
     // No cache available - fetch in background WITHOUT blocking UI (no withPending)
     // Show the first page as soon as it arrives, then complete pagination in background.
@@ -1453,6 +1481,7 @@ export function useBronApi(): UseBronApiReturn {
 
           allKeywords.push(...firstPageKeywords);
           setKeywords(firstPageKeywords);
+          setIsKeywordHydrating(false);
           if (firstPageKeywords.length > 0) {
             // Cache something immediately so switching away/back doesn't incur the full delay again.
             saveCachedKeywords(domainKey, firstPageKeywords);
@@ -1461,6 +1490,7 @@ export function useBronApi(): UseBronApiReturn {
           hasMore = firstPageKeywords.length >= pageSize;
           page = 2;
         } else {
+          setIsKeywordHydrating(false);
           hasMore = false;
         }
         
@@ -1503,6 +1533,7 @@ export function useBronApi(): UseBronApiReturn {
         console.log(`[BRON] Fetched ${allKeywords.length} total keywords across ${page - 1} page(s)`);
         // Only replace the list if we actually got more than the first page
         if (allKeywords.length > 0) setKeywords(allKeywords);
+        setIsKeywordHydrating(false);
         
         // Save to cache
         if (allKeywords.length > 0) {
@@ -1512,6 +1543,7 @@ export function useBronApi(): UseBronApiReturn {
         if (reqId !== keywordsReqIdRef.current) return;
         // Don't toast on background fetch failures - just log
         console.warn('[BRON] Background keyword fetch failed:', err);
+        setIsKeywordHydrating(false);
       }
     })();
   }, [callApi, normalizeDomainKey]);
@@ -1975,6 +2007,7 @@ export function useBronApi(): UseBronApiReturn {
   return {
     isLoading,
     isAuthenticated,
+    activeDomain,
     domains,
     keywords,
     pages,
