@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { clearDomainCache } from '@/lib/persistentCache';
 
 // Cache configuration
 const CACHE_PREFIX = 'domain_cache_';
@@ -287,6 +288,9 @@ export function useDomainCache() {
         }
       }
     } catch {}
+    
+    // Clear persistent cache entries (screenshot, map, GMB, domain info)
+    clearDomainCache(normalizedDomain);
     
     console.log(`[Domain Cache] Completed removal of all cached data for ${normalizedDomain}`);
   }, [userAddedDomains, setUserAddedDomains]);

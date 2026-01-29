@@ -1,24 +1,44 @@
 import { memo, useMemo } from "react";
 import { MapPin } from "lucide-react";
+import { loadCachedMapEmbed, saveCachedMapEmbed } from "@/lib/persistentCache";
 
 interface BronCachedMapProps {
   address?: string;
+  domain?: string; // Add domain for cache key
 }
 
 /**
  * Stable cached map component - defined as a separate module to prevent re-renders.
- * Uses a memoized embed URL and stable key to avoid iframe remounting.
+ * Uses localStorage caching to persist map embeds across hard refreshes.
  */
-export const BronCachedMap = memo(({ address }: BronCachedMapProps) => {
+export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
   // Use a stable key based on address to avoid iframe remounting
   const mapKey = useMemo(() => address ? `map-${address}` : 'map-empty', [address]);
   
-  // Generate embed URL synchronously - no state updates needed
+  // Generate embed URL - check persistent cache first
   const embedUrl = useMemo(() => {
     if (!address) return null;
+    
+    // Check persistent cache first
+    if (domain) {
+      const cached = loadCachedMapEmbed(domain);
+      if (cached && cached.address === address) {
+        console.log('[BronCachedMap] Using cached embed URL for', domain);
+        return cached.embedUrl;
+      }
+    }
+    
+    // Generate new URL
     const encoded = encodeURIComponent(address);
-    return `https://www.google.com/maps?q=${encoded}&output=embed`;
-  }, [address]);
+    const url = `https://www.google.com/maps?q=${encoded}&output=embed`;
+    
+    // Save to persistent cache
+    if (domain) {
+      saveCachedMapEmbed(domain, url, address);
+    }
+    
+    return url;
+  }, [address, domain]);
 
   if (!address || !embedUrl) {
     return (

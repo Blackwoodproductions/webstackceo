@@ -12,6 +12,13 @@ import { BRONSerpTab } from "./BRONSerpTab";
 import { BronDomainProfile, BronKeywordsInfoCards } from "./bron";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { 
+  loadCachedScreenshot, 
+  saveCachedScreenshot,
+  loadCachedDomainInfo,
+  saveCachedDomainInfo,
+  type DomainInfoCacheData
+} from "@/lib/persistentCache";
 
 // ─── Types ───
 interface BRONDashboardProps {
@@ -47,14 +54,35 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(!hasCached);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authErrorDetails, setAuthErrorDetails] = useState<string | null>(null);
-  const [domainInfo, setDomainInfo] = useState<BronDomain | null>(null);
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const [domainInfo, setDomainInfo] = useState<BronDomain | null>(() => {
+    // Hydrate from persistent cache synchronously
+    if (selectedDomain) {
+      const cached = loadCachedDomainInfo(selectedDomain);
+      if (cached) {
+        console.log('[BRON] Hydrated domain info from persistent cache:', selectedDomain);
+        return cached as BronDomain;
+      }
+    }
+    return null;
+  });
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(() => {
+    // Hydrate screenshot from persistent cache synchronously
+    if (selectedDomain) {
+      const cached = loadCachedScreenshot(selectedDomain);
+      if (cached) {
+        console.log('[BRON] Hydrated screenshot from persistent cache:', selectedDomain);
+        return cached;
+      }
+    }
+    return null;
+  });
   const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
   const [isBackgroundAuthenticating, setIsBackgroundAuthenticating] = useState(hasCached);
 
   // Refs to prevent duplicate requests
   const linksRequestedForDomainRef = useRef<string | null>(null);
   const keywordPrefetchStartedRef = useRef(false);
+  const lastHydratedDomainRef = useRef<string | null>(selectedDomain ?? null);
 
   // ─── Authentication ───
   useEffect(() => {
@@ -119,6 +147,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
       if (data?.success && data?.url) {
         const url = data.cached ? data.url : `${data.url}?t=${Date.now()}`;
         setScreenshotUrl(url);
+        // Save to persistent cache
+        saveCachedScreenshot(domain, url);
         if (!data.cached) {
           toast.success("Website screenshot captured!");
         }
@@ -135,6 +165,15 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   }, []);
 
   const getExistingScreenshot = useCallback(async (domain: string) => {
+    // First check persistent cache - if we have it, skip API call
+    const cached = loadCachedScreenshot(domain);
+    if (cached) {
+      console.log('[BRON] Screenshot from persistent cache:', domain);
+      setScreenshotUrl(cached);
+      return true;
+    }
+    
+    // No cache - fetch from API in background
     try {
       const { data } = await supabase.functions.invoke("capture-website-screenshot", {
         body: { action: "get", domain }
@@ -142,6 +181,8 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
 
       if (data?.success && data?.url) {
         setScreenshotUrl(data.url);
+        // Save to persistent cache for next time
+        saveCachedScreenshot(domain, data.url);
         return true;
       }
       return false;
@@ -193,6 +234,28 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     bronApi.selectDomain(selectedDomain ?? null);
   }, [selectedDomain]);
 
+  // Hydrate from persistent cache IMMEDIATELY when domain changes
+  useEffect(() => {
+    if (!selectedDomain) return;
+    if (lastHydratedDomainRef.current === selectedDomain) return;
+    
+    lastHydratedDomainRef.current = selectedDomain;
+    
+    // Hydrate screenshot from persistent cache (sync)
+    const cachedScreenshot = loadCachedScreenshot(selectedDomain);
+    if (cachedScreenshot) {
+      setScreenshotUrl(cachedScreenshot);
+    } else {
+      setScreenshotUrl(null);
+    }
+    
+    // Hydrate domain info from persistent cache (sync)
+    const cachedDomainInfo = loadCachedDomainInfo(selectedDomain);
+    if (cachedDomainInfo) {
+      setDomainInfo(cachedDomainInfo as BronDomain);
+    }
+  }, [selectedDomain]);
+
   // Load domain-specific data (only fetch from API when authenticated)
   // Cache is already hydrated by selectDomain above
   useEffect(() => {
@@ -201,16 +264,23 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
     if (!selectedDomain) return;
 
     linksRequestedForDomainRef.current = null;
-    setScreenshotUrl(null);
 
-    getExistingScreenshot(selectedDomain);
+    // Check if we need to fetch screenshot (only if not in persistent cache)
+    const cachedScreenshot = loadCachedScreenshot(selectedDomain);
+    if (!cachedScreenshot) {
+      getExistingScreenshot(selectedDomain);
+    }
 
     // Only fetch from API when authenticated
     if (!bronApi.isAuthenticated) return;
 
     // Fire all fetches in parallel (these will return from cache instantly if available)
     bronApi.fetchDomain(selectedDomain).then((info) => {
-      if (!cancelled && info) setDomainInfo(info);
+      if (!cancelled && info) {
+        setDomainInfo(info);
+        // Save to persistent cache for next hard refresh
+        saveCachedDomainInfo(selectedDomain, info as DomainInfoCacheData);
+      }
     });
     bronApi.fetchKeywords(selectedDomain);
     bronApi.fetchSerpReport(selectedDomain);

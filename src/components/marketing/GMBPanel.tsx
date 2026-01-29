@@ -26,6 +26,12 @@ import { GMBPhotoManager } from './GMBPhotoManager';
 import { GMBClaimListingFlow } from './GMBClaimListingFlow';
 import { GMBCreateListingWizard } from './GMBCreateListingWizard';
 import { useGmbApi } from '@/hooks/use-gmb-api';
+import {
+  loadCachedGmbPersistent,
+  saveCachedGmbPersistent,
+  hasGmbDataChanged,
+  type GmbPersistentCacheData
+} from '@/lib/persistentCache';
 
 interface GmbReview {
   name: string;
@@ -204,7 +210,14 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   const { googleProfile } = useAuth();
   
   // Connection state
-  const [isCheckingAccount, setIsCheckingAccount] = useState(true);
+  const [isCheckingAccount, setIsCheckingAccount] = useState(() => {
+    // Check if we have persistent cache - if so, skip initial loading
+    if (selectedDomain) {
+      const cached = loadCachedGmbPersistent(selectedDomain);
+      return !cached;
+    }
+    return true;
+  });
   const [accessToken, setAccessToken] = useState<string | null>(() => {
     // Check for stored token
     const gmbToken = localStorage.getItem('gmb_access_token');
@@ -219,13 +232,50 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
     }
     return null;
   });
-  const [accounts, setAccounts] = useState<GmbAccount[]>([]);
-  const [locations, setLocations] = useState<GmbLocation[]>([]);
-  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(null);
+  const [accounts, setAccounts] = useState<GmbAccount[]>(() => {
+    // Hydrate from persistent cache synchronously
+    if (selectedDomain) {
+      const cached = loadCachedGmbPersistent(selectedDomain);
+      if (cached) {
+        console.log('[GMBPanel] Hydrated accounts from persistent cache:', selectedDomain);
+        return cached.accounts;
+      }
+    }
+    return [];
+  });
+  const [locations, setLocations] = useState<GmbLocation[]>(() => {
+    // Hydrate from persistent cache synchronously
+    if (selectedDomain) {
+      const cached = loadCachedGmbPersistent(selectedDomain);
+      if (cached) {
+        console.log('[GMBPanel] Hydrated locations from persistent cache:', selectedDomain);
+        return cached.locations as GmbLocation[];
+      }
+    }
+    return [];
+  });
+  const [matchingLocation, setMatchingLocation] = useState<GmbLocation | null>(() => {
+    // Hydrate matching location from persistent cache synchronously
+    if (selectedDomain) {
+      const cached = loadCachedGmbPersistent(selectedDomain);
+      if (cached && cached.matchingLocationName) {
+        const match = (cached.locations as GmbLocation[]).find(l => l.name === cached.matchingLocationName);
+        return match || null;
+      }
+    }
+    return null;
+  });
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(() => {
+    // If we have cache, we'll sync in background
+    if (selectedDomain) {
+      const cached = loadCachedGmbPersistent(selectedDomain);
+      return !!cached;
+    }
+    return false;
+  });
 
   // Dashboard state
   const [activeTab, setActiveTab] = useState("overview");
@@ -237,7 +287,7 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
   // Use the GMB API hook for all read/write operations
   const gmbApi = useGmbApi(accessToken);
 
-  // Hydrate from cache INSTANTLY when domain changes
+  // Hydrate from persistent cache INSTANTLY when domain changes
   useEffect(() => {
     if (!selectedDomain) {
       setAccounts([]);
@@ -246,13 +296,42 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       return;
     }
 
+    // First try persistent cache (survives hard refresh)
+    const persistentCached = loadCachedGmbPersistent(selectedDomain);
+    if (persistentCached) {
+      console.log('[GMBPanel] Hydrating from persistent cache for', selectedDomain);
+      setAccounts(persistentCached.accounts);
+      setLocations(persistentCached.locations as GmbLocation[]);
+      setIsCheckingAccount(false);
+      setIsBackgroundSyncing(true);
+      
+      // Find matching location
+      if (persistentCached.matchingLocationName) {
+        const match = (persistentCached.locations as GmbLocation[]).find(
+          l => l.name === persistentCached.matchingLocationName
+        );
+        setMatchingLocation(match || null);
+      } else {
+        const normalizedSelected = normalizeDomain(selectedDomain);
+        const match = (persistentCached.locations as GmbLocation[]).find((loc) => {
+          const locDomain = normalizeDomain(loc.websiteUri || '');
+          return locDomain === normalizedSelected || 
+                 locDomain.includes(normalizedSelected) || 
+                 normalizedSelected.includes(locDomain);
+        });
+        setMatchingLocation(match || null);
+      }
+      return;
+    }
+
+    // Fallback to session cache (old system)
     const cached = loadCachedGmbData(selectedDomain);
     if (cached) {
-      console.log('[GMBPanel] Hydrating from cache for', selectedDomain);
+      console.log('[GMBPanel] Hydrating from session cache for', selectedDomain);
       setAccounts(cached.accounts);
       setLocations(cached.locations);
       setIsCheckingAccount(false);
-      setIsBackgroundSyncing(true); // Will sync in background
+      setIsBackgroundSyncing(true);
       
       // Find matching location
       const normalizedSelected = normalizeDomain(selectedDomain);
@@ -409,12 +488,13 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
       localStorage.setItem('gmb_access_token', token);
       localStorage.setItem('gmb_token_expiry', String(Date.now() + expirySeconds * 1000));
       
-      // Save to cache
+      // Save to session cache (old system)
       if (selectedDomain) {
         saveCachedGmbData(selectedDomain, fetchedAccounts, fetchedLocations);
       }
       
       // Check if selected domain matches any location
+      let matchedLocation: GmbLocation | null = null;
       if (selectedDomain) {
         const normalizedSelected = normalizeDomain(selectedDomain);
         const match = fetchedLocations.find((loc: GmbLocation) => {
@@ -423,7 +503,15 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
                  locDomain.includes(normalizedSelected) || 
                  normalizedSelected.includes(locDomain);
         });
-        setMatchingLocation(match || null);
+        matchedLocation = match || null;
+        setMatchingLocation(matchedLocation);
+        
+        // Save to persistent cache (survives hard refresh)
+        saveCachedGmbPersistent(selectedDomain, {
+          accounts: fetchedAccounts,
+          locations: fetchedLocations,
+          matchingLocationName: matchedLocation?.name,
+        });
       }
     } catch (err) {
       console.error('[GMBPanel] Sync error:', err);
