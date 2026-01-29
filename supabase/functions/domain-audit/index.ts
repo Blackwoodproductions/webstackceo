@@ -1,8 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { 
+  checkRateLimit, 
+  getClientId, 
+  rateLimitResponse, 
+  addRateLimitHeaders 
+} from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Rate limit config: 10 requests per minute per IP
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  keyPrefix: 'domain-audit',
 };
 
 interface AhrefsMetrics {
@@ -35,6 +48,18 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Apply rate limiting
+  const clientId = getClientId(req);
+  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_CONFIG);
+  
+  if (!rateLimitResult.allowed) {
+    const response = rateLimitResponse(rateLimitResult);
+    // Add CORS headers
+    const headers = new Headers(response.headers);
+    Object.entries(corsHeaders).forEach(([key, value]) => headers.set(key, value));
+    return new Response(response.body, { status: 429, headers });
   }
 
   try {
