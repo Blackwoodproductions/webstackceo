@@ -435,43 +435,165 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
           </div>
         )}
 
-        {/* Active Crawl Progress */}
-        {isCrawling && crawlTask && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                <span className="font-medium text-sm">Crawl in Progress</span>
-              </div>
-              {crawlTask.pages_crawled !== undefined && (
-                <span className="text-sm text-muted-foreground">
-                  {crawlTask.pages_crawled} / {crawlTask.total_pages || "?"} pages
-                </span>
-              )}
+        {/* Active Tasks Panel - Shows all running/queued tasks */}
+        {(byType.crawl.length > 0 || byType.categorization.length > 0 || byType.css.length > 0) && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                Recent Tasks
+              </h4>
+              <Badge variant="outline" className="text-xs">
+                {byType.crawl.length + byType.categorization.length + byType.css.length} total
+              </Badge>
             </div>
             
-            {crawlTask.progress !== undefined && (
-              <Progress value={crawlTask.progress} className="h-2 mb-2" />
-            )}
-            
-            {crawlTask.current_url && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
-                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                {crawlTask.current_url}
-              </div>
-            )}
-            
-            {crawlTask.message && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                <Info className="w-3 h-3 flex-shrink-0" />
-                {crawlTask.message}
-              </div>
-            )}
-          </motion.div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {/* Active Crawl Tasks */}
+              {byType.crawl.slice(0, 5).map((task) => (
+                <motion.div
+                  key={task.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`p-3 rounded-lg border ${
+                    task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
+                      ? "bg-blue-500/10 border-blue-500/30"
+                      : task.statusValue === "completed" || task.statusValue === "done"
+                      ? "bg-green-500/10 border-green-500/30"
+                      : task.statusValue === "failed" || task.statusValue === "error"
+                      ? "bg-red-500/10 border-red-500/30"
+                      : "bg-secondary/30 border-border"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(task.statusValue)}
+                      <span className="font-medium text-sm">Crawl</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {task.statusValue}
+                      </Badge>
+                    </div>
+                    {task.created_at && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(task.created_at).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {task.progress !== undefined && task.progress > 0 && (
+                    <Progress value={task.progress} className="h-1.5 mb-2" />
+                  )}
+                  
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {task.pages_crawled !== undefined && (
+                      <span>{task.pages_crawled} / {task.total_pages || "?"} pages</span>
+                    )}
+                    {task.current_url && (
+                      <span className="truncate flex-1" title={task.current_url}>
+                        <ExternalLink className="w-3 h-3 inline mr-1" />
+                        {task.current_url}
+                      </span>
+                    )}
+                    {task.message && !task.current_url && (
+                      <span className="truncate flex-1">{task.message}</span>
+                    )}
+                  </div>
+                  
+                  {task.error && (
+                    <div className="text-xs text-red-400 mt-1 truncate">
+                      <AlertTriangle className="w-3 h-3 inline mr-1" />
+                      {task.error}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+              
+              {/* Active Categorization Tasks */}
+              {byType.categorization.slice(0, 3).map((task) => (
+                <motion.div
+                  key={task.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`p-3 rounded-lg border ${
+                    task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
+                      ? "bg-violet-500/10 border-violet-500/30"
+                      : task.statusValue === "completed" || task.statusValue === "done"
+                      ? "bg-green-500/10 border-green-500/30"
+                      : task.statusValue === "failed" || task.statusValue === "error"
+                      ? "bg-red-500/10 border-red-500/30"
+                      : "bg-secondary/30 border-border"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(task.statusValue)}
+                      <span className="font-medium text-sm">Categorization</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {task.statusValue}
+                      </Badge>
+                    </div>
+                    {task.created_at && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(task.created_at).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {task.message && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      {task.message}
+                    </div>
+                  )}
+                  
+                  {task.categories && task.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {task.categories.slice(0, 3).map((cat, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+              
+              {/* Active CSS Tasks */}
+              {byType.css.slice(0, 2).map((task) => (
+                <motion.div
+                  key={task.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`p-3 rounded-lg border ${
+                    task.statusValue === "running" || task.statusValue === "queued" || task.statusValue === "processing"
+                      ? "bg-amber-500/10 border-amber-500/30"
+                      : task.statusValue === "completed" || task.statusValue === "done"
+                      ? "bg-green-500/10 border-green-500/30"
+                      : "bg-secondary/30 border-border"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(task.statusValue)}
+                      <span className="font-medium text-sm">CSS Analysis</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {task.statusValue}
+                      </Badge>
+                    </div>
+                    {task.created_at && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(task.created_at).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                  {task.message && (
+                    <div className="text-xs text-muted-foreground mt-1 truncate">
+                      {task.message}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Action Buttons */}
