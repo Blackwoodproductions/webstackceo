@@ -28,9 +28,9 @@ export const BronCachedMap = memo(({ address, domain }: BronCachedMapProps) => {
       }
     }
     
-    // Generate new URL
+    // Generate new URL with zoom level 14 for better fit
     const encoded = encodeURIComponent(address);
-    const url = `https://www.google.com/maps?q=${encoded}&output=embed`;
+    const url = `https://www.google.com/maps?q=${encoded}&z=14&output=embed`;
     
     // Save to persistent cache
     if (domain) {
