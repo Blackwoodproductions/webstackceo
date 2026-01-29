@@ -930,55 +930,63 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
       <SectionCard title="Content Hub" accentColor="cyan">
         <div className="space-y-5">
           
-          {/* Compact Command Strip */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-4 rounded-xl bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5 border border-border/30">
+          {/* Enhanced Command Strip with futuristic design */}
+          <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-4 p-5 rounded-xl bg-gradient-to-br from-cyan-500/10 via-card/50 to-violet-500/10 border border-cyan-500/20 overflow-hidden">
+            {/* Background glow effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl" />
+            </div>
             
-            {/* Scheduler Mini */}
-            <div className="lg:col-span-3 flex items-center gap-3">
-              <div className="relative w-14 h-14 flex-shrink-0">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-500/10" />
+            {/* Scheduler with enhanced ring */}
+            <div className="relative lg:col-span-3 flex items-center gap-4 p-3 rounded-xl bg-gradient-to-br from-cyan-500/5 to-transparent border border-cyan-500/10">
+              <div className="relative w-16 h-16 flex-shrink-0">
+                {/* Outer glow */}
+                <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-lg" />
+                <svg className="relative w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-500/20" />
                   <circle 
-                    cx="18" cy="18" r="14" fill="none" stroke="url(#timer-gradient-compact)" strokeWidth="2.5" 
+                    cx="18" cy="18" r="14" fill="none" stroke="url(#timer-gradient-hub)" strokeWidth="3" 
                     strokeDasharray="73 88"
                     strokeLinecap="round"
                     className="transition-all duration-1000"
+                    style={{ filter: 'drop-shadow(0 0 4px rgba(34, 211, 238, 0.5))' }}
                   />
                   <defs>
-                    <linearGradient id="timer-gradient-compact" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="timer-gradient-hub" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#22d3ee" />
                       <stop offset="100%" stopColor="#0891b2" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-sm font-bold text-cyan-400">11h</span>
+                  <span className="text-lg font-bold text-cyan-400">11h</span>
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <Calendar className="w-3 h-3 text-cyan-400" />
-                  <span className="text-[10px] text-muted-foreground uppercase">Next Gen</span>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next Gen</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs text-emerald-400 font-medium">Active</span>
-                  <span className="text-[10px] text-muted-foreground">• 12hr cycle</span>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                  <span className="text-sm text-emerald-400 font-semibold">Active</span>
+                  <span className="text-xs text-muted-foreground">• 12hr cycle</span>
                 </div>
               </div>
             </div>
             
-            {/* Quick Generate */}
-            <div className="lg:col-span-5 flex items-center gap-3">
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <Zap className="w-4 h-4 text-amber-400" />
+            {/* Quick Generate with enhanced styling */}
+            <div className="relative lg:col-span-5 flex items-center gap-4 p-3 rounded-xl bg-gradient-to-br from-amber-500/5 to-transparent border border-amber-500/10">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                <Zap className="w-5 h-5 text-amber-400" />
                 <div>
-                  <p className="text-[10px] text-muted-foreground">Quota</p>
-                  <p className="text-sm font-bold text-amber-400">2/2</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Quota</p>
+                  <p className="text-lg font-bold text-amber-400">2/2</p>
                 </div>
               </div>
               <Select value={scheduleCount} onValueChange={setScheduleCount}>
-                <SelectTrigger className="w-28 bg-background/60 border-border/50 h-9 text-xs">
+                <SelectTrigger className="w-28 bg-background/80 border-border/50 h-10 text-sm font-medium">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -991,100 +999,109 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               <Button 
                 onClick={handleScheduleNow}
                 disabled={isScheduling}
-                size="sm"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white h-9"
+                size="default"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white h-10 px-5 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_25px_rgba(245,158,11,0.5)] transition-all"
               >
                 {isScheduling ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Play className="w-3.5 h-3.5 mr-1" />
+                    <Play className="w-4 h-4 mr-1.5" />
                     Generate
                   </>
                 )}
               </Button>
             </div>
             
-            {/* Account Mini */}
-            <div className="lg:col-span-4 flex items-center gap-3">
-              <div className="relative w-10 h-10 flex-shrink-0">
-                <svg className="w-full h-full" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="url(#auth-gradient-compact)" strokeWidth="2" />
+            {/* Account Status with enhanced ring */}
+            <div className="relative lg:col-span-4 flex items-center gap-4 p-3 rounded-xl bg-gradient-to-br from-violet-500/5 to-transparent border border-violet-500/10">
+              <div className="relative w-12 h-12 flex-shrink-0">
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-md" />
+                <svg className="relative w-full h-full" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="url(#auth-gradient-hub)" strokeWidth="2.5" 
+                    style={{ filter: 'drop-shadow(0 0 4px rgba(52, 211, 153, 0.5))' }}
+                  />
                   <defs>
-                    <linearGradient id="auth-gradient-compact" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <linearGradient id="auth-gradient-hub" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" stopColor="#34d399" />
                       <stop offset="100%" stopColor="#10b981" />
                     </linearGradient>
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-violet-400">{account.serviceType}</span>
-                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-bold text-violet-400">{account.serviceType}</span>
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/40 text-[10px] px-2 py-0.5 shadow-[0_0_8px_rgba(52,211,153,0.2)]">
                     Active
                   </Badge>
                 </div>
-                <p className="text-[10px] text-muted-foreground truncate">{domainContext?.business_name || domain || "—"}</p>
+                <p className="text-xs text-muted-foreground truncate">{domainContext?.business_name || domain || "—"}</p>
               </div>
             </div>
           </div>
           
-          {/* Content Tabs */}
+          {/* Content Tabs with enhanced styling */}
           <Tabs value={contentTab} onValueChange={setContentTab}>
             <TabsList className="bg-transparent border-b border-border/50 rounded-none p-0 h-auto">
               <TabsTrigger 
                 value="articles" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-5 font-medium"
               >
                 Blog Article
               </TabsTrigger>
               <TabsTrigger 
                 value="faqs" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-5 font-medium"
               >
                 FAQ
               </TabsTrigger>
               <TabsTrigger 
                 value="scheduled" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent pb-3 px-5 font-medium"
               >
                 Scheduled
               </TabsTrigger>
               <TabsTrigger 
                 value="domain-info" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:text-violet-400 data-[state=active]:bg-transparent pb-3 px-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:text-violet-400 data-[state=active]:bg-transparent pb-3 px-5 font-medium"
               >
                 Domain Info
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="articles" className="mt-5 space-y-4">
-              {/* Compact Stats Row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
-                  <div className="text-2xl font-bold text-cyan-400">{contentStats.total}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase">Total</div>
+            <TabsContent value="articles" className="mt-5 space-y-5">
+              {/* Enhanced Stats Row with gradients and glows */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="relative p-5 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent text-center overflow-hidden group hover:border-cyan-500/50 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+                  <div className="text-3xl font-bold text-cyan-400 mb-1" style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.3)' }}>{contentStats.total}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest">Total</div>
                 </div>
-                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
-                  <div className="text-2xl font-bold text-emerald-400">{contentStats.published}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase">Published</div>
+                <div className="relative p-5 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-transparent text-center overflow-hidden group hover:border-emerald-500/50 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+                  <div className="text-3xl font-bold text-emerald-400 mb-1" style={{ textShadow: '0 0 20px rgba(52, 211, 153, 0.3)' }}>{contentStats.published}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest">Published</div>
                 </div>
-                <div className="p-3 rounded-xl border border-border/50 bg-card/30 text-center">
-                  <div className="text-2xl font-bold text-orange-400">{contentStats.drafts}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase">Drafts</div>
+                <div className="relative p-5 rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-transparent text-center overflow-hidden group hover:border-orange-500/50 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+                  <div className="text-3xl font-bold text-orange-400 mb-1" style={{ textShadow: '0 0 20px rgba(249, 115, 22, 0.3)' }}>{contentStats.drafts}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-widest">Drafts</div>
                 </div>
               </div>
               
-              {/* Filter & Action Row */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">Filter:</span>
+              {/* Enhanced Filter & Action Row */}
+              <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-card/50 to-transparent border border-border/30">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground font-medium">Filter:</span>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-36 bg-background/60 border-border/50 h-8 text-xs">
+                    <SelectTrigger className="w-40 bg-background/80 border-border/50 h-9 text-sm">
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1095,7 +1112,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                     </SelectContent>
                   </Select>
                 </div>
-                <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white h-8 text-xs">
+                <Button size="default" className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-all">
                   View All CADE Posts
                 </Button>
               </div>
