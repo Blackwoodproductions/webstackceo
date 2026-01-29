@@ -295,9 +295,9 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Live Task Window - Primary focus when tasks are active */}
+        {/* Live Task Window - Primary focus when tasks are active OR button was just clicked */}
         <AnimatePresence>
-          {hasActiveTasks && (
+          {(hasActiveTasks || isCrawling || isCategorizing || isAnalyzingCss) && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -317,17 +317,17 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Live Task Monitor</h3>
-                      <p className="text-xs text-muted-foreground">Real-time updates every 5 seconds</p>
+                      <p className="text-xs text-muted-foreground">Real-time updates via callbacks</p>
                     </div>
                   </div>
                   <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
                     <Zap className="w-3 h-3 mr-1" />
-                    {stats.active} Active
+                    {stats.active > 0 ? `${stats.active} Active` : "Processing..."}
                   </Badge>
                 </div>
 
                 {/* Active Crawl Task - Detailed View */}
-                {activeTasksByType.crawl && (
+                {(activeTasksByType.crawl || isCrawling) && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -344,24 +344,26 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                       <div className="flex items-center gap-2">
                         <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {activeTasksByType.crawl.statusValue}
+                          {activeTasksByType.crawl?.statusValue || "starting"}
                         </Badge>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleTerminateTask("crawl", activeTasksByType.crawl!.id)}
-                                disabled={isTerminating}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              >
-                                {isTerminating ? <Loader2 className="w-4 h-4 animate-spin" /> : <StopCircle className="w-4 h-4" />}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Stop crawl</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {activeTasksByType.crawl && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleTerminateTask("crawl", activeTasksByType.crawl!.id)}
+                                  disabled={isTerminating}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                >
+                                  {isTerminating ? <Loader2 className="w-4 h-4 animate-spin" /> : <StopCircle className="w-4 h-4" />}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Stop crawl</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     </div>
 
@@ -370,14 +372,14 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Progress</span>
                         <span className="font-medium text-blue-400">
-                          {activeTasksByType.crawl.progress ?? 0}%
+                          {activeTasksByType.crawl?.progress ?? crawlTask?.progress ?? 0}%
                         </span>
                       </div>
                       <div className="relative h-3 rounded-full bg-secondary overflow-hidden">
                         <motion.div
                           className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-500"
                           initial={{ width: 0 }}
-                          animate={{ width: `${activeTasksByType.crawl.progress ?? 0}%` }}
+                          animate={{ width: `${activeTasksByType.crawl?.progress ?? crawlTask?.progress ?? (isCrawling ? 5 : 0)}%` }}
                           transition={{ duration: 0.5 }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
@@ -389,20 +391,20 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-blue-400">
-                          {activeTasksByType.crawl.pages_crawled ?? 0}
+                          {activeTasksByType.crawl?.pages_crawled ?? crawlTask?.pages_crawled ?? 0}
                         </p>
                         <p className="text-[10px] text-muted-foreground">Pages Crawled</p>
                       </div>
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-violet-400">
-                          {activeTasksByType.crawl.total_pages ?? "—"}
+                          {activeTasksByType.crawl?.total_pages ?? crawlTask?.total_pages ?? "—"}
                         </p>
                         <p className="text-[10px] text-muted-foreground">Total Pages</p>
                       </div>
                       <div className="p-2 rounded-lg bg-background/50 border border-border">
                         <p className="text-xl font-bold text-green-400">
-                          {activeTasksByType.crawl.created_at 
-                            ? Math.round((Date.now() - new Date(activeTasksByType.crawl.created_at).getTime()) / 1000) + "s"
+                          {(activeTasksByType.crawl?.created_at || crawlTask?.started_at)
+                            ? Math.round((Date.now() - new Date(activeTasksByType.crawl?.created_at || crawlTask?.started_at || Date.now()).getTime()) / 1000) + "s"
                             : "—"}
                         </p>
                         <p className="text-[10px] text-muted-foreground">Duration</p>
@@ -410,106 +412,134 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                     </div>
 
                     {/* Current URL */}
-                    {activeTasksByType.crawl.current_url && (
+                    {(activeTasksByType.crawl?.current_url || crawlTask?.current_url) && (
                       <div className="p-2 rounded-lg bg-background/30 border border-border">
                         <div className="flex items-center gap-2 text-xs">
                           <Link2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                           <span className="text-muted-foreground">Currently crawling:</span>
                           <span className="font-mono text-cyan-400 truncate flex-1">
-                            {activeTasksByType.crawl.current_url}
+                            {activeTasksByType.crawl?.current_url || crawlTask?.current_url}
                           </span>
                         </div>
                       </div>
                     )}
 
                     {/* Status Message */}
-                    {activeTasksByType.crawl.message && (
+                    {(activeTasksByType.crawl?.message || crawlTask?.message || (!activeTasksByType.crawl && isCrawling)) && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Info className="w-4 h-4 flex-shrink-0" />
-                        <span>{activeTasksByType.crawl.message}</span>
+                        <span>{activeTasksByType.crawl?.message || crawlTask?.message || "Initiating crawl with CADE API..."}</span>
                       </div>
                     )}
                   </motion.div>
                 )}
 
                 {/* Active Categorization Task */}
-                {activeTasksByType.categorization && (
+                {(activeTasksByType.categorization || isCategorizing) && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/30 space-y-2"
+                    className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/30 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">🏷️</span>
                         <div>
                           <h4 className="font-medium">Domain Categorization</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {activeTasksByType.categorization.message || "Analyzing domain categories..."}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Analyzing business context</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-violet-500/30 text-violet-300 border-violet-500/50">
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {activeTasksByType.categorization.statusValue}
+                          {activeTasksByType.categorization?.statusValue || "starting"}
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTerminateTask("categorization", activeTasksByType.categorization!.id)}
-                          disabled={isTerminating}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        >
-                          <StopCircle className="w-4 h-4" />
-                        </Button>
+                        {activeTasksByType.categorization && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTerminateTask("categorization", activeTasksByType.categorization!.id)}
+                            disabled={isTerminating}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <StopCircle className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Info className="w-4 h-4 flex-shrink-0" />
+                      <span>{activeTasksByType.categorization?.message || "Analyzing domain categories and competitors..."}</span>
                     </div>
                   </motion.div>
                 )}
 
                 {/* Active CSS Analysis Task */}
-                {activeTasksByType.css && (
+                {(activeTasksByType.css || isAnalyzingCss) && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2"
+                    className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">🎨</span>
                         <div>
                           <h4 className="font-medium">CSS Analysis</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {activeTasksByType.css.message || "Extracting styling patterns..."}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Extracting design patterns</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-amber-500/30 text-amber-300 border-amber-500/50">
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          {activeTasksByType.css.statusValue}
+                          {activeTasksByType.css?.statusValue || "starting"}
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTerminateTask("css", activeTasksByType.css!.id)}
-                          disabled={isTerminating}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        >
-                          <StopCircle className="w-4 h-4" />
-                        </Button>
+                        {activeTasksByType.css && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTerminateTask("css", activeTasksByType.css!.id)}
+                            disabled={isTerminating}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <StopCircle className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </motion.div>
+                )}
+
+                {/* Recent Activity Feed - Show latest events */}
+                {byType.crawl.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                      <Layers className="w-3 h-3" />
+                      Recent Activity
+                    </h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {byType.crawl.slice(0, 5).map((task) => (
+                        <div key={task.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-secondary/30">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(task.statusValue)}
+                            <span className="text-muted-foreground">Crawl</span>
+                            <Badge variant="outline" className="text-[10px] py-0">{task.statusValue}</Badge>
+                          </div>
+                          <span className="text-muted-foreground">
+                            {task.created_at ? new Date(task.created_at).toLocaleTimeString() : "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Not Crawled State - Show when no crawl and no active tasks */}
-        {!hasCrawled && !hasActiveTasks && (
+        {/* Not Crawled State - Show when no crawl and no active tasks and not currently processing */}
+        {!hasCrawled && !hasActiveTasks && !isCrawling && !isCategorizing && !isAnalyzingCss && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
