@@ -422,6 +422,7 @@ export const BRONDashboard = memo(({ selectedDomain, bronApiInstance }: BRONDash
             linksOut={stableLinksOut}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
+            isKeywordHydrating={bronApi.isKeywordHydrating}
             onRefresh={handleRefreshKeywords}
             onAdd={handleAddKeyword}
             onUpdate={handleUpdateKeyword}
