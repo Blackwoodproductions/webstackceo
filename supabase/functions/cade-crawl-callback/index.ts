@@ -53,26 +53,49 @@ Deno.serve(async (req) => {
     console.log("[CADE Callback] Raw payload received:", JSON.stringify(payload, null, 2));
 
     // Extract domain from either nested data object or top-level
-    const domain = payload.domain || payload.data?.domain;
+    const data = payload.data || {};
     const task = payload.task || "CRAWL";
     const status = payload.status || "update";
     
+    // Extract request_id first - we may need it to look up the domain
+    const request_id = payload.request_id ?? (data as Record<string, unknown>).request_id as string | undefined;
+    const user_id = payload.user_id ?? (data as Record<string, unknown>).user_id as string | undefined;
+    const target_request_id = (payload as Record<string, unknown>).target_request_id ?? 
+                               (data as Record<string, unknown>).target_request_id as string | undefined;
+    
+    // Extract domain - try multiple sources
+    let domain = payload.domain || data.domain;
+    
+    // If no domain but we have target_request_id, extract domain from it (format: crawl-domain-timestamp)
+    if (!domain && target_request_id && typeof target_request_id === "string") {
+      const match = target_request_id.match(/^(?:crawl|categorize|css)-(.+)-\d+$/);
+      if (match) {
+        domain = match[1];
+        console.log(`[CADE Callback] Extracted domain from target_request_id: ${domain}`);
+      }
+    }
+    
+    // If still no domain but we have request_id, try to extract from it
+    if (!domain && request_id && typeof request_id === "string") {
+      const match = request_id.match(/^(?:crawl|categorize|css)-(.+)-\d+$/);
+      if (match) {
+        domain = match[1];
+        console.log(`[CADE Callback] Extracted domain from request_id: ${domain}`);
+      }
+    }
+    
     // Extract other fields from nested data or top-level
-    const data = payload.data || {};
     const progress = payload.progress ?? data.progress;
     const pages_crawled = payload.pages_crawled ?? data.pages_crawled;
     const total_pages = payload.total_pages ?? data.total_pages;
     const current_url = payload.current_url ?? data.current_url;
     const error = payload.error ?? data.error;
     const message = payload.message ?? data.message;
-    const request_id = payload.request_id ?? (data as Record<string, unknown>).request_id as string | undefined;
-    const user_id = payload.user_id ?? (data as Record<string, unknown>).user_id as string | undefined;
 
-    // For categorization tasks without domain, we can still log them
-    // Don't reject - just use task type as identifier
+    // Final domain fallback - only use task:TYPE if we really have no domain info
     const domainOrTask = domain || `task:${task}`;
     
-    console.log(`[CADE Callback] Task: ${task}, Status: ${status}, Domain: ${domainOrTask}`);
+    console.log(`[CADE Callback] Task: ${task}, Status: ${status}, Domain: ${domainOrTask}, RequestId: ${request_id || "N/A"}`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -93,7 +116,10 @@ Deno.serve(async (req) => {
         current_url,
         error_message: error,
         message,
-        raw_payload: payload,
+        raw_payload: {
+          ...payload,
+          target_request_id,
+        },
       })
       .select()
       .single();
