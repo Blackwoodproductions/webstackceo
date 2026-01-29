@@ -3508,50 +3508,6 @@ f.parentNode.insertBefore(j,f);
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
           <div className="space-y-6">
-            {/* Title Header */}
-            <header className="flex items-start justify-between gap-4 relative overflow-hidden">
-              {/* Matrix Data Streams - CADE */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {/* Vertical falling data streams */}
-                <div className="absolute w-px h-16 bg-gradient-to-b from-transparent via-violet-400/60 to-transparent animate-[slide-down_2s_linear_infinite] left-[12%] -top-4" />
-                <div className="absolute w-px h-12 bg-gradient-to-b from-transparent via-purple-500/50 to-transparent animate-[slide-down_2.5s_linear_infinite_0.3s] left-[25%] -top-4" />
-                <div className="absolute w-px h-20 bg-gradient-to-b from-transparent via-fuchsia-400/40 to-transparent animate-[slide-down_1.8s_linear_infinite_0.6s] left-[40%] -top-4" />
-                <div className="absolute w-px h-14 bg-gradient-to-b from-transparent via-violet-500/55 to-transparent animate-[slide-down_2.2s_linear_infinite_0.9s] left-[55%] -top-4" />
-                <div className="absolute w-px h-18 bg-gradient-to-b from-transparent via-purple-400/45 to-transparent animate-[slide-down_1.6s_linear_infinite_1.2s] left-[70%] -top-4" />
-                <div className="absolute w-px h-10 bg-gradient-to-b from-transparent via-fuchsia-500/50 to-transparent animate-[slide-down_2.8s_linear_infinite_1.5s] left-[82%] -top-4" />
-                {/* Horizontal scan line */}
-                <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent animate-[slide-right_3s_linear_infinite] top-1/2" />
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center shrink-0">
-                  <FileText className="w-7 h-7 text-white" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-bold">CADE</h2>
-                  <p className="text-sm text-muted-foreground max-w-2xl">
-                    Content automation and topical authority signals. AI-powered content generation that matches your native CSS and inner-links to your money pages.
-                  </p>
-                </div>
-              </div>
-              <div className="hidden md:flex flex-col items-end gap-2 shrink-0">
-                {/* Trust Badges */}
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-amber-500/20 to-yellow-600/20 border border-amber-500/40 shadow-sm hover:scale-105 hover:shadow-amber-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Award className="w-4 h-4 text-amber-500" />
-                    <span className="text-[7px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 whitespace-nowrap">1,000+ CEOs</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-slate-500/20 to-zinc-600/20 border border-slate-500/40 shadow-sm hover:scale-105 hover:shadow-slate-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Building className="w-4 h-4 text-slate-500" />
-                    <span className="text-[7px] font-bold text-slate-600 dark:text-slate-400 mt-0.5 whitespace-nowrap">100+ Partners</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center px-2 h-11 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/40 shadow-sm hover:scale-105 hover:shadow-violet-500/30 hover:shadow-md transition-all duration-300 cursor-default">
-                    <Sparkles className="w-4 h-4 text-violet-500 animate-pulse" />
-                    <span className="text-[7px] font-bold text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">Agentic AI</span>
-                  </div>
-                </div>
-              </div>
-            </header>
-
             {/* CADE Dashboard - Redesigned */}
             <CADEDashboardNew
               domain={selectedTrackedDomain || selectedDomainKey}
