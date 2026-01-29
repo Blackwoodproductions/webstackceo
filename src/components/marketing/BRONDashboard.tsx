@@ -349,14 +349,11 @@ export const BRONDashboard = memo(({ selectedDomain }: BRONDashboardProps) => {
   }, [selectedDomain]);
 
   // ─── Render States ───
+  // NEVER show a blocking loading screen - always render the full dashboard UI
+  // The individual tabs (Keywords, etc.) show their own skeleton loaders
   
-  // Loading state (only if no cache)
-  if (isAuthenticating && !hasCached) {
-    return <LoadingScreen message="Connecting to BRON API..." />;
-  }
-
-  // Error state (only if no cache)
-  if (authError && !hasCached) {
+  // Only show blocking error if auth completely failed AND no cache
+  if (authError && !hasCached && !isAuthenticating) {
     return (
       <AuthErrorScreen 
         error={authError}
