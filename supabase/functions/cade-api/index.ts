@@ -24,6 +24,7 @@ serve(async (req) => {
     
     // Always use the system API key - no user key needed
     const apiKey = Deno.env.get("CADE_API_KEY");
+    const apiSecret = Deno.env.get("CADE_API_SECRET");
     
     if (!apiKey) {
       console.error("[CADE API] System API key not configured");
@@ -169,8 +170,11 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        method = "POST";
-        endpoint = `/domain/context?domain=${encodeURIComponent(domain)}`;
+        // Domain context update endpoints vary across CADE deployments.
+        // Start with the canonical path and include the domain in the body.
+        // We'll fall back to query-param and alternate verbs if needed.
+        method = "PUT";
+        endpoint = "/domain/context";
         postBody = JSON.stringify({ domain, ...params });
         console.log(`[CADE API] Update domain context for: ${domain}`);
         break;
@@ -558,6 +562,12 @@ serve(async (req) => {
       "Accept": "application/json",
     };
 
+    // Some CADE deployments require a secret for write operations.
+    if (apiSecret) {
+      headers["X-API-Secret"] = apiSecret;
+      headers["x-api-secret"] = apiSecret;
+    }
+
     const fetchOptions: RequestInit = {
       method,
       headers,
@@ -588,6 +598,40 @@ serve(async (req) => {
       throw fetchError;
     }
     clearTimeout(timeoutId);
+
+    // If CADE rejects the method/path for domain-context updates, try common variants.
+    if ((response.status === 404 || response.status === 405) && action === "update-domain-context" && domain) {
+      const fallbackAttempts: Array<{ method: string; endpoint: string }> = [
+        { method: "PUT", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
+        { method: "POST", endpoint: "/domain/context" },
+        { method: "POST", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
+        { method: "PATCH", endpoint: "/domain/context" },
+        { method: "PATCH", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
+      ];
+
+      for (const attempt of fallbackAttempts) {
+        try {
+          console.warn(`[CADE API] update-domain-context fallback -> ${attempt.method} ${attempt.endpoint}`);
+          const attemptUrl = `${CADE_API_BASE}${attempt.endpoint}`;
+          const attemptOptions: RequestInit = {
+            ...fetchOptions,
+            method: attempt.method,
+          };
+          const attemptRes = await fetch(attemptUrl, attemptOptions);
+          if (attemptRes.ok) {
+            response = attemptRes;
+            break;
+          }
+          // Keep trying if it's still a path/method issue.
+          if (attemptRes.status !== 404 && attemptRes.status !== 405) {
+            response = attemptRes;
+            break;
+          }
+        } catch (e) {
+          console.warn("[CADE API] update-domain-context fallback attempt failed:", e);
+        }
+      }
+    }
     
     const responseText = await response.text();
 

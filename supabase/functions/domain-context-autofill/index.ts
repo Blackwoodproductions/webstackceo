@@ -251,17 +251,49 @@ serve(async (req) => {
     const cadeApiKey = Deno.env.get("CADE_API_KEY");
     if (cadeApiKey) {
       try {
-        const cadeResponse = await fetch(
-          `https://seo-acg-api.stg.seosara.ai/api/v1/domain/context?domain=${encodeURIComponent(domain)}`,
-          {
-            method: "POST",
-            headers: {
-              "X-API-Key": cadeApiKey,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ domain, ...extracted }),
+        // CADE persistence endpoints vary by deployment. Try common variants.
+        const cadeBase = "https://seo-acg-api.stg.seosara.ai/api/v1";
+        const payload = JSON.stringify({ domain, ...extracted });
+        const cadeApiSecret = Deno.env.get("CADE_API_SECRET");
+        const cadeHeaders: Record<string, string> = {
+          "X-API-Key": cadeApiKey,
+          "Content-Type": "application/json",
+        };
+        if (cadeApiSecret) {
+          cadeHeaders["X-API-Secret"] = cadeApiSecret;
+          cadeHeaders["x-api-secret"] = cadeApiSecret;
+        }
+
+        const candidates: Array<{ method: string; url: string }> = [
+          { method: "PUT", url: `${cadeBase}/domain/context` },
+          { method: "PUT", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
+          { method: "POST", url: `${cadeBase}/domain/context` },
+          { method: "POST", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
+          { method: "PATCH", url: `${cadeBase}/domain/context` },
+          { method: "PATCH", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
+        ];
+
+        let cadeResponse: Response | null = null;
+        for (const c of candidates) {
+          try {
+            const res = await fetch(c.url, {
+              method: c.method,
+              headers: cadeHeaders,
+              body: payload,
+            });
+            cadeResponse = res;
+            if (res.ok) break;
+            if (res.status !== 404 && res.status !== 405) break;
+            console.warn(`[AutoFill] CADE save rejected (${res.status}) for ${c.method} ${c.url}`);
+          } catch (e) {
+            console.warn("[AutoFill] CADE save attempt failed:", e);
           }
-        );
+        }
+
+        if (!cadeResponse) {
+          console.warn("[AutoFill] No CADE response received while saving");
+          cadeResponse = new Response("", { status: 500 });
+        }
         
         if (cadeResponse.ok) {
           const cadeData = await cadeResponse.json();
