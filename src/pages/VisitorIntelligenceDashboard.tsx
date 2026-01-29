@@ -3552,23 +3552,6 @@ f.parentNode.insertBefore(j,f);
               </div>
             </header>
 
-            {/* Platform Connection Section - Show at TOP when not connected, hidden during loading */}
-            {cadeHasSubscription && !cadePlatformConnected && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <CADEPlatformConnect 
-                  domain={selectedTrackedDomain || selectedDomainKey} 
-                  onConnectionComplete={(platform) => {
-                    setCadePlatformConnected(platform);
-                    toast.success(`Successfully connected to ${platform}!`);
-                  }}
-                />
-              </motion.div>
-            )}
-
             {/* CADE API Login & Dashboard */}
             <CADEApiDashboard
               domain={selectedTrackedDomain || selectedDomainKey}
@@ -3687,6 +3670,23 @@ f.parentNode.insertBefore(j,f);
                 </div>
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Platform Connection Section - moved to BOTTOM for better overview */}
+            {cadeHasSubscription && !cadePlatformConnected && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CADEPlatformConnect
+                  domain={selectedTrackedDomain || selectedDomainKey}
+                  onConnectionComplete={(platform) => {
+                    setCadePlatformConnected(platform);
+                    toast.success(`Successfully connected to ${platform}!`);
+                  }}
+                />
+              </motion.div>
+            )}
           </div>
           </div>
         </div>
