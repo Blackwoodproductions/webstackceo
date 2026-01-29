@@ -21,11 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -35,6 +30,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
+import { AIMetricsAnimation } from "@/components/ui/ai-metrics-animation";
 import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -377,7 +373,6 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
   const [domainContextOpen, setDomainContextOpen] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [faqPaused, setFaqPaused] = useState(false);
-  const [metricsOpen, setMetricsOpen] = useState(false);
   
   // Account info
   const [account, setAccount] = useState({
@@ -655,38 +650,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </div>
       </div>
 
-      {/* View AI Search Metrics - Centered Button + Inline Animation */}
-      <Collapsible open={metricsOpen} onOpenChange={setMetricsOpen}>
-        <div className="flex justify-center">
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500 gap-2 px-6"
-            >
-              <Brain className="w-4 h-4" />
-              View AI Search Metrics
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${metricsOpen ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2">
-          <div className="mt-4 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6" style={{ minHeight: '220px' }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Search className="w-4 h-4 text-primary" />
-              <h4 className="text-lg font-semibold">Analyzing Keywords</h4>
-              {/* Scanning line effect */}
-              <div className="h-0.5 flex-1 max-w-[200px] rounded-full overflow-hidden bg-muted/30 ml-4">
-                <div 
-                  className="h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent"
-                  style={{ animation: 'cade-scan 1.5s ease-in-out infinite' }}
-                />
-              </div>
-            </div>
-            <CADEAIMetricsAnimation />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+      {/* AI Search Metrics - Always Visible */}
+      <AIMetricsAnimation title="Analyzing Keywords" />
 
 
       {/* Row 1: Scheduler, Quick Actions, Account Status */}
