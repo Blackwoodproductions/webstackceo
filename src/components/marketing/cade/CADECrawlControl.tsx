@@ -1,15 +1,17 @@
 import { useState, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe, RefreshCw, Play, Loader2, CheckCircle2, AlertTriangle,
   Clock, FileText, Palette, Target, Activity, MapPin, Languages, 
-  Users, Info, ChevronDown, ExternalLink
+  Users, Info, ChevronDown, ExternalLink, XCircle, StopCircle,
+  Link2, Layers, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
@@ -52,6 +54,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const [isAnalyzingCss, setIsAnalyzingCss] = useState(false);
   const [crawlTask, setCrawlTask] = useState<CrawlTask | null>(null);
   const [showCategorizationDetails, setShowCategorizationDetails] = useState(false);
+  const [isTerminating, setIsTerminating] = useState(false);
 
   // Get latest data from events with stats
   const { 
@@ -160,7 +163,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         onTaskStarted?.(task?.task_id || requestId);
       }
       
-      toast.success("Crawl started! Check the Task Monitor for progress.");
+      toast.success("Crawl started! Watch the progress below.");
       refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Start error:", err);
@@ -202,6 +205,38 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
       setIsAnalyzingCss(false);
     }
   };
+
+  const handleTerminateTask = async (taskType: "crawl" | "categorization" | "css", taskId: string) => {
+    setIsTerminating(true);
+    try {
+      let action = "terminate-content-task";
+      if (taskType === "crawl") action = "terminate-crawl-task";
+      else if (taskType === "categorization") action = "terminate-categorization-task";
+
+      await callCadeApi(action, { task_id: taskId, request_id: taskId });
+      toast.success(`${taskType.charAt(0).toUpperCase() + taskType.slice(1)} task terminated`);
+      
+      // Reset states
+      if (taskType === "crawl") {
+        setIsCrawling(false);
+        setCrawlTask(null);
+      } else if (taskType === "categorization") {
+        setIsCategorizing(false);
+      } else if (taskType === "css") {
+        setIsAnalyzingCss(false);
+      }
+      
+      refreshEvents();
+    } catch (err) {
+      console.error("[CADE Crawl] Terminate error:", err);
+      toast.error("Failed to terminate task");
+    } finally {
+      setIsTerminating(false);
+    }
+  };
+
+  // Check if domain has been crawled
+  const hasCrawled = domainProfile?.crawled_pages && domainProfile.crawled_pages > 0;
 
   if (!domain) {
     return (
@@ -260,99 +295,249 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Task Status Summary - Shows when there are active or recent tasks */}
-        {stats.total > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-green-500/10 border border-primary/20"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                Task Overview
-              </h4>
-              {hasActiveTasks && (
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  {stats.active} active
-                </Badge>
-              )}
-            </div>
-            
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-2 rounded-lg bg-background/50">
-                <p className="text-lg font-bold text-primary">{stats.byType.crawl}</p>
-                <p className="text-[10px] text-muted-foreground">Crawls</p>
-              </div>
-              <div className="p-2 rounded-lg bg-background/50">
-                <p className="text-lg font-bold text-violet-400">{stats.byType.categorization}</p>
-                <p className="text-[10px] text-muted-foreground">Categories</p>
-              </div>
-              <div className="p-2 rounded-lg bg-background/50">
-                <p className="text-lg font-bold text-green-400">{stats.completed}</p>
-                <p className="text-[10px] text-muted-foreground">Completed</p>
-              </div>
-              <div className="p-2 rounded-lg bg-background/50">
-                <p className={`text-lg font-bold ${stats.failed > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                  {stats.failed}
-                </p>
-                <p className="text-[10px] text-muted-foreground">Failed</p>
-              </div>
-            </div>
+        {/* Live Task Window - Primary focus when tasks are active */}
+        <AnimatePresence>
+          {hasActiveTasks && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/20 via-violet-500/15 to-cyan-500/10 border-2 border-blue-500/40 p-1"
+            >
+              {/* Animated border effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-cyan-500/20 animate-pulse" />
+              
+              <div className="relative bg-background/95 backdrop-blur-sm rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Activity className="w-6 h-6 text-blue-400" />
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-ping" />
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Live Task Monitor</h3>
+                      <p className="text-xs text-muted-foreground">Real-time updates every 5 seconds</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
+                    <Zap className="w-3 h-3 mr-1" />
+                    {stats.active} Active
+                  </Badge>
+                </div>
 
-            {/* Active Task Details */}
-            {hasActiveTasks && (
-              <div className="mt-3 space-y-2">
+                {/* Active Crawl Task - Detailed View */}
                 {activeTasksByType.crawl && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-                    <span className="text-xs font-medium">Crawling</span>
-                    {activeTasksByType.crawl.progress !== undefined && (
-                      <Progress value={activeTasksByType.crawl.progress} className="h-1.5 flex-1 max-w-32" />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🕷️</span>
+                        <div>
+                          <h4 className="font-medium">Website Crawl</h4>
+                          <p className="text-xs text-muted-foreground">{domain}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-blue-500/30 text-blue-300 border-blue-500/50">
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {activeTasksByType.crawl.statusValue}
+                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleTerminateTask("crawl", activeTasksByType.crawl!.id)}
+                                disabled={isTerminating}
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                {isTerminating ? <Loader2 className="w-4 h-4 animate-spin" /> : <StopCircle className="w-4 h-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Stop crawl</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-medium text-blue-400">
+                          {activeTasksByType.crawl.progress ?? 0}%
+                        </span>
+                      </div>
+                      <div className="relative h-3 rounded-full bg-secondary overflow-hidden">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-500"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${activeTasksByType.crawl.progress ?? 0}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
+                          style={{ backgroundSize: "200% 100%" }} />
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="p-2 rounded-lg bg-background/50 border border-border">
+                        <p className="text-xl font-bold text-blue-400">
+                          {activeTasksByType.crawl.pages_crawled ?? 0}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Pages Crawled</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-background/50 border border-border">
+                        <p className="text-xl font-bold text-violet-400">
+                          {activeTasksByType.crawl.total_pages ?? "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Total Pages</p>
+                      </div>
+                      <div className="p-2 rounded-lg bg-background/50 border border-border">
+                        <p className="text-xl font-bold text-green-400">
+                          {activeTasksByType.crawl.created_at 
+                            ? Math.round((Date.now() - new Date(activeTasksByType.crawl.created_at).getTime()) / 1000) + "s"
+                            : "—"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">Duration</p>
+                      </div>
+                    </div>
+
+                    {/* Current URL */}
+                    {activeTasksByType.crawl.current_url && (
+                      <div className="p-2 rounded-lg bg-background/30 border border-border">
+                        <div className="flex items-center gap-2 text-xs">
+                          <Link2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-muted-foreground">Currently crawling:</span>
+                          <span className="font-mono text-cyan-400 truncate flex-1">
+                            {activeTasksByType.crawl.current_url}
+                          </span>
+                        </div>
+                      </div>
                     )}
-                    {activeTasksByType.crawl.pages_crawled !== undefined && (
-                      <span className="text-xs text-muted-foreground">
-                        {activeTasksByType.crawl.pages_crawled} pages
-                      </span>
-                    )}
+
+                    {/* Status Message */}
                     {activeTasksByType.crawl.message && (
-                      <span className="text-xs text-muted-foreground truncate max-w-48">
-                        {activeTasksByType.crawl.message}
-                      </span>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Info className="w-4 h-4 flex-shrink-0" />
+                        <span>{activeTasksByType.crawl.message}</span>
+                      </div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
+
+                {/* Active Categorization Task */}
                 {activeTasksByType.categorization && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
-                    <span className="text-xs font-medium">Categorizing</span>
-                    {activeTasksByType.categorization.message && (
-                      <span className="text-xs text-muted-foreground truncate flex-1">
-                        {activeTasksByType.categorization.message}
-                      </span>
-                    )}
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/30 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🏷️</span>
+                        <div>
+                          <h4 className="font-medium">Domain Categorization</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {activeTasksByType.categorization.message || "Analyzing domain categories..."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-violet-500/30 text-violet-300 border-violet-500/50">
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {activeTasksByType.categorization.statusValue}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTerminateTask("categorization", activeTasksByType.categorization!.id)}
+                          disabled={isTerminating}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <StopCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
+
+                {/* Active CSS Analysis Task */}
                 {activeTasksByType.css && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
-                    <span className="text-xs font-medium">Analyzing CSS</span>
-                    {activeTasksByType.css.message && (
-                      <span className="text-xs text-muted-foreground truncate flex-1">
-                        {activeTasksByType.css.message}
-                      </span>
-                    )}
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🎨</span>
+                        <div>
+                          <h4 className="font-medium">CSS Analysis</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {activeTasksByType.css.message || "Extracting styling patterns..."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-amber-500/30 text-amber-300 border-amber-500/50">
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          {activeTasksByType.css.statusValue}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTerminateTask("css", activeTasksByType.css!.id)}
+                          disabled={isTerminating}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <StopCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
               </div>
-            )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Not Crawled State - Show when no crawl and no active tasks */}
+        {!hasCrawled && !hasActiveTasks && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-12 text-center"
+          >
+            <Globe className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+            <h3 className="text-lg font-medium mb-2">Domain hasn't been crawled yet</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Start a crawl to analyze your website structure and prepare for content generation.
+            </p>
+            <Button
+              onClick={handleStartCrawl}
+              disabled={isCrawling}
+              size="lg"
+              className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
+              {isCrawling ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-5 h-5" />
+              )}
+              Start Domain Crawl
+            </Button>
           </motion.div>
         )}
 
-        {/* Domain Stats */}
-        {domainProfile && (
+        {/* Domain Stats - Show when crawled */}
+        {hasCrawled && !hasActiveTasks && domainProfile && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
