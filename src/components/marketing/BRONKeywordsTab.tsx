@@ -412,9 +412,27 @@ export const BRONKeywordsTab = memo(({
     clusters: ReturnType<typeof groupKeywords>;
   } | null>(null);
 
+  // Avoid building massive strings like `ids.join(',')` for large domains.
+  // A compact hash signature is enough to detect changes.
+  const computeIdsSignature = useCallback((items: BronKeyword[]) => {
+    // FNV-1a 32-bit
+    let hash = 2166136261;
+    for (const it of items) {
+      const s = String(it.id);
+      for (let i = 0; i < s.length; i++) {
+        hash ^= s.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      // delimiter
+      hash ^= 44;
+      hash = Math.imul(hash, 16777619);
+    }
+    return `${items.length}:${(hash >>> 0).toString(16)}`;
+  }, []);
+
   const groupedKeywords = useMemo(() => {
-    // Generate a signature from keyword IDs (fast string comparison)
-    const idSignature = filteredKeywords.map(k => k.id).join(',');
+    // Generate a stable signature from keyword IDs (no huge allocations)
+    const idSignature = computeIdsSignature(filteredKeywords);
     
     // Check if cache is still valid
     const cached = clusterCacheRef.current;
@@ -445,6 +463,38 @@ export const BRONKeywordsTab = memo(({
         return reconstructed;
       }
     }
+
+    // Backwards-compatibility path: if signature changed between builds,
+    // reuse any cached clusters for this domain (best-effort) to avoid a full re-cluster.
+    if (selectedDomain) {
+      const looseIndex = loadKeywordClustersIndexCache(selectedDomain);
+      if (looseIndex && looseIndex.length > 0) {
+        const byId = new Map<string | number, BronKeyword>();
+        for (const kw of filteredKeywords) byId.set(kw.id, kw);
+
+        const reconstructed = looseIndex
+          .map((c) => {
+            const parent = byId.get(c.parentId);
+            if (!parent) return null;
+            const children = c.childIds
+              .map((id) => byId.get(id))
+              .filter(Boolean) as BronKeyword[];
+            return { parent, children, parentId: c.parentId };
+          })
+          .filter(Boolean) as ReturnType<typeof groupKeywords>;
+
+        if (reconstructed.length > 0) {
+          clusterCacheRef.current = { domain: selectedDomain, keywordIds: idSignature, clusters: reconstructed };
+          // Persist updated signature immediately.
+          const index: KeywordClusterIndex = reconstructed.map((c) => ({
+            parentId: c.parentId,
+            childIds: c.children.map((ch) => ch.id),
+          }));
+          saveKeywordClustersIndexCache(selectedDomain, idSignature, index);
+          return reconstructed;
+        }
+      }
+    }
     
     // Recompute clusters
     const clusters = groupKeywords(filteredKeywords, selectedDomain);
@@ -459,7 +509,7 @@ export const BRONKeywordsTab = memo(({
       saveKeywordClustersIndexCache(selectedDomain, idSignature, index);
     }
     return clusters;
-  }, [filteredKeywords, selectedDomain]);
+  }, [filteredKeywords, selectedDomain, computeIdsSignature]);
 
   // Remove “grey” tracking-only rows from the UI (still counted in stats)
   const displayClusters = useMemo(

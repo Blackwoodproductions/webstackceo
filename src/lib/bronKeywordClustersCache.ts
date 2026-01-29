@@ -44,13 +44,15 @@ function saveAll(cache: CacheMap) {
 
 export function loadKeywordClustersIndexCache(
   domain: string,
-  keywordIdsSignature: string
+  keywordIdsSignature?: string
 ): KeywordClusterIndex | null {
   try {
     const cache = loadAll();
     const entry = cache[domain];
     if (!entry) return null;
-    if (entry.keywordIdsSignature !== keywordIdsSignature) return null;
+    // If a signature is provided, enforce it. If not, return best-effort cached clusters.
+    // This is important for backwards-compatibility when the signature algorithm changes.
+    if (keywordIdsSignature && entry.keywordIdsSignature !== keywordIdsSignature) return null;
     return entry.clusters ?? null;
   } catch {
     return null;

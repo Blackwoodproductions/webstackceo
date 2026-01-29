@@ -207,9 +207,10 @@ const KEYWORD_CACHE_V2_INDEX_KEY = 'bron_keywords_cache_v2_index';
 // full keyword payload is too large to persist/parse in localStorage.
 const KEYWORD_CACHE_V2_PREVIEW_PREFIX = 'bron_keywords_cache_v2_preview_';
 const MAX_PREVIEW_KEYWORDS = 80;
-// If the raw JSON string is huge, parsing it synchronously on hard refresh can
-// stall the UI; prefer the preview in that case.
-const LARGE_KEYWORDS_RAW_THRESHOLD = 1_500_000; // ~1.5MB of JSON text
+// If the raw JSON string is moderately large, parsing it synchronously on hard refresh
+// can stall the UI. Prefer the preview (or IndexedDB) in that case.
+// NOTE: This threshold is intentionally conservative.
+const LARGE_KEYWORDS_RAW_THRESHOLD = 250_000; // ~250KB of JSON text
 
 // ─── In-Memory Keyword Cache ───
 // Avoids re-parsing large localStorage JSON on every domain switch (major perf gain for 150+ keyword domains)
@@ -242,7 +243,12 @@ function getKeywordV2PreviewKey(domain: string) {
 
 function loadCachedKeywordsPreview(domain: string): BronKeyword[] | null {
   try {
-    const raw = localStorage.getItem(getKeywordV2PreviewKey(domain));
+    // Prefer sessionStorage (often available even when localStorage is quota-tight)
+    // then fall back to localStorage.
+    const previewKey = getKeywordV2PreviewKey(domain);
+    const raw =
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(previewKey) : null) ||
+      localStorage.getItem(previewKey);
     if (!raw) return null;
     const entry = JSON.parse(raw) as KeywordCacheEntry;
     if (!entry || (Date.now() - entry.cachedAt) > CACHE_MAX_AGE) return null;
@@ -258,7 +264,19 @@ function saveCachedKeywordsPreview(domain: string, keywords: BronKeyword[]) {
       keywords: keywords.slice(0, MAX_PREVIEW_KEYWORDS),
       cachedAt: Date.now(),
     };
-    localStorage.setItem(getKeywordV2PreviewKey(domain), JSON.stringify(entry));
+    const previewKey = getKeywordV2PreviewKey(domain);
+    const payload = JSON.stringify(entry);
+    // Best-effort: write to both.
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(previewKey, payload);
+    } catch {
+      // ignore
+    }
+    try {
+      localStorage.setItem(previewKey, payload);
+    } catch {
+      // ignore
+    }
   } catch {
     // best-effort
   }
@@ -334,19 +352,23 @@ function loadCachedKeywords(domain: string): BronKeyword[] | null {
           });
           return preview;
         }
-      }
 
-      const entry = JSON.parse(v2Raw) as KeywordCacheEntry;
-      if (entry && (now - entry.cachedAt) <= CACHE_MAX_AGE) {
-        const elapsed = (performance.now() - startTime).toFixed(1);
-        console.log(`[BRON] Cache HIT for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
-        // Store in memory cache for fast subsequent access
-        keywordMemoryCache.set(domain, {
-          keywords: entry.keywords,
-          cachedAt: entry.cachedAt,
-          localStorageLoadedAt: now,
-        });
-        return entry.keywords;
+        // No preview available: avoid blocking parse on hard refresh.
+        // We'll fall back to other caches (preview/legacy) or network/IDB hydration.
+        console.log(`[BRON] Cache too large to parse synchronously for ${domain} (${v2Raw.length} chars) - skipping full parse`);
+      } else {
+        const entry = JSON.parse(v2Raw) as KeywordCacheEntry;
+        if (entry && (now - entry.cachedAt) <= CACHE_MAX_AGE) {
+          const elapsed = (performance.now() - startTime).toFixed(1);
+          console.log(`[BRON] Cache HIT for ${domain}: ${entry.keywords.length} keywords loaded in ${elapsed}ms`);
+          // Store in memory cache for fast subsequent access
+          keywordMemoryCache.set(domain, {
+            keywords: entry.keywords,
+            cachedAt: entry.cachedAt,
+            localStorageLoadedAt: now,
+          });
+          return entry.keywords;
+        }
       }
     }
 
