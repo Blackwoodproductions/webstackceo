@@ -48,9 +48,10 @@ interface ContentItem {
 interface CADEContentManagerProps {
   domain?: string;
   onRefresh?: () => void;
+  isCompact?: boolean;
 }
 
-export const CADEContentManager = ({ domain, onRefresh }: CADEContentManagerProps) => {
+export const CADEContentManager = ({ domain, onRefresh, isCompact = false }: CADEContentManagerProps) => {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -216,12 +217,176 @@ export const CADEContentManager = ({ domain, onRefresh }: CADEContentManagerProp
 
   if (!domain) {
     return (
-      <Card className="border-violet-500/20">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p>Select a domain to manage content</p>
-        </CardContent>
-      </Card>
+      <div className="py-8 text-center text-muted-foreground">
+        <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">Select a domain to manage content</p>
+      </div>
+    );
+  }
+
+  // Compact view for inline display
+  if (isCompact) {
+    return (
+      <>
+        <div className="space-y-2">
+          {isLoading && content.length === 0 ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-10 bg-muted/50 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : filteredContent.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs">No content yet</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGenerate(true)}
+                className="mt-2 gap-1 text-xs h-7"
+              >
+                <Wand2 className="w-3 h-3" />
+                Generate
+              </Button>
+            </div>
+          ) : (
+            <ScrollArea className="h-[180px]">
+              <div className="space-y-1.5">
+                {filteredContent.slice(0, 5).map((item, index) => {
+                  const itemId = item.content_id || item.id || `item-${index}`;
+                  return (
+                    <div
+                      key={itemId}
+                      className="flex items-center justify-between p-2 rounded-lg bg-secondary/30 border border-border text-sm"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate text-xs">{item.title || "Untitled"}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge className={`${getStatusColor(item.status)} text-[10px] py-0`}>
+                            {item.status || "draft"}
+                          </Badge>
+                          {item.type && (
+                            <span className="text-[10px] text-muted-foreground">{item.type}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            setEditingItem(item);
+                            setEditForm({ title: item.title || "", content: item.content || "" });
+                          }}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {filteredContent.length > 5 && (
+                <p className="text-center text-xs text-muted-foreground mt-2">
+                  +{filteredContent.length - 5} more articles
+                </p>
+              )}
+            </ScrollArea>
+          )}
+          
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGenerate(true)}
+              className="flex-1 gap-1 text-xs h-7"
+            >
+              <Wand2 className="w-3 h-3" />
+              Generate Article
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="h-7 w-7 p-0"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Generate Dialog */}
+        <Dialog open={showGenerate} onOpenChange={setShowGenerate}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-violet-500" />
+                Generate Content
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Target Keyword</Label>
+                <Input
+                  placeholder="e.g., best dental implants 2024"
+                  value={generateKeyword}
+                  onChange={(e) => setGenerateKeyword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowGenerate(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || !generateKeyword.trim()}
+                className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600"
+              >
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Generate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Content</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Content</Label>
+                <Textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, content: e.target.value }))}
+                  rows={10}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingItem(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit} disabled={isSaving} className="gap-2">
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 

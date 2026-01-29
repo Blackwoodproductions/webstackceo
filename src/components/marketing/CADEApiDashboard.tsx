@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
@@ -144,7 +143,6 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   
   // Collapsible states
   const [systemOpen, setSystemOpen] = useState(false);
-  const [managementTab, setManagementTab] = useState("content");
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, retries = 2) => {
     const cacheKey = `cade_${action}_${domain || "global"}`;
@@ -885,51 +883,83 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
             onRefresh={handleRefresh}
             isCollapsed={false}
           />
-          <CADEWorkerStatus isCollapsed={true} />
         </div>
       )}
 
-      {/* Management Tabs - Content, FAQs, Crawl */}
+      {/* Unified Dashboard View - All key info on one screen */}
       {domain && (
-        <Tabs value={managementTab} onValueChange={setManagementTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
-            <TabsTrigger value="content" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Content
-            </TabsTrigger>
-            <TabsTrigger value="faqs" className="gap-2">
-              <HelpCircle className="w-4 h-4" />
-              FAQs
-            </TabsTrigger>
-            <TabsTrigger value="crawl" className="gap-2">
-              <Globe className="w-4 h-4" />
-              Crawl & Analysis
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Crawl & Analysis Section */}
+          <CADECrawlControl
+            domain={domain}
+            domainProfile={domainProfile}
+            onRefresh={handleRefresh}
+          />
 
-          <TabsContent value="content" className="mt-4">
-            <CADEContentManager 
-              domain={domain} 
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
+          {/* Content & FAQs Summary Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Content Summary Card */}
+            <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-violet-500" />
+                    Content Library
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    {domainProfile?.content_count ?? 0} articles
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CADEContentManager 
+                  domain={domain} 
+                  onRefresh={handleRefresh}
+                  isCompact={true}
+                />
+              </CardContent>
+            </Card>
 
-          <TabsContent value="faqs" className="mt-4">
-            <CADEFAQManager 
-              domain={domain}
-              initialFaqs={faqs}
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
+            {/* FAQs Summary Card */}
+            <Card className="border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-blue-500/5">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-cyan-500" />
+                    FAQ Library
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs">
+                    {faqs.length} FAQs
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CADEFAQManager 
+                  domain={domain}
+                  initialFaqs={faqs}
+                  onRefresh={handleRefresh}
+                  isCompact={true}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-          <TabsContent value="crawl" className="mt-4">
-            <CADECrawlControl
-              domain={domain}
-              domainProfile={domainProfile}
-              onRefresh={handleRefresh}
-            />
-          </TabsContent>
-        </Tabs>
+          {/* Worker Status - Collapsible at bottom */}
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-muted/30 hover:bg-muted/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Cpu className="w-5 h-5 text-green-500" />
+                  <span className="font-semibold">System Workers & Queues</span>
+                </div>
+                <ChevronDown className="w-5 h-5" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <CADEWorkerStatus isCollapsed={false} />
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       )}
     </motion.div>
   );

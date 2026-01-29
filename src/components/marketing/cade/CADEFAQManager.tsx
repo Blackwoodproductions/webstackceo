@@ -46,9 +46,10 @@ interface CADEFAQManagerProps {
   domain?: string;
   initialFaqs?: FAQItem[];
   onRefresh?: () => void;
+  isCompact?: boolean;
 }
 
-export const CADEFAQManager = ({ domain, initialFaqs = [], onRefresh }: CADEFAQManagerProps) => {
+export const CADEFAQManager = ({ domain, initialFaqs = [], onRefresh, isCompact = false }: CADEFAQManagerProps) => {
   const [faqs, setFaqs] = useState<FAQItem[]>(initialFaqs);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -218,12 +219,135 @@ export const CADEFAQManager = ({ domain, initialFaqs = [], onRefresh }: CADEFAQM
 
   if (!domain) {
     return (
-      <Card className="border-violet-500/20">
-        <CardContent className="py-12 text-center text-muted-foreground">
-          <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p>Select a domain to manage FAQs</p>
-        </CardContent>
-      </Card>
+      <div className="py-8 text-center text-muted-foreground">
+        <HelpCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">Select a domain to manage FAQs</p>
+      </div>
+    );
+  }
+
+  // Compact view for inline display
+  if (isCompact) {
+    return (
+      <>
+        <div className="space-y-2">
+          {isLoading && faqs.length === 0 ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-10 bg-muted/50 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : filteredFaqs.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <HelpCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs">No FAQs yet</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateFaqs}
+                disabled={isGenerating}
+                className="mt-2 gap-1 text-xs h-7"
+              >
+                {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                Generate FAQs
+              </Button>
+            </div>
+          ) : (
+            <ScrollArea className="h-[180px]">
+              <div className="space-y-1.5">
+                {filteredFaqs.slice(0, 5).map((faq, index) => {
+                  const faqId = faq.faq_id || faq.id || `faq-${index}`;
+                  return (
+                    <div
+                      key={faqId}
+                      className="p-2 rounded-lg bg-secondary/30 border border-border text-sm"
+                    >
+                      <p className="font-medium text-xs line-clamp-1">{faq.question || "No question"}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{faq.answer || "No answer"}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              {filteredFaqs.length > 5 && (
+                <p className="text-center text-xs text-muted-foreground mt-2">
+                  +{filteredFaqs.length - 5} more FAQs
+                </p>
+              )}
+            </ScrollArea>
+          )}
+          
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateFaqs}
+              disabled={isGenerating}
+              className="flex-1 gap-1 text-xs h-7"
+            >
+              {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+              Generate FAQs
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDialog(true)}
+              className="gap-1 text-xs h-7"
+            >
+              <Plus className="w-3 h-3" />
+              Add
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="h-7 w-7 p-0"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLoading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Add FAQ Dialog */}
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5 text-cyan-500" />
+                Add FAQ
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Question</Label>
+                <Input
+                  placeholder="What is your question?"
+                  value={newFaq.question}
+                  onChange={(e) => setNewFaq((prev) => ({ ...prev, question: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Answer</Label>
+                <Textarea
+                  placeholder="Enter the answer..."
+                  value={newFaq.answer}
+                  onChange={(e) => setNewFaq((prev) => ({ ...prev, answer: e.target.value }))}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddFaq} disabled={isAdding} className="gap-2">
+                {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Add FAQ
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
