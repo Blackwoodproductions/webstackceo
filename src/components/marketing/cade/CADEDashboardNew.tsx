@@ -688,6 +688,176 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Live Activity Mini Dashboard - Full Width at Top */}
+      <SectionCard title="Live Activity" accentColor="violet">
+        <div className="space-y-4">
+          {/* Dials Row */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Active Dial */}
+            <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
+              <div className="relative w-16 h-16">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500/10" />
+                  <circle 
+                    cx="18" cy="18" r="15" fill="none" stroke="url(#amber-gradient-top)" strokeWidth="2.5" 
+                    strokeDasharray={`${Math.min((stats.active / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                    strokeLinecap="round"
+                    className="transition-all duration-500"
+                  />
+                  <defs>
+                    <linearGradient id="amber-gradient-top" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="100%" stopColor="#f59e0b" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-amber-400">{stats.active}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Active</p>
+              {stats.active > 0 && (
+                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </div>
+
+            {/* Completed Dial */}
+            <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border border-emerald-500/20">
+              <div className="relative w-16 h-16">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500/10" />
+                  <circle 
+                    cx="18" cy="18" r="15" fill="none" stroke="url(#emerald-gradient-top)" strokeWidth="2.5" 
+                    strokeDasharray={`${Math.min((stats.completed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                    strokeLinecap="round"
+                    className="transition-all duration-500"
+                  />
+                  <defs>
+                    <linearGradient id="emerald-gradient-top" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#34d399" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-emerald-400">{stats.completed}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Completed</p>
+            </div>
+
+            {/* Failed Dial */}
+            <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-red-500/5 to-red-500/10 border border-red-500/20">
+              <div className="relative w-16 h-16">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500/10" />
+                  <circle 
+                    cx="18" cy="18" r="15" fill="none" stroke="url(#red-gradient-top)" strokeWidth="2.5" 
+                    strokeDasharray={`${Math.min((stats.failed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
+                    strokeLinecap="round"
+                    className="transition-all duration-500"
+                  />
+                  <defs>
+                    <linearGradient id="red-gradient-top" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f87171" />
+                      <stop offset="100%" stopColor="#ef4444" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-red-400">{stats.failed}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Failed</p>
+            </div>
+          </div>
+
+          {/* Activity by Type - Mini Bar Chart */}
+          <div className="p-3 rounded-xl bg-background/30 border border-border/30">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Activity by Type</p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={refreshTasks}
+                className="text-[10px] h-6 px-2"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { type: "CRAWL", color: "orange", count: stats.byType.crawl || 0 },
+                { type: "CATEGORIZATION", color: "violet", count: stats.byType.categorization || 0 },
+                { type: "CONTENT", color: "cyan", count: byType.content?.length || 0 },
+                { type: "CSS", color: "blue", count: byType.css?.length || 0 },
+              ].map((item) => {
+                const maxCount = Math.max(stats.byType.crawl || 0, stats.byType.categorization || 0, byType.content?.length || 0, byType.css?.length || 0, 1);
+                const percentage = (item.count / maxCount) * 100;
+                const colorMap: Record<string, string> = {
+                  orange: "from-orange-500 to-orange-400",
+                  violet: "from-violet-500 to-purple-400",
+                  cyan: "from-cyan-500 to-cyan-400",
+                  blue: "from-blue-500 to-blue-400",
+                };
+                return (
+                  <div key={item.type} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground uppercase truncate">{item.type}</span>
+                      <span className={`text-xs font-medium text-${item.color}-400`}>{item.count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted/20 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full bg-gradient-to-r ${colorMap[item.color]} transition-all duration-500`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Activity Feed - Horizontal Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            {tasks.length === 0 ? (
+              <div className="md:col-span-3 text-center py-4 text-muted-foreground">
+                <Activity className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
+                <p className="text-xs">No recent activity</p>
+              </div>
+            ) : (
+              tasks.slice(0, 6).map((task) => {
+                const isActive = ["running", "processing", "pending", "queued", "in_progress"].includes(task.statusValue);
+                const isCompleted = ["completed", "done", "success"].includes(task.statusValue);
+                const isFailed = ["failed", "error"].includes(task.statusValue);
+                
+                return (
+                  <div 
+                    key={task.id} 
+                    className="flex items-center gap-2 p-2 rounded-lg bg-background/20 border border-border/20"
+                  >
+                    <div className="flex-shrink-0">
+                      {isActive && <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                      {isCompleted && <div className="w-2 h-2 rounded-full bg-emerald-400" />}
+                      {isFailed && <div className="w-2 h-2 rounded-full bg-red-400" />}
+                      {!isActive && !isCompleted && !isFailed && <div className="w-2 h-2 rounded-full bg-muted-foreground" />}
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase w-16 truncate">{task.type}</span>
+                    <span className="flex-1 text-xs truncate">
+                      {task.message || task.current_url || `${task.type} ${task.statusValue}`}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
+                      {task.created_at ? new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </SectionCard>
+
       {/* Row 1: Scheduler, Quick Actions, Account Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
@@ -784,275 +954,105 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </SectionCard>
       </div>
 
-      {/* Row 2: Website Crawl + Domain Information */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        
-        {/* Website Crawl Card - 2 columns */}
-        <div className="md:col-span-2">
-          <SectionCard title="Website Crawl" accentColor="orange" className="h-full">
-            <div className="space-y-4 flex flex-col h-full">
-              {/* AI Animation Section - Top */}
-              <div className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-violet-500/10 border border-orange-500/20">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-14 h-14 flex-shrink-0">
-                    {/* Orbiting dots */}
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="absolute w-2 h-2 rounded-full bg-orange-400/80"
-                        style={{
-                          top: '50%',
-                          left: '50%',
-                          transform: `rotate(${i * 90}deg) translateX(24px) translateY(-50%)`,
-                          animation: `cade-orbit 3s linear infinite`,
-                          animationDelay: `${i * 0.75}s`,
-                        }}
-                      />
-                    ))}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/30 to-violet-500/30 border border-orange-500/40 flex items-center justify-center">
-                        <Search className="w-4 h-4 text-orange-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Content Analysis</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isCrawling ? "Processing pages..." : "Ready to analyze your website content"}
-                    </p>
-                  </div>
-                  {isCrawling && (
-                    <div className="w-10 h-10 rounded-full border-2 border-orange-500/30 border-t-orange-500 animate-spin" />
-                  )}
-                </div>
-                
-                {/* Stats Row */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
-                    <p className="text-xl font-bold text-orange-400">{domainProfile?.crawled_pages || stats.byType.crawl || 0}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Pages Crawled</p>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
-                    <p className="text-xl font-bold text-violet-400">{stats.byType.categorization || 0}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Categorized</p>
+      {/* Row 2: Website Crawl (Full width, simplified) */}
+      <SectionCard title="Website Crawl" accentColor="orange">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* AI Animation Section */}
+          <div className="relative p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-violet-500/10 border border-orange-500/20">
+            <div className="flex items-center gap-4">
+              <div className="relative w-14 h-14 flex-shrink-0">
+                {/* Orbiting dots */}
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full bg-orange-400/80"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: `rotate(${i * 90}deg) translateX(24px) translateY(-50%)`,
+                      animation: `cade-orbit 3s linear infinite`,
+                      animationDelay: `${i * 0.75}s`,
+                    }}
+                  />
+                ))}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/30 to-violet-500/30 border border-orange-500/40 flex items-center justify-center">
+                    <Search className="w-4 h-4 text-orange-400" />
                   </div>
                 </div>
               </div>
-
-              {/* Status Box */}
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-emerald-400 font-semibold">Complete</p>
-                    <p className="text-xs text-muted-foreground">Crawl finished successfully.</p>
-                  </div>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Last Crawl:</p>
-                <p className="font-semibold mt-0.5">
-                  {domainProfile?.last_crawl
-                    ? new Date(domainProfile.last_crawl).toLocaleString()
-                    : latestCrawl?.created_at
-                    ? new Date(latestCrawl.created_at).toLocaleString()
-                    : "11/13/2025, 02:44:14 PM"}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Content Analysis</p>
+                <p className="text-xs text-muted-foreground">
+                  {isCrawling ? "Processing pages..." : "Ready to analyze your website content"}
                 </p>
               </div>
+              {isCrawling && (
+                <div className="w-10 h-10 rounded-full border-2 border-orange-500/30 border-t-orange-500 animate-spin" />
+              )}
+            </div>
+            
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
+                <p className="text-xl font-bold text-orange-400">{domainProfile?.crawled_pages || stats.byType.crawl || 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">Pages Crawled</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-background/40 border border-border/30 text-center">
+                <p className="text-xl font-bold text-violet-400">{stats.byType.categorization || 0}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">Categorized</p>
+              </div>
+            </div>
+          </div>
 
-              <Button
-                onClick={handleTriggerCrawl}
-                disabled={isCrawling}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-              >
-                {isCrawling ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Crawling...
-                  </>
-                ) : (
-                  "Trigger Manual Crawl"
-                )}
-              </Button>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                Update content analysis (takes several minutes)
+          {/* Status & Info */}
+          <div className="space-y-4">
+            {/* Status Box */}
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-emerald-400 font-semibold">Complete</p>
+                  <p className="text-xs text-muted-foreground">Crawl finished successfully.</p>
+                </div>
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Last Crawl:</p>
+              <p className="font-semibold mt-0.5">
+                {domainProfile?.last_crawl
+                  ? new Date(domainProfile.last_crawl).toLocaleString()
+                  : latestCrawl?.created_at
+                  ? new Date(latestCrawl.created_at).toLocaleString()
+                  : "11/13/2025, 02:44:14 PM"}
               </p>
             </div>
-          </SectionCard>
+          </div>
+
+          {/* Crawl Action */}
+          <div className="flex flex-col justify-center">
+            <Button
+              onClick={handleTriggerCrawl}
+              disabled={isCrawling}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+            >
+              {isCrawling ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Crawling...
+                </>
+              ) : (
+                "Trigger Manual Crawl"
+              )}
+            </Button>
+            
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              Update content analysis (takes several minutes)
+            </p>
+          </div>
         </div>
-
-        {/* Live Activity Mini Dashboard - 3 columns */}
-        <div className="md:col-span-3">
-          <SectionCard title="Live Activity" accentColor="violet" className="h-full">
-            <div className="space-y-4">
-              {/* Dials Row */}
-              <div className="grid grid-cols-3 gap-3">
-                {/* Active Dial */}
-                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-500/10" />
-                      <circle 
-                        cx="18" cy="18" r="15" fill="none" stroke="url(#amber-gradient)" strokeWidth="2.5" 
-                        strokeDasharray={`${Math.min((stats.active / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
-                        strokeLinecap="round"
-                        className="transition-all duration-500"
-                      />
-                      <defs>
-                        <linearGradient id="amber-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#fbbf24" />
-                          <stop offset="100%" stopColor="#f59e0b" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-amber-400">{stats.active}</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Active</p>
-                  {stats.active > 0 && (
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                  )}
-                </div>
-
-                {/* Completed Dial */}
-                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border border-emerald-500/20">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500/10" />
-                      <circle 
-                        cx="18" cy="18" r="15" fill="none" stroke="url(#emerald-gradient)" strokeWidth="2.5" 
-                        strokeDasharray={`${Math.min((stats.completed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
-                        strokeLinecap="round"
-                        className="transition-all duration-500"
-                      />
-                      <defs>
-                        <linearGradient id="emerald-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#34d399" />
-                          <stop offset="100%" stopColor="#10b981" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-emerald-400">{stats.completed}</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Completed</p>
-                </div>
-
-                {/* Failed Dial */}
-                <div className="relative flex flex-col items-center p-3 rounded-xl bg-gradient-to-br from-red-500/5 to-red-500/10 border border-red-500/20">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-500/10" />
-                      <circle 
-                        cx="18" cy="18" r="15" fill="none" stroke="url(#red-gradient)" strokeWidth="2.5" 
-                        strokeDasharray={`${Math.min((stats.failed / Math.max(stats.active + stats.completed + stats.failed, 1)) * 94, 94)} 94`}
-                        strokeLinecap="round"
-                        className="transition-all duration-500"
-                      />
-                      <defs>
-                        <linearGradient id="red-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f87171" />
-                          <stop offset="100%" stopColor="#ef4444" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-lg font-bold text-red-400">{stats.failed}</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Failed</p>
-                </div>
-              </div>
-
-              {/* Activity by Type - Mini Bar Chart */}
-              <div className="p-3 rounded-xl bg-background/30 border border-border/30">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Activity by Type</p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={refreshTasks}
-                    className="text-[10px] h-6 px-2"
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Refresh
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {[
-                    { type: "CRAWL", color: "orange", count: stats.byType.crawl || 0 },
-                    { type: "CATEGORIZATION", color: "violet", count: stats.byType.categorization || 0 },
-                    { type: "CONTENT", color: "cyan", count: byType.content?.length || 0 },
-                    { type: "CSS", color: "blue", count: byType.css?.length || 0 },
-                  ].map((item) => {
-                    const maxCount = Math.max(stats.byType.crawl || 0, stats.byType.categorization || 0, byType.content?.length || 0, byType.css?.length || 0, 1);
-                    const percentage = (item.count / maxCount) * 100;
-                    const colorMap: Record<string, string> = {
-                      orange: "from-orange-500 to-orange-400",
-                      violet: "from-violet-500 to-purple-400",
-                      cyan: "from-cyan-500 to-cyan-400",
-                      blue: "from-blue-500 to-blue-400",
-                    };
-                    return (
-                      <div key={item.type} className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground w-24 truncate">{item.type}</span>
-                        <div className="flex-1 h-2 rounded-full bg-muted/20 overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full bg-gradient-to-r ${colorMap[item.color]} transition-all duration-500`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs font-medium text-${item.color}-400 w-6 text-right`}>{item.count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Recent Activity Feed - Compact */}
-              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
-                {tasks.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <Activity className="w-6 h-6 mx-auto mb-1.5 opacity-30" />
-                    <p className="text-xs">No recent activity</p>
-                  </div>
-                ) : (
-                  tasks.slice(0, 5).map((task) => {
-                    const isActive = ["running", "processing", "pending", "queued", "in_progress"].includes(task.statusValue);
-                    const isCompleted = ["completed", "done", "success"].includes(task.statusValue);
-                    const isFailed = ["failed", "error"].includes(task.statusValue);
-                    
-                    return (
-                      <div 
-                        key={task.id} 
-                        className="flex items-center gap-2 p-2 rounded-lg bg-background/20 border border-border/20"
-                      >
-                        <div className="flex-shrink-0">
-                          {isActive && <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
-                          {isCompleted && <div className="w-2 h-2 rounded-full bg-emerald-400" />}
-                          {isFailed && <div className="w-2 h-2 rounded-full bg-red-400" />}
-                          {!isActive && !isCompleted && !isFailed && <div className="w-2 h-2 rounded-full bg-muted-foreground" />}
-                        </div>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase w-16 truncate">{task.type}</span>
-                        <span className="flex-1 text-xs truncate">
-                          {task.message || task.current_url || `${task.type} ${task.statusValue}`}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground/60 flex-shrink-0">
-                          {task.created_at ? new Date(task.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
-                        </span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-      </div>
+      </SectionCard>
 
       {/* Row 3: Content Management */}
       <SectionCard title="Content Management" accentColor="cyan">
