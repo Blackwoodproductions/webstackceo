@@ -138,7 +138,11 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
       body: { action, domain, params },
     });
     if (error) throw new Error(error.message);
-    if (data?.error) throw new Error(data.error);
+    // Handle nested error structure from CADE API
+    if (data?.error) {
+      const errMsg = typeof data.error === 'object' ? (data.error.message || JSON.stringify(data.error)) : data.error;
+      throw new Error(errMsg);
+    }
     return data;
   }, [domain]);
 
@@ -299,9 +303,12 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     } catch (err) {
       console.error("[CADE] Schedule error:", err);
       const errMsg = err instanceof Error ? err.message : "Failed to schedule content";
-      if (errMsg.toLowerCase().includes("wordpress") || errMsg.toLowerCase().includes("platform")) {
-        toast.error("Please connect your WordPress platform first");
-      } else if (errMsg.includes("crawl")) {
+      // Better error detection for WordPress connection issues
+      if (errMsg.toLowerCase().includes("wordpress") && (errMsg.toLowerCase().includes("username") || errMsg.toLowerCase().includes("password") || errMsg.toLowerCase().includes("required"))) {
+        toast.error("Please connect your WordPress platform first. Go to the CADE tab settings to add your WordPress credentials.", { duration: 6000 });
+      } else if (errMsg.toLowerCase().includes("platform")) {
+        toast.error("Please connect a publishing platform first");
+      } else if (errMsg.toLowerCase().includes("crawl")) {
         toast.error("Please crawl the domain first");
       } else {
         toast.error(errMsg);
@@ -310,8 +317,6 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
       setIsScheduling(false);
     }
   };
-
-  // Loading state
   if (isCheckingSubscription) {
     return (
       <motion.div
