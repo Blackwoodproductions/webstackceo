@@ -7,8 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Use production environment
-const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
+// Use staging environment
+const CADE_API_BASE = "https://seo-acg-api.stg.seosara.ai/api/v1";
 
 serve(async (req) => {
   // Handle CORS preflight
