@@ -10,7 +10,7 @@ import { BRONLinksTab } from "./BRONLinksTab";
 import { BRONContentTab } from "./BRONContentTab";
 import { BRONSerpTab } from "./BRONSerpTab";
 import { BronDomainProfile, BronKeywordsInfoCards } from "./bron";
-import { AIMetricsAnimation } from "@/components/ui/ai-metrics-animation";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
@@ -396,8 +396,6 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
         />
       )}
 
-      {/* AI Search Metrics - Always Visible */}
-      <AIMetricsAnimation title="Analyzing Keywords" />
 
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
