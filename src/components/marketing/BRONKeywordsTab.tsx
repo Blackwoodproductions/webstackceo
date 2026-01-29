@@ -78,7 +78,7 @@ const KeywordListItem = memo(({
   selectedDomain,
   expandedIds,
   initialPositions,
-  metricsLoading,
+  metricsLoadingKeys,
   inlineEditForms,
   savingIds,
   onToggleExpand,
@@ -95,7 +95,7 @@ const KeywordListItem = memo(({
   selectedDomain?: string;
   expandedIds: Set<number | string>;
   initialPositions: Record<string, InitialPositions>;
-  metricsLoading: boolean;
+  metricsLoadingKeys: Set<string>;
   inlineEditForms: Record<string | number, Record<string, string>>;
   savingIds: Set<number | string>;
   onToggleExpand: (kw: BronKeyword) => void;
@@ -153,7 +153,7 @@ const KeywordListItem = memo(({
           googleMovement={googleMovement}
           bingMovement={bingMovement}
           yahooMovement={yahooMovement}
-          metricsLoading={metricsLoading}
+          metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
           onToggleExpand={() => onToggleExpand(kw)}
         />
         
@@ -201,7 +201,8 @@ const KeywordListItem = memo(({
     if (prev.cluster.children[i].id !== next.cluster.children[i].id) return false;
   }
   if (prev.selectedDomain !== next.selectedDomain) return false;
-  if (prev.metricsLoading !== next.metricsLoading) return false;
+  // For metricsLoadingKeys, compare whether any keyword in THIS cluster is loading
+  // This is done below in the per-keyword loop
 
   // Data references: if these change, re-render (they affect counts/metrics/UI)
   if (prev.serpReports !== next.serpReports) return false;
@@ -259,6 +260,10 @@ const KeywordListItem = memo(({
   for (const kw of kws) {
     if (!compareMetricsForKw(kw)) return false;
     if (!comparePageSpeedForKw(kw)) return false;
+    
+    // Check if loading state changed for this keyword
+    const kwText = getKeywordDisplayText(kw).toLowerCase();
+    if (prev.metricsLoadingKeys.has(kwText) !== next.metricsLoadingKeys.has(kwText)) return false;
   }
 
   for (const id of ids) {
@@ -295,8 +300,12 @@ export const BRONKeywordsTab = memo(({
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
+  // Initialize metricsLoading as a Set of keyword keys that are ACTUALLY being fetched
+  // This allows us to show "loading" only on keywords without cached metrics
   const [keywordMetrics, setKeywordMetrics] = useState<Record<string, KeywordMetrics>>({});
-  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsLoadingKeys, setMetricsLoadingKeys] = useState<Set<string>>(new Set());
+  // Legacy boolean for backward compatibility - only true if we have ANY keys loading
+  const metricsLoading = metricsLoadingKeys.size > 0;
   const [pageSpeedScores, setPageSpeedScores] = useState<Record<string, PageSpeedScore>>(() => loadCachedPageSpeedScores());
   const pageSpeedScoresRef = useRef(pageSpeedScores);
   const pageSpeedCacheSaveTimerRef = useRef<number | null>(null);
@@ -552,7 +561,17 @@ export const BRONKeywordsTab = memo(({
       const missing = uniqueCoreKeywords.filter((k) => !cachedByCore[k]);
       if (missing.length === 0) return;
 
-      setMetricsLoading(true);
+      // Track which keys are being loaded so we can show per-keyword loading state
+      const loadingKeySet = new Set<string>();
+      for (const kw of keywords) {
+        const full = getKeywordDisplayText(kw);
+        const core = extractCoreKeyword(full);
+        if (missing.includes(core)) {
+          loadingKeySet.add(full.toLowerCase());
+        }
+      }
+      setMetricsLoadingKeys(loadingKeySet);
+      
       try {
         const { data, error } = await supabase.functions.invoke("keyword-metrics", {
           body: { keywords: missing },
@@ -567,7 +586,7 @@ export const BRONKeywordsTab = memo(({
       } catch (err) {
         console.error("Failed to fetch metrics:", err);
       } finally {
-        setMetricsLoading(false);
+        setMetricsLoadingKeys(new Set());
       }
     };
     
@@ -1047,7 +1066,7 @@ export const BRONKeywordsTab = memo(({
                     selectedDomain={selectedDomain}
                     expandedIds={expandedIds}
                     initialPositions={initialPositions}
-                    metricsLoading={metricsLoading}
+                    metricsLoadingKeys={metricsLoadingKeys}
                     inlineEditForms={inlineEditForms}
                     savingIds={savingIds}
                     onToggleExpand={handleToggleExpand}
