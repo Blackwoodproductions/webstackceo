@@ -16,6 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 // ─── Types ───
 interface CrawlTask {
   task_id: string;
+  request_id?: string;  // Tracking ID for correlating callbacks
+  user_id?: string;     // User tracking ID
   domain: string;
   status: string;
   progress?: number;
@@ -28,6 +30,8 @@ interface CrawlTask {
 
 interface CategorizationTask {
   task_id: string;
+  request_id?: string;
+  user_id?: string;
   domain: string;
   status: string;
   category?: string;
@@ -39,6 +43,8 @@ interface CategorizationTask {
 
 interface ContentTask {
   task_id: string;
+  request_id?: string;
+  user_id?: string;
   domain?: string;
   status: string;
   content_type?: string;
@@ -51,6 +57,7 @@ interface ContentTask {
 interface CADETaskMonitorProps {
   domain?: string;
   userId?: string;
+  requestId?: string;  // Optional request_id to filter specific task
   onRefresh?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -60,6 +67,7 @@ interface CADETaskMonitorProps {
 export const CADETaskMonitor = ({ 
   domain, 
   userId,
+  requestId,
   onRefresh,
   isCollapsed = false,
   onToggleCollapse
@@ -86,16 +94,27 @@ export const CADETaskMonitor = ({
     setError(null);
     
     try {
+      // Pass user_id and request_id for task correlation
+      const taskParams: Record<string, unknown> = {};
+      if (userId) taskParams.user_id = userId;
+      if (requestId) taskParams.request_id = requestId;
+      
       // Fetch all task types in parallel
-      const [crawlResult, categorizationResult] = await Promise.allSettled([
-        callCadeApi("crawl-tasks", { user_id: userId }),
-        callCadeApi("categorization-tasks", { user_id: userId }),
+      const [crawlResult, categorizationResult, contentResult] = await Promise.allSettled([
+        callCadeApi("crawl-tasks", taskParams),
+        callCadeApi("categorization-tasks", taskParams),
+        callCadeApi("content-tasks", taskParams),
       ]);
 
       // Process crawl tasks
       if (crawlResult.status === "fulfilled") {
         const data = crawlResult.value?.data || crawlResult.value || [];
-        setCrawlTasks(Array.isArray(data) ? data : []);
+        const tasks = Array.isArray(data) ? data : [];
+        // Filter by request_id if provided
+        setCrawlTasks(requestId 
+          ? tasks.filter((t: CrawlTask) => t.request_id === requestId || t.task_id?.includes(requestId))
+          : tasks
+        );
       } else {
         console.error("[CADE Tasks] Crawl tasks error:", crawlResult.reason);
       }
@@ -103,9 +122,25 @@ export const CADETaskMonitor = ({
       // Process categorization tasks
       if (categorizationResult.status === "fulfilled") {
         const data = categorizationResult.value?.data || categorizationResult.value || [];
-        setCategorizationTasks(Array.isArray(data) ? data : []);
+        const tasks = Array.isArray(data) ? data : [];
+        setCategorizationTasks(requestId 
+          ? tasks.filter((t: CategorizationTask) => t.request_id === requestId)
+          : tasks
+        );
       } else {
         console.error("[CADE Tasks] Categorization tasks error:", categorizationResult.reason);
+      }
+
+      // Process content tasks
+      if (contentResult.status === "fulfilled") {
+        const data = contentResult.value?.data || contentResult.value || [];
+        const tasks = Array.isArray(data) ? data : [];
+        setContentTasks(requestId 
+          ? tasks.filter((t: ContentTask) => t.request_id === requestId)
+          : tasks
+        );
+      } else {
+        console.error("[CADE Tasks] Content tasks error:", contentResult.reason);
       }
 
     } catch (err) {
@@ -114,7 +149,7 @@ export const CADETaskMonitor = ({
     } finally {
       setIsLoading(false);
     }
-  }, [callCadeApi, userId]);
+  }, [callCadeApi, userId, requestId]);
 
   // Initial fetch and polling
   useEffect(() => {

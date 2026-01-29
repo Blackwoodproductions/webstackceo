@@ -169,16 +169,22 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleStartCrawl = async () => {
     if (!domain) return;
     setIsCrawling(true);
+    
+    // Generate a request_id for this crawl session
+    const requestId = `crawl-${domain}-${Date.now()}`;
+    
     try {
       const result = await callCadeApi("crawl-domain", {
         full_crawl: true,
+        request_id: requestId,
+        // user_id can be passed from auth context if available
       });
       const task = result?.data || result;
-      setCrawlTask(task);
+      setCrawlTask({ ...task, request_id: requestId });
       
-      // Notify parent about the new task
-      if (task?.task_id) {
-        onTaskStarted?.(task.task_id);
+      // Notify parent about the new task with request_id for tracking
+      if (task?.task_id || requestId) {
+        onTaskStarted?.(task?.task_id || requestId);
       }
       
       toast.success("Crawl started! Check the Task Monitor for progress.");
@@ -192,8 +198,11 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleCategorizeDomain = async () => {
     if (!domain) return;
     setIsCategorizing(true);
+    
+    const requestId = `categorize-${domain}-${Date.now()}`;
+    
     try {
-      await callCadeApi("categorize-domain");
+      await callCadeApi("categorize-domain", { request_id: requestId });
       toast.success("Domain categorization started!");
       setTimeout(() => {
         onRefresh?.();
@@ -209,8 +218,11 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const handleAnalyzeCss = async () => {
     if (!domain) return;
     setIsAnalyzingCss(true);
+    
+    const requestId = `css-${domain}-${Date.now()}`;
+    
     try {
-      await callCadeApi("analyze-css");
+      await callCadeApi("analyze-css", { request_id: requestId });
       toast.success("CSS analysis started! Content will match your site's styling.");
       setTimeout(() => {
         onRefresh?.();
