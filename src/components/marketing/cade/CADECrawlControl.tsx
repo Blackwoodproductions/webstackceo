@@ -2,14 +2,17 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Globe, RefreshCw, Play, Loader2, CheckCircle2, AlertTriangle,
-  Clock, FileText, Palette, Target, Activity, ExternalLink
+  Clock, FileText, Palette, Target, Activity, MapPin, Languages, 
+  Users, Info, ChevronDown, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
 
 interface DomainProfile {
   domain?: string;
@@ -23,6 +26,7 @@ interface DomainProfile {
 
 interface CrawlTask {
   task_id?: string;
+  request_id?: string;
   status?: string;
   progress?: number;
   pages_crawled?: number;
@@ -31,6 +35,7 @@ interface CrawlTask {
   completed_at?: string;
   error?: string;
   current_url?: string;
+  message?: string;
 }
 
 interface CADECrawlControlProps {
@@ -46,7 +51,10 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isAnalyzingCss, setIsAnalyzingCss] = useState(false);
   const [crawlTask, setCrawlTask] = useState<CrawlTask | null>(null);
-  const [activeTasks, setActiveTasks] = useState<CrawlTask[]>([]);
+  const [showCategorizationDetails, setShowCategorizationDetails] = useState(false);
+
+  // Get latest data from events
+  const { latestCategorization, byType, refresh: refreshEvents } = useCadeEventTasks(domain);
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("cade-api", {
@@ -57,142 +65,126 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     return data;
   }, [domain]);
 
-  // Check for active crawl tasks
-  const checkActiveTasks = useCallback(async () => {
+  // Check for active crawl from events
+  useEffect(() => {
     if (!domain) return;
-    try {
-      const result = await callCadeApi("crawl-tasks");
-      const tasks = result?.data || result?.tasks || result || [];
-      setActiveTasks(Array.isArray(tasks) ? tasks : []);
-      
-      // Find active task for this domain
-      const activeTask = tasks.find((t: CrawlTask) => 
-        t.status === "processing" || t.status === "pending"
-      );
-      if (activeTask) {
-        setCrawlTask(activeTask);
-        setIsCrawling(true);
-      }
-    } catch (err) {
-      console.error("[CADE Crawl] Tasks check error:", err);
-    }
-  }, [callCadeApi, domain]);
-
-  useEffect(() => {
-    if (domain) {
-      checkActiveTasks();
-    }
-  }, [domain, checkActiveTasks]);
-
-  // Subscribe to realtime crawl events from callback
-  useEffect(() => {
-    if (!domain || !isCrawling) return;
-
-    // Subscribe to realtime updates from cade_crawl_events
-    const channel = supabase
-      .channel(`cade-crawl-${domain}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'cade_crawl_events',
-          filter: `domain=eq.${domain}`,
-        },
-        (payload) => {
-          console.log("[CADE Crawl] Realtime event:", payload.new);
-          const event = payload.new as {
-            status?: string;
-            progress?: number;
-            pages_crawled?: number;
-            total_pages?: number;
-            error_message?: string;
-            message?: string;
-          };
-          
-          const normalizedStatus = (event.status || "").toString();
-          const statusValue = normalizedStatus.includes(":")
-            ? normalizedStatus.split(":").pop()
-            : normalizedStatus;
-
-          setCrawlTask(prev => ({
-            ...(prev ?? {}),
-            status: normalizedStatus,
-            progress: event.progress,
-            pages_crawled: event.pages_crawled,
-            total_pages: event.total_pages,
-            error: event.error_message,
-          }));
-
-          if (statusValue === "completed" || statusValue === "done") {
-            setIsCrawling(false);
-            toast.success("Crawl completed successfully!");
-            onRefresh?.();
-          } else if (statusValue === "failed" || statusValue === "error") {
-            setIsCrawling(false);
-            toast.error("Crawl failed: " + (event.error_message || event.message || "Unknown error"));
-            onRefresh?.();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [domain, isCrawling, onRefresh]);
-
-  // Fallback poll for task status while crawling (if realtime fails)
-  useEffect(() => {
-    if (!isCrawling || !crawlTask?.task_id) return;
     
-    const interval = setInterval(async () => {
-      try {
-        const result = await callCadeApi("crawl-task-status", { task_id: crawlTask.task_id });
-        const status = result?.data || result;
-        
-        if (status?.status === "completed" || status?.status === "failed") {
+    // Check if there's an active crawl task from the events
+    const activeCrawl = byType.crawl.find(t => 
+      t.statusValue === "running" || 
+      t.statusValue === "processing" || 
+      t.statusValue === "pending" || 
+      t.statusValue === "queued"
+    );
+    
+    if (activeCrawl) {
+      setIsCrawling(true);
+      setCrawlTask({
+        task_id: activeCrawl.id,
+        request_id: activeCrawl.request_id,
+        status: activeCrawl.statusValue,
+        progress: activeCrawl.progress,
+        pages_crawled: activeCrawl.pages_crawled,
+        total_pages: activeCrawl.total_pages,
+        current_url: activeCrawl.current_url,
+        message: activeCrawl.message,
+        error: activeCrawl.error,
+      });
+    } else if (isCrawling) {
+      // Check if we were crawling and now completed
+      const latestCrawl = byType.crawl[0];
+      if (latestCrawl) {
+        if (latestCrawl.statusValue === "completed" || latestCrawl.statusValue === "done") {
           setIsCrawling(false);
-          setCrawlTask(status);
-          if (status.status === "completed") {
-            toast.success("Crawl completed successfully!");
-          } else {
-            toast.error("Crawl failed: " + (status.error || "Unknown error"));
-          }
+          setCrawlTask(null);
+          toast.success("Crawl completed!");
           onRefresh?.();
-        } else {
-          setCrawlTask(status);
+        } else if (latestCrawl.statusValue === "failed" || latestCrawl.statusValue === "error") {
+          setIsCrawling(false);
+          setCrawlTask(null);
+          toast.error("Crawl failed: " + (latestCrawl.error || "Unknown error"));
+          onRefresh?.();
         }
-      } catch (err) {
-        console.error("[CADE Crawl] Status check error:", err);
       }
-    }, 10000); // Reduced frequency since we have realtime
+    }
+  }, [domain, byType.crawl, isCrawling, onRefresh]);
+
+  // Check for active categorization
+  useEffect(() => {
+    if (!domain) return;
     
-    return () => clearInterval(interval);
-  }, [isCrawling, crawlTask?.task_id, callCadeApi, onRefresh]);
+    const activeCat = byType.categorization.find(t => 
+      t.statusValue === "running" || 
+      t.statusValue === "processing" || 
+      t.statusValue === "pending" || 
+      t.statusValue === "queued"
+    );
+    
+    if (activeCat) {
+      setIsCategorizing(true);
+    } else if (isCategorizing) {
+      const latestCat = byType.categorization[0];
+      if (latestCat) {
+        if (latestCat.statusValue === "completed" || latestCat.statusValue === "done") {
+          setIsCategorizing(false);
+          toast.success("Categorization completed!");
+          onRefresh?.();
+        } else if (latestCat.statusValue === "failed" || latestCat.statusValue === "error") {
+          setIsCategorizing(false);
+          toast.error("Categorization failed");
+        }
+      }
+    }
+  }, [domain, byType.categorization, isCategorizing, onRefresh]);
+
+  // Check for active CSS analysis
+  useEffect(() => {
+    if (!domain) return;
+    
+    const activeCss = byType.css.find(t => 
+      t.statusValue === "running" || 
+      t.statusValue === "processing" || 
+      t.statusValue === "pending" || 
+      t.statusValue === "queued"
+    );
+    
+    if (activeCss) {
+      setIsAnalyzingCss(true);
+    } else if (isAnalyzingCss) {
+      const latestCss = byType.css[0];
+      if (latestCss) {
+        if (latestCss.statusValue === "completed" || latestCss.statusValue === "done") {
+          setIsAnalyzingCss(false);
+          toast.success("CSS analysis completed!");
+          onRefresh?.();
+        } else if (latestCss.statusValue === "failed" || latestCss.statusValue === "error") {
+          setIsAnalyzingCss(false);
+          toast.error("CSS analysis failed");
+        }
+      }
+    }
+  }, [domain, byType.css, isAnalyzingCss, onRefresh]);
 
   const handleStartCrawl = async () => {
     if (!domain) return;
     setIsCrawling(true);
     
-    // Generate a request_id for this crawl session
     const requestId = `crawl-${domain}-${Date.now()}`;
     
     try {
       const result = await callCadeApi("crawl-domain", {
         full_crawl: true,
         request_id: requestId,
-        // user_id can be passed from auth context if available
       });
       const task = result?.data || result;
       setCrawlTask({ ...task, request_id: requestId });
       
-      // Notify parent about the new task with request_id for tracking
       if (task?.task_id || requestId) {
         onTaskStarted?.(task?.task_id || requestId);
       }
       
       toast.success("Crawl started! Check the Task Monitor for progress.");
+      refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Start error:", err);
       toast.error("Failed to start crawl");
@@ -209,10 +201,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     try {
       await callCadeApi("categorize-domain", { request_id: requestId });
       toast.success("Domain categorization started!");
-      setTimeout(() => {
-        onRefresh?.();
-        setIsCategorizing(false);
-      }, 3000);
+      refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] Categorize error:", err);
       toast.error("Failed to categorize domain");
@@ -228,11 +217,8 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     
     try {
       await callCadeApi("analyze-css", { request_id: requestId });
-      toast.success("CSS analysis started! Content will match your site's styling.");
-      setTimeout(() => {
-        onRefresh?.();
-        setIsAnalyzingCss(false);
-      }, 5000);
+      toast.success("CSS analysis started!");
+      refreshEvents();
     } catch (err) {
       console.error("[CADE Crawl] CSS analyze error:", err);
       toast.error("Failed to analyze CSS");
@@ -258,8 +244,10 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         return <CheckCircle2 className="w-4 h-4 text-green-500" />;
       case "processing":
       case "crawling":
+      case "running":
         return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
       case "pending":
+      case "queued":
         return <Clock className="w-4 h-4 text-amber-500" />;
       case "failed":
       case "error":
@@ -287,7 +275,7 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         <Button
           variant="outline"
           size="sm"
-          onClick={onRefresh}
+          onClick={() => { onRefresh?.(); refreshEvents(); }}
           disabled={isLoading}
           className="border-green-500/30 hover:bg-green-500/10"
         >
@@ -329,6 +317,116 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
           </div>
         )}
 
+        {/* Latest Categorization Data */}
+        {latestCategorization && (
+          <Collapsible open={showCategorizationDetails} onOpenChange={setShowCategorizationDetails}>
+            <CollapsibleTrigger asChild>
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 cursor-pointer hover:bg-blue-500/15 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-blue-400" />
+                    <span className="font-medium text-sm">Domain Intelligence</span>
+                    <Badge variant="outline" className="text-xs">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Categorized
+                    </Badge>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showCategorizationDetails ? "rotate-180" : ""}`} />
+                </div>
+                
+                {/* Categories preview */}
+                {latestCategorization.categories && latestCategorization.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {latestCategorization.categories.slice(0, 3).map((cat, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">
+                        {cat}
+                      </Badge>
+                    ))}
+                    {latestCategorization.categories.length > 3 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{latestCategorization.categories.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="p-4 mt-2 rounded-lg bg-secondary/30 border border-border space-y-3"
+              >
+                {/* Metadata row */}
+                <div className="flex flex-wrap gap-3 text-xs">
+                  {latestCategorization.country && (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="w-3 h-3" />
+                      {latestCategorization.country.toUpperCase()}
+                    </span>
+                  )}
+                  {latestCategorization.language && (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Languages className="w-3 h-3" />
+                      {latestCategorization.language.toUpperCase()}
+                    </span>
+                  )}
+                  {latestCategorization.tier && (
+                    <Badge variant="outline" className="text-xs">
+                      {latestCategorization.tier} tier
+                    </Badge>
+                  )}
+                </div>
+
+                {/* All categories */}
+                {latestCategorization.categories && latestCategorization.categories.length > 0 && (
+                  <div>
+                    <span className="text-xs text-muted-foreground">Categories:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {latestCategorization.categories.map((cat, i) => (
+                        <Badge key={i} className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                          {cat}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Competitors */}
+                {latestCategorization.competitors && (
+                  <div>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      Competitors:
+                    </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {latestCategorization.competitors.split(",").map((comp, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {comp.trim()}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                {latestCategorization.description && (
+                  <div>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Business Description:
+                    </span>
+                    <p className="text-xs mt-1 text-foreground line-clamp-4">
+                      {latestCategorization.description}
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
         {/* Last Crawl Info */}
         {domainProfile?.last_crawl && (
           <div className="text-sm text-muted-foreground">
@@ -355,8 +453,23 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
                 </span>
               )}
             </div>
+            
             {crawlTask.progress !== undefined && (
-              <Progress value={crawlTask.progress} className="h-2" />
+              <Progress value={crawlTask.progress} className="h-2 mb-2" />
+            )}
+            
+            {crawlTask.current_url && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                {crawlTask.current_url}
+              </div>
+            )}
+            
+            {crawlTask.message && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                <Info className="w-3 h-3 flex-shrink-0" />
+                {crawlTask.message}
+              </div>
             )}
           </motion.div>
         )}
