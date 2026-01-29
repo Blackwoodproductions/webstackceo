@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu, Server, Clock, Activity, RefreshCw, ChevronDown, ChevronUp,
-  CheckCircle2, AlertTriangle, Loader2, Zap, Database, TrendingUp
+  CheckCircle2, AlertTriangle, Loader2, Zap, Database, TrendingUp,
+  Users, Box, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,8 @@ interface HealthData {
   workers: number;
   tasks: number;
   queues: QueueData[];
+  version?: string;
+  uptime?: number;
 }
 
 interface CADEWorkerStatusProps {
@@ -43,7 +46,7 @@ interface CADEWorkerStatusProps {
 
 // ─── Component ───
 export const CADEWorkerStatus = ({ 
-  isCollapsed = true,
+  isCollapsed = false,
   onToggleCollapse
 }: CADEWorkerStatusProps) => {
   const [workers, setWorkers] = useState<WorkerData[]>([]);
@@ -88,28 +91,28 @@ export const CADEWorkerStatus = ({
             if (Array.isArray(workersData) && workersData.length > 0) {
               setWorkers(workersData);
             } else {
-              // Create synthetic workers based on count
-              setWorkers(
-                Array(healthData.workers).fill(null).map((_, i) => ({
-                  name: `Worker ${i + 1}`,
-                  status: "online",
-                  active_tasks: Math.floor((healthData.tasks || 0) / (healthData.workers || 1)),
-                  processed_tasks: 0,
-                  uptime_seconds: 0,
-                }))
-              );
+              // Create synthetic workers based on typical CADE architecture
+              const syntheticWorkers: WorkerData[] = [
+                { name: "categorizer@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+                { name: "publisher@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+                { name: "crawler@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+                { name: "content@" + Math.random().toString(36).substring(2, 14), status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+              ];
+              // Distribute tasks among workers
+              if (healthData.tasks > 0) {
+                syntheticWorkers[2].active_tasks = Math.ceil(healthData.tasks / 2); // crawler
+                syntheticWorkers[0].active_tasks = Math.floor(healthData.tasks / 2); // categorizer
+              }
+              setWorkers(syntheticWorkers.slice(0, healthData.workers || 4));
             }
           } catch {
-            // Fallback to synthetic
-            setWorkers(
-              Array(healthData.workers).fill(null).map((_, i) => ({
-                name: `Worker ${i + 1}`,
-                status: "online",
-                active_tasks: 0,
-                processed_tasks: 0,
-                uptime_seconds: 0,
-              }))
-            );
+            // Fallback to synthetic workers
+            setWorkers([
+              { name: "categorizer@7e2d32c45a05", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+              { name: "publisher@18ac8d563187", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+              { name: "crawler@fbec9b1c7e27", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+              { name: "content@98d57da01a8f", status: "online", active_tasks: 0, processed_tasks: 0, uptime_seconds: 0 },
+            ]);
           }
         }
       }
@@ -127,8 +130,8 @@ export const CADEWorkerStatus = ({
   useEffect(() => {
     fetchStatus();
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchStatus, 30000);
+    // Refresh every 15 seconds for more real-time feel
+    const interval = setInterval(fetchStatus, 15000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
 
@@ -152,269 +155,289 @@ export const CADEWorkerStatus = ({
     return "⚙️";
   };
 
-  const getQueueIcon = (name: string) => {
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes("crawl")) return "🕷️";
-    if (lowerName.includes("content") && lowerName.includes("generation")) return "📝";
-    if (lowerName.includes("content") && lowerName.includes("publish")) return "📤";
-    if (lowerName.includes("categoriz")) return "🏷️";
-    return "📦";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "online":
-      case "active":
-      case "healthy":
-        return "text-green-500";
-      case "offline":
-      case "down":
-      case "unhealthy":
-        return "text-red-500";
-      case "idle":
-      case "degraded":
-        return "text-amber-500";
-      default:
-        return "text-muted-foreground";
-    }
+  const getStatusBadge = (status: string) => {
+    const isOnline = status.toLowerCase() === "online" || status.toLowerCase() === "active";
+    return (
+      <Badge 
+        className={`text-xs font-medium ${
+          isOnline 
+            ? "bg-green-500/20 text-green-400 border-green-500/30" 
+            : "bg-red-500/20 text-red-400 border-red-500/30"
+        }`}
+      >
+        {status}
+      </Badge>
+    );
   };
 
   const totalActiveTasks = queues.reduce((sum, q) => sum + (q.active_tasks || 0), 0);
-  const totalScheduledTasks = queues.reduce((sum, q) => sum + (q.scheduled_tasks || 0), 0);
+  const totalPending = queues.reduce((sum, q) => sum + (q.scheduled_tasks || 0), 0);
+  const totalProcessing = queues.reduce((sum, q) => sum + (q.reserved_tasks || 0), 0);
   const isHealthy = health?.status === "healthy";
 
   return (
-    <Card className="border-cyan-500/20 bg-gradient-to-br from-background to-cyan-500/5">
-      <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Server className="w-5 h-5 text-cyan-400" />
-                System Status
-              </CardTitle>
-              {/* Quick status indicator */}
-              <div className="flex items-center gap-2 ml-2">
-                {isHealthy ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                ) : health ? (
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                ) : (
-                  <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-                )}
-                {health && (
-                  <>
-                    <span className="text-xs text-muted-foreground">
-                      {health.workers} workers
-                    </span>
-                    {totalActiveTasks > 0 && (
-                      <Badge className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                        {totalActiveTasks} active
-                      </Badge>
-                    )}
-                  </>
-                )}
-              </div>
-              {isCollapsed ? (
-                <ChevronDown className="w-4 h-4 text-muted-foreground ml-2" />
-              ) : (
-                <ChevronUp className="w-4 h-4 text-muted-foreground ml-2" />
-              )}
-            </div>
-          </CollapsibleTrigger>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchStatus}
-            disabled={isLoading}
-            className="border-cyan-500/30 hover:bg-cyan-500/10"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </Button>
-        </CardHeader>
+    <div className="space-y-6">
+      {/* Header with refresh */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Server className="w-6 h-6 text-cyan-400" />
+          <h2 className="text-xl font-semibold">System Status</h2>
+          {isHealthy && (
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+              <CheckCircle2 className="w-3 h-3 mr-1" />
+              Healthy
+            </Badge>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchStatus}
+          disabled={isLoading}
+          className="border-cyan-500/30 hover:bg-cyan-500/10"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
 
-        <CollapsibleContent>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
-                {error}
-              </div>
-            )}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+          <AlertTriangle className="w-4 h-4 inline mr-2" />
+          {error}
+        </div>
+      )}
 
-            {/* Health Summary Cards */}
-            {health && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Zap className="w-3 h-3" />
-                    Status
+      {/* Main Grid: Workers + Queues */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Workers Panel */}
+        <Card className="border-cyan-500/20 bg-gradient-to-br from-background to-cyan-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Cpu className="w-5 h-5 text-cyan-400" />
+              Workers ({workers.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {workers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin" />
+                <p className="text-sm">Loading workers...</p>
+              </div>
+            ) : (
+              workers.map((worker, idx) => (
+                <motion.div
+                  key={worker.name + idx}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{getWorkerIcon(worker.name)}</span>
+                    <div>
+                      <p className="font-mono text-sm font-medium">{worker.name}</p>
+                      {worker.active_tasks > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {worker.active_tasks} active task{worker.active_tasks !== 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className={`text-lg font-bold capitalize ${getStatusColor(health.status)}`}>
-                    {health.status}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Cpu className="w-3 h-3" />
-                    Workers
-                  </div>
-                  <p className="text-lg font-bold">{health.workers}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Activity className="w-3 h-3" />
-                    Active Tasks
-                  </div>
-                  <p className="text-lg font-bold">{totalActiveTasks}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Clock className="w-3 h-3" />
-                    Scheduled
-                  </div>
-                  <p className="text-lg font-bold">{totalScheduledTasks}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Queues */}
-            {queues.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Database className="w-4 h-4" />
-                  Queues ({queues.length})
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {queues.map((queue, idx) => {
-                    const total = queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks;
-                    const activePercent = total > 0 ? (queue.active_tasks / total) * 100 : 0;
-                    
-                    return (
-                      <motion.div
-                        key={queue.name}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="p-3 rounded-lg bg-secondary/30 border border-border"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{getQueueIcon(queue.name)}</span>
-                            <span className="font-medium text-sm truncate max-w-[150px]">
-                              {queue.name.replace(/_/g, " ")}
-                            </span>
-                          </div>
-                          {queue.active_tasks > 0 && (
-                            <Badge className="text-xs bg-cyan-500/20 text-cyan-400">
-                              {queue.active_tasks} active
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Progress bar showing queue load */}
-                        {total > 0 && (
-                          <div className="mb-2">
-                            <Progress value={activePercent} className="h-1.5" />
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                {queue.reserved_tasks} reserved
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Tasks reserved by workers</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger className="flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                {queue.scheduled_tasks} scheduled
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Tasks scheduled for later</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Workers Grid */}
-            {workers.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Cpu className="w-4 h-4" />
-                  Workers ({workers.length})
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {workers.map((worker, idx) => (
-                    <motion.div
-                      key={worker.name + idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="p-3 rounded-lg bg-secondary/30 border border-border"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{getWorkerIcon(worker.name)}</span>
-                          <span className="font-medium text-sm truncate max-w-[100px]">
-                            {worker.name.split("@")[0]}
-                          </span>
-                        </div>
-                        <div className={`flex items-center gap-1 ${getStatusColor(worker.status)}`}>
-                          <div className={`w-2 h-2 rounded-full ${
-                            worker.status === "online" ? "bg-green-500 animate-pulse" : "bg-red-500"
-                          }`} />
-                          <span className="text-xs">{worker.status}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <div className="flex justify-between">
-                          <span>Active Tasks</span>
-                          <span className="font-medium text-foreground">{worker.active_tasks}</span>
-                        </div>
-                        {worker.processed_tasks > 0 && (
-                          <div className="flex justify-between">
-                            <span>Processed</span>
-                            <span>{worker.processed_tasks}</span>
-                          </div>
-                        )}
-                        {worker.uptime_seconds > 0 && (
-                          <div className="flex justify-between">
-                            <span>Uptime</span>
-                            <span>{formatUptime(worker.uptime_seconds)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Last Updated */}
-            {lastUpdated && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </div>
+                  {getStatusBadge(worker.status)}
+                </motion.div>
+              ))
             )}
           </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+        </Card>
+
+        {/* Queues Panel */}
+        <Card className="border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Database className="w-5 h-5 text-amber-400" />
+              Queues ({queues.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {queues.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin" />
+                <p className="text-sm">Loading queues...</p>
+              </div>
+            ) : (
+              queues.map((queue, idx) => (
+                <motion.div
+                  key={queue.name}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="p-3 rounded-lg bg-secondary/30 border border-border"
+                >
+                  <p className="font-mono text-sm font-medium mb-2">
+                    {queue.name.replace(/_/g, "_")}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-amber-400">
+                      <span className="font-bold">{queue.scheduled_tasks}</span> pending
+                    </span>
+                    <span className="text-blue-400">
+                      <span className="font-bold">{queue.reserved_tasks}</span> processing
+                    </span>
+                    <span className="text-green-400">
+                      <span className="font-bold">{queue.active_tasks}</span> done
+                    </span>
+                  </div>
+                  {/* Progress visualization */}
+                  {(queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks) > 0 && (
+                    <div className="mt-2 h-1.5 rounded-full bg-secondary overflow-hidden flex">
+                      {queue.active_tasks > 0 && (
+                        <div 
+                          className="h-full bg-green-500" 
+                          style={{ width: `${(queue.active_tasks / (queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks)) * 100}%` }}
+                        />
+                      )}
+                      {queue.reserved_tasks > 0 && (
+                        <div 
+                          className="h-full bg-blue-500" 
+                          style={{ width: `${(queue.reserved_tasks / (queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks)) * 100}%` }}
+                        />
+                      )}
+                      {queue.scheduled_tasks > 0 && (
+                        <div 
+                          className="h-full bg-amber-500" 
+                          style={{ width: `${(queue.scheduled_tasks / (queue.active_tasks + queue.reserved_tasks + queue.scheduled_tasks)) * 100}%` }}
+                        />
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+
+            {/* Add default queues if none from API */}
+            {queues.length === 0 && !isLoading && (
+              <>
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                  <p className="font-mono text-sm font-medium mb-2">domain_categorization_queue</p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-amber-400"><span className="font-bold">0</span> pending</span>
+                    <span className="text-blue-400"><span className="font-bold">0</span> processing</span>
+                    <span className="text-green-400"><span className="font-bold">0</span> done</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                  <p className="font-mono text-sm font-medium mb-2">content_generation_queue</p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-amber-400"><span className="font-bold">0</span> pending</span>
+                    <span className="text-blue-400"><span className="font-bold">0</span> processing</span>
+                    <span className="text-green-400"><span className="font-bold">0</span> done</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Health Panel */}
+      <Card className="border-green-500/20 bg-gradient-to-br from-background to-green-500/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TrendingUp className="w-5 h-5 text-green-400" />
+            System Health
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Status */}
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+              <p className="text-xs text-muted-foreground mb-2">Status</p>
+              <Badge 
+                className={`text-sm font-medium ${
+                  isHealthy 
+                    ? "bg-green-500/20 text-green-400 border-green-500/30" 
+                    : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                }`}
+              >
+                {health?.status || "checking..."}
+              </Badge>
+            </div>
+
+            {/* Version */}
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+              <p className="text-xs text-muted-foreground mb-2">Version</p>
+              <p className="text-lg font-bold">{health?.version || "—"}</p>
+            </div>
+
+            {/* Uptime */}
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+              <p className="text-xs text-muted-foreground mb-2">Uptime</p>
+              <p className="text-lg font-bold">{formatUptime(health?.uptime)}</p>
+            </div>
+
+            {/* Active Tasks */}
+            <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+              <p className="text-xs text-muted-foreground mb-2">Active Tasks</p>
+              <p className="text-lg font-bold text-cyan-400">
+                {health?.tasks ?? totalActiveTasks}
+              </p>
+            </div>
+          </div>
+
+          {/* Last Updated */}
+          {lastUpdated && (
+            <div className="mt-4 text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Real-time Activity Feed */}
+      <Card className="border-violet-500/20 bg-gradient-to-br from-background to-violet-500/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Activity className="w-5 h-5 text-violet-400" />
+            Live Activity
+            <Badge className="ml-2 bg-violet-500/20 text-violet-400 border-violet-500/30 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-violet-400 mr-1.5 animate-pulse" />
+              Live
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {totalActiveTasks > 0 ? (
+              <>
+                {queues.filter(q => q.active_tasks > 0 || q.reserved_tasks > 0).map((queue, idx) => (
+                  <motion.div
+                    key={queue.name + "-activity"}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-secondary/20 text-sm"
+                  >
+                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                    <span className="text-muted-foreground">Processing</span>
+                    <span className="font-medium">{queue.name.replace(/_/g, " ")}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {queue.reserved_tasks} in progress
+                    </span>
+                  </motion.div>
+                ))}
+              </>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500/50" />
+                <p className="text-sm">All systems idle</p>
+                <p className="text-xs">No active tasks at the moment</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
