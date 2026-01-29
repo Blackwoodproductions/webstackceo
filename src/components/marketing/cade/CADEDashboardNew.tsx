@@ -789,8 +789,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         
         {/* Website Crawl Card - 2 columns */}
         <div className="md:col-span-2">
-          <SectionCard title="Website Crawl" accentColor="orange">
-            <div className="space-y-4">
+          <SectionCard title="Website Crawl" accentColor="orange" className="h-full">
+            <div className="space-y-4 flex flex-col h-full">
               {/* Status Box */}
               <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center justify-between">
@@ -831,14 +831,64 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               <p className="text-xs text-muted-foreground text-center">
                 Update content analysis (takes several minutes)
               </p>
+              
+              {/* Crawl Stats & AI Animation */}
+              <div className="flex-1 mt-2 pt-4 border-t border-border/30">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-center">
+                    <p className="text-2xl font-bold text-orange-400">{domainProfile?.crawled_pages || stats.byType.crawl || 0}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Pages Crawled</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-center">
+                    <p className="text-2xl font-bold text-violet-400">{stats.byType.categorization || 0}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Categorized</p>
+                  </div>
+                </div>
+                
+                {/* Mini AI Animation */}
+                <div className="relative p-3 rounded-lg bg-gradient-to-br from-orange-500/5 to-violet-500/5 border border-border/20">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 flex-shrink-0">
+                      {/* Orbiting dots */}
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="absolute w-1.5 h-1.5 rounded-full bg-orange-400/70"
+                          style={{
+                            top: '50%',
+                            left: '50%',
+                            transform: `rotate(${i * 120}deg) translateX(16px) translateY(-50%)`,
+                            animation: `cade-orbit 2.5s linear infinite`,
+                            animationDelay: `${i * 0.833}s`,
+                          }}
+                        />
+                      ))}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500/20 to-violet-500/20 border border-orange-500/30 flex items-center justify-center">
+                          <Search className="w-3 h-3 text-orange-400" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground">Content Analysis</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {isCrawling ? "Processing pages..." : "Ready to analyze"}
+                      </p>
+                    </div>
+                    {isCrawling && (
+                      <div className="w-8 h-8 rounded-full border-2 border-orange-500/30 border-t-orange-500 animate-spin" />
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </SectionCard>
         </div>
 
         {/* Live Activity Card - 3 columns */}
         <div className="md:col-span-3">
-          <SectionCard title="Live Activity" accentColor="violet">
-            <div className="space-y-3 max-h-[280px] overflow-y-auto pr-2">
+          <SectionCard title="Live Activity" accentColor="violet" className="h-full">
+            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-2">
               {tasks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
