@@ -924,44 +924,121 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         </div>
       </div>
 
-      {/* Row 2: Scheduler, Quick Actions, Account Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        
-        {/* Scheduler Card */}
-        <SectionCard title="Scheduler" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Scheduler Status</p>
-              <div className="flex items-center gap-2 mt-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Enabled</span>
+      {/* Row 2: Unified Command Center - Scheduler, Quick Actions, Account Status */}
+      <SectionCard title="Command Center" accentColor="cyan">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Section: Scheduler with Circular Timer */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Scheduler</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Circular Timer Dial */}
+              <div className="relative w-24 h-24 flex-shrink-0">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  {/* Background track */}
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-500/10" />
+                  {/* Progress arc - simulated 11hrs remaining of 12hrs */}
+                  <circle 
+                    cx="18" cy="18" r="15" fill="none" stroke="url(#timer-gradient)" strokeWidth="3" 
+                    strokeDasharray="78 94"
+                    strokeLinecap="round"
+                    className="transition-all duration-1000"
+                  />
+                  {/* Inner glow */}
+                  <circle cx="18" cy="18" r="10" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-cyan-500/20" />
+                  <defs>
+                    <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#22d3ee" />
+                      <stop offset="50%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#0891b2" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold text-cyan-400">11h</span>
+                  <span className="text-[10px] text-muted-foreground">26m</span>
+                </div>
+                {/* Pulsing indicator */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              </div>
+              
+              {/* Stats Stack */}
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="text-xs text-muted-foreground">Status</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-medium text-emerald-400">Enabled</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-background/30 border border-border/30">
+                  <span className="text-xs text-muted-foreground">Frequency</span>
+                  <span className="text-xs font-medium">12hrs</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-background/30 border border-border/30">
+                  <span className="text-xs text-muted-foreground">Per Batch</span>
+                  <span className="text-xs font-medium">1 article</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Center Section: Quick Actions with Activity Gauge */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-4 h-4 text-amber-400" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Quick Actions</span>
+            </div>
+            
+            {/* Content Quota Gauge */}
+            <div className="relative p-4 rounded-xl bg-gradient-to-br from-amber-500/5 to-orange-500/10 border border-amber-500/20">
+              <div className="flex items-center gap-4">
+                {/* Semi-circle gauge */}
+                <div className="relative w-20 h-12 overflow-hidden">
+                  <svg className="w-20 h-20 -translate-y-1" viewBox="0 0 36 36">
+                    <path
+                      d="M18 3 A 15 15 0 0 1 33 18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="text-amber-500/10"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M18 3 A 15 15 0 0 1 33 18"
+                      fill="none"
+                      stroke="url(#quota-gradient)"
+                      strokeWidth="3"
+                      strokeDasharray="23.5 23.5"
+                      strokeLinecap="round"
+                      className="transition-all duration-500"
+                    />
+                    <defs>
+                      <linearGradient id="quota-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#fbbf24" />
+                        <stop offset="100%" stopColor="#f59e0b" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+                    <span className="text-lg font-bold text-amber-400">2/2</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Weekly Quota</p>
+                  <p className="text-sm font-semibold">2 articles remaining</p>
+                </div>
               </div>
             </div>
             
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Next Generation</p>
-              <p className="text-lg font-bold mt-0.5">11 hrs, 26 mins, 5 sec</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Generation Frequency</p>
-              <p className="font-semibold mt-0.5">12hrs</p>
-            </div>
-            
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Articles Per Batch</p>
-              <p className="font-semibold mt-0.5">1 article(s)</p>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Quick Actions Card */}
-        <SectionCard title="Quick Actions" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Schedule Content Now</p>
+            {/* Action Controls */}
+            <div className="flex gap-2">
               <Select value={scheduleCount} onValueChange={setScheduleCount}>
-                <SelectTrigger className="bg-background/60 border-border/50">
+                <SelectTrigger className="flex-1 bg-background/60 border-border/50 h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -971,54 +1048,89 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                   <SelectItem value="5">5 Article(s)</SelectItem>
                 </SelectContent>
               </Select>
+              <Button 
+                onClick={handleScheduleNow}
+                disabled={isScheduling}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-6"
+              >
+                {isScheduling ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-1.5" />
+                    Generate
+                  </>
+                )}
+              </Button>
             </div>
-            
-            <Button 
-              onClick={handleScheduleNow}
-              disabled={isScheduling}
-              className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white"
-            >
-              {isScheduling ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Scheduling...
-                </>
-              ) : (
-                "Schedule Now"
-              )}
-            </Button>
-            
-            <p className="text-xs text-muted-foreground text-center">
-              Remaining this week: <span className="text-foreground font-semibold">2 of 2 articles</span>
-            </p>
           </div>
-        </SectionCard>
-
-        {/* Account Status Card */}
-        <SectionCard title="Account Status" accentColor="cyan">
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Service Type</p>
-              <p className="text-lg font-bold mt-0.5">{account.serviceType}</p>
+          
+          {/* Right Section: Account with Auth Status Ring */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <User className="w-4 h-4 text-violet-400" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Account</span>
             </div>
             
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">User</p>
-              <p className="font-semibold mt-0.5">{domainContext?.business_name || domain || "—"}</p>
+            <div className="flex items-start gap-4">
+              {/* Auth Status Ring */}
+              <div className="relative w-16 h-16 flex-shrink-0">
+                <svg className="w-full h-full" viewBox="0 0 36 36">
+                  {/* Outer ring */}
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="1" className="text-emerald-500/20" />
+                  {/* Inner filled ring */}
+                  <circle cx="18" cy="18" r="13" fill="none" stroke="url(#auth-gradient)" strokeWidth="2.5" className="transition-all duration-500" />
+                  {/* Pulsing core */}
+                  <circle cx="18" cy="18" r="8" fill="currentColor" className="text-emerald-500/10" />
+                  <defs>
+                    <linearGradient id="auth-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#34d399" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                {/* Scanning animation */}
+                <div 
+                  className="absolute inset-0 rounded-full border-2 border-emerald-400/30"
+                  style={{ 
+                    animation: 'cade-auth-scan 2s ease-out infinite',
+                  }}
+                />
+              </div>
+              
+              {/* Account Info */}
+              <div className="flex-1 space-y-2">
+                <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                  <p className="text-[10px] text-muted-foreground uppercase">Service</p>
+                  <p className="text-sm font-bold text-violet-400">{account.serviceType}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-background/30 border border-border/30">
+                  <p className="text-[10px] text-muted-foreground uppercase truncate">{domainContext?.business_name || domain || "—"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{domainContext?.email || account.email || "—"}</p>
+                </div>
+              </div>
             </div>
             
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Email</p>
-              <p className="text-muted-foreground mt-0.5">{domainContext?.email || account.email || "—"}</p>
+            {/* Auth Badge */}
+            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-400">Session Active</span>
+              <span className="text-[10px] text-muted-foreground">• Last verified 2m ago</span>
             </div>
-            
-            <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
-              Authenticated
-              <CheckCircle2 className="w-3.5 h-3.5 ml-1.5" />
-            </Badge>
           </div>
-        </SectionCard>
-      </div>
+        </div>
+        
+        {/* CSS for auth scan animation */}
+        <style>{`
+          @keyframes cade-auth-scan {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.5); opacity: 0; }
+          }
+        `}</style>
+      </SectionCard>
 
       {/* Row 3: Content Management */}
       <SectionCard title="Content Management" accentColor="cyan">
