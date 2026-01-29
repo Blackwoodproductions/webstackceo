@@ -278,31 +278,45 @@ export const BronDomainProfile = memo(({
 
               <InfoRow label="Domain Status">
                 <Badge 
-                  variant="secondary" 
-                  className="bg-secondary/80 text-foreground border-border/50"
+                  className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] px-3 py-1"
                 >
+                  <span className="relative flex h-2 w-2 mr-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
                   LIVE
                 </Badge>
               </InfoRow>
 
               <InfoRow label="Package">
-                <span className="text-sm font-medium">{getPackageName(domainInfo?.servicetype)}</span>
+                <Badge 
+                  className="bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)] px-3 py-1 font-semibold"
+                >
+                  <Sparkles className="w-3 h-3 mr-1.5 text-cyan-400" />
+                  {getPackageName(domainInfo?.servicetype)}
+                </Badge>
               </InfoRow>
 
               <InfoRow label="Last Feed Check">
-                <span className="text-sm font-medium">
+                <Badge 
+                  variant="outline"
+                  className="bg-secondary/50 text-muted-foreground border-border/50 px-3 py-1"
+                >
                   {domainInfo?.updated_at 
                     ? new Date(domainInfo.updated_at).toLocaleDateString()
                     : "1 month ago"}
-                </span>
+                </Badge>
               </InfoRow>
 
               <InfoRow label="Domain Category">
-                <span className="text-sm font-medium">
+                <Badge 
+                  className="bg-gradient-to-r from-violet-500/15 to-purple-500/15 text-violet-300 border border-violet-500/30 shadow-[0_0_10px_rgba(139,92,246,0.15)] px-3 py-1"
+                >
+                  <Tag className="w-3 h-3 mr-1.5 text-violet-400" />
                   {domainInfo?.wr_name 
                     ? `${domainInfo.wr_name.split(' ').slice(-1)[0]} Services` 
                     : "Business Services"}
-                </span>
+                </Badge>
               </InfoRow>
             </div>
           </div>
