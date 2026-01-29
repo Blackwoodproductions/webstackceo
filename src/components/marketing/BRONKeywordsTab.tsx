@@ -313,6 +313,8 @@ export const BRONKeywordsTab = memo(({
   // Use a ref to persist the last valid cluster count during domain transitions
   const prevDomainRef = useRef<string | undefined>(selectedDomain);
   const lastValidClusterCountRef = useRef<number>(0);
+  // Track if we're still waiting for initial data load from parent (prevents premature "no keywords")
+  const hasEverReceivedDataRef = useRef(false);
   
   // Update last valid count when we have actual data
   useEffect(() => {
@@ -321,18 +323,34 @@ export const BRONKeywordsTab = memo(({
     }
   }, [keywords.length]);
   
-  // Derive "has data" - consider we have data if either:
-  // 1. Current keywords array has items, OR
-  // 2. We had data before and are just transitioning (prevents flash)
-  const hasReceivedData = keywords.length > 0 || (prevDomainRef.current === selectedDomain && lastValidClusterCountRef.current > 0);
+  // Mark data as "received" when loading transitions from true to false
+  // This indicates the fetch has completed (regardless of whether data was found)
+  const prevIsLoadingRef = useRef(isLoading);
+  useEffect(() => {
+    // If we transition from loading to not-loading, we've received the response
+    if (prevIsLoadingRef.current && !isLoading) {
+      hasEverReceivedDataRef.current = true;
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading]);
   
   // Reset the last valid count when domain actually changes
   useEffect(() => {
     if (selectedDomain !== prevDomainRef.current) {
       // Only reset if we're switching to a truly different domain
       lastValidClusterCountRef.current = 0;
+      hasEverReceivedDataRef.current = false;
+      prevDomainRef.current = selectedDomain;
     }
   }, [selectedDomain]);
+  
+  // Derive "has data" - ONLY show "no keywords found" when:
+  // 1. We're NOT loading anymore (isLoading === false)
+  // 2. We have zero keywords
+  // 3. We've actually completed a fetch for the current domain (hasEverReceivedDataRef.current === true)
+  //    This prevents showing "no keywords" during the brief period between domain switch and data hydration
+  // CRITICAL: If still loading (isLoading=true), never show "no keywords found"
+  const hasReceivedData = keywords.length > 0 || isLoading || !hasEverReceivedDataRef.current;
   
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
