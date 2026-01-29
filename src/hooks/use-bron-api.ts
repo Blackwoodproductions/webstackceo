@@ -681,11 +681,19 @@ export interface BronSerpReport {
 // SERP List item (historical report metadata)
 export interface BronSerpListItem {
   id: string | number;
+  serpid?: string | number;     // BRON API primary ID
   report_id?: string | number;
   domain?: string;
-  started?: string;
-  complete?: string;
-  created_at?: string;
+  started?: string;             // Start date
+  start_date?: string;          // Alternative start date field
+  startdate?: string;           // Alternative start date field
+  date?: string;                // Generic date field
+  complete?: string;            // Completion date
+  completed?: string;           // Alternative completion field
+  completed_at?: string;        // Alternative completion field
+  created?: string;             // Creation date
+  created_at?: string;          // Alternative creation field
+  timestamp?: string | number;  // Unix timestamp
   status?: string;
 }
 

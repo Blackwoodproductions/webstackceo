@@ -31,26 +31,67 @@ export function BronHistoryDateSelector({
   // Sort history by date descending (newest first)
   const sortedHistory = useMemo(() => {
     return [...serpHistory].sort((a, b) => {
-      const dateA = new Date(a.started || a.created_at || 0).getTime();
-      const dateB = new Date(b.started || b.created_at || 0).getTime();
+      const dateA = extractDate(a);
+      const dateB = extractDate(b);
       return dateB - dateA;
     });
   }, [serpHistory]);
+
+  // Extract date from various possible field names in BRON API response
+  function extractDate(report: BronSerpListItem): number {
+    // Try all possible date field names from BRON API
+    const dateStr = 
+      (report as any).started ||
+      (report as any).start_date ||
+      (report as any).startdate ||
+      (report as any).date ||
+      (report as any).created ||
+      (report as any).created_at ||
+      (report as any).timestamp ||
+      (report as any).complete ||
+      (report as any).completed ||
+      (report as any).completed_at;
+    
+    if (!dateStr) return 0;
+    
+    // Handle Unix timestamps (if it's a number or numeric string)
+    if (typeof dateStr === 'number') {
+      // If it's in seconds (10 digits), convert to ms
+      return dateStr > 9999999999 ? dateStr : dateStr * 1000;
+    }
+    if (/^\d+$/.test(String(dateStr))) {
+      const num = parseInt(String(dateStr), 10);
+      return num > 9999999999 ? num : num * 1000;
+    }
+    
+    try {
+      return new Date(dateStr).getTime();
+    } catch {
+      return 0;
+    }
+  }
 
   // Get the selected report for display
   const selectedReport = useMemo(() => {
     if (!selectedReportId) return null;
     return sortedHistory.find(
-      (r) => String(r.report_id || r.id) === String(selectedReportId)
+      (r) => String(r.report_id || r.id || (r as any).serpid) === String(selectedReportId)
     );
   }, [sortedHistory, selectedReportId]);
 
   // Format date for display
   const formatReportDate = (report: BronSerpListItem) => {
-    const dateStr = report.started || report.created_at;
-    if (!dateStr) return "Unknown date";
+    const timestamp = extractDate(report);
+    if (!timestamp || timestamp === 0) {
+      // Fallback: try to derive from ID or any other field
+      const anyReport = report as any;
+      // If no date, show the report ID as identifier
+      const id = anyReport.serpid || anyReport.report_id || anyReport.id;
+      if (id) return `Report #${String(id).slice(-6)}`;
+      return "Unknown date";
+    }
     try {
-      return format(new Date(dateStr), "MMM d, yyyy");
+      return format(new Date(timestamp), "MMM d, yyyy");
     } catch {
       return "Unknown date";
     }
@@ -58,10 +99,10 @@ export function BronHistoryDateSelector({
 
   // Get formatted time
   const formatReportTime = (report: BronSerpListItem) => {
-    const dateStr = report.started || report.created_at;
-    if (!dateStr) return "";
+    const timestamp = extractDate(report);
+    if (!timestamp || timestamp === 0) return "";
     try {
-      return format(new Date(dateStr), "h:mm a");
+      return format(new Date(timestamp), "h:mm a");
     } catch {
       return "";
     }
@@ -76,7 +117,17 @@ export function BronHistoryDateSelector({
     return null;
   }
 
-  const latestReportId = sortedHistory[0]?.report_id || sortedHistory[0]?.id;
+  // Debug log to understand API structure (remove after fixing)
+  if (sortedHistory.length > 0) {
+    console.log('[BronHistoryDateSelector] Sample report structure:', Object.keys(sortedHistory[0]), sortedHistory[0]);
+  }
+
+  const getReportId = (report: BronSerpListItem) => {
+    const anyReport = report as any;
+    return anyReport.serpid || anyReport.report_id || anyReport.id;
+  };
+
+  const latestReportId = getReportId(sortedHistory[0]);
   const isLatest = !selectedReportId || String(selectedReportId) === String(latestReportId);
 
   return (
@@ -143,12 +194,12 @@ export function BronHistoryDateSelector({
 
           {/* Historical Reports */}
           {sortedHistory.slice(1).map((report, index) => {
-            const reportId = report.report_id || report.id;
+            const reportId = getReportId(report);
             const isSelected = String(selectedReportId) === String(reportId);
             
             return (
               <button
-                key={reportId}
+                key={reportId || `report-${index}`}
                 className={cn(
                   "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-violet-500/10 transition-colors",
                   isSelected && "bg-violet-500/10",
