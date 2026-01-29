@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ import {
   saveCachedCadeData,
   type CadeCacheData
 } from "@/lib/persistentCache";
+import { CADEContentManager, CADEFAQManager, CADECrawlControl } from "./cade";
 
 // Use BRON subscription cache (authoritative source, shared across components)
 const BRON_SUBSCRIPTION_CACHE_KEY = 'bron_subscription_cache';
@@ -141,9 +143,8 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
   const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(!!cachedData?.isConnected);
   
   // Collapsible states
-  const [systemOpen, setSystemOpen] = useState(true);
-  const [domainOpen, setDomainOpen] = useState(true);
-  const [faqsOpen, setFaqsOpen] = useState(false);
+  const [systemOpen, setSystemOpen] = useState(false);
+  const [managementTab, setManagementTab] = useState("content");
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>, retries = 2) => {
     const cacheKey = `cade_${action}_${domain || "global"}`;
@@ -876,100 +877,47 @@ export const CADEApiDashboard = ({ domain }: CADEApiDashboardProps) => {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Domain Profile */}
+      {/* Management Tabs - Content, FAQs, Crawl */}
       {domain && (
-        <Collapsible open={domainOpen} onOpenChange={setDomainOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-muted/30 hover:bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-violet-500" />
-                <span className="font-semibold">Domain: {domain}</span>
-                {domainProfile?.status && (
-                  <Badge className={getStatusColor(domainProfile.status)}>
-                    {domainProfile.status}
-                  </Badge>
-                )}
-              </div>
-              {domainOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="mt-3 p-4 rounded-xl bg-muted/20 border border-border">
-              {domainProfile ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Category</p>
-                    <p className="font-medium">{domainProfile.category || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Crawled Pages</p>
-                    <p className="font-medium">{domainProfile.crawled_pages ?? "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Content Count</p>
-                    <p className="font-medium">{domainProfile.content_count ?? "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">CSS Analyzed</p>
-                    <p className="font-medium">{domainProfile.css_analyzed ? "Yes" : "No"}</p>
-                  </div>
-                  {domainProfile.last_crawl && (
-                    <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">Last Crawl</p>
-                      <p className="font-medium">{new Date(domainProfile.last_crawl).toLocaleString()}</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">
-                    No profile data for this domain. The domain may need to be crawled first.
-                  </p>
-                  <Button variant="outline" size="sm" className="mt-3">
-                    <Target className="w-4 h-4 mr-2" />
-                    Initiate Crawl
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+        <Tabs value={managementTab} onValueChange={setManagementTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+            <TabsTrigger value="content" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Content
+            </TabsTrigger>
+            <TabsTrigger value="faqs" className="gap-2">
+              <HelpCircle className="w-4 h-4" />
+              FAQs
+            </TabsTrigger>
+            <TabsTrigger value="crawl" className="gap-2">
+              <Globe className="w-4 h-4" />
+              Crawl & Analysis
+            </TabsTrigger>
+          </TabsList>
 
-      {/* FAQs Section */}
-      {domain && faqs.length > 0 && (
-        <Collapsible open={faqsOpen} onOpenChange={setFaqsOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-4 h-auto bg-muted/30 hover:bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <HelpCircle className="w-5 h-5 text-violet-500" />
-                <span className="font-semibold">Generated FAQs ({faqs.length})</span>
-              </div>
-              {faqsOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <ScrollArea className="mt-3 h-64">
-              <div className="space-y-3">
-                {faqs.map((faq, i) => (
-                  <motion.div
-                    key={faq.id || i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/10 border border-violet-500/20"
-                  >
-                    <p className="font-medium text-sm mb-2 flex items-start gap-2">
-                      <HelpCircle className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
-                      {faq.question}
-                    </p>
-                    <p className="text-sm text-muted-foreground pl-6">{faq.answer}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CollapsibleContent>
-        </Collapsible>
+          <TabsContent value="content" className="mt-4">
+            <CADEContentManager 
+              domain={domain} 
+              onRefresh={handleRefresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="faqs" className="mt-4">
+            <CADEFAQManager 
+              domain={domain}
+              initialFaqs={faqs}
+              onRefresh={handleRefresh}
+            />
+          </TabsContent>
+
+          <TabsContent value="crawl" className="mt-4">
+            <CADECrawlControl
+              domain={domain}
+              domainProfile={domainProfile}
+              onRefresh={handleRefresh}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </motion.div>
   );
