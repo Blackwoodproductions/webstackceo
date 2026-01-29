@@ -53,8 +53,15 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
   const [crawlTask, setCrawlTask] = useState<CrawlTask | null>(null);
   const [showCategorizationDetails, setShowCategorizationDetails] = useState(false);
 
-  // Get latest data from events
-  const { latestCategorization, byType, refresh: refreshEvents } = useCadeEventTasks(domain);
+  // Get latest data from events with stats
+  const { 
+    latestCategorization, 
+    byType, 
+    stats, 
+    hasActiveTasks, 
+    activeTasksByType,
+    refresh: refreshEvents 
+  } = useCadeEventTasks(domain);
 
   const callCadeApi = useCallback(async (action: string, params?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("cade-api", {
@@ -65,20 +72,14 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
     return data;
   }, [domain]);
 
-  // Check for active crawl from events
+  // Sync button states with active tasks from hook
   useEffect(() => {
     if (!domain) return;
     
-    // Check if there's an active crawl task from the events
-    const activeCrawl = byType.crawl.find(t => 
-      t.statusValue === "running" || 
-      t.statusValue === "processing" || 
-      t.statusValue === "pending" || 
-      t.statusValue === "queued"
-    );
-    
+    // Sync crawl state
+    const activeCrawl = activeTasksByType.crawl;
     if (activeCrawl) {
-      setIsCrawling(true);
+      if (!isCrawling) setIsCrawling(true);
       setCrawlTask({
         task_id: activeCrawl.id,
         request_id: activeCrawl.request_id,
@@ -107,63 +108,39 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         }
       }
     }
-  }, [domain, byType.crawl, isCrawling, onRefresh]);
-
-  // Check for active categorization
-  useEffect(() => {
-    if (!domain) return;
     
-    const activeCat = byType.categorization.find(t => 
-      t.statusValue === "running" || 
-      t.statusValue === "processing" || 
-      t.statusValue === "pending" || 
-      t.statusValue === "queued"
-    );
-    
-    if (activeCat) {
-      setIsCategorizing(true);
+    // Sync categorization state
+    if (activeTasksByType.categorization) {
+      if (!isCategorizing) setIsCategorizing(true);
     } else if (isCategorizing) {
       const latestCat = byType.categorization[0];
-      if (latestCat) {
-        if (latestCat.statusValue === "completed" || latestCat.statusValue === "done") {
-          setIsCategorizing(false);
-          toast.success("Categorization completed!");
-          onRefresh?.();
-        } else if (latestCat.statusValue === "failed" || latestCat.statusValue === "error") {
-          setIsCategorizing(false);
-          toast.error("Categorization failed");
-        }
+      if (latestCat?.statusValue === "completed" || latestCat?.statusValue === "done") {
+        setIsCategorizing(false);
+        toast.success("Categorization completed!");
+        onRefresh?.();
+      } else if (latestCat?.statusValue === "failed" || latestCat?.statusValue === "error") {
+        setIsCategorizing(false);
+        toast.error("Categorization failed");
       }
     }
-  }, [domain, byType.categorization, isCategorizing, onRefresh]);
-
-  // Check for active CSS analysis
-  useEffect(() => {
-    if (!domain) return;
     
-    const activeCss = byType.css.find(t => 
-      t.statusValue === "running" || 
-      t.statusValue === "processing" || 
-      t.statusValue === "pending" || 
-      t.statusValue === "queued"
-    );
-    
-    if (activeCss) {
-      setIsAnalyzingCss(true);
+    // Sync CSS analysis state
+    if (activeTasksByType.css) {
+      if (!isAnalyzingCss) setIsAnalyzingCss(true);
     } else if (isAnalyzingCss) {
       const latestCss = byType.css[0];
-      if (latestCss) {
-        if (latestCss.statusValue === "completed" || latestCss.statusValue === "done") {
-          setIsAnalyzingCss(false);
-          toast.success("CSS analysis completed!");
-          onRefresh?.();
-        } else if (latestCss.statusValue === "failed" || latestCss.statusValue === "error") {
-          setIsAnalyzingCss(false);
-          toast.error("CSS analysis failed");
-        }
+      if (latestCss?.statusValue === "completed" || latestCss?.statusValue === "done") {
+        setIsAnalyzingCss(false);
+        toast.success("CSS analysis completed!");
+        onRefresh?.();
+      } else if (latestCss?.statusValue === "failed" || latestCss?.statusValue === "error") {
+        setIsAnalyzingCss(false);
+        toast.error("CSS analysis failed");
       }
     }
-  }, [domain, byType.css, isAnalyzingCss, onRefresh]);
+  }, [domain, activeTasksByType, byType, isCrawling, isCategorizing, isAnalyzingCss, onRefresh]);
+
+  // NOTE: Categorization and CSS states are now synced in the unified effect above
 
   const handleStartCrawl = async () => {
     if (!domain) return;
@@ -283,6 +260,97 @@ export const CADECrawlControl = ({ domain, domainProfile, onRefresh, onTaskStart
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Task Status Summary - Shows when there are active or recent tasks */}
+        {stats.total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-green-500/10 border border-primary/20"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                Task Overview
+              </h4>
+              {hasActiveTasks && (
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse">
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  {stats.active} active
+                </Badge>
+              )}
+            </div>
+            
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="p-2 rounded-lg bg-background/50">
+                <p className="text-lg font-bold text-primary">{stats.byType.crawl}</p>
+                <p className="text-[10px] text-muted-foreground">Crawls</p>
+              </div>
+              <div className="p-2 rounded-lg bg-background/50">
+                <p className="text-lg font-bold text-violet-400">{stats.byType.categorization}</p>
+                <p className="text-[10px] text-muted-foreground">Categories</p>
+              </div>
+              <div className="p-2 rounded-lg bg-background/50">
+                <p className="text-lg font-bold text-green-400">{stats.completed}</p>
+                <p className="text-[10px] text-muted-foreground">Completed</p>
+              </div>
+              <div className="p-2 rounded-lg bg-background/50">
+                <p className={`text-lg font-bold ${stats.failed > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                  {stats.failed}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Failed</p>
+              </div>
+            </div>
+
+            {/* Active Task Details */}
+            {hasActiveTasks && (
+              <div className="mt-3 space-y-2">
+                {activeTasksByType.crawl && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                    <span className="text-xs font-medium">Crawling</span>
+                    {activeTasksByType.crawl.progress !== undefined && (
+                      <Progress value={activeTasksByType.crawl.progress} className="h-1.5 flex-1 max-w-32" />
+                    )}
+                    {activeTasksByType.crawl.pages_crawled !== undefined && (
+                      <span className="text-xs text-muted-foreground">
+                        {activeTasksByType.crawl.pages_crawled} pages
+                      </span>
+                    )}
+                    {activeTasksByType.crawl.message && (
+                      <span className="text-xs text-muted-foreground truncate max-w-48">
+                        {activeTasksByType.crawl.message}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {activeTasksByType.categorization && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                    <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                    <span className="text-xs font-medium">Categorizing</span>
+                    {activeTasksByType.categorization.message && (
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {activeTasksByType.categorization.message}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {activeTasksByType.css && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                    <span className="text-xs font-medium">Analyzing CSS</span>
+                    {activeTasksByType.css.message && (
+                      <span className="text-xs text-muted-foreground truncate flex-1">
+                        {activeTasksByType.css.message}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Domain Stats */}
         {domainProfile && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
