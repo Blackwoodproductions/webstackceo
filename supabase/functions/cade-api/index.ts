@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Use staging environment - same as Postman
-const CADE_API_BASE = "https://seo-acg-api.stg.seosara.ai/api/v1";
+// Use production environment
+const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
 
 serve(async (req) => {
   // Handle CORS preflight
