@@ -161,12 +161,37 @@ function ClusterKeywordRowImpl({
     // Check both keys for baseline positions
     let initial = initialPositions[keyLower] || initialPositions[altKeyLower];
     
-    // If still not found, try partial match (baseline keywords may be slightly different)
-    if (!initial) {
+    // If still not found, try more aggressive matching strategies
+    if (!initial && Object.keys(initialPositions).length > 0) {
+      // Strategy 1: Normalize and compare (remove special chars)
+      const normalizedKey = keyLower.replace(/[^a-z0-9]/g, '');
       for (const [baselineKey, positions] of Object.entries(initialPositions)) {
-        if (keyLower.includes(baselineKey) || baselineKey.includes(keyLower)) {
+        const normalizedBaseline = baselineKey.replace(/[^a-z0-9]/g, '');
+        if (normalizedKey === normalizedBaseline) {
           initial = positions;
           break;
+        }
+      }
+      
+      // Strategy 2: Substring match (for longer/shorter variants)
+      if (!initial) {
+        for (const [baselineKey, positions] of Object.entries(initialPositions)) {
+          if (keyLower.includes(baselineKey) || baselineKey.includes(keyLower)) {
+            initial = positions;
+            break;
+          }
+        }
+      }
+      
+      // Strategy 3: Match first N significant words
+      if (!initial) {
+        const keyWords = keyLower.split(/\s+/).filter(w => w.length > 2).slice(0, 4).join(' ');
+        for (const [baselineKey, positions] of Object.entries(initialPositions)) {
+          const baselineWords = baselineKey.split(/\s+/).filter(w => w.length > 2).slice(0, 4).join(' ');
+          if (keyWords === baselineWords && keyWords.length > 5) {
+            initial = positions;
+            break;
+          }
         }
       }
     }
