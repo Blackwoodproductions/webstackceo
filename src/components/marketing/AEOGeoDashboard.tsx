@@ -56,10 +56,9 @@ const CACHE_TTL_DAYS = 7; // Weekly refresh
 
 const LLM_ICONS: Record<string, string> = {
   'Google Gemini': '🔷',
-  'ChatGPT': '🟢',
-  'GPT-5 Mini': '🟡',
+  'Gemini Flash': '⚡',
+  'Gemini Pro': '🔷',
   'Perplexity': '🔵',
-  'Claude': '🟣',
 };
 
 const PositionBadge = memo(({ position, confidence }: { position: string; confidence: number }) => {
