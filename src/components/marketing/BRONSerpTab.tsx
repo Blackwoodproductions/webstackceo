@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { 
-  BarChart3, RefreshCw, Search, Target, CalendarIcon
+  BarChart3, RefreshCw, Search, Target, CalendarIcon, TrendingUp
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,25 +11,162 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { BronSerpReport } from "@/hooks/use-bron-api";
+import { BronSerpReport, BronSerpListItem, BronKeyword } from "@/hooks/use-bron-api";
+import { BronMultiKeywordTrendChart } from "@/components/marketing/bron/BronMultiKeywordTrendChart";
 import { cn } from "@/lib/utils";
+
+// Helper to get timestamp from SERP list item
+function getSerpListItemTimestamp(item: BronSerpListItem): number | null {
+  const candidates: Array<string | number | undefined | null> = [
+    item.started,
+    item.start_date,
+    item.startdate,
+    item.date,
+    item.created_at,
+    item.created,
+    item.timestamp,
+  ];
+
+  for (const c of candidates) {
+    if (c === undefined || c === null) continue;
+    if (typeof c === 'number') {
+      const ms = c < 2_000_000_000 ? c * 1000 : c;
+      if (Number.isFinite(ms) && ms > 0) return ms;
+      continue;
+    }
+    const s = String(c).trim();
+    if (!s) continue;
+    if (/^\d{10,13}$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) continue;
+      const ms = s.length === 10 ? n * 1000 : n;
+      if (Number.isFinite(ms) && ms > 0) return ms;
+      continue;
+    }
+    const ms = Date.parse(s);
+    if (Number.isFinite(ms)) return ms;
+  }
+
+  return null;
+}
+
+// Helper to get report ID from BronSerpListItem
+function getReportId(item: BronSerpListItem): string {
+  return String(item.serpid || item.report_id || item.id || '');
+}
 
 interface BRONSerpTabProps {
   serpReports: BronSerpReport[];
+  serpHistory?: BronSerpListItem[];
+  keywords?: BronKeyword[];
   selectedDomain?: string;
   isLoading: boolean;
   onRefresh: () => void;
+  onFetchSerpDetail?: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
 }
 
 export const BRONSerpTab = ({
   serpReports,
+  serpHistory = [],
+  keywords = [],
   selectedDomain,
   isLoading,
   onRefresh,
+  onFetchSerpDetail,
 }: BRONSerpTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [showTrendChart, setShowTrendChart] = useState(true);
+  const [historicalData, setHistoricalData] = useState<Map<string, BronSerpReport[]>>(new Map());
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Filter keywords to non-tracking-only for trend chart
+  const chartKeywords = useMemo(() => {
+    return keywords.filter(kw => 
+      kw.status !== 'tracking_only' && !String(kw.id).startsWith('serp_')
+    ).slice(0, 8); // Limit to 8 keywords for readability
+  }, [keywords]);
+
+  // Sorted history by date
+  const sortedHistory = useMemo(() => {
+    return [...serpHistory].sort((a, b) => {
+      const dateA = getSerpListItemTimestamp(a) ?? 0;
+      const dateB = getSerpListItemTimestamp(b) ?? 0;
+      return dateA - dateB;
+    });
+  }, [serpHistory]);
+
+  // Filter history by date range
+  const filteredHistory = useMemo(() => {
+    if (!startDate && !endDate) return sortedHistory;
+    
+    return sortedHistory.filter(item => {
+      const ts = getSerpListItemTimestamp(item);
+      if (ts === null) return true;
+      const itemDate = new Date(ts);
+      
+      if (startDate && itemDate < startDate) return false;
+      if (endDate) {
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (itemDate > endOfDay) return false;
+      }
+      return true;
+    });
+  }, [sortedHistory, startDate, endDate]);
+
+  // Report dates for the chart
+  const reportDates = useMemo(() => {
+    return filteredHistory.map(item => {
+      const timestamp = getSerpListItemTimestamp(item) ?? 0;
+      return {
+        reportId: getReportId(item),
+        date: timestamp ? format(new Date(timestamp), 'MMM d') : '',
+        timestamp,
+      };
+    }).filter(r => r.reportId && r.timestamp > 0);
+  }, [filteredHistory]);
+
+  // Fetch historical SERP details for trend chart
+  const fetchHistoricalData = useCallback(async () => {
+    if (!selectedDomain || !onFetchSerpDetail || filteredHistory.length === 0) return;
+    
+    setIsLoadingHistory(true);
+    const dataMap = new Map<string, BronSerpReport[]>();
+    
+    try {
+      // Limit to 15 most recent reports for performance
+      const reportsToFetch = filteredHistory.slice(-15);
+      
+      for (const item of reportsToFetch) {
+        const reportId = getReportId(item);
+        if (!reportId) continue;
+        
+        try {
+          const data = await onFetchSerpDetail(selectedDomain, reportId);
+          if (data?.length > 0) {
+            dataMap.set(reportId, data);
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch report ${reportId}:`, e);
+        }
+      }
+      
+      setHistoricalData(dataMap);
+    } catch (err) {
+      console.error('Failed to fetch historical data:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [selectedDomain, onFetchSerpDetail, filteredHistory]);
+
+  // Fetch data when chart is shown and we have history
+  useEffect(() => {
+    if (showTrendChart && chartKeywords.length > 0 && filteredHistory.length > 0 && historicalData.size === 0) {
+      fetchHistoricalData();
+    }
+  }, [showTrendChart, chartKeywords.length, filteredHistory.length, historicalData.size, fetchHistoricalData]);
 
   const filteredReports = useMemo(() => {
     return serpReports.filter(r => {
@@ -79,14 +216,49 @@ export const BRONSerpTab = ({
     }
   };
 
-  // Remove unused getDifficultyColor function since API doesn't return difficulty
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
+      className="space-y-4"
     >
+      {/* Multi-Keyword Trend Chart */}
+      {selectedDomain && chartKeywords.length > 0 && showTrendChart && (
+        <div className="relative">
+          {isLoadingHistory && historicalData.size === 0 ? (
+            <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
+              <CardContent className="py-12">
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-muted-foreground text-sm">Loading trend data...</div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : historicalData.size > 0 ? (
+            <BronMultiKeywordTrendChart
+              keywords={chartKeywords}
+              serpReportsMap={historicalData}
+              reportDates={reportDates}
+              title="ALL-TIME TREND"
+              maxKeywords={8}
+            />
+          ) : null}
+          
+          {/* Toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowTrendChart(!showTrendChart)}
+            className="absolute top-2 right-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {showTrendChart ? 'Hide Chart' : 'Show Chart'}
+          </Button>
+        </div>
+      )}
+
       <Card className="border-emerald-500/20 bg-gradient-to-br from-background to-emerald-500/5">
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-3">

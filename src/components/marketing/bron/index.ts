@@ -13,4 +13,5 @@ export type { QuickFilterType } from "./BronQuickFilters";
 export { BronClusterCard } from "./BronClusterCard";
 export { BronClusterVisualization } from "./BronClusterVisualization";
 export { BronKeywordAnalysisDialog } from "./BronKeywordAnalysisDialog";
+export { BronMultiKeywordTrendChart } from "./BronMultiKeywordTrendChart";
 export * from "./utils";
