@@ -30,6 +30,7 @@ interface BronClusterCardProps {
   onSave: (kw: BronKeyword) => void;
   onOpenArticleEditor: (kw: BronKeyword) => void;
   onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
+  onOpenAnalysis?: (kw: BronKeyword) => void;
 }
 
 // Tree connector line component - uses CSS only, no animations
@@ -114,6 +115,7 @@ function ClusterKeywordRowImpl({
   onSave,
   onOpenArticleEditor,
   onToggleLink,
+  onOpenAnalysis,
 }: {
   kw: BronKeyword;
   isNested: boolean;
@@ -136,6 +138,7 @@ function ClusterKeywordRowImpl({
   onSave: (kw: BronKeyword) => void;
   onOpenArticleEditor: (kw: BronKeyword) => void;
   onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
+  onOpenAnalysis?: (kw: BronKeyword) => void;
 }) {
   const keywordText = useMemo(() => getKeywordDisplayText(kw), [kw]);
   const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
@@ -206,6 +209,7 @@ function ClusterKeywordRowImpl({
   );
   const handleSaveKw = useCallback(() => onSave(kw), [onSave, kw]);
   const handleOpenEditor = useCallback(() => onOpenArticleEditor(kw), [onOpenArticleEditor, kw]);
+  const handleOpenAnalysis = useCallback(() => onOpenAnalysis?.(kw), [onOpenAnalysis, kw]);
 
   return (
     <div 
@@ -235,6 +239,7 @@ function ClusterKeywordRowImpl({
             yahooMovement={yahooMovement}
             metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
             onToggleExpand={handleToggle}
+            onOpenAnalysis={onOpenAnalysis ? handleOpenAnalysis : undefined}
           />
           
           {/* Expanded content - lazy render */}
@@ -285,6 +290,7 @@ export const BronClusterCard = memo(({
   onSave,
   onOpenArticleEditor,
   onToggleLink,
+  onOpenAnalysis,
 }: BronClusterCardProps) => {
   const hasChildren = cluster.children.length > 0;
   
@@ -313,6 +319,7 @@ export const BronClusterCard = memo(({
           onSave={onSave}
           onOpenArticleEditor={onOpenArticleEditor}
           onToggleLink={onToggleLink}
+          onOpenAnalysis={onOpenAnalysis}
         />
       </div>
     );
@@ -344,6 +351,7 @@ export const BronClusterCard = memo(({
         onSave={onSave}
         onOpenArticleEditor={onOpenArticleEditor}
         onToggleLink={onToggleLink}
+        onOpenAnalysis={onOpenAnalysis}
       />
       
       {/* Children with tree connectors */}
@@ -372,6 +380,7 @@ export const BronClusterCard = memo(({
               onSave={onSave}
               onOpenArticleEditor={onOpenArticleEditor}
               onToggleLink={onToggleLink}
+              onOpenAnalysis={onOpenAnalysis}
             />
           ))}
         </div>

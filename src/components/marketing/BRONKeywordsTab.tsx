@@ -47,6 +47,7 @@ import {
   QuickFilterType,
   BronClusterCard,
   BronClusterVisualization,
+  BronKeywordAnalysisDialog,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -100,6 +101,7 @@ export const BRONKeywordsTab = memo(({
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
   const [showClusterMap, setShowClusterMap] = useState(false);
+  const [analysisKeyword, setAnalysisKeyword] = useState<BronKeyword | null>(null);
   
   // Quick filter state
   const [activeFilter, setActiveFilter] = useState<"all" | "top10" | "top50" | "hasContent" | "noContent" | "improved" | "dropped">("all");
@@ -955,6 +957,7 @@ export const BRONKeywordsTab = memo(({
                     onSave={handleSave}
                     onOpenArticleEditor={handleOpenArticleEditor}
                     onToggleLink={onToggleLink}
+                    onOpenAnalysis={setAnalysisKeyword}
                   />
                 ))}
               </div>
@@ -1171,6 +1174,19 @@ export const BRONKeywordsTab = memo(({
         selectedDomain={selectedDomain}
         initialPositions={initialPositions}
       />
+      
+      {/* Keyword Analysis Dialog */}
+      {analysisKeyword && (
+        <BronKeywordAnalysisDialog
+          isOpen={!!analysisKeyword}
+          onClose={() => setAnalysisKeyword(null)}
+          keyword={analysisKeyword}
+          relatedKeywords={displayClusters.find(c => c.parent.id === analysisKeyword.id)?.children || []}
+          serpHistory={serpHistory}
+          selectedDomain={selectedDomain}
+          onFetchSerpDetail={onFetchSerpDetail}
+        />
+      )}
     </div>
   );
 });
