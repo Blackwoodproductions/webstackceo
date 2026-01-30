@@ -783,96 +783,99 @@ export const BRONKeywordsTab = memo(({
   return (
     <div style={{ contain: 'layout' }}>
       <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Key className="w-5 h-5 text-primary" />
-              Keywords & Rankings
-              {selectedDomain && (
-                <Badge variant="secondary" className="text-xs ml-2">{selectedDomain}</Badge>
-              )}
-              {selectedHistoryReportId && (
-                <Badge className="text-xs ml-2 bg-violet-500/20 text-violet-300 border-violet-500/30">
-                  Historical View
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-              <span>Total: <strong className="text-foreground">{mergedKeywords.length}</strong></span>
-              <span>•</span>
-              <span>With Content: <strong className="text-emerald-400">{contentKeywords.length}</strong></span>
-              <span>•</span>
-              <span>Tracking Only: <strong className="text-amber-400">{trackingKeywords.length}</strong></span>
-              {selectedHistoryReportId && historicalSerpReports.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span>Rankings from: <strong className="text-violet-400">{historicalSerpReports.length} keywords</strong></span>
-                </>
-              )}
+        {/* Hide header while loading animation is shown */}
+        {!(displayClusters.length === 0 && !hasReceivedData) && (
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Key className="w-5 h-5 text-primary" />
+                Keywords & Rankings
+                {selectedDomain && (
+                  <Badge variant="secondary" className="text-xs ml-2">{selectedDomain}</Badge>
+                )}
+                {selectedHistoryReportId && (
+                  <Badge className="text-xs ml-2 bg-violet-500/20 text-violet-300 border-violet-500/30">
+                    Historical View
+                  </Badge>
+                )}
+              </CardTitle>
+              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                <span>Total: <strong className="text-foreground">{mergedKeywords.length}</strong></span>
+                <span>•</span>
+                <span>With Content: <strong className="text-emerald-400">{contentKeywords.length}</strong></span>
+                <span>•</span>
+                <span>Tracking Only: <strong className="text-amber-400">{trackingKeywords.length}</strong></span>
+                {selectedHistoryReportId && historicalSerpReports.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span>Rankings from: <strong className="text-violet-400">{historicalSerpReports.length} keywords</strong></span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Historical Date Selector */}
-            {serpHistory.length > 0 && selectedDomain && (
-              <BronHistoryDateSelector
-                serpHistory={serpHistory}
-                selectedReportId={selectedHistoryReportId}
-                onSelectReport={handleSelectHistoricalReport}
-                isLoading={isLoadingHistorical}
-                disabled={isLoading}
-              />
-            )}
-            
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search keywords..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 w-48 h-9 bg-secondary/50"
-              />
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Historical Date Selector */}
+              {serpHistory.length > 0 && selectedDomain && (
+                <BronHistoryDateSelector
+                  serpHistory={serpHistory}
+                  selectedReportId={selectedHistoryReportId}
+                  onSelectReport={handleSelectHistoricalReport}
+                  isLoading={isLoadingHistorical}
+                  disabled={isLoading}
+                />
+              )}
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search keywords..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-48 h-9 bg-secondary/50"
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onRefresh}
+                disabled={isLoading || !selectedDomain}
+                className="border-primary/30 hover:bg-primary/10"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={saveRankingSnapshot}
+                disabled={savingSnapshot || keywords.length === 0}
+                className="border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400"
+                title="Save current rankings as historical snapshot"
+              >
+                <Save className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClusterMap(true)}
+                disabled={!selectedDomain || displayClusters.length === 0}
+                className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
+                title="View keyword clusters as visual map"
+              >
+                <GitBranch className="w-4 h-4 mr-1" />
+                Cluster Map
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => setShowAddModal(true)}
+                disabled={!selectedDomain}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add
+              </Button>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRefresh}
-              disabled={isLoading || !selectedDomain}
-              className="border-primary/30 hover:bg-primary/10"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={saveRankingSnapshot}
-              disabled={savingSnapshot || keywords.length === 0}
-              className="border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400"
-              title="Save current rankings as historical snapshot"
-            >
-              <Save className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowClusterMap(true)}
-              disabled={!selectedDomain || displayClusters.length === 0}
-              className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
-              title="View keyword clusters as visual map"
-            >
-              <GitBranch className="w-4 h-4 mr-1" />
-              Cluster Map
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => setShowAddModal(true)}
-              disabled={!selectedDomain}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add
-            </Button>
-          </div>
-        </CardHeader>
+          </CardHeader>
+        )}
         
         {/* Quick Filters Bar */}
         {selectedDomain && displayClusters.length > 0 && (
