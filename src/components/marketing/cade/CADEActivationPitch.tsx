@@ -1,7 +1,7 @@
 import { 
   Sparkles, Zap, FileText, TrendingUp, Clock, Target,
   ArrowRight, CheckCircle2, Brain, BarChart3, Cpu,
-  Bot, Wand2, Layers, Globe, Play
+  Bot, Wand2, Layers, Globe, Play, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,9 @@ const workflowSteps = [
 ];
 
 export const CADEActivationPitch = ({ domain }: CADEActivationPitchProps) => {
-  const handleContactSupport = () => {
-    window.open("mailto:support@webstack.ceo?subject=Activate CADE for " + (domain || "my domain"), "_blank");
+  const handleSubscribe = () => {
+    // Navigate to pricing page with CADE highlighted
+    window.location.href = "/pricing?feature=cade&domain=" + encodeURIComponent(domain || "");
   };
 
   const handleLearnMore = () => {
@@ -93,28 +94,28 @@ export const CADEActivationPitch = ({ domain }: CADEActivationPitchProps) => {
               <Sparkles className="absolute -right-1 -top-1 h-5 w-5 text-amber-400 animate-pulse" />
             </div>
             <div>
-              <Badge className="mb-2 border-violet-500/40 bg-violet-500/20 px-3 py-1 text-xs text-violet-300 backdrop-blur-sm">
-                <Cpu className="mr-1.5 h-3 w-3 animate-pulse" />
-                AI Content Automation Engine
+              <Badge className="mb-2 border-amber-500/40 bg-amber-500/20 px-3 py-1 text-xs text-amber-300 backdrop-blur-sm">
+                <AlertTriangle className="mr-1.5 h-3 w-3" />
+                No Active Subscription for {domain || "this domain"}
               </Badge>
               <h1 className="text-3xl font-bold leading-tight text-white lg:text-4xl">
                 Activate <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">CADE</span> for {domain || "your site"}
               </h1>
               <p className="mt-2 text-slate-400 max-w-xl">
-                Autonomous AI agent that creates, optimizes, and publishes SEO content 24/7
+                This domain doesn't have a CADE subscription. Subscribe to unlock autonomous AI content generation.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button 
-              onClick={handleContactSupport}
+              onClick={handleSubscribe}
               size="lg"
               className="relative overflow-hidden bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 px-8 text-base font-semibold text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-300 hover:scale-105"
             >
               <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
               <Zap className="mr-2 h-5 w-5" />
-              Activate CADE Now
+              Subscribe to CADE
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
