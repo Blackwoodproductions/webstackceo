@@ -3408,32 +3408,15 @@ f.parentNode.insertBefore(j,f);
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
         <FeatureGate feature="bron" domain={selectedTrackedDomain || selectedDomainKey} isAdmin={isSuperAdmin}>
-        <div className="relative max-w-[1480px] mx-auto group/bron">
-          <motion.div
-            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/bron:opacity-50 transition-opacity duration-500 blur-md -z-10"
-            animate={{
-              background: [
-                "linear-gradient(180deg, rgba(34,197,94,0.3), rgba(16,185,129,0.3))",
-                "linear-gradient(270deg, rgba(16,185,129,0.3), rgba(34,197,94,0.3))",
-                "linear-gradient(180deg, rgba(34,197,94,0.3), rgba(16,185,129,0.3))",
-              ],
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          />
+        <div className="relative max-w-[1480px] mx-auto" style={{ contain: 'layout style' }}>
           <div className="relative bg-gradient-to-br from-card via-card/98 to-emerald-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
-            {/* Grid pattern */}
+            {/* Static grid pattern - no animation for performance */}
             <div 
               className="absolute inset-0 opacity-[0.02] pointer-events-none"
               style={{
                 backgroundImage: `linear-gradient(hsl(142 76% 36%) 1px, transparent 1px), linear-gradient(90deg, hsl(142 76% 36%) 1px, transparent 1px)`,
                 backgroundSize: '30px 30px',
               }}
-            />
-            {/* Scanning line */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent pointer-events-none"
-              animate={{ y: ['-100%', '200%'] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
             <BRONPlatformConnect 
               domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} 
@@ -3448,32 +3431,14 @@ f.parentNode.insertBefore(j,f);
       {/* AEO/GEO Tab Content */}
       {activeTab === 'aeo-geo' && (
         <FeatureGate feature="aeo-geo" domain={selectedTrackedDomain || selectedDomainKey} isAdmin={isSuperAdmin}>
-        <div className="relative max-w-[1480px] mx-auto group/aeo">
-          <motion.div
-            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/aeo:opacity-50 transition-opacity duration-500 blur-md -z-10"
-            animate={{
-              background: [
-                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3))",
-                "linear-gradient(270deg, rgba(236,72,153,0.3), rgba(139,92,246,0.3))",
-                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3))",
-              ],
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          />
+        <div className="relative max-w-[1480px] mx-auto" style={{ contain: 'layout style' }}>
           <div className="relative bg-gradient-to-br from-card via-card/98 to-fuchsia-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
-            {/* Grid pattern */}
             <div 
               className="absolute inset-0 opacity-[0.02] pointer-events-none"
               style={{
                 backgroundImage: `linear-gradient(hsl(280 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(280 80% 60%) 1px, transparent 1px)`,
                 backgroundSize: '30px 30px',
               }}
-            />
-            {/* Scanning line */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-b from-transparent via-fuchsia-500/5 to-transparent pointer-events-none"
-              animate={{ y: ['-100%', '200%'] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
             <AEOGeoDashboard 
               domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)}
@@ -3486,32 +3451,14 @@ f.parentNode.insertBefore(j,f);
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
         <FeatureGate feature="cade" domain={selectedTrackedDomain || selectedDomainKey} isAdmin={isSuperAdmin}>
-        <div className="relative max-w-[1480px] mx-auto group/cade">
-          <motion.div
-            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/cade:opacity-50 transition-opacity duration-500 blur-md -z-10"
-            animate={{
-              background: [
-                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(168,85,247,0.3))",
-                "linear-gradient(270deg, rgba(168,85,247,0.3), rgba(139,92,246,0.3))",
-                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(168,85,247,0.3))",
-              ],
-            }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          />
+        <div className="relative max-w-[1480px] mx-auto" style={{ contain: 'layout style' }}>
           <div className="relative bg-gradient-to-br from-card via-card/98 to-violet-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
-            {/* Grid pattern */}
             <div 
               className="absolute inset-0 opacity-[0.02] pointer-events-none"
               style={{
                 backgroundImage: `linear-gradient(hsl(280 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(280 80% 60%) 1px, transparent 1px)`,
                 backgroundSize: '30px 30px',
               }}
-            />
-            {/* Scanning line */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/5 to-transparent pointer-events-none"
-              animate={{ y: ['-100%', '200%'] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
           <div className="space-y-6">
             {/* CADE Dashboard - Redesigned */}
