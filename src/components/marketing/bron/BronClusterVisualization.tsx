@@ -1,6 +1,7 @@
 import { memo, useState, useMemo, useCallback, useEffect } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, ArrowUpDown, Trophy, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
@@ -299,23 +300,23 @@ const MiniClusterCard = memo(({
           className={`${bgColor} ${borderColor} border-2 rounded-full flex items-center justify-center relative`}
           style={{ width: size, height: size }}
         >
-          <span className={`font-bold text-[10px] ${textColor}`}>
+          <span className={`font-bold text-xs ${textColor}`}>
             {googlePos !== null ? `#${googlePos}` : '—'}
           </span>
           
           {/* Movement badge */}
           {movement !== 0 && (
             <div 
-              className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center text-[6px] font-bold text-white ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
             >
               {movement > 0 ? '+' : ''}{movement > 99 ? '99' : movement < -99 ? '-99' : movement}
             </div>
           )}
         </div>
         
-        {/* Label - hidden for compactness */}
-        <span className="text-[7px] text-muted-foreground mt-0.5 max-w-[40px] truncate text-center leading-tight">
-          {node.keywordText.length > 8 ? node.keywordText.substring(0, 6) + '…' : node.keywordText}
+        {/* Label */}
+        <span className="text-[8px] text-muted-foreground mt-1 max-w-[55px] truncate text-center leading-tight">
+          {node.keywordText.length > 10 ? node.keywordText.substring(0, 8) + '…' : node.keywordText}
         </span>
       </div>
     );
@@ -345,24 +346,24 @@ const MiniClusterCard = memo(({
       )}
       
       {/* Visual layout: Parent on top, children below */}
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-1">
         {/* Parent (Money Page) - with external indicator */}
         <div className="relative">
-          {renderNode(parentNode, 28)}
+          {renderNode(parentNode, 36)}
           {hasExternalLinkout && (
-            <div className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-cyan-500 flex items-center justify-center" title="Client's Money Page">
-              <Link2 className="w-1.5 h-1.5 text-white" />
+            <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center" title="Client's Money Page">
+              <Link2 className="w-2 h-2 text-white" />
             </div>
           )}
         </div>
         
         {/* Connection lines (simplified as a visual indicator) */}
         {childNodes.length > 0 && (
-          <div className="flex items-center justify-center gap-0.5 h-2">
+          <div className="flex items-center justify-center gap-1 h-3">
             {childNodes.slice(0, 2).map((child, i) => (
               <div 
                 key={`line-${i}`}
-                className={`w-px h-2 ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
+                className={`w-px h-3 ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
                 style={{ transform: `rotate(${childNodes.length > 1 ? (i - 0.5) * 20 : 0}deg)` }}
               />
             ))}
@@ -371,11 +372,11 @@ const MiniClusterCard = memo(({
         
         {/* Children (Supporting Pages) - max 2 shown */}
         {childNodes.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-0.5">
-            {childNodes.slice(0, 2).map(child => renderNode(child, 22))}
+          <div className="flex flex-wrap justify-center gap-1">
+            {childNodes.slice(0, 2).map(child => renderNode(child, 28))}
             {childNodes.length > 2 && (
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted/50 border border-muted-foreground/20">
-                <span className="text-[7px] text-muted-foreground">+{childNodes.length - 2}</span>
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted/50 border border-muted-foreground/20">
+                <span className="text-[8px] text-muted-foreground">+{childNodes.length - 2}</span>
               </div>
             )}
           </div>
@@ -489,6 +490,7 @@ export const BronClusterVisualization = memo(({
   const [hoveredNode, setHoveredNode] = useState<NodeData | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [sortOrder, setSortOrder] = useState<'best' | 'worst'>('best');
 
   // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
@@ -510,6 +512,23 @@ export const BronClusterVisualization = memo(({
     }
     return map;
   }, [linksIn, linksOut]);
+  
+  // Sort clusters by performance (Google ranking)
+  const sortedClusters = useMemo(() => {
+    const getClusterScore = (cluster: ClusterData) => {
+      const keywordText = getKeywordDisplayText(cluster.parent);
+      const serpData = findSerpForKeyword(keywordText, serpReports);
+      const googlePos = getPosition(serpData?.google);
+      // Unranked = 1000, lower is better
+      return googlePos ?? 1000;
+    };
+    
+    return [...clusters].sort((a, b) => {
+      const scoreA = getClusterScore(a);
+      const scoreB = getClusterScore(b);
+      return sortOrder === 'best' ? scoreA - scoreB : scoreB - scoreA;
+    });
+  }, [clusters, serpReports, sortOrder]);
 
   // Reset on open
   useEffect(() => {
@@ -577,23 +596,44 @@ export const BronClusterVisualization = memo(({
               {externalLinkoutCount} Client Pages
             </Badge>
           )}
-          <span className="text-[10px] text-muted-foreground hidden sm:inline">
-            Hover for details · Click to open URL
-          </span>
         </div>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
-        >
-          <span className="sr-only">Close</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        
+        {/* Sort selector and close */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-muted/50 rounded-md p-0.5">
+            <Button
+              variant={sortOrder === 'best' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSortOrder('best')}
+              className={`h-6 px-2 text-[10px] gap-1 ${sortOrder === 'best' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : ''}`}
+            >
+              <Trophy className="w-3 h-3" />
+              Best First
+            </Button>
+            <Button
+              variant={sortOrder === 'worst' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setSortOrder('worst')}
+              className={`h-6 px-2 text-[10px] gap-1 ${sortOrder === 'worst' ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : ''}`}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              Needs Work
+            </Button>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+          >
+            <span className="sr-only">Close</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
       
-      {/* Content - no scroll, fit all in view */}
-      <div className="p-2">
+      {/* Content - fit all in view without scroll */}
+      <div className="p-3">
         {clusters.length === 0 ? (
           <div className="flex items-center justify-center py-8">
             <div className="text-center text-muted-foreground">
@@ -603,12 +643,12 @@ export const BronClusterVisualization = memo(({
           </div>
         ) : (
           <div 
-            className="grid gap-1.5"
+            className="grid gap-2"
             style={{
-              gridTemplateColumns: `repeat(${Math.min(10, Math.ceil(Math.sqrt(clusters.length * 2)))}, minmax(80px, 1fr))`,
+              gridTemplateColumns: `repeat(auto-fill, minmax(100px, 1fr))`,
             }}
           >
-            {clusters.map((cluster) => (
+            {sortedClusters.map((cluster) => (
               <MiniClusterCard
                 key={cluster.parentId}
                 cluster={cluster}
