@@ -246,21 +246,36 @@ const NodeTooltip = memo(({
   
   const tips = useMemo(() => generateSEOTips(data), [data]);
   
-  // Calculate tooltip position - flip to left if near right edge
-  const tooltipWidth = 400;
-  const tooltipHeight = 500;
-  const padding = 20;
+  // Calculate tooltip position - ensure it stays within viewport
+  const tooltipWidth = 380;
+  const tooltipHeight = 480;
+  const padding = 30;
   
-  const isNearRightEdge = position.x > window.innerWidth - tooltipWidth - 50;
-  const isNearBottomEdge = position.y > window.innerHeight - tooltipHeight - 50;
+  // Use more conservative edge detection
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
   
-  const left = isNearRightEdge 
-    ? Math.max(padding, position.x - tooltipWidth - 20) 
-    : Math.min(position.x + 20, window.innerWidth - tooltipWidth - padding);
-    
-  const top = isNearBottomEdge
-    ? Math.max(padding, position.y - tooltipHeight + 100)
-    : Math.max(padding, Math.min(position.y - 20, window.innerHeight - tooltipHeight - padding));
+  const isNearRightEdge = position.x > viewportWidth - tooltipWidth - 100;
+  const isNearBottomEdge = position.y > viewportHeight - tooltipHeight - 100;
+  const isNearTopEdge = position.y < tooltipHeight / 2;
+  
+  // Position tooltip to the left of cursor when near right edge
+  let left: number;
+  if (isNearRightEdge) {
+    left = Math.max(padding, position.x - tooltipWidth - 40);
+  } else {
+    left = Math.min(position.x + 25, viewportWidth - tooltipWidth - padding);
+  }
+  
+  // Keep tooltip within vertical bounds
+  let top: number;
+  if (isNearBottomEdge) {
+    top = Math.max(padding, viewportHeight - tooltipHeight - padding);
+  } else if (isNearTopEdge) {
+    top = padding;
+  } else {
+    top = Math.max(padding, position.y - 50);
+  }
   
   return (
     <div
