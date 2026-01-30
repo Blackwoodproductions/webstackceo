@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  LayoutDashboard, Users, FileText, Settings, LogOut, 
+  LayoutDashboard, Users, FileText, LogOut, 
   CheckCircle, XCircle, Clock, Star, Award, TrendingUp,
   Plus, Edit, Trash2, Eye, Search, Building2, Shield, Crown,
   BarChart3, Activity, Zap, Globe, ArrowLeft, MousePointer,
-  Mail, UserCheck, DollarSign, Target
+  Mail, UserCheck, DollarSign, Target, RefreshCw, X, Check,
+  Cpu, Radio, Gauge, Server, Settings, CreditCard, Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,14 +20,185 @@ import type { User, Session } from "@supabase/supabase-js";
 import AdminApplicationsTab from "@/components/admin/AdminApplicationsTab";
 import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
-import { SuperAdminPanel } from "@/components/admin/SuperAdminPanel";
 import { SystemHealthPanel } from "@/components/admin/SystemHealthPanel";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+
+interface UserWithRoles {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  roles: string[];
+}
+
+interface WhiteLabelSetting {
+  id: string;
+  user_id: string;
+  logo_url: string | null;
+  company_name: string | null;
+  is_active: boolean;
+  subscription_status: string;
+  subscription_start: string | null;
+  subscription_end: string | null;
+  created_at: string;
+  user_email?: string;
+  user_name?: string;
+}
+
+// Animated circular dial component
+const CommandDial = ({ 
+  value, 
+  max, 
+  label, 
+  color, 
+  icon: Icon,
+  size = 120 
+}: { 
+  value: number; 
+  max: number; 
+  label: string; 
+  color: string;
+  icon: any;
+  size?: number;
+}) => {
+  const percentage = max > 0 ? (value / max) * 100 : 0;
+  const radius = (size - 16) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+  
+  return (
+    <div className="relative flex flex-col items-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        {/* Background ring */}
+        <svg className="absolute inset-0" width={size} height={size}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="6"
+            className="text-secondary/30"
+          />
+        </svg>
+        
+        {/* Progress ring */}
+        <svg className="absolute inset-0 -rotate-90" width={size} height={size}>
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            style={{ filter: `drop-shadow(0 0 10px ${color}50)` }}
+          />
+        </svg>
+        
+        {/* Inner glow */}
+        <div 
+          className="absolute inset-4 rounded-full"
+          style={{ 
+            background: `radial-gradient(circle, ${color}10 0%, transparent 70%)`,
+            boxShadow: `inset 0 0 30px ${color}20`
+          }}
+        />
+        
+        {/* Center content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Icon className="w-5 h-5 mb-1" style={{ color }} />
+          <span className="text-2xl font-bold" style={{ color }}>{value.toLocaleString()}</span>
+        </div>
+      </div>
+      <span className="text-xs text-muted-foreground mt-2 text-center">{label}</span>
+    </div>
+  );
+};
+
+// Holographic stat card
+const HoloStatCard = ({ 
+  label, 
+  value, 
+  icon: Icon, 
+  gradient, 
+  delay = 0 
+}: { 
+  label: string; 
+  value: string | number; 
+  icon: any; 
+  gradient: string;
+  delay?: number;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ delay, duration: 0.5 }}
+    className="relative group"
+  >
+    <div className={`absolute -inset-0.5 ${gradient} rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity`} />
+    <Card className="relative bg-background/80 backdrop-blur-xl border-0 overflow-hidden">
+      {/* Scanline effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity animate-pulse" />
+      
+      {/* Grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+          backgroundSize: '20px 20px'
+        }}
+      />
+      
+      <CardContent className="pt-5 pb-4 relative z-10">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-3xl font-bold tracking-tight">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+            <p className="text-sm text-muted-foreground">{label}</p>
+          </div>
+          <div className={`w-12 h-12 rounded-xl ${gradient} flex items-center justify-center shadow-lg`}>
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </motion.div>
+);
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: toastNotify } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -52,15 +224,24 @@ const Admin = () => {
     totalRevenue: 0,
   });
 
+  // Super admin specific state
+  const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [whiteLabelSettings, setWhiteLabelSettings] = useState<WhiteLabelSetting[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'super_admin' | 'white_label_admin'>('white_label_admin');
+  const [companyName, setCompanyName] = useState('');
+  const [processingAction, setProcessingAction] = useState(false);
+
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer the admin check
           setTimeout(() => {
             checkAdminRole(session.user.id);
           }, 0);
@@ -71,7 +252,6 @@ const Admin = () => {
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -87,7 +267,6 @@ const Admin = () => {
   }, []);
 
   const checkAdminRole = async (userId: string) => {
-    // Check for admin role
     const { data: adminData } = await supabase
       .from("user_roles")
       .select("role")
@@ -95,7 +274,6 @@ const Admin = () => {
       .eq("role", "admin")
       .maybeSingle();
 
-    // Check for super_admin role
     const { data: superAdminData } = await supabase
       .from("user_roles")
       .select("role")
@@ -112,6 +290,10 @@ const Admin = () => {
     if (hasAdmin) {
       fetchStats();
       fetchSiteStats();
+      if (hasSuperAdmin) {
+        fetchUsers();
+        fetchWhiteLabelSettings();
+      }
     }
     setIsLoading(false);
   };
@@ -179,15 +361,188 @@ const Admin = () => {
     }
   };
 
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, email, full_name, avatar_url, created_at')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      const usersWithRoles: UserWithRoles[] = (profiles || []).map(profile => ({
+        id: profile.user_id,
+        email: profile.email || '',
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        created_at: profile.created_at,
+        roles: (roles || [])
+          .filter(r => r.user_id === profile.user_id)
+          .map(r => r.role),
+      }));
+
+      setUsers(usersWithRoles);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const fetchWhiteLabelSettings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('white_label_settings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const enrichedSettings = await Promise.all(
+        (data || []).map(async (setting) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('user_id', setting.user_id)
+            .single();
+          
+          return {
+            ...setting,
+            user_email: profile?.email,
+            user_name: profile?.full_name,
+          };
+        })
+      );
+
+      setWhiteLabelSettings(enrichedSettings);
+    } catch (error) {
+      console.error('Error fetching white label settings:', error);
+    }
+  }, []);
+
+  const handlePromoteUser = async () => {
+    if (!selectedUser) return;
+    setProcessingAction(true);
+
+    try {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: selectedUser.id,
+          role: selectedRole as 'admin' | 'moderator' | 'user' | 'super_admin' | 'white_label_admin',
+        });
+
+      if (roleError) throw roleError;
+
+      if (selectedRole === 'white_label_admin') {
+        const { error: settingsError } = await supabase
+          .from('white_label_settings')
+          .insert({
+            user_id: selectedUser.id,
+            company_name: companyName || null,
+            subscription_status: 'trial',
+            subscription_start: new Date().toISOString(),
+            subscription_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+
+        if (settingsError) throw settingsError;
+      }
+
+      toast.success(`Successfully promoted ${selectedUser.email} to ${selectedRole.replace('_', ' ')}`);
+      setPromoteDialogOpen(false);
+      setSelectedUser(null);
+      setCompanyName('');
+      fetchUsers();
+      fetchWhiteLabelSettings();
+    } catch (error) {
+      console.error('Error promoting user:', error);
+      toast.error('Failed to promote user');
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  const handleRevokeRole = async (userId: string, role: string) => {
+    if (!confirm(`Are you sure you want to revoke the ${role.replace('_', ' ')} role?`)) return;
+    
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', role as 'admin' | 'moderator' | 'user' | 'super_admin' | 'white_label_admin');
+
+      if (error) throw error;
+
+      if (role === 'white_label_admin') {
+        await supabase
+          .from('white_label_settings')
+          .update({ is_active: false })
+          .eq('user_id', userId);
+      }
+
+      toast.success('Role revoked successfully');
+      fetchUsers();
+      fetchWhiteLabelSettings();
+    } catch (error) {
+      console.error('Error revoking role:', error);
+      toast.error('Failed to revoke role');
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
 
+  const filteredUsers = users.filter(user => 
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0';
+      case 'white_label_admin': return 'bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0';
+      case 'admin': return 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0';
+      default: return 'bg-secondary text-secondary-foreground';
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active': return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>;
+      case 'trial': return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Trial</Badge>;
+      case 'expired': return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Expired</Badge>;
+      case 'cancelled': return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Cancelled</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-primary to-violet-500 rounded-full blur-xl opacity-50 animate-pulse" />
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 via-primary to-violet-500 flex items-center justify-center">
+              <Cpu className="w-8 h-8 text-white animate-pulse" />
+            </div>
+          </div>
+          <p className="text-muted-foreground">Initializing Command Center...</p>
+        </motion.div>
       </div>
     );
   }
@@ -226,12 +581,6 @@ const Admin = () => {
     );
   }
 
-  const initialTab = (() => {
-    const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab === 'super-admin' && isSuperAdmin) return 'super-admin';
-    return 'overview';
-  })();
-
   return (
     <div className="min-h-screen bg-background relative animate-fade-in">
       {/* VI Dashboard Background Effects */}
@@ -242,7 +591,6 @@ const Admin = () => {
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-6 py-3 flex items-center justify-between max-w-7xl">
           <div className="flex items-center gap-4">
-            {/* Back to Dashboard */}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -255,17 +603,16 @@ const Admin = () => {
             
             <div className="w-px h-6 bg-border/50" />
             
-            {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-primary to-violet-500 rounded-xl blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
                 <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-primary to-violet-500 flex items-center justify-center shadow-lg">
-                  <BarChart3 className="w-5 h-5 text-white" />
+                  <Cpu className="w-5 h-5 text-white" />
                 </div>
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-primary to-violet-400 bg-clip-text text-transparent">
-                  Admin Console
+                  Command Center
                 </h1>
                 <p className="text-[10px] text-muted-foreground">{user.email}</p>
               </div>
@@ -274,7 +621,7 @@ const Admin = () => {
           
           <div className="flex items-center gap-2">
             {isSuperAdmin && (
-              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg shadow-amber-500/20">
                 <Crown className="w-3 h-3 mr-1" />
                 Super Admin
               </Badge>
@@ -288,223 +635,486 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-6 py-8 max-w-7xl relative z-10">
-        {/* Main Content */}
-        <Tabs defaultValue={initialTab} className="space-y-6">
-          <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-6' : 'grid-cols-5'} lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50`}>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50">
             <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-violet-500/20">
-              <BarChart3 className="w-4 h-4" />
-              Overview
+              <Gauge className="w-4 h-4" />
+              Command
             </TabsTrigger>
             <TabsTrigger value="health" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-green-500/20">
               <Activity className="w-4 h-4" />
-              System Health
+              Systems
             </TabsTrigger>
-            <TabsTrigger value="applications" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Applications
-              {stats.pendingApplications > 0 && (
-                <Badge variant="destructive" className="ml-1 text-[10px] px-1.5">
-                  {stats.pendingApplications}
-                </Badge>
-              )}
+            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20">
+              <Users className="w-4 h-4" />
+              Users
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Partners
-            </TabsTrigger>
-            <TabsTrigger value="directory" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
-              Directory
-              {stats.pendingDirectoryListings > 0 && (
+              Partners
+              {(stats.pendingApplications + stats.pendingDirectoryListings) > 0 && (
                 <Badge variant="destructive" className="ml-1 text-[10px] px-1.5">
-                  {stats.pendingDirectoryListings}
+                  {stats.pendingApplications + stats.pendingDirectoryListings}
                 </Badge>
               )}
             </TabsTrigger>
-            {isSuperAdmin && (
-              <TabsTrigger value="super-admin" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20">
-                <Crown className="w-4 h-4 text-amber-400" />
-                Super Admin
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="directory" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Directory
+            </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab - Site-wide Metrics */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Hero Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { 
-                  label: "Total Visitors", 
-                  value: siteStats.totalVisitors.toLocaleString(), 
-                  icon: Eye, 
-                  gradient: "from-cyan-500/20 to-blue-500/20",
-                  borderColor: "border-cyan-500/30",
-                  iconColor: "text-cyan-400"
-                },
-                { 
-                  label: "Page Views", 
-                  value: siteStats.totalPageViews.toLocaleString(), 
-                  icon: MousePointer, 
-                  gradient: "from-violet-500/20 to-purple-500/20",
-                  borderColor: "border-violet-500/30",
-                  iconColor: "text-violet-400"
-                },
-                { 
-                  label: "Total Leads", 
-                  value: siteStats.totalLeads.toLocaleString(), 
-                  icon: Mail, 
-                  gradient: "from-emerald-500/20 to-green-500/20",
-                  borderColor: "border-emerald-500/30",
-                  iconColor: "text-emerald-400"
-                },
-                { 
-                  label: "Registered Users", 
-                  value: siteStats.totalUsers.toLocaleString(), 
-                  icon: UserCheck, 
-                  gradient: "from-amber-500/20 to-orange-500/20",
-                  borderColor: "border-amber-500/30",
-                  iconColor: "text-amber-400"
-                },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient} border ${stat.borderColor} backdrop-blur-sm`}>
-                    {/* Glow effect */}
-                    <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl ${stat.gradient} blur-2xl opacity-50`} />
-                    <CardContent className="pt-6 relative z-10">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl bg-background/50 backdrop-blur-sm flex items-center justify-center ${stat.iconColor} shadow-lg`}>
-                          <stat.icon className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-3xl font-bold tracking-tight">{stat.value}</p>
-                          <p className="text-sm text-muted-foreground">{stat.label}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Secondary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { 
-                  label: "Active Today", 
-                  value: siteStats.activeToday.toString(), 
-                  icon: Activity, 
-                  color: "text-green-400",
-                  bg: "bg-green-500/10 border-green-500/20"
-                },
-                { 
-                  label: "Leads This Month", 
-                  value: siteStats.leadsThisMonth.toString(), 
-                  icon: Target, 
-                  color: "text-blue-400",
-                  bg: "bg-blue-500/10 border-blue-500/20"
-                },
-                { 
-                  label: "Conversion Rate", 
-                  value: `${siteStats.conversionRate}%`, 
-                  icon: TrendingUp, 
-                  color: "text-violet-400",
-                  bg: "bg-violet-500/10 border-violet-500/20"
-                },
-                { 
-                  label: "Total Revenue", 
-                  value: `$${siteStats.totalRevenue.toLocaleString()}`, 
-                  icon: DollarSign, 
-                  color: "text-emerald-400",
-                  bg: "bg-emerald-500/10 border-emerald-500/20"
-                },
-              ].map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                >
-                  <Card className={`${stat.bg} border backdrop-blur-sm`}>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg bg-background/50 flex items-center justify-center ${stat.color}`}>
-                          <stat.icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-xl font-bold">{stat.value}</p>
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Partner Stats */}
+          {/* Command Center Overview */}
+          <TabsContent value="overview" className="space-y-8">
+            {/* Hero Command Dials */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
+              className="relative"
             >
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                Partner & Directory Stats
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: "Total Partners", value: stats.totalPartners, icon: Users, color: "text-cyan-400" },
-                  { label: "Pending Applications", value: stats.pendingApplications, icon: Clock, color: "text-yellow-400" },
-                  { label: "Directory Pending", value: stats.pendingDirectoryListings, icon: Building2, color: "text-orange-400" },
-                  { label: "Sponsored Partners", value: stats.sponsoredPartners, icon: Award, color: "text-violet-400" },
-                ].map((stat) => (
-                  <Card key={stat.label} className="bg-background/50 border-border/50 backdrop-blur-sm">
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg bg-secondary flex items-center justify-center ${stat.color}`}>
-                          <stat.icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{stat.value}</p>
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
-                        </div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/10 via-primary/5 to-violet-500/10 rounded-3xl blur-xl" />
+              <Card className="relative bg-background/60 backdrop-blur-xl border-primary/20 overflow-hidden">
+                {/* Animated scan line */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <motion.div
+                    className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
+                    initial={{ top: "-10%" }}
+                    animate={{ top: "110%" }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  />
+                </div>
+                
+                {/* Grid pattern */}
+                <div 
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: 'linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px)',
+                    backgroundSize: '30px 30px'
+                  }}
+                />
+                
+                <CardContent className="py-8 relative z-10">
+                  <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+                    <CommandDial 
+                      value={siteStats.totalVisitors} 
+                      max={Math.max(siteStats.totalVisitors * 1.5, 1000)} 
+                      label="Total Visitors" 
+                      color="#06b6d4" 
+                      icon={Eye}
+                    />
+                    <CommandDial 
+                      value={siteStats.totalPageViews} 
+                      max={Math.max(siteStats.totalPageViews * 1.5, 5000)} 
+                      label="Page Views" 
+                      color="#8b5cf6" 
+                      icon={MousePointer}
+                    />
+                    <CommandDial 
+                      value={siteStats.totalLeads} 
+                      max={Math.max(siteStats.totalLeads * 1.5, 100)} 
+                      label="Total Leads" 
+                      color="#10b981" 
+                      icon={Mail}
+                    />
+                    <CommandDial 
+                      value={siteStats.totalUsers} 
+                      max={Math.max(siteStats.totalUsers * 1.5, 50)} 
+                      label="Registered Users" 
+                      color="#f59e0b" 
+                      icon={UserCheck}
+                    />
+                    {isSuperAdmin && (
+                      <CommandDial 
+                        value={users.filter(u => u.roles.includes('super_admin')).length} 
+                        max={10} 
+                        label="Super Admins" 
+                        color="#ef4444" 
+                        icon={Crown}
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <HoloStatCard 
+                label="Active Today" 
+                value={siteStats.activeToday} 
+                icon={Activity} 
+                gradient="bg-gradient-to-br from-green-500 to-emerald-600"
+                delay={0.1}
+              />
+              <HoloStatCard 
+                label="Leads This Month" 
+                value={siteStats.leadsThisMonth} 
+                icon={Target} 
+                gradient="bg-gradient-to-br from-blue-500 to-cyan-600"
+                delay={0.2}
+              />
+              <HoloStatCard 
+                label="Conversion Rate" 
+                value={`${siteStats.conversionRate}%`} 
+                icon={TrendingUp} 
+                gradient="bg-gradient-to-br from-violet-500 to-purple-600"
+                delay={0.3}
+              />
+              <HoloStatCard 
+                label="Total Revenue" 
+                value={`$${siteStats.totalRevenue.toLocaleString()}`} 
+                icon={DollarSign} 
+                gradient="bg-gradient-to-br from-emerald-500 to-green-600"
+                delay={0.4}
+              />
+            </div>
+
+            {/* Partner & Directory Quick Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
+              {[
+                { label: "Total Partners", value: stats.totalPartners, icon: Users, color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/20" },
+                { label: "Pending Apps", value: stats.pendingApplications, icon: Clock, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
+                { label: "Directory Pending", value: stats.pendingDirectoryListings, icon: Building2, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20" },
+                { label: "Sponsored", value: stats.sponsoredPartners, icon: Award, color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
+              ].map((stat) => (
+                <Card key={stat.label} className={`${stat.bg} border backdrop-blur-sm`}>
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg bg-background/50 flex items-center justify-center ${stat.color}`}>
+                        <stat.icon className="w-5 h-5" />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </motion.div>
           </TabsContent>
 
+          {/* System Health */}
           <TabsContent value="health">
             <SystemHealthPanel />
           </TabsContent>
 
-          <TabsContent value="applications">
-            <AdminApplicationsTab onUpdate={fetchStats} />
+          {/* Users & Roles Management */}
+          <TabsContent value="users" className="space-y-6">
+            {!isSuperAdmin ? (
+              <Card className="bg-amber-500/10 border-amber-500/20">
+                <CardContent className="py-8 text-center">
+                  <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Super Admin Access Required</h3>
+                  <p className="text-muted-foreground">You need super admin privileges to manage users and roles.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Role Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Crown className="w-8 h-8 text-amber-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{users.filter(u => u.roles.includes('super_admin')).length}</p>
+                          <p className="text-sm text-muted-foreground">Super Admins</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Building2 className="w-8 h-8 text-violet-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{users.filter(u => u.roles.includes('white_label_admin')).length}</p>
+                          <p className="text-sm text-muted-foreground">White Label Partners</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Check className="w-8 h-8 text-green-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{whiteLabelSettings.filter(s => s.subscription_status === 'active').length}</p>
+                          <p className="text-sm text-muted-foreground">Active Subscriptions</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-8 h-8 text-blue-500" />
+                        <div>
+                          <p className="text-2xl font-bold">{users.length}</p>
+                          <p className="text-sm text-muted-foreground">Total Users</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Users Table */}
+                <Card className="bg-background/50 backdrop-blur-sm border-border/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search users..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 bg-background/50"
+                        />
+                      </div>
+                      <Button onClick={() => { fetchUsers(); fetchWhiteLabelSettings(); }} variant="outline" size="sm">
+                        <RefreshCw className={`w-4 h-4 mr-2 ${usersLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Roles</TableHead>
+                          <TableHead>Joined</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usersLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8">
+                              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                            </TableCell>
+                          </TableRow>
+                        ) : filteredUsers.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              No users found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          filteredUsers.map((userItem) => (
+                            <TableRow key={userItem.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  {userItem.avatar_url ? (
+                                    <img src={userItem.avatar_url} alt="" className="w-8 h-8 rounded-full" />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                      <span className="text-xs font-medium">{(userItem.email || 'U').charAt(0).toUpperCase()}</span>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <p className="font-medium">{userItem.full_name || 'No name'}</p>
+                                    <p className="text-xs text-muted-foreground">{userItem.email}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {userItem.roles.length === 0 ? (
+                                    <Badge variant="outline">User</Badge>
+                                  ) : (
+                                    userItem.roles.map(role => (
+                                      <Badge key={role} className={getRoleBadgeColor(role)}>
+                                        {role.replace('_', ' ')}
+                                      </Badge>
+                                    ))
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {format(new Date(userItem.created_at), 'MMM d, yyyy')}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedUser(userItem);
+                                      setPromoteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add Role
+                                  </Button>
+                                  {userItem.roles.map(role => (
+                                    <Button
+                                      key={role}
+                                      size="sm"
+                                      variant="ghost"
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                      onClick={() => handleRevokeRole(userItem.id, role)}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                {/* White Label Partners */}
+                {whiteLabelSettings.length > 0 && (
+                  <Card className="bg-background/50 backdrop-blur-sm border-border/50">
+                    <CardContent className="pt-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-violet-500" />
+                        White Label Partners
+                      </h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Partner</TableHead>
+                            <TableHead>Company</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Subscription</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {whiteLabelSettings.map((setting) => (
+                            <TableRow key={setting.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{setting.user_name || 'No name'}</p>
+                                  <p className="text-xs text-muted-foreground">{setting.user_email}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {setting.logo_url && (
+                                    <img src={setting.logo_url} alt="" className="w-6 h-6 rounded" />
+                                  )}
+                                  <span>{setting.company_name || 'Not set'}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{getStatusBadge(setting.subscription_status)}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {setting.subscription_end 
+                                  ? `Ends ${format(new Date(setting.subscription_end), 'MMM d, yyyy')}`
+                                  : 'No end date'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
           </TabsContent>
 
-          <TabsContent value="partners">
-            <AdminPartnersTab onUpdate={fetchStats} />
+          {/* Partners & Applications */}
+          <TabsContent value="partners" className="space-y-6">
+            <Tabs defaultValue="applications">
+              <TabsList className="mb-4">
+                <TabsTrigger value="applications" className="gap-2">
+                  <FileText className="w-4 h-4" />
+                  Applications
+                  {stats.pendingApplications > 0 && (
+                    <Badge variant="destructive" className="ml-1">{stats.pendingApplications}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="active" className="gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Active Partners
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="applications">
+                <AdminApplicationsTab onUpdate={fetchStats} />
+              </TabsContent>
+              <TabsContent value="active">
+                <AdminPartnersTab onUpdate={fetchStats} />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
+          {/* Directory */}
           <TabsContent value="directory">
             <AdminDirectoryTab onUpdate={fetchStats} />
           </TabsContent>
-
-          {isSuperAdmin && (
-            <TabsContent value="super-admin">
-              <SuperAdminPanel />
-            </TabsContent>
-          )}
         </Tabs>
       </main>
+
+      {/* Promote User Dialog */}
+      <Dialog open={promoteDialogOpen} onOpenChange={setPromoteDialogOpen}>
+        <DialogContent className="bg-background/95 backdrop-blur-xl border-border/50">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Add Role to User
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-secondary/50">
+                <p className="font-medium">{selectedUser.full_name || 'No name'}</p>
+                <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Role to Add</Label>
+                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                    <SelectItem value="white_label_admin">White Label Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {selectedRole === 'white_label_admin' && (
+                <div className="space-y-2">
+                  <Label>Company Name</Label>
+                  <Input
+                    placeholder="Enter company name..."
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePromoteUser} disabled={processingAction}>
+              {processingAction ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 mr-2" />
+              )}
+              Add Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
