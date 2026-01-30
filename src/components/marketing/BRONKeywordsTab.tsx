@@ -74,6 +74,53 @@ interface InitialPositions {
   yahoo: number | null;
 }
 
+function buildKeywordKeyVariants(text: string): string[] {
+  const base = (text || '').toLowerCase().trim();
+  if (!base) return [];
+
+  const beforeColon = base.includes(':') ? base.split(':')[0].trim() : base;
+
+  // Keep spaces, but normalize punctuation/whitespace.
+  const normalized = base
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const normalizedNoSpace = normalized.replace(/\s+/g, '');
+
+  const beforeColonNormalized = beforeColon
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const beforeColonNormalizedNoSpace = beforeColonNormalized.replace(/\s+/g, '');
+
+  // Unique, stable order.
+  const out: string[] = [];
+  const push = (v: string) => {
+    if (!v) return;
+    if (!out.includes(v)) out.push(v);
+  };
+
+  push(base);
+  push(beforeColon);
+  push(normalized);
+  push(normalizedNoSpace);
+  push(beforeColonNormalized);
+  push(beforeColonNormalizedNoSpace);
+
+  return out;
+}
+
+function lookupInitialPositions(
+  map: Record<string, InitialPositions>,
+  keywordText: string
+): InitialPositions | undefined {
+  for (const key of buildKeywordKeyVariants(keywordText)) {
+    const hit = map[key];
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
 // Main component
 export const BRONKeywordsTab = memo(({
   keywords,
@@ -283,7 +330,7 @@ export const BRONKeywordsTab = memo(({
         const isTrackingOnly = k.status === 'tracking_only' || String(k.id).startsWith('serp_');
         
         // Calculate movement
-        const initial = initialPositions[keywordText.toLowerCase()];
+        const initial = lookupInitialPositions(initialPositions, keywordText);
         const movement = initial?.google && googlePos ? initial.google - googlePos : 0;
         
         switch (activeFilter) {
@@ -328,7 +375,7 @@ export const BRONKeywordsTab = memo(({
       const hasContentFlag = k.resfeedtext && k.resfeedtext.length > 50;
       const isTrackingOnly = k.status === 'tracking_only' || String(k.id).startsWith('serp_');
       
-      const initial = initialPositions[keywordText.toLowerCase()];
+      const initial = lookupInitialPositions(initialPositions, keywordText);
       const movement = initial?.google && googlePos ? initial.google - googlePos : 0;
       
       if (googlePos !== null && googlePos <= 10) top10++;
@@ -418,19 +465,17 @@ export const BRONKeywordsTab = memo(({
           const firstPositions: Record<string, InitialPositions> = {};
           for (const item of oldestReportData) {
             if (item.keyword) {
-              const key = item.keyword.toLowerCase().trim();
               const positions = {
                 google: getPosition(item.google),
                 bing: getPosition(item.bing),
                 yahoo: getPosition(item.yahoo),
               };
-              firstPositions[key] = positions;
-              
-              // Also store normalized version (no special chars) for better matching
-              const normalizedKey = key.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
-              if (normalizedKey !== key) {
-                firstPositions[normalizedKey] = positions;
-              }
+
+                // Store multiple key variants so latest/current report keywords can always match
+                // (colon prefixes, punctuation differences, etc.)
+                for (const key of buildKeywordKeyVariants(String(item.keyword))) {
+                  firstPositions[key] = positions;
+                }
             }
           }
           console.log('[BRON] Loaded baseline positions for', Object.keys(firstPositions).length, 'keywords');
