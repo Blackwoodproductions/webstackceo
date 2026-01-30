@@ -50,9 +50,18 @@ interface BronKeywordCardProps {
 // Utility functions
 // Extract the actual TARGET KEYWORD (not page title) for SERP matching
 // This should be the keyword we're ranking for, e.g. "Best Dentist in Port Coquitlam"
+// STRICT: Never include page titles with ":" or subtitles
 export function getTargetKeyword(kw: BronKeyword): string {
   // Priority 1: Explicit keyword field (most reliable)
-  if (kw.keyword && kw.keyword.trim()) return kw.keyword.trim();
+  if (kw.keyword && kw.keyword.trim()) {
+    const kwText = kw.keyword.trim();
+    // If keyword contains ":", only take the part before it (remove page title suffix)
+    if (kwText.includes(':')) {
+      const beforeColon = kwText.split(':')[0].trim();
+      if (beforeColon.length > 3) return beforeColon;
+    }
+    return kwText;
+  }
   
   // Priority 2: Extract from URL slug (this IS the target keyword)
   if (kw.linkouturl) {
@@ -79,8 +88,19 @@ export function getTargetKeyword(kw: BronKeyword): string {
     return kw.keywordtitle.trim();
   }
   
-  // Fallback: Return the display text (even if it's a page title)
-  return getKeywordDisplayText(kw);
+  // Priority 4: If keywordtitle has ":", extract just the keyword part
+  if (kw.keywordtitle && kw.keywordtitle.includes(':')) {
+    const beforeColon = kw.keywordtitle.split(':')[0].trim();
+    if (beforeColon.length > 3) return beforeColon;
+  }
+  
+  // Fallback: Return the display text but strip page title suffix
+  const display = getKeywordDisplayText(kw);
+  if (display.includes(':')) {
+    const beforeColon = display.split(':')[0].trim();
+    if (beforeColon.length > 3) return beforeColon;
+  }
+  return display;
 }
 
 export function getKeywordDisplayText(kw: BronKeyword): string {
