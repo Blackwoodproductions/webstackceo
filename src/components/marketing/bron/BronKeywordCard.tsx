@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { 
   ChevronUp, ChevronDown, ArrowUpRight, ArrowDownLeft,
   TrendingUp, TrendingDown, Minus, DollarSign, Search, MousePointerClick,
-  ShoppingCart, Info, Compass, Target, RefreshCw, BarChart3
+  ShoppingCart, Info, Compass, Target, RefreshCw, BarChart3, Link
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -627,21 +627,16 @@ export const BronKeywordCard = memo(({
             {/* Column 4: Keyword Text */}
             <div className="min-w-0 pr-2">
               <div className="flex items-center gap-2">
-                {/* Gold TARGET badge for main keywords */}
-                {isMainKeyword && !isNested ? (
-                  <Badge className={`${badgeSize} bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-500 border-amber-400/50 whitespace-nowrap font-bold uppercase tracking-wide`}>
-                    <Target className="w-2.5 h-2.5 mr-0.5" />
-                    Target
-                  </Badge>
-                ) : (
-                  <span 
-                    className={`w-2 h-2 rounded-full shrink-0 ${
-                      isNested 
+                {/* Simple dot indicator - no TARGET pill */}
+                <span 
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isMainKeyword && !isNested
+                      ? 'bg-amber-500'
+                      : isNested 
                         ? 'bg-amber-500' 
                         : 'bg-primary/60'
-                    }`} 
-                  />
-                )}
+                  }`} 
+                />
                 
                 <h3 
                   className={`font-medium truncate ${textSize} ${
@@ -705,15 +700,36 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 9: Links Display */}
+            {/* Column 9: Links Display with integrated collapse */}
             <div className="flex items-center justify-center">
-              <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
+              <div className={`flex items-center gap-1 ${isCompact ? 'px-2 py-1' : 'px-2 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
+                {/* Collapse/Expand chevron - integrated on left side */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand();
+                  }}
+                  className={`shrink-0 ${isCompact ? 'w-5 h-5' : 'w-6 h-6'} rounded flex items-center justify-center ${
+                    isExpanded 
+                      ? 'bg-primary/20 text-primary' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  title={isExpanded ? 'Collapse' : 'Expand'}
+                  aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                >
+                  {isExpanded 
+                    ? <ChevronUp className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> 
+                    : <ChevronDown className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                  }
+                </button>
+
                 <div className="flex items-center gap-1">
                   <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-cyan-400`}>{linksInCount}</span>
                   <ArrowDownLeft className={`${actionIconSize} text-cyan-400`} />
                 </div>
 
-                {/* Center info button (opens link report / expands keyword) */}
+                {/* Center link icon (opens link report / expands keyword) */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -721,11 +737,11 @@ export const BronKeywordCard = memo(({
                     // Open (but don't toggle closed) to show link report
                     if (!isExpanded && !isTrackingOnly) onToggleExpand();
                   }}
-                  className="shrink-0 w-7 h-7 rounded-full bg-background/40 border border-border/50 flex items-center justify-center hover:bg-background/60"
+                  className="shrink-0 w-6 h-6 rounded-full bg-background/40 border border-border/50 flex items-center justify-center hover:bg-background/60"
                   title={isTrackingOnly ? 'Link report not available for tracking-only keywords' : 'Open link report'}
                   aria-label="Open link report"
                 >
-                  <Info className={`${actionIconSize} text-muted-foreground`} />
+                  <Link className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
 
                 <div className="flex items-center gap-1">
@@ -735,18 +751,9 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 10: Expand/Collapse */}
+            {/* Column 10: Now empty - collapse moved into links pill */}
             <div className="flex items-center justify-center">
-              <div className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-full flex items-center justify-center ${
-                isExpanded 
-                  ? 'bg-primary/20 text-primary' 
-                  : 'bg-muted/50 text-muted-foreground'
-              }`}>
-                {isExpanded 
-                  ? <ChevronUp className={isCompact ? 'w-4 h-4' : 'w-5 h-5'} /> 
-                  : <ChevronDown className={isCompact ? 'w-4 h-4' : 'w-5 h-5'} />
-                }
-              </div>
+              {/* Placeholder for grid alignment */}
             </div>
           </div>
         </div>

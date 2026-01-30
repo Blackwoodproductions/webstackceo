@@ -68,7 +68,8 @@ interface KeywordSummary {
   keyword: string;
   best: number | null;
   current: number | null;
-  change: number;
+  baseline: number | null; // First recorded position (oldest report)
+  change: number; // Change from baseline to current (positive = improved)
   color: string;
   gradient: string;
 }
@@ -192,10 +193,10 @@ export const BronKeywordAnalysisDialog = memo(({
     const data: ChartDataPoint[] = [];
     const summaries: KeywordSummary[] = [];
     
-    // Track best/current for each keyword
-    const keywordStats: Record<string, { best: number | null; current: number | null; all: number[] }> = {};
+    // Track best/current/baseline for each keyword
+    const keywordStats: Record<string, { best: number | null; current: number | null; baseline: number | null; all: number[] }> = {};
     trackedKeywords.forEach(tk => {
-      keywordStats[tk.text] = { best: null, current: null, all: [] };
+      keywordStats[tk.text] = { best: null, current: null, baseline: null, all: [] };
     });
     
     // Build chart data points
@@ -230,23 +231,38 @@ export const BronKeywordAnalysisDialog = memo(({
       }
     });
     
-    // Calculate best/current for each keyword
+    // Calculate best/current/baseline for each keyword
+    // Baseline = first ever recorded position (from oldest report in "All Time" view)
     trackedKeywords.forEach((tk, idx) => {
       const stats = keywordStats[tk.text];
       if (stats.all.length > 0) {
         stats.best = Math.min(...stats.all);
         stats.current = stats.all[stats.all.length - 1];
+        stats.baseline = stats.all[0]; // First recorded position is the baseline
       }
       
-      const first = stats.all[0] ?? null;
+      // Change is calculated as: baseline - current
+      // Positive = improved (e.g., baseline #10 to current #5 = +5)
+      // Negative = dropped (e.g., baseline #5 to current #10 = -5)
+      const baseline = stats.baseline;
       const current = stats.current;
-      const change = first && current ? first - current : 0;
+      let change = 0;
+      if (baseline !== null && current !== null) {
+        change = baseline - current;
+      } else if (baseline === null && current !== null) {
+        // Newly ranked (wasn't in baseline)
+        change = 999;
+      } else if (baseline !== null && current === null) {
+        // Dropped off entirely
+        change = -999;
+      }
       
       const colorObj = KEYWORD_COLORS[idx % KEYWORD_COLORS.length];
       summaries.push({
         keyword: tk.text,
         best: stats.best,
         current: stats.current,
+        baseline: stats.baseline,
         change,
         color: colorObj.stroke,
         gradient: colorObj.gradient,
@@ -399,12 +415,12 @@ export const BronKeywordAnalysisDialog = memo(({
           </div>
 			</div>
 
-          {/* Keyword Summary Cards - horizontal strip (no vertical scrolling) */}
-          <div className="mt-4 flex gap-4 overflow-x-auto pb-2 shrink-0">
-            {keywordSummaries.map((summary, idx) => (
+          {/* Keyword Summary Cards - equal width grid */}
+          <div className="mt-4 grid grid-cols-3 gap-4 shrink-0">
+            {keywordSummaries.slice(0, 3).map((summary, idx) => (
               <div 
                 key={idx}
-                className={`relative rounded-2xl border border-border/50 bg-gradient-to-br ${summary.gradient} backdrop-blur-sm p-4 overflow-hidden min-w-[260px]`}
+                className={`relative rounded-2xl border border-border/50 bg-gradient-to-br ${summary.gradient} backdrop-blur-sm p-4 overflow-hidden flex-1`}
               >
                 {/* Accent glow */}
                 <div 
@@ -426,33 +442,35 @@ export const BronKeywordAnalysisDialog = memo(({
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
-                      <p className="text-xl font-bold text-cyan-400">
+                      <p className="text-lg font-bold text-cyan-400">
                         {summary.best !== null ? `#${summary.best}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
-                      <p className="text-xl font-bold text-violet-400">
+                      <p className="text-lg font-bold text-violet-400">
                         {summary.current !== null ? `#${summary.current}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
-                      <div className={`flex items-center justify-center gap-1 ${
+                      <div className={`flex items-center justify-center gap-0.5 ${
                         summary.change > 0 
                           ? 'text-emerald-400' 
                           : summary.change < 0 
                             ? 'text-red-400' 
                             : 'text-muted-foreground'
                       }`}>
-                        {summary.change > 0 && <TrendingUp className="w-4 h-4" />}
-                        {summary.change < 0 && <TrendingDown className="w-4 h-4" />}
-                        {summary.change === 0 && <Minus className="w-4 h-4" />}
-                        <span className="text-xl font-bold">
-                          {summary.change !== 0 ? (
+                        {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
+                        {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
+                        {summary.change === 0 && <Minus className="w-3 h-3" />}
+                        <span className="text-lg font-bold">
+                          {summary.change >= 999 ? '+NEW' : 
+                           summary.change <= -999 ? 'LOST' :
+                           summary.change !== 0 ? (
                             summary.change > 0 ? `+${summary.change}` : summary.change
                           ) : '—'}
                         </span>
