@@ -1,102 +1,64 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Zap, TrendingUp, FileText, Award, Brain, BarChart3 } from 'lucide-react';
+import { ShoppingCart, Zap, Globe, Sparkles, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 
-// Your existing Stripe products mapped to a catalog
+// Webstack.ceo À La Carte Add-on Services
+// These are add-ons to subscription plans, not legacy Stripe products
 const products = [
   {
-    id: 'bron-15',
-    priceId: 'price_1ST2P1DhwTkpKWXviUKZcjHg',
-    productId: 'prod_TPs99FAUdyhPHW',
-    name: 'BRON 15 Keywords',
-    description: 'Boost your site\'s authority with automated, industry-relevant backlinks from real business websites.',
-    price: 5000,
+    id: 'vi-domain-addon',
+    priceId: 'price_vi_domain_addon', // To be created in Stripe
+    productId: 'prod_vi_domain',
+    name: 'Additional VI Domain',
+    description: 'Add another domain to your Visitor Intelligence dashboard for comprehensive tracking.',
+    price: 1500, // $15/month
     currency: 'usd',
     type: 'one_time' as const,
-    icon: TrendingUp,
-    color: 'emerald',
-    popular: false,
-  },
-  {
-    id: 'bron-60',
-    priceId: 'price_1SVGnnDhwTkpKWXveaUdIBtn',
-    productId: 'prod_TSBAjvIHDqrici',
-    name: 'BRON 60 Keywords',
-    description: 'Enterprise-level backlink building with 60 keyword targeting for maximum SEO impact.',
-    price: 29900,
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: TrendingUp,
-    color: 'emerald',
-    popular: true,
-  },
-  {
-    id: 'cade',
-    priceId: 'price_1ST2SkDhwTkpKWXv7jSyg5zG',
-    productId: 'prod_TPsD0SbpheHZwj',
-    name: 'CADE Content Automation',
-    description: 'Weekly, competitor-informed content including blog drip, knowledge base articles, and FAQs.',
-    price: 14900,
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: FileText,
+    icon: Globe,
     color: 'cyan',
     popular: true,
   },
   {
-    id: 'bron-cade-combo',
-    priceId: 'price_1SPbjRDhwTkpKWXv2RH12zjV',
-    productId: 'prod_TMKOsaPgcTdIkD',
-    name: 'BRON + CADE Bundle',
-    description: 'Complete SEO package: backlink building + content automation at a discounted rate.',
-    price: 44900,
+    id: 'aeo-geo-10',
+    priceId: 'price_aeo_geo_10', // To be created in Stripe
+    productId: 'prod_aeo_geo',
+    name: 'AEO/GEO 10 Keywords',
+    description: 'Track 10 keywords for AI Engine Optimization and Geographic signals visibility.',
+    price: 2000, // $20/month (10 x $2)
     currency: 'usd',
     type: 'one_time' as const,
-    icon: Zap,
+    icon: Sparkles,
+    color: 'violet',
+    popular: false,
+  },
+  {
+    id: 'aeo-geo-25',
+    priceId: 'price_aeo_geo_25', // To be created in Stripe
+    productId: 'prod_aeo_geo',
+    name: 'AEO/GEO 25 Keywords',
+    description: 'Track 25 keywords for comprehensive AI visibility monitoring across search engines.',
+    price: 5000, // $50/month (25 x $2)
+    currency: 'usd',
+    type: 'one_time' as const,
+    icon: Sparkles,
     color: 'violet',
     popular: true,
-    savings: 'Save $50',
+    savings: 'Best Value',
   },
   {
-    id: 'dax-50',
-    priceId: 'price_1ST2WCDhwTkpKWXvEaNP2rKP',
-    productId: 'prod_TPsGrSQHfjG2iA',
-    name: 'DAX 50 Domain Authority',
-    description: 'Boost your domain authority to 50+ with our proven link building strategy.',
-    price: 4900,
+    id: 'priority-support',
+    priceId: 'price_priority_support', // To be created in Stripe
+    productId: 'prod_priority_support',
+    name: 'Priority Support',
+    description: 'Get dedicated support with faster response times and direct access to our SEO experts.',
+    price: 4900, // $49/month
     currency: 'usd',
     type: 'one_time' as const,
-    icon: Award,
-    color: 'amber',
-    popular: false,
-  },
-  {
-    id: 'dax-60',
-    priceId: 'price_1ST2XTDhwTkpKWXv7Vx663I4',
-    productId: 'prod_TPsIyDYbIjDqIY',
-    name: 'DAX 60 Domain Authority',
-    description: 'Premium authority building package for competitive niches.',
-    price: 9900,
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: Award,
-    color: 'amber',
-    popular: false,
-  },
-  {
-    id: 'dax-70',
-    priceId: 'price_1ST2XmDhwTkpKWXvW1kMKl69',
-    productId: 'prod_TPsI93Rq3YmOwi',
-    name: 'DAX 70 Domain Authority',
-    description: 'Enterprise-level domain authority for maximum search visibility.',
-    price: 19900,
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: Award,
+    icon: Shield,
     color: 'amber',
     popular: false,
   },
