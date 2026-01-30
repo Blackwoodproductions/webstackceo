@@ -612,8 +612,8 @@ export const BronKeywordAnalysisDialog = memo(({
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-6xl h-[90vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
-        <div className="flex h-full flex-col overflow-hidden p-4">
+      <DialogContent className="max-w-6xl h-[90vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0 flex flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden p-4 min-h-0">
           {/* Compact Header Row */}
           <DialogHeader className="shrink-0 pb-2">
             <div className="flex items-center justify-between gap-4">
@@ -654,8 +654,8 @@ export const BronKeywordAnalysisDialog = memo(({
             </div>
           </DialogHeader>
 
-          {/* Chart Section - Uses working BronMultiKeywordTrendChart */}
-          <div className="flex-1 min-h-0 overflow-auto">
+          {/* Chart Section - Uses full height */}
+          <div className="flex-1 min-h-0 flex flex-col">
             {isLoading && !hasRenderableHistory ? (
               <BronHistoricalLoadingScreen
                 title="Loading historical data…"
@@ -663,9 +663,9 @@ export const BronKeywordAnalysisDialog = memo(({
                 total={fetchProgress.total}
               />
             ) : historicalData.size > 0 ? (
-              <div className="relative">
+              <div className="flex-1 min-h-0 flex flex-col relative">
                 {isLoading && (
-                  <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/70 backdrop-blur px-4 py-2">
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/70 backdrop-blur px-4 py-2">
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-primary" />
                       <span className="text-xs text-muted-foreground">Loading historical data…</span>
@@ -684,7 +684,7 @@ export const BronKeywordAnalysisDialog = memo(({
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="flex flex-col items-center justify-center flex-1 gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
                   <Activity className="w-6 h-6 text-muted-foreground" />
                 </div>
