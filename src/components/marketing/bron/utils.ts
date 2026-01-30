@@ -313,6 +313,15 @@ export interface KeywordCluster {
 // Location words used for similarity boosting (static, shared)
 const LOCATION_WORDS = new Set(['port', 'coquitlam', 'vancouver', 'burnaby', 'surrey', 'richmond', 'langley', 'abbotsford']);
 
+// Industry-specific words for better clustering (dental, medical, legal, etc.)
+const INDUSTRY_STEM_WORDS = new Set([
+  'dental', 'dentist', 'dentists', 'dentistry', 'teeth', 'tooth', 'orthodont', 'implant', 'crown', 'veneer', 'cosmetic', 'emergency',
+  'lawyer', 'attorney', 'legal', 'law',
+  'doctor', 'medical', 'clinic', 'health', 'care',
+  'plumber', 'plumbing', 'hvac', 'heating', 'cooling', 'air',
+  'roofing', 'roofer', 'contractor', 'repair',
+]);
+
 // Calculate text similarity between pre-split word arrays (avoids repeated split/filter)
 function calculateWordSimilarity(words1: string[], words2: string[]): number {
   if (words1.length === 0 || words2.length === 0) return 0;
@@ -323,10 +332,31 @@ function calculateWordSimilarity(words1: string[], words2: string[]): number {
     if (set2.has(w)) commonWords.push(w);
   }
   
+  // Also check for industry stem matches (partial word matching)
+  let industryStemMatch = false;
+  for (const w1 of words1) {
+    for (const w2 of words2) {
+      // Check if both words share an industry stem
+      for (const stem of INDUSTRY_STEM_WORDS) {
+        if (w1.includes(stem.slice(0, 4)) && w2.includes(stem.slice(0, 4))) {
+          industryStemMatch = true;
+          break;
+        }
+      }
+      if (industryStemMatch) break;
+    }
+    if (industryStemMatch) break;
+  }
+  
   const overlap = commonWords.length / Math.min(words1.length, words2.length);
   const hasMatchingLocation = commonWords.some(w => LOCATION_WORDS.has(w));
   
-  return hasMatchingLocation ? overlap * 1.2 : overlap;
+  // Boost for industry stem matches
+  let score = overlap;
+  if (hasMatchingLocation) score *= 1.2;
+  if (industryStemMatch) score += 0.1;
+  
+  return score;
 }
 
 // Group keywords by topic similarity
@@ -443,7 +473,7 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
     for (const kw of contentKeywords) {
       if (childIds.has(String(kw.id))) continue;
       let children = parentChildMap.get(String(kw.id)) || [];
-      children = children.slice(0, 2); // Max 2 supporting per cluster
+      children = children.slice(0, 5); // Max 5 supporting per cluster (was 2)
       clusters.push({ parent: kw, children, parentId: kw.id });
     }
   } else {
@@ -482,8 +512,9 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
       }
       scored.sort((a, b) => b.score - a.score);
       
-      for (let i = 0; i < Math.min(2, scored.length); i++) {
-        if (scored[i].score >= 0.3) {
+      for (let i = 0; i < Math.min(5, scored.length); i++) {
+        // Lower threshold to 0.15 (was 0.3) for better clustering
+        if (scored[i].score >= 0.15) {
           children.push(scored[i].kw);
           assigned.add(String(scored[i].kw.id));
         }
