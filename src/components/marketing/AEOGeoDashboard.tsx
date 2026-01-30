@@ -3,7 +3,7 @@ import {
   BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
   ChevronDown, ChevronRight, Lightbulb, Sparkles, 
   MessageSquare, Play, Pause, Calendar, History, RefreshCw,
-  TrendingUp, TrendingDown, Minus, Zap, GitBranch
+  TrendingUp, TrendingDown, Minus, Zap, GitBranch, Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useBronApi, BronKeyword } from '@/hooks/use-bron-api';
 import { getTargetKeyword } from './bron/BronKeywordCard';
 import { groupKeywords, KeywordCluster } from './bron/utils';
+import { LLMTrainingAnimation, KeywordTrainingInfo } from '@/components/ui/llm-training-animation';
 import { format, subDays, startOfDay, isToday, differenceInDays } from 'date-fns';
 
 interface LLMResult {
@@ -373,55 +374,37 @@ const KeywordAEOCard = memo(({
               </div>
               
               <div className="flex items-center gap-3">
-                {data.isLoading ? (
+                {/* Always show training info component */}
+                <KeywordTrainingInfo
+                  hasResults={data.results.length > 0}
+                  prominentCount={prominentCount}
+                  mentionedCount={mentionedCount}
+                  roundCount={roundCount}
+                  lastTrainedAt={data.timestamp}
+                  isTraining={data.isLoading}
+                  trainingProgress={data.isLoading ? 25 : (hasTrainingData ? 100 : 0)}
+                />
+                
+                {data.results.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">Checking...</span>
+                    <Progress value={successRate} className="w-16 h-2" />
+                    <span className="text-xs font-medium text-muted-foreground">{successRate}%</span>
                   </div>
-                ) : data.results.length > 0 ? (
-                  <>
-                    {/* Training stats */}
-                    {hasTrainingData && (
-                      <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-[10px]">
-                        {roundCount} training rounds
-                      </Badge>
-                    )}
-                    {/* Show re-check button if less than 3 LLM results (stale cache) */}
-                    {data.results.length < 3 && onRecheck && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRecheck();
-                        }}
-                      >
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Re-check
-                      </Button>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Progress value={successRate} className="w-20 h-2" />
-                      <span className="text-xs font-medium text-muted-foreground">{successRate}%</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {prominentCount > 0 && (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">
-                          {prominentCount} prominent
-                        </Badge>
-                      )}
-                      {mentionedCount > 0 && (
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px]">
-                          {mentionedCount} mentioned
-                        </Badge>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                    Pending
-                  </Badge>
+                )}
+                
+                {/* Show re-check button */}
+                {!data.isLoading && onRecheck && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRecheck();
+                    }}
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                  </Button>
                 )}
               </div>
             </div>
@@ -1045,6 +1028,51 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     }
   }, [domain, saveResultToDb]);
   
+  // Check keyword and then start training session
+  const handleCheckAndTrain = useCallback(async (keyword: string) => {
+    // First do the initial check
+    const checkSuccess = await checkKeyword(keyword);
+    if (!checkSuccess) return;
+    
+    // Then start a training session via the scheduled check function
+    toast.info(`Starting LLM training for "${keyword}"...`);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('aeo-scheduled-check', {
+        body: { 
+          action: 'train_keyword',
+          domain,
+          keyword,
+        }
+      });
+      
+      if (error) {
+        console.error('Training start error:', error);
+        toast.error('Failed to start training session');
+        return;
+      }
+      
+      // Update the result with training data
+      if (data?.results) {
+        setKeywordResults(prev => ({
+          ...prev,
+          [keyword]: {
+            keyword,
+            isLoading: false,
+            results: data.results || [],
+            suggestions: data.suggestions || [],
+            timestamp: data.timestamp,
+          }
+        }));
+        
+        toast.success(`Training session completed for "${keyword}"`);
+      }
+    } catch (e) {
+      console.error('Training error:', e);
+      toast.error('Training session failed');
+    }
+  }, [domain, checkKeyword]);
+  
   // Auto-run checks sequentially
   const startAutoRun = useCallback(async () => {
     if (bronKeywords.length === 0) {
@@ -1235,15 +1263,13 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         availableDates={availableDates} 
       />
       
-      {/* Keywords List - No animations for stability */}
+      {/* Keywords List - With proper loading animation */}
       <div className="space-y-2">
         {isLoadingKeywords ? (
-          <Card className="bg-muted/20 border-dashed">
-            <CardContent className="py-12 text-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground">Loading keywords from BRON...</p>
-            </CardContent>
-          </Card>
+          <LLMTrainingAnimation 
+            title="Loading Keywords for LLM Training"
+            subtitle={`Analyzing ${domain} keywords from BRON tracker`}
+          />
         ) : bronKeywords.length === 0 ? (
           <Card className="bg-muted/20 border-dashed">
             <CardContent className="py-12 text-center">
@@ -1262,7 +1288,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               isExpanded={expandedKeyword === kw.keyword}
               onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
               position={kw.isNested ? undefined : kw.position}
-              onRecheck={() => checkKeyword(kw.keyword)}
+              onRecheck={() => handleCheckAndTrain(kw.keyword)}
               isNested={kw.isNested}
               isMainKeyword={kw.isMainKeyword}
               childCount={kw.childCount}
