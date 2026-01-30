@@ -2009,11 +2009,33 @@ const MarketingDashboard = () => {
                   sideOffset={4}
                 >
                   {(() => {
+                    // Build normalized GSC domain list for comparison
+                    const gscDomainSet = new Set(
+                      gscSites.map(site => 
+                        site.siteUrl.toLowerCase().trim()
+                          .replace('sc-domain:', '')
+                          .replace(/^(https?:\/\/)?(www\.)?/, '')
+                          .replace(/\/$/, '')
+                          .split('/')[0]
+                      )
+                    );
+                    
                     // Use user-owned domains from database (multi-tenant isolation)
-                    const ownedDomains = userOwnedDomains.map(d => ({
-                      ...d,
-                      normalized: d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]
-                    }));
+                    // For normal users: only show domains that are in their GSC
+                    // For super admins: show all domains, mark non-GSC as demo
+                    const ownedDomains = userOwnedDomains
+                      .map(d => {
+                        const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                        const isInGsc = gscDomainSet.has(normalized);
+                        return {
+                          ...d,
+                          normalized,
+                          isDemo: !isInGsc && d.source !== 'gsc'
+                        };
+                      })
+                      // Normal users only see GSC-verified domains
+                      // Super admins see everything
+                      .filter(d => isSuperAdmin || !d.isDemo);
                     
                     return (
                       <>
@@ -2029,7 +2051,9 @@ const MarketingDashboard = () => {
                         ) : (
                           ownedDomains.map((userDomain) => {
                             const isPrimary = userDomain.is_primary;
-                            const canAccess = isPrimary; // For now, only primary is free
+                            const isDemo = userDomain.isDemo;
+                            // Super admins can access all, normal users only primary
+                            const canAccess = isSuperAdmin || isPrimary;
                             
                             return (
                               <div key={userDomain.id} className="flex items-center justify-between group">
@@ -2041,18 +2065,25 @@ const MarketingDashboard = () => {
                                   <div className="flex items-center gap-2">
                                     {isPrimary ? (
                                       <Star className="w-3.5 h-3.5 text-amber-500" />
+                                    ) : isDemo ? (
+                                      <FlaskConical className="w-3.5 h-3.5 text-violet-400" />
                                     ) : (
                                       <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                                     )}
                                     <span className="truncate max-w-[200px]" title={userDomain.domain}>
                                       {userDomain.domain}
                                     </span>
-                                    {isPrimary && (
+                                    {isDemo && (
+                                      <Badge className="text-[8px] px-1 py-0 bg-violet-500/20 text-violet-400 border-violet-500/30">
+                                        DEMO
+                                      </Badge>
+                                    )}
+                                    {isPrimary && !isDemo && (
                                       <Badge className="text-[8px] px-1 py-0 bg-amber-500/20 text-amber-600 border-amber-500/30">
                                         FREE
                                       </Badge>
                                     )}
-                                    {!canAccess && (
+                                    {!canAccess && !isDemo && (
                                       <Badge variant="outline" className="text-[8px] px-1 py-0">
                                         Upgrade
                                       </Badge>
@@ -4148,6 +4179,7 @@ f.parentNode.insertBefore(j,f);
         open={domainSelectionDialogOpen}
         onOpenChange={setDomainSelectionDialogOpen}
         domains={userOwnedDomains}
+        gscSites={gscSites}
         onSelectPrimary={async (domainId) => {
           const success = await setPrimaryDomain(domainId);
           if (success) {
