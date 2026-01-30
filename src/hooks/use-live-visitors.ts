@@ -11,6 +11,7 @@ export interface LiveVisitor {
   avatar_url?: string | null;
   display_name?: string | null;
   is_current_user?: boolean;
+  domain?: string | null;
 }
 
 interface UseLiveVisitorsOptions {
@@ -19,11 +20,13 @@ interface UseLiveVisitorsOptions {
   enabled?: boolean;
   pollInterval?: number;
   limit?: number;
+  domain?: string | null;
 }
 
 /**
  * Hook to fetch and poll live visitors with deduplication
  * Prevents duplicate entries for the same user/session
+ * Now supports domain-scoped filtering
  */
 export const useLiveVisitors = ({
   sessionId,
@@ -31,6 +34,7 @@ export const useLiveVisitors = ({
   enabled = true,
   pollInterval = 30000,
   limit = 8,
+  domain,
 }: UseLiveVisitorsOptions) => {
   const [liveVisitors, setLiveVisitors] = useState<LiveVisitor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,11 +42,13 @@ export const useLiveVisitors = ({
   // Use refs to avoid re-creating the fetch function on every render
   const sessionIdRef = useRef(sessionId);
   const currentUserIdRef = useRef(currentUserId);
+  const domainRef = useRef(domain);
   
   useEffect(() => {
     sessionIdRef.current = sessionId;
     currentUserIdRef.current = currentUserId;
-  }, [sessionId, currentUserId]);
+    domainRef.current = domain;
+  }, [sessionId, currentUserId, domain]);
 
   const fetchLiveVisitors = useCallback(async () => {
     if (!enabled) return;
@@ -52,12 +58,19 @@ export const useLiveVisitors = ({
     try {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       
-      const { data: sessions } = await supabase
+      let query = supabase
         .from('visitor_sessions')
-        .select('session_id, first_page, last_activity_at, started_at, referrer, user_id')
+        .select('session_id, first_page, last_activity_at, started_at, referrer, user_id, domain')
         .gte('last_activity_at', fiveMinutesAgo)
         .order('last_activity_at', { ascending: false })
         .limit(limit);
+      
+      // Apply domain filter if specified
+      if (domainRef.current) {
+        query = query.eq('domain', domainRef.current);
+      }
+      
+      const { data: sessions } = await query;
       
       if (!sessions) {
         setLiveVisitors([]);
@@ -140,14 +153,14 @@ export const useLiveVisitors = ({
     }
   }, [enabled, limit]);
 
-  // Poll for live visitors
+  // Poll for live visitors - refetch when domain changes
   useEffect(() => {
     if (!enabled) return;
     
     fetchLiveVisitors();
     const interval = setInterval(fetchLiveVisitors, pollInterval);
     return () => clearInterval(interval);
-  }, [enabled, pollInterval, fetchLiveVisitors]);
+  }, [enabled, pollInterval, fetchLiveVisitors, domain]);
 
   return {
     liveVisitors,

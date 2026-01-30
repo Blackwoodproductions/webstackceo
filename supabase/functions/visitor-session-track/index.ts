@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-api-key",
+    "authorization, x-client-info, apikey, content-type, x-api-key, x-tracking-token",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
@@ -12,6 +12,9 @@ type Action = "init" | "touch" | "page_view";
 type Payload = {
   action: Action;
   session_id: string;
+  // Domain tracking - either tracking_token OR domain can be provided
+  tracking_token?: string;
+  domain?: string;
   first_page?: string | null;
   referrer?: string | null;
   user_agent?: string | null;
@@ -44,6 +47,9 @@ Deno.serve(async (req) => {
     }
 
     const authHeader = req.headers.get("authorization") || "";
+    
+    // Check for tracking token in header as fallback
+    const headerTrackingToken = req.headers.get("x-tracking-token") || "";
 
     // Auth-aware client (uses caller JWT if present)
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -61,6 +67,36 @@ Deno.serve(async (req) => {
     const sessionId = (payload.session_id || "").trim();
     if (!action || !sessionId) {
       return jsonResponse({ success: false, error: "Missing action/session_id" }, 400);
+    }
+
+    // Resolve domain from tracking_token or direct domain parameter
+    let domain: string | null = null;
+    const trackingToken = payload.tracking_token || headerTrackingToken;
+    
+    if (trackingToken) {
+      // Look up domain by tracking token
+      const { data: domainData } = await serviceClient
+        .from("user_domains")
+        .select("domain")
+        .eq("tracking_token", trackingToken)
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (domainData?.domain) {
+        domain = domainData.domain;
+        console.log(`[visitor-session-track] Resolved domain ${domain} from token`);
+      } else {
+        console.warn(`[visitor-session-track] Invalid tracking token: ${trackingToken.substring(0, 8)}...`);
+      }
+    } else if (payload.domain) {
+      // Direct domain parameter (for internal/legacy use)
+      domain = payload.domain;
+    }
+    
+    // If no domain resolved and no token provided, this is likely webstack.ceo internal tracking
+    // We'll mark it as 'webstack.ceo' domain for internal analytics
+    if (!domain && !trackingToken) {
+      domain = "webstack.ceo";
     }
 
     // Determine authenticated user (if any); never trust user_id from the client.
@@ -86,6 +122,7 @@ Deno.serve(async (req) => {
             referrer,
             user_agent: userAgent,
             user_id: userId,
+            domain,
             last_activity_at: new Date().toISOString(),
           },
           { onConflict: "session_id", ignoreDuplicates: true },
@@ -104,7 +141,7 @@ Deno.serve(async (req) => {
           .eq("session_id", sessionId);
       }
 
-      return jsonResponse({ success: true });
+      return jsonResponse({ success: true, domain });
     }
 
     if (action === "touch") {
@@ -128,6 +165,7 @@ Deno.serve(async (req) => {
               referrer: payload.referrer ?? null,
               user_agent: payload.user_agent ?? null,
               user_id: userId,
+              domain,
               last_activity_at: now,
             },
             { onConflict: "session_id", ignoreDuplicates: true },
@@ -158,6 +196,7 @@ Deno.serve(async (req) => {
       page_title: payload.page_title ?? null,
       time_on_page: payload.time_on_page ?? 0,
       scroll_depth: payload.scroll_depth ?? 0,
+      domain,
     });
 
     if (error) {

@@ -31,6 +31,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
         const { data: { user } } = await supabase.auth.getUser();
 
         // Route all writes through backend function to avoid RLS/anon write failures.
+        // This tracks webstack.ceo internal visitors (the marketing site itself)
         await supabase.functions.invoke('visitor-session-track', {
           body: {
             action: 'init',
@@ -38,6 +39,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
             first_page: window.location.pathname,
             referrer: document.referrer || null,
             user_agent: navigator.userAgent,
+            domain: 'webstack.ceo', // Internal tracking for the marketing site
             // user_id is derived server-side from the caller JWT (if any)
           },
         });
@@ -64,6 +66,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
                 first_page: window.location.pathname,
                 referrer: document.referrer || null,
                 user_agent: navigator.userAgent,
+                domain: 'webstack.ceo',
               },
             });
           } catch {
@@ -83,6 +86,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
             first_page: window.location.pathname,
             referrer: document.referrer || null,
             user_agent: navigator.userAgent,
+            domain: 'webstack.ceo',
           },
         });
       } catch {
@@ -121,6 +125,7 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
             page_title: document.title,
             time_on_page: 0,
             scroll_depth: 0,
+            domain: 'webstack.ceo',
           },
         });
       } catch (error) {

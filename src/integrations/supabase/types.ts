@@ -439,6 +439,7 @@ export type Database = {
         Row: {
           created_at: string
           current_page: string | null
+          domain: string | null
           id: string
           last_message_at: string
           operator_id: string | null
@@ -451,6 +452,7 @@ export type Database = {
         Insert: {
           created_at?: string
           current_page?: string | null
+          domain?: string | null
           id?: string
           last_message_at?: string
           operator_id?: string | null
@@ -463,6 +465,7 @@ export type Database = {
         Update: {
           created_at?: string
           current_page?: string | null
+          domain?: string | null
           id?: string
           last_message_at?: string
           operator_id?: string | null
@@ -769,6 +772,7 @@ export type Database = {
       form_submissions: {
         Row: {
           created_at: string
+          domain: string | null
           form_data: Json | null
           form_name: string
           id: string
@@ -777,6 +781,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          domain?: string | null
           form_data?: Json | null
           form_name: string
           id?: string
@@ -785,6 +790,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          domain?: string | null
           form_data?: Json | null
           form_name?: string
           id?: string
@@ -983,6 +989,7 @@ export type Database = {
           qualification_step: number | null
           source_page: string | null
           status: string
+          tracking_domain: string | null
         }
         Insert: {
           annual_revenue?: string | null
@@ -1000,6 +1007,7 @@ export type Database = {
           qualification_step?: number | null
           source_page?: string | null
           status?: string
+          tracking_domain?: string | null
         }
         Update: {
           annual_revenue?: string | null
@@ -1017,6 +1025,7 @@ export type Database = {
           qualification_step?: number | null
           source_page?: string | null
           status?: string
+          tracking_domain?: string | null
         }
         Relationships: []
       }
@@ -1213,6 +1222,7 @@ export type Database = {
       page_views: {
         Row: {
           created_at: string
+          domain: string | null
           id: string
           page_path: string
           page_title: string | null
@@ -1222,6 +1232,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          domain?: string | null
           id?: string
           page_path: string
           page_title?: string | null
@@ -1231,6 +1242,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          domain?: string | null
           id?: string
           page_path?: string
           page_title?: string | null
@@ -1495,6 +1507,7 @@ export type Database = {
       tool_interactions: {
         Row: {
           created_at: string
+          domain: string | null
           id: string
           metadata: Json | null
           page_path: string | null
@@ -1504,6 +1517,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          domain?: string | null
           id?: string
           metadata?: Json | null
           page_path?: string | null
@@ -1513,6 +1527,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          domain?: string | null
           id?: string
           metadata?: Json | null
           page_path?: string | null
@@ -1572,6 +1587,7 @@ export type Database = {
           is_active: boolean
           is_primary: boolean
           source: string
+          tracking_token: string | null
           updated_at: string
           user_id: string
         }
@@ -1582,6 +1598,7 @@ export type Database = {
           is_active?: boolean
           is_primary?: boolean
           source?: string
+          tracking_token?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1592,6 +1609,7 @@ export type Database = {
           is_active?: boolean
           is_primary?: boolean
           source?: string
+          tracking_token?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1620,6 +1638,7 @@ export type Database = {
       }
       visitor_sessions: {
         Row: {
+          domain: string | null
           first_page: string | null
           id: string
           ip_hash: string | null
@@ -1631,6 +1650,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          domain?: string | null
           first_page?: string | null
           id?: string
           ip_hash?: string | null
@@ -1642,6 +1662,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          domain?: string | null
           first_page?: string | null
           id?: string
           ip_hash?: string | null
@@ -1723,6 +1744,7 @@ export type Database = {
       live_visitors: {
         Row: {
           current_page: string | null
+          domain: string | null
           first_page: string | null
           last_activity_at: string | null
           referrer: string | null
@@ -1732,6 +1754,7 @@ export type Database = {
         }
         Insert: {
           current_page?: never
+          domain?: string | null
           first_page?: string | null
           last_activity_at?: string | null
           referrer?: string | null
@@ -1741,6 +1764,7 @@ export type Database = {
         }
         Update: {
           current_page?: never
+          domain?: string | null
           first_page?: string | null
           last_activity_at?: string | null
           referrer?: string | null
@@ -1849,6 +1873,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_analytics: { Args: never; Returns: number }
+      generate_tracking_token: { Args: never; Returns: string }
       get_user_primary_domain: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: {

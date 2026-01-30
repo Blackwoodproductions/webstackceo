@@ -109,7 +109,7 @@ const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveS
     };
   }, [shouldShow, isVisible]);
 
-  // Fetch live stats
+  // Fetch live stats - scoped to webstack.ceo domain for the marketing site
   useEffect(() => {
     if (!shouldShow) return;
 
@@ -124,10 +124,12 @@ const FloatingLiveStats = memo(forwardRef<HTMLDivElement>(function FloatingLiveS
           supabase
             .from('visitor_sessions')
             .select('id', { count: 'exact', head: true })
+            .eq('domain', 'webstack.ceo')
             .gte('last_activity_at', fiveMinAgo.toISOString()),
           supabase
             .from('visitor_sessions')
             .select('id', { count: 'exact', head: true })
+            .eq('domain', 'webstack.ceo')
             .gte('started_at', startOfDay.toISOString()),
         ]);
 
