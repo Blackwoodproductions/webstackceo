@@ -317,7 +317,7 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
   // ─── Stable Callbacks ───
   const handleRefreshKeywords = useCallback(() => {
     if (selectedDomain) bronApi.fetchKeywords(selectedDomain, true);
-  }, [selectedDomain]);
+  }, [selectedDomain, bronApi]);
 
   const handleAddKeyword = useCallback((data: Record<string, unknown>) => {
     return bronApi.addKeyword(data, selectedDomain);
