@@ -640,10 +640,10 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-2 w-full" 
             style={{ 
-              // Widened metrics column from 150px to 180px to fit all 3 badges
+              // Narrower ranking columns (80px), proper metrics width, compact links column
               gridTemplateColumns: isNested 
-                ? '52px 44px 1fr 90px 90px 90px 180px 120px'  // 8 columns
-                : '44px 52px 44px 1fr 90px 90px 90px 180px 120px',  // 9 columns with chart
+                ? '52px 44px 1fr 80px 80px 80px 160px 100px'  // 8 columns
+                : '44px 52px 44px 1fr 80px 80px 80px 160px 100px',  // 9 columns with chart
             }}
           >
             {/* Column 1: Chart/Analysis Button - only for non-nested cards */}
@@ -753,8 +753,8 @@ export const BronKeywordCard = memo(({
               isBaselineReport={isBaselineReport}
             />
 
-            {/* Column 8: Keyword Metrics - left margin for gap from Yahoo, right margin for spacing */}
-            <div className="flex items-center justify-center ml-16 mr-3">
+            {/* Column 8: Keyword Metrics - moderate left margin for gap from Yahoo */}
+            <div className="flex items-center justify-center ml-4">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
@@ -762,8 +762,8 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 9: Links Pill - entire pill is clickable for collapse - added left margin for gap from CTR */}
-            <div className="flex items-center justify-end ml-8">
+            {/* Column 9: Links Pill - entire pill is clickable for collapse */}
+            <div className="flex items-center justify-end ml-2">
               <button
                 type="button"
                 onClick={(e) => {
