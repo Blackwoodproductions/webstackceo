@@ -189,22 +189,23 @@ export function getPositionDelta(val?: string | number): number {
 function getKeywordIntent(keyword: string) {
   const kw = keyword.toLowerCase();
   
+  // Softer blue-gray palette for intent badges - less visual noise, more professional
   const transactionalPatterns = ['buy', 'purchase', 'order', 'book', 'hire', 'get', 'download', 'subscribe', 'sign up', 'register', 'schedule', 'appointment', 'quote', 'pricing', 'cost', 'price', 'deal', 'discount', 'coupon', 'free trial'];
   if (transactionalPatterns.some(p => kw.includes(p))) {
-    return { type: 'transactional' as const, icon: ShoppingCart, color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' };
+    return { type: 'transactional' as const, icon: ShoppingCart, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
   }
   
   const commercialPatterns = ['best', 'top', 'review', 'vs', 'versus', 'compare', 'comparison', 'alternative', 'affordable', 'cheap', 'premium', 'professional', 'rated', 'recommended', 'trusted'];
   if (commercialPatterns.some(p => kw.includes(p))) {
-    return { type: 'commercial' as const, icon: Target, color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' };
+    return { type: 'commercial' as const, icon: Target, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
   }
   
   const navigationalPatterns = ['login', 'sign in', 'website', 'official', 'contact', 'near me', 'location', 'address', 'hours', 'directions'];
   if (navigationalPatterns.some(p => kw.includes(p))) {
-    return { type: 'navigational' as const, icon: Compass, color: 'text-blue-400', bgColor: 'bg-blue-500/20 border-blue-500/30' };
+    return { type: 'navigational' as const, icon: Compass, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
   }
   
-  return { type: 'informational' as const, icon: Info, color: 'text-violet-400', bgColor: 'bg-violet-500/20 border-violet-500/30' };
+  return { type: 'informational' as const, icon: Info, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
 }
 
 function getMovementFromDelta(movement: number) {
@@ -488,12 +489,12 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
         <span className="text-[7px] text-cyan-400/70">Vol</span>
       </div>
       
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
+      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
         <div className="flex items-center gap-0.5">
-          <MousePointerClick className="w-2.5 h-2.5 text-violet-400" />
-          <span className="text-[10px] font-bold text-violet-400">{ctrValue || '—'}</span>
+          <MousePointerClick className="w-2.5 h-2.5 text-emerald-400" />
+          <span className="text-[10px] font-bold text-emerald-400">{ctrValue || '—'}</span>
         </div>
-        <span className="text-[7px] text-violet-400/70">CTR</span>
+        <span className="text-[7px] text-emerald-400/70">CTR</span>
       </div>
     </div>
   );
@@ -620,11 +621,11 @@ export const BronKeywordCard = memo(({
         className={`
           rounded-lg border overflow-hidden no-theme-transition
           ${isNested 
-            ? 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
+            ? 'bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10'
             : isTrackingOnly 
               ? 'bg-muted/30 border-muted-foreground/20'
               : isMainKeyword
-                ? 'bg-blue-500/5 border-blue-500/20 hover:bg-blue-500/10'
+                ? 'bg-gradient-to-r from-cyan-500/10 via-violet-500/10 to-cyan-500/10 border-cyan-500/30 hover:from-cyan-500/15 hover:via-violet-500/15 hover:to-cyan-500/15 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                 : 'bg-card/80 border-border/40 hover:bg-card'
           }
           transition-colors duration-150
@@ -687,9 +688,9 @@ export const BronKeywordCard = memo(({
                 <span 
                   className={`w-2 h-2 rounded-full shrink-0 ${
                     isMainKeyword && !isNested
-                      ? 'bg-amber-500'
+                      ? 'bg-cyan-500'
                       : isNested 
-                        ? 'bg-amber-500' 
+                        ? 'bg-cyan-400' 
                         : 'bg-primary/60'
                   }`} 
                 />
@@ -697,9 +698,9 @@ export const BronKeywordCard = memo(({
                 <h3 
                   className={`font-medium truncate ${textSize} ${
                     isNested 
-                      ? 'text-amber-600 dark:text-amber-400' 
+                      ? 'text-cyan-600 dark:text-cyan-400' 
                       : isMainKeyword 
-                        ? 'text-amber-500' 
+                        ? 'text-cyan-500' 
                         : 'text-foreground'
                   }`}
                   title={keywordText}
@@ -721,7 +722,7 @@ export const BronKeywordCard = memo(({
                 )}
                 
                 {isNested && (
-                  <Badge className={`${badgeSize} bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 whitespace-nowrap`}>
+                  <Badge className={`${badgeSize} bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 whitespace-nowrap`}>
                     Supporting
                   </Badge>
                 )}
