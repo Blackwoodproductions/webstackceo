@@ -90,7 +90,7 @@ const GlossaryIndex = lazy(() => import("./pages/learn/glossary/GlossaryIndex"))
 const FloatingCodeBox = lazy(() => import("@/components/ui/floating-code-box"));
 const FloatingLiveStats = lazy(() => import("@/components/ui/floating-live-stats"));
 const BetaNoticeBanner = lazy(() => import("@/components/BetaNoticeBanner"));
-const FreeTrialPromo = lazy(() => import("@/components/marketing/FreeTrialPromo"));
+
 const ShopSideTab = lazy(() => import("@/components/marketing/ShopSideTab"));
 
 // Minimal loading fallback - no heavy animations
@@ -127,9 +127,6 @@ const App = () => (
                 <Suspense fallback={null}>
                   <ErrorBoundary fallback={<></>}>
                     <BetaNoticeBanner />
-                  </ErrorBoundary>
-                  <ErrorBoundary fallback={<></>}>
-                    <FreeTrialPromo variant="side-tab" />
                   </ErrorBoundary>
                   <ErrorBoundary fallback={<></>}>
                     <ShopSideTab />
