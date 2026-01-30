@@ -508,8 +508,11 @@ export const BronClusterVisualization = memo(({
     }
   }, []);
 
-  // Don't render if not open
-  if (!isOpen) return null;
+  // Calculate total supporting keywords
+  const totalSupportingKeywords = useMemo(() => 
+    clusters.reduce((sum, c) => sum + c.children.length, 0), 
+    [clusters]
+  );
 
   return (
     <div className="relative">
@@ -517,8 +520,11 @@ export const BronClusterVisualization = memo(({
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-card/50">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">Keyword Cluster Map</h3>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1.5 py-0">
-            {clusters.length} Clusters
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+            {clusters.length} Money Pages
+          </Badge>
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-[10px] px-1.5 py-0">
+            {totalSupportingKeywords} Supporting
           </Badge>
           <span className="text-[10px] text-muted-foreground">
             Hover for details · Click to open URL
