@@ -6,15 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ONPAGE_SEO_PRODUCTS, formatPrice } from '@/lib/stripeProducts';
 
-// Stripe Product/Price IDs for On-Page SEO tiers
+// Stripe Product/Price IDs for On-Page SEO tiers (from centralized config)
 export const ON_PAGE_SEO_TIERS = {
   starter: {
     name: 'Starter',
     pages: '≤500 pages',
     price: 99,
-    priceId: 'price_1SvOjIDhwTkpKWXvU4xM60Ed', // Original $99/mo product
-    productId: 'prod_TtB03wiEu1PUeM',
+    priceId: ONPAGE_SEO_PRODUCTS[0].priceId,
+    productId: ONPAGE_SEO_PRODUCTS[0].productId,
     icon: Zap,
     features: [
       'Up to 500 pages',
@@ -30,8 +31,8 @@ export const ON_PAGE_SEO_TIERS = {
     name: 'Pro',
     pages: '501-2000 pages',
     price: 199,
-    priceId: 'price_1SvOkWDhwTkpKWXvZmIk2GlJ',
-    productId: 'prod_TtB6aUtfuWXJRP',
+    priceId: ONPAGE_SEO_PRODUCTS[1].priceId,
+    productId: ONPAGE_SEO_PRODUCTS[1].productId,
     icon: Crown,
     features: [
       'Up to 2,000 pages',
@@ -47,8 +48,8 @@ export const ON_PAGE_SEO_TIERS = {
     name: 'Enterprise',
     pages: '2001-5000 pages',
     price: 299,
-    priceId: 'price_1SvOkpDhwTkpKWXvwZWsflJA',
-    productId: 'prod_TtB7I2SfEbK0Zr',
+    priceId: ONPAGE_SEO_PRODUCTS[2].priceId,
+    productId: ONPAGE_SEO_PRODUCTS[2].productId,
     icon: Building2,
     features: [
       'Up to 5,000 pages',
@@ -64,8 +65,8 @@ export const ON_PAGE_SEO_TIERS = {
     name: 'Unlimited',
     pages: '5000+ pages',
     price: 499,
-    priceId: 'price_1SvOl4DhwTkpKWXv8YqYLlJU',
-    productId: 'prod_TtB73CXo6jDJ3O',
+    priceId: ONPAGE_SEO_PRODUCTS[3].priceId,
+    productId: ONPAGE_SEO_PRODUCTS[3].productId,
     icon: Rocket,
     features: [
       'Unlimited pages',

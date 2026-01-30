@@ -1,61 +1,99 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Zap, Globe, Sparkles, Shield } from 'lucide-react';
+import { ShoppingCart, Zap, Globe, Sparkles, Shield, TrendingUp, FileText, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
+import { 
+  BRON_PRODUCTS, 
+  CADE_PRODUCTS, 
+  BUNDLE_PRODUCTS, 
+  DAX_PRODUCTS,
+  formatPrice as formatStripePrice 
+} from '@/lib/stripeProducts';
 
-// Webstack.ceo À La Carte Add-on Services
-// These are add-ons to subscription plans, not legacy Stripe products
+// À La Carte Add-on Services mapped from real Stripe products
 const products = [
+  // VI Domain Add-on
   {
     id: 'vi-domain-addon',
-    priceId: 'price_vi_domain_addon', // To be created in Stripe
-    productId: 'prod_vi_domain',
+    priceId: 'price_1RGLeTDhwTkpKWXvUE214Xqr',
+    productId: 'prod_SAh2LhPb8MjufT',
     name: 'Additional VI Domain',
     description: 'Add another domain to your Visitor Intelligence dashboard for comprehensive tracking.',
-    price: 1500, // $15/month
+    price: 200,
     currency: 'usd',
     type: 'one_time' as const,
     icon: Globe,
     color: 'cyan',
     popular: true,
   },
+  // BRON Boost
   {
-    id: 'aeo-geo-10',
-    priceId: 'price_aeo_geo_10', // To be created in Stripe
-    productId: 'prod_aeo_geo',
-    name: 'AEO/GEO 10 Keywords',
-    description: 'Track 10 keywords for AI Engine Optimization and Geographic signals visibility.',
-    price: 2000, // $20/month (10 x $2)
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: Sparkles,
-    color: 'violet',
+    id: BRON_PRODUCTS[0].id,
+    priceId: BRON_PRODUCTS[0].priceId,
+    productId: BRON_PRODUCTS[0].productId,
+    name: BRON_PRODUCTS[0].name,
+    description: BRON_PRODUCTS[0].description,
+    price: BRON_PRODUCTS[0].price,
+    currency: BRON_PRODUCTS[0].currency,
+    type: BRON_PRODUCTS[0].type,
+    icon: TrendingUp,
+    color: 'emerald',
     popular: false,
   },
+  // CADE Boost
   {
-    id: 'aeo-geo-25',
-    priceId: 'price_aeo_geo_25', // To be created in Stripe
-    productId: 'prod_aeo_geo',
-    name: 'AEO/GEO 25 Keywords',
-    description: 'Track 25 keywords for comprehensive AI visibility monitoring across search engines.',
-    price: 5000, // $50/month (25 x $2)
-    currency: 'usd',
-    type: 'one_time' as const,
-    icon: Sparkles,
+    id: CADE_PRODUCTS[0].id,
+    priceId: CADE_PRODUCTS[0].priceId,
+    productId: CADE_PRODUCTS[0].productId,
+    name: CADE_PRODUCTS[0].name,
+    description: CADE_PRODUCTS[0].description,
+    price: CADE_PRODUCTS[0].price,
+    currency: CADE_PRODUCTS[0].currency,
+    type: CADE_PRODUCTS[0].type,
+    icon: FileText,
+    color: 'amber',
+    popular: false,
+  },
+  // Bundle Boost (Best Value)
+  {
+    id: BUNDLE_PRODUCTS[0].id,
+    priceId: BUNDLE_PRODUCTS[0].priceId,
+    productId: BUNDLE_PRODUCTS[0].productId,
+    name: BUNDLE_PRODUCTS[0].name,
+    description: BUNDLE_PRODUCTS[0].description,
+    price: BUNDLE_PRODUCTS[0].price,
+    currency: BUNDLE_PRODUCTS[0].currency,
+    type: BUNDLE_PRODUCTS[0].type,
+    icon: Crown,
     color: 'violet',
     popular: true,
     savings: 'Best Value',
   },
+  // DAX Boost
+  {
+    id: DAX_PRODUCTS[0].id,
+    priceId: DAX_PRODUCTS[0].priceId,
+    productId: DAX_PRODUCTS[0].productId,
+    name: DAX_PRODUCTS[0].name,
+    description: DAX_PRODUCTS[0].description,
+    price: DAX_PRODUCTS[0].price,
+    currency: DAX_PRODUCTS[0].currency,
+    type: DAX_PRODUCTS[0].type,
+    icon: Sparkles,
+    color: 'violet',
+    popular: false,
+  },
+  // Priority Support
   {
     id: 'priority-support',
-    priceId: 'price_priority_support', // To be created in Stripe
-    productId: 'prod_priority_support',
+    priceId: 'price_1RjOEUDhwTkpKWXvNUtR9nfh',
+    productId: 'prod_SehdzWU9I7OMYk',
     name: 'Priority Support',
     description: 'Get dedicated support with faster response times and direct access to our SEO experts.',
-    price: 4900, // $49/month
+    price: 99900,
     currency: 'usd',
     type: 'one_time' as const,
     icon: Shield,
