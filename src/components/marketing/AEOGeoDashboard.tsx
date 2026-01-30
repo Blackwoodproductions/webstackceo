@@ -1563,30 +1563,6 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
                 </div>
               )}
               
-              {/* Action Button */}
-              {bronKeywords.length > 0 && selectedDate === 'today' && (
-                <Button 
-                  onClick={isAutoRunning ? stopAutoRun : startAutoRun}
-                  disabled={isLoadingKeywords}
-                  size="lg"
-                  className={isAutoRunning 
-                    ? "bg-red-500 hover:bg-red-600 px-6" 
-                    : "bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 px-6 shadow-lg shadow-violet-500/30"
-                  }
-                >
-                  {isAutoRunning ? (
-                    <>
-                      <Pause className="w-5 h-5 mr-2" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5 mr-2" />
-                      {stats.checked > 0 ? 'Resume' : 'Start Training'}
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
           </div>
           
