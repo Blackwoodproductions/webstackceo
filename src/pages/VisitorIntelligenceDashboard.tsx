@@ -813,137 +813,141 @@ const MarketingDashboard = () => {
 
   // Fetch live visitors (active in last 5 minutes) - ordered by time on site, then page count
   // DEDUPLICATION: Show only ONE entry per user_id (most recent session), preventing duplicate avatars
+  // ADMIN FEATURE: Admins always see webstack.ceo visitors for reporting
   const fetchLiveVisitors = useCallback(async () => {
     // Get current user's session ID and user ID for marking
     const currentSessionId = sessionStorage.getItem('webstack_session_id');
     const currentUserId = user?.id || null;
     
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: sessions } = await supabase
+    
+    // Build query - admins see webstack.ceo domain, others see their selected domain
+    let query = supabase
       .from('visitor_sessions')
-      .select('session_id, first_page, last_activity_at, started_at, user_id')
+      .select('session_id, first_page, last_activity_at, started_at, user_id, domain')
       .gte('last_activity_at', fiveMinutesAgo)
-      .order('last_activity_at', { ascending: false }) // Most recent first for dedup priority
+      .order('last_activity_at', { ascending: false })
       .limit(50);
     
-    if (sessions) {
-      // ========== STRICT DEDUPLICATION LOGIC ==========
-      // Ensures only ONE entry per unique person appears in the visitor list
-      const sortedByActivity = [...sessions].sort(
-        (a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
-      );
-      
-      const uniqueSessions: typeof sessions = [];
-      const seenKeys = new Set<string>();
-      let selfIncluded = false;
-      
-      for (const s of sortedByActivity) {
-        // Check if this session belongs to the current user (by session OR user_id match)
-        const isSelf =
-          (!!currentUserId && s.user_id === currentUserId) ||
-          (!!currentSessionId && s.session_id === currentSessionId);
-        
-        // STRICT: Only ONE "self" entry ever
-        if (isSelf) {
-          if (selfIncluded) continue; // Skip duplicate self entries
-          selfIncluded = true;
-          uniqueSessions.push(s);
-          // Also mark both keys as seen to prevent any duplicate routes
-          seenKeys.add('self');
-          if (currentUserId) seenKeys.add(`u:${currentUserId}`);
-          if (currentSessionId) seenKeys.add(`s:${currentSessionId}`);
-          continue;
-        }
-        
-        // For other users: dedupe by user_id (if logged in) or session_id (anonymous)
-        const key = s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
-        if (seenKeys.has(key)) continue;
-        seenKeys.add(key);
-        uniqueSessions.push(s);
-      }
-      
-      // Filter out sessions that already have an active chat
-      const chatSessionIds = chatSessionIdsRef.current;
-      const filteredSessions = uniqueSessions.filter(v => !chatSessionIds.includes(v.session_id));
-      
-      // Fetch page view counts for each session
-      const sessionIds = filteredSessions.map(s => s.session_id);
-      const { data: pageViews } = await supabase
-        .from('page_views')
-        .select('session_id')
-        .in('session_id', sessionIds);
-      
-      // Count pages per session
-      const pageCountMap: Record<string, number> = {};
-      pageViews?.forEach(pv => {
-        pageCountMap[pv.session_id] = (pageCountMap[pv.session_id] || 0) + 1;
-      });
-      
-      // Fetch profiles for logged-in users
-      const userIds = filteredSessions.filter(s => s.user_id).map(s => s.user_id!);
-      let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
-      
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, avatar_url, full_name')
-          .in('user_id', userIds);
-        
-        if (profiles) {
-          profiles.forEach(p => {
-            profilesMap[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
-          });
-        }
-      }
-      
-      // Also get current user's profile if logged in but missing from profilesMap
-      if (currentUserId && !profilesMap[currentUserId]) {
-        const { data: selfProfile } = await supabase
-          .from('profiles')
-          .select('user_id, avatar_url, full_name')
-          .eq('user_id', currentUserId)
-          .single();
-        if (selfProfile) {
-          profilesMap[selfProfile.user_id] = { avatar_url: selfProfile.avatar_url, full_name: selfProfile.full_name };
-        }
-      }
-      
-      // Sort: time on site (descending), then page count (descending)
-      const sorted = filteredSessions.sort((a, b) => {
-        const timeA = Date.now() - new Date(a.started_at).getTime();
-        const timeB = Date.now() - new Date(b.started_at).getTime();
-        if (timeB !== timeA) return timeB - timeA;
-        return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0);
-      });
-      
-      // Map with profiles and current user flag
-      const visitorsWithProfiles = sorted.slice(0, 10).map(s => {
-        const isSelf =
-          (!!currentUserId && s.user_id === currentUserId) ||
-          (!!currentSessionId && s.session_id === currentSessionId);
-        
-        // For "self", prefer current user's profile even if session has no user_id yet
-        const profileUserId = isSelf && currentUserId ? currentUserId : s.user_id;
-        
-        return {
-          ...s,
-          page_count: pageCountMap[s.session_id] || 1,
-          avatar_url: profileUserId ? profilesMap[profileUserId]?.avatar_url : null,
-          display_name: profileUserId ? profilesMap[profileUserId]?.full_name : null,
-          is_current_user: isSelf,
-        };
-      });
-      
-      // Sort to put current user first
-      const finalSorted = visitorsWithProfiles.sort((a, b) => {
-        if (a.is_current_user) return -1;
-        if (b.is_current_user) return 1;
-        return 0;
-      });
-      
-      setLiveVisitors(finalSorted);
+    // Admin users always see webstack.ceo visitors for reporting
+    if (isAdmin || isSuperAdmin) {
+      query = query.eq('domain', 'webstack.ceo');
     }
-  }, [user?.id]);
+    
+    const { data: sessions } = await query;
+    
+    if (!sessions || sessions.length === 0) {
+      setLiveVisitors([]);
+      return;
+    }
+    
+    // ========== STRICT DEDUPLICATION LOGIC ==========
+    const sortedByActivity = [...sessions].sort(
+      (a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime()
+    );
+    
+    const uniqueSessions: typeof sessions = [];
+    const seenKeys = new Set<string>();
+    let selfIncluded = false;
+    
+    for (const s of sortedByActivity) {
+      const isSelf =
+        (!!currentUserId && s.user_id === currentUserId) ||
+        (!!currentSessionId && s.session_id === currentSessionId);
+      
+      if (isSelf) {
+        if (selfIncluded) continue;
+        selfIncluded = true;
+        uniqueSessions.push(s);
+        seenKeys.add('self');
+        if (currentUserId) seenKeys.add(`u:${currentUserId}`);
+        if (currentSessionId) seenKeys.add(`s:${currentSessionId}`);
+        continue;
+      }
+      
+      const key = s.user_id ? `u:${s.user_id}` : `s:${s.session_id}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      uniqueSessions.push(s);
+    }
+    
+    // Filter out sessions that already have an active chat
+    const chatSessionIds = chatSessionIdsRef.current;
+    const filteredSessions = uniqueSessions.filter(v => !chatSessionIds.includes(v.session_id));
+    
+    // Fetch page view counts in single query
+    const sessionIds = filteredSessions.map(s => s.session_id);
+    const { data: pageViews } = await supabase
+      .from('page_views')
+      .select('session_id')
+      .in('session_id', sessionIds);
+    
+    const pageCountMap: Record<string, number> = {};
+    pageViews?.forEach(pv => {
+      pageCountMap[pv.session_id] = (pageCountMap[pv.session_id] || 0) + 1;
+    });
+    
+    // Fetch profiles for logged-in users
+    const userIds = filteredSessions.filter(s => s.user_id).map(s => s.user_id!);
+    let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
+    
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, avatar_url, full_name')
+        .in('user_id', userIds);
+      
+      if (profiles) {
+        profiles.forEach(p => {
+          profilesMap[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+        });
+      }
+    }
+    
+    // Get current user's profile if needed
+    if (currentUserId && !profilesMap[currentUserId]) {
+      const { data: selfProfile } = await supabase
+        .from('profiles')
+        .select('user_id, avatar_url, full_name')
+        .eq('user_id', currentUserId)
+        .single();
+      if (selfProfile) {
+        profilesMap[selfProfile.user_id] = { avatar_url: selfProfile.avatar_url, full_name: selfProfile.full_name };
+      }
+    }
+    
+    // Sort by time on site, then page count
+    const sorted = filteredSessions.sort((a, b) => {
+      const timeA = Date.now() - new Date(a.started_at).getTime();
+      const timeB = Date.now() - new Date(b.started_at).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+      return (pageCountMap[b.session_id] || 0) - (pageCountMap[a.session_id] || 0);
+    });
+    
+    const visitorsWithProfiles = sorted.slice(0, 10).map(s => {
+      const isSelf =
+        (!!currentUserId && s.user_id === currentUserId) ||
+        (!!currentSessionId && s.session_id === currentSessionId);
+      const profileUserId = isSelf && currentUserId ? currentUserId : s.user_id;
+      
+      return {
+        ...s,
+        page_count: pageCountMap[s.session_id] || 1,
+        avatar_url: profileUserId ? profilesMap[profileUserId]?.avatar_url : null,
+        display_name: profileUserId ? profilesMap[profileUserId]?.full_name : null,
+        is_current_user: isSelf,
+      };
+    });
+    
+    // Current user first
+    const finalSorted = visitorsWithProfiles.sort((a, b) => {
+      if (a.is_current_user) return -1;
+      if (b.is_current_user) return 1;
+      return 0;
+    });
+    
+    setLiveVisitors(finalSorted);
+  }, [user?.id, isAdmin, isSuperAdmin]);
 
   // Poll for live visitors every 30 seconds
   useEffect(() => {
@@ -1594,51 +1598,9 @@ const MarketingDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchUserProfile = async (userId: string) => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('avatar_url, full_name')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (data) setCurrentUserProfile(data);
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminRole(session.user.id);
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          // User logged out - ensure we redirect immediately
-          setIsAdmin(false);
-          setIsLoading(false);
-          setCurrentUserProfile(null);
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-        fetchUserProfile(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkAdminRole = async (userId: string) => {
+  const checkAdminRole = useCallback(async (userId: string) => {
     try {
+      // Run both checks in parallel for speed
       const [adminRes, superRes] = await Promise.all([
         supabase.rpc('is_admin', { _user_id: userId }),
         supabase.rpc('is_super_admin', { _user_id: userId }),
@@ -1650,13 +1612,64 @@ const MarketingDashboard = () => {
       setIsSuperAdmin(superStatus);
       setIsAdmin(adminStatus);
 
-      if (adminStatus) await fetchAllData();
+      // Only fetch all data if admin - regular users don't need this
+      if (adminStatus) {
+        // Don't await - let it load in background
+        fetchAllData();
+      }
     } catch (error) {
       console.error('Error checking admin role:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const fetchUserProfile = async (userId: string) => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data) setCurrentUserProfile(data);
+    };
+
+    // Try to get cached session first for faster initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSession(session);
+        setUser(session.user);
+        // Run admin check and profile fetch in parallel
+        Promise.all([
+          checkAdminRole(session.user.id),
+          fetchUserProfile(session.user.id),
+        ]);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Debounce to avoid duplicate calls
+          setTimeout(() => {
+            checkAdminRole(session.user.id);
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setIsAdmin(false);
+          setIsLoading(false);
+          setCurrentUserProfile(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [checkAdminRole]);
 
   const fetchAllData = async () => {
     setRefreshing(true);

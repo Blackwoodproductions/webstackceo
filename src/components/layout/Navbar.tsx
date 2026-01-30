@@ -910,14 +910,7 @@ const Navbar = () => {
                   </a>
                 </DropdownMenuItem>
 
-                {isSuperAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin?tab=super-admin" className="flex items-center gap-2 cursor-pointer">
-                      <Crown className="w-4 h-4" />
-                      Super Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                {/* Super Admin link removed - access via /admin directly */}
 
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 cursor-pointer">
