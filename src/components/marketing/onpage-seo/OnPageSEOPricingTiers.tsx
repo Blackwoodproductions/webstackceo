@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ONPAGE_SEO_PRODUCTS, formatPrice } from '@/lib/stripeProducts';
+import { ONPAGE_SEO_PRODUCTS } from '@/lib/stripeProducts';
+import { useGeoCurrency } from '@/hooks/use-geo-currency';
 
 // Stripe Product/Price IDs for On-Page SEO tiers (from centralized config)
 export const ON_PAGE_SEO_TIERS = {
@@ -92,6 +93,7 @@ export const OnPageSEOPricingTiers = ({
   onSubscribe 
 }: OnPageSEOPricingTiersProps) => {
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const { formatLocalPrice, isUSD, country, loading } = useGeoCurrency();
 
   const recommendedTier = (): keyof typeof ON_PAGE_SEO_TIERS => {
     if (pageCount <= 500) return 'starter';
@@ -143,6 +145,11 @@ export const OnPageSEOPricingTiers = ({
         <p className="text-muted-foreground">
           Pricing based on your website size. All plans include real platform editing.
         </p>
+        {!isUSD && !loading && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Prices shown in your local currency ({country}). Billed in USD.
+          </p>
+        )}
         {pageCount > 0 && (
           <Badge className="mt-3 bg-amber-500/20 text-amber-500 border-amber-500/30">
             Your site: ~{pageCount.toLocaleString()} pages → Recommended: {ON_PAGE_SEO_TIERS[recommendedTier()].name}
@@ -200,9 +207,12 @@ export const OnPageSEOPricingTiers = ({
                     </div>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">${tier.price}</span>
+                    <span className="text-3xl font-bold">{formatLocalPrice(tier.price * 100)}</span>
                     <span className="text-sm text-muted-foreground">/month</span>
                   </div>
+                  {!isUSD && (
+                    <p className="text-xs text-muted-foreground">≈ ${tier.price} USD</p>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-4">
