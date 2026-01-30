@@ -25,6 +25,7 @@ interface LLMResult {
   position: 'prominent' | 'mentioned' | 'not_found';
   confidence: number;
   queryUsed: string;
+  roundNumber?: number;
   error?: string;
 }
 
@@ -128,6 +129,153 @@ const LLMResultCard = memo(({ result }: { result: LLMResult }) => {
 });
 LLMResultCard.displayName = 'LLMResultCard';
 
+// Training status component
+const TrainingStatusBadge = memo(({ 
+  results, 
+  timestamp,
+  suggestions 
+}: { 
+  results: LLMResult[];
+  timestamp?: string;
+  suggestions: string[];
+}) => {
+  // Check if training is in progress based on suggestions
+  const isTraining = suggestions.some(s => s.includes('Training in progress'));
+  const trainingMatch = suggestions.find(s => s.includes('Training in progress'))?.match(/Round (\d+)\/(\d+)/);
+  const currentRound = trainingMatch ? parseInt(trainingMatch[1]) : 0;
+  const totalRounds = trainingMatch ? parseInt(trainingMatch[2]) : 12;
+  const progressPercent = isTraining ? (currentRound / totalRounds) * 100 : 100;
+  
+  // Get training completion info
+  const completedSession = suggestions.some(s => s.includes('Training session completed'));
+  const achievedTop = suggestions.some(s => s.includes('Achieved #1 prominence'));
+  const improved = suggestions.some(s => s.includes('Improved visibility'));
+  
+  // Calculate best round stats from results
+  const roundNumbers = [...new Set(results.filter(r => r.roundNumber).map(r => r.roundNumber))];
+  const bestRound = roundNumbers.length > 0 ? Math.max(...roundNumbers.map(rn => 
+    results.filter(r => r.roundNumber === rn && r.position === 'prominent').length
+  )) : 0;
+  
+  if (isTraining) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 bg-violet-500/10 border border-violet-500/30 rounded-lg">
+        <Loader2 className="w-3 h-3 animate-spin text-violet-400" />
+        <div className="flex flex-col">
+          <span className="text-[10px] font-medium text-violet-400">Training Round {currentRound}/{totalRounds}</span>
+          <Progress value={progressPercent} className="h-1 w-16 bg-violet-900/50" />
+        </div>
+      </div>
+    );
+  }
+  
+  if (completedSession) {
+    return (
+      <div className="flex items-center gap-2">
+        {achievedTop && (
+          <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black border-0 text-[9px] px-1.5">
+            🏆 #1 Achieved
+          </Badge>
+        )}
+        {improved && !achievedTop && (
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[9px]">
+            📈 Improved
+          </Badge>
+        )}
+        <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-400 border-violet-500/30">
+          {roundNumbers.length} rounds trained
+        </Badge>
+      </div>
+    );
+  }
+  
+  if (timestamp) {
+    const lastCheck = new Date(timestamp);
+    const hoursAgo = Math.floor((Date.now() - lastCheck.getTime()) / (1000 * 60 * 60));
+    const daysAgo = Math.floor(hoursAgo / 24);
+    
+    return (
+      <Badge variant="outline" className="text-[9px] text-muted-foreground">
+        Last trained: {daysAgo > 0 ? `${daysAgo}d ago` : hoursAgo > 0 ? `${hoursAgo}h ago` : 'Just now'}
+      </Badge>
+    );
+  }
+  
+  return null;
+});
+TrainingStatusBadge.displayName = 'TrainingStatusBadge';
+
+// Training details panel showing round-by-round results
+const TrainingDetailsPanel = memo(({ results, suggestions }: { results: LLMResult[]; suggestions: string[] }) => {
+  const roundNumbers = [...new Set(results.filter(r => r.roundNumber).map(r => r.roundNumber))].sort((a, b) => (a || 0) - (b || 0));
+  
+  if (roundNumbers.length === 0) return null;
+  
+  // Group results by round
+  const roundStats = roundNumbers.map(rn => {
+    const roundResults = results.filter(r => r.roundNumber === rn);
+    return {
+      round: rn,
+      prominent: roundResults.filter(r => r.position === 'prominent').length,
+      mentioned: roundResults.filter(r => r.position === 'mentioned').length,
+      total: roundResults.length,
+    };
+  });
+  
+  // Find best round
+  const bestRound = roundStats.reduce((best, curr) => 
+    curr.prominent > (best?.prominent || 0) ? curr : best, roundStats[0]);
+  
+  return (
+    <div className="mt-4 p-3 bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20 rounded-lg">
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="w-4 h-4 text-violet-400" />
+        <h4 className="font-semibold text-sm">Training Session Details</h4>
+        <Badge variant="outline" className="text-[9px] ml-auto">
+          {roundNumbers.length} rounds completed
+        </Badge>
+      </div>
+      
+      {/* Training suggestions/achievements */}
+      {suggestions.filter(s => s.includes('🎯') || s.includes('🏆') || s.includes('📈')).length > 0 && (
+        <div className="mb-3 space-y-1">
+          {suggestions.filter(s => s.includes('🎯') || s.includes('🏆') || s.includes('📈')).map((s, i) => (
+            <p key={i} className="text-xs text-emerald-400">{s}</p>
+          ))}
+        </div>
+      )}
+      
+      {/* Round progress visualization */}
+      <div className="grid grid-cols-6 md:grid-cols-12 gap-1">
+        {roundStats.map(rs => (
+          <div 
+            key={rs.round}
+            className={`p-1.5 rounded text-center text-[9px] ${
+              rs.prominent === rs.total 
+                ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/50' 
+                : rs.prominent > 0 
+                  ? 'bg-amber-500/20 text-amber-300' 
+                  : rs.mentioned > 0 
+                    ? 'bg-blue-500/20 text-blue-300'
+                    : 'bg-muted/30 text-muted-foreground'
+            }`}
+            title={`Round ${rs.round}: ${rs.prominent} prominent, ${rs.mentioned} mentioned`}
+          >
+            R{rs.round}
+          </div>
+        ))}
+      </div>
+      
+      {bestRound && (
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Best performance: Round {bestRound.round} with {bestRound.prominent}/{bestRound.total} prominent placements
+        </p>
+      )}
+    </div>
+  );
+});
+TrainingDetailsPanel.displayName = 'TrainingDetailsPanel';
+
 const KeywordAEOCard = memo(({ 
   data, 
   isExpanded, 
@@ -146,6 +294,12 @@ const KeywordAEOCard = memo(({
   const totalChecked = data.results.filter(r => !r.error).length;
   const successRate = totalChecked > 0 
     ? Math.round(((prominentCount + mentionedCount) / totalChecked) * 100) 
+    : 0;
+  
+  // Check for training rounds
+  const hasTrainingData = data.results.some(r => r.roundNumber);
+  const roundCount = hasTrainingData 
+    ? [...new Set(data.results.filter(r => r.roundNumber).map(r => r.roundNumber))].length 
     : 0;
 
   return (
@@ -168,11 +322,18 @@ const KeywordAEOCard = memo(({
                   )}
                   <div>
                     <CardTitle className="text-base font-semibold">{data.keyword}</CardTitle>
-                    {data.timestamp && (
-                      <CardDescription className="text-[10px]">
-                        Checked: {new Date(data.timestamp).toLocaleString()}
-                      </CardDescription>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {data.timestamp && (
+                        <CardDescription className="text-[10px]">
+                          Checked: {new Date(data.timestamp).toLocaleString()}
+                        </CardDescription>
+                      )}
+                      <TrainingStatusBadge 
+                        results={data.results} 
+                        timestamp={data.timestamp} 
+                        suggestions={data.suggestions}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -185,6 +346,12 @@ const KeywordAEOCard = memo(({
                   </div>
                 ) : data.results.length > 0 ? (
                   <>
+                    {/* Training stats */}
+                    {hasTrainingData && (
+                      <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-[10px]">
+                        {roundCount} training rounds
+                      </Badge>
+                    )}
                     {/* Show re-check button if less than 3 LLM results (stale cache) */}
                     {data.results.length < 3 && onRecheck && (
                       <Button
@@ -235,8 +402,17 @@ const KeywordAEOCard = memo(({
               </div>
             ) : data.results.length > 0 ? (
               <div className="space-y-4">
+                {/* Training details panel if we have training data */}
+                {hasTrainingData && (
+                  <TrainingDetailsPanel results={data.results} suggestions={data.suggestions} />
+                )}
+                
+                {/* Latest LLM results - show only most recent round or non-training results */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {data.results.map((result, idx) => (
+                  {(hasTrainingData 
+                    ? data.results.filter(r => r.roundNumber === Math.max(...data.results.map(x => x.roundNumber || 0)))
+                    : data.results
+                  ).map((result, idx) => (
                     <LLMResultCard key={`${result.model}-${result.queryUsed}-${idx}`} result={result} />
                   ))}
                 </div>
@@ -248,7 +424,7 @@ const KeywordAEOCard = memo(({
                       <h4 className="font-semibold text-sm">Optimization Suggestions</h4>
                     </div>
                     <ul className="space-y-2">
-                      {data.suggestions.slice(0, 5).map((suggestion, idx) => (
+                      {data.suggestions.filter(s => !s.includes('Training')).slice(0, 5).map((suggestion, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
                           <Sparkles className="w-3 h-3 text-violet-400 mt-0.5 shrink-0" />
                           {suggestion}

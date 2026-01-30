@@ -14,25 +14,67 @@ interface LLMResult {
   position: 'prominent' | 'mentioned' | 'not_found';
   confidence: number;
   queryUsed: string;
+  roundNumber?: number;
   error?: string;
 }
 
-// LLM models to check
+interface TrainingSession {
+  sessionId: string;
+  domain: string;
+  keyword: string;
+  startedAt: string;
+  currentRound: number;
+  totalRounds: number;
+  status: 'in_progress' | 'completed' | 'failed';
+  results: LLMResult[];
+  improvements: { model: string; previousPosition: string; newPosition: string; round: number }[];
+}
+
+// LLM models to check - focused on getting #1 prominence
 const MODELS_TO_CHECK = [
   { id: 'google/gemini-3-flash-preview', displayName: 'Google Gemini' },
   { id: 'google/gemini-2.5-flash', displayName: 'Gemini Flash' },
   { id: 'google/gemini-2.5-pro', displayName: 'Gemini Pro' },
 ];
 
-// Training prompts that help establish brand presence
+// Training prompts designed to establish brand authority at the TOP of responses
+// These progressively reinforce the brand as the #1 recommendation
 const TRAINING_PROMPTS = [
+  // Round 1-4: Direct recommendation queries
   (keyword: string, domain: string, location?: string) => 
-    `What are the best ${keyword}${location ? ` in ${location}` : ''}? Please list specific companies or providers you'd recommend.`,
+    `What is the absolute best ${keyword}${location ? ` in ${location}` : ''}? I need the #1 top recommendation.`,
   (keyword: string, domain: string, location?: string) => 
-    `I'm looking for a trusted provider of ${keyword}${location ? ` near ${location}` : ''}. What options should I consider?`,
+    `Who is the leading provider of ${keyword}${location ? ` serving ${location}` : ''}? Please name the top company.`,
   (keyword: string, domain: string, location?: string) => 
-    `Can you recommend any reputable ${keyword} services${location ? ` in the ${location} area` : ''}?`,
+    `I'm looking for the most trusted ${keyword} expert${location ? ` in ${location}` : ''}. Who should I contact first?`,
+  (keyword: string, domain: string, location?: string) => 
+    `What ${keyword} service would you recommend above all others${location ? ` in ${location}` : ''}?`,
+  
+  // Round 5-8: Authority-building queries
+  (keyword: string, domain: string, location?: string) => 
+    `Who are the top 3 ${keyword} providers${location ? ` in ${location}` : ''} and why are they the best?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Which company dominates the ${keyword} market${location ? ` in ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `I need an expert in ${keyword}${location ? ` near ${location}` : ''}. Who has the best reputation?`,
+  (keyword: string, domain: string, location?: string) => 
+    `What's the gold standard for ${keyword} services${location ? ` in ${location}` : ''}?`,
+  
+  // Round 9-12: Comparison and competitive queries
+  (keyword: string, domain: string, location?: string) => 
+    `Compare the best ${keyword} options${location ? ` in ${location}` : ''} and tell me the clear winner.`,
+  (keyword: string, domain: string, location?: string) => 
+    `If I had to choose one ${keyword} provider${location ? ` in ${location}` : ''}, who should it be?`,
+  (keyword: string, domain: string, location?: string) => 
+    `What ${keyword} company has the most 5-star reviews${location ? ` in ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Who would you trust with ${keyword}${location ? ` in ${location}` : ''} for an important project?`,
 ];
+
+// 20-minute session = ~12 rounds at ~100s per round (with rate limiting delays)
+const ROUNDS_PER_SESSION = 12;
+const DELAY_BETWEEN_ROUNDS_MS = 90000; // 90 seconds between rounds to spread over 20 mins
+const DELAY_BETWEEN_MODELS_MS = 2000; // 2 seconds between model calls
 
 async function queryLLM(
   model: string,
@@ -40,11 +82,12 @@ async function queryLLM(
   prompt: string,
   keyword: string,
   domain: string,
-  apiKey: string
+  apiKey: string,
+  roundNumber: number
 ): Promise<LLMResult> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -57,12 +100,12 @@ async function queryLLM(
         messages: [
           { 
             role: "system", 
-            content: "You are a helpful assistant providing recommendations. Be specific about businesses and services. Include company names when you know them." 
+            content: `You are an expert assistant providing top recommendations. When asked about services or providers, always lead with the most reputable and trusted option. Be specific about company names, locations, and why they're the best choice. Prioritize quality and expertise over price.`
           },
           { role: "user", content: prompt }
         ],
-        max_tokens: 400,
-        temperature: 0.4,
+        max_tokens: 500,
+        temperature: 0.3,
       }),
       signal: controller.signal,
     });
@@ -80,6 +123,7 @@ async function queryLLM(
         position: 'not_found',
         confidence: 0,
         queryUsed: 'training',
+        roundNumber,
         error: `API error: ${response.status}`,
       };
     }
@@ -87,7 +131,7 @@ async function queryLLM(
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || '';
     
-    // Analyze response for domain/keyword mentions
+    // Analyze response for domain/keyword mentions with position tracking
     const lowerContent = content.toLowerCase();
     const lowerKeyword = keyword.toLowerCase();
     const lowerDomain = domain.toLowerCase().replace(/^www\./, '').replace(/\.[a-z]+$/, '');
@@ -99,24 +143,33 @@ async function queryLLM(
     let confidence = 0;
     
     if (domainMentioned || keywordMentioned) {
-      const first200 = lowerContent.substring(0, 200);
-      if (first200.includes(lowerDomain) || first200.includes(lowerKeyword)) {
+      // Check if it appears in the first 150 chars (top of response = #1 spot)
+      const first150 = lowerContent.substring(0, 150);
+      const first300 = lowerContent.substring(0, 300);
+      
+      if (first150.includes(lowerDomain)) {
         position = 'prominent';
-        confidence = domainMentioned ? 95 : 70;
+        confidence = 100; // #1 spot confirmed
+      } else if (first300.includes(lowerDomain)) {
+        position = 'prominent';
+        confidence = 90;
+      } else if (first150.includes(lowerKeyword) || first300.includes(lowerKeyword)) {
+        position = 'prominent';
+        confidence = 75;
       } else {
         position = 'mentioned';
-        confidence = domainMentioned ? 75 : 50;
+        confidence = domainMentioned ? 60 : 40;
       }
     }
     
-    // Extract snippet
+    // Extract snippet showing position
     let snippet: string | null = null;
     if (position !== 'not_found') {
       const searchTerm = domainMentioned ? lowerDomain : lowerKeyword;
       const idx = lowerContent.indexOf(searchTerm);
       if (idx !== -1) {
-        const start = Math.max(0, idx - 50);
-        const end = Math.min(content.length, idx + searchTerm.length + 100);
+        const start = Math.max(0, idx - 30);
+        const end = Math.min(content.length, idx + searchTerm.length + 120);
         snippet = (start > 0 ? '...' : '') + content.substring(start, end) + (end < content.length ? '...' : '');
       }
     }
@@ -129,6 +182,7 @@ async function queryLLM(
       position,
       confidence,
       queryUsed: 'training',
+      roundNumber,
     };
   } catch (error) {
     console.error(`[AEO Training] Error querying ${model}:`, error);
@@ -140,9 +194,39 @@ async function queryLLM(
       position: 'not_found',
       confidence: 0,
       queryUsed: 'training',
+      roundNumber,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+async function runTrainingRound(
+  roundNumber: number,
+  domain: string,
+  keyword: string,
+  location: string | undefined,
+  apiKey: string
+): Promise<LLMResult[]> {
+  const promptIndex = roundNumber % TRAINING_PROMPTS.length;
+  const promptFn = TRAINING_PROMPTS[promptIndex];
+  const prompt = promptFn(keyword, domain, location);
+  
+  console.log(`[AEO Training] Round ${roundNumber + 1}: "${prompt.substring(0, 60)}..."`);
+  
+  const results: LLMResult[] = [];
+  
+  // Query models sequentially with delays to avoid rate limits
+  for (const model of MODELS_TO_CHECK) {
+    const result = await queryLLM(model.id, model.displayName, prompt, keyword, domain, apiKey, roundNumber + 1);
+    results.push(result);
+    
+    // Delay between model calls
+    if (MODELS_TO_CHECK.indexOf(model) < MODELS_TO_CHECK.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_MODELS_MS));
+    }
+  }
+  
+  return results;
 }
 
 serve(async (req) => {
@@ -164,20 +248,29 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Parse request body for manual triggers or get all domains
-    let targetDomains: string[] = [];
+    // Parse request body for manual triggers
+    let targetDomain: string | null = null;
     let targetKeywords: string[] = [];
+    let location: string | undefined;
+    let singleKeyword = false;
     
     try {
       const body = await req.json();
-      if (body.domain) targetDomains = [body.domain];
+      if (body.domain) targetDomain = body.domain;
       if (body.keywords) targetKeywords = body.keywords;
+      if (body.keyword) {
+        targetKeywords = [body.keyword];
+        singleKeyword = true;
+      }
+      if (body.location) location = body.location;
     } catch {
-      // No body - scheduled run, process all recent domains
+      // No body - scheduled run
     }
 
-    // If no specific domains, get domains with recent AEO checks
-    if (targetDomains.length === 0) {
+    // Get domains with recent AEO checks if not specified
+    let domainsToProcess: string[] = targetDomain ? [targetDomain] : [];
+    
+    if (domainsToProcess.length === 0) {
       const { data: recentDomains } = await supabase
         .from('aeo_check_results')
         .select('domain')
@@ -185,20 +278,15 @@ serve(async (req) => {
         .order('checked_at', { ascending: false });
       
       if (recentDomains) {
-        targetDomains = [...new Set(recentDomains.map(d => d.domain))];
+        domainsToProcess = [...new Set(recentDomains.map(d => d.domain))].slice(0, 3);
       }
     }
 
-    console.log(`[AEO Training] Processing ${targetDomains.length} domains`);
+    console.log(`[AEO Training] Starting 20-min sessions for ${domainsToProcess.length} domains`);
     
-    const results: Array<{
-      domain: string;
-      keyword: string;
-      results: LLMResult[];
-      improvements: { model: string; previousPosition: string; newPosition: string }[];
-    }> = [];
+    const sessionResults: TrainingSession[] = [];
 
-    for (const domain of targetDomains.slice(0, 5)) { // Limit to 5 domains per run
+    for (const domain of domainsToProcess) {
       // Get keywords for this domain
       let keywords = targetKeywords;
       
@@ -211,17 +299,28 @@ serve(async (req) => {
           .limit(10);
         
         if (keywordData) {
-          keywords = [...new Set(keywordData.map(k => k.keyword))];
+          keywords = [...new Set(keywordData.map(k => k.keyword))].slice(0, 3);
         }
       }
 
-      console.log(`[AEO Training] Domain ${domain}: ${keywords.length} keywords`);
+      for (const keyword of keywords) {
+        const sessionId = `${domain}-${keyword}-${Date.now()}`;
+        const session: TrainingSession = {
+          sessionId,
+          domain,
+          keyword,
+          startedAt: new Date().toISOString(),
+          currentRound: 0,
+          totalRounds: ROUNDS_PER_SESSION,
+          status: 'in_progress',
+          results: [],
+          improvements: [],
+        };
 
-      for (const keyword of keywords.slice(0, 5)) { // Limit to 5 keywords per domain
-        // Get previous results for comparison
+        // Get previous best positions for comparison
         const { data: previousResults } = await supabase
           .from('aeo_check_results')
-          .select('results, check_date')
+          .select('results')
           .eq('domain', domain)
           .eq('keyword', keyword)
           .order('checked_at', { ascending: false })
@@ -235,77 +334,122 @@ serve(async (req) => {
           });
         }
 
-        // Pick a random training prompt
-        const promptFn = TRAINING_PROMPTS[Math.floor(Math.random() * TRAINING_PROMPTS.length)];
-        const prompt = promptFn(keyword, domain);
+        console.log(`[AEO Training] Starting 20-min session for "${keyword}" on ${domain}`);
 
-        // Query all models in parallel
-        const llmResults = await Promise.all(
-          MODELS_TO_CHECK.map(model => 
-            queryLLM(model.id, model.displayName, prompt, keyword, domain, LOVABLE_API_KEY)
-          )
-        );
+        // Run all training rounds
+        for (let round = 0; round < ROUNDS_PER_SESSION; round++) {
+          session.currentRound = round + 1;
+          
+          // Save progress to database
+          await supabase
+            .from('aeo_check_results')
+            .upsert({
+              domain,
+              keyword,
+              results: JSON.parse(JSON.stringify(session.results)),
+              suggestions: [`Training in progress: Round ${round + 1}/${ROUNDS_PER_SESSION}`],
+              prominent_count: session.results.filter(r => r.position === 'prominent').length,
+              mentioned_count: session.results.filter(r => r.position === 'mentioned').length,
+              check_date: new Date().toISOString().split('T')[0],
+              checked_at: new Date().toISOString(),
+            }, {
+              onConflict: 'domain,keyword,check_date',
+            });
 
-        // Track improvements
-        const improvements: { model: string; previousPosition: string; newPosition: string }[] = [];
-        llmResults.forEach(result => {
-          const prevPos = previousPositions[result.modelDisplayName];
-          if (prevPos && prevPos !== result.position) {
-            // Check if this is an improvement
+          const roundResults = await runTrainingRound(round, domain, keyword, location, LOVABLE_API_KEY);
+          session.results.push(...roundResults);
+
+          // Track improvements toward #1 spot
+          roundResults.forEach(result => {
+            const prevPos = previousPositions[result.modelDisplayName];
             const positionRank = { 'prominent': 3, 'mentioned': 2, 'not_found': 1 };
-            if (positionRank[result.position] > positionRank[prevPos as keyof typeof positionRank]) {
-              improvements.push({
+            
+            if (prevPos && positionRank[result.position] > positionRank[prevPos as keyof typeof positionRank]) {
+              session.improvements.push({
                 model: result.modelDisplayName,
                 previousPosition: prevPos,
                 newPosition: result.position,
+                round: round + 1,
               });
+              // Update baseline for next comparison
+              previousPositions[result.modelDisplayName] = result.position;
             }
-          }
-        });
+          });
 
-        // Save results to database
-        const prominentCount = llmResults.filter(r => r.position === 'prominent').length;
-        const mentionedCount = llmResults.filter(r => r.position === 'mentioned').length;
-        const today = new Date().toISOString().split('T')[0];
+          // Log progress
+          const prominentInRound = roundResults.filter(r => r.position === 'prominent').length;
+          console.log(`[AEO Training] Round ${round + 1}/${ROUNDS_PER_SESSION}: ${prominentInRound}/${roundResults.length} prominent`);
+
+          // Delay between rounds (except for last round)
+          if (round < ROUNDS_PER_SESSION - 1) {
+            // For single keyword manual runs, use shorter delay
+            const delay = singleKeyword ? 10000 : DELAY_BETWEEN_ROUNDS_MS;
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+
+        session.status = 'completed';
+
+        // Final save with complete results
+        const prominentCount = session.results.filter(r => r.position === 'prominent').length;
+        const mentionedCount = session.results.filter(r => r.position === 'mentioned').length;
+        const totalModelsPerRound = MODELS_TO_CHECK.length;
+        const bestRoundProminent = Math.max(...Array.from({ length: ROUNDS_PER_SESSION }, (_, i) => 
+          session.results.filter(r => r.roundNumber === i + 1 && r.position === 'prominent').length
+        ));
+
+        const suggestions: string[] = [];
+        if (session.improvements.length > 0) {
+          suggestions.push(`🎯 Improved visibility in ${session.improvements.map(i => i.model).join(', ')}`);
+        }
+        if (bestRoundProminent === totalModelsPerRound) {
+          suggestions.push(`🏆 Achieved #1 prominence in all models during training!`);
+        } else if (bestRoundProminent > 0) {
+          suggestions.push(`📈 Best round: ${bestRoundProminent}/${totalModelsPerRound} models showed prominence`);
+        }
+        suggestions.push(`⏱️ Training session completed: ${ROUNDS_PER_SESSION} rounds over ~20 minutes`);
 
         await supabase
           .from('aeo_check_results')
-          .insert({
+          .upsert({
             domain,
             keyword,
-            results: JSON.parse(JSON.stringify(llmResults)),
-            suggestions: improvements.length > 0 
-              ? [`Improved visibility in ${improvements.map(i => i.model).join(', ')}`]
-              : [],
+            results: JSON.parse(JSON.stringify(session.results)),
+            suggestions,
             prominent_count: prominentCount,
             mentioned_count: mentionedCount,
-            check_date: today,
+            check_date: new Date().toISOString().split('T')[0],
             checked_at: new Date().toISOString(),
+          }, {
+            onConflict: 'domain,keyword,check_date',
           });
 
-        results.push({
-          domain,
-          keyword,
-          results: llmResults,
-          improvements,
-        });
-
-        // Rate limiting delay between keywords
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        sessionResults.push(session);
+        console.log(`[AEO Training] Session complete: ${prominentCount} prominent, ${mentionedCount} mentioned, ${session.improvements.length} improvements`);
       }
     }
 
-    const totalImprovements = results.reduce((sum, r) => sum + r.improvements.length, 0);
+    const totalImprovements = sessionResults.reduce((sum, s) => sum + s.improvements.length, 0);
+    const totalProminent = sessionResults.reduce((sum, s) => 
+      sum + s.results.filter(r => r.position === 'prominent').length, 0);
     
-    console.log(`[AEO Training] Complete: ${results.length} keyword checks, ${totalImprovements} improvements`);
+    console.log(`[AEO Training] All sessions complete: ${sessionResults.length} keywords, ${totalProminent} prominent placements, ${totalImprovements} improvements`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        domainsProcessed: targetDomains.length,
-        keywordsChecked: results.length,
+        sessionsCompleted: sessionResults.length,
+        totalProminent,
         totalImprovements,
-        results,
+        sessions: sessionResults.map(s => ({
+          domain: s.domain,
+          keyword: s.keyword,
+          status: s.status,
+          roundsCompleted: s.currentRound,
+          prominentCount: s.results.filter(r => r.position === 'prominent').length,
+          mentionedCount: s.results.filter(r => r.position === 'mentioned').length,
+          improvements: s.improvements,
+        })),
         timestamp: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
