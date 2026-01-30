@@ -60,10 +60,10 @@ interface CADEDashboardNewProps {
 }
 
 // ─── Cache Helpers ───────────────────────────────────────────────────────────
-// V3: Optimized caching - long cache for confirmed subscriptions, short for non-subscribers
-const CACHE_KEY = "cade_subscription_cache_v3";
+// V4: Force fresh check on load, cache confirmed subscriptions for session
+const CACHE_KEY = "cade_subscription_cache_v4";
 const CACHE_MAX_AGE_CONFIRMED = 24 * 60 * 60 * 1000; // 24 hours for confirmed subscriptions
-const CACHE_MAX_AGE_FREE = 5 * 60 * 1000; // 5 minutes for non-subscribers (they might upgrade)
+const CACHE_MAX_AGE_FREE = 2 * 60 * 1000; // 2 minutes for non-subscribers (faster refresh)
 
 interface CacheEntry {
   subscription: BronSubscription;
