@@ -1,8 +1,13 @@
 import { memo, useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
@@ -110,19 +115,17 @@ const generateSEOTip = async (node: NodeData): Promise<string> => {
   return tips.slice(0, 3).join("\n\n");
 };
 
-// Single Node Component - Hierarchical layout version
+// Single Node Component - Static hierarchical layout
 const ClusterNode = memo(({
   node,
   isHovered,
   isSelected,
-  zoom,
   onHover,
   onClick,
 }: {
   node: NodeData;
   isHovered: boolean;
   isSelected: boolean;
-  zoom: number;
   onHover: (node: NodeData | null) => void;
   onClick: (node: NodeData) => void;
 }) => {
@@ -130,8 +133,7 @@ const ClusterNode = memo(({
   const movement = node.movement.google;
   
   // Main nodes are larger (money pages), supporting nodes are smaller
-  const baseSize = node.isMainNode ? 100 : 70;
-  const size = baseSize * zoom;
+  const size = node.isMainNode ? 90 : 65;
   
   // Color coding: Money pages use ranking colors, supporting pages use violet/purple
   let fillColor = "rgba(120, 120, 120, 0.3)";
@@ -169,7 +171,7 @@ const ClusterNode = memo(({
     }
   }
   
-  const hoverScale = isHovered || isSelected ? 1.1 : 1;
+  const hoverScale = isHovered || isSelected ? 1.08 : 1;
   const finalOpacity = isHovered || isSelected ? 1 : 0.9;
   
   return (
@@ -183,12 +185,12 @@ const ClusterNode = memo(({
       {/* Glow effect */}
       {glowStroke && (
         <circle
-          r={size / 2 + 12}
+          r={size / 2 + 10}
           fill="none"
           stroke={glowStroke}
-          strokeWidth={8}
+          strokeWidth={6}
           style={{
-            filter: 'blur(10px)',
+            filter: 'blur(8px)',
             opacity: isHovered || isSelected ? 0.9 : 0.5,
           }}
         />
@@ -199,7 +201,7 @@ const ClusterNode = memo(({
         r={(size / 2) * hoverScale}
         fill={fillColor}
         stroke={strokeColor}
-        strokeWidth={node.isMainNode ? 4 : 2.5}
+        strokeWidth={node.isMainNode ? 3.5 : 2.5}
         style={{
           opacity: finalOpacity,
           transition: 'all 0.2s ease',
@@ -209,12 +211,12 @@ const ClusterNode = memo(({
       
       {/* Position badge */}
       {googlePos !== null && (
-        <g transform={`translate(0, ${-size / 8})`}>
+        <g transform={`translate(0, ${-size / 10})`}>
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="hsl(var(--foreground))"
-            fontSize={node.isMainNode ? 22 * zoom : 16 * zoom}
+            fontSize={node.isMainNode ? 20 : 15}
             fontWeight={700}
           >
             #{googlePos}
@@ -224,16 +226,16 @@ const ClusterNode = memo(({
       
       {/* Movement indicator */}
       {movement !== 0 && (
-        <g transform={`translate(${size / 2 - 10}, ${-size / 2 + 10})`}>
+        <g transform={`translate(${size / 2 - 8}, ${-size / 2 + 8})`}>
           <circle
-            r={12}
+            r={11}
             fill={movement > 0 ? "rgba(16, 185, 129, 0.95)" : "rgba(244, 63, 94, 0.95)"}
           />
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="white"
-            fontSize={11}
+            fontSize={10}
             fontWeight="bold"
           >
             {movement > 0 ? `+${movement}` : movement}
@@ -242,38 +244,38 @@ const ClusterNode = memo(({
       )}
       
       {/* Keyword label */}
-      <g transform={`translate(0, ${size / 2 + 18})`}>
+      <g transform={`translate(0, ${size / 2 + 16})`}>
         <text
           textAnchor="middle"
           dominantBaseline="hanging"
           fill="hsl(var(--foreground) / 0.85)"
-          fontSize={12 * zoom}
+          fontSize={11}
           fontWeight={node.isMainNode ? 600 : 400}
         >
-          {node.keywordText.length > 25 
-            ? node.keywordText.substring(0, 23) + '...' 
+          {node.keywordText.length > 22 
+            ? node.keywordText.substring(0, 20) + '...' 
             : node.keywordText}
         </text>
       </g>
       
       {/* Money page badge */}
       {node.isMainNode && (
-        <g transform={`translate(0, ${size / 2 + 38})`}>
+        <g transform={`translate(0, ${size / 2 + 34})`}>
           <rect
-            x={-30}
+            x={-28}
             y={0}
-            width={60}
-            height={18}
-            rx={9}
+            width={56}
+            height={16}
+            rx={8}
             fill="rgba(245, 158, 11, 0.9)"
           />
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="white"
-            fontSize={10}
+            fontSize={9}
             fontWeight="700"
-            y={9}
+            y={8}
           >
             MONEY
           </text>
@@ -282,22 +284,22 @@ const ClusterNode = memo(({
       
       {/* Supporting badge */}
       {!node.isMainNode && (
-        <g transform={`translate(0, ${size / 2 + 38})`}>
+        <g transform={`translate(0, ${size / 2 + 34})`}>
           <rect
-            x={-38}
+            x={-35}
             y={0}
-            width={76}
-            height={16}
-            rx={8}
+            width={70}
+            height={14}
+            rx={7}
             fill="rgba(139, 92, 246, 0.8)"
           />
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="white"
-            fontSize={9}
+            fontSize={8}
             fontWeight="600"
-            y={8}
+            y={7}
           >
             SUPPORTING
           </text>
@@ -334,8 +336,8 @@ const ConnectionLine = memo(({
       x2={to.x}
       y2={to.y}
       stroke={stroke}
-      strokeWidth={isUrlConnection ? 3 : isHighlighted ? 2 : 1.5}
-      strokeDasharray={isUrlConnection ? undefined : "6,4"}
+      strokeWidth={isUrlConnection ? 2.5 : isHighlighted ? 2 : 1.5}
+      strokeDasharray={isUrlConnection ? undefined : "5,4"}
       style={{ transition: "stroke 200ms ease, stroke-width 200ms ease" }}
     />
   );
@@ -346,50 +348,58 @@ ConnectionLine.displayName = 'ConnectionLine';
 const NodeTooltip = memo(({
   data,
   position,
+  containerRect,
 }: {
   data: TooltipData;
   position: { x: number; y: number };
+  containerRect: DOMRect | null;
 }) => {
   const googlePos = getPosition(data.serpData?.google);
   const bingPos = getPosition(data.serpData?.bing);
   const yahooPos = getPosition(data.serpData?.yahoo);
   
+  // Position relative to container
+  const left = containerRect ? position.x - containerRect.left + 15 : position.x + 15;
+  const top = containerRect ? position.y - containerRect.top - 40 : position.y - 40;
+  const isRight = containerRect ? position.x > containerRect.left + containerRect.width / 2 : false;
+  
   return (
     <div
-      className="absolute z-50 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl p-4 min-w-[320px] max-w-[400px]"
+      className="absolute z-50 bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl p-4 min-w-[280px] max-w-[350px] pointer-events-none"
       style={{
-        left: position.x + 20,
-        top: position.y - 50,
-        transform: position.x > window.innerWidth / 2 ? 'translateX(-100%)' : 'none',
+        left: isRight ? undefined : left,
+        right: isRight ? (containerRect ? containerRect.right - position.x + 15 : 15) : undefined,
+        top: Math.max(10, top),
       }}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div>
-          <h4 className="font-semibold text-foreground">{data.keywordText}</h4>
+        <div className="min-w-0 flex-1">
+          <h4 className="font-semibold text-foreground text-sm truncate">{data.keywordText}</h4>
           {data.keyword.linkouturl && (
             <a
               href={data.keyword.linkouturl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              {data.keyword.linkouturl}
-              <ExternalLink className="w-3 h-3" />
+              <span className="truncate max-w-[180px]">{data.keyword.linkouturl}</span>
+              <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )}
         </div>
         <Badge className={data.isMainNode 
-          ? "bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs"
-          : "bg-violet-500/20 text-violet-400 border-violet-400/50 text-xs"
+          ? "bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs flex-shrink-0"
+          : "bg-violet-500/20 text-violet-400 border-violet-400/50 text-xs flex-shrink-0"
         }>
-          {data.isMainNode ? "Money Page" : "Supporting"}
+          {data.isMainNode ? "Money" : "Support"}
         </Badge>
       </div>
       
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-muted/50 rounded-lg p-2 text-center">
-          <div className="text-xs text-muted-foreground mb-1">Google</div>
-          <div className="font-bold text-foreground">{googlePos ?? '—'}</div>
+          <div className="text-xs text-muted-foreground mb-0.5">Google</div>
+          <div className="font-bold text-foreground text-sm">{googlePos ?? '—'}</div>
           {data.movement.google !== 0 && (
             <div className={`text-xs flex items-center justify-center gap-0.5 ${data.movement.google > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {data.movement.google > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -398,31 +408,31 @@ const NodeTooltip = memo(({
           )}
         </div>
         <div className="bg-muted/50 rounded-lg p-2 text-center">
-          <div className="text-xs text-muted-foreground mb-1">Bing</div>
-          <div className="font-bold text-foreground">{bingPos ?? '—'}</div>
+          <div className="text-xs text-muted-foreground mb-0.5">Bing</div>
+          <div className="font-bold text-foreground text-sm">{bingPos ?? '—'}</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-2 text-center">
-          <div className="text-xs text-muted-foreground mb-1">Yahoo</div>
-          <div className="font-bold text-foreground">{yahooPos ?? '—'}</div>
+          <div className="text-xs text-muted-foreground mb-0.5">Yahoo</div>
+          <div className="font-bold text-foreground text-sm">{yahooPos ?? '—'}</div>
         </div>
       </div>
       
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        <div className="text-center">
+      <div className="grid grid-cols-4 gap-1.5 mb-3 text-center">
+        <div>
           <div className="text-xs text-muted-foreground">Speed</div>
-          <div className="font-semibold text-sm">
+          <div className="font-semibold text-xs">
             {data.pageSpeed?.mobileScore !== undefined ? `${data.pageSpeed.mobileScore}` : '—'}
           </div>
         </div>
-        <div className="text-center">
+        <div>
           <div className="text-xs text-muted-foreground">CPC</div>
-          <div className="font-semibold text-sm">
+          <div className="font-semibold text-xs">
             {data.metrics?.cpc !== undefined ? `$${data.metrics.cpc.toFixed(2)}` : '—'}
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-xs text-muted-foreground">Volume</div>
-          <div className="font-semibold text-sm">
+        <div>
+          <div className="text-xs text-muted-foreground">Vol</div>
+          <div className="font-semibold text-xs">
             {data.metrics?.search_volume !== undefined 
               ? data.metrics.search_volume >= 1000 
                 ? `${(data.metrics.search_volume / 1000).toFixed(1)}K`
@@ -430,28 +440,28 @@ const NodeTooltip = memo(({
               : '—'}
           </div>
         </div>
-        <div className="text-center">
+        <div>
           <div className="text-xs text-muted-foreground">Links</div>
-          <div className="font-semibold text-sm">{data.linksInCount}/{data.linksOutCount}</div>
+          <div className="font-semibold text-xs">{data.linksInCount}/{data.linksOutCount}</div>
         </div>
       </div>
       
-      <div className="border-t border-border/50 pt-3">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-violet-400" />
+      <div className="border-t border-border/50 pt-2">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Sparkles className="w-3 h-3 text-violet-400" />
           <span className="text-xs font-medium text-violet-400">AI SEO Tips</span>
         </div>
         {data.isLoadingTip ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="w-3 h-3 animate-spin" />
             Analyzing...
           </div>
         ) : data.aiTip ? (
-          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+          <div className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
             {data.aiTip}
           </div>
         ) : (
-          <div className="text-sm text-muted-foreground italic">
+          <div className="text-xs text-muted-foreground italic">
             Hover to generate tips
           </div>
         )}
@@ -461,7 +471,7 @@ const NodeTooltip = memo(({
 });
 NodeTooltip.displayName = 'NodeTooltip';
 
-// Main Visualization Component
+// Main Visualization Component - Inline Dialog (not fullscreen)
 export const BronClusterVisualization = memo(({
   isOpen,
   onClose,
@@ -477,13 +487,16 @@ export const BronClusterVisualization = memo(({
 }: BronClusterVisualizationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const [zoom, setZoom] = useState(1);
   const [hoveredNode, setHoveredNode] = useState<NodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [currentClusterIndex, setCurrentClusterIndex] = useState(0);
-  const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
+  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
+
+  // Fixed dimensions for the SVG canvas
+  const canvasWidth = 600;
+  const canvasHeight = 450;
 
   // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
@@ -509,30 +522,24 @@ export const BronClusterVisualization = memo(({
   // Reset on open
   useEffect(() => {
     if (!isOpen) return;
-    setZoom(1);
     setHoveredNode(null);
     setSelectedNode(null);
     setTooltipData(null);
     setCurrentClusterIndex(0);
   }, [isOpen]);
   
-  // Measure container size
+  // Track container rect for tooltip positioning
   useEffect(() => {
     if (!isOpen) return;
     const el = containerRef.current;
     if (!el) return;
 
-    const updateSize = () => {
-      const rect = el.getBoundingClientRect();
-      setContainerSize({
-        width: Math.max(rect.width, 800),
-        height: Math.max(rect.height - 64, 600),
-      });
+    const updateRect = () => {
+      setContainerRect(el.getBoundingClientRect());
     };
 
-    updateSize();
-
-    const ro = new ResizeObserver(() => updateSize());
+    updateRect();
+    const ro = new ResizeObserver(() => updateRect());
     ro.observe(el);
     return () => ro.disconnect();
   }, [isOpen]);
@@ -555,10 +562,10 @@ export const BronClusterVisualization = memo(({
       return effectiveBaseline - effectiveCurrent;
     };
     
-    const centerX = containerSize.width / 2;
-    const topY = containerSize.height * 0.25;
-    const bottomY = containerSize.height * 0.65;
-    const horizontalSpread = containerSize.width * 0.3;
+    const centerX = canvasWidth / 2;
+    const topY = 100;
+    const bottomY = 320;
+    const horizontalSpread = 180;
     
     // Cache SERP lookups
     const serpCache = new Map<string, BronSerpReport | null>();
@@ -616,7 +623,6 @@ export const BronClusterVisualization = memo(({
     // Children (Supporting Pages) - positioned below, left and right
     const numChildren = currentCluster.children.length;
     currentCluster.children.forEach((child, childIndex) => {
-      // Position: first child bottom-left, second bottom-right, others spread below
       let childX: number;
       let childY: number;
       
@@ -628,12 +634,12 @@ export const BronClusterVisualization = memo(({
         childY = bottomY;
       } else {
         // More than 2: spread them in an arc below
-        const spreadAngle = Math.PI * 0.6; // 108 degrees
+        const spreadAngle = Math.PI * 0.5;
         const startAngle = Math.PI / 2 - spreadAngle / 2;
-        const angle = startAngle + (childIndex / (numChildren - 1)) * spreadAngle;
-        const radius = containerSize.width * 0.35;
+        const angle = startAngle + (childIndex / Math.max(numChildren - 1, 1)) * spreadAngle;
+        const radius = 200;
         childX = centerX + Math.cos(angle) * radius * (childIndex % 2 === 0 ? -1 : 1);
-        childY = bottomY + (childIndex > 1 ? 80 : 0);
+        childY = bottomY + (childIndex > 1 ? 60 : 0);
       }
       
       const childKeywordText = getKeywordDisplayText(child);
@@ -671,7 +677,7 @@ export const BronClusterVisualization = memo(({
     });
     
     return result;
-  }, [currentCluster, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl, isBaselineReport, currentClusterIndex]);
+  }, [currentCluster, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, linkCountsByUrl, isBaselineReport, currentClusterIndex, canvasWidth]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, NodeData>();
@@ -697,7 +703,6 @@ export const BronClusterVisualization = memo(({
         let isUrlConnection = false;
         if (childNode.linkoutUrl && parentUrlKey) {
           const childUrlKey = normalizeUrlKey(childNode.linkoutUrl);
-          // Check if the child links TO the parent
           isUrlConnection = childUrlKey === parentUrlKey;
         }
         
@@ -749,22 +754,9 @@ export const BronClusterVisualization = memo(({
     setSelectedNode(prev => prev?.id === node.id ? null : node);
   }, []);
   
-  // Mouse move for tooltip positioning
+  // Mouse move for tooltip positioning (static - only updates tooltip position)
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
-  }, []);
-  
-  // Zoom handlers
-  const handleZoomIn = useCallback(() => {
-    setZoom(prev => Math.min(prev + 0.2, 2));
-  }, []);
-  
-  const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev - 0.2, 0.5));
-  }, []);
-  
-  const handleReset = useCallback(() => {
-    setZoom(1);
   }, []);
 
   // Navigation handlers
@@ -780,185 +772,149 @@ export const BronClusterVisualization = memo(({
     setTooltipData(null);
   }, [clusters.length]);
 
-  // Keyboard handler
+  // Keyboard handler for navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      } else if (e.key === 'ArrowLeft') {
+      if (!isOpen) return;
+      if (e.key === 'ArrowLeft') {
         handlePrevCluster();
       } else if (e.key === 'ArrowRight') {
         handleNextCluster();
       }
     };
     
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, onClose, handlePrevCluster, handleNextCluster]);
-  
-  if (!isOpen) return null;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handlePrevCluster, handleNextCluster]);
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] bg-background overflow-hidden"
-      style={{ isolation: "isolate" }}
-      onMouseMove={handleMouseMove}
-    >
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-background border-b border-border/50 flex items-center justify-between px-6 z-20">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-foreground">Keyword Cluster Map</h2>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-            {clusters.length} Clusters
-          </Badge>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {/* Cluster navigation */}
-          {clusters.length > 1 && (
-            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrevCluster}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="text-sm min-w-[60px] text-center">
-                {currentClusterIndex + 1} / {clusters.length}
-              </span>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNextCluster}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[700px] max-h-[85vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-lg">Keyword Cluster Map</DialogTitle>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                {clusters.length} Clusters
+              </Badge>
+            </div>
+            
+            {/* Cluster navigation */}
+            {clusters.length > 1 && (
+              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevCluster}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-xs min-w-[50px] text-center">
+                  {currentClusterIndex + 1} / {clusters.length}
+                </span>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextCluster}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {/* Current cluster name */}
+          {currentCluster && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Viewing: <span className="text-foreground font-medium">{getKeywordDisplayText(currentCluster.parent)}</span>
             </div>
           )}
-          
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}>
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm w-12 text-center">{Math.round(zoom * 100)}%</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn}>
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReset}>
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Legend */}
-      <div className="absolute top-20 left-6 z-20 bg-card border border-border/50 rounded-xl p-4 shadow-lg">
-        <h4 className="text-sm font-medium mb-3 text-foreground">Legend</h4>
-        <div className="space-y-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-emerald-500/40 border-2 border-emerald-400" />
-            <span className="text-muted-foreground">Money Page (by rank)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-violet-500/30 border-2 border-violet-400" />
-            <span className="text-muted-foreground">Supporting Page</span>
-          </div>
-          <div className="flex items-center gap-2 mt-3">
-            <div className="w-6 h-0.5 bg-amber-400" />
-            <span className="text-muted-foreground">URL Link</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-0.5 border-t-2 border-dashed border-muted-foreground/40" />
-            <span className="text-muted-foreground">Cluster Relation</span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Canvas (Static - no panning) */}
-      <div
-        ref={containerRef}
-        className="w-full h-full pt-16 overflow-hidden relative"
-        style={{ contain: 'layout style paint' }}
-      >
-        {nodes.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground">
-              <p className="text-lg mb-2">No clusters to display</p>
-              <p className="text-sm">Add keywords with parent-child relationships to see clusters</p>
+        </DialogHeader>
+        
+        <div className="flex">
+          {/* Legend sidebar */}
+          <div className="w-[140px] border-r border-border/50 p-4 bg-muted/20 flex-shrink-0">
+            <h4 className="text-xs font-medium mb-3 text-foreground">Legend</h4>
+            <div className="space-y-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-emerald-500/40 border-2 border-emerald-400 flex-shrink-0" />
+                <span className="text-muted-foreground">Money Page</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3.5 h-3.5 rounded-full bg-violet-500/30 border-2 border-violet-400 flex-shrink-0" />
+                <span className="text-muted-foreground">Supporting</span>
+              </div>
+              <div className="border-t border-border/50 my-2" />
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-0.5 bg-amber-400 flex-shrink-0" />
+                <span className="text-muted-foreground">URL Link</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-0.5 border-t-2 border-dashed border-muted-foreground/40 flex-shrink-0" />
+                <span className="text-muted-foreground">Cluster</span>
+              </div>
             </div>
-          </div>
-        ) : (
-          <svg
-            width="100%"
-            height="100%"
-            viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
-            className="select-none block"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: 'center center',
-            }}
-          >
-            {/* Connection lines */}
-            {connections.map((conn, i) => (
-              <ConnectionLine
-                key={`conn-${i}`}
-                from={conn.from}
-                to={conn.to}
-                isHighlighted={
-                  hoveredNode?.id === conn.from.id || 
-                  hoveredNode?.id === conn.to.id ||
-                  selectedNode?.id === conn.from.id ||
-                  selectedNode?.id === conn.to.id
-                }
-                isUrlConnection={conn.isUrlConnection}
-              />
-            ))}
             
-            {/* Nodes */}
-            {nodes.map(node => (
-              <ClusterNode
-                key={node.id}
-                node={node}
-                isHovered={hoveredNode?.id === node.id}
-                isSelected={selectedNode?.id === node.id}
-                zoom={zoom}
-                onHover={handleNodeHover}
-                onClick={handleNodeClick}
-              />
-            ))}
-          </svg>
-        )}
-      </div>
-      
-      {/* Tooltip */}
-      {tooltipData && (
-        <NodeTooltip data={tooltipData} position={mousePos} />
-      )}
-      
-      {/* Current cluster name */}
-      {currentCluster && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-card border border-border/50 rounded-xl px-6 py-3 shadow-lg">
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground mb-1">Current Cluster</div>
-            <div className="font-semibold text-foreground">
-              {getKeywordDisplayText(currentCluster.parent)}
+            <div className="mt-6 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Hover nodes for details. Click to open URL. Use ← → to navigate.
+              </p>
             </div>
           </div>
+          
+          {/* Canvas area - STATIC, no mouse drag */}
+          <div
+            ref={containerRef}
+            className="flex-1 overflow-hidden relative bg-background"
+            onMouseMove={handleMouseMove}
+            style={{ height: canvasHeight }}
+          >
+            {nodes.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-muted-foreground">
+                  <p className="text-sm mb-1">No clusters to display</p>
+                  <p className="text-xs">Add keywords with parent-child relationships</p>
+                </div>
+              </div>
+            ) : (
+              <svg
+                width="100%"
+                height="100%"
+                viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+                className="select-none block"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                {/* Connection lines */}
+                {connections.map((conn, i) => (
+                  <ConnectionLine
+                    key={`conn-${i}`}
+                    from={conn.from}
+                    to={conn.to}
+                    isHighlighted={
+                      hoveredNode?.id === conn.from.id || 
+                      hoveredNode?.id === conn.to.id ||
+                      selectedNode?.id === conn.from.id ||
+                      selectedNode?.id === conn.to.id
+                    }
+                    isUrlConnection={conn.isUrlConnection}
+                  />
+                ))}
+                
+                {/* Nodes */}
+                {nodes.map(node => (
+                  <ClusterNode
+                    key={node.id}
+                    node={node}
+                    isHovered={hoveredNode?.id === node.id}
+                    isSelected={selectedNode?.id === node.id}
+                    onHover={handleNodeHover}
+                    onClick={handleNodeClick}
+                  />
+                ))}
+              </svg>
+            )}
+            
+            {/* Tooltip */}
+            {tooltipData && (
+              <NodeTooltip data={tooltipData} position={mousePos} containerRect={containerRect} />
+            )}
+          </div>
         </div>
-      )}
-      
-      {/* Instructions */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-card border border-border/50 rounded-full px-4 py-2 text-sm text-muted-foreground shadow-lg">
-        Hover for details · Click node to open URL · ← → to navigate · ESC to close
-      </div>
-    </div>
-  , document.body);
+      </DialogContent>
+    </Dialog>
+  );
 });
 
 BronClusterVisualization.displayName = 'BronClusterVisualization';
