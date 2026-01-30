@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus, CreditCard } from "lucide-react";
+import { Check, Star, ShieldCheck, Clock, HeadphonesIcon, Sparkles, Zap, Crown, Shield, Flame, Plus, CreditCard, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
-
+import { useCart } from "@/contexts/CartContext";
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
   const now = new Date();
@@ -42,6 +42,50 @@ const addOns = [
   { name: "Additional VI Domain", icon: Shield, price: "$15/mo" },
 ];
 
+// Cart product mappings for each plan
+const planProducts = {
+  "Business CEO": {
+    id: 'business-ceo-monthly',
+    priceId: 'price_business_ceo_monthly', // Replace with actual Stripe price ID
+    productId: 'prod_business_ceo',
+    name: 'Business CEO Monthly',
+    description: 'Everything you need to dominate local SEO',
+    price: 7500, // $75 in cents
+    currency: 'usd',
+    type: 'one_time' as const,
+  },
+  "Business CEO Yearly": {
+    id: 'business-ceo-yearly',
+    priceId: 'price_business_ceo_yearly', // Replace with actual Stripe price ID
+    productId: 'prod_business_ceo',
+    name: 'Business CEO Yearly',
+    description: 'Everything you need to dominate local SEO (Yearly)',
+    price: 72000, // $60/mo * 12 = $720/year in cents
+    currency: 'usd',
+    type: 'one_time' as const,
+  },
+  "White Label": {
+    id: 'white-label-monthly',
+    priceId: 'price_white_label_monthly', // Replace with actual Stripe price ID
+    productId: 'prod_white_label',
+    name: 'White Label Monthly',
+    description: 'Resell our services under your brand',
+    price: 49900, // $499 in cents
+    currency: 'usd',
+    type: 'one_time' as const,
+  },
+  "White Label Yearly": {
+    id: 'white-label-yearly',
+    priceId: 'price_white_label_yearly', // Replace with actual Stripe price ID
+    productId: 'prod_white_label',
+    name: 'White Label Yearly',
+    description: 'Resell our services under your brand (Yearly)',
+    price: 478800, // $399/mo * 12 = $4788/year in cents
+    currency: 'usd',
+    type: 'one_time' as const,
+  },
+};
+
 const plans = [
   {
     name: "Business CEO",
@@ -70,6 +114,8 @@ const plans = [
     hasToggle: true,
     originalPrice: 150,
     hasScarcity: true,
+    cartKey: "Business CEO",
+    cartKeyYearly: "Business CEO Yearly",
   },
   {
     name: "White Label",
@@ -98,6 +144,8 @@ const plans = [
     ],
     highlighted: true,
     hasToggle: true,
+    cartKey: "White Label",
+    cartKeyYearly: "White Label Yearly",
   },
   {
     name: "Super Reseller",
@@ -132,6 +180,14 @@ const plans = [
 const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
+  const { addItem } = useCart();
+
+  const handleAddToCart = (plan: typeof plans[0]) => {
+    const cartKey = isYearly && plan.cartKeyYearly ? plan.cartKeyYearly : plan.cartKey;
+    if (cartKey && planProducts[cartKey as keyof typeof planProducts]) {
+      addItem(planProducts[cartKey as keyof typeof planProducts]);
+    }
+  };
 
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
@@ -337,7 +393,9 @@ const PricingSection = () => {
                   variant={plan.highlighted ? "hero" : "heroOutline"}
                   className="w-full"
                   size="lg"
+                  onClick={() => handleAddToCart(plan)}
                 >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
                   {plan.buttonText || "Get Started"}
                 </Button>
               )}
