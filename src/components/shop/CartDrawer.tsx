@@ -1,12 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, ShoppingCart, Trash2, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useState } from 'react';
 import { toast } from 'sonner';
+import { EmbeddedCheckoutDialog } from './EmbeddedCheckout';
 
 function formatPrice(cents: number, currency: string) {
   return new Intl.NumberFormat('en-US', {
@@ -18,39 +16,16 @@ function formatPrice(cents: number, currency: string) {
 
 export const CartDrawer = memo(function CartDrawer() {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalAmount, isOpen, setIsOpen } = useCart();
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (items.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-
-    setIsCheckingOut(true);
-
-    try {
-      // Build line items for Stripe
-      const lineItems = items.map((item) => ({
-        priceId: item.priceId,
-        quantity: item.quantity,
-      }));
-
-      const { data, error } = await supabase.functions.invoke('create-cart-checkout', {
-        body: { lineItems },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        // Clear cart and redirect to Stripe
-        clearCart();
-        window.open(data.url, '_blank');
-      }
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      toast.error(err.message || 'Failed to start checkout');
-    } finally {
-      setIsCheckingOut(false);
-    }
+    // Close cart drawer and open embedded checkout
+    setIsOpen(false);
+    setShowEmbeddedCheckout(true);
   };
 
   return (
@@ -182,14 +157,9 @@ export const CartDrawer = memo(function CartDrawer() {
                     className="w-full bg-gradient-to-r from-primary to-violet-500 hover:opacity-90 text-white"
                     size="lg"
                     onClick={handleCheckout}
-                    disabled={isCheckingOut}
                   >
-                    {isCheckingOut ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <CreditCard className="w-4 h-4 mr-2" />
-                    )}
-                    {isCheckingOut ? 'Processing...' : 'Checkout with Stripe'}
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Checkout
                   </Button>
 
                   <Button
@@ -205,6 +175,12 @@ export const CartDrawer = memo(function CartDrawer() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Embedded Checkout Dialog */}
+      <EmbeddedCheckoutDialog 
+        open={showEmbeddedCheckout} 
+        onOpenChange={setShowEmbeddedCheckout} 
+      />
     </>
   );
 });
