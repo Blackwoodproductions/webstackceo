@@ -638,12 +638,11 @@ export const BronKeywordCard = memo(({
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
           {/* Grid-based layout - nested cards skip first column since they're already offset by tree connector */}
           <div 
-            className="grid items-center gap-3 w-full" 
+            className="grid items-center gap-2 w-full" 
             style={{ 
-              // Rankings moved left by expanding keyword column (1fr) and reducing metrics width
-              // Gap increased from gap-2 to gap-3 for better spacing between columns
+              // Reduced gap back to gap-2, tightened keyword column spacing
               gridTemplateColumns: isNested 
-                ? '52px 44px 1fr 90px 90px 90px 150px 120px'  // 8 columns - wider ranking cols, narrower metrics
+                ? '52px 44px 1fr 90px 90px 90px 150px 120px'  // 8 columns
                 : '44px 52px 44px 1fr 90px 90px 90px 150px 120px',  // 9 columns with chart
             }}
           >
@@ -687,8 +686,8 @@ export const BronKeywordCard = memo(({
               </span>
             </div>
 
-            {/* Column 4: Keyword Text */}
-            <div className="min-w-0 pr-2">
+            {/* Column 4: Keyword Text - removed right padding for tighter spacing */}
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 {/* Simple dot indicator - no TARGET pill */}
                 <span 
