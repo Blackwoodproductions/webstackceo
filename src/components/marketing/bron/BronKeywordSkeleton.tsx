@@ -289,17 +289,17 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
   
   return (
     <div 
-      className="grid items-center gap-4 px-4 py-3 rounded-lg bg-card/50 border border-border/30"
+      className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
       style={{ 
-        gridTemplateColumns: '80px 1fr 160px 260px 160px 100px 48px',
-        minWidth: '1000px',
+        gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
+        minWidth: '900px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
     >
       {/* Speed gauge placeholder */}
       <div className="flex justify-center">
-        <div className="w-10 h-10 rounded-full bg-muted/40" />
+        <div className="w-9 h-9 rounded-full bg-muted/40" />
       </div>
       
       {/* Keyword text placeholder */}
@@ -315,9 +315,9 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
       
       {/* Rankings placeholders */}
       <div className="flex items-center justify-center gap-1">
-        <div className="w-[60px] h-6 rounded bg-muted/40" />
-        <div className="w-[60px] h-6 rounded bg-muted/35" />
-        <div className="w-[60px] h-6 rounded bg-muted/30" />
+        <div className="w-[70px] h-5 rounded bg-muted/40" />
+        <div className="w-[70px] h-5 rounded bg-muted/35" />
+        <div className="w-[70px] h-5 rounded bg-muted/30" />
       </div>
       
       {/* Metrics placeholders */}
@@ -346,10 +346,10 @@ BronKeywordSkeleton.displayName = 'BronKeywordSkeleton';
  */
 export const BronKeywordTableHeader = memo(() => (
   <div 
-    className="grid items-center gap-4 px-4 py-2 mb-2 rounded-lg bg-card/80 border border-border/50" 
+    className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
     style={{ 
-      gridTemplateColumns: '80px 1fr 160px 260px 160px 100px 48px',
-      minWidth: '1000px',
+      gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
+      minWidth: '900px',
       contain: 'layout style' 
     }}
   >
@@ -362,14 +362,14 @@ export const BronKeywordTableHeader = memo(() => (
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Intent</span>
     </div>
-    <div className="flex items-center justify-center gap-2">
-      <div className="w-[80px] flex justify-center">
+    <div className="flex items-center justify-center gap-1">
+      <div className="w-[70px] flex justify-center">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
       </div>
-      <div className="w-[80px] flex justify-center">
+      <div className="w-[70px] flex justify-center">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Bing</span>
       </div>
-      <div className="w-[80px] flex justify-center">
+      <div className="w-[70px] flex justify-center">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yahoo</span>
       </div>
     </div>
