@@ -204,8 +204,9 @@ const ClusterNode = memo(({
           <text
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-foreground font-bold"
+            fill="hsl(var(--foreground))"
             fontSize={node.isMainNode ? 18 * zoom : 14 * zoom}
+            fontWeight={700}
           >
             #{googlePos}
           </text>
@@ -215,7 +216,10 @@ const ClusterNode = memo(({
       {/* Movement indicator */}
       {movement !== 0 && (
         <g transform={`translate(${size / 2 - 8}, ${-size / 2 + 8})`}>
-          <circle r={10} className={movement > 0 ? "fill-emerald-500" : "fill-rose-500"} />
+          <circle
+            r={10}
+            fill={movement > 0 ? "rgba(16, 185, 129, 0.95)" : "rgba(244, 63, 94, 0.95)"}
+          />
           <text
             textAnchor="middle"
             dominantBaseline="middle"
@@ -233,7 +237,7 @@ const ClusterNode = memo(({
         <text
           textAnchor="middle"
           dominantBaseline="hanging"
-          className="fill-foreground/80"
+          fill="hsl(var(--foreground) / 0.8)"
           fontSize={11 * zoom}
           style={{
             maxWidth: 120,
@@ -256,7 +260,7 @@ const ClusterNode = memo(({
             width={50}
             height={16}
             rx={8}
-            className="fill-amber-500/80"
+            fill="rgba(245, 158, 11, 0.85)"
           />
           <text
             textAnchor="middle"
@@ -284,17 +288,24 @@ const ConnectionLine = memo(({
   from: { x: number; y: number };
   to: { x: number; y: number };
   isHighlighted: boolean;
-}) => (
-  <line
-    x1={from.x}
-    y1={from.y}
-    x2={to.x}
-    y2={to.y}
-    className={`${isHighlighted ? 'stroke-amber-400' : 'stroke-muted-foreground/30'} transition-all duration-200`}
-    strokeWidth={isHighlighted ? 2 : 1}
-    strokeDasharray={isHighlighted ? "none" : "4,4"}
-  />
-));
+}) => {
+  const stroke = isHighlighted
+    ? "rgba(251, 191, 36, 0.95)"
+    : "hsl(var(--muted-foreground) / 0.30)";
+
+  return (
+    <line
+      x1={from.x}
+      y1={from.y}
+      x2={to.x}
+      y2={to.y}
+      stroke={stroke}
+      strokeWidth={isHighlighted ? 2 : 1}
+      strokeDasharray={isHighlighted ? undefined : "4,4"}
+      style={{ transition: "stroke 200ms ease, stroke-width 200ms ease" }}
+    />
+  );
+});
 ConnectionLine.displayName = 'ConnectionLine';
 
 // Tooltip Component
@@ -434,6 +445,12 @@ export const BronClusterVisualization = memo(({
 }: BronClusterVisualizationProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const rafMoveRef = useRef<number | null>(null);
+  const pendingMoveRef = useRef<{ x: number; y: number } | null>(null);
+  const panRef = useRef({ x: 0, y: 0 });
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const isPanningRef = useRef(false);
   
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -444,24 +461,51 @@ export const BronClusterVisualization = memo(({
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
-  
-  // Measure container size
+
+  // Keep refs in sync for rAF-driven updates (avoids stale closures)
   useEffect(() => {
-    if (!containerRef.current || !isOpen) return;
-    
+    panRef.current = pan;
+  }, [pan]);
+
+  useEffect(() => {
+    panStartRef.current = panStart;
+  }, [panStart]);
+
+  useEffect(() => {
+    isPanningRef.current = isPanning;
+  }, [isPanning]);
+
+  // Reset view state on open (prevents “blank map” from stale pan/zoom)
+  useEffect(() => {
+    if (!isOpen) return;
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+    setIsPanning(false);
+    setPanStart({ x: 0, y: 0 });
+    setHoveredNode(null);
+    setSelectedNode(null);
+    setTooltipData(null);
+  }, [isOpen]);
+  
+  // Measure container size (robust inside fixed/fullscreen modals)
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = containerRef.current;
+    if (!el) return;
+
     const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ 
-          width: Math.max(rect.width, 800), 
-          height: Math.max(rect.height - 64, 600) // subtract header height
-        });
-      }
+      const rect = el.getBoundingClientRect();
+      setContainerSize({
+        width: Math.max(rect.width, 800),
+        height: Math.max(rect.height - 64, 600), // keep nodes away from header
+      });
     };
-    
+
     updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+
+    const ro = new ResizeObserver(() => updateSize());
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [isOpen]);
   
   // Generate node positions in radial layout - use container dimensions
@@ -630,22 +674,30 @@ export const BronClusterVisualization = memo(({
   
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 0) {
-      setIsPanning(true);
-      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-    }
-  }, [pan]);
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setIsPanning(true);
+    setPanStart({ x: e.clientX - panRef.current.x, y: e.clientY - panRef.current.y });
+  }, []);
   
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-    
-    if (isPanning) {
-      setPan({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y,
-      });
-    }
-  }, [isPanning, panStart]);
+    pendingMoveRef.current = { x: e.clientX, y: e.clientY };
+    if (rafMoveRef.current != null) return;
+
+    rafMoveRef.current = window.requestAnimationFrame(() => {
+      rafMoveRef.current = null;
+      const pending = pendingMoveRef.current;
+      if (!pending) return;
+
+      setMousePos({ x: pending.x, y: pending.y });
+      if (isPanningRef.current) {
+        setPan({
+          x: pending.x - panStartRef.current.x,
+          y: pending.y - panStartRef.current.y,
+        });
+      }
+    });
+  }, []);
   
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
@@ -664,6 +716,41 @@ export const BronClusterVisualization = memo(({
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, []);
+
+  // Wheel/trackpad support: pan normally, zoom with Ctrl/Cmd
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (ev: WheelEvent) => {
+      // Only handle wheel when pointer is over the canvas
+      // (keeps other UI interactions predictable)
+      const target = ev.target as HTMLElement | null;
+      if (!target) return;
+      if (!el.contains(target)) return;
+
+      // Prevent the underlying page from stealing scroll
+      ev.preventDefault();
+
+      const isZoomGesture = ev.ctrlKey || ev.metaKey;
+      if (isZoomGesture) {
+        const delta = ev.deltaY;
+        setZoom((prev) => {
+          const next = prev + (delta > 0 ? -0.08 : 0.08);
+          return Math.max(0.4, Math.min(2, next));
+        });
+        return;
+      }
+
+      const dx = ev.shiftKey ? ev.deltaY : ev.deltaX;
+      const dy = ev.deltaY;
+      setPan((prev) => ({ x: prev.x - dx, y: prev.y - dy }));
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel as any);
+  }, [isOpen]);
   
   // Keyboard handler
   useEffect(() => {
@@ -683,6 +770,16 @@ export const BronClusterVisualization = memo(({
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  // Cleanup any pending rAF
+  useEffect(() => {
+    return () => {
+      if (rafMoveRef.current != null) {
+        cancelAnimationFrame(rafMoveRef.current);
+        rafMoveRef.current = null;
+      }
+    };
+  }, []);
   
   if (!isOpen) return null;
   
@@ -755,7 +852,7 @@ export const BronClusterVisualization = memo(({
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="w-full h-full pt-16 cursor-grab active:cursor-grabbing overflow-hidden"
+        className="w-full h-full pt-16 cursor-grab active:cursor-grabbing overflow-hidden relative"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -775,7 +872,7 @@ export const BronClusterVisualization = memo(({
             width="100%"
             height="100%"
             viewBox={`${-containerSize.width * 0.5} ${-containerSize.height * 0.3} ${containerSize.width * 2} ${containerSize.height * 1.6}`}
-            className="select-none"
+            className="select-none block"
             preserveAspectRatio="xMidYMid meet"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
