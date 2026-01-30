@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import {
   Brain, RefreshCw, Loader2, CheckCircle2, Clock, Play, Pause,
   Settings, Globe, Target, FileText, HelpCircle, Calendar, Zap,
@@ -73,8 +73,8 @@ interface CADEDashboardNewProps {
 }
 
 // ─── Cache Helpers ───────────────────────────────────────────────────────────
-const CACHE_KEY = "bron_subscription_cache";
-const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+const CACHE_KEY = "cade_subscription_cache";
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes - shorter to ensure fresh subscription checks
 
 interface CacheEntry {
   subscription: BronSubscription;
@@ -99,6 +99,17 @@ const setCachedSubscription = (targetDomain: string, data: BronSubscription) => 
     const cached = localStorage.getItem(CACHE_KEY);
     const parsed = cached ? (JSON.parse(cached) as Record<string, CacheEntry>) : {};
     parsed[targetDomain] = { subscription: data, cachedAt: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+  } catch { /* ignore */ }
+};
+
+// Clear subscription cache for a domain (useful on domain switch)
+const clearCachedSubscription = (targetDomain: string) => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return;
+    const parsed = JSON.parse(cached) as Record<string, CacheEntry>;
+    delete parsed[targetDomain];
     localStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
   } catch { /* ignore */ }
 };
@@ -415,8 +426,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     return data;
   }, [domain]);
 
-  // Check subscription
-  const checkSubscription = useCallback(async (): Promise<boolean> => {
+  // Check subscription - force fresh check on domain changes
+  const checkSubscription = useCallback(async (forceRefresh = false): Promise<boolean> => {
     if (!domain) {
       setIsCheckingSubscription(false);
       setIsLoading(false);
@@ -426,24 +437,37 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
 
     setIsCheckingSubscription(true);
 
-    const cachedSub = getCachedSubscription(domain);
-    if (cachedSub?.has_cade === true) {
-      setHasCadeSubscription(true);
-      onSubscriptionChange?.(true);
-      setAccount(prev => ({
-        ...prev,
-        serviceType: cachedSub.plan || cachedSub.servicetype || "CADE",
-      }));
-      setIsCheckingSubscription(false);
-      
-      fetchSubscription(domain).then(fresh => {
-        if (fresh?.has_cade === true) setCachedSubscription(domain, fresh);
-      }).catch(() => {});
-      
-      return true;
+    // Only use cache if not forcing refresh
+    if (!forceRefresh) {
+      const cachedSub = getCachedSubscription(domain);
+      if (cachedSub?.has_cade === true) {
+        setHasCadeSubscription(true);
+        onSubscriptionChange?.(true);
+        setAccount(prev => ({
+          ...prev,
+          serviceType: cachedSub.plan || cachedSub.servicetype || "CADE",
+        }));
+        setIsCheckingSubscription(false);
+        
+        // Background refresh to ensure cache stays fresh
+        fetchSubscription(domain).then(fresh => {
+          if (fresh) {
+            setCachedSubscription(domain, fresh);
+            // If subscription status changed, update state
+            if (fresh.has_cade !== true) {
+              setHasCadeSubscription(false);
+              onSubscriptionChange?.(false);
+            }
+          }
+        }).catch(() => {});
+        
+        return true;
+      }
     }
 
     try {
+      // Force fresh from API by clearing cache first
+      clearCachedSubscription(domain);
       const subData = await fetchSubscription(domain);
       if (subData?.has_cade === true) {
         setCachedSubscription(domain, subData);
@@ -457,6 +481,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         return true;
       }
 
+      // No CADE subscription
       setHasCadeSubscription(false);
       onSubscriptionChange?.(false);
       setIsCheckingSubscription(false);
@@ -515,11 +540,29 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     }
   }, [callCadeApi, domain, hasCadeSubscription, latestCategorization]);
 
-  // Init
+  // Track previous domain to detect changes
+  const prevDomainRef = useRef<string | null | undefined>(null);
+
+  // Init - reset state and check subscription when domain changes
   useEffect(() => {
     let cancelled = false;
+    
+    // Reset state when domain changes
+    const domainChanged = prevDomainRef.current !== domain;
+    if (domainChanged && prevDomainRef.current !== null) {
+      // Clear previous domain's state
+      setHasCadeSubscription(false);
+      setDomainProfile(null);
+      setArticles([]);
+      setFaqs([]);
+      setIsLoading(true);
+      setIsCheckingSubscription(true);
+    }
+    prevDomainRef.current = domain;
+    
     const init = async () => {
-      const hasSub = await checkSubscription();
+      // Force fresh subscription check when domain changes
+      const hasSub = await checkSubscription(domainChanged);
       if (cancelled) return;
       if (hasSub) {
         fetchData();
@@ -530,7 +573,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     };
     init();
     return () => { cancelled = true; };
-  }, [domain]);
+  }, [domain, checkSubscription, fetchData, fetchDomainContext]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
