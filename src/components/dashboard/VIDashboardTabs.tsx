@@ -57,7 +57,7 @@ const tabs = [
     description: 'Local SEO',
     icon: MapPin, 
     isPaid: true,
-    colorClass: 'amber' as const
+    colorClass: 'sky' as const
   },
   { 
     id: 'social-signals' as DashboardTab, 
@@ -146,6 +146,12 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
             active: 'bg-gradient-to-b from-rose-500/20 to-background text-rose-400 border-rose-500/50',
             inactive: 'bg-gradient-to-b from-rose-500/5 to-muted/20 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 border-transparent',
             iconActive: 'bg-rose-500/20 text-rose-400',
+            iconInactive: 'bg-secondary/50',
+          },
+          sky: {
+            active: 'bg-gradient-to-b from-sky-400/20 to-background text-sky-400 border-sky-400/50',
+            inactive: 'bg-gradient-to-b from-sky-400/5 to-muted/20 text-muted-foreground hover:text-sky-400 hover:bg-sky-400/10 border-transparent',
+            iconActive: 'bg-sky-400/20 text-sky-400',
             iconInactive: 'bg-secondary/50',
           },
         };
