@@ -245,11 +245,12 @@ export const BronDomainProfile = memo(({
                 </div>
               )}
               
-              {/* Screenshot image with fallbacks */}
+              {/* Screenshot image with fallbacks - focus on content area, not header */}
               <img 
                 src={screenshotUrl || `https://api.microlink.io/?url=https://${selectedDomain}&screenshot=true&meta=false&embed=screenshot.url`}
                 alt={`${selectedDomain} preview`}
-                className="w-full h-full object-cover object-top"
+                className="w-full h-full object-cover"
+                style={{ objectPosition: 'center 20%' }}
                 loading="lazy"
                 onError={(e) => {
                   const target = e.currentTarget;
