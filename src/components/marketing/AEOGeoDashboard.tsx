@@ -861,6 +861,8 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   // Flatten clusters into keyword list with hierarchy info
   useEffect(() => {
     if (keywordClusters.length > 0) {
+      console.log('[AEO] Processing clusters:', keywordClusters.length, 'clusters');
+      
       const allKeywords: Array<{ 
         keyword: string; 
         position?: number; 
@@ -870,10 +872,13 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         parentKeyword?: string;
       }> = [];
       
+      let totalChildren = 0;
+      
       keywordClusters.forEach((cluster, clusterIdx) => {
         const mainKw = cluster.parent;
         const mainKeywordText = getTargetKeyword(mainKw);
         const children = cluster.children || [];
+        totalChildren += children.length;
         
         // Add main keyword
         allKeywords.push({
@@ -884,10 +889,10 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
           childCount: children.length,
         });
         
-        // Add supporting keywords (indented)
-        children.slice(0, 3).forEach((child, childIdx) => {
+        // Add ALL supporting keywords (up to 5 per parent)
+        children.slice(0, 5).forEach((child, childIdx) => {
           const childKeywordText = getTargetKeyword(child);
-          if (childKeywordText && childKeywordText !== mainKeywordText) {
+          if (childKeywordText && childKeywordText.toLowerCase() !== mainKeywordText.toLowerCase()) {
             allKeywords.push({
               keyword: childKeywordText,
               position: child.position || (clusterIdx + 1) * 100 + childIdx + 1,
@@ -900,8 +905,11 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         });
       });
       
+      console.log('[AEO] Total children found:', totalChildren);
+      console.log('[AEO] Keywords with hierarchy:', allKeywords.filter(k => k.isNested).length, 'nested');
+      
       // Limit to reasonable number
-      const limitedKeywords = allKeywords.slice(0, 40);
+      const limitedKeywords = allKeywords.slice(0, 60);
       setBronKeywords(limitedKeywords);
       setIsLoadingKeywords(false);
       
