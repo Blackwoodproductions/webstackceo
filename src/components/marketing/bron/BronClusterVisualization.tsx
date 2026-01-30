@@ -524,14 +524,24 @@ export const BronClusterVisualization = memo(({
   // Reset view state on open (prevents “blank map” from stale pan/zoom)
   useEffect(() => {
     if (!isOpen) return;
-    setZoom(1);
+    // Auto-calculate zoom to fit all clusters
+    const clusterCount = clusters?.length || 0;
+    let initialZoom = 1;
+    if (clusterCount > 20) {
+      initialZoom = 0.5;
+    } else if (clusterCount > 12) {
+      initialZoom = 0.65;
+    } else if (clusterCount > 8) {
+      initialZoom = 0.8;
+    }
+    setZoom(initialZoom);
     setPan({ x: 0, y: 0 });
     setIsPanning(false);
     setPanStart({ x: 0, y: 0 });
     setHoveredNode(null);
     setSelectedNode(null);
     setTooltipData(null);
-  }, [isOpen]);
+  }, [isOpen, clusters?.length]);
   
   // Measure container size (robust inside fixed/fullscreen modals)
   useEffect(() => {
@@ -554,7 +564,9 @@ export const BronClusterVisualization = memo(({
     return () => ro.disconnect();
   }, [isOpen]);
   
-  // Generate node positions in radial layout - use container dimensions
+  // Generate node positions using a grid-based cluster layout
+  // Each cluster is arranged in a grid pattern, with main nodes in the center
+  // and child nodes arranged around them
   const nodes = useMemo(() => {
     const result: NodeData[] = [];
     
@@ -573,11 +585,22 @@ export const BronClusterVisualization = memo(({
       return effectiveBaseline - effectiveCurrent;
     };
     
-    const centerX = containerSize.width / 2;
-    const centerY = containerSize.height / 2;
-    // Scale radius based on cluster count - more clusters = larger spread
-    const baseRadius = Math.min(containerSize.width, containerSize.height) * 0.35;
-    const clusterRadius = clusters.length <= 5 ? baseRadius : baseRadius * Math.min(1.5, clusters.length / 5);
+    // Grid layout configuration
+    const padding = 80;
+    const clusterSpacing = 280; // Space between cluster centers
+    const childRadius = 90; // Distance of children from parent
+    
+    // Calculate grid dimensions based on number of clusters
+    const cols = Math.ceil(Math.sqrt(clusters.length * 1.5)); // Slightly wider than tall
+    const rows = Math.ceil(clusters.length / cols);
+    
+    // Calculate total grid size
+    const gridWidth = cols * clusterSpacing;
+    const gridHeight = rows * clusterSpacing;
+    
+    // Center offset - position grid in center of container
+    const offsetX = (containerSize.width - gridWidth) / 2 + clusterSpacing / 2;
+    const offsetY = padding + clusterSpacing / 2;
     
     // Cache expensive lookups for this computation pass
     const serpCache = new Map<string, BronSerpReport | null>();
@@ -591,10 +614,13 @@ export const BronClusterVisualization = memo(({
     };
 
     clusters.forEach((cluster, clusterIndex) => {
-      // Position main clusters in a circle
-      const clusterAngle = (clusterIndex / Math.max(clusters.length, 1)) * 2 * Math.PI - Math.PI / 2;
-      const clusterX = centerX + Math.cos(clusterAngle) * clusterRadius;
-      const clusterY = centerY + Math.sin(clusterAngle) * clusterRadius;
+      // Calculate grid position for this cluster
+      const col = clusterIndex % cols;
+      const row = Math.floor(clusterIndex / cols);
+      
+      // Position cluster center
+      const clusterX = offsetX + col * clusterSpacing;
+      const clusterY = offsetY + row * clusterSpacing;
       
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
       const parentSerpData = getSerp(parentKeywordText);
@@ -635,10 +661,11 @@ export const BronClusterVisualization = memo(({
         linksOutCount: parentLinkCounts?.out ?? 0,
       });
       
-      // Position children around parent - scale based on number of children
-      const childRadius = 100 + (cluster.children.length * 15);
+      // Position children around parent in a circle
+      const numChildren = cluster.children.length;
       cluster.children.forEach((child, childIndex) => {
-        const childAngle = (childIndex / Math.max(cluster.children.length, 1)) * 2 * Math.PI - Math.PI / 2;
+        // Distribute children evenly around the parent
+        const childAngle = (childIndex / Math.max(numChildren, 1)) * 2 * Math.PI - Math.PI / 2;
         const childX = clusterX + Math.cos(childAngle) * childRadius;
         const childY = clusterY + Math.sin(childAngle) * childRadius;
         
@@ -935,7 +962,7 @@ export const BronClusterVisualization = memo(({
             ref={svgRef}
             width="100%"
             height="100%"
-            viewBox={`${-containerSize.width * 0.5} ${-containerSize.height * 0.3} ${containerSize.width * 2} ${containerSize.height * 1.6}`}
+            viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
             className="select-none block"
             preserveAspectRatio="xMidYMid meet"
             style={{
