@@ -763,8 +763,8 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 9: Links Pill - entire pill is clickable for collapse */}
-            <div className="flex items-center justify-end">
+            {/* Column 9: Links Pill - entire pill is clickable for collapse - added left margin for gap from CTR */}
+            <div className="flex items-center justify-end ml-8">
               <button
                 type="button"
                 onClick={(e) => {
