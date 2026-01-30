@@ -921,11 +921,11 @@ export const BRONKeywordsTab = memo(({
             // Fallback static skeleton
             <BronKeywordSkeletonList count={5} />
           ) : (
-            <div className="no-theme-transition space-y-3" data-no-theme-transition style={{ contain: 'layout style' }}>
+            <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
               {/* Column Headers Row - extracted to shared component */}
               <BronKeywordTableHeader />
-              {/* Keyword list with containment for scroll performance */}
-              <div className="space-y-4" style={{ contain: 'layout style' }}>
+              {/* Keyword list with no spacing between cards */}
+              <div className="divide-y divide-border/20" style={{ contain: 'layout style' }}>
                 {displayClusters.map((cluster) => (
                   <BronClusterCard
                     key={cluster.parentId}
