@@ -2,7 +2,7 @@ import { useState, useCallback, memo, useEffect, useRef, useMemo } from 'react';
 import { 
   BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
   ChevronDown, ChevronRight, Lightbulb, Sparkles, 
-  MessageSquare, Play, Pause, Calendar, History
+  MessageSquare, Play, Pause, Calendar, History, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -132,11 +132,13 @@ const KeywordAEOCard = memo(({
   isExpanded, 
   onToggle,
   position,
+  onRecheck,
 }: { 
   data: KeywordAEOResult; 
   isExpanded: boolean; 
   onToggle: () => void;
   position?: number;
+  onRecheck?: () => void;
 }) => {
   const prominentCount = data.results.filter(r => r.position === 'prominent').length;
   const mentionedCount = data.results.filter(r => r.position === 'mentioned').length;
@@ -182,6 +184,21 @@ const KeywordAEOCard = memo(({
                   </div>
                 ) : data.results.length > 0 ? (
                   <>
+                    {/* Show re-check button if less than 3 LLM results (stale cache) */}
+                    {data.results.length < 3 && onRecheck && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRecheck();
+                        }}
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Re-check
+                      </Button>
+                    )}
                     <div className="flex items-center gap-2">
                       <Progress value={successRate} className="w-20 h-2" />
                       <span className="text-xs font-medium text-muted-foreground">{successRate}%</span>
@@ -773,6 +790,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               isExpanded={expandedKeyword === kw.keyword}
               onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
               position={kw.position}
+              onRecheck={() => checkKeyword(kw.keyword)}
             />
           ))
         )}
