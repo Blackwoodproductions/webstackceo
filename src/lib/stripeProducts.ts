@@ -342,7 +342,7 @@ export const VI_ADDON_PRODUCTS: StripeProduct[] = [
 export const AEO_GEO_PRODUCTS: StripeProduct[] = [
   {
     id: 'aeo-geo-keyword',
-    priceId: 'price_1RGLeTDhwTkpKWXvUE214Xqr', // Using same $2 price point
+    priceId: 'price_1RGLeTDhwTkpKWXvUE214Xqr',
     productId: 'prod_SAh2LhPb8MjufT',
     name: 'AEO/GEO Keyword',
     description: 'Track a keyword for AI Engine Optimization visibility.',
@@ -350,6 +350,34 @@ export const AEO_GEO_PRODUCTS: StripeProduct[] = [
     currency: 'usd',
     type: 'one_time',
     category: 'aeo-geo',
+  },
+];
+
+// =====================
+// PPC Landing Pages
+// =====================
+export const PPC_PRODUCTS: StripeProduct[] = [
+  {
+    id: 'ppc-keyword-ab-test',
+    priceId: 'price_1SvPAUDhwTkpKWXvBY3aJiCt',
+    productId: 'prod_TtBXrEm6rL7K4d',
+    name: 'PPC Keyword A/B Testing',
+    description: 'A/B tested landing page per keyword with heatmapping and conversion analytics.',
+    price: 2500,
+    currency: 'usd',
+    type: 'one_time',
+    category: 'addon',
+  },
+  {
+    id: 'ppc-page-editor-session',
+    priceId: 'price_1SvPAjDhwTkpKWXv57mbSW0h',
+    productId: 'prod_TtBXTbm9dAm8uo',
+    name: 'PPC Page Editor Session',
+    description: 'AI page editing session - design changes, copy updates, and conversion optimizations.',
+    price: 25000,
+    currency: 'usd',
+    type: 'one_time',
+    category: 'addon',
   },
 ];
 
@@ -364,6 +392,7 @@ export const ALL_PRODUCTS: StripeProduct[] = [
   ...ONPAGE_SEO_PRODUCTS,
   ...VI_ADDON_PRODUCTS,
   ...AEO_GEO_PRODUCTS,
+  ...PPC_PRODUCTS,
 ];
 
 // Helper to get product by ID
