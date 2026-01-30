@@ -174,28 +174,64 @@ function reconstructClustersFromCache(
   }
 }
 
+// Helper to extract keyword text from a SERP report (BRON API uses various field names)
+function getSerpReportKeyword(report: BronSerpReport): string {
+  // Primary field
+  if (report.keyword && typeof report.keyword === 'string' && report.keyword.trim()) {
+    return report.keyword.toLowerCase().trim();
+  }
+  // Check alternative field names (BRON API may use different names)
+  const r = report as unknown as Record<string, unknown>;
+  const altFields = ['keyword_text', 'keywordtitle', 'title', 'phrase', 'query', 'search_term', 'text', 'name'];
+  for (const field of altFields) {
+    const val = r[field];
+    if (typeof val === 'string' && val.trim()) {
+      return val.toLowerCase().trim();
+    }
+  }
+  return '';
+}
+
 // Find matching SERP report for a keyword
 export function findSerpForKeyword(keywordText: string, serpReports: BronSerpReport[]): BronSerpReport | null {
   if (!keywordText || !serpReports.length) return null;
   const normalizedKeyword = keywordText.toLowerCase().trim();
   
-  // Exact match
-  const exactMatch = serpReports.find(r => r.keyword?.toLowerCase().trim() === normalizedKeyword);
+  // Exact match using extended keyword extraction
+  const exactMatch = serpReports.find(r => getSerpReportKeyword(r) === normalizedKeyword);
   if (exactMatch) return exactMatch;
   
   // Contains match
   const containsMatch = serpReports.find(r => {
-    const serpKeyword = r.keyword?.toLowerCase().trim() || '';
+    const serpKeyword = getSerpReportKeyword(r);
+    if (!serpKeyword) return false;
     return normalizedKeyword.includes(serpKeyword) || serpKeyword.includes(normalizedKeyword);
   });
   if (containsMatch) return containsMatch;
   
-  // Word overlap match
+  // Word overlap match (2+ word matches)
   const keywordWords = normalizedKeyword.split(/\s+/).filter(w => w.length > 2);
   for (const report of serpReports) {
-    const serpWords = (report.keyword || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const serpKeyword = getSerpReportKeyword(report);
+    if (!serpKeyword) continue;
+    const serpWords = serpKeyword.split(/\s+/).filter(w => w.length > 2);
     const matchCount = keywordWords.filter(w => serpWords.includes(w)).length;
     if (matchCount >= 2) return report;
+  }
+  
+  // Fallback: normalized slug comparison (remove special chars)
+  const normalizedSlug = normalizedKeyword.replace(/[^a-z0-9]/g, '');
+  for (const report of serpReports) {
+    const serpKeyword = getSerpReportKeyword(report);
+    if (!serpKeyword) continue;
+    const serpSlug = serpKeyword.replace(/[^a-z0-9]/g, '');
+    if (normalizedSlug === serpSlug) return report;
+    // Partial slug match (one contains the other, with min length)
+    if (normalizedSlug.length >= 8 && serpSlug.length >= 8) {
+      if (normalizedSlug.includes(serpSlug) || serpSlug.includes(normalizedSlug)) {
+        return report;
+      }
+    }
   }
   
   return null;

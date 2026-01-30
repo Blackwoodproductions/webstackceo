@@ -172,17 +172,28 @@ export const BronKeywordAnalysisDialog = memo(({
         // Fetch all historical reports (limit to avoid too many requests)
         const reportsToFetch = filteredHistory.slice(0, 20);
         
-        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports');
+        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports for keywords:', trackedKeywords.map(tk => tk.text));
+        console.log('[BronKeywordAnalysisDialog] Report IDs to fetch:', reportsToFetch.map(r => getReportId(r)));
         
         for (const item of reportsToFetch) {
           const reportId = getReportId(item);
-          if (!reportId) continue;
+          if (!reportId) {
+            console.warn('[BronKeywordAnalysisDialog] Skipping report with no ID:', item);
+            continue;
+          }
           
           try {
             const data = await onFetchSerpDetail(selectedDomain, reportId);
             if (data?.length > 0) {
               dataMap.set(reportId, data);
+              // Log first report's structure to understand API response
+              if (dataMap.size === 1) {
+                console.log('[BronKeywordAnalysisDialog] First report sample entry keys:', Object.keys(data[0]));
+                console.log('[BronKeywordAnalysisDialog] First report sample entry:', JSON.stringify(data[0]).slice(0, 500));
+              }
               console.log(`[BronKeywordAnalysisDialog] Report ${reportId}: ${data.length} entries`);
+            } else {
+              console.log(`[BronKeywordAnalysisDialog] Report ${reportId}: empty response`);
             }
           } catch (e) {
             console.warn(`Failed to fetch report ${reportId}:`, e);
@@ -199,12 +210,14 @@ export const BronKeywordAnalysisDialog = memo(({
     };
     
     fetchData();
-  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail]);
+  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, trackedKeywords]);
   
   // Build chart data
   const { chartData, keywordSummaries } = useMemo(() => {
     const data: ChartDataPoint[] = [];
     const summaries: KeywordSummary[] = [];
+    
+    console.log('[BronKeywordAnalysisDialog] Building chart data, historicalData size:', historicalData.size, 'filteredHistory length:', filteredHistory.length);
     
     // Track best/current/baseline for each keyword
     const keywordStats: Record<string, { best: number | null; current: number | null; baseline: number | null; all: number[] }> = {};
@@ -213,10 +226,17 @@ export const BronKeywordAnalysisDialog = memo(({
     });
     
     // Build chart data points
+    let matchedReports = 0;
+    let unmatchedReports = 0;
+    
     filteredHistory.forEach(item => {
       const reportId = getReportId(item);
       const reportData = historicalData.get(reportId);
-      if (!reportData || reportData.length === 0) return;
+      if (!reportData || reportData.length === 0) {
+        unmatchedReports++;
+        return;
+      }
+      matchedReports++;
 
       const timestamp = getSerpListItemTimestamp(item);
       if (timestamp === null) return;
@@ -242,6 +262,8 @@ export const BronKeywordAnalysisDialog = memo(({
         data.push(point);
       }
     });
+    
+    console.log('[BronKeywordAnalysisDialog] Chart data build result: matchedReports:', matchedReports, 'unmatchedReports:', unmatchedReports, 'dataPoints:', data.length);
     
     // Calculate best/current/baseline for each keyword
     // Baseline = first ever recorded position (from oldest report in "All Time" view)
