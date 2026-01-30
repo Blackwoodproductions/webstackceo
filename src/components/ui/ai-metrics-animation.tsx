@@ -81,12 +81,38 @@ export const AIMetricsAnimation = memo(({ title = "Analyzing Keywords", variant 
     <div className="flex items-center gap-2 mb-4">
       <Search className="w-4 h-4 text-primary" />
       <h4 className="text-lg font-semibold">{title}</h4>
-      {/* Scanning line effect */}
-      <div className="h-0.5 flex-1 max-w-[200px] rounded-full overflow-hidden bg-muted/30 ml-4">
-        <div 
-          className="h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent"
-          style={{ animation: 'ai-metrics-scan 1.5s ease-in-out infinite' }}
-        />
+      {/* Heartbeat rhythm line effect */}
+      <div className="flex items-center gap-1 ml-4 flex-1 max-w-[280px]">
+        {/* Heartbeat SVG rhythm bars */}
+        <svg viewBox="0 0 120 24" className="w-full h-6 overflow-visible" preserveAspectRatio="none">
+          <path 
+            d="M0 12 L15 12 L18 12 L22 4 L26 20 L30 8 L34 14 L38 12 L50 12 L53 12 L57 2 L61 22 L65 6 L69 16 L73 12 L85 12 L88 12 L92 3 L96 21 L100 7 L104 15 L108 12 L120 12"
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="opacity-40"
+          />
+          <path 
+            d="M0 12 L15 12 L18 12 L22 4 L26 20 L30 8 L34 14 L38 12 L50 12 L53 12 L57 2 L61 22 L65 6 L69 16 L73 12 L85 12 L88 12 L92 3 L96 21 L100 7 L104 15 L108 12 L120 12"
+            fill="none"
+            stroke="url(#heartbeat-gradient)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="240"
+            style={{ animation: 'heartbeat-trace 2s ease-in-out infinite' }}
+          />
+          <defs>
+            <linearGradient id="heartbeat-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="40%" stopColor="hsl(var(--primary))" />
+              <stop offset="60%" stopColor="hsl(186 100% 50%)" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
     </div>
     
@@ -160,6 +186,11 @@ export const AIMetricsAnimation = memo(({ title = "Analyzing Keywords", variant 
       @keyframes ai-metrics-scan {
         0% { transform: translateX(-150%); }
         100% { transform: translateX(450%); }
+      }
+      @keyframes heartbeat-trace {
+        0% { stroke-dashoffset: 240; }
+        50% { stroke-dashoffset: 0; }
+        100% { stroke-dashoffset: -240; }
       }
     `}</style>
   </div>
