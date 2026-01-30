@@ -246,13 +246,26 @@ const NodeTooltip = memo(({
   
   const tips = useMemo(() => generateSEOTips(data), [data]);
   
+  // Calculate tooltip position - flip to left if near right edge
+  const tooltipWidth = 400;
+  const tooltipHeight = 500;
+  const padding = 20;
+  
+  const isNearRightEdge = position.x > window.innerWidth - tooltipWidth - 50;
+  const isNearBottomEdge = position.y > window.innerHeight - tooltipHeight - 50;
+  
+  const left = isNearRightEdge 
+    ? Math.max(padding, position.x - tooltipWidth - 20) 
+    : Math.min(position.x + 20, window.innerWidth - tooltipWidth - padding);
+    
+  const top = isNearBottomEdge
+    ? Math.max(padding, position.y - tooltipHeight + 100)
+    : Math.max(padding, Math.min(position.y - 20, window.innerHeight - tooltipHeight - padding));
+  
   return (
     <div
       className="fixed z-[100] bg-background/98 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl p-4 min-w-[340px] max-w-[400px] pointer-events-none"
-      style={{
-        left: Math.min(position.x + 15, window.innerWidth - 420),
-        top: Math.min(position.y - 20, window.innerHeight - 520),
-      }}
+      style={{ left, top }}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
