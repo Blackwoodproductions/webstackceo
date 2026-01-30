@@ -152,7 +152,7 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
   return { mainTip, actionItems: actionItems.slice(0, 4), improvement };
 };
 
-// Animated electrical line component
+// Simplified electrical line component - reduced animations to prevent glitching
 const ElectricLine = memo(({ 
   x1, y1, x2, y2, 
   delay = 0, 
@@ -164,48 +164,49 @@ const ElectricLine = memo(({
   isHighlighted?: boolean;
   googlePos: number | null;
 }) => {
-  const lineId = useMemo(() => `line-${x1}-${y1}-${x2}-${y2}-${Math.random()}`, [x1, y1, x2, y2]);
-  
   // Color based on ranking performance
-  let strokeColor = "rgba(148, 163, 184, 0.4)"; // muted
-  let glowColor = "rgba(148, 163, 184, 0.2)";
+  let strokeColor = "rgba(148, 163, 184, 0.3)";
+  let glowColor = "rgba(148, 163, 184, 0.15)";
   let particleColor = "#94a3b8";
   
   if (googlePos !== null) {
     if (googlePos <= 3) {
-      strokeColor = "rgba(52, 211, 153, 0.6)"; // emerald
-      glowColor = "rgba(52, 211, 153, 0.3)";
+      strokeColor = "rgba(52, 211, 153, 0.5)";
+      glowColor = "rgba(52, 211, 153, 0.2)";
       particleColor = "#34d399";
     } else if (googlePos <= 10) {
-      strokeColor = "rgba(34, 211, 238, 0.6)"; // cyan
-      glowColor = "rgba(34, 211, 238, 0.3)";
+      strokeColor = "rgba(34, 211, 238, 0.5)";
+      glowColor = "rgba(34, 211, 238, 0.2)";
       particleColor = "#22d3ee";
     } else if (googlePos <= 20) {
-      strokeColor = "rgba(251, 191, 36, 0.6)"; // amber
-      glowColor = "rgba(251, 191, 36, 0.3)";
+      strokeColor = "rgba(251, 191, 36, 0.5)";
+      glowColor = "rgba(251, 191, 36, 0.2)";
       particleColor = "#fbbf24";
     } else {
-      strokeColor = "rgba(251, 146, 60, 0.5)"; // orange
-      glowColor = "rgba(251, 146, 60, 0.25)";
+      strokeColor = "rgba(251, 146, 60, 0.4)";
+      glowColor = "rgba(251, 146, 60, 0.15)";
       particleColor = "#fb923c";
     }
   }
   
   if (isHighlighted) {
-    strokeColor = "rgba(168, 85, 247, 0.8)"; // violet
-    glowColor = "rgba(168, 85, 247, 0.4)";
+    strokeColor = "rgba(168, 85, 247, 0.7)";
+    glowColor = "rgba(168, 85, 247, 0.3)";
     particleColor = "#a855f7";
   }
 
+  // Calculate path length for animation timing
+  const pathLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  const animDuration = Math.max(2, pathLength / 150); // Slower, smoother animation
+
   return (
-    <g>
-      {/* Glow effect */}
+    <g style={{ contain: 'layout paint' }}>
+      {/* Subtle glow effect - no blur filter to prevent glitching */}
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={glowColor}
-        strokeWidth="6"
+        strokeWidth="4"
         strokeLinecap="round"
-        style={{ filter: 'blur(4px)' }}
       />
       
       {/* Main line */}
@@ -216,44 +217,13 @@ const ElectricLine = memo(({
         strokeLinecap="round"
       />
       
-      {/* Animated electricity particle */}
-      <circle r="4" fill={particleColor} style={{ filter: `drop-shadow(0 0 6px ${particleColor})` }}>
+      {/* Single animated particle - simplified for performance */}
+      <circle r="3" fill={particleColor} opacity="0.8">
         <animateMotion
-          dur="2s"
+          dur={`${animDuration}s`}
           repeatCount="indefinite"
           begin={`${delay}s`}
           path={`M${x1},${y1} L${x2},${y2}`}
-        />
-        <animate
-          attributeName="opacity"
-          values="0;1;1;0"
-          dur="2s"
-          repeatCount="indefinite"
-          begin={`${delay}s`}
-        />
-        <animate
-          attributeName="r"
-          values="2;4;2"
-          dur="2s"
-          repeatCount="indefinite"
-          begin={`${delay}s`}
-        />
-      </circle>
-      
-      {/* Second particle offset */}
-      <circle r="3" fill={particleColor} style={{ filter: `drop-shadow(0 0 4px ${particleColor})` }}>
-        <animateMotion
-          dur="2s"
-          repeatCount="indefinite"
-          begin={`${delay + 1}s`}
-          path={`M${x1},${y1} L${x2},${y2}`}
-        />
-        <animate
-          attributeName="opacity"
-          values="0;0.8;0.8;0"
-          dur="2s"
-          repeatCount="indefinite"
-          begin={`${delay + 1}s`}
         />
       </circle>
     </g>
@@ -518,11 +488,12 @@ export const BronClusterVisualization = memo(({
     });
   }, [clusters, serpReports, sortOrder]);
 
-  // Build positioned nodes for radial layout
+  // Build positioned nodes for radial layout - SPREAD OUT MORE
   const { centerX, centerY, clusterNodes } = useMemo(() => {
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
-    const baseRadius = Math.min(cx, cy) - 100;
+    // Increase base radius for more spread
+    const maxRadius = Math.min(cx, cy) - 80;
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -543,13 +514,13 @@ export const BronClusterVisualization = memo(({
       return null;
     };
 
-    // Position clusters in concentric rings
+    // Position clusters in multiple concentric rings for better spread
     const nodes: NodeData[] = [];
     const count = sortedClusters.length;
     
-    // Distribute in rings - inner ring for top performers
-    const innerRingCount = Math.min(8, Math.ceil(count / 2));
-    const outerRingCount = count - innerRingCount;
+    // Calculate ring distribution - aim for 6-8 nodes per ring max
+    const nodesPerRing = Math.min(8, Math.max(5, Math.ceil(count / 3)));
+    const numRings = Math.ceil(count / nodesPerRing);
     
     sortedClusters.forEach((cluster, index) => {
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
@@ -561,13 +532,19 @@ export const BronClusterVisualization = memo(({
       const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
       const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
       
-      // Determine which ring and position
-      const isInnerRing = index < innerRingCount;
-      const ringRadius = isInnerRing ? baseRadius * 0.55 : baseRadius * 0.85;
-      const ringIndex = isInnerRing ? index : index - innerRingCount;
-      const ringTotal = isInnerRing ? innerRingCount : outerRingCount;
+      // Determine which ring (0 = innermost)
+      const ringIndex = Math.floor(index / nodesPerRing);
+      const positionInRing = index % nodesPerRing;
+      const nodesInThisRing = Math.min(nodesPerRing, count - ringIndex * nodesPerRing);
       
-      const angle = (ringIndex / ringTotal) * Math.PI * 2 - Math.PI / 2;
+      // Calculate radius for this ring - spread rings evenly from center
+      const minRadius = 180; // Minimum distance from center
+      const ringSpacing = numRings > 1 ? (maxRadius - minRadius) / (numRings - 1) : 0;
+      const ringRadius = numRings === 1 ? maxRadius * 0.7 : minRadius + ringIndex * ringSpacing;
+      
+      // Offset each ring slightly for visual variety
+      const angleOffset = ringIndex * (Math.PI / nodesPerRing / 2);
+      const angle = (positionInRing / nodesInThisRing) * Math.PI * 2 - Math.PI / 2 + angleOffset;
       const x = cx + Math.cos(angle) * ringRadius;
       const y = cy + Math.sin(angle) * ringRadius;
       
@@ -660,67 +637,55 @@ export const BronClusterVisualization = memo(({
   };
 
   return (
-    <div className="relative">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-semibold text-foreground">Power Flow Network</h3>
-          </div>
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs px-2 py-0.5">
-            {clusters.length} Money Pages
-          </Badge>
-          <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-xs px-2 py-0.5">
-            {totalSupportingKeywords} Supporting
-          </Badge>
-          {externalLinkoutCount > 0 && (
-            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-xs px-2 py-0.5">
-              <Link2 className="w-3 h-3 mr-1" />
-              {externalLinkoutCount} Client Pages
-            </Badge>
-          )}
-        </div>
-        
-        {/* Sort selector and close */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
-            <Button
-              variant={sortOrder === 'best' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setSortOrder('best')}
-              className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'best' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : ''}`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              Best First
-            </Button>
-            <Button
-              variant={sortOrder === 'worst' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setSortOrder('worst')}
-              className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'worst' ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : ''}`}
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Needs Work
-            </Button>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted/50"
+    <div className="relative" style={{ contain: 'layout style paint' }}>
+      {/* Minimal floating controls - no header bar */}
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+        <div className="flex items-center bg-background/80 backdrop-blur-sm rounded-lg p-0.5 border border-border/50">
+          <Button
+            variant={sortOrder === 'best' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setSortOrder('best')}
+            className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'best' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : ''}`}
           >
-            <span className="sr-only">Close</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            <Trophy className="w-3.5 h-3.5" />
+            Best
+          </Button>
+          <Button
+            variant={sortOrder === 'worst' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setSortOrder('worst')}
+            className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'worst' ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : ''}`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Needs Work
+          </Button>
         </div>
+        <button
+          onClick={onClose}
+          className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted/50 bg-background/80 backdrop-blur-sm border border-border/50"
+        >
+          <span className="sr-only">Close</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
       
-      {/* Radial Visualization Canvas */}
+      {/* Stats badges - floating top left */}
+      <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
+        <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-amber-400 border-amber-500/30 text-xs px-2 py-1">
+          {clusters.length} Money Pages
+        </Badge>
+        <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-violet-400 border-violet-500/30 text-xs px-2 py-1">
+          {totalSupportingKeywords} Supporting
+        </Badge>
+      </div>
+      
+      {/* Radial Visualization Canvas - Full screen */}
       <div 
         ref={containerRef}
-        className="relative bg-gradient-to-br from-background via-background to-muted/20"
-        style={{ minHeight: '700px', height: '75vh' }}
+        className="relative bg-gradient-to-br from-background via-background to-muted/10"
+        style={{ minHeight: '750px', height: '80vh' }}
       >
         {clusters.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -772,66 +737,38 @@ export const BronClusterVisualization = memo(({
                 );
               })}
               
-              {/* Center hub glow rings */}
+              {/* Center hub glow - static, no animations to prevent glitching */}
               <circle
                 cx={centerX}
                 cy={centerY}
-                r="90"
+                r="85"
                 fill="url(#centerGradient)"
-                opacity="0.5"
-              >
-                <animate
-                  attributeName="r"
-                  values="85;95;85"
-                  dur="3s"
-                  repeatCount="indefinite"
-                />
-              </circle>
+                opacity="0.4"
+              />
               <circle
                 cx={centerX}
                 cy={centerY}
                 r="70"
                 fill="none"
-                stroke="rgba(168, 85, 247, 0.3)"
+                stroke="rgba(168, 85, 247, 0.25)"
                 strokeWidth="2"
-              >
-                <animate
-                  attributeName="r"
-                  values="65;75;65"
-                  dur="2.5s"
-                  repeatCount="indefinite"
-                />
-                <animate
-                  attributeName="opacity"
-                  values="0.3;0.6;0.3"
-                  dur="2.5s"
-                  repeatCount="indefinite"
-                />
-              </circle>
+              />
             </svg>
             
-            {/* Center Hub - Main Website */}
+            {/* Center Hub - Main Website - Simplified, no pulse animations */}
             <div
               className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
               style={{ left: centerX, top: centerY }}
             >
-              <div className="relative">
-                {/* Outer pulse ring */}
-                <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-600/20 animate-pulse" />
-                
-                {/* Main hub */}
-                <div 
-                  className="relative w-32 h-32 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.4)] backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
-                  onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
-                >
-                  <Globe className="w-8 h-8 text-violet-400 mb-1" />
-                  <span className="text-xs font-bold text-violet-300 text-center px-2 leading-tight">
-                    {selectedDomain || 'Main Site'}
-                  </span>
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                    <Zap className="w-5 h-5 text-cyan-400 animate-pulse" />
-                  </div>
-                </div>
+              <div 
+                className="relative w-36 h-36 rounded-full bg-gradient-to-br from-violet-600/25 via-purple-600/20 to-indigo-600/25 border-2 border-violet-400/50 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.3)] cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
+              >
+                <Globe className="w-10 h-10 text-violet-400 mb-1" />
+                <span className="text-sm font-bold text-violet-300 text-center px-3 leading-tight">
+                  {selectedDomain || 'Main Site'}
+                </span>
+                <Zap className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-5 h-5 text-cyan-400" />
               </div>
             </div>
             
@@ -845,25 +782,33 @@ export const BronClusterVisualization = memo(({
               return (
                 <div
                   key={node.id}
-                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200 ${isHovered ? 'scale-110 z-30' : ''}`}
-                  style={{ left: node.x, top: node.y }}
+                  className="absolute z-10"
+                  style={{ 
+                    left: node.x, 
+                    top: node.y,
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.1)' : 'scale(1)'}`,
+                    transition: 'transform 0.15s ease-out',
+                    zIndex: isHovered ? 30 : 10,
+                    contain: 'layout style',
+                  }}
                   onMouseEnter={(e) => handleNodeHover(node, e)}
                   onMouseLeave={(e) => handleNodeHover(null, e)}
                   onClick={() => handleNodeClick(node)}
                 >
-                  <div className="relative cursor-pointer group">
-                    {/* Node circle */}
+                  <div className="relative cursor-pointer">
+                    {/* Node circle - larger for better visibility */}
                     <div 
-                      className={`w-16 h-16 rounded-full ${style.bg} border-2 ${style.border} ${style.glow} flex flex-col items-center justify-center backdrop-blur-sm transition-all group-hover:scale-105`}
+                      className={`w-20 h-20 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center`}
+                      style={{ boxShadow: isHovered ? '0 0 25px rgba(168,85,247,0.5)' : undefined }}
                     >
-                      <span className={`font-bold text-sm ${style.text}`}>
+                      <span className={`font-bold text-base ${style.text}`}>
                         {googlePos !== null ? `#${googlePos}` : '—'}
                       </span>
                       
                       {/* Movement badge */}
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-2 -right-2 min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-2 -right-2 min-w-7 h-7 px-1.5 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
@@ -877,10 +822,10 @@ export const BronClusterVisualization = memo(({
                       )}
                     </div>
                     
-                    {/* Label */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-24 text-center">
-                      <span className="text-[11px] text-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                        {node.keywordText.length > 25 ? node.keywordText.substring(0, 22) + '…' : node.keywordText}
+                    {/* Label - wider for better readability */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-28 text-center">
+                      <span className="text-xs text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-2 py-1 rounded shadow-sm">
+                        {node.keywordText.length > 28 ? node.keywordText.substring(0, 25) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
