@@ -1,7 +1,7 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  FlaskConical, X, MessageSquarePlus, Bug, Lightbulb, 
+  FlaskConical, MessageSquarePlus, Bug, Lightbulb, 
   AlertTriangle, Send, Loader2, Check, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,58 @@ const BetaNoticeBanner = memo(() => {
   const [pageErrors, setPageErrors] = useState<PageError[]>([]);
   const [consoleErrors, setConsoleErrors] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+
+  // Scroll positioning (staggered at 60% - lower than FREE tab at 40%)
+  const [topPosition, setTopPosition] = useState('60%');
+  const [tabOpacity, setTabOpacity] = useState(1);
+  const throttleRef = useRef(false);
+
+  // Handle scroll to stop above footer and fade out
+  useEffect(() => {
+    const handleScroll = () => {
+      if (throttleRef.current) return;
+      throttleRef.current = true;
+      
+      requestAnimationFrame(() => {
+        const footer = document.querySelector('footer');
+        if (!footer) {
+          throttleRef.current = false;
+          return;
+        }
+
+        const footerRect = footer.getBoundingClientRect();
+        const elementHeight = 56;
+        const buffer = 40;
+        const defaultTop = window.innerHeight * 0.60;
+        const fadeStartDistance = 150;
+        
+        const maxTop = footerRect.top - elementHeight - buffer;
+        const distanceToFooter = footerRect.top - defaultTop - elementHeight;
+        
+        if (distanceToFooter < fadeStartDistance) {
+          const fadeProgress = Math.max(0, distanceToFooter / fadeStartDistance);
+          setTabOpacity(fadeProgress);
+        } else {
+          setTabOpacity(1);
+        }
+        
+        if (defaultTop > maxTop) {
+          setTopPosition(`${maxTop}px`);
+        } else {
+          setTopPosition('60%');
+        }
+        throttleRef.current = false;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, []);
 
   // Capture page errors
   useEffect(() => {
@@ -143,10 +195,16 @@ const BetaNoticeBanner = memo(() => {
 
   const currentOption = feedbackOptions.find(o => o.value === feedbackType) || feedbackOptions[0];
 
+  // Hide when opacity is 0
+  if (tabOpacity === 0) return null;
+
   return (
     <>
       {/* Right side vertical tab */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] flex items-center">
+      <div 
+        className="fixed right-0 z-[100] flex items-center transition-opacity duration-300"
+        style={{ top: topPosition, opacity: tabOpacity }}
+      >
         <AnimatePresence>
           {isExpanded && (
             <motion.div
