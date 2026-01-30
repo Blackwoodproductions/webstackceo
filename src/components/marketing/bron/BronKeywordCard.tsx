@@ -518,12 +518,12 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout for consistent columns */}
+          {/* Grid-based layout for consistent columns - tighter spacing */}
           <div 
-            className="grid items-center gap-3" 
+            className="grid items-center gap-2" 
             style={{ 
-              gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
-              minWidth: '900px'
+              gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+              minWidth: '800px'
             }}
           >
             {/* Column 1: Page Speed Gauge - centered for vertical alignment */}
