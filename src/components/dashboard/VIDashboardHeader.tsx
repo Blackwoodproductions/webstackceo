@@ -1,5 +1,4 @@
 import { memo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +58,10 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
   }, [navigate]);
 
   return (
-    <div className="relative z-10 px-8 py-3 flex items-center justify-between">
+    <div 
+      className="relative z-10 px-8 py-3 flex items-center justify-between"
+      style={{ contain: 'layout style' }}
+    >
       {/* Left: Logo */}
       <Link to="/" className="flex items-center gap-3 group">
         <div className="relative">
@@ -82,10 +84,11 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
         {/* Live Stats Pill */}
         <div className="hidden md:flex items-center gap-4 px-4 py-1.5 rounded-full bg-background/50 border border-border/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-xs">
-            <motion.div 
+            <div 
               className="w-2 h-2 rounded-full bg-emerald-400"
-              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.6, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              style={{ 
+                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              }}
             />
             <span className="text-muted-foreground">Live:</span>
             <span className="font-semibold text-emerald-400">{activeVisitors}</span>

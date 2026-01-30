@@ -93,7 +93,10 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
   const isCompact = variant === 'compact';
 
   return (
-    <div className="absolute inset-x-0 -bottom-px z-20 flex justify-center">
+    <div 
+      className="absolute inset-x-0 -bottom-px z-20 flex justify-center"
+      style={{ contain: 'layout style' }}
+    >
       <div
         className={
           isCompact
@@ -103,6 +106,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
+          contain: 'layout',
         }}
       >
         {tabs.map((tab, index) => {
@@ -162,7 +166,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            style={{ zIndex: isActive ? 10 : 8 - index }}
+            style={{ zIndex: isActive ? 10 : 8 - index, contain: 'layout style' }}
             className={
               isCompact
                 ? `relative flex flex-col items-center justify-center w-16 h-11 transition-all rounded-t-lg border-t border-x gap-0.5 ${
