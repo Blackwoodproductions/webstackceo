@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import { useCart } from "@/contexts/CartContext";
+import { useGeoCurrency } from "@/hooks/use-geo-currency";
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
   const now = new Date();
@@ -181,6 +182,7 @@ const PricingSection = () => {
   const [isYearly, setIsYearly] = useState(false);
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
   const { addItem } = useCart();
+  const { formatLocalPrice, isUSD, country, loading, convertPrice } = useGeoCurrency();
 
   const handleAddToCart = (plan: typeof plans[0]) => {
     const cartKey = isYearly && plan.cartKeyYearly ? plan.cartKeyYearly : plan.cartKey;
@@ -195,6 +197,16 @@ const PricingSection = () => {
       <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
       
       <div className="container mx-auto px-6 relative z-10 max-w-6xl">
+        {/* Currency Notice */}
+        {!isUSD && !loading && (
+          <div className="text-center mb-6">
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              Prices shown for {country}. Billed in USD.
+            </span>
+          </div>
+        )}
+
         {/* Billing Toggle */}
         <div className="flex items-center justify-center gap-4 mb-12">
           <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -258,7 +270,7 @@ const PricingSection = () => {
                 <div className="flex items-baseline justify-center gap-2">
                   {plan.originalPrice && !isYearly && (
                     <span className="text-xl text-muted-foreground line-through">
-                      ${plan.originalPrice}
+                      {formatLocalPrice(plan.originalPrice * 100)}
                     </span>
                   )}
                   <motion.span 
@@ -267,10 +279,17 @@ const PricingSection = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-4xl font-bold"
                   >
-                    ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                    {formatLocalPrice((isYearly ? plan.yearlyPrice : plan.monthlyPrice) * 100)}
                   </motion.span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
+                
+                {/* USD equivalent for non-USD users */}
+                {!isUSD && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ≈ ${isYearly ? plan.yearlyPrice : plan.monthlyPrice} USD/month
+                  </p>
+                )}
                 
                 {/* Half off badge for Business CEO */}
                 {plan.originalPrice && !isYearly && (
@@ -287,7 +306,7 @@ const PricingSection = () => {
                 
                 {isYearly && plan.yearlyPrice && (
                   <p className="text-xs text-primary mt-1">
-                    Billed annually (${plan.yearlyPrice * 12}/year)
+                    Billed annually ({formatLocalPrice(plan.yearlyPrice * 12 * 100)}/year)
                   </p>
                 )}
                 

@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
+import { useGeoCurrency } from '@/hooks/use-geo-currency';
 import { 
   BRON_PRODUCTS, 
   CADE_PRODUCTS, 
   BUNDLE_PRODUCTS, 
   DAX_PRODUCTS,
-  formatPrice as formatStripePrice 
 } from '@/lib/stripeProducts';
 
 // À La Carte Add-on Services mapped from real Stripe products
@@ -129,16 +129,9 @@ const colorClasses = {
   },
 };
 
-function formatPrice(cents: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
 export const ProductCatalog = memo(function ProductCatalog() {
   const { addItem } = useCart();
+  const { formatLocalPrice, getEquivalent, country, isUSD, loading } = useGeoCurrency();
 
   return (
     <section id="services" className="py-20">
@@ -158,6 +151,11 @@ export const ProductCatalog = memo(function ProductCatalog() {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Select the services you need. Mix and match to create the perfect SEO solution for your business.
           </p>
+          {!isUSD && !loading && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Prices shown in your local currency ({country}). Billed in USD.
+            </p>
+          )}
         </div>
 
         {/* Product Grid */}
@@ -203,12 +201,18 @@ export const ProductCatalog = memo(function ProductCatalog() {
                   </CardHeader>
 
                   <CardContent className="pt-4">
-                    <div className="flex items-baseline gap-2 mb-4">
+                    <div className="flex items-baseline gap-2 mb-1">
                       <span className="text-3xl font-bold">
-                        {formatPrice(product.price, product.currency)}
+                        {formatLocalPrice(product.price)}
                       </span>
                       <span className="text-muted-foreground text-sm">/month</span>
                     </div>
+                    {!isUSD && (
+                      <p className="text-xs text-muted-foreground mb-4">
+                        ≈ ${(product.price / 100).toFixed(0)} USD
+                      </p>
+                    )}
+                    {isUSD && <div className="mb-4" />}
 
                     <Button
                       className={`w-full ${colors.button} text-white`}
