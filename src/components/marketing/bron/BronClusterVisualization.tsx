@@ -1,5 +1,5 @@
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, FileText, CheckCircle2, AlertCircle, Lightbulb } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, CheckCircle2, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
@@ -66,6 +66,7 @@ interface NodeData {
   linksOutCount: number;
   linkoutUrl: string | null;
   angle?: number;
+  parentNodeId?: string | number;
 }
 
 interface TooltipData extends NodeData {
@@ -78,7 +79,6 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
   const googlePos = getPosition(node.serpData?.google);
   const movement = node.movement.google;
   const linksIn = node.linksInCount;
-  const linksOut = node.linksOutCount;
   const pageSpeed = node.pageSpeed?.mobileScore;
   const metrics = node.metrics;
   
@@ -152,21 +152,23 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
   return { mainTip, actionItems: actionItems.slice(0, 4), improvement };
 };
 
-// Simplified electrical line component - reduced animations to prevent glitching
+// Electrical line component with smooth animation
 const ElectricLine = memo(({ 
   x1, y1, x2, y2, 
   delay = 0, 
   isHighlighted = false,
-  googlePos 
+  googlePos,
+  isSupportingLink = false
 }: { 
   x1: number; y1: number; x2: number; y2: number; 
   delay?: number; 
   isHighlighted?: boolean;
   googlePos: number | null;
+  isSupportingLink?: boolean;
 }) => {
   // Color based on ranking performance
-  let strokeColor = "rgba(148, 163, 184, 0.3)";
-  let glowColor = "rgba(148, 163, 184, 0.15)";
+  let strokeColor = "rgba(148, 163, 184, 0.25)";
+  let glowColor = "rgba(148, 163, 184, 0.1)";
   let particleColor = "#94a3b8";
   
   if (googlePos !== null) {
@@ -183,8 +185,8 @@ const ElectricLine = memo(({
       glowColor = "rgba(251, 191, 36, 0.2)";
       particleColor = "#fbbf24";
     } else {
-      strokeColor = "rgba(251, 146, 60, 0.4)";
-      glowColor = "rgba(251, 146, 60, 0.15)";
+      strokeColor = "rgba(251, 146, 60, 0.35)";
+      glowColor = "rgba(251, 146, 60, 0.12)";
       particleColor = "#fb923c";
     }
   }
@@ -194,31 +196,30 @@ const ElectricLine = memo(({
     glowColor = "rgba(168, 85, 247, 0.3)";
     particleColor = "#a855f7";
   }
+  
+  // Supporting links are thinner and more subtle
+  const strokeWidth = isSupportingLink ? 1.5 : 2;
+  const glowWidth = isSupportingLink ? 3 : 4;
+  const particleSize = isSupportingLink ? 2 : 3;
 
-  // Calculate path length for animation timing
   const pathLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  const animDuration = Math.max(2, pathLength / 150); // Slower, smoother animation
+  const animDuration = Math.max(1.5, pathLength / 180);
 
   return (
     <g style={{ contain: 'layout paint' }}>
-      {/* Subtle glow effect - no blur filter to prevent glitching */}
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={glowColor}
-        strokeWidth="4"
+        strokeWidth={glowWidth}
         strokeLinecap="round"
       />
-      
-      {/* Main line */}
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
         stroke={strokeColor}
-        strokeWidth="2"
+        strokeWidth={strokeWidth}
         strokeLinecap="round"
       />
-      
-      {/* Single animated particle - simplified for performance */}
-      <circle r="3" fill={particleColor} opacity="0.8">
+      <circle r={particleSize} fill={particleColor} opacity="0.8">
         <animateMotion
           dur={`${animDuration}s`}
           repeatCount="indefinite"
@@ -231,7 +232,7 @@ const ElectricLine = memo(({
 });
 ElectricLine.displayName = 'ElectricLine';
 
-// Enhanced Tooltip Component with more relevant data
+// Enhanced Tooltip Component
 const NodeTooltip = memo(({
   data,
   position,
@@ -243,12 +244,7 @@ const NodeTooltip = memo(({
   const bingPos = getPosition(data.serpData?.bing);
   const yahooPos = getPosition(data.serpData?.yahoo);
   
-  // Generate tips synchronously
   const tips = useMemo(() => generateSEOTips(data), [data]);
-  
-  // Calculate total improvement across engines
-  const totalImprovement = data.movement.google + data.movement.bing + data.movement.yahoo;
-  const avgImprovement = Math.round(totalImprovement / 3);
   
   return (
     <div
@@ -340,8 +336,7 @@ const NodeTooltip = memo(({
       </div>
       
       {/* Metrics Row */}
-      <div className="flex items-center gap-3 mb-3 text-xs">
-        {/* Links */}
+      <div className="flex items-center gap-3 mb-3 text-xs flex-wrap">
         <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
           <LinkIcon className="w-3 h-3 text-cyan-400" />
           <span className="text-muted-foreground">Links:</span>
@@ -350,7 +345,6 @@ const NodeTooltip = memo(({
           <span className="text-foreground font-medium">{data.linksOutCount} out</span>
         </div>
         
-        {/* PageSpeed if available */}
         {data.pageSpeed?.mobileScore !== undefined && (
           <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
             <Gauge className="w-3 h-3 text-amber-400" />
@@ -362,7 +356,6 @@ const NodeTooltip = memo(({
           </div>
         )}
         
-        {/* CPC if available */}
         {data.metrics?.cpc !== undefined && (
           <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
             <DollarSign className="w-3 h-3 text-emerald-400" />
@@ -372,7 +365,6 @@ const NodeTooltip = memo(({
         )}
       </div>
       
-      {/* Search Volume if available */}
       {data.metrics?.search_volume !== undefined && data.metrics.search_volume > 0 && (
         <div className="flex items-center gap-2 mb-3 text-xs bg-violet-500/10 rounded-lg px-3 py-1.5 border border-violet-500/20">
           <Target className="w-3.5 h-3.5 text-violet-400" />
@@ -388,12 +380,10 @@ const NodeTooltip = memo(({
           <span className="text-sm font-semibold text-violet-400">AI Ranking Analysis</span>
         </div>
         
-        {/* Main tip */}
         <p className="text-sm text-foreground mb-3 leading-relaxed">
           {tips.mainTip}
         </p>
         
-        {/* Action items */}
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Lightbulb className="w-3 h-3 text-amber-400" />
@@ -412,7 +402,7 @@ const NodeTooltip = memo(({
 });
 NodeTooltip.displayName = 'NodeTooltip';
 
-// Main Visualization Component - Radial Layout with Central Hub
+// Main Visualization Component - Three-tier hierarchy
 export const BronClusterVisualization = memo(({
   isOpen,
   onClose,
@@ -431,7 +421,7 @@ export const BronClusterVisualization = memo(({
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [sortOrder, setSortOrder] = useState<'best' | 'worst'>('best');
-  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
+  const [dimensions, setDimensions] = useState({ width: 1400, height: 900 });
 
   // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
@@ -461,7 +451,7 @@ export const BronClusterVisualization = memo(({
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: Math.max(700, rect.height) });
+        setDimensions({ width: rect.width, height: Math.max(800, rect.height) });
       }
     };
     
@@ -472,7 +462,7 @@ export const BronClusterVisualization = memo(({
     return () => observer.disconnect();
   }, [isOpen]);
   
-  // Sort clusters by performance (Google ranking)
+  // Sort clusters by performance
   const sortedClusters = useMemo(() => {
     const getClusterScore = (cluster: ClusterData) => {
       const keywordText = getKeywordDisplayText(cluster.parent);
@@ -488,12 +478,14 @@ export const BronClusterVisualization = memo(({
     });
   }, [clusters, serpReports, sortOrder]);
 
-  // Build positioned nodes for radial layout - SPREAD OUT MORE
-  const { centerX, centerY, clusterNodes } = useMemo(() => {
+  // Build three-tier node layout: Center → Money Pages → Supporting Pages
+  const { centerX, centerY, moneyNodes, supportingNodes, connections } = useMemo(() => {
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
-    // Increase base radius for more spread
-    const maxRadius = Math.min(cx, cy) - 80;
+    
+    // Radii for the three tiers
+    const moneyPageRadius = Math.min(cx, cy) * 0.42; // Money pages orbit
+    const supportingBaseRadius = Math.min(cx, cy) * 0.72; // Supporting pages base radius
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -514,15 +506,14 @@ export const BronClusterVisualization = memo(({
       return null;
     };
 
-    // Position clusters in multiple concentric rings for better spread
-    const nodes: NodeData[] = [];
-    const count = sortedClusters.length;
+    const money: NodeData[] = [];
+    const supporting: NodeData[] = [];
+    const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' }> = [];
     
-    // Calculate ring distribution - aim for 6-8 nodes per ring max
-    const nodesPerRing = Math.min(8, Math.max(5, Math.ceil(count / 3)));
-    const numRings = Math.ceil(count / nodesPerRing);
+    const moneyCount = sortedClusters.length;
     
-    sortedClusters.forEach((cluster, index) => {
+    // Position money pages in a circle around the center
+    sortedClusters.forEach((cluster, clusterIndex) => {
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
       const parentSerpData = getSerp(parentKeywordText);
       const parentKey = parentKeywordText.toLowerCase();
@@ -532,27 +523,16 @@ export const BronClusterVisualization = memo(({
       const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
       const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
       
-      // Determine which ring (0 = innermost)
-      const ringIndex = Math.floor(index / nodesPerRing);
-      const positionInRing = index % nodesPerRing;
-      const nodesInThisRing = Math.min(nodesPerRing, count - ringIndex * nodesPerRing);
+      // Distribute money pages evenly around the center
+      const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2;
+      const moneyX = cx + Math.cos(moneyAngle) * moneyPageRadius;
+      const moneyY = cy + Math.sin(moneyAngle) * moneyPageRadius;
       
-      // Calculate radius for this ring - spread rings evenly from center
-      const minRadius = 180; // Minimum distance from center
-      const ringSpacing = numRings > 1 ? (maxRadius - minRadius) / (numRings - 1) : 0;
-      const ringRadius = numRings === 1 ? maxRadius * 0.7 : minRadius + ringIndex * ringSpacing;
-      
-      // Offset each ring slightly for visual variety
-      const angleOffset = ringIndex * (Math.PI / nodesPerRing / 2);
-      const angle = (positionInRing / nodesInThisRing) * Math.PI * 2 - Math.PI / 2 + angleOffset;
-      const x = cx + Math.cos(angle) * ringRadius;
-      const y = cy + Math.sin(angle) * ringRadius;
-      
-      nodes.push({
+      const moneyNode: NodeData = {
         id: cluster.parent.id,
         keyword: cluster.parent,
-        x,
-        y,
+        x: moneyX,
+        y: moneyY,
         isMainNode: true,
         keywordText: parentKeywordText,
         serpData: parentSerpData,
@@ -568,11 +548,69 @@ export const BronClusterVisualization = memo(({
         linksInCount: parentLinkCounts?.in ?? 0,
         linksOutCount: parentLinkCounts?.out ?? 0,
         linkoutUrl: parentUrl,
-        angle,
-      });
+        angle: moneyAngle,
+      };
+      
+      money.push(moneyNode);
+      
+      // Position supporting pages in an arc around this money page
+      const supportingCount = cluster.children.length;
+      if (supportingCount > 0) {
+        // Calculate arc span based on how many supporting pages
+        const arcSpan = Math.min(Math.PI * 0.6, (supportingCount / 6) * Math.PI);
+        const supportingRadius = 90 + Math.min(supportingCount * 8, 60); // Distance from money page
+        
+        cluster.children.forEach((child, childIndex) => {
+          const childKeywordText = getKeywordDisplayText(child);
+          const childSerpData = getSerp(childKeywordText);
+          const childKey = childKeywordText.toLowerCase();
+          const childInitial = initialPositions[childKey] || { google: null, bing: null, yahoo: null };
+          const childGooglePos = getPosition(childSerpData?.google);
+          const childUrl = getUrlForKeyword(child, childKeywordText);
+          const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
+          const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
+          
+          // Position supporting pages in an arc radiating outward from money page
+          const arcStart = moneyAngle - arcSpan / 2;
+          const childAngle = supportingCount === 1 
+            ? moneyAngle // Single child: straight out
+            : arcStart + (childIndex / (supportingCount - 1)) * arcSpan;
+          
+          const supportingX = moneyX + Math.cos(childAngle) * supportingRadius;
+          const supportingY = moneyY + Math.sin(childAngle) * supportingRadius;
+          
+          const supportingNode: NodeData = {
+            id: child.id,
+            keyword: child,
+            x: supportingX,
+            y: supportingY,
+            isMainNode: false,
+            keywordText: childKeywordText,
+            serpData: childSerpData,
+            metrics: keywordMetrics[childKey],
+            pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
+            movement: isBaselineReport
+              ? { google: 0, bing: 0, yahoo: 0 }
+              : {
+                  google: calculateMovement(childInitial.google, childGooglePos),
+                  bing: calculateMovement(childInitial.bing, getPosition(childSerpData?.bing)),
+                  yahoo: calculateMovement(childInitial.yahoo, getPosition(childSerpData?.yahoo)),
+                },
+            linksInCount: childLinkCounts?.in ?? 0,
+            linksOutCount: childLinkCounts?.out ?? 0,
+            linkoutUrl: childUrl,
+            parentNodeId: moneyNode.id,
+          };
+          
+          supporting.push(supportingNode);
+          
+          // Connection from supporting to money page
+          conns.push({ from: supportingNode, to: moneyNode, type: 'supporting-to-money' });
+        });
+      }
     });
     
-    return { centerX: cx, centerY: cy, clusterNodes: nodes };
+    return { centerX: cx, centerY: cy, moneyNodes: money, supportingNodes: supporting, connections: conns };
   }, [sortedClusters, dimensions, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, isBaselineReport, linkCountsByUrl]);
 
   // Reset on open
@@ -582,13 +620,12 @@ export const BronClusterVisualization = memo(({
     setTooltipData(null);
   }, [isOpen]);
   
-  // Handle hover with AI tip generation
-  const handleNodeHover = useCallback(async (node: NodeData | null, e: React.MouseEvent) => {
+  // Handle hover
+  const handleNodeHover = useCallback((node: NodeData | null, e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
     setHoveredNode(node);
     
     if (node) {
-      // Tips are now generated synchronously in the tooltip itself
       setTooltipData({ ...node });
     } else {
       setTooltipData(null);
@@ -607,14 +644,7 @@ export const BronClusterVisualization = memo(({
     clusters.reduce((sum, c) => sum + c.children.length, 0), 
     [clusters]
   );
-  
-  // Count clusters with external linkout
-  const externalLinkoutCount = useMemo(() => 
-    clusters.filter(c => !!c.parent.linkouturl).length, 
-    [clusters]
-  );
 
-  // Don't render if not open
   if (!isOpen) return null;
 
   // Get node color based on ranking
@@ -638,7 +668,7 @@ export const BronClusterVisualization = memo(({
 
   return (
     <div className="relative" style={{ contain: 'layout style paint' }}>
-      {/* Minimal floating controls - no header bar */}
+      {/* Floating controls */}
       <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
         <div className="flex items-center bg-background/80 backdrop-blur-sm rounded-lg p-0.5 border border-border/50">
           <Button
@@ -671,7 +701,7 @@ export const BronClusterVisualization = memo(({
         </button>
       </div>
       
-      {/* Stats badges - floating top left */}
+      {/* Stats badges */}
       <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
         <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-amber-400 border-amber-500/30 text-xs px-2 py-1">
           {clusters.length} Money Pages
@@ -681,11 +711,11 @@ export const BronClusterVisualization = memo(({
         </Badge>
       </div>
       
-      {/* Radial Visualization Canvas - Full screen */}
+      {/* Visualization Canvas */}
       <div 
         ref={containerRef}
         className="relative bg-gradient-to-br from-background via-background to-muted/10"
-        style={{ minHeight: '750px', height: '80vh' }}
+        style={{ minHeight: '850px', height: '85vh' }}
       >
         {clusters.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -703,77 +733,85 @@ export const BronClusterVisualization = memo(({
               style={{ zIndex: 0 }}
             >
               <defs>
-                {/* Glow filter for center hub */}
-                <filter id="centerGlow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-                
-                {/* Radial gradient for center */}
                 <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="rgba(168, 85, 247, 0.3)" />
+                  <stop offset="0%" stopColor="rgba(168, 85, 247, 0.35)" />
                   <stop offset="50%" stopColor="rgba(139, 92, 246, 0.2)" />
-                  <stop offset="100%" stopColor="rgba(99, 102, 241, 0.1)" />
+                  <stop offset="100%" stopColor="rgba(99, 102, 241, 0.08)" />
                 </radialGradient>
               </defs>
               
-              {/* Electrical connections from center to each cluster */}
-              {clusterNodes.map((node, index) => {
+              {/* Connections from money pages to center */}
+              {moneyNodes.map((node, index) => {
                 const googlePos = getPosition(node.serpData?.google);
                 return (
                   <ElectricLine
-                    key={`line-${node.id}`}
+                    key={`center-to-${node.id}`}
                     x1={centerX}
                     y1={centerY}
                     x2={node.x}
                     y2={node.y}
-                    delay={index * 0.15}
+                    delay={index * 0.12}
                     isHighlighted={hoveredNode?.id === node.id}
                     googlePos={googlePos}
                   />
                 );
               })}
               
-              {/* Center hub glow - static, no animations to prevent glitching */}
+              {/* Connections from supporting pages to their money pages */}
+              {connections.map((conn, index) => {
+                const googlePos = getPosition(conn.from.serpData?.google);
+                return (
+                  <ElectricLine
+                    key={`support-${conn.from.id}-to-${conn.to.id}`}
+                    x1={conn.to.x}
+                    y1={conn.to.y}
+                    x2={conn.from.x}
+                    y2={conn.from.y}
+                    delay={0.5 + index * 0.08}
+                    isHighlighted={hoveredNode?.id === conn.from.id || hoveredNode?.id === conn.to.id}
+                    googlePos={googlePos}
+                    isSupportingLink
+                  />
+                );
+              })}
+              
+              {/* Center hub glow */}
+              <circle
+                cx={centerX}
+                cy={centerY}
+                r="100"
+                fill="url(#centerGradient)"
+                opacity="0.5"
+              />
               <circle
                 cx={centerX}
                 cy={centerY}
                 r="85"
-                fill="url(#centerGradient)"
-                opacity="0.4"
-              />
-              <circle
-                cx={centerX}
-                cy={centerY}
-                r="70"
                 fill="none"
-                stroke="rgba(168, 85, 247, 0.25)"
+                stroke="rgba(168, 85, 247, 0.3)"
                 strokeWidth="2"
               />
             </svg>
             
-            {/* Center Hub - Main Website - Simplified, no pulse animations */}
+            {/* Center Hub - Main Website */}
             <div
               className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
               style={{ left: centerX, top: centerY }}
             >
               <div 
-                className="relative w-36 h-36 rounded-full bg-gradient-to-br from-violet-600/25 via-purple-600/20 to-indigo-600/25 border-2 border-violet-400/50 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.3)] cursor-pointer hover:scale-105 transition-transform"
+                className="relative w-40 h-40 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.35)] cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
               >
-                <Globe className="w-10 h-10 text-violet-400 mb-1" />
-                <span className="text-sm font-bold text-violet-300 text-center px-3 leading-tight">
+                <Globe className="w-12 h-12 text-violet-400 mb-1.5" />
+                <span className="text-sm font-bold text-violet-300 text-center px-4 leading-tight">
                   {selectedDomain || 'Main Site'}
                 </span>
-                <Zap className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-5 h-5 text-cyan-400" />
+                <Zap className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 text-cyan-400" />
               </div>
             </div>
             
-            {/* Cluster Nodes */}
-            {clusterNodes.map((node) => {
+            {/* Money Page Nodes */}
+            {moneyNodes.map((node) => {
               const style = getNodeStyle(node);
               const googlePos = getPosition(node.serpData?.google);
               const isHovered = hoveredNode?.id === node.id;
@@ -786,9 +824,9 @@ export const BronClusterVisualization = memo(({
                   style={{ 
                     left: node.x, 
                     top: node.y,
-                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.1)' : 'scale(1)'}`,
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.12)' : 'scale(1)'}`,
                     transition: 'transform 0.15s ease-out',
-                    zIndex: isHovered ? 30 : 10,
+                    zIndex: isHovered ? 30 : 15,
                     contain: 'layout style',
                   }}
                   onMouseEnter={(e) => handleNodeHover(node, e)}
@@ -796,36 +834,93 @@ export const BronClusterVisualization = memo(({
                   onClick={() => handleNodeClick(node)}
                 >
                   <div className="relative cursor-pointer">
-                    {/* Node circle - larger for better visibility */}
+                    {/* Money page node - larger */}
                     <div 
-                      className={`w-20 h-20 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center`}
-                      style={{ boxShadow: isHovered ? '0 0 25px rgba(168,85,247,0.5)' : undefined }}
+                      className={`w-16 h-16 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center ${style.glow}`}
+                      style={{ boxShadow: isHovered ? '0 0 30px rgba(168,85,247,0.5)' : undefined }}
                     >
-                      <span className={`font-bold text-base ${style.text}`}>
+                      <span className={`font-bold text-sm ${style.text}`}>
                         {googlePos !== null ? `#${googlePos}` : '—'}
                       </span>
                       
-                      {/* Movement badge */}
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-2 -right-2 min-w-7 h-7 px-1.5 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
                       )}
                       
-                      {/* External link indicator */}
                       {hasExternalLinkout && (
-                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-                          <Link2 className="w-3 h-3 text-white" />
+                        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                          <Link2 className="w-2.5 h-2.5 text-white" />
                         </div>
                       )}
                     </div>
                     
-                    {/* Label - wider for better readability */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-3 w-28 text-center">
-                      <span className="text-xs text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-2 py-1 rounded shadow-sm">
-                        {node.keywordText.length > 28 ? node.keywordText.substring(0, 25) + '…' : node.keywordText}
+                    {/* Label */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-24 text-center">
+                      <span className="text-[10px] text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-1.5 py-0.5 rounded shadow-sm">
+                        {node.keywordText.length > 24 ? node.keywordText.substring(0, 21) + '…' : node.keywordText}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Supporting Page Nodes */}
+            {supportingNodes.map((node) => {
+              const style = getNodeStyle(node);
+              const googlePos = getPosition(node.serpData?.google);
+              const isHovered = hoveredNode?.id === node.id;
+              const hasExternalLinkout = !!node.keyword.linkouturl;
+              
+              return (
+                <div
+                  key={node.id}
+                  className="absolute z-5"
+                  style={{ 
+                    left: node.x, 
+                    top: node.y,
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.15)' : 'scale(1)'}`,
+                    transition: 'transform 0.15s ease-out',
+                    zIndex: isHovered ? 25 : 5,
+                    contain: 'layout style',
+                  }}
+                  onMouseEnter={(e) => handleNodeHover(node, e)}
+                  onMouseLeave={(e) => handleNodeHover(null, e)}
+                  onClick={() => handleNodeClick(node)}
+                >
+                  <div className="relative cursor-pointer">
+                    {/* Supporting page node - smaller */}
+                    <div 
+                      className={`w-10 h-10 rounded-full ${style.bg} border-[1.5px] ${style.border} flex items-center justify-center`}
+                      style={{ boxShadow: isHovered ? '0 0 20px rgba(168,85,247,0.4)' : undefined }}
+                    >
+                      <span className={`font-semibold text-xs ${style.text}`}>
+                        {googlePos !== null ? googlePos : '—'}
+                      </span>
+                      
+                      {node.movement.google !== 0 && (
+                        <div 
+                          className={`absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                        >
+                          {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
+                        </div>
+                      )}
+                      
+                      {hasExternalLinkout && (
+                        <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center shadow">
+                          <Link2 className="w-2 h-2 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Smaller label for supporting */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1.5 w-20 text-center">
+                      <span className="text-[9px] text-muted-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-1 py-0.5 rounded">
+                        {node.keywordText.length > 20 ? node.keywordText.substring(0, 17) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
