@@ -78,6 +78,7 @@ import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
 import { VIDashboardHeader } from '@/components/dashboard/VIDashboardHeader';
 import { VIDashboardTabs, type DashboardTab } from '@/components/dashboard/VIDashboardTabs';
 import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
+import { FeatureGate } from '@/components/dashboard/FeatureGate';
 
 // Import optimized hooks
 import { useVIAuth } from '@/hooks/use-vi-auth';
@@ -3426,6 +3427,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
+        <FeatureGate feature="bron">
         <div className="relative max-w-[1480px] mx-auto group/bron">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/bron:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3460,10 +3462,12 @@ f.parentNode.insertBefore(j,f);
             />
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {/* AEO/GEO Tab Content */}
       {activeTab === 'aeo-geo' && (
+        <FeatureGate feature="aeo-geo">
         <div className="relative max-w-[1480px] mx-auto group/aeo">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/aeo:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3496,10 +3500,12 @@ f.parentNode.insertBefore(j,f);
             />
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
+        <FeatureGate feature="cade">
         <div className="relative max-w-[1480px] mx-auto group/cade">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/cade:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3647,27 +3653,33 @@ f.parentNode.insertBefore(j,f);
               </CollapsibleContent>
             </Collapsible>
 
-          </div>
+           </div>
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
+        <FeatureGate feature="gmb">
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <GMBPanel selectedDomain={selectedTrackedDomain || selectedDomainKey} />
         </div>
+        </FeatureGate>
       )}
 
       {/* Social Signals Tab Content */}
       {activeTab === 'social-signals' && (
+        <FeatureGate feature="social-signals">
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <SocialPanel selectedDomain={selectedTrackedDomain || selectedDomainKey} />
         </div>
+        </FeatureGate>
       )}
 
       {/* On-page SEO Tab Content */}
       {activeTab === 'on-page-seo' && (
+        <FeatureGate feature="on-page-seo">
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
@@ -3913,9 +3925,11 @@ f.parentNode.insertBefore(j,f);
             </div>
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {activeTab === 'landing-pages' && (
+        <FeatureGate feature="landing-pages">
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           
@@ -3924,6 +3938,7 @@ f.parentNode.insertBefore(j,f);
             <PPCLandingPagesExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
         </div>
+        </FeatureGate>
       )}
 
       {/* Floating Chat Bar - Show on all tabs */}
