@@ -1,18 +1,19 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  BrainCircuit, Search, Loader2, CheckCircle, XCircle, AlertCircle, 
-  ChevronDown, ChevronRight, Lightbulb, Sparkles, Target, TrendingUp,
-  MessageSquare, Zap, ExternalLink, RefreshCw
+  BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
+  ChevronDown, ChevronRight, Lightbulb, Sparkles, 
+  MessageSquare, Zap, Play, Pause
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useBronApi } from '@/hooks/use-bron-api';
+import { getTargetKeyword } from './bron/BronKeywordCard';
 
 interface LLMResult {
   model: string;
@@ -36,7 +37,6 @@ interface KeywordAEOResult {
 
 interface AEOGeoDashboardProps {
   domain: string;
-  keywords?: Array<{ keyword: string; position?: number }>;
 }
 
 const LLM_ICONS: Record<string, string> = {
@@ -119,12 +119,12 @@ const KeywordAEOCard = memo(({
   data, 
   isExpanded, 
   onToggle,
-  onCheck
+  position,
 }: { 
   data: KeywordAEOResult; 
   isExpanded: boolean; 
   onToggle: () => void;
-  onCheck: (keyword: string) => void;
+  position?: number;
 }) => {
   const prominentCount = data.results.filter(r => r.position === 'prominent').length;
   const mentionedCount = data.results.filter(r => r.position === 'mentioned').length;
@@ -145,13 +145,20 @@ const KeywordAEOCard = memo(({
                 ) : (
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 )}
-                <div>
-                  <CardTitle className="text-base font-semibold">{data.keyword}</CardTitle>
-                  {data.timestamp && (
-                    <CardDescription className="text-[10px]">
-                      Last checked: {new Date(data.timestamp).toLocaleString()}
-                    </CardDescription>
+                <div className="flex items-center gap-2">
+                  {position && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary border-primary/30">
+                      #{position}
+                    </Badge>
                   )}
+                  <div>
+                    <CardTitle className="text-base font-semibold">{data.keyword}</CardTitle>
+                    {data.timestamp && (
+                      <CardDescription className="text-[10px]">
+                        Checked: {new Date(data.timestamp).toLocaleString()}
+                      </CardDescription>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -181,18 +188,9 @@ const KeywordAEOCard = memo(({
                     </div>
                   </>
                 ) : (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCheck(data.keyword);
-                    }}
-                    className="text-xs"
-                  >
-                    <Search className="w-3 h-3 mr-1" />
-                    Check LLMs
-                  </Button>
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                    Pending
+                  </Badge>
                 )}
               </div>
             </div>
@@ -232,11 +230,18 @@ const KeywordAEOCard = memo(({
                   </div>
                 )}
               </div>
+            ) : data.isLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Querying AI models...
+                </p>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <BrainCircuit className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Click "Check LLMs" to see how this keyword appears across AI models
+                  Waiting to check this keyword...
                 </p>
               </div>
             )}
@@ -248,23 +253,88 @@ const KeywordAEOCard = memo(({
 });
 KeywordAEOCard.displayName = 'KeywordAEOCard';
 
-export const AEOGeoDashboard = memo(({ domain, keywords = [] }: AEOGeoDashboardProps) => {
+export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
+  const bronApi = useBronApi();
   const [keywordResults, setKeywordResults] = useState<Record<string, KeywordAEOResult>>({});
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
-  const [customKeyword, setCustomKeyword] = useState('');
-  const [isCheckingAll, setIsCheckingAll] = useState(false);
+  const [isAutoRunning, setIsAutoRunning] = useState(false);
+  const [currentCheckIndex, setCurrentCheckIndex] = useState(0);
+  const [bronKeywords, setBronKeywords] = useState<Array<{ keyword: string; position?: number }>>([]);
+  const [isLoadingKeywords, setIsLoadingKeywords] = useState(true);
+  const autoRunAbortRef = useRef(false);
+  const hasFetchedRef = useRef<string | null>(null);
+  
+  // Fetch BRON keywords for this domain
+  useEffect(() => {
+    if (!domain || hasFetchedRef.current === domain) return;
+    hasFetchedRef.current = domain;
+    
+    const fetchKeywords = async () => {
+      setIsLoadingKeywords(true);
+      try {
+        // Use the BRON API to fetch keywords - it populates keywords state
+        await bronApi.fetchKeywords(domain);
+      } catch (error) {
+        console.error('Error fetching BRON keywords:', error);
+        toast.error('Failed to load keywords from BRON');
+      } finally {
+        setIsLoadingKeywords(false);
+      }
+    };
+    
+    fetchKeywords();
+  }, [domain, bronApi]);
+  
+  // When keywords updates, extract keyword text
+  useEffect(() => {
+    if (bronApi.keywords && bronApi.keywords.length > 0) {
+      // Extract unique keywords
+      const keywordMap = new Map<string, number>();
+      bronApi.keywords.forEach((kw, idx) => {
+        const keyword = getTargetKeyword(kw);
+        const position = kw.position || idx + 1;
+        if (keyword && !keywordMap.has(keyword)) {
+          keywordMap.set(keyword, position);
+        }
+      });
+      
+      const keywords = Array.from(keywordMap.entries())
+        .map(([keyword, position]) => ({ keyword, position }))
+        .sort((a, b) => (a.position || 999) - (b.position || 999))
+        .slice(0, 20); // Limit to top 20 keywords
+      
+      setBronKeywords(keywords);
+      setIsLoadingKeywords(false);
+      
+      // Initialize keyword results
+      const initialResults: Record<string, KeywordAEOResult> = {};
+      keywords.forEach(kw => {
+        if (!keywordResults[kw.keyword]) {
+          initialResults[kw.keyword] = {
+            keyword: kw.keyword,
+            isLoading: false,
+            results: [],
+            suggestions: [],
+          };
+        }
+      });
+      if (Object.keys(initialResults).length > 0) {
+        setKeywordResults(prev => ({ ...prev, ...initialResults }));
+      }
+    }
+  }, [bronApi.keywords]);
   
   const checkKeyword = useCallback(async (keyword: string) => {
     setKeywordResults(prev => ({
       ...prev,
       [keyword]: {
+        ...prev[keyword],
         keyword,
         isLoading: true,
         results: [],
         suggestions: [],
       }
     }));
-    setExpandedKeyword(keyword);
     
     try {
       const { data, error } = await supabase.functions.invoke('aeo-llm-check', {
@@ -283,15 +353,18 @@ export const AEOGeoDashboard = memo(({ domain, keywords = [] }: AEOGeoDashboardP
           timestamp: data.timestamp,
         }
       }));
+      
+      return true;
     } catch (error) {
       console.error('Error checking keyword:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to check LLMs';
       
-      // Handle specific error types
       if (errorMessage.includes('Rate limit') || errorMessage.includes('429')) {
-        toast.error('Rate limit exceeded. Please wait a moment and try again.');
+        toast.error('Rate limit hit. Pausing auto-check...');
+        return false; // Signal to stop auto-run
       } else if (errorMessage.includes('Payment required') || errorMessage.includes('402')) {
         toast.error('API credits exhausted. Please add credits to continue.');
+        return false;
       }
       
       setKeywordResults(prev => ({
@@ -304,37 +377,52 @@ export const AEOGeoDashboard = memo(({ domain, keywords = [] }: AEOGeoDashboardP
           error: errorMessage,
         }
       }));
+      return true; // Continue despite single keyword error
     }
   }, [domain]);
   
-  const handleAddCustomKeyword = useCallback(() => {
-    if (!customKeyword.trim()) return;
-    checkKeyword(customKeyword.trim());
-    setCustomKeyword('');
-  }, [customKeyword, checkKeyword]);
-  
-  const checkAllKeywords = useCallback(async () => {
-    if (keywords.length === 0) {
-      toast.info('No keywords to check. Add keywords from the BRON tab first.');
+  // Auto-run checks sequentially
+  const startAutoRun = useCallback(async () => {
+    if (bronKeywords.length === 0) {
+      toast.info('No keywords to check');
       return;
     }
     
-    setIsCheckingAll(true);
+    setIsAutoRunning(true);
+    autoRunAbortRef.current = false;
     
-    for (const kw of keywords.slice(0, 10)) { // Limit to 10 to avoid rate limits
-      await checkKeyword(kw.keyword);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay between checks
+    for (let i = currentCheckIndex; i < bronKeywords.length; i++) {
+      if (autoRunAbortRef.current) break;
+      
+      setCurrentCheckIndex(i);
+      const keyword = bronKeywords[i].keyword;
+      
+      // Skip if already checked
+      if (keywordResults[keyword]?.results?.length > 0) continue;
+      
+      const success = await checkKeyword(keyword);
+      if (!success) {
+        // Rate limit or payment error - stop
+        break;
+      }
+      
+      // Delay between checks to avoid rate limits (3 seconds)
+      if (i < bronKeywords.length - 1 && !autoRunAbortRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
     }
     
-    setIsCheckingAll(false);
-    toast.success('Finished checking all keywords');
-  }, [keywords, checkKeyword]);
+    setIsAutoRunning(false);
+    if (!autoRunAbortRef.current) {
+      toast.success('Finished checking all keywords');
+    }
+  }, [bronKeywords, currentCheckIndex, keywordResults, checkKeyword]);
   
-  // Combine BRON keywords with any custom checks
-  const allKeywords = [
-    ...keywords.map(k => k.keyword),
-    ...Object.keys(keywordResults).filter(k => !keywords.some(kw => kw.keyword === k))
-  ];
+  const stopAutoRun = useCallback(() => {
+    autoRunAbortRef.current = true;
+    setIsAutoRunning(false);
+    toast.info('Auto-check paused');
+  }, []);
   
   // Stats
   const checkedCount = Object.values(keywordResults).filter(r => r.results.length > 0).length;
@@ -379,98 +467,99 @@ export const AEOGeoDashboard = memo(({ domain, keywords = [] }: AEOGeoDashboardP
                 AEO / GEO Intelligence
               </h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-lg">
-                Answer Engine Optimization - Check how your keywords appear across ChatGPT, Gemini, Claude, and other AI models. Get actionable suggestions to improve your AI visibility.
+                Answer Engine Optimization - Checking how your BRON keywords appear across ChatGPT, Gemini, and other AI models.
               </p>
             </div>
           </div>
           
-          {/* Quick Stats */}
+          {/* Quick Stats & Controls */}
           <div className="flex items-center gap-4">
-            <div className="text-center px-4 py-2 bg-background/50 rounded-lg border border-border/50">
-              <p className="text-2xl font-bold text-foreground">{checkedCount}</p>
-              <p className="text-[10px] text-muted-foreground">Checked</p>
+            <div className="flex items-center gap-3">
+              <div className="text-center px-4 py-2 bg-background/50 rounded-lg border border-border/50">
+                <p className="text-2xl font-bold text-foreground">{checkedCount}/{bronKeywords.length}</p>
+                <p className="text-[10px] text-muted-foreground">Checked</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                <p className="text-2xl font-bold text-emerald-400">{prominentCount}</p>
+                <p className="text-[10px] text-emerald-400/70">Prominent</p>
+              </div>
+              <div className="text-center px-4 py-2 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                <p className="text-2xl font-bold text-amber-400">{mentionedCount}</p>
+                <p className="text-[10px] text-amber-400/70">Mentioned</p>
+              </div>
             </div>
-            <div className="text-center px-4 py-2 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
-              <p className="text-2xl font-bold text-emerald-400">{prominentCount}</p>
-              <p className="text-[10px] text-emerald-400/70">Prominent</p>
-            </div>
-            <div className="text-center px-4 py-2 bg-amber-500/10 rounded-lg border border-amber-500/30">
-              <p className="text-2xl font-bold text-amber-400">{mentionedCount}</p>
-              <p className="text-[10px] text-amber-400/70">Mentioned</p>
-            </div>
+            
+            {bronKeywords.length > 0 && (
+              <Button 
+                onClick={isAutoRunning ? stopAutoRun : startAutoRun}
+                disabled={isLoadingKeywords}
+                className={isAutoRunning 
+                  ? "bg-red-500 hover:bg-red-600" 
+                  : "bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+                }
+              >
+                {isAutoRunning ? (
+                  <>
+                    <Pause className="w-4 h-4 mr-2" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    {checkedCount > 0 ? 'Resume' : 'Start'} Check
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
-      </div>
-      
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="flex-1 flex gap-2">
-          <Input
-            placeholder="Add custom keyword to check..."
-            value={customKeyword}
-            onChange={(e) => setCustomKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddCustomKeyword()}
-            className="bg-muted/30"
-          />
-          <Button 
-            onClick={handleAddCustomKeyword}
-            disabled={!customKeyword.trim()}
-            className="shrink-0"
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Check
-          </Button>
-        </div>
         
-        {keywords.length > 0 && (
-          <Button 
-            variant="outline" 
-            onClick={checkAllKeywords}
-            disabled={isCheckingAll}
-            className="border-violet-500/30 hover:bg-violet-500/10"
-          >
-            {isCheckingAll ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Checking...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 mr-2" />
-                Check All ({Math.min(keywords.length, 10)})
-              </>
-            )}
-          </Button>
+        {/* Progress bar during auto-run */}
+        {isAutoRunning && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>Checking: {bronKeywords[currentCheckIndex]?.keyword || '...'}</span>
+              <span>{currentCheckIndex + 1} of {bronKeywords.length}</span>
+            </div>
+            <Progress value={((currentCheckIndex + 1) / bronKeywords.length) * 100} className="h-2" />
+          </div>
         )}
       </div>
       
       {/* Keywords List */}
       <div className="space-y-3">
-        {allKeywords.length === 0 ? (
+        {isLoadingKeywords ? (
+          <Card className="bg-muted/20 border-dashed">
+            <CardContent className="py-12 text-center">
+              <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground">Loading keywords from BRON...</p>
+            </CardContent>
+          </Card>
+        ) : bronKeywords.length === 0 ? (
           <Card className="bg-muted/20 border-dashed">
             <CardContent className="py-12 text-center">
               <BrainCircuit className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Keywords to Check</h3>
+              <h3 className="text-lg font-semibold mb-2">No Keywords Found</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Add keywords from the BRON tab to track them here, or enter a custom keyword above to check its AI engine presence.
+                Connect your domain in the BRON tab first to track keywords, then return here to check AI engine presence.
               </p>
             </CardContent>
           </Card>
         ) : (
           <AnimatePresence mode="popLayout">
-            {allKeywords.map((keyword, idx) => (
+            {bronKeywords.map((kw, idx) => (
               <motion.div
-                key={keyword}
+                key={kw.keyword}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: idx * 0.05 }}
+                transition={{ delay: idx * 0.03 }}
               >
                 <KeywordAEOCard
-                  data={keywordResults[keyword] || { keyword, isLoading: false, results: [], suggestions: [] }}
-                  isExpanded={expandedKeyword === keyword}
-                  onToggle={() => setExpandedKeyword(prev => prev === keyword ? null : keyword)}
-                  onCheck={checkKeyword}
+                  data={keywordResults[kw.keyword] || { keyword: kw.keyword, isLoading: false, results: [], suggestions: [] }}
+                  isExpanded={expandedKeyword === kw.keyword}
+                  onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
+                  position={kw.position}
                 />
               </motion.div>
             ))}
@@ -488,8 +577,7 @@ export const AEOGeoDashboard = memo(({ domain, keywords = [] }: AEOGeoDashboardP
               <p>
                 Answer Engine Optimization (AEO) and Generative Engine Optimization (GEO) focus on 
                 getting your brand and services mentioned by AI assistants like ChatGPT and Google Gemini. 
-                Unlike traditional SEO, AEO targets the training data and real-time search integrations 
-                that power conversational AI responses.
+                Click "Start Check" to automatically test each keyword against multiple AI models.
               </p>
             </div>
           </div>
