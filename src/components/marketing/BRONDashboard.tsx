@@ -383,17 +383,19 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
       
       {/* Domain Profile Section */}
       {selectedDomain && (
-        <BronDomainProfile
-          selectedDomain={selectedDomain}
-          domainInfo={domainInfo}
-          keywordCount={stableKeywords.length}
-          screenshotUrl={screenshotUrl}
-          isCapturingScreenshot={isCapturingScreenshot}
-          onCaptureScreenshot={handleCaptureScreenshot}
-          onScreenshotError={handleScreenshotError}
-          isNewlyAddedDomain={isNewlyAddedDomain}
-          onAutoFillComplete={onAutoFillComplete}
-        />
+        <div className="mb-6">
+          <BronDomainProfile
+            selectedDomain={selectedDomain}
+            domainInfo={domainInfo}
+            keywordCount={stableKeywords.length}
+            screenshotUrl={screenshotUrl}
+            isCapturingScreenshot={isCapturingScreenshot}
+            onCaptureScreenshot={handleCaptureScreenshot}
+            onScreenshotError={handleScreenshotError}
+            isNewlyAddedDomain={isNewlyAddedDomain}
+            onAutoFillComplete={onAutoFillComplete}
+          />
+        </div>
       )}
 
 
