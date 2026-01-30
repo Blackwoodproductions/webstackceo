@@ -8,6 +8,7 @@ import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-
 import { getTargetKeyword, getPosition } from "./BronKeywordCard";
 import { findSerpForKeyword, findSerpByKeywordId } from "./utils";
 import { BronMultiKeywordTrendChart } from "./BronMultiKeywordTrendChart";
+import { BronHistoricalLoadingScreen } from "./BronHistoricalLoadingScreen";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { format } from "date-fns";
 
@@ -662,15 +663,11 @@ export const BronKeywordAnalysisDialog = memo(({
                 />
               </div>
             ) : isLoading ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
-                  <BarChart3 className="w-6 h-6 text-primary" />
-                </div>
-                <div className="text-muted-foreground">Loading historical data...</div>
-                {fetchProgress.total > 0 && (
-                  <div className="text-xs text-muted-foreground tabular-nums">{fetchProgress.done}/{fetchProgress.total}</div>
-                )}
-              </div>
+              <BronHistoricalLoadingScreen
+                title="Loading historical data…"
+                done={fetchProgress.done}
+                total={fetchProgress.total}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
