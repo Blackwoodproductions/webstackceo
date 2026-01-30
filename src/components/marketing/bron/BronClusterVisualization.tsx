@@ -768,16 +768,16 @@ export const BronClusterVisualization = memo(({
                 </radialGradient>
               </defs>
               
-              {/* Connections from money pages to center */}
+              {/* Connections from money pages TO center (flow inward) */}
               {moneyNodes.map((node, index) => {
                 const googlePos = getPosition(node.serpData?.google);
                 return (
                   <ElectricLine
                     key={`center-to-${node.id}`}
-                    x1={centerX}
-                    y1={centerY}
-                    x2={node.x}
-                    y2={node.y}
+                    x1={node.x}
+                    y1={node.y}
+                    x2={centerX}
+                    y2={centerY}
                     delay={index * 0.12}
                     isHighlighted={hoveredNode?.id === node.id}
                     googlePos={googlePos}
@@ -785,16 +785,16 @@ export const BronClusterVisualization = memo(({
                 );
               })}
               
-              {/* Connections from supporting pages to their money pages */}
+              {/* Connections from supporting pages TO their money pages (flow inward) */}
               {connections.map((conn, index) => {
                 const googlePos = getPosition(conn.from.serpData?.google);
                 return (
                   <ElectricLine
                     key={`support-${conn.from.id}-to-${conn.to.id}`}
-                    x1={conn.to.x}
-                    y1={conn.to.y}
-                    x2={conn.from.x}
-                    y2={conn.from.y}
+                    x1={conn.from.x}
+                    y1={conn.from.y}
+                    x2={conn.to.x}
+                    y2={conn.to.y}
                     delay={0.5 + index * 0.08}
                     isHighlighted={hoveredNode?.id === conn.from.id || hoveredNode?.id === conn.to.id}
                     googlePos={googlePos}
@@ -847,15 +847,16 @@ export const BronClusterVisualization = memo(({
                   <Globe className={`w-8 h-8 text-violet-500 ${selectedDomain ? 'hidden' : ''}`} />
                 </div>
                 
-                {/* Curved text around bottom edge */}
+                {/* Curved text around bottom edge - right side up */}
                 <svg 
                   className="absolute inset-0 w-full h-full pointer-events-none"
                   viewBox="0 0 176 176"
                 >
                   <defs>
+                    {/* Bottom arc path - draws from left to right along bottom */}
                     <path
-                      id="curvedTextPath"
-                      d="M 88,88 m -70,0 a 70,70 0 1,0 140,0 a 70,70 0 1,0 -140,0"
+                      id="curvedTextPathBottom"
+                      d="M 18,88 a 70,70 0 0,0 140,0"
                       fill="none"
                     />
                   </defs>
@@ -864,8 +865,8 @@ export const BronClusterVisualization = memo(({
                     textAnchor="middle"
                   >
                     <textPath 
-                      href="#curvedTextPath" 
-                      startOffset="75%"
+                      href="#curvedTextPathBottom" 
+                      startOffset="50%"
                     >
                       {selectedDomain || 'Main Site'}
                     </textPath>
