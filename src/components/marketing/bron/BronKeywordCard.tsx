@@ -634,16 +634,15 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout - nested cards skip first column since they're already offset by tree connector (56px = ml-32 + pl-24) */}
+          {/* Grid-based layout - nested cards skip first column since they're already offset by tree connector */}
           <div 
-            className="grid items-center gap-2 w-full" 
+            className="grid items-center gap-3 w-full" 
             style={{ 
-              // Nested cards: No chart column - PageSpeed aligns with parent's PageSpeed
-              // Parent: chart(44px) + pagespeed(52px) = 96px before intent
-              // Nested container has ml-32 + pl-24 = 56px offset, so we need 96-56 = 40px before PageSpeed
+              // Rankings moved left by expanding keyword column (1fr) and reducing metrics width
+              // Gap increased from gap-2 to gap-3 for better spacing between columns
               gridTemplateColumns: isNested 
-                ? '52px 44px 1fr 68px 68px 68px 170px 140px'  // 8 columns - no chart column
-                : '44px 52px 44px 1fr 68px 68px 68px 170px 140px',  // 9 columns with chart
+                ? '52px 44px 1fr 90px 90px 90px 150px 120px'  // 8 columns - wider ranking cols, narrower metrics
+                : '44px 52px 44px 1fr 90px 90px 90px 150px 120px',  // 9 columns with chart
             }}
           >
             {/* Column 1: Chart/Analysis Button - only for non-nested cards */}
