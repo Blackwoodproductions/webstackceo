@@ -457,10 +457,10 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   
   return (
     <div className="grid grid-cols-3 gap-1.5" style={{ contain: 'layout style' }}>
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
         <div className="flex items-center gap-0.5">
-          <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
-          <span className="text-[10px] font-bold text-emerald-400">
+          <DollarSign className="w-2.5 h-2.5 text-amber-400" />
+          <span className="text-[10px] font-bold text-amber-400">
             {showCpcLoading ? (
               <span className="opacity-50">...</span>
             ) : hasCachedCpc ? (
@@ -470,7 +470,7 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
             )}
           </span>
         </div>
-        <span className="text-[7px] text-emerald-400/70">CPC</span>
+        <span className="text-[7px] text-amber-400/70">CPC</span>
       </div>
       
       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
@@ -489,12 +489,12 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
         <span className="text-[7px] text-cyan-400/70">Vol</span>
       </div>
       
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
         <div className="flex items-center gap-0.5">
-          <MousePointerClick className="w-2.5 h-2.5 text-emerald-400" />
-          <span className="text-[10px] font-bold text-emerald-400">{ctrValue || '—'}</span>
+          <MousePointerClick className="w-2.5 h-2.5 text-violet-400" />
+          <span className="text-[10px] font-bold text-violet-400">{ctrValue || '—'}</span>
         </div>
-        <span className="text-[7px] text-emerald-400/70">CTR</span>
+        <span className="text-[7px] text-violet-400/70">CTR</span>
       </div>
     </div>
   );
