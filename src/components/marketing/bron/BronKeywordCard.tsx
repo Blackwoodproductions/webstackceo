@@ -514,13 +514,23 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-3" 
             style={{ 
-              gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
+              gridTemplateColumns: '72px 1fr 140px 230px 140px 90px 40px',
               minWidth: '900px'
             }}
           >
-            {/* Column 1: Page Speed Gauge */}
-            <div className="flex items-center justify-center">
-              <div className={gaugeSize}>
+            {/* Column 1: Page Speed Gauge + Main indicator */}
+            <div className="flex items-center gap-1">
+              {/* Main keyword target indicator on the left */}
+              {isMainKeyword && !isNested ? (
+                <div className="w-6 flex items-center justify-center shrink-0">
+                  <div className="w-1.5 h-8 rounded-full bg-gradient-to-b from-blue-400 to-blue-600" title="Main Target Page" />
+                </div>
+              ) : (
+                <div className="w-6" />
+              )}
+              
+              {/* PageSpeed gauge - always same size for alignment */}
+              <div className="w-10 h-10 shrink-0">
                 <PageSpeedGauge 
                   score={pageSpeedScore?.mobileScore || 0}
                   loading={pageSpeedScore?.loading}

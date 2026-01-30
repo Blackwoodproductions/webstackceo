@@ -473,8 +473,9 @@ export const BronClusterVisualization = memo(({
     
     const centerX = containerSize.width / 2;
     const centerY = containerSize.height / 2;
-    // Scale radius based on container size and cluster count
-    const clusterRadius = Math.min(containerSize.width, containerSize.height) * 0.3;
+    // Scale radius based on cluster count - more clusters = larger spread
+    const baseRadius = Math.min(containerSize.width, containerSize.height) * 0.35;
+    const clusterRadius = clusters.length <= 5 ? baseRadius : baseRadius * Math.min(1.5, clusters.length / 5);
     
     clusters.forEach((cluster, clusterIndex) => {
       // Position main clusters in a circle
@@ -527,8 +528,8 @@ export const BronClusterVisualization = memo(({
         linksOutCount: parentLinksOut.length,
       });
       
-      // Position children around parent
-      const childRadius = 120;
+      // Position children around parent - scale based on number of children
+      const childRadius = 100 + (cluster.children.length * 15);
       cluster.children.forEach((child, childIndex) => {
         const childAngle = (childIndex / Math.max(cluster.children.length, 1)) * 2 * Math.PI - Math.PI / 2;
         const childX = clusterX + Math.cos(childAngle) * childRadius;
@@ -686,7 +687,10 @@ export const BronClusterVisualization = memo(({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 z-50 bg-background/98 backdrop-blur-md"
+      onClick={(e) => e.target === e.currentTarget && e.stopPropagation()}
+    >
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 flex items-center justify-between px-6 z-10">
         <div className="flex items-center gap-4">
@@ -768,10 +772,11 @@ export const BronClusterVisualization = memo(({
         ) : (
           <svg
             ref={svgRef}
-            width={containerSize.width}
-            height={containerSize.height}
-            viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
+            width="100%"
+            height="100%"
+            viewBox={`${-containerSize.width * 0.5} ${-containerSize.height * 0.3} ${containerSize.width * 2} ${containerSize.height * 1.6}`}
             className="select-none"
+            preserveAspectRatio="xMidYMid meet"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               transformOrigin: 'center center',
