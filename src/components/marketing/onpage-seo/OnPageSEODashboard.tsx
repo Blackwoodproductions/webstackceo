@@ -127,6 +127,9 @@ const severityConfig = {
 };
 
 export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlatform }: OnPageSEODashboardProps) => {
+  // Ensure we're using the selected domain, not a hardcoded value
+  const activeDomain = domain || 'example.com';
+  
   const [stats, setStats] = useState<OptimizationStats>({
     pagesScanned: 47,
     issuesFound: 23,
@@ -170,6 +173,25 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlat
     },
   ]);
 
+  // Reset state when domain changes
+  useEffect(() => {
+    if (domain) {
+      console.log('[OnPage SEO] Domain changed to:', domain);
+      // Reset stats for new domain
+      setStats(prev => ({
+        ...prev,
+        pagesScanned: 0,
+        issuesFound: 0,
+        issuesFixed: 0,
+        seoScore: 0,
+        lastScan: new Date().toISOString(),
+      }));
+      setIssues([]);
+      // Trigger initial scan for the new domain
+      handleRunScan();
+    }
+  }, [domain]);
+
   // Auto-enable autopilot for Lovable sites
   useEffect(() => {
     if (activePlatform === 'lovable' || activePlatform === 'php-bron') {
@@ -192,21 +214,65 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlat
   };
 
   const handleRunScan = async () => {
-    setIsScanning(true);
-    toast.info('Scanning website...', { description: 'Analyzing all pages for SEO issues' });
+    if (!activeDomain) {
+      toast.error('No domain selected', { description: 'Please select a domain to scan' });
+      return;
+    }
     
-    // Simulate scan
+    setIsScanning(true);
+    toast.info(`Scanning ${activeDomain}...`, { description: 'Analyzing all pages for SEO issues' });
+    
+    // Simulate domain-specific scan
     await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Generate domain-specific mock data
+    const pagesFound = Math.floor(Math.random() * 30) + 20;
+    const issuesFound = Math.floor(Math.random() * 15) + 5;
     
     setStats(prev => ({
       ...prev,
-      pagesScanned: prev.pagesScanned + 5,
-      issuesFound: prev.issuesFound + 2,
+      pagesScanned: pagesFound,
+      issuesFound: issuesFound,
+      seoScore: Math.floor(Math.random() * 30) + 60,
       lastScan: new Date().toISOString(),
     }));
     
+    // Generate domain-specific issues
+    setIssues([
+      {
+        id: '1',
+        type: 'meta_title',
+        severity: 'critical',
+        page: `/${activeDomain}/services`,
+        issue: 'Title tag is 78 characters (exceeds 60 char limit)',
+        suggestion: `Shorten to "Professional Services | ${activeDomain}"`,
+        autoFixable: true,
+        status: 'pending',
+      },
+      {
+        id: '2',
+        type: 'meta_description',
+        severity: 'warning',
+        page: `/${activeDomain}/about`,
+        issue: 'Meta description missing',
+        suggestion: 'Add compelling 150-160 character description with target keywords',
+        autoFixable: true,
+        status: 'pending',
+      },
+      {
+        id: '3',
+        type: 'schema',
+        severity: 'info',
+        page: `/${activeDomain}/contact`,
+        issue: 'LocalBusiness schema not implemented',
+        suggestion: 'Add LocalBusiness structured data for local SEO boost',
+        autoFixable: true,
+        status: 'pending',
+      },
+    ]);
+    
     setIsScanning(false);
-    toast.success('Scan complete!', { description: 'Found 2 new issues to optimize' });
+    toast.success('Scan complete!', { description: `Found ${issuesFound} issues on ${activeDomain}` });
   };
 
   const handleFixIssue = async (issueId: string, automatic: boolean = false) => {

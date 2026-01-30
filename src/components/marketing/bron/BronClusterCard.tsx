@@ -152,23 +152,10 @@ function ClusterKeywordRowImpl({
   // Filter links for this specific keyword - memoized
   const { keywordLinksIn, keywordLinksOut } = useMemo(() => {
     const result = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
-    // Debug logging for link counts - helps diagnose matching issues
-    if (linksIn.length > 0 || linksOut.length > 0) {
-      console.log(`[BRON Links] kw="${keywordText.slice(0, 30)}" id=${kw.id} | In: ${result.keywordLinksIn.length}/${linksIn.length} | Out: ${result.keywordLinksOut.length}/${linksOut.length}`);
-      // Log first unmatched link to debug matching logic
-      if (result.keywordLinksIn.length === 0 && linksIn.length > 0) {
-        const sampleLink = linksIn[0] as Record<string, unknown>;
-        console.log(`[BRON Links DEBUG] Sample link fields:`, {
-          feedid: sampleLink.feedid,
-          keywordid: sampleLink.keywordid,
-          keyword: sampleLink.keyword,
-          anchor_text: sampleLink.anchor_text,
-          link: sampleLink.link,
-        });
-      }
-    }
+    // Reduce debug logging - only log in development when there's a potential mismatch
+    // Removed verbose logging to improve performance
     return result;
-  }, [kw, linksIn, linksOut, selectedDomain, keywordText]);
+  }, [kw, linksIn, linksOut, selectedDomain]);
   
   // Calculate movements - memoized
   // Compare current position with baseline (oldest report)
