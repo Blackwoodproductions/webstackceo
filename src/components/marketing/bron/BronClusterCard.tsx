@@ -41,9 +41,9 @@ const TreeBranch = memo(({ isLast }: { isLast: boolean }) => (
     style={{ left: '-24px', width: '22px' }}
   >
     {/* Horizontal line from vertical border to card */}
-    <div className="w-full h-0.5 bg-amber-500/50" />
-    {/* Connection dot at the end */}
-    <div className="absolute right-0 w-2.5 h-2.5 rounded-full bg-amber-500/70 border-2 border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+    <div className="w-full h-px bg-amber-500/40" />
+    {/* Connection dot at the end - smaller */}
+    <div className="absolute right-0 w-1.5 h-1.5 rounded-full bg-amber-500/60 border border-amber-400/80" />
   </div>
 ));
 TreeBranch.displayName = 'TreeBranch';
