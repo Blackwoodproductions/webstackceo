@@ -1,8 +1,7 @@
-import { memo, useState, useMemo, useCallback, useEffect } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, ArrowUpDown, Trophy, AlertTriangle } from "lucide-react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, Trophy, AlertTriangle, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
@@ -66,6 +65,7 @@ interface NodeData {
   linksInCount: number;
   linksOutCount: number;
   linkoutUrl: string | null;
+  angle?: number;
 }
 
 interface TooltipData extends NodeData {
@@ -101,301 +101,114 @@ const generateSEOTip = async (node: NodeData): Promise<string> => {
   return tips.join(" ");
 };
 
-// Mini Cluster Card Component - Shows one cluster with parent + children
-const MiniClusterCard = memo(({
-  cluster,
-  serpReports,
-  keywordMetrics,
-  pageSpeedScores,
-  selectedDomain,
-  initialPositions,
-  linkCountsByUrl,
-  linksOut,
-  isBaselineReport,
-  onNodeHover,
-  onNodeClick,
-  hoveredNode,
-}: {
-  cluster: ClusterData;
-  serpReports: BronSerpReport[];
-  keywordMetrics: Record<string, KeywordMetrics>;
-  pageSpeedScores: Record<string, PageSpeedScore>;
-  selectedDomain?: string;
-  initialPositions: Record<string, InitialPositions>;
-  linkCountsByUrl: Map<string, { in: number; out: number }>;
-  linksOut: BronLink[];
-  isBaselineReport: boolean;
-  onNodeHover: (node: NodeData | null, e: React.MouseEvent) => void;
-  onNodeClick: (node: NodeData) => void;
-  hoveredNode: NodeData | null;
+// Animated electrical line component
+const ElectricLine = memo(({ 
+  x1, y1, x2, y2, 
+  delay = 0, 
+  isHighlighted = false,
+  googlePos 
+}: { 
+  x1: number; y1: number; x2: number; y2: number; 
+  delay?: number; 
+  isHighlighted?: boolean;
+  googlePos: number | null;
 }) => {
-  const UNRANKED_POSITION = 1000;
-  const calculateMovement = (baseline: number | null, current: number | null): number => {
-    if (baseline === null && current === null) return 0;
-    const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
-    const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
-    return effectiveBaseline - effectiveCurrent;
-  };
-
-  const getSerp = (keywordText: string) => {
-    return findSerpForKeyword(keywordText, serpReports);
-  };
-
-  const getUrlForKeyword = (kw: BronKeyword, kwText: string) => {
-    if (kw.linkouturl) return kw.linkouturl;
-    if (selectedDomain) {
-      const slug = kwText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      return `https://${selectedDomain}/${slug}`;
-    }
-    return null;
-  };
-
-  // Build nodes
-  const parentKeywordText = getKeywordDisplayText(cluster.parent);
-  const parentSerpData = getSerp(parentKeywordText);
-  const parentKey = parentKeywordText.toLowerCase();
-  const parentInitial = initialPositions[parentKey] || { google: null, bing: null, yahoo: null };
-  const parentGooglePos = getPosition(parentSerpData?.google);
-  const parentUrl = getUrlForKeyword(cluster.parent, parentKeywordText);
-  const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
-  const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
+  const lineId = useMemo(() => `line-${x1}-${y1}-${x2}-${y2}-${Math.random()}`, [x1, y1, x2, y2]);
   
-  // Check if this cluster links to an external money page (client's site)
-  const hasExternalLinkout = !!cluster.parent.linkouturl;
-  const linkoutDomain = hasExternalLinkout 
-    ? (() => {
-        try {
-          const url = new URL(cluster.parent.linkouturl!);
-          return url.hostname.replace(/^www\./, '');
-        } catch {
-          return cluster.parent.linkouturl?.split('/')[2]?.replace(/^www\./, '') || '';
-        }
-      })()
-    : null;
-  const linkoutPath = hasExternalLinkout
-    ? (() => {
-        try {
-          const url = new URL(cluster.parent.linkouturl!);
-          return url.pathname.length > 1 ? url.pathname : '';
-        } catch {
-          return '';
-        }
-      })()
-    : null;
-
-  const parentNode: NodeData = {
-    id: cluster.parent.id,
-    keyword: cluster.parent,
-    x: 0, y: 0,
-    isMainNode: true,
-    keywordText: parentKeywordText,
-    serpData: parentSerpData,
-    metrics: keywordMetrics[parentKey],
-    pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
-    movement: isBaselineReport
-      ? { google: 0, bing: 0, yahoo: 0 }
-      : {
-          google: calculateMovement(parentInitial.google, parentGooglePos),
-          bing: calculateMovement(parentInitial.bing, getPosition(parentSerpData?.bing)),
-          yahoo: calculateMovement(parentInitial.yahoo, getPosition(parentSerpData?.yahoo)),
-        },
-    linksInCount: parentLinkCounts?.in ?? 0,
-    linksOutCount: parentLinkCounts?.out ?? 0,
-    linkoutUrl: parentUrl,
-  };
-
-  const childNodes: NodeData[] = cluster.children.map(child => {
-    const childKeywordText = getKeywordDisplayText(child);
-    const childSerpData = getSerp(childKeywordText);
-    const childKey = childKeywordText.toLowerCase();
-    const childInitial = initialPositions[childKey] || { google: null, bing: null, yahoo: null };
-    const childGooglePos = getPosition(childSerpData?.google);
-    const childUrl = getUrlForKeyword(child, childKeywordText);
-    const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
-    const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
-
-    return {
-      id: child.id,
-      keyword: child,
-      x: 0, y: 0,
-      isMainNode: false,
-      keywordText: childKeywordText,
-      serpData: childSerpData,
-      metrics: keywordMetrics[childKey],
-      pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
-      movement: isBaselineReport
-        ? { google: 0, bing: 0, yahoo: 0 }
-        : {
-            google: calculateMovement(childInitial.google, childGooglePos),
-            bing: calculateMovement(childInitial.bing, getPosition(childSerpData?.bing)),
-            yahoo: calculateMovement(childInitial.yahoo, getPosition(childSerpData?.yahoo)),
-          },
-      linksInCount: childLinkCounts?.in ?? 0,
-      linksOutCount: childLinkCounts?.out ?? 0,
-      linkoutUrl: childUrl,
-    };
-  });
-
-  // Check URL connections
-  const getUrlConnection = (childNode: NodeData) => {
-    if (!childNode.linkoutUrl || !parentUrlKey) return false;
-    const childUrlKey = normalizeUrlKey(childNode.linkoutUrl);
-    if (childUrlKey === parentUrlKey) return true;
-    
-    for (const link of linksOut) {
-      const linkTarget = getLinkTargetKey(link, "out");
-      if (linkTarget && linkTarget === parentUrlKey) {
-        const linkSource = link.source_url ? normalizeUrlKey(link.source_url) : null;
-        if (linkSource === childUrlKey) return true;
-      }
-    }
-    return false;
-  };
-
-  // Render a mini node - LARGER sizes for better visibility
-  const renderNode = (node: NodeData, size: number) => {
-    const googlePos = getPosition(node.serpData?.google);
-    const movement = node.movement.google;
-    const isHovered = hoveredNode?.id === node.id;
-    
-    let bgColor = "bg-muted/50";
-    let borderColor = "border-muted-foreground/30";
-    let textColor = "text-muted-foreground";
-    
-    if (node.isMainNode) {
-      if (googlePos !== null) {
-        if (googlePos <= 3) {
-          bgColor = "bg-emerald-500/20";
-          borderColor = "border-emerald-400";
-          textColor = "text-emerald-400";
-        } else if (googlePos <= 10) {
-          bgColor = "bg-cyan-500/20";
-          borderColor = "border-cyan-400";
-          textColor = "text-cyan-400";
-        } else if (googlePos <= 20) {
-          bgColor = "bg-amber-500/20";
-          borderColor = "border-amber-400";
-          textColor = "text-amber-400";
-        } else {
-          bgColor = "bg-orange-500/20";
-          borderColor = "border-orange-400";
-          textColor = "text-orange-400";
-        }
-      }
+  // Color based on ranking performance
+  let strokeColor = "rgba(148, 163, 184, 0.4)"; // muted
+  let glowColor = "rgba(148, 163, 184, 0.2)";
+  let particleColor = "#94a3b8";
+  
+  if (googlePos !== null) {
+    if (googlePos <= 3) {
+      strokeColor = "rgba(52, 211, 153, 0.6)"; // emerald
+      glowColor = "rgba(52, 211, 153, 0.3)";
+      particleColor = "#34d399";
+    } else if (googlePos <= 10) {
+      strokeColor = "rgba(34, 211, 238, 0.6)"; // cyan
+      glowColor = "rgba(34, 211, 238, 0.3)";
+      particleColor = "#22d3ee";
+    } else if (googlePos <= 20) {
+      strokeColor = "rgba(251, 191, 36, 0.6)"; // amber
+      glowColor = "rgba(251, 191, 36, 0.3)";
+      particleColor = "#fbbf24";
     } else {
-      bgColor = "bg-violet-500/15";
-      borderColor = "border-violet-400/60";
-      textColor = "text-violet-400";
+      strokeColor = "rgba(251, 146, 60, 0.5)"; // orange
+      glowColor = "rgba(251, 146, 60, 0.25)";
+      particleColor = "#fb923c";
     }
-
-    return (
-      <div
-        key={node.id}
-        className={`relative flex flex-col items-center cursor-pointer transition-all duration-150 ${isHovered ? 'scale-110 z-10' : ''}`}
-        onMouseEnter={(e) => {
-          e.stopPropagation();
-          onNodeHover(node, e);
-        }}
-        onMouseLeave={(e) => {
-          e.stopPropagation();
-          onNodeHover(null, e);
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onNodeClick(node);
-        }}
-        style={{ pointerEvents: 'auto' }}
-      >
-        <div 
-          className={`${bgColor} ${borderColor} border-2 rounded-full flex items-center justify-center relative shadow-lg ${isHovered ? 'ring-2 ring-primary/50' : ''}`}
-          style={{ width: size, height: size }}
-        >
-          <span className={`font-bold ${size >= 48 ? 'text-sm' : 'text-xs'} ${textColor}`}>
-            {googlePos !== null ? `#${googlePos}` : '—'}
-          </span>
-          
-          {/* Movement badge - larger */}
-          {movement !== 0 && (
-            <div 
-              className={`absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-md ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
-            >
-              {movement > 0 ? '+' : ''}{movement > 99 ? '99' : movement < -99 ? '-99' : movement}
-            </div>
-          )}
-        </div>
-        
-        {/* Label - larger text */}
-        <span className="text-[10px] text-muted-foreground mt-1.5 max-w-[70px] truncate text-center leading-tight font-medium">
-          {node.keywordText.length > 12 ? node.keywordText.substring(0, 10) + '…' : node.keywordText}
-        </span>
-      </div>
-    );
-  };
+  }
+  
+  if (isHighlighted) {
+    strokeColor = "rgba(168, 85, 247, 0.8)"; // violet
+    glowColor = "rgba(168, 85, 247, 0.4)";
+    particleColor = "#a855f7";
+  }
 
   return (
-    <div 
-      className={`bg-card/30 border rounded-lg p-3 hover:border-primary/30 transition-colors ${hasExternalLinkout ? 'border-cyan-500/40' : 'border-border/30'}`}
-      style={{ minWidth: 140 }}
-    >
-      {/* Cluster title - larger */}
-      <div className="text-xs font-semibold text-foreground mb-2 truncate text-center leading-tight" title={parentKeywordText}>
-        {parentKeywordText.length > 22 ? parentKeywordText.substring(0, 20) + '…' : parentKeywordText}
-      </div>
+    <g>
+      {/* Glow effect */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={glowColor}
+        strokeWidth="6"
+        strokeLinecap="round"
+        style={{ filter: 'blur(4px)' }}
+      />
       
-      {/* External linkout destination indicator */}
-      {hasExternalLinkout && linkoutPath && (
-        <div 
-          className="flex items-center justify-center gap-1 mb-2 px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/20"
-          title={`Links to: ${cluster.parent.linkouturl}`}
-        >
-          <Globe className="w-3 h-3 text-cyan-400 flex-shrink-0" />
-          <span className="text-[9px] text-cyan-400 truncate max-w-[80px]">
-            {linkoutPath.length > 18 ? linkoutPath.substring(0, 16) + '…' : linkoutPath}
-          </span>
-        </div>
-      )}
+      {/* Main line */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={strokeColor}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       
-      {/* Visual layout: Parent on top, children below */}
-      <div className="flex flex-col items-center gap-2">
-        {/* Parent (Money Page) - LARGER size (48px) */}
-        <div className="relative">
-          {renderNode(parentNode, 48)}
-          {hasExternalLinkout && (
-            <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center shadow-md" title="Client's Money Page">
-              <Link2 className="w-2.5 h-2.5 text-white" />
-            </div>
-          )}
-        </div>
-        
-        {/* Connection lines (simplified as a visual indicator) */}
-        {childNodes.length > 0 && (
-          <div className="flex items-center justify-center gap-2 h-4">
-            {childNodes.slice(0, 3).map((child, i) => (
-              <div 
-                key={`line-${i}`}
-                className={`w-0.5 h-4 rounded ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
-                style={{ transform: `rotate(${childNodes.length > 1 ? (i - 1) * 15 : 0}deg)` }}
-              />
-            ))}
-          </div>
-        )}
-        
-        {/* Children (Supporting Pages) - LARGER size (36px), show up to 3 */}
-        {childNodes.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2">
-            {childNodes.slice(0, 3).map(child => renderNode(child, 36))}
-            {childNodes.length > 3 && (
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 border border-muted-foreground/20">
-                <span className="text-[10px] text-muted-foreground font-medium">+{childNodes.length - 3}</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Animated electricity particle */}
+      <circle r="4" fill={particleColor} style={{ filter: `drop-shadow(0 0 6px ${particleColor})` }}>
+        <animateMotion
+          dur="2s"
+          repeatCount="indefinite"
+          begin={`${delay}s`}
+          path={`M${x1},${y1} L${x2},${y2}`}
+        />
+        <animate
+          attributeName="opacity"
+          values="0;1;1;0"
+          dur="2s"
+          repeatCount="indefinite"
+          begin={`${delay}s`}
+        />
+        <animate
+          attributeName="r"
+          values="2;4;2"
+          dur="2s"
+          repeatCount="indefinite"
+          begin={`${delay}s`}
+        />
+      </circle>
+      
+      {/* Second particle offset */}
+      <circle r="3" fill={particleColor} style={{ filter: `drop-shadow(0 0 4px ${particleColor})` }}>
+        <animateMotion
+          dur="2s"
+          repeatCount="indefinite"
+          begin={`${delay + 1}s`}
+          path={`M${x1},${y1} L${x2},${y2}`}
+        />
+        <animate
+          attributeName="opacity"
+          values="0;0.8;0.8;0"
+          dur="2s"
+          repeatCount="indefinite"
+          begin={`${delay + 1}s`}
+        />
+      </circle>
+    </g>
   );
 });
-MiniClusterCard.displayName = 'MiniClusterCard';
+ElectricLine.displayName = 'ElectricLine';
 
 // Tooltip Component
 const NodeTooltip = memo(({
@@ -483,7 +296,7 @@ const NodeTooltip = memo(({
 });
 NodeTooltip.displayName = 'NodeTooltip';
 
-// Main Visualization Component - Inline (not a popup/dialog)
+// Main Visualization Component - Radial Layout with Central Hub
 export const BronClusterVisualization = memo(({
   isOpen,
   onClose,
@@ -497,10 +310,12 @@ export const BronClusterVisualization = memo(({
   initialPositions,
   isBaselineReport = false,
 }: BronClusterVisualizationProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<NodeData | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [sortOrder, setSortOrder] = useState<'best' | 'worst'>('best');
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
@@ -522,6 +337,24 @@ export const BronClusterVisualization = memo(({
     }
     return map;
   }, [linksIn, linksOut]);
+
+  // Update dimensions on resize
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: Math.max(700, rect.height) });
+      }
+    };
+    
+    updateDimensions();
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(containerRef.current);
+    
+    return () => observer.disconnect();
+  }, [isOpen]);
   
   // Sort clusters by performance (Google ranking)
   const sortedClusters = useMemo(() => {
@@ -529,7 +362,6 @@ export const BronClusterVisualization = memo(({
       const keywordText = getKeywordDisplayText(cluster.parent);
       const serpData = findSerpForKeyword(keywordText, serpReports);
       const googlePos = getPosition(serpData?.google);
-      // Unranked = 1000, lower is better
       return googlePos ?? 1000;
     };
     
@@ -539,6 +371,86 @@ export const BronClusterVisualization = memo(({
       return sortOrder === 'best' ? scoreA - scoreB : scoreB - scoreA;
     });
   }, [clusters, serpReports, sortOrder]);
+
+  // Build positioned nodes for radial layout
+  const { centerX, centerY, clusterNodes } = useMemo(() => {
+    const cx = dimensions.width / 2;
+    const cy = dimensions.height / 2;
+    const baseRadius = Math.min(cx, cy) - 100;
+    
+    const UNRANKED_POSITION = 1000;
+    const calculateMovement = (baseline: number | null, current: number | null): number => {
+      if (baseline === null && current === null) return 0;
+      const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
+      const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
+      return effectiveBaseline - effectiveCurrent;
+    };
+
+    const getSerp = (keywordText: string) => findSerpForKeyword(keywordText, serpReports);
+
+    const getUrlForKeyword = (kw: BronKeyword, kwText: string) => {
+      if (kw.linkouturl) return kw.linkouturl;
+      if (selectedDomain) {
+        const slug = kwText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        return `https://${selectedDomain}/${slug}`;
+      }
+      return null;
+    };
+
+    // Position clusters in concentric rings
+    const nodes: NodeData[] = [];
+    const count = sortedClusters.length;
+    
+    // Distribute in rings - inner ring for top performers
+    const innerRingCount = Math.min(8, Math.ceil(count / 2));
+    const outerRingCount = count - innerRingCount;
+    
+    sortedClusters.forEach((cluster, index) => {
+      const parentKeywordText = getKeywordDisplayText(cluster.parent);
+      const parentSerpData = getSerp(parentKeywordText);
+      const parentKey = parentKeywordText.toLowerCase();
+      const parentInitial = initialPositions[parentKey] || { google: null, bing: null, yahoo: null };
+      const parentGooglePos = getPosition(parentSerpData?.google);
+      const parentUrl = getUrlForKeyword(cluster.parent, parentKeywordText);
+      const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
+      const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
+      
+      // Determine which ring and position
+      const isInnerRing = index < innerRingCount;
+      const ringRadius = isInnerRing ? baseRadius * 0.55 : baseRadius * 0.85;
+      const ringIndex = isInnerRing ? index : index - innerRingCount;
+      const ringTotal = isInnerRing ? innerRingCount : outerRingCount;
+      
+      const angle = (ringIndex / ringTotal) * Math.PI * 2 - Math.PI / 2;
+      const x = cx + Math.cos(angle) * ringRadius;
+      const y = cy + Math.sin(angle) * ringRadius;
+      
+      nodes.push({
+        id: cluster.parent.id,
+        keyword: cluster.parent,
+        x,
+        y,
+        isMainNode: true,
+        keywordText: parentKeywordText,
+        serpData: parentSerpData,
+        metrics: keywordMetrics[parentKey],
+        pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
+        movement: isBaselineReport
+          ? { google: 0, bing: 0, yahoo: 0 }
+          : {
+              google: calculateMovement(parentInitial.google, parentGooglePos),
+              bing: calculateMovement(parentInitial.bing, getPosition(parentSerpData?.bing)),
+              yahoo: calculateMovement(parentInitial.yahoo, getPosition(parentSerpData?.yahoo)),
+            },
+        linksInCount: parentLinkCounts?.in ?? 0,
+        linksOutCount: parentLinkCounts?.out ?? 0,
+        linkoutUrl: parentUrl,
+        angle,
+      });
+    });
+    
+    return { centerX: cx, centerY: cy, clusterNodes: nodes };
+  }, [sortedClusters, dimensions, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, isBaselineReport, linkCountsByUrl]);
 
   // Reset on open
   useEffect(() => {
@@ -588,94 +500,254 @@ export const BronClusterVisualization = memo(({
   // Don't render if not open
   if (!isOpen) return null;
 
+  // Get node color based on ranking
+  const getNodeStyle = (node: NodeData) => {
+    const googlePos = getPosition(node.serpData?.google);
+    
+    if (googlePos === null) {
+      return { bg: 'bg-muted/60', border: 'border-muted-foreground/40', text: 'text-muted-foreground', glow: '' };
+    }
+    if (googlePos <= 3) {
+      return { bg: 'bg-emerald-500/30', border: 'border-emerald-400', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.4)]' };
+    }
+    if (googlePos <= 10) {
+      return { bg: 'bg-cyan-500/30', border: 'border-cyan-400', text: 'text-cyan-400', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' };
+    }
+    if (googlePos <= 20) {
+      return { bg: 'bg-amber-500/30', border: 'border-amber-400', text: 'text-amber-400', glow: 'shadow-[0_0_20px_rgba(251,191,36,0.4)]' };
+    }
+    return { bg: 'bg-orange-500/30', border: 'border-orange-400', text: 'text-orange-400', glow: 'shadow-[0_0_15px_rgba(251,146,60,0.3)]' };
+  };
+
   return (
     <div className="relative">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-card/50">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="text-sm font-semibold text-foreground">Keyword Cluster Map</h3>
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-base font-semibold text-foreground">Power Flow Network</h3>
+          </div>
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs px-2 py-0.5">
             {clusters.length} Money Pages
           </Badge>
-          <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-[10px] px-1.5 py-0">
+          <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-xs px-2 py-0.5">
             {totalSupportingKeywords} Supporting
           </Badge>
           {externalLinkoutCount > 0 && (
-            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[10px] px-1.5 py-0">
-              <Link2 className="w-2.5 h-2.5 mr-0.5" />
+            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-xs px-2 py-0.5">
+              <Link2 className="w-3 h-3 mr-1" />
               {externalLinkoutCount} Client Pages
             </Badge>
           )}
         </div>
         
         {/* Sort selector and close */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-muted/50 rounded-md p-0.5">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
             <Button
               variant={sortOrder === 'best' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setSortOrder('best')}
-              className={`h-6 px-2 text-[10px] gap-1 ${sortOrder === 'best' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : ''}`}
+              className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'best' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : ''}`}
             >
-              <Trophy className="w-3 h-3" />
+              <Trophy className="w-3.5 h-3.5" />
               Best First
             </Button>
             <Button
               variant={sortOrder === 'worst' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setSortOrder('worst')}
-              className={`h-6 px-2 text-[10px] gap-1 ${sortOrder === 'worst' ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : ''}`}
+              className={`h-7 px-3 text-xs gap-1.5 ${sortOrder === 'worst' ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : ''}`}
             >
-              <AlertTriangle className="w-3 h-3" />
+              <AlertTriangle className="w-3.5 h-3.5" />
               Needs Work
             </Button>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted/50"
           >
             <span className="sr-only">Close</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       </div>
       
-      {/* Content - expanded layout, no scrolling */}
-      <div className="p-4" style={{ minHeight: '400px' }}>
+      {/* Radial Visualization Canvas */}
+      <div 
+        ref={containerRef}
+        className="relative bg-gradient-to-br from-background via-background to-muted/20"
+        style={{ minHeight: '700px', height: '75vh' }}
+      >
         {clusters.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center h-full">
             <div className="text-center text-muted-foreground">
+              <Zap className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm mb-1">No clusters to display</p>
               <p className="text-xs">Add keywords with parent-child relationships</p>
             </div>
           </div>
         ) : (
-          <div 
-            className="grid gap-4"
-            style={{
-              gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))`,
-            }}
-          >
-            {sortedClusters.map((cluster) => (
-              <MiniClusterCard
-                key={cluster.parentId}
-                cluster={cluster}
-                serpReports={serpReports}
-                keywordMetrics={keywordMetrics}
-                pageSpeedScores={pageSpeedScores}
-                selectedDomain={selectedDomain}
-                initialPositions={initialPositions}
-                linkCountsByUrl={linkCountsByUrl}
-                linksOut={linksOut}
-                isBaselineReport={isBaselineReport}
-                onNodeHover={handleNodeHover}
-                onNodeClick={handleNodeClick}
-                hoveredNode={hoveredNode}
-              />
-            ))}
-          </div>
+          <>
+            {/* SVG for connections */}
+            <svg 
+              className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 0 }}
+            >
+              <defs>
+                {/* Glow filter for center hub */}
+                <filter id="centerGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                
+                {/* Radial gradient for center */}
+                <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="rgba(168, 85, 247, 0.3)" />
+                  <stop offset="50%" stopColor="rgba(139, 92, 246, 0.2)" />
+                  <stop offset="100%" stopColor="rgba(99, 102, 241, 0.1)" />
+                </radialGradient>
+              </defs>
+              
+              {/* Electrical connections from center to each cluster */}
+              {clusterNodes.map((node, index) => {
+                const googlePos = getPosition(node.serpData?.google);
+                return (
+                  <ElectricLine
+                    key={`line-${node.id}`}
+                    x1={centerX}
+                    y1={centerY}
+                    x2={node.x}
+                    y2={node.y}
+                    delay={index * 0.15}
+                    isHighlighted={hoveredNode?.id === node.id}
+                    googlePos={googlePos}
+                  />
+                );
+              })}
+              
+              {/* Center hub glow rings */}
+              <circle
+                cx={centerX}
+                cy={centerY}
+                r="90"
+                fill="url(#centerGradient)"
+                opacity="0.5"
+              >
+                <animate
+                  attributeName="r"
+                  values="85;95;85"
+                  dur="3s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+              <circle
+                cx={centerX}
+                cy={centerY}
+                r="70"
+                fill="none"
+                stroke="rgba(168, 85, 247, 0.3)"
+                strokeWidth="2"
+              >
+                <animate
+                  attributeName="r"
+                  values="65;75;65"
+                  dur="2.5s"
+                  repeatCount="indefinite"
+                />
+                <animate
+                  attributeName="opacity"
+                  values="0.3;0.6;0.3"
+                  dur="2.5s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </svg>
+            
+            {/* Center Hub - Main Website */}
+            <div
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
+              style={{ left: centerX, top: centerY }}
+            >
+              <div className="relative">
+                {/* Outer pulse ring */}
+                <div className="absolute inset-0 -m-4 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-600/20 animate-pulse" />
+                
+                {/* Main hub */}
+                <div 
+                  className="relative w-32 h-32 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.4)] backdrop-blur-sm cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
+                >
+                  <Globe className="w-8 h-8 text-violet-400 mb-1" />
+                  <span className="text-xs font-bold text-violet-300 text-center px-2 leading-tight">
+                    {selectedDomain || 'Main Site'}
+                  </span>
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                    <Zap className="w-5 h-5 text-cyan-400 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Cluster Nodes */}
+            {clusterNodes.map((node) => {
+              const style = getNodeStyle(node);
+              const googlePos = getPosition(node.serpData?.google);
+              const isHovered = hoveredNode?.id === node.id;
+              const hasExternalLinkout = !!node.keyword.linkouturl;
+              
+              return (
+                <div
+                  key={node.id}
+                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-200 ${isHovered ? 'scale-110 z-30' : ''}`}
+                  style={{ left: node.x, top: node.y }}
+                  onMouseEnter={(e) => handleNodeHover(node, e)}
+                  onMouseLeave={(e) => handleNodeHover(null, e)}
+                  onClick={() => handleNodeClick(node)}
+                >
+                  <div className="relative cursor-pointer group">
+                    {/* Node circle */}
+                    <div 
+                      className={`w-16 h-16 rounded-full ${style.bg} border-2 ${style.border} ${style.glow} flex flex-col items-center justify-center backdrop-blur-sm transition-all group-hover:scale-105`}
+                    >
+                      <span className={`font-bold text-sm ${style.text}`}>
+                        {googlePos !== null ? `#${googlePos}` : '—'}
+                      </span>
+                      
+                      {/* Movement badge */}
+                      {node.movement.google !== 0 && (
+                        <div 
+                          className={`absolute -top-2 -right-2 min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                        >
+                          {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
+                        </div>
+                      )}
+                      
+                      {/* External link indicator */}
+                      {hasExternalLinkout && (
+                        <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                          <Link2 className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Label */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-24 text-center">
+                      <span className="text-[11px] text-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-1.5 py-0.5 rounded backdrop-blur-sm">
+                        {node.keywordText.length > 25 ? node.keywordText.substring(0, 22) + '…' : node.keywordText}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
       
