@@ -78,11 +78,14 @@ export const AIMetricsAnimation = memo(({ title = "Analyzing Keywords", variant 
     style={{ contain: 'layout style paint' }}
     data-no-theme-transition
   >
-    <div className="flex items-center gap-2 mb-4">
-      <Search className="w-4 h-4 text-primary" />
+    {/* Header with title and heartbeat */}
+    <div className="flex items-center gap-3 mb-6">
+      <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center">
+        <Search className="w-4 h-4 text-primary" />
+      </div>
       <h4 className="text-lg font-semibold">{title}</h4>
       {/* Heartbeat rhythm line effect */}
-      <div className="flex items-center gap-1 ml-4 flex-1 max-w-[280px]">
+      <div className="flex items-center gap-1 ml-2 flex-1 max-w-[280px]">
         {/* Heartbeat SVG rhythm bars */}
         <svg viewBox="0 0 120 24" className="w-full h-6 overflow-visible" preserveAspectRatio="none">
           <path 
