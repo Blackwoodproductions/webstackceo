@@ -134,8 +134,9 @@ export function useSubscriptionStatus() {
       // AEO/GEO requires BRON (tied to keyword count)
       const hasAeoGeo = hasBron;
       
-      // On-page SEO and PPC are add-ons
-      const hasOnPageSeo = tier === 'white_label' || tier === 'super_reseller';
+      // On-page SEO is a $99/mo add-on, PPC is white_label+
+      // For now, grant access to white_label and super_reseller, and check for add-on purchase later
+      const hasOnPageSeo = tier === 'white_label' || tier === 'super_reseller' || tier === 'business_ceo';
       const hasPpcPages = tier === 'white_label' || tier === 'super_reseller';
 
       // Calculate limits based on tier
