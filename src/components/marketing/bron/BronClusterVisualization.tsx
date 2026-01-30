@@ -523,12 +523,17 @@ export const BronClusterVisualization = memo(({
 
   // Build four-tier node layout: Center → Money Pages → Supporting Pages → Resource Pages
   const { centerX, centerY, moneyNodes, supportingNodes, resourceNodes, connections } = useMemo(() => {
+    // Add edge buffer to keep nodes within visible area
+    const edgeBuffer = 80;
+    const usableWidth = dimensions.width - (edgeBuffer * 2);
+    const usableHeight = dimensions.height - (edgeBuffer * 2);
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
     
-    // Radii for the tiers - tightened to fit within viewport
-    const moneyPageRadius = Math.min(cx, cy) * 0.38; // Money pages orbit - tightened
-    const supportingBaseRadius = Math.min(cx, cy) * 0.65; // Supporting pages base radius - tightened
+    // Radii for the tiers - increased by 15% and scaled to usable area
+    const baseRadius = Math.min(usableWidth, usableHeight) / 2;
+    const moneyPageRadius = baseRadius * 0.44; // Money pages orbit - increased 15%
+    const supportingBaseRadius = baseRadius * 0.75; // Supporting pages base radius - increased 15%
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -570,7 +575,7 @@ export const BronClusterVisualization = memo(({
     const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' | 'resource-to-parent' }> = [];
     
     const moneyCount = sortedClusters.length;
-    const resourceRadius = 55; // Distance from furthest supporting node for resource
+    const resourceRadius = 65; // Distance from furthest supporting node for resource - increased 15%
     
     // Position money pages in a circle around the center
     sortedClusters.forEach((cluster, clusterIndex) => {
@@ -624,7 +629,7 @@ export const BronClusterVisualization = memo(({
       if (supportingCount > 0) {
         // Calculate arc span based on how many supporting pages
         const arcSpan = Math.min(Math.PI * 0.7, (supportingCount / 4) * Math.PI);
-        const supportingRadius = 90 + Math.min(supportingCount * 8, 60); // Tightened distance from money page
+        const supportingRadius = 105 + Math.min(supportingCount * 10, 70); // Increased 15% from money page
         
         cluster.children.forEach((child, childIndex) => {
           const childKeywordText = getKeywordDisplayText(child);
@@ -680,7 +685,7 @@ export const BronClusterVisualization = memo(({
       // This single resource page links to the money page AND all supporting pages
       if (moneyResourceUrl) {
         // Position resource page beyond the furthest supporting nodes
-        const supportingRadius = 90 + Math.min(supportingCount * 8, 60);
+        const supportingRadius = 105 + Math.min(supportingCount * 10, 70);
         const totalDistance = moneyPageRadius + supportingRadius + resourceRadius;
         
         // Place resource node in the same direction as the cluster
