@@ -497,8 +497,8 @@ export const BronClusterVisualization = memo(({
     const cy = dimensions.height / 2;
     
     // Radii for the three tiers
-    const moneyPageRadius = Math.min(cx, cy) * 0.42; // Money pages orbit
-    const supportingBaseRadius = Math.min(cx, cy) * 0.72; // Supporting pages base radius
+    const moneyPageRadius = Math.min(cx, cy) * 0.55; // Money pages orbit - increased for more spacing
+    const supportingBaseRadius = Math.min(cx, cy) * 0.85; // Supporting pages base radius - increased
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -569,9 +569,9 @@ export const BronClusterVisualization = memo(({
       // Position supporting pages in an arc around this money page
       const supportingCount = cluster.children.length;
       if (supportingCount > 0) {
-        // Calculate arc span based on how many supporting pages
-        const arcSpan = Math.min(Math.PI * 0.6, (supportingCount / 6) * Math.PI);
-        const supportingRadius = 90 + Math.min(supportingCount * 8, 60); // Distance from money page
+        // Calculate arc span based on how many supporting pages - wider spread
+        const arcSpan = Math.min(Math.PI * 0.8, (supportingCount / 4) * Math.PI);
+        const supportingRadius = 130 + Math.min(supportingCount * 12, 100); // Increased distance from money page
         
         cluster.children.forEach((child, childIndex) => {
           const childKeywordText = getKeywordDisplayText(child);
@@ -728,7 +728,7 @@ export const BronClusterVisualization = memo(({
       <div 
         ref={containerRef}
         className="relative bg-gradient-to-br from-background via-background to-muted/10"
-        style={{ minHeight: '850px', height: '85vh' }}
+        style={{ minHeight: '1000px', height: '90vh' }}
       >
         {clusters.length === 0 ? (
           <div className="flex items-center justify-center h-full">
