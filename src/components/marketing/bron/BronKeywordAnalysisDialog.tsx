@@ -654,27 +654,10 @@ export const BronKeywordAnalysisDialog = memo(({
             </div>
           </DialogHeader>
 
-          {/* Chart Section - Uses full height */}
+          {/* Chart Section - Uses full height, renders immediately as data arrives */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {isLoading && !hasRenderableHistory ? (
-              <BronHistoricalLoadingScreen
-                title="Loading historical data…"
-                done={fetchProgress.done}
-                total={fetchProgress.total}
-              />
-            ) : historicalData.size > 0 ? (
+            {historicalData.size > 0 || filteredHistory.length > 0 ? (
               <div className="flex-1 min-h-0 flex flex-col relative">
-                {isLoading && (
-                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/70 backdrop-blur px-4 py-2">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-primary" />
-                      <span className="text-xs text-muted-foreground">Loading historical data…</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {fetchProgress.total > 0 ? `${fetchProgress.done}/${fetchProgress.total}` : ''}
-                    </span>
-                  </div>
-                )}
                 <BronMultiKeywordTrendChart
                   keywords={chartKeywords}
                   serpReportsMap={historicalData}
@@ -683,7 +666,7 @@ export const BronKeywordAnalysisDialog = memo(({
                   maxKeywords={3}
                 />
               </div>
-            ) : (
+            ) : !isLoading ? (
               <div className="flex flex-col items-center justify-center flex-1 gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
                   <Activity className="w-6 h-6 text-muted-foreground" />
@@ -693,7 +676,7 @@ export const BronKeywordAnalysisDialog = memo(({
                   <p className="text-xs mt-1">Historical reports: {filteredHistory.length}</p>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
         </div>
