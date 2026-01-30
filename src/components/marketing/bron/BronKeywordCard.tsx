@@ -522,7 +522,7 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-2" 
             style={{ 
-              gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+              gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
               minWidth: '800px'
             }}
           >

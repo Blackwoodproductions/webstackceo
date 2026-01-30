@@ -291,7 +291,7 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
     <div 
       className="grid items-center gap-2 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
       style={{ 
-        gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+        gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
         minWidth: '800px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
@@ -348,7 +348,7 @@ export const BronKeywordTableHeader = memo(() => (
   <div 
     className="grid items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
     style={{ 
-      gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+      gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
       minWidth: '800px',
       contain: 'layout style' 
     }}
