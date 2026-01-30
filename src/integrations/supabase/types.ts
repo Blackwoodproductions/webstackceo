@@ -336,6 +336,57 @@ export type Database = {
           },
         ]
       }
+      beta_feedback: {
+        Row: {
+          admin_notes: string | null
+          browser_info: string | null
+          console_errors: Json | null
+          created_at: string
+          feedback_type: string
+          id: string
+          message: string
+          page_errors: Json | null
+          page_url: string | null
+          status: string
+          title: string | null
+          updated_at: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          browser_info?: string | null
+          console_errors?: Json | null
+          created_at?: string
+          feedback_type: string
+          id?: string
+          message: string
+          page_errors?: Json | null
+          page_url?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          browser_info?: string | null
+          console_errors?: Json | null
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string
+          page_errors?: Json | null
+          page_url?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cade_crawl_events: {
         Row: {
           created_at: string
