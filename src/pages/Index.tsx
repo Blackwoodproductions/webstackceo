@@ -44,9 +44,9 @@ const Index = () => {
         {/* Floating AI Shield */}
         <FloatingAIShield />
         <SEO
-          title="Webstack.ceo | Niche Linking on Autopilot for SEO Agencies"
-          description="White-label SEO tools for agencies and marketing companies. We categorize client websites by niche to enable automated, relevant backlink building at scale. Built by Blackwood Productions."
-          keywords="SEO agency tools, white label SEO, niche link building, automated backlinks, marketing agency software, reseller SEO platform, link building automation, agency SEO tools"
+          title="Webstack.ceo | Command Your Website & Operate Like a BOSS"
+          description="All-in-one SEO command center. Free instant audits, visitor intelligence, automated content (BRON & CADE), AEO/GEO optimization, uptime monitoring, and white-label dashboards. One platform for everything—fully automated."
+          keywords="SEO platform, visitor intelligence, website analytics, SEO audit, automated content, AEO optimization, GEO SEO, uptime monitoring, white-label SEO, link building, BRON, CADE, traffic intelligence"
           canonical="/"
           ogImage={ogImages.home}
         />
