@@ -3,7 +3,7 @@ import {
   BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
   ChevronDown, ChevronRight, Lightbulb, Sparkles, 
   MessageSquare, Play, Pause, Calendar, History, RefreshCw,
-  TrendingUp, TrendingDown, Minus, Zap
+  TrendingUp, TrendingDown, Minus, Zap, GitBranch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,8 +13,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useBronApi } from '@/hooks/use-bron-api';
+import { useBronApi, BronKeyword } from '@/hooks/use-bron-api';
 import { getTargetKeyword } from './bron/BronKeywordCard';
+import { groupKeywords, KeywordCluster } from './bron/utils';
 import { format, subDays, startOfDay, isToday, differenceInDays } from 'date-fns';
 
 interface LLMResult {
@@ -282,12 +283,18 @@ const KeywordAEOCard = memo(({
   onToggle,
   position,
   onRecheck,
+  isNested = false,
+  isMainKeyword = false,
+  childCount = 0,
 }: { 
   data: KeywordAEOResult; 
   isExpanded: boolean; 
   onToggle: () => void;
   position?: number;
   onRecheck?: () => void;
+  isNested?: boolean;
+  isMainKeyword?: boolean;
+  childCount?: number;
 }) => {
   const prominentCount = data.results.filter(r => r.position === 'prominent').length;
   const mentionedCount = data.results.filter(r => r.position === 'mentioned').length;
@@ -303,12 +310,25 @@ const KeywordAEOCard = memo(({
     : 0;
 
   return (
-    <Card className="bg-card/80 border-border/50 overflow-hidden" style={{ contain: 'layout style' }}>
+    <Card className={`overflow-hidden ${
+      isNested 
+        ? 'bg-muted/20 border-border/30 ml-6 border-l-2 border-l-cyan-500/30' 
+        : isMainKeyword
+          ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 border-violet-500/30'
+          : 'bg-card/80 border-border/50'
+    }`} style={{ contain: 'layout style' }}>
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/20 py-4">
+          <CardHeader className="cursor-pointer hover:bg-muted/20 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
+                {/* Tree connector for nested keywords */}
+                {isNested && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-px bg-cyan-500/40" />
+                    <GitBranch className="w-3 h-3 text-cyan-500/60 rotate-180" />
+                  </div>
+                )}
                 {isExpanded ? (
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 ) : (
@@ -316,12 +336,26 @@ const KeywordAEOCard = memo(({
                 )}
                 <div className="flex items-center gap-2">
                   {position && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary border-primary/30">
+                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0.5 ${
+                      isNested 
+                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' 
+                        : 'bg-primary/10 text-primary border-primary/30'
+                    }`}>
                       #{position}
                     </Badge>
                   )}
+                  {isMainKeyword && childCount > 0 && (
+                    <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 text-[9px]">
+                      +{childCount} supporting
+                    </Badge>
+                  )}
+                  {isNested && (
+                    <Badge variant="outline" className="text-[9px] bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                      Supporting
+                    </Badge>
+                  )}
                   <div>
-                    <CardTitle className="text-base font-semibold">{data.keyword}</CardTitle>
+                    <CardTitle className={`font-semibold ${isNested ? 'text-sm' : 'text-base'}`}>{data.keyword}</CardTitle>
                     <div className="flex items-center gap-2 mt-0.5">
                       {data.timestamp && (
                         <CardDescription className="text-[10px]">
@@ -662,7 +696,14 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
   const [isAutoRunning, setIsAutoRunning] = useState(false);
   const [currentCheckIndex, setCurrentCheckIndex] = useState(0);
-  const [bronKeywords, setBronKeywords] = useState<Array<{ keyword: string; position?: number }>>([]);
+  const [bronKeywords, setBronKeywords] = useState<Array<{ 
+    keyword: string; 
+    position?: number;
+    isNested: boolean;
+    isMainKeyword: boolean;
+    childCount: number;
+    parentKeyword?: string;
+  }>>([]);
   const [isLoadingKeywords, setIsLoadingKeywords] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
@@ -828,29 +869,62 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     fetchKeywords();
   }, [domain, bronApi, loadCachedResults, loadAvailableDates]);
   
-  // When keywords update, extract keyword text
+  // When keywords update, extract keyword text and group into clusters
+  const keywordClusters = useMemo(() => {
+    if (!bronApi.keywords || bronApi.keywords.length === 0) return [];
+    return groupKeywords(bronApi.keywords, domain);
+  }, [bronApi.keywords, domain]);
+
+  // Flatten clusters into keyword list with hierarchy info
   useEffect(() => {
-    if (bronApi.keywords && bronApi.keywords.length > 0) {
-      const keywordMap = new Map<string, number>();
-      bronApi.keywords.forEach((kw, idx) => {
-        const keyword = getTargetKeyword(kw);
-        const position = kw.position || idx + 1;
-        if (keyword && !keywordMap.has(keyword)) {
-          keywordMap.set(keyword, position);
-        }
+    if (keywordClusters.length > 0) {
+      const allKeywords: Array<{ 
+        keyword: string; 
+        position?: number; 
+        isNested: boolean; 
+        isMainKeyword: boolean;
+        childCount: number;
+        parentKeyword?: string;
+      }> = [];
+      
+      keywordClusters.forEach((cluster, clusterIdx) => {
+        const mainKw = cluster.parent;
+        const mainKeywordText = getTargetKeyword(mainKw);
+        const children = cluster.children || [];
+        
+        // Add main keyword
+        allKeywords.push({
+          keyword: mainKeywordText,
+          position: mainKw.position || clusterIdx + 1,
+          isNested: false,
+          isMainKeyword: children.length > 0,
+          childCount: children.length,
+        });
+        
+        // Add supporting keywords (indented)
+        children.slice(0, 3).forEach((child, childIdx) => {
+          const childKeywordText = getTargetKeyword(child);
+          if (childKeywordText && childKeywordText !== mainKeywordText) {
+            allKeywords.push({
+              keyword: childKeywordText,
+              position: child.position || (clusterIdx + 1) * 100 + childIdx + 1,
+              isNested: true,
+              isMainKeyword: false,
+              childCount: 0,
+              parentKeyword: mainKeywordText,
+            });
+          }
+        });
       });
       
-      const keywords = Array.from(keywordMap.entries())
-        .map(([keyword, position]) => ({ keyword, position }))
-        .sort((a, b) => (a.position || 999) - (b.position || 999))
-        .slice(0, 20);
-      
-      setBronKeywords(keywords);
+      // Limit to reasonable number
+      const limitedKeywords = allKeywords.slice(0, 40);
+      setBronKeywords(limitedKeywords);
       setIsLoadingKeywords(false);
       
       // Initialize keyword results (preserve cached)
       const initialResults: Record<string, KeywordAEOResult> = {};
-      keywords.forEach(kw => {
+      limitedKeywords.forEach(kw => {
         if (!keywordResults[kw.keyword]) {
           initialResults[kw.keyword] = {
             keyword: kw.keyword,
@@ -864,7 +938,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         setKeywordResults(prev => ({ ...prev, ...initialResults }));
       }
     }
-  }, [bronApi.keywords]);
+  }, [keywordClusters, domain]);
 
   // Auto-start check when keywords are loaded and we have no cached results
   useEffect(() => {
@@ -1024,8 +1098,13 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     const mentioned = Object.values(keywordResults)
       .flatMap(r => r.results)
       .filter(r => r.position === 'mentioned').length;
-    return { checked, prominent, mentioned };
-  }, [keywordResults]);
+    
+    // Count main vs supporting keywords
+    const mainCount = bronKeywords.filter(k => !k.isNested).length;
+    const supportingCount = bronKeywords.filter(k => k.isNested).length;
+    
+    return { checked, prominent, mentioned, mainCount, supportingCount };
+  }, [keywordResults, bronKeywords]);
 
   // Date options for selector
   const dateOptions = useMemo(() => {
@@ -1094,6 +1173,12 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
                   <p className="text-lg font-bold text-foreground">{stats.checked}/{bronKeywords.length}</p>
                   <p className="text-[9px] text-muted-foreground">Checked</p>
                 </div>
+                {stats.supportingCount > 0 && (
+                  <div className="text-center px-2 py-1.5 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                    <p className="text-sm font-bold text-cyan-400">{stats.mainCount} + {stats.supportingCount}</p>
+                    <p className="text-[8px] text-cyan-400/70">Main + Support</p>
+                  </div>
+                )}
                 <div className="text-center px-3 py-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
                   <p className="text-lg font-bold text-emerald-400">{stats.prominent}</p>
                   <p className="text-[9px] text-emerald-400/70">Prominent</p>
@@ -1170,14 +1255,17 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
             </CardContent>
           </Card>
         ) : (
-          bronKeywords.map((kw) => (
+          bronKeywords.map((kw, idx) => (
             <KeywordAEOCard
-              key={kw.keyword}
+              key={`${kw.keyword}-${idx}`}
               data={keywordResults[kw.keyword] || { keyword: kw.keyword, isLoading: false, results: [], suggestions: [] }}
               isExpanded={expandedKeyword === kw.keyword}
               onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
-              position={kw.position}
+              position={kw.isNested ? undefined : kw.position}
               onRecheck={() => checkKeyword(kw.keyword)}
+              isNested={kw.isNested}
+              isMainKeyword={kw.isMainKeyword}
+              childCount={kw.childCount}
             />
           ))
         )}
