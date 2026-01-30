@@ -283,11 +283,11 @@ const RankingsDisplay = memo(({
         glow: '',
       };
     }
-    // No movement - still show blue background when we have a position
+    // No movement - show 0 with blue background when we have a position
     return {
       textColor: 'text-blue-400',
       bgColor: hasPosition ? 'bg-blue-500/15 border border-blue-500/30' : '',
-      icon: hasPosition ? <Minus className="w-2.5 h-2.5" strokeWidth={2} /> : null,
+      icon: null, // No icon for zero movement
       glow: '',
     };
   };
@@ -321,8 +321,11 @@ const RankingsDisplay = memo(({
       );
     }
     
-    // Format movement display - cap at ±999 for "newly ranked" / "dropped off"
+    // Format movement display
+    // Movement is calculated from position 1000 as baseline for new keywords
+    // So #1 position = +999 movement, #10 = +990, etc.
     const formatMovement = (mv: number) => {
+      if (mv === 0) return '0'; // Show 0 instead of "-"
       if (mv >= 999) return '+NEW';
       if (mv <= -999) return 'LOST';
       return mv > 0 ? `+${mv}` : String(mv);
@@ -335,14 +338,12 @@ const RankingsDisplay = memo(({
             {styles.icon}
           </div>
         )}
+        <span className={`text-[10px] font-semibold ${styles.textColor}`}>
+          {formatMovement(effectiveMovement)}
+        </span>
         <span className={`text-xs font-semibold ${styles.textColor}`}>
           #{pos}
         </span>
-        {effectiveMovement !== 0 && (
-          <span className={`text-[9px] font-semibold ${styles.textColor}`}>
-            {formatMovement(effectiveMovement)}
-          </span>
-        )}
         {prevDelta !== 0 && !isBaselineReport && (
           <span
             className="text-[8px] text-muted-foreground/80"
