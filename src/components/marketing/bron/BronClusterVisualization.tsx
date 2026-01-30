@@ -1,5 +1,5 @@
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, CheckCircle2, Lightbulb, Building2 } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, CheckCircle2, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
@@ -23,16 +23,6 @@ function getLinkTargetKey(link: BronLink, kind: "in" | "out"): string | null {
 
   if (!raw) return null;
   return normalizeUrlKey(raw);
-}
-
-function extractDomain(url: string): string {
-  try {
-    const normalized = url.startsWith('http') ? url : `https://${url}`;
-    const urlObj = new URL(normalized);
-    return urlObj.hostname.replace(/^www\./, '');
-  } catch {
-    return url.split('/')[0].replace(/^www\./, '');
-  }
 }
 
 interface InitialPositions {
@@ -79,21 +69,12 @@ interface NodeData {
   parentNodeId?: string | number;
 }
 
-interface PartnerNode {
-  id: string;
-  domain: string;
-  linkCount: number;
-  x: number;
-  y: number;
-  parentId: string | number;
-}
-
 interface TooltipData extends NodeData {
   aiTip?: string;
   isLoadingTip?: boolean;
 }
 
-// Enhanced AI tip generation
+// Enhanced AI tip generation with actionable insights
 const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string[]; improvement: string } => {
   const googlePos = getPosition(node.serpData?.google);
   const movement = node.movement.google;
@@ -105,6 +86,7 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
   const actionItems: string[] = [];
   let improvement = "";
   
+  // Improvement summary
   if (movement > 0) {
     if (movement >= 50) {
       improvement = `🚀 Massive improvement! Climbed ${movement} positions`;
@@ -121,6 +103,7 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
     improvement = "➡️ Holding steady at current position";
   }
   
+  // Main tip based on ranking
   if (googlePos === null) {
     mainTip = "Not yet indexed. Focus on building topical authority and quality backlinks.";
     actionItems.push("Submit URL to Google Search Console");
@@ -153,6 +136,7 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
     actionItems.push("Build brand mentions");
   }
   
+  // Add context-specific actions
   if (pageSpeed !== undefined && pageSpeed < 50) {
     actionItems.unshift("⚡ Critical: Improve page speed (currently " + pageSpeed + "/100)");
   }
@@ -168,31 +152,85 @@ const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string
   return { mainTip, actionItems: actionItems.slice(0, 4), improvement };
 };
 
-// Static line component - no animation for performance
-const StaticLine = memo(({ 
+// Electrical line component with smooth animation
+const ElectricLine = memo(({ 
   x1, y1, x2, y2, 
-  strokeColor = "rgba(148, 163, 184, 0.2)",
-  strokeWidth = 1,
+  delay = 0, 
   isHighlighted = false,
+  googlePos,
+  isSupportingLink = false
 }: { 
   x1: number; y1: number; x2: number; y2: number; 
-  strokeColor?: string;
-  strokeWidth?: number;
+  delay?: number; 
   isHighlighted?: boolean;
+  googlePos: number | null;
+  isSupportingLink?: boolean;
 }) => {
-  const finalColor = isHighlighted ? "rgba(168, 85, 247, 0.6)" : strokeColor;
-  const finalWidth = isHighlighted ? strokeWidth + 1 : strokeWidth;
+  // Color based on ranking performance
+  let strokeColor = "rgba(148, 163, 184, 0.25)";
+  let glowColor = "rgba(148, 163, 184, 0.1)";
+  let particleColor = "#94a3b8";
   
+  if (googlePos !== null) {
+    if (googlePos <= 3) {
+      strokeColor = "rgba(52, 211, 153, 0.5)";
+      glowColor = "rgba(52, 211, 153, 0.2)";
+      particleColor = "#34d399";
+    } else if (googlePos <= 10) {
+      strokeColor = "rgba(34, 211, 238, 0.5)";
+      glowColor = "rgba(34, 211, 238, 0.2)";
+      particleColor = "#22d3ee";
+    } else if (googlePos <= 20) {
+      strokeColor = "rgba(251, 191, 36, 0.5)";
+      glowColor = "rgba(251, 191, 36, 0.2)";
+      particleColor = "#fbbf24";
+    } else {
+      strokeColor = "rgba(251, 146, 60, 0.35)";
+      glowColor = "rgba(251, 146, 60, 0.12)";
+      particleColor = "#fb923c";
+    }
+  }
+  
+  if (isHighlighted) {
+    strokeColor = "rgba(168, 85, 247, 0.7)";
+    glowColor = "rgba(168, 85, 247, 0.3)";
+    particleColor = "#a855f7";
+  }
+  
+  // Supporting links are thinner and more subtle
+  const strokeWidth = isSupportingLink ? 1.5 : 2;
+  const glowWidth = isSupportingLink ? 3 : 4;
+  const particleSize = isSupportingLink ? 2 : 3;
+
+  const pathLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  const animDuration = Math.max(1.5, pathLength / 180);
+
   return (
-    <line
-      x1={x1} y1={y1} x2={x2} y2={y2}
-      stroke={finalColor}
-      strokeWidth={finalWidth}
-      strokeLinecap="round"
-    />
+    <g style={{ contain: 'layout paint' }}>
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={glowColor}
+        strokeWidth={glowWidth}
+        strokeLinecap="round"
+      />
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      <circle r={particleSize} fill={particleColor} opacity="0.8">
+        <animateMotion
+          dur={`${animDuration}s`}
+          repeatCount="indefinite"
+          begin={`${delay}s`}
+          path={`M${x1},${y1} L${x2},${y2}`}
+        />
+      </circle>
+    </g>
   );
 });
-StaticLine.displayName = 'StaticLine';
+ElectricLine.displayName = 'ElectricLine';
 
 // Enhanced Tooltip Component
 const NodeTooltip = memo(({
@@ -208,6 +246,7 @@ const NodeTooltip = memo(({
   
   const tips = useMemo(() => generateSEOTips(data), [data]);
   
+  // Calculate tooltip position - flip to left if near right edge
   const tooltipWidth = 400;
   const tooltipHeight = 500;
   const padding = 20;
@@ -228,6 +267,7 @@ const NodeTooltip = memo(({
       className="fixed z-[100] bg-background/98 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl p-4 min-w-[340px] max-w-[400px] pointer-events-none"
       style={{ left, top }}
     >
+      {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <h4 className="font-bold text-foreground text-base leading-tight">{data.keywordText}</h4>
@@ -252,6 +292,7 @@ const NodeTooltip = memo(({
         </Badge>
       </div>
       
+      {/* Improvement Summary Banner */}
       <div className={`rounded-lg px-3 py-2 mb-3 ${
         data.movement.google > 0 
           ? 'bg-emerald-500/10 border border-emerald-500/30' 
@@ -275,6 +316,7 @@ const NodeTooltip = memo(({
         </div>
       </div>
       
+      {/* Rankings Grid */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-muted/40 rounded-lg p-2 text-center border border-border/30">
           <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Google</div>
@@ -306,6 +348,7 @@ const NodeTooltip = memo(({
         </div>
       </div>
       
+      {/* Metrics Row */}
       <div className="flex items-center gap-3 mb-3 text-xs flex-wrap">
         <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
           <LinkIcon className="w-3 h-3 text-cyan-400" />
@@ -343,6 +386,7 @@ const NodeTooltip = memo(({
         </div>
       )}
       
+      {/* AI Analysis Section */}
       <div className="border-t border-border/50 pt-3">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
@@ -371,7 +415,7 @@ const NodeTooltip = memo(({
 });
 NodeTooltip.displayName = 'NodeTooltip';
 
-// Main Visualization Component
+// Main Visualization Component - Three-tier hierarchy
 export const BronClusterVisualization = memo(({
   isOpen,
   onClose,
@@ -387,12 +431,10 @@ export const BronClusterVisualization = memo(({
 }: BronClusterVisualizationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<NodeData | null>(null);
-  const [hoveredPartner, setHoveredPartner] = useState<PartnerNode | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [sortOrder, setSortOrder] = useState<'best' | 'worst'>('best');
   const [dimensions, setDimensions] = useState({ width: 1400, height: 900 });
-  const [showPartners, setShowPartners] = useState(true);
 
   // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
@@ -415,30 +457,7 @@ export const BronClusterVisualization = memo(({
     return map;
   }, [linksIn, linksOut]);
 
-  // Group links by source domain for partner visualization
-  const linkPartnersByCluster = useMemo(() => {
-    const partnerMap = new Map<string, Map<string, number>>();
-    
-    for (const link of linksIn) {
-      const targetUrl = link.target_url || link.link || '';
-      const sourceUrl = link.source_url || link.link || '';
-      
-      if (!targetUrl || !sourceUrl) continue;
-      
-      const targetKey = normalizeUrlKey(targetUrl);
-      const sourceDomain = extractDomain(sourceUrl);
-      
-      if (!partnerMap.has(targetKey)) {
-        partnerMap.set(targetKey, new Map());
-      }
-      
-      const domainCounts = partnerMap.get(targetKey)!;
-      domainCounts.set(sourceDomain, (domainCounts.get(sourceDomain) || 0) + 1);
-    }
-    
-    return partnerMap;
-  }, [linksIn]);
-
+  // Update dimensions on resize
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -456,6 +475,7 @@ export const BronClusterVisualization = memo(({
     return () => observer.disconnect();
   }, [isOpen]);
   
+  // Sort clusters by performance
   const sortedClusters = useMemo(() => {
     const getClusterScore = (cluster: ClusterData) => {
       const keywordText = getKeywordDisplayText(cluster.parent);
@@ -471,18 +491,20 @@ export const BronClusterVisualization = memo(({
     });
   }, [clusters, serpReports, sortOrder]);
 
-  // Build layout with partners
-  const { centerX, centerY, moneyNodes, supportingNodes, partnerNodes, connections, partnerConnections } = useMemo(() => {
+  // Build three-tier node layout: Center → Money Pages → Supporting Pages
+  const { centerX, centerY, moneyNodes, supportingNodes, connections } = useMemo(() => {
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
     
+    // Calculate dynamic radius based on number of clusters - more clusters = larger radius
     const moneyCount = sortedClusters.length;
     const baseRadius = Math.min(cx, cy);
     
-    // Dynamic radius - spread based on count
-    const moneyPageRadius = baseRadius * 0.32;
-    const supportingRadius = 70;
-    const partnerRadius = 45;
+    // Scale radius based on cluster count to prevent overlapping
+    // More clusters need more space
+    const minMoneyRadius = baseRadius * 0.35;
+    const maxMoneyRadius = baseRadius * 0.55;
+    const moneyPageRadius = Math.min(maxMoneyRadius, minMoneyRadius + (moneyCount * 4));
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -505,10 +527,9 @@ export const BronClusterVisualization = memo(({
 
     const money: NodeData[] = [];
     const supporting: NodeData[] = [];
-    const partners: PartnerNode[] = [];
-    const conns: Array<{ from: NodeData; to: { x: number; y: number }; type: string }> = [];
-    const partnerConns: Array<{ from: PartnerNode; to: NodeData }> = [];
+    const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' }> = [];
     
+    // Position money pages in a circle around the center with more spacing
     sortedClusters.forEach((cluster, clusterIndex) => {
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
       const parentSerpData = getSerp(parentKeywordText);
@@ -519,7 +540,9 @@ export const BronClusterVisualization = memo(({
       const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
       const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
       
-      const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2;
+      // Distribute money pages evenly around the center with offset for visual variety
+      const angleOffset = (clusterIndex % 2) * 0.02; // Slight stagger
+      const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2 + angleOffset;
       const moneyX = cx + Math.cos(moneyAngle) * moneyPageRadius;
       const moneyY = cy + Math.sin(moneyAngle) * moneyPageRadius;
       
@@ -548,10 +571,13 @@ export const BronClusterVisualization = memo(({
       
       money.push(moneyNode);
       
-      // Add supporting pages
+      // Position supporting pages in an arc around this money page - more spread out
       const supportingCount = cluster.children.length;
       if (supportingCount > 0) {
-        const arcSpan = Math.min(Math.PI * 0.5, (supportingCount / 5) * Math.PI);
+        // Wider arc span for better separation
+        const arcSpan = Math.min(Math.PI * 0.75, (supportingCount / 4) * Math.PI);
+        // Increased distance from money page
+        const supportingRadius = 110 + Math.min(supportingCount * 12, 80);
         
         cluster.children.forEach((child, childIndex) => {
           const childKeywordText = getKeywordDisplayText(child);
@@ -563,9 +589,10 @@ export const BronClusterVisualization = memo(({
           const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
           const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
           
+          // Position supporting pages in an arc radiating outward from money page
           const arcStart = moneyAngle - arcSpan / 2;
           const childAngle = supportingCount === 1 
-            ? moneyAngle 
+            ? moneyAngle // Single child: straight out
             : arcStart + (childIndex / (supportingCount - 1)) * arcSpan;
           
           const supportingX = moneyX + Math.cos(childAngle) * supportingRadius;
@@ -595,102 +622,27 @@ export const BronClusterVisualization = memo(({
           };
           
           supporting.push(supportingNode);
+          
+          // Connection from supporting to money page
           conns.push({ from: supportingNode, to: moneyNode, type: 'supporting-to-money' });
-          
-          // Add partner domains for this supporting page
-          if (childUrlKey && showPartners) {
-            const domainCounts = linkPartnersByCluster.get(childUrlKey);
-            if (domainCounts) {
-              const topPartners = Array.from(domainCounts.entries())
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5); // Show top 5 partners per page
-              
-              const partnerArcSpan = Math.PI * 0.4;
-              topPartners.forEach(([domain, count], partnerIdx) => {
-                const partnerArcStart = childAngle - partnerArcSpan / 2;
-                const partnerAngle = topPartners.length === 1
-                  ? childAngle
-                  : partnerArcStart + (partnerIdx / (topPartners.length - 1)) * partnerArcSpan;
-                
-                const partnerX = supportingX + Math.cos(partnerAngle) * partnerRadius;
-                const partnerY = supportingY + Math.sin(partnerAngle) * partnerRadius;
-                
-                const partnerNode: PartnerNode = {
-                  id: `partner-${childUrlKey}-${domain}`,
-                  domain,
-                  linkCount: count,
-                  x: partnerX,
-                  y: partnerY,
-                  parentId: supportingNode.id,
-                };
-                
-                partners.push(partnerNode);
-                partnerConns.push({ from: partnerNode, to: supportingNode });
-              });
-            }
-          }
         });
-      }
-      
-      // Add partner domains for money page
-      if (parentUrlKey && showPartners) {
-        const domainCounts = linkPartnersByCluster.get(parentUrlKey);
-        if (domainCounts) {
-          const topPartners = Array.from(domainCounts.entries())
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
-          
-          // Position partners around the money page (opposite side from supporting)
-          const partnerArcSpan = Math.PI * 0.5;
-          const basePartnerAngle = moneyAngle + Math.PI; // Opposite side
-          
-          topPartners.forEach(([domain, count], partnerIdx) => {
-            const partnerArcStart = basePartnerAngle - partnerArcSpan / 2;
-            const partnerAngle = topPartners.length === 1
-              ? basePartnerAngle
-              : partnerArcStart + (partnerIdx / (topPartners.length - 1)) * partnerArcSpan;
-            
-            const partnerX = moneyX + Math.cos(partnerAngle) * (supportingRadius - 10);
-            const partnerY = moneyY + Math.sin(partnerAngle) * (supportingRadius - 10);
-            
-            const partnerNode: PartnerNode = {
-              id: `partner-${parentUrlKey}-${domain}`,
-              domain,
-              linkCount: count,
-              x: partnerX,
-              y: partnerY,
-              parentId: moneyNode.id,
-            };
-            
-            partners.push(partnerNode);
-            partnerConns.push({ from: partnerNode, to: moneyNode });
-          });
-        }
       }
     });
     
-    return { 
-      centerX: cx, 
-      centerY: cy, 
-      moneyNodes: money, 
-      supportingNodes: supporting, 
-      partnerNodes: partners,
-      connections: conns, 
-      partnerConnections: partnerConns 
-    };
-  }, [sortedClusters, dimensions, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, isBaselineReport, linkCountsByUrl, linkPartnersByCluster, showPartners]);
+    return { centerX: cx, centerY: cy, moneyNodes: money, supportingNodes: supporting, connections: conns };
+  }, [sortedClusters, dimensions, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, isBaselineReport, linkCountsByUrl]);
 
+  // Reset on open
   useEffect(() => {
     if (!isOpen) return;
     setHoveredNode(null);
-    setHoveredPartner(null);
     setTooltipData(null);
   }, [isOpen]);
   
+  // Handle hover
   const handleNodeHover = useCallback((node: NodeData | null, e: React.MouseEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
     setHoveredNode(node);
-    setHoveredPartner(null);
     
     if (node) {
       setTooltipData({ ...node });
@@ -699,17 +651,14 @@ export const BronClusterVisualization = memo(({
     }
   }, []);
   
-  const handlePartnerHover = useCallback((partner: PartnerNode | null, e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-    setHoveredPartner(partner);
-  }, []);
-  
+  // Handle node click
   const handleNodeClick = useCallback((node: NodeData) => {
     if (node.keyword.linkouturl) {
       window.open(node.keyword.linkouturl, '_blank');
     }
   }, []);
 
+  // Calculate total supporting keywords
   const totalSupportingKeywords = useMemo(() => 
     clusters.reduce((sum, c) => sum + c.children.length, 0), 
     [clusters]
@@ -717,37 +666,29 @@ export const BronClusterVisualization = memo(({
 
   if (!isOpen) return null;
 
+  // Get node color based on ranking
   const getNodeStyle = (node: NodeData) => {
     const googlePos = getPosition(node.serpData?.google);
     
     if (googlePos === null) {
-      return { bg: 'bg-muted/60', border: 'border-muted-foreground/40', text: 'text-muted-foreground', stroke: 'rgba(148, 163, 184, 0.3)' };
+      return { bg: 'bg-muted/60', border: 'border-muted-foreground/40', text: 'text-muted-foreground', glow: '' };
     }
     if (googlePos <= 3) {
-      return { bg: 'bg-emerald-500/30', border: 'border-emerald-400', text: 'text-emerald-400', stroke: 'rgba(52, 211, 153, 0.4)' };
+      return { bg: 'bg-emerald-500/30', border: 'border-emerald-400', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(52,211,153,0.4)]' };
     }
     if (googlePos <= 10) {
-      return { bg: 'bg-cyan-500/30', border: 'border-cyan-400', text: 'text-cyan-400', stroke: 'rgba(34, 211, 238, 0.4)' };
+      return { bg: 'bg-cyan-500/30', border: 'border-cyan-400', text: 'text-cyan-400', glow: 'shadow-[0_0_20px_rgba(34,211,238,0.4)]' };
     }
     if (googlePos <= 20) {
-      return { bg: 'bg-amber-500/30', border: 'border-amber-400', text: 'text-amber-400', stroke: 'rgba(251, 191, 36, 0.4)' };
+      return { bg: 'bg-amber-500/30', border: 'border-amber-400', text: 'text-amber-400', glow: 'shadow-[0_0_20px_rgba(251,191,36,0.4)]' };
     }
-    return { bg: 'bg-orange-500/30', border: 'border-orange-400', text: 'text-orange-400', stroke: 'rgba(251, 146, 60, 0.35)' };
+    return { bg: 'bg-orange-500/30', border: 'border-orange-400', text: 'text-orange-400', glow: 'shadow-[0_0_15px_rgba(251,146,60,0.3)]' };
   };
 
   return (
     <div className="relative" style={{ contain: 'layout style paint' }}>
-      {/* Controls */}
+      {/* Floating controls */}
       <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-        <Button
-          variant={showPartners ? 'default' : 'ghost'}
-          size="sm"
-          onClick={() => setShowPartners(!showPartners)}
-          className={`h-7 px-3 text-xs gap-1.5 ${showPartners ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' : ''}`}
-        >
-          <Building2 className="w-3.5 h-3.5" />
-          {partnerNodes.length} Partners
-        </Button>
         <div className="flex items-center bg-background/80 backdrop-blur-sm rounded-lg p-0.5 border border-border/50">
           <Button
             variant={sortOrder === 'best' ? 'default' : 'ghost'}
@@ -779,7 +720,7 @@ export const BronClusterVisualization = memo(({
         </button>
       </div>
       
-      {/* Stats */}
+      {/* Stats badges */}
       <div className="absolute top-4 left-4 z-30 flex items-center gap-2">
         <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-amber-400 border-amber-500/30 text-xs px-2 py-1">
           {clusters.length} Money Pages
@@ -787,12 +728,9 @@ export const BronClusterVisualization = memo(({
         <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-violet-400 border-violet-500/30 text-xs px-2 py-1">
           {totalSupportingKeywords} Supporting
         </Badge>
-        <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-cyan-400 border-cyan-500/30 text-xs px-2 py-1">
-          {partnerNodes.length} Link Partners
-        </Badge>
       </div>
       
-      {/* Visualization */}
+      {/* Visualization Canvas */}
       <div 
         ref={containerRef}
         className="relative bg-gradient-to-br from-background via-background to-muted/10"
@@ -803,11 +741,12 @@ export const BronClusterVisualization = memo(({
             <div className="text-center text-muted-foreground">
               <Zap className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm mb-1">No clusters to display</p>
+              <p className="text-xs">Add keywords with parent-child relationships</p>
             </div>
           </div>
         ) : (
           <>
-            {/* SVG connections - static lines, no animation */}
+            {/* SVG for connections */}
             <svg 
               className="absolute inset-0 w-full h-full pointer-events-none"
               style={{ zIndex: 0 }}
@@ -820,114 +759,75 @@ export const BronClusterVisualization = memo(({
                 </radialGradient>
               </defs>
               
-              {/* Partner to cluster connections */}
-              {showPartners && partnerConnections.map((conn) => (
-                <StaticLine
-                  key={conn.from.id}
-                  x1={conn.from.x}
-                  y1={conn.from.y}
-                  x2={conn.to.x}
-                  y2={conn.to.y}
-                  strokeColor="rgba(34, 211, 238, 0.15)"
-                  strokeWidth={1}
-                  isHighlighted={hoveredPartner?.id === conn.from.id || hoveredNode?.id === conn.to.id}
-                />
-              ))}
-              
-              {/* Supporting to money connections */}
-              {connections.map((conn) => {
-                const style = getNodeStyle(conn.from);
+              {/* Connections from money pages TO center - particles flow INWARD */}
+              {moneyNodes.map((node, index) => {
+                const googlePos = getPosition(node.serpData?.google);
                 return (
-                  <StaticLine
-                    key={`${conn.from.id}-to-money`}
-                    x1={conn.from.x}
-                    y1={conn.from.y}
-                    x2={conn.to.x}
-                    y2={conn.to.y}
-                    strokeColor={style.stroke}
-                    strokeWidth={1.5}
-                    isHighlighted={hoveredNode?.id === conn.from.id}
-                  />
-                );
-              })}
-              
-              {/* Money to center connections */}
-              {moneyNodes.map((node) => {
-                const style = getNodeStyle(node);
-                return (
-                  <StaticLine
-                    key={`money-${node.id}-to-center`}
+                  <ElectricLine
+                    key={`money-to-center-${node.id}`}
                     x1={node.x}
                     y1={node.y}
                     x2={centerX}
                     y2={centerY}
-                    strokeColor={style.stroke}
-                    strokeWidth={2}
+                    delay={index * 0.1}
                     isHighlighted={hoveredNode?.id === node.id}
+                    googlePos={googlePos}
                   />
                 );
               })}
               
-              {/* Center hub */}
+              {/* Connections from supporting pages TO their money pages - particles flow INWARD */}
+              {connections.map((conn, index) => {
+                const googlePos = getPosition(conn.from.serpData?.google);
+                return (
+                  <ElectricLine
+                    key={`support-to-money-${conn.from.id}`}
+                    x1={conn.from.x}
+                    y1={conn.from.y}
+                    x2={conn.to.x}
+                    y2={conn.to.y}
+                    delay={0.3 + index * 0.05}
+                    isHighlighted={hoveredNode?.id === conn.from.id || hoveredNode?.id === conn.to.id}
+                    googlePos={googlePos}
+                    isSupportingLink
+                  />
+                );
+              })}
+              
+              {/* Center hub glow */}
               <circle
                 cx={centerX}
                 cy={centerY}
-                r="70"
+                r="100"
                 fill="url(#centerGradient)"
                 opacity="0.5"
               />
               <circle
                 cx={centerX}
                 cy={centerY}
-                r="60"
+                r="85"
                 fill="none"
                 stroke="rgba(168, 85, 247, 0.3)"
                 strokeWidth="2"
               />
             </svg>
             
-            {/* Center Hub */}
+            {/* Center Hub - Main Website */}
             <div
               className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
               style={{ left: centerX, top: centerY }}
             >
               <div 
-                className="relative w-28 h-28 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.3)] cursor-pointer hover:scale-105 transition-transform"
+                className="relative w-40 h-40 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.35)] cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
               >
-                <Globe className="w-8 h-8 text-violet-400 mb-1" />
-                <span className="text-[10px] font-bold text-violet-300 text-center px-2 leading-tight">
+                <Globe className="w-12 h-12 text-violet-400 mb-1.5" />
+                <span className="text-sm font-bold text-violet-300 text-center px-4 leading-tight">
                   {selectedDomain || 'Main Site'}
                 </span>
+                <Zap className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 text-cyan-400" />
               </div>
             </div>
-            
-            {/* Partner Nodes */}
-            {showPartners && partnerNodes.map((partner) => {
-              const isHovered = hoveredPartner?.id === partner.id;
-              
-              return (
-                <div
-                  key={partner.id}
-                  className="absolute z-[1]"
-                  style={{ 
-                    left: partner.x, 
-                    top: partner.y,
-                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.2)' : 'scale(1)'}`,
-                    transition: 'transform 0.1s ease-out',
-                  }}
-                  onMouseEnter={(e) => handlePartnerHover(partner, e)}
-                  onMouseLeave={(e) => handlePartnerHover(null, e)}
-                >
-                  <div 
-                    className="w-4 h-4 rounded-full bg-cyan-500/30 border border-cyan-400/50 flex items-center justify-center cursor-pointer"
-                    title={`${partner.domain} (${partner.linkCount} links)`}
-                  >
-                    <span className="text-[6px] text-cyan-400 font-bold">{partner.linkCount}</span>
-                  </div>
-                </div>
-              );
-            })}
             
             {/* Money Page Nodes */}
             {moneyNodes.map((node) => {
@@ -943,40 +843,44 @@ export const BronClusterVisualization = memo(({
                   style={{ 
                     left: node.x, 
                     top: node.y,
-                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.1)' : 'scale(1)'}`,
-                    transition: 'transform 0.1s ease-out',
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.12)' : 'scale(1)'}`,
+                    transition: 'transform 0.15s ease-out',
                     zIndex: isHovered ? 30 : 15,
+                    contain: 'layout style',
                   }}
                   onMouseEnter={(e) => handleNodeHover(node, e)}
                   onMouseLeave={(e) => handleNodeHover(null, e)}
                   onClick={() => handleNodeClick(node)}
                 >
                   <div className="relative cursor-pointer">
+                    {/* Money page node - compact for less overlap */}
                     <div 
-                      className={`w-10 h-10 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center`}
+                      className={`w-12 h-12 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center ${style.glow}`}
+                      style={{ boxShadow: isHovered ? '0 0 25px rgba(168,85,247,0.5)' : undefined }}
                     >
-                      <span className={`font-bold text-[10px] ${style.text}`}>
+                      <span className={`font-bold text-xs ${style.text}`}>
                         {googlePos !== null ? `#${googlePos}` : '—'}
                       </span>
                       
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-1 -right-1 min-w-5 h-5 px-0.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
                       )}
                       
                       {hasExternalLinkout && (
-                        <div className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-cyan-500 flex items-center justify-center shadow">
-                          <Link2 className="w-1.5 h-1.5 text-white" />
+                        <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                          <Link2 className="w-2 h-2 text-white" />
                         </div>
                       )}
                     </div>
                     
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-16 text-center">
-                      <span className="text-[8px] text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-0.5 py-0.5 rounded">
-                        {node.keywordText.length > 16 ? node.keywordText.substring(0, 13) + '…' : node.keywordText}
+                    {/* Label - more compact */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-20 text-center">
+                      <span className="text-[9px] text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-1 py-0.5 rounded shadow-sm">
+                        {node.keywordText.length > 20 ? node.keywordText.substring(0, 17) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
@@ -999,39 +903,43 @@ export const BronClusterVisualization = memo(({
                     left: node.x, 
                     top: node.y,
                     transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.15)' : 'scale(1)'}`,
-                    transition: 'transform 0.1s ease-out',
+                    transition: 'transform 0.15s ease-out',
                     zIndex: isHovered ? 25 : 5,
+                    contain: 'layout style',
                   }}
                   onMouseEnter={(e) => handleNodeHover(node, e)}
                   onMouseLeave={(e) => handleNodeHover(null, e)}
                   onClick={() => handleNodeClick(node)}
                 >
                   <div className="relative cursor-pointer">
+                    {/* Supporting page node - compact */}
                     <div 
-                      className={`w-7 h-7 rounded-full ${style.bg} border-[1.5px] ${style.border} flex items-center justify-center`}
+                      className={`w-8 h-8 rounded-full ${style.bg} border-[1.5px] ${style.border} flex items-center justify-center`}
+                      style={{ boxShadow: isHovered ? '0 0 15px rgba(168,85,247,0.4)' : undefined }}
                     >
-                      <span className={`font-semibold text-[8px] ${style.text}`}>
+                      <span className={`font-semibold text-[10px] ${style.text}`}>
                         {googlePos !== null ? googlePos : '—'}
                       </span>
                       
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-0.5 -right-0.5 min-w-3 h-3 px-0.5 rounded-full flex items-center justify-center text-[6px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
                       )}
                       
                       {hasExternalLinkout && (
-                        <div className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-cyan-500 flex items-center justify-center shadow">
-                          <Link2 className="w-1 h-1 text-white" />
+                        <div className="absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full bg-cyan-500 flex items-center justify-center shadow">
+                          <Link2 className="w-1.5 h-1.5 text-white" />
                         </div>
                       )}
                     </div>
                     
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-0.5 w-14 text-center">
-                      <span className="text-[7px] text-muted-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-0.5 rounded">
-                        {node.keywordText.length > 14 ? node.keywordText.substring(0, 11) + '…' : node.keywordText}
+                    {/* Compact label for supporting */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-16 text-center">
+                      <span className="text-[8px] text-muted-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-0.5 py-0.5 rounded">
+                        {node.keywordText.length > 16 ? node.keywordText.substring(0, 13) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
@@ -1045,25 +953,6 @@ export const BronClusterVisualization = memo(({
       {/* Tooltip */}
       {tooltipData && (
         <NodeTooltip data={tooltipData} position={mousePos} />
-      )}
-      
-      {/* Partner tooltip */}
-      {hoveredPartner && (
-        <div
-          className="fixed z-[100] bg-background/95 backdrop-blur-sm border border-cyan-500/30 rounded-lg shadow-xl p-2 pointer-events-none"
-          style={{
-            left: Math.min(mousePos.x + 15, window.innerWidth - 200),
-            top: mousePos.y - 10,
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-xs font-medium text-foreground">{hoveredPartner.domain}</span>
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-1">
-            {hoveredPartner.linkCount} link{hoveredPartner.linkCount !== 1 ? 's' : ''} to this page
-          </div>
-        </div>
       )}
     </div>
   );
