@@ -3478,6 +3478,7 @@ f.parentNode.insertBefore(j,f);
             <CADEDashboardNew
               domain={selectedTrackedDomain || selectedDomainKey}
               onSubscriptionChange={setCadeHasSubscription}
+              isActive={activeTab === 'cade'}
             />
 
             {/* Platform Connection Section - Compact "Connected" state at BOTTOM after connection */}
