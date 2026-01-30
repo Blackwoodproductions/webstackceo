@@ -278,8 +278,10 @@ const NodeTooltip = memo(({
   const maxLeft = Math.max(padding, viewportWidth - tooltipSize.w - padding);
   const maxTop = Math.max(padding, viewportHeight - tooltipSize.h - padding);
 
-  // Prefer right of cursor, but flip left when it would overflow
-  const shouldFlipLeft = position.x + offsetX + tooltipSize.w > viewportWidth - padding;
+  // Flip to left side if node is past 55% of viewport width (more aggressive flip for right-side nodes)
+  const shouldFlipLeft = position.x > viewportWidth * 0.55 || 
+    (position.x + offsetX + tooltipSize.w > viewportWidth - padding);
+  
   const rawLeft = shouldFlipLeft
     ? position.x - offsetX - tooltipSize.w
     : position.x + offsetX;
