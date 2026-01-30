@@ -541,13 +541,21 @@ export function filterLinksForKeyword(
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
 
-  // Extract BRON token (e.g., "582231bc" or "568071bc") from URLs
-  // This token uniquely identifies a keyword's page in the BRON system
+  // Extract BRON token (e.g., "582231" or "582231bc") from URLs
+  // BRON pages have two URL patterns:
+  // - Main article: /best-dentist-in-port-coquitlam-582231/
+  // - Resources/Links page: /best-dentist-in-port-coquitlam-582231bc/
+  // Both use the same 6-digit ID, the "bc" suffix denotes the bottom-of-silo links page
   const extractBronToken = (value?: string | null): string | null => {
     if (!value) return null;
-    // Match patterns like "-582231bc" or "/582231bc" at end of URLs
-    const match = String(value).match(/-?(\d{6,}bc)(?:\/|$)/i);
-    return match?.[1]?.toLowerCase() || null;
+    const str = String(value);
+    // Match patterns like "-582231bc/" or "-582231/" at end of URLs
+    const matchWithBc = str.match(/-(\d{6,})bc(?:\/|$)/i);
+    if (matchWithBc) return matchWithBc[1];
+    // Match without bc suffix
+    const matchWithoutBc = str.match(/-(\d{6,})(?:\/|$)/i);
+    if (matchWithoutBc) return matchWithoutBc[1];
+    return null;
   };
 
   const normalize = (value: string) =>
@@ -570,12 +578,19 @@ export function filterLinksForKeyword(
   
   // Primary: Extract from linkouturl (most reliable)
   const tokenFromUrl = extractBronToken(keywordUrl);
-  if (tokenFromUrl) tokenCandidates.add(tokenFromUrl);
+  if (tokenFromUrl) {
+    tokenCandidates.add(tokenFromUrl);
+    // Also add with bc suffix for matching links pages
+    tokenCandidates.add(`${tokenFromUrl}bc`);
+  }
   
   // Secondary: Try keyword ID if it looks like a BRON ID
   const idStr = String(keyword.id);
   // Only use ID if it's a numeric ID that matches BRON pattern (6+ digits)
-  if (/^\d{6,}$/.test(idStr)) tokenCandidates.add(`${idStr}bc`);
+  if (/^\d{6,}$/.test(idStr)) {
+    tokenCandidates.add(idStr);
+    tokenCandidates.add(`${idStr}bc`);
+  }
   
   // Also match with hyphen prefix
   for (const t of Array.from(tokenCandidates)) tokenCandidates.add(`-${t}`);
