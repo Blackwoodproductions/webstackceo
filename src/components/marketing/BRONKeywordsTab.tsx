@@ -74,6 +74,12 @@ interface InitialPositions {
   yahoo: number | null;
 }
 
+// Baseline report ID - used to detect when viewing the baseline itself (no movement)
+interface BaselineInfo {
+  reportId: string | null;
+  positions: Record<string, InitialPositions>;
+}
+
 function buildKeywordKeyVariants(text: string): string[] {
   const base = (text || '').toLowerCase().trim();
   if (!base) return [];
@@ -190,6 +196,7 @@ export const BRONKeywordsTab = memo(({
   const pageSpeedScoresRef = useRef(pageSpeedScores);
   const pageSpeedCacheSaveTimerRef = useRef<number | null>(null);
   const [initialPositions, setInitialPositions] = useState<Record<string, InitialPositions>>({});
+  const [baselineReportId, setBaselineReportId] = useState<string | null>(null);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   
   // Track if we've received data for the current domain to avoid "no keywords" flash
@@ -459,6 +466,7 @@ export const BRONKeywordsTab = memo(({
         console.log('[BRON] Fetching baseline positions from oldest report:', oldestReport.started || oldestReport.created_at);
         
         const reportId = String(oldestReport.report_id || oldestReport.id);
+        setBaselineReportId(reportId); // Store baseline report ID
         const oldestReportData = await onFetchSerpDetail(selectedDomain, reportId);
         
         if (oldestReportData?.length > 0) {
@@ -480,6 +488,7 @@ export const BRONKeywordsTab = memo(({
           }
           console.log('[BRON] Loaded baseline positions for', Object.keys(firstPositions).length, 'keywords');
           console.log('[BRON] Sample baseline keywords:', Object.keys(firstPositions).slice(0, 10));
+          console.log('[BRON] Baseline report ID:', reportId);
           setInitialPositions(firstPositions);
         }
       } catch (err) {
@@ -1004,6 +1013,7 @@ export const BRONKeywordsTab = memo(({
                     inlineEditForms={inlineEditForms}
                     savingIds={savingIds}
                     compactMode={compactMode}
+                    isBaselineReport={selectedHistoryReportId ? String(selectedHistoryReportId) === baselineReportId : false}
                     onToggleExpand={handleToggleExpand}
                     onUpdateForm={handleUpdateForm}
                     onSave={handleSave}
