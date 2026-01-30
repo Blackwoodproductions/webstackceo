@@ -6,3 +6,5 @@ export { CADEWorkerStatus } from "./CADEWorkerStatus";
 export { CADEDashboardNew } from "./CADEDashboardNew";
 export { CADEActivationPitch } from "./CADEActivationPitch";
 export { CADEPlatformCards } from "./CADEPlatformCards";
+export { CADEInlineContentEditor } from "./CADEInlineContentEditor";
+export { CADEInlineFAQEditor } from "./CADEInlineFAQEditor";

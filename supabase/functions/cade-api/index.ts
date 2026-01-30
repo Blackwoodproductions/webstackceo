@@ -7,8 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Use staging environment
-const CADE_API_BASE = "https://seo-acg-api.stg.seosara.ai/api/v1";
+// Use production environment
+const CADE_API_BASE = "https://seo-acg-api.prod.seosara.ai/api/v1";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -30,6 +30,7 @@ serve(async (req) => {
           status: "healthy",
           service: "cade-api",
           api_key_configured: !!apiKey,
+          environment: "production",
           timestamp: new Date().toISOString(),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -184,13 +185,26 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // Domain context update endpoints vary across CADE deployments.
-        // Start with the canonical path and include the domain in the body.
-        // We'll fall back to query-param and alternate verbs if needed.
-        method = "PUT";
-        endpoint = "/domain/context";
-        postBody = JSON.stringify({ domain, ...params });
+        // Per prod API docs: PATCH /api/v1/domain/context/{domain}/
+        method = "PATCH";
+        endpoint = `/domain/context/${encodeURIComponent(domain)}/`;
+        postBody = JSON.stringify({ ...params });
         console.log(`[CADE API] Update domain context for: ${domain}`);
+        break;
+      }
+
+      case "validate-domain-context": {
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for validate-domain-context" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Per prod API docs: POST /api/v1/domain/context/validation/{domain}/
+        method = "POST";
+        endpoint = `/domain/context/validation/${encodeURIComponent(domain)}/`;
+        postBody = JSON.stringify({ ...params });
+        console.log(`[CADE API] Validate domain context for: ${domain}`);
         break;
       }
 
@@ -263,6 +277,35 @@ serve(async (req) => {
         break;
       }
 
+      // === LOCATION ENDPOINTS (NEW) ===
+      case "list-countries":
+        endpoint = "/location/countries";
+        break;
+
+      case "list-subdivisions": {
+        const countryCode = params?.country_code;
+        if (!countryCode) {
+          return new Response(
+            JSON.stringify({ error: "country_code is required for list-subdivisions" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = `/location/subdivisions/${encodeURIComponent(String(countryCode))}`;
+        break;
+      }
+
+      case "list-cities": {
+        const cityCountryCode = params?.country_code;
+        if (!cityCountryCode) {
+          return new Response(
+            JSON.stringify({ error: "country_code is required for list-cities" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        endpoint = `/location/cities/${encodeURIComponent(String(cityCountryCode))}`;
+        break;
+      }
+
       // === SUBSCRIPTION ENDPOINTS ===
       case "subscription":
         endpoint = "/subscription/";
@@ -302,8 +345,8 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // Remove trailing slash - API may reject it
-        endpoint = `/content?domain=${encodeURIComponent(domain)}`;
+        // Per prod API: /content/list with query params
+        endpoint = `/content/list?domain=${encodeURIComponent(domain)}`;
         if (params?.page) endpoint += `&page=${params.page}`;
         if (params?.limit) endpoint += `&limit=${params.limit}`;
         if (params?.status) endpoint += `&status=${params.status}`;
@@ -435,10 +478,9 @@ serve(async (req) => {
         break;
 
       // === TASK ENDPOINTS ===
-      // Note: Task endpoints require user_id as a query parameter (integer)
+      // Per prod API: /tasks/crawl/all (not crawl-all)
       case "crawl-tasks": {
-        endpoint = "/tasks/crawl/crawl-all";
-        // API requires user_id and validates integer
+        endpoint = "/tasks/crawl/all";
         endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
@@ -450,13 +492,12 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        // CADE returns status_url like: /tasks/crawl?task_id=...
         endpoint = `/tasks/crawl?task_id=${encodeURIComponent(String(params.task_id))}`;
         break;
       }
 
       case "categorization-tasks": {
-        endpoint = "/tasks/categorization/categorization-all";
+        endpoint = "/tasks/categorization/all";
         endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
@@ -472,11 +513,50 @@ serve(async (req) => {
         break;
       }
 
+      // === CONTENT TASK ENDPOINTS (NEW) ===
+      case "content-task-status": {
+        if (!params?.task_id) {
+          return new Response(
+            JSON.stringify({ error: "task_id is required for content-task-status" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Per prod API: /tasks/content/
+        endpoint = `/tasks/content/?task_id=${encodeURIComponent(String(params.task_id))}`;
+        break;
+      }
+
       case "terminate-content-task":
         method = "POST";
-        endpoint = "/tasks/content/termination";
+        endpoint = "/tasks/content/termination/";
         postBody = JSON.stringify({ ...params });
         break;
+
+      // === DOMAIN TASKS (NEW) ===
+      case "domain-tasks": {
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for domain-tasks" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Per prod API: /tasks/domain/
+        endpoint = `/tasks/domain/?domain=${encodeURIComponent(domain)}`;
+        break;
+      }
+
+      // === TASK STATUS BY ID (NEW) ===
+      case "task-status": {
+        if (!params?.task_id) {
+          return new Response(
+            JSON.stringify({ error: "task_id is required for task-status" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        // Per prod API: /tasks/status/
+        endpoint = `/tasks/status/?task_id=${encodeURIComponent(String(params.task_id))}`;
+        break;
+      }
 
       case "terminate-crawl-task": {
         if (!params?.task_id) {
@@ -537,20 +617,8 @@ serve(async (req) => {
 
       // === CONTENT TASKS - Additional endpoints ===
       case "content-tasks": {
-        // Some deployments may not expose content task listing; keep best-effort.
         endpoint = "/tasks/content-all";
         endpoint += `?user_id=${encodeURIComponent(String(cadeUserId))}`;
-        break;
-      }
-
-      case "content-task-status": {
-        if (!params?.task_id) {
-          return new Response(
-            JSON.stringify({ error: "task_id is required for content-task-status" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        endpoint = `/tasks/content?task_id=${encodeURIComponent(String(params.task_id))}&user_id=${encodeURIComponent(String(cadeUserId))}`;
         break;
       }
 
@@ -619,8 +687,7 @@ serve(async (req) => {
         { method: "PUT", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
         { method: "POST", endpoint: "/domain/context" },
         { method: "POST", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
-        { method: "PATCH", endpoint: "/domain/context" },
-        { method: "PATCH", endpoint: `/domain/context?domain=${encodeURIComponent(domain)}` },
+        { method: "PUT", endpoint: `/domain/context/${encodeURIComponent(domain)}/` },
       ];
 
       for (const attempt of fallbackAttempts) {

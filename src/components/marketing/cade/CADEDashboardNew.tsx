@@ -3,11 +3,14 @@ import {
   Brain, RefreshCw, Loader2, CheckCircle2, Clock, Play, Pause,
   Settings, Globe, Target, FileText, HelpCircle, Calendar, Zap,
   AlertTriangle, Sparkles, Search, Save, X, Plus, ChevronDown,
-  Activity, ExternalLink, User, TrendingUp, Link2, BarChart3, Database
+  Activity, ExternalLink, User, TrendingUp, Link2, BarChart3, Database,
+  Wand2
 } from "lucide-react";
 import { DomainContextDialog } from "./DomainContextDialog";
 import { CADEActivationPitch } from "./CADEActivationPitch";
 import { CADEPlatformCards } from "./CADEPlatformCards";
+import { CADEInlineContentEditor, ContentItem } from "./CADEInlineContentEditor";
+import { CADEInlineFAQEditor, FAQItem } from "./CADEInlineFAQEditor";
 import { useDomainContext } from "@/hooks/use-domain-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -35,7 +39,8 @@ import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
 import { AIMetricsAnimation } from "@/components/ui/ai-metrics-animation";
 import { toast } from "sonner";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// Types imported from CADEInlineContentEditor and CADEInlineFAQEditor
+
 interface DomainProfile {
   domain?: string;
   category?: string;
@@ -45,26 +50,6 @@ interface DomainProfile {
   description?: string;
   categories?: string[];
   competitors?: string;
-}
-
-interface ContentItem {
-  id?: string;
-  content_id?: string;
-  title?: string;
-  content?: string;
-  status?: string;
-  type?: string;
-  keyword?: string;
-  created_at?: string;
-  word_count?: number;
-}
-
-interface FAQItem {
-  id?: string;
-  faq_id?: string;
-  question?: string;
-  answer?: string;
-  status?: string;
 }
 
 interface CADEDashboardNewProps {
@@ -1189,26 +1174,36 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                 </div>
               </div>
               
-              {/* Enhanced Filter & Action Row */}
-              <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-card/50 to-transparent border border-border/30">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground font-medium">Filter:</span>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40 bg-background/80 border-border/50 h-9 text-sm">
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Inline Content Editors */}
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-2 pr-2">
+                  {articles.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p>No articles yet</p>
+                      <p className="text-sm mt-1">Generate content using the controls above</p>
+                    </div>
+                  ) : (
+                    articles
+                      .filter(a => statusFilter === "all" || a.status === statusFilter)
+                      .map((article, idx) => (
+                        <CADEInlineContentEditor
+                          key={article.content_id || article.id || idx}
+                          item={article}
+                          domain={domain}
+                          onUpdate={(updated) => {
+                            setArticles(prev => prev.map(a => 
+                              (a.content_id || a.id) === (updated.content_id || updated.id) ? updated : a
+                            ));
+                          }}
+                          onDelete={(id) => {
+                            setArticles(prev => prev.filter(a => (a.content_id || a.id) !== id));
+                          }}
+                        />
+                      ))
+                  )}
                 </div>
-                <Button size="default" className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-all">
-                  View All CADE Posts
-                </Button>
-              </div>
+              </ScrollArea>
             </TabsContent>
             
             <TabsContent value="faqs" className="mt-6 space-y-6">
@@ -1225,6 +1220,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                       {!faqPaused && <CheckCircle2 className="w-4 h-4 ml-2" />}
                     </Badge>
                   </div>
+                  <StatBox value={faqs.length} label="Total FAQs" color="cyan" />
                 </div>
                 
                 <Button
@@ -1249,16 +1245,34 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
                 </Button>
               </div>
               
-              <div>
-                <h4 className="font-semibold text-base mb-2">FAQ Items</h4>
-                <p className="text-sm text-muted-foreground">
-                  Manage your CADE-generated FAQ content.
-                </p>
-              </div>
-              
-              <div className="flex gap-4">
-                <StatBox value={faqs.length} label="Total FAQs" color="cyan" />
-              </div>
+              {/* Inline FAQ Editors */}
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-2 pr-2">
+                  {faqs.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <HelpCircle className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                      <p>No FAQs yet</p>
+                      <p className="text-sm mt-1">FAQs will be generated automatically</p>
+                    </div>
+                  ) : (
+                    faqs.map((faq, idx) => (
+                      <CADEInlineFAQEditor
+                        key={faq.faq_id || faq.id || idx}
+                        item={faq}
+                        domain={domain}
+                        onUpdate={(updated) => {
+                          setFaqs(prev => prev.map(f => 
+                            (f.faq_id || f.id) === (updated.faq_id || updated.id) ? updated : f
+                          ));
+                        }}
+                        onDelete={(id) => {
+                          setFaqs(prev => prev.filter(f => (f.faq_id || f.id) !== id));
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </TabsContent>
             
             <TabsContent value="scheduled" className="mt-6 space-y-6">
