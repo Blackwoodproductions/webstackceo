@@ -444,9 +444,12 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
         <TabsContent value="serp" className="mt-0">
           <BRONSerpTab 
             serpReports={stableSerpReports}
+            serpHistory={stableSerpHistory}
+            keywords={stableKeywords}
             selectedDomain={selectedDomain}
             isLoading={bronApi.isLoading}
             onRefresh={handleRefreshSerp}
+            onFetchSerpDetail={bronApi.fetchSerpDetail}
           />
         </TabsContent>
 
