@@ -246,7 +246,7 @@ const Admin = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/visitor-intelligence-dashboard")}
               className="gap-2 text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4" />
