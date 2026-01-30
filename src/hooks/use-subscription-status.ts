@@ -117,16 +117,18 @@ export function useSubscriptionStatus() {
       }
 
       // Determine feature access based on tier
-      // vi_basic ($15/domain) = ONLY Visitor Intelligence access
-      // business_ceo ($75/mo) = VI + BRON + CADE + GMB + Social
+      // vi_basic ($15/domain) = Visitor Intelligence + Maps (GMB) access
+      // business_ceo ($75/mo) = VI + Maps + BRON + CADE + Social
       // white_label/super_reseller = Everything
       
       const hasViAccess = true;
       
-      // BRON, CADE, GMB, Social require business_ceo or higher
+      // GMB/Maps is included with basic $15/domain tier
+      const hasGmb = tier !== 'free';
+      
+      // BRON, CADE, Social require business_ceo or higher
       const hasBron = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
       const hasCade = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
-      const hasGmb = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
       const hasSocial = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
       
       // AEO/GEO requires BRON (tied to keyword count)

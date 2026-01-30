@@ -27,6 +27,14 @@ const tabs = [
     colorClass: 'cyan' as const
   },
   { 
+    id: 'gmb' as DashboardTab, 
+    label: 'Maps', 
+    description: 'Local SEO',
+    icon: MapPin, 
+    isPaid: false, // Included with $15/domain
+    colorClass: 'sky' as const
+  },
+  { 
     id: 'bron' as DashboardTab, 
     label: 'Bron', 
     description: 'SEO Rankings',
@@ -50,14 +58,6 @@ const tabs = [
     icon: FileText, 
     isPaid: true,
     colorClass: 'amber' as const
-  },
-  { 
-    id: 'gmb' as DashboardTab, 
-    label: 'Maps', 
-    description: 'Local SEO',
-    icon: MapPin, 
-    isPaid: true,
-    colorClass: 'sky' as const
   },
   { 
     id: 'social-signals' as DashboardTab, 
