@@ -570,7 +570,7 @@ export const BronClusterVisualization = memo(({
     const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' | 'resource-to-parent' }> = [];
     
     const moneyCount = sortedClusters.length;
-    const resourceRadius = 60; // Distance from parent node for resource nodes
+    const resourceRadius = 80; // Distance from furthest supporting node for resource
     
     // Position money pages in a circle around the center
     sortedClusters.forEach((cluster, clusterIndex) => {
@@ -616,33 +616,8 @@ export const BronClusterVisualization = memo(({
       
       money.push(moneyNode);
       
-      // Add resource node for money page (positioned outward from center)
-      if (moneyResourceUrl) {
-        const resourceAngle = moneyAngle;
-        const resourceX = moneyX + Math.cos(resourceAngle) * resourceRadius;
-        const resourceY = moneyY + Math.sin(resourceAngle) * resourceRadius;
-        
-        const resourceNode: NodeData = {
-          id: `resource-${cluster.parent.id}`,
-          keyword: cluster.parent,
-          x: resourceX,
-          y: resourceY,
-          isMainNode: false,
-          isResourceNode: true,
-          keywordText: `${parentKeywordText} Resources`,
-          serpData: null,
-          metrics: undefined,
-          pageSpeed: undefined,
-          movement: { google: 0, bing: 0, yahoo: 0 },
-          linksInCount: 0,
-          linksOutCount: parentLinkCounts?.out ?? 0,
-          linkoutUrl: moneyResourceUrl,
-          parentNodeId: moneyNode.id,
-        };
-        
-        resources.push(resourceNode);
-        conns.push({ from: resourceNode, to: moneyNode, type: 'resource-to-parent' });
-      }
+      // Track supporting nodes for this cluster to connect them to the single resource page
+      const clusterSupportingNodes: NodeData[] = [];
       
       // Position supporting pages in an arc around this money page
       const supportingCount = cluster.children.length;
@@ -670,8 +645,6 @@ export const BronClusterVisualization = memo(({
           const supportingX = moneyX + Math.cos(childAngle) * supportingRadius;
           const supportingY = moneyY + Math.sin(childAngle) * supportingRadius;
           
-          const childResourceUrl = getResourceUrl(childUrl);
-          
           const supportingNode: NodeData = {
             id: child.id,
             keyword: child,
@@ -692,42 +665,54 @@ export const BronClusterVisualization = memo(({
             linksInCount: childLinkCounts?.in ?? 0,
             linksOutCount: childLinkCounts?.out ?? 0,
             linkoutUrl: childUrl,
-            resourceUrl: childResourceUrl,
             parentNodeId: moneyNode.id,
           };
           
           supporting.push(supportingNode);
+          clusterSupportingNodes.push(supportingNode);
           
           // Connection from supporting to money page
           conns.push({ from: supportingNode, to: moneyNode, type: 'supporting-to-money' });
-          
-          // Add resource node for supporting page (positioned outward)
-          if (childResourceUrl) {
-            const resAngle = childAngle;
-            const resX = supportingX + Math.cos(resAngle) * (resourceRadius * 0.8);
-            const resY = supportingY + Math.sin(resAngle) * (resourceRadius * 0.8);
-            
-            const resourceNode: NodeData = {
-              id: `resource-${child.id}`,
-              keyword: child,
-              x: resX,
-              y: resY,
-              isMainNode: false,
-              isResourceNode: true,
-              keywordText: `${childKeywordText} Resources`,
-              serpData: null,
-              metrics: undefined,
-              pageSpeed: undefined,
-              movement: { google: 0, bing: 0, yahoo: 0 },
-              linksInCount: 0,
-              linksOutCount: childLinkCounts?.out ?? 0,
-              linkoutUrl: childResourceUrl,
-              parentNodeId: supportingNode.id,
-            };
-            
-            resources.push(resourceNode);
-            conns.push({ from: resourceNode, to: supportingNode, type: 'resource-to-parent' });
-          }
+        });
+      }
+      
+      // Add ONE resource node per cluster - positioned at the outer edge of the cluster
+      // This single resource page links to the money page AND all supporting pages
+      if (moneyResourceUrl) {
+        // Position resource page beyond the furthest supporting nodes
+        const supportingRadius = 130 + Math.min(supportingCount * 12, 100);
+        const totalDistance = moneyPageRadius + supportingRadius + resourceRadius;
+        
+        // Place resource node in the same direction as the cluster
+        const resourceX = cx + Math.cos(moneyAngle) * totalDistance;
+        const resourceY = cy + Math.sin(moneyAngle) * totalDistance;
+        
+        const resourceNode: NodeData = {
+          id: `resource-${cluster.parent.id}`,
+          keyword: cluster.parent,
+          x: resourceX,
+          y: resourceY,
+          isMainNode: false,
+          isResourceNode: true,
+          keywordText: `${parentKeywordText} Resources`,
+          serpData: null,
+          metrics: undefined,
+          pageSpeed: undefined,
+          movement: { google: 0, bing: 0, yahoo: 0 },
+          linksInCount: 0,
+          linksOutCount: (parentLinkCounts?.out ?? 0) + clusterSupportingNodes.length,
+          linkoutUrl: moneyResourceUrl,
+          parentNodeId: moneyNode.id,
+        };
+        
+        resources.push(resourceNode);
+        
+        // Resource page links TO the money page
+        conns.push({ from: resourceNode, to: moneyNode, type: 'resource-to-parent' });
+        
+        // Resource page also links TO each supporting page in this cluster
+        clusterSupportingNodes.forEach((supportingNode) => {
+          conns.push({ from: resourceNode, to: supportingNode, type: 'resource-to-parent' });
         });
       }
     });
