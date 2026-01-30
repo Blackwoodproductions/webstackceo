@@ -198,7 +198,7 @@ export function SuperAdminPanel() {
         .from('user_roles')
         .delete()
         .eq('user_id', userId)
-        .eq('role', role);
+        .eq('role', role as 'admin' | 'moderator' | 'user' | 'super_admin' | 'white_label_admin');
 
       if (error) throw error;
 
@@ -513,7 +513,10 @@ export function SuperAdminPanel() {
             
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <Select 
+                value={selectedRole} 
+                onValueChange={(value: string) => setSelectedRole(value as 'admin' | 'super_admin' | 'white_label_admin')}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
