@@ -34,20 +34,21 @@ interface BronClusterCardProps {
   onOpenAnalysis?: (kw: BronKeyword) => void;
 }
 
-// Tree connector line component - positioned absolutely to not affect grid alignment
-const TreeConnector = memo(({ isLast }: { isLast: boolean }) => (
+// Tree connector horizontal branch - connects from left border to card
+const TreeBranch = memo(({ isLast }: { isLast: boolean }) => (
   <div 
-    className="absolute left-0 top-0 bottom-0 flex items-stretch shrink-0 pointer-events-none" 
-    style={{ width: '28px', contain: 'strict' }}
+    className="absolute top-1/2 -translate-y-1/2 pointer-events-none flex items-center"
+    style={{ left: '-24px', width: '24px', contain: 'strict' }}
   >
-    <div className={`w-px bg-amber-500/40 ${isLast ? 'h-1/2' : 'h-full'}`} style={{ marginLeft: '8px' }} />
-    <div className="flex items-center h-full" style={{ marginLeft: '-1px' }}>
-      <div className="w-4 h-px bg-amber-500/40" />
-      <div className="w-2 h-2 rounded-full bg-amber-500/60 border border-amber-400/80 shrink-0" />
-    </div>
+    {/* Horizontal line from border to dot */}
+    <div className="w-3 h-px bg-amber-500/40" />
+    {/* Connection dot */}
+    <div className="w-2 h-2 rounded-full bg-amber-500/60 border border-amber-400/80 shrink-0" />
+    {/* Horizontal line from dot to card */}
+    <div className="flex-1 h-px bg-amber-500/40" />
   </div>
 ));
-TreeConnector.displayName = 'TreeConnector';
+TreeBranch.displayName = 'TreeBranch';
 
 // Props comparison for ClusterKeywordRow memoization
 function areClusterKeywordRowPropsEqual(
@@ -277,8 +278,8 @@ function ClusterKeywordRowImpl({
       style={{ contain: 'layout style' }}
       data-no-theme-transition
     >
-      {/* Tree connector positioned absolutely - doesn't affect grid */}
-      {isNested && <TreeConnector isLast={isLastChild} />}
+      {/* Tree branch connector - horizontal line from left border to card */}
+      {isNested && <TreeBranch isLast={isLastChild} />}
       
       <div className="w-full">
         <BronKeywordCard
@@ -417,9 +418,9 @@ export const BronClusterCard = memo(({
         onOpenAnalysis={onOpenAnalysis}
       />
       
-      {/* Children container: ml = parent's (chart column 52px + px-4 padding 16px - child px-3 padding 12px) = 56px */}
+      {/* Children container with left border as vertical connector line */}
       {cluster.children.length > 0 && (
-        <div className="border-l-2 border-amber-500/30 ml-[56px]">
+        <div className="relative ml-[32px] pl-[24px] border-l-2 border-amber-500/30">
           {cluster.children.map((child, idx) => (
             <ClusterKeywordRow
               key={child.id}
