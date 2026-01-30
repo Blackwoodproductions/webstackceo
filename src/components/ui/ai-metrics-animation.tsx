@@ -120,11 +120,11 @@ export const AIMetricsAnimation = memo(({ title = "Analyzing Keywords", variant 
     </div>
     
     <div 
-      className="flex items-stretch gap-4 h-full"
+      className="flex items-center gap-4"
       style={{ contain: 'layout style paint' }}
     >
       {/* Left: Brain Icon with orbiting particles */}
-      <div className="relative w-32 flex-shrink-0 flex items-center justify-center">
+      <div className="relative w-32 flex-shrink-0 flex items-center justify-center h-[120px]">
         {/* Outer glow ring */}
         <div 
           className="absolute inset-0 rounded-full m-auto w-24 h-24"

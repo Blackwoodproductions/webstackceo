@@ -664,24 +664,22 @@ export const BronKeywordCard = memo(({
               </div>
             )}
 
-            {/* Column 2: Page Speed Gauge - consistent size for main and supporting */}
-            <div className="flex items-center justify-center">
-              <div className="w-12 h-12 shrink-0 flex items-center justify-center">
-                <PageSpeedGauge 
-                  score={pageSpeedScore?.mobileScore || 0}
-                  loading={pageSpeedScore?.loading}
-                  updating={pageSpeedScore?.updating}
-                  error={pageSpeedScore?.error}
-                />
-              </div>
+            {/* Column 2: Page Speed Gauge - fixed height container for consistent alignment */}
+            <div className="flex items-center justify-center h-12">
+              <PageSpeedGauge 
+                score={pageSpeedScore?.mobileScore || 0}
+                loading={pageSpeedScore?.loading}
+                updating={pageSpeedScore?.updating}
+                error={pageSpeedScore?.error}
+              />
             </div>
 
-            {/* Column 3: Intent Badge - consistent size for main and supporting */}
-            <div className="flex flex-col items-center justify-center gap-0.5">
+            {/* Column 3: Intent Badge - fixed height container for consistent alignment */}
+            <div className="flex flex-col items-center justify-center h-12">
               <div className={`w-7 h-7 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
                 <IntentIcon className={`w-3.5 h-3.5 ${intent.color}`} />
               </div>
-              <span className={`text-[7px] font-medium capitalize ${intent.color} whitespace-nowrap leading-none`}>
+              <span className={`text-[7px] font-medium capitalize ${intent.color} whitespace-nowrap leading-none mt-0.5`}>
                 {intent.type.slice(0, 4)}
               </span>
             </div>
