@@ -94,15 +94,15 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
 
   return (
     <div 
-      className="absolute inset-x-0 -bottom-px z-[150] flex justify-center pointer-events-auto"
+      className="absolute inset-x-0 -bottom-px z-[150] flex justify-center pointer-events-none"
       style={{ contain: 'layout style' }}
     >
       <div
-        className={
+        className={`${
           isCompact
             ? 'flex items-end gap-0 px-2 overflow-x-auto'
             : 'flex items-end gap-1.5 px-2 overflow-x-auto'
-        }
+        } pointer-events-auto`}
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',

@@ -13,7 +13,6 @@ import ScrollProgress from "@/components/ui/scroll-progress";
 import LoadingScreen from "@/components/ui/loading-screen";
 import SectionIndicator from "@/components/ui/section-indicator";
 import KeyboardShortcutsHelp from "@/components/ui/keyboard-shortcuts-help";
-import LiveChatWidget from "@/components/ui/live-chat-widget";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import FloatingAIShield from "@/components/ui/floating-ai-shield";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
@@ -49,7 +48,6 @@ const Index = () => {
       <ScrollProgress />
       <SectionIndicator />
       <KeyboardShortcutsHelp />
-      <LiveChatWidget />
       <Navbar />
       <main>
         <HeroSection />
