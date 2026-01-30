@@ -246,29 +246,25 @@ export const CADEActivationPitch = ({ domain }: CADEActivationPitchProps) => {
                 <Brain className="w-14 h-14 text-white" />
               </div>
               
-              {/* Orbiting icons */}
-              {[Bot, Cpu, Network, Workflow].map((Icon, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-10 h-10 rounded-xl bg-background/80 backdrop-blur-sm border border-violet-500/30 flex items-center justify-center shadow-lg"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                  }}
-                  animate={{
-                    x: Math.cos((i / 4) * Math.PI * 2) * 70 - 20,
-                    y: Math.sin((i / 4) * Math.PI * 2) * 70 - 20,
-                    rotate: [0, 360],
-                  }}
-                  transition={{
-                    x: { duration: 0 },
-                    y: { duration: 0 },
-                    rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-                  }}
-                >
-                  <Icon className="w-5 h-5 text-violet-400" />
-                </motion.div>
-              ))}
+              {/* Orbiting icons - static positions to prevent render glitches */}
+              {[Bot, Cpu, Network, Workflow].map((Icon, i) => {
+                const angle = (i / 4) * Math.PI * 2;
+                const x = Math.cos(angle) * 70 - 20;
+                const y = Math.sin(angle) * 70 - 20;
+                return (
+                  <div
+                    key={i}
+                    className="absolute w-10 h-10 rounded-xl bg-background/80 backdrop-blur-sm border border-violet-500/30 flex items-center justify-center shadow-lg"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: `translate(${x}px, ${y}px)`,
+                    }}
+                  >
+                    <Icon className="w-5 h-5 text-violet-400" />
+                  </div>
+                );
+              })}
               
               {/* Sparkle accents */}
               {[...Array(4)].map((_, i) => (
