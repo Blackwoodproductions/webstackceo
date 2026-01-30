@@ -32,7 +32,7 @@ const tabs = [
     description: 'SEO Rankings',
     icon: TrendingUp, 
     isPaid: true,
-    colorClass: 'amber' as const
+    colorClass: 'emerald' as const
   },
   { 
     id: 'aeo-geo' as DashboardTab, 
