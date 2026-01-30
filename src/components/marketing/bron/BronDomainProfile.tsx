@@ -213,12 +213,12 @@ export const BronDomainProfile = memo(({
       {/* Full Content */}
       {!isCollapsed && (
         <>
-          {/* Collapse button in top-right */}
+          {/* Collapse button in top-right - z-30 to stay above map z-20 */}
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleCollapsed}
-            className="absolute top-2 right-2 z-10 gap-1.5 h-7 text-xs bg-background/80 hover:bg-background"
+            className="absolute top-2 right-2 z-30 gap-1.5 h-7 text-xs bg-background/80 hover:bg-background"
           >
             <Minimize2 className="w-3.5 h-3.5" />
             Minimize
