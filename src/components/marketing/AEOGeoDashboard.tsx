@@ -666,6 +666,17 @@ const KeywordAEOCard = memo(({
                 </div>
               </div>
             )}
+            
+            {/* Centered Collapse Button - Only visible when expanded */}
+            <div className="flex justify-center pt-3 mt-2 border-t border-border/20">
+              <button
+                onClick={onToggle}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-[10px] text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/50 rounded-full border border-border/40 transition-colors"
+              >
+                <ChevronDown className="w-3 h-3 rotate-180" />
+                Collapse
+              </button>
+            </div>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
