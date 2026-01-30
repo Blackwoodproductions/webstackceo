@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-api";
 import { getTargetKeyword, getPosition } from "./BronKeywordCard";
-import { findSerpForKeyword } from "./utils";
+import { findSerpForKeyword, findSerpByKeywordId } from "./utils";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { format } from "date-fns";
 
@@ -313,7 +313,16 @@ export const BronKeywordAnalysisDialog = memo(({
       positionsPerKeyword[kw.id] = [];
     });
     
-    filteredHistory.forEach(item => {
+    // Sort history chronologically (oldest first)
+    const sortedHistoryByTime = [...filteredHistory].sort((a, b) => {
+      const tsA = getSerpListItemTimestamp(a) ?? 0;
+      const tsB = getSerpListItemTimestamp(b) ?? 0;
+      return tsA - tsB;
+    });
+    
+    let debugLogged = false;
+    
+    sortedHistoryByTime.forEach(item => {
       const reportId = getReportId(item);
       const reportData = historicalData.get(reportId);
       if (!reportData || reportData.length === 0) return;
@@ -325,15 +334,36 @@ export const BronKeywordAnalysisDialog = memo(({
       let hasAnyPosition = false;
       
       allKeywords.forEach(kw => {
-        const serpItem = findSerpForKeyword(kw.text, reportData);
+        // Try multiple matching strategies
+        let serpItem = findSerpForKeyword(kw.text, reportData);
+        
+        // Fallback: Try matching by keyword ID
+        if (!serpItem) {
+          serpItem = findSerpByKeywordId(kw.keyword.id, reportData);
+        }
+        
+        // Debug log for first iteration
+        if (!debugLogged && !serpItem && reportData.length > 0) {
+          console.log('[BronKeywordAnalysisDialog] No match for keyword:', kw.text, 
+            'Available SERP keywords:', reportData.slice(0, 5).map(r => ({
+              keyword: r.keyword,
+              google: r.google,
+              id: (r as any).id,
+              keyword_id: (r as any).keyword_id
+            }))
+          );
+        }
+        
         let pos: number | null = null;
         
-        if (engine === "google") {
-          pos = getPosition(serpItem?.google);
-        } else if (engine === "bing") {
-          pos = getPosition(serpItem?.bing);
-        } else if (engine === "yahoo") {
-          pos = getPosition(serpItem?.yahoo);
+        if (serpItem) {
+          if (engine === "google") {
+            pos = getPosition(serpItem.google);
+          } else if (engine === "bing") {
+            pos = getPosition(serpItem.bing);
+          } else if (engine === "yahoo") {
+            pos = getPosition(serpItem.yahoo);
+          }
         }
         
         if (pos !== null) {
@@ -345,9 +375,17 @@ export const BronKeywordAnalysisDialog = memo(({
         point[kw.id] = pos ?? UNRANKED_POSITION;
       });
       
+      debugLogged = true;
+      
       if (hasAnyPosition) {
         data.push(point);
       }
+    });
+    
+    // Log summary
+    console.log(`[BronKeywordAnalysisDialog] ${engine} chart data:`, {
+      dataPoints: data.length,
+      keywords: allKeywords.map(kw => ({ id: kw.id, text: kw.text, positions: positionsPerKeyword[kw.id]?.length || 0 }))
     });
     
     // Calculate summaries for each keyword
