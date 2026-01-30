@@ -17,6 +17,7 @@ interface VIDashboardTabsProps {
   variant?: 'default' | 'compact';
 }
 
+// Tab order: Visitor → Maps → PPC → Bron → AEO/GEO → Cade → Social → SEO
 const tabs = [
   { 
     id: 'visitor-intelligence' as DashboardTab, 
@@ -33,6 +34,14 @@ const tabs = [
     icon: MapPin, 
     isPaid: false, // Included with $15/domain
     colorClass: 'sky' as const
+  },
+  { 
+    id: 'landing-pages' as DashboardTab, 
+    label: 'PPC', 
+    description: 'Paid Ads',
+    icon: Target, 
+    isPaid: true,
+    colorClass: 'rose' as const
   },
   { 
     id: 'bron' as DashboardTab, 
@@ -74,14 +83,6 @@ const tabs = [
     icon: FileSearch, 
     isPaid: true,
     colorClass: 'emerald' as const
-  },
-  { 
-    id: 'landing-pages' as DashboardTab, 
-    label: 'PPC', 
-    description: 'Paid Ads',
-    icon: Target, 
-    isPaid: true,
-    colorClass: 'rose' as const
   },
 ];
 
