@@ -1760,22 +1760,8 @@ const MarketingDashboard = () => {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 max-w-md text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
-          <p className="text-muted-foreground mb-6">
-            You don't have permission to access the visitor intelligence dashboard.
-          </p>
-          <Button onClick={handleLogout} variant="outline">
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </Card>
-      </div>
-    );
-  }
+  // Note: Any authenticated user can access the dashboard
+  // Feature access is controlled by subscription tier via FeatureGate components
 
   // Calculate funnel percentages
   const funnelSteps = [
