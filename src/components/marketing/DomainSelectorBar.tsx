@@ -1,4 +1,5 @@
-import { Globe, Plus, CalendarIcon, Filter, X } from 'lucide-react';
+import { useState } from 'react';
+import { Globe, Plus, CalendarIcon, Filter, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -11,6 +12,16 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -53,6 +64,8 @@ export function DomainSelectorBar({
   centerContent,
   rightContent,
 }: DomainSelectorBarProps) {
+  const [deleteConfirmDomain, setDeleteConfirmDomain] = useState<string | null>(null);
+  
   const normalizeDomainKey = (input: string) =>
     input
       .toLowerCase()
@@ -131,13 +144,11 @@ export function DomainSelectorBar({
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              if (confirm(`Remove "${domain}" and all its cached data?`)) {
-                                onRemoveDomain(domain);
-                              }
+                              setDeleteConfirmDomain(domain);
                             }}
-                            title="Remove domain and all cached data"
+                            title="Delete domain and all cached data"
                           >
-                            <X className="w-3 h-3 text-destructive" />
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
                           </button>
                         )}
                       </div>
@@ -269,6 +280,37 @@ export function DomainSelectorBar({
       
       {/* Bottom accent line - static */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent pointer-events-none" />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmDomain} onOpenChange={(open) => !open && setDeleteConfirmDomain(null)}>
+        <AlertDialogContent className="bg-card border border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Delete Domain
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong className="text-foreground">{deleteConfirmDomain}</strong>? 
+              This will remove all cached data including keywords, metrics, and screenshots. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirmDomain && onRemoveDomain) {
+                  onRemoveDomain(deleteConfirmDomain);
+                }
+                setDeleteConfirmDomain(null);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Domain
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
