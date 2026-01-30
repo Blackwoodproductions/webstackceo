@@ -22,11 +22,11 @@ interface LLMResult {
   error?: string;
 }
 
-// All models to check - run in parallel
+// All models to check - run in parallel (using valid Lovable AI model IDs)
 const MODELS_TO_CHECK = [
   { id: 'google/gemini-3-flash-preview', displayName: 'Google Gemini', icon: '🔷' },
-  { id: 'openai/gpt-5', displayName: 'ChatGPT', icon: '🟢' },
-  { id: 'openai/gpt-5-mini', displayName: 'GPT-5 Mini', icon: '🟡' },
+  { id: 'google/gemini-2.5-flash', displayName: 'Gemini Flash', icon: '⚡' },
+  { id: 'google/gemini-2.5-pro', displayName: 'Gemini Pro', icon: '🔷' },
 ];
 
 async function queryLLM(
