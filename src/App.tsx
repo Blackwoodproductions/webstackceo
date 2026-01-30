@@ -112,6 +112,31 @@ const queryClient = new QueryClient({
 
 import { VisitorTrackingProvider } from "@/components/VisitorTrackingProvider";
 
+// Component to hide floating elements during auth
+const FloatingElements = () => {
+  const location = window.location.pathname;
+  const isAuthRoute = location.startsWith('/auth');
+  
+  if (isAuthRoute) return null;
+  
+  return (
+    <Suspense fallback={null}>
+      <ErrorBoundary fallback={<></>}>
+        <BetaNoticeBanner />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={<></>}>
+        <ShopSideTab />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={<></>}>
+        <FloatingCodeBox />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={<></>}>
+        <FloatingLiveStats />
+      </ErrorBoundary>
+    </Suspense>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
@@ -123,20 +148,7 @@ const App = () => (
             <BrowserRouter>
               <VisitorTrackingProvider>
                 <ScrollToTop />
-                <Suspense fallback={null}>
-                  <ErrorBoundary fallback={<></>}>
-                    <BetaNoticeBanner />
-                  </ErrorBoundary>
-                  <ErrorBoundary fallback={<></>}>
-                    <ShopSideTab />
-                  </ErrorBoundary>
-                  <ErrorBoundary fallback={<></>}>
-                    <FloatingCodeBox />
-                  </ErrorBoundary>
-                  <ErrorBoundary fallback={<></>}>
-                    <FloatingLiveStats />
-                  </ErrorBoundary>
-                </Suspense>
+                <FloatingElements />
                 <ErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
