@@ -654,10 +654,10 @@ export const BronKeywordAnalysisDialog = memo(({
             </div>
           </DialogHeader>
 
-          {/* Chart Section - Uses full height, renders immediately as data arrives */}
+          {/* Chart Section - Only renders once data exists */}
           <div className="flex-1 min-h-0 flex flex-col">
-            {historicalData.size > 0 || filteredHistory.length > 0 ? (
-              <div className="flex-1 min-h-0 flex flex-col relative">
+            {historicalData.size > 0 ? (
+              <div className="flex-1 min-h-0 flex flex-col">
                 <BronMultiKeywordTrendChart
                   keywords={chartKeywords}
                   serpReportsMap={historicalData}
@@ -666,7 +666,10 @@ export const BronKeywordAnalysisDialog = memo(({
                   maxKeywords={3}
                 />
               </div>
-            ) : !isLoading ? (
+            ) : isLoading ? (
+              /* Show nothing while loading - chart will appear as soon as first data arrives */
+              null
+            ) : (
               <div className="flex flex-col items-center justify-center flex-1 gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
                   <Activity className="w-6 h-6 text-muted-foreground" />
@@ -676,7 +679,7 @@ export const BronKeywordAnalysisDialog = memo(({
                   <p className="text-xs mt-1">Historical reports: {filteredHistory.length}</p>
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
 
         </div>
