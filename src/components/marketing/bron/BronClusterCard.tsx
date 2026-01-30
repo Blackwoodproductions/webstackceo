@@ -34,9 +34,12 @@ interface BronClusterCardProps {
   onOpenAnalysis?: (kw: BronKeyword) => void;
 }
 
-// Tree connector line component - uses CSS only, no animations
+// Tree connector line component - positioned absolutely to not affect grid alignment
 const TreeConnector = memo(({ isLast }: { isLast: boolean }) => (
-  <div className="flex items-stretch shrink-0" style={{ width: '28px', contain: 'strict' }}>
+  <div 
+    className="absolute left-0 top-0 bottom-0 flex items-stretch shrink-0 pointer-events-none" 
+    style={{ width: '28px', contain: 'strict' }}
+  >
     <div className={`w-px bg-amber-500/40 ${isLast ? 'h-1/2' : 'h-full'}`} style={{ marginLeft: '8px' }} />
     <div className="flex items-center h-full" style={{ marginLeft: '-1px' }}>
       <div className="w-4 h-px bg-amber-500/40" />
@@ -270,55 +273,54 @@ function ClusterKeywordRowImpl({
 
   return (
     <div 
-      className="no-theme-transition"
+      className="no-theme-transition relative"
       style={{ contain: 'layout style' }}
       data-no-theme-transition
     >
-      <div className="flex items-stretch">
-        {isNested && <TreeConnector isLast={isLastChild} />}
+      {/* Tree connector positioned absolutely - doesn't affect grid */}
+      {isNested && <TreeConnector isLast={isLastChild} />}
+      
+      <div className="w-full">
+        <BronKeywordCard
+          keyword={kw}
+          serpData={serpData}
+          keywordMetrics={keywordMetrics[keywordText.toLowerCase()]}
+          pageSpeedScore={pageSpeed}
+          linksInCount={keywordLinksIn.length}
+          linksOutCount={keywordLinksOut.length}
+          isExpanded={isExpanded}
+          isNested={isNested}
+          isTrackingOnly={isTrackingOnly}
+          isMainKeyword={isMainKeyword}
+          clusterChildCount={clusterChildCount}
+          selectedDomain={selectedDomain}
+          googleMovement={googleMovement}
+          bingMovement={bingMovement}
+          yahooMovement={yahooMovement}
+          metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
+          isBaselineReport={isBaselineReport}
+          onToggleExpand={handleToggle}
+          onOpenAnalysis={onOpenAnalysis ? handleOpenAnalysis : undefined}
+        />
         
-        <div className="flex-1 min-w-0">
-          <BronKeywordCard
-            keyword={kw}
-            serpData={serpData}
-            keywordMetrics={keywordMetrics[keywordText.toLowerCase()]}
-            pageSpeedScore={pageSpeed}
-            linksInCount={keywordLinksIn.length}
-            linksOutCount={keywordLinksOut.length}
-            isExpanded={isExpanded}
-            isNested={isNested}
-            isTrackingOnly={isTrackingOnly}
-            isMainKeyword={isMainKeyword}
-            clusterChildCount={clusterChildCount}
-            selectedDomain={selectedDomain}
-            googleMovement={googleMovement}
-            bingMovement={bingMovement}
-            yahooMovement={yahooMovement}
-            metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
-            isBaselineReport={isBaselineReport}
-            onToggleExpand={handleToggle}
-            onOpenAnalysis={onOpenAnalysis ? handleOpenAnalysis : undefined}
-          />
-          
-          {/* Expanded content - lazy render */}
-          {isExpanded && inlineEditForms[kw.id] && (
-            <div style={{ contain: 'layout style paint' }}>
-              <BronKeywordExpanded
-                keyword={kw}
-                isTrackingOnly={isTrackingOnly}
-                selectedDomain={selectedDomain}
-                linksIn={keywordLinksIn}
-                linksOut={keywordLinksOut}
-                formData={inlineEditForms[kw.id] as any}
-                isSaving={savingIds.has(kw.id)}
-                onUpdateForm={handleUpdateField}
-                onSave={handleSaveKw}
-                onOpenArticleEditor={handleOpenEditor}
-                onToggleLink={onToggleLink}
-              />
-            </div>
-          )}
-        </div>
+        {/* Expanded content - lazy render */}
+        {isExpanded && inlineEditForms[kw.id] && (
+          <div style={{ contain: 'layout style paint' }}>
+            <BronKeywordExpanded
+              keyword={kw}
+              isTrackingOnly={isTrackingOnly}
+              selectedDomain={selectedDomain}
+              linksIn={keywordLinksIn}
+              linksOut={keywordLinksOut}
+              formData={inlineEditForms[kw.id] as any}
+              isSaving={savingIds.has(kw.id)}
+              onUpdateForm={handleUpdateField}
+              onSave={handleSaveKw}
+              onOpenArticleEditor={handleOpenEditor}
+              onToggleLink={onToggleLink}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -415,9 +417,9 @@ export const BronClusterCard = memo(({
         onOpenAnalysis={onOpenAnalysis}
       />
       
-      {/* Children with tree connectors */}
+      {/* Children container: ml = parent's (chart column 52px + px-4 padding 16px - child px-3 padding 12px) = 56px */}
       {cluster.children.length > 0 && (
-        <div className="ml-4 border-l-2 border-amber-500/30 pl-0">
+        <div className="border-l-2 border-amber-500/30 ml-[56px]">
           {cluster.children.map((child, idx) => (
             <ClusterKeywordRow
               key={child.id}
