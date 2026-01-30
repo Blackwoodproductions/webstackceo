@@ -367,9 +367,12 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
   }
 
   // ─── Main Render ───
+  // Only show stats footer when keywords have loaded
+  const showStatsFooter = selectedDomain && stableKeywords.length > 0;
+
   return (
     <div 
-      className="space-y-6 no-theme-transition" 
+      className={`space-y-6 no-theme-transition ${showStatsFooter ? 'pb-20' : ''}`}
       style={{ contain: "layout style paint" }}
       data-no-theme-transition
     >
@@ -469,8 +472,8 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
         </TabsContent>
       </Tabs>
       
-      {/* Stats Footer Bar */}
-      {selectedDomain && (
+      {/* Stats Footer Bar - only show after keywords loaded */}
+      {showStatsFooter && (
         <BronStatsFooter
           keywords={stableKeywords}
           serpReports={stableSerpReports}
