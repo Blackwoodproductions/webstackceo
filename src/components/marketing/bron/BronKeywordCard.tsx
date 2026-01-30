@@ -450,6 +450,13 @@ export const BronKeywordCard = memo(({
     return null;
   }, [kw.linkouturl, selectedDomain, keywordText, isTrackingOnly]);
 
+  // Nested/supporting keywords are smaller
+  const isCompact = isNested;
+  const rowPadding = isCompact ? 'p-2.5' : 'p-4';
+  const gaugeSize = isCompact ? 'w-10 h-10' : 'w-12 h-12';
+  const textSize = isCompact ? 'text-sm' : 'text-base';
+  const badgeSize = isCompact ? 'text-[8px] h-4 px-1.5' : 'text-[9px] h-5 px-2';
+  
   return (
     <div
       className={`${deleted ? 'opacity-50' : ''} no-theme-transition`}
@@ -472,22 +479,30 @@ export const BronKeywordCard = memo(({
         style={{ contain: 'layout style' }}
       >
         {/* Header - Clickable */}
-        <div className="p-4 cursor-pointer overflow-x-auto" onClick={onToggleExpand}>
-          <div className="flex items-center w-full justify-between" style={{ minWidth: '1050px' }}>
+        <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
+          {/* Grid-based layout for consistent columns */}
+          <div 
+            className="grid items-center gap-2" 
+            style={{ 
+              gridTemplateColumns: '70px 1fr 140px 220px 140px 80px 40px',
+              minWidth: '900px'
+            }}
+          >
             {/* Column 1: Page Speed Gauge */}
-            <div className="w-[70px] flex-shrink-0 flex items-center justify-center">
-              <PageSpeedGauge 
-                score={pageSpeedScore?.mobileScore || 0}
-                loading={pageSpeedScore?.loading}
-                updating={pageSpeedScore?.updating}
-                error={pageSpeedScore?.error}
-              />
+            <div className="flex items-center justify-center">
+              <div className={gaugeSize}>
+                <PageSpeedGauge 
+                  score={pageSpeedScore?.mobileScore || 0}
+                  loading={pageSpeedScore?.loading}
+                  updating={pageSpeedScore?.updating}
+                  error={pageSpeedScore?.error}
+                />
+              </div>
             </div>
 
             {/* Column 2: Keyword Text */}
-            <div className="w-[380px] flex-shrink-0 pr-4">
+            <div className="min-w-0 pr-2">
               <div className="flex items-center gap-2">
-                {/* Small colored dot indicator */}
                 <span 
                   className={`w-2 h-2 rounded-full shrink-0 ${
                     isNested 
@@ -499,7 +514,7 @@ export const BronKeywordCard = memo(({
                 />
                 
                 <h3 
-                  className={`font-medium truncate max-w-[300px] ${
+                  className={`font-medium truncate ${textSize} ${
                     isNested 
                       ? 'text-amber-600 dark:text-amber-400' 
                       : isMainKeyword 
@@ -520,18 +535,17 @@ export const BronKeywordCard = memo(({
                     className="flex-shrink-0 p-1 rounded-md hover:bg-primary/20"
                     title={`Open ${keywordUrl}`}
                   >
-                    <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                    <ArrowUpRight className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-muted-foreground hover:text-primary`} />
                   </a>
                 )}
                 
-                {/* Role badges - simplified */}
                 {isNested && (
-                  <Badge className="text-[9px] h-5 px-2 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 whitespace-nowrap">
+                  <Badge className={`${badgeSize} bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 whitespace-nowrap`}>
                     Supporting
                   </Badge>
                 )}
                 {isTrackingOnly && (
-                  <Badge className="text-[9px] h-5 px-2 bg-muted text-muted-foreground border-muted-foreground/30 whitespace-nowrap">
+                  <Badge className={`${badgeSize} bg-muted text-muted-foreground border-muted-foreground/30 whitespace-nowrap`}>
                     Tracking
                   </Badge>
                 )}
@@ -539,19 +553,19 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 3: Intent Badge */}
-            <div className="w-[140px] flex-shrink-0 flex items-center justify-center">
-              <div className="w-[130px] bg-card border border-border/60 rounded-md px-3 py-1.5 flex items-center gap-2 justify-center">
-                <div className={`w-5 h-5 rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
-                  <IntentIcon className={`w-3 h-3 ${intent.color}`} />
+            <div className="flex items-center justify-center">
+              <div className={`${isCompact ? 'w-[110px] px-2 py-1' : 'w-[130px] px-3 py-1.5'} bg-card border border-border/60 rounded-md flex items-center gap-2 justify-center`}>
+                <div className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
+                  <IntentIcon className={`${isCompact ? 'w-2.5 h-2.5' : 'w-3 h-3'} ${intent.color}`} />
                 </div>
-                <span className={`text-[10px] font-medium capitalize ${intent.color} whitespace-nowrap`}>
+                <span className={`${isCompact ? 'text-[9px]' : 'text-[10px]'} font-medium capitalize ${intent.color} whitespace-nowrap`}>
                   {intent.type}
                 </span>
               </div>
             </div>
 
             {/* Column 4: SERP Rankings */}
-            <div className="w-[220px] flex-shrink-0">
+            <div className="flex items-center justify-center">
               <RankingsDisplay
                 googlePos={googlePos}
                 bingPos={bingPos}
@@ -563,7 +577,7 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 5: Keyword Metrics */}
-            <div className="w-[140px] flex-shrink-0">
+            <div className="flex items-center justify-center">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
@@ -572,28 +586,31 @@ export const BronKeywordCard = memo(({
             </div>
 
             {/* Column 6: Links Display */}
-            <div className="w-[80px] flex-shrink-0 flex justify-center">
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40">
+            <div className="flex items-center justify-center">
+              <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-semibold text-cyan-400">{linksInCount}</span>
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-cyan-400`}>{linksInCount}</span>
+                  <ArrowDownLeft className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-cyan-400`} />
                 </div>
-                <div className="w-px h-4 bg-border/40" />
+                <div className={`w-px ${isCompact ? 'h-3' : 'h-4'} bg-border/40`} />
                 <div className="flex items-center gap-1">
-                  <ArrowUpRight className="w-3.5 h-3.5 text-violet-400" />
-                  <span className="text-xs font-semibold text-violet-400">{linksOutCount}</span>
+                  <ArrowUpRight className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-violet-400`} />
+                  <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-violet-400`}>{linksOutCount}</span>
                 </div>
               </div>
             </div>
 
             {/* Column 7: Expand/Collapse */}
-            <div className="w-[40px] flex-shrink-0 flex justify-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            <div className="flex items-center justify-center">
+              <div className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-full flex items-center justify-center ${
                 isExpanded 
                   ? 'bg-primary/20 text-primary' 
                   : 'bg-muted/50 text-muted-foreground'
               }`}>
-                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                {isExpanded 
+                  ? <ChevronUp className={isCompact ? 'w-4 h-4' : 'w-5 h-5'} /> 
+                  : <ChevronDown className={isCompact ? 'w-4 h-4' : 'w-5 h-5'} />
+                }
               </div>
             </div>
           </div>
