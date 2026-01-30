@@ -1,6 +1,5 @@
-import { memo, useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, Layers } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { memo, useState, useMemo, useCallback } from "react";
+import { ChevronDown, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { BronKeywordCard, getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
@@ -34,12 +33,10 @@ interface BronClusterCardProps {
   onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
 }
 
-// Tree connector line component
+// Tree connector line component - uses CSS only, no animations
 const TreeConnector = memo(({ isLast }: { isLast: boolean }) => (
-  <div className="flex items-stretch shrink-0" style={{ width: '28px' }}>
-    {/* Vertical line */}
+  <div className="flex items-stretch shrink-0" style={{ width: '28px', contain: 'strict' }}>
     <div className={`w-px bg-amber-500/40 ${isLast ? 'h-1/2' : 'h-full'}`} style={{ marginLeft: '8px' }} />
-    {/* Horizontal connector */}
     <div className="flex items-center h-full" style={{ marginLeft: '-1px' }}>
       <div className="w-4 h-px bg-amber-500/40" />
       <div className="w-2 h-2 rounded-full bg-amber-500/60 border border-amber-400/80 shrink-0" />
@@ -48,8 +45,55 @@ const TreeConnector = memo(({ isLast }: { isLast: boolean }) => (
 ));
 TreeConnector.displayName = 'TreeConnector';
 
-// Single keyword row within a cluster
-const ClusterKeywordRow = memo(({
+// Props comparison for ClusterKeywordRow memoization
+function areClusterKeywordRowPropsEqual(
+  prev: Parameters<typeof ClusterKeywordRowImpl>[0],
+  next: Parameters<typeof ClusterKeywordRowImpl>[0]
+): boolean {
+  // Fast identity checks first
+  if (prev.kw.id !== next.kw.id) return false;
+  if (prev.isExpanded !== next.isExpanded) return false;
+  if (prev.isNested !== next.isNested) return false;
+  if (prev.isLastChild !== next.isLastChild) return false;
+  if (prev.isMainKeyword !== next.isMainKeyword) return false;
+  if (prev.selectedDomain !== next.selectedDomain) return false;
+  if (prev.clusterChildCount !== next.clusterChildCount) return false;
+  
+  // Check if saving state changed
+  if (prev.savingIds.has(prev.kw.id) !== next.savingIds.has(next.kw.id)) return false;
+  
+  // Check if form data changed (reference comparison is usually sufficient)
+  if (prev.inlineEditForms[prev.kw.id] !== next.inlineEditForms[next.kw.id]) return false;
+  
+  // Check keyword content changes
+  if (prev.kw.keywordtitle !== next.kw.keywordtitle) return false;
+  if (prev.kw.keyword !== next.kw.keyword) return false;
+  if (prev.kw.linkouturl !== next.kw.linkouturl) return false;
+  if (prev.kw.deleted !== next.kw.deleted) return false;
+  if (prev.kw.active !== next.kw.active) return false;
+  
+  // Check metrics loading
+  const keywordText = getKeywordDisplayText(prev.kw).toLowerCase();
+  if (prev.metricsLoadingKeys.has(keywordText) !== next.metricsLoadingKeys.has(keywordText)) return false;
+  
+  // Check metrics values
+  const prevMetrics = prev.keywordMetrics[keywordText];
+  const nextMetrics = next.keywordMetrics[keywordText];
+  if ((prevMetrics?.cpc ?? null) !== (nextMetrics?.cpc ?? null)) return false;
+  if ((prevMetrics?.search_volume ?? null) !== (nextMetrics?.search_volume ?? null)) return false;
+  
+  // Reference checks for arrays (fast)
+  if (prev.serpReports !== next.serpReports) return false;
+  if (prev.linksIn !== next.linksIn) return false;
+  if (prev.linksOut !== next.linksOut) return false;
+  if (prev.initialPositions !== next.initialPositions) return false;
+  if (prev.pageSpeedScores !== next.pageSpeedScores) return false;
+  
+  return true;
+}
+
+// Single keyword row within a cluster - implementation
+function ClusterKeywordRowImpl({
   kw,
   isNested,
   isLastChild,
@@ -93,43 +137,61 @@ const ClusterKeywordRow = memo(({
   onSave: (kw: BronKeyword) => void;
   onOpenArticleEditor: (kw: BronKeyword) => void;
   onToggleLink?: (linkId: string | number, currentDisabled: string, domain: string) => Promise<boolean>;
-}) => {
-  const keywordText = getKeywordDisplayText(kw);
+}) {
+  const keywordText = useMemo(() => getKeywordDisplayText(kw), [kw]);
   const isTrackingOnly = kw.status === 'tracking_only' || String(kw.id).startsWith('serp_');
-  const serpData = findSerpForKeyword(keywordText, serpReports);
+  const serpData = useMemo(() => findSerpForKeyword(keywordText, serpReports), [keywordText, serpReports]);
   
-  // Filter links for this specific keyword
-  const { keywordLinksIn, keywordLinksOut } = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
+  // Filter links for this specific keyword - memoized
+  const { keywordLinksIn, keywordLinksOut } = useMemo(
+    () => filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain),
+    [kw, linksIn, linksOut, selectedDomain]
+  );
   
-  // Calculate movements
-  const initial = initialPositions[keywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
-  const currentGoogle = getPosition(serpData?.google);
-  const currentBing = getPosition(serpData?.bing);
-  const currentYahoo = getPosition(serpData?.yahoo);
-  
-  const googleMovement = initial.google && currentGoogle ? initial.google - currentGoogle : 0;
-  const bingMovement = initial.bing && currentBing ? initial.bing - currentBing : 0;
-  const yahooMovement = initial.yahoo && currentYahoo ? initial.yahoo - currentYahoo : 0;
-  
-  // Get PageSpeed URL
-  let keywordUrl = kw.linkouturl;
-  if (!keywordUrl && selectedDomain && !isTrackingOnly) {
-    const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    keywordUrl = `https://${selectedDomain}/${slug}`;
-  }
-  const pageSpeed = keywordUrl ? pageSpeedScores[keywordUrl] : undefined;
+  // Calculate movements - memoized
+  const { googleMovement, bingMovement, yahooMovement, pageSpeed } = useMemo(() => {
+    const initial = initialPositions[keywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
+    const currentGoogle = getPosition(serpData?.google);
+    const currentBing = getPosition(serpData?.bing);
+    const currentYahoo = getPosition(serpData?.yahoo);
+    
+    const gMove = initial.google && currentGoogle ? initial.google - currentGoogle : 0;
+    const bMove = initial.bing && currentBing ? initial.bing - currentBing : 0;
+    const yMove = initial.yahoo && currentYahoo ? initial.yahoo - currentYahoo : 0;
+    
+    // Get PageSpeed URL
+    let keywordUrl = kw.linkouturl;
+    if (!keywordUrl && selectedDomain && !isTrackingOnly) {
+      const slug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      keywordUrl = `https://${selectedDomain}/${slug}`;
+    }
+    
+    return {
+      googleMovement: gMove,
+      bingMovement: bMove,
+      yahooMovement: yMove,
+      pageSpeed: keywordUrl ? pageSpeedScores[keywordUrl] : undefined,
+    };
+  }, [keywordText, serpData, initialPositions, kw.linkouturl, selectedDomain, isTrackingOnly, pageSpeedScores]);
+
+  // Stable callback refs
+  const handleToggle = useCallback(() => onToggleExpand(kw), [onToggleExpand, kw]);
+  const handleUpdateField = useCallback(
+    (field: string, value: string) => onUpdateForm(kw.id, field, value),
+    [onUpdateForm, kw.id]
+  );
+  const handleSaveKw = useCallback(() => onSave(kw), [onSave, kw]);
+  const handleOpenEditor = useCallback(() => onOpenArticleEditor(kw), [onOpenArticleEditor, kw]);
 
   return (
     <div 
       className="no-theme-transition"
-      style={{ contain: 'layout style' }}
+      style={{ contain: 'layout style', contentVisibility: 'auto', containIntrinsicSize: '0 60px' }}
       data-no-theme-transition
     >
       <div className="flex items-stretch">
-        {/* Tree connector for nested keywords */}
         {isNested && <TreeConnector isLast={isLastChild} />}
         
-        {/* Keyword card - full width minus connector */}
         <div className="flex-1 min-w-0">
           <BronKeywordCard
             keyword={kw}
@@ -148,10 +210,10 @@ const ClusterKeywordRow = memo(({
             bingMovement={bingMovement}
             yahooMovement={yahooMovement}
             metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
-            onToggleExpand={() => onToggleExpand(kw)}
+            onToggleExpand={handleToggle}
           />
           
-          {/* Expanded content */}
+          {/* Expanded content - lazy render */}
           {isExpanded && inlineEditForms[kw.id] && (
             <div style={{ contain: 'layout style paint' }}>
               <BronKeywordExpanded
@@ -162,9 +224,9 @@ const ClusterKeywordRow = memo(({
                 linksOut={keywordLinksOut}
                 formData={inlineEditForms[kw.id] as any}
                 isSaving={savingIds.has(kw.id)}
-                onUpdateForm={(field, value) => onUpdateForm(kw.id, field, value)}
-                onSave={() => onSave(kw)}
-                onOpenArticleEditor={() => onOpenArticleEditor(kw)}
+                onUpdateForm={handleUpdateField}
+                onSave={handleSaveKw}
+                onOpenArticleEditor={handleOpenEditor}
                 onToggleLink={onToggleLink}
               />
             </div>
@@ -173,7 +235,10 @@ const ClusterKeywordRow = memo(({
       </div>
     </div>
   );
-});
+}
+
+// Memoized wrapper
+const ClusterKeywordRow = memo(ClusterKeywordRowImpl, areClusterKeywordRowPropsEqual);
 ClusterKeywordRow.displayName = 'ClusterKeywordRow';
 
 // Main Cluster Card Component
@@ -233,18 +298,21 @@ export const BronClusterCard = memo(({
     );
   }
 
-  // Cluster card with header and children
+  // Cluster card with header and children - CSS-only transitions for performance
+  const toggleCluster = useCallback(() => setClusterExpanded(e => !e), []);
+  
   return (
     <div 
       className="relative rounded-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-500/5 overflow-hidden"
       style={{ contain: 'layout style paint' }}
     >
       {/* Cluster Header */}
-      <div 
-        className="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-500/20 cursor-pointer hover:bg-blue-500/15 transition-colors"
-        onClick={() => setClusterExpanded(!clusterExpanded)}
+      <button 
+        type="button"
+        className="flex items-center gap-3 px-4 py-3 w-full text-left bg-blue-500/10 border-b border-blue-500/20 cursor-pointer hover:bg-blue-500/15 transition-colors"
+        onClick={toggleCluster}
       >
-        <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0">
           <Layers className="w-4 h-4 text-blue-400" />
         </div>
         
@@ -258,36 +326,64 @@ export const BronClusterCard = memo(({
           Main · {cluster.children.length}
         </Badge>
         
-        <div className={`w-7 h-7 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 transition-transform ${clusterExpanded ? 'rotate-0' : '-rotate-90'}`}>
+        <div 
+          className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 transition-transform duration-150"
+          style={{ transform: clusterExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+        >
           <ChevronDown className="w-4 h-4" />
         </div>
-      </div>
+      </button>
       
-      {/* Cluster Content */}
-      <AnimatePresence initial={false}>
-        {clusterExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="p-3 space-y-2">
-              {/* Parent keyword row */}
+      {/* Cluster Content - CSS height transition instead of framer-motion */}
+      <div 
+        className="overflow-hidden transition-[max-height] duration-200 ease-out"
+        style={{ 
+          maxHeight: clusterExpanded ? '5000px' : '0px',
+          contain: 'layout style'
+        }}
+      >
+        <div className="p-3 space-y-2">
+          {/* Parent keyword row */}
+          <ClusterKeywordRow
+            kw={cluster.parent}
+            isNested={false}
+            isLastChild={false}
+            isMainKeyword={true}
+            clusterChildCount={cluster.children.length}
+            serpReports={serpReports}
+            keywordMetrics={keywordMetrics}
+            pageSpeedScores={pageSpeedScores}
+            linksIn={linksIn}
+            linksOut={linksOut}
+            selectedDomain={selectedDomain}
+            isExpanded={expandedIds.has(cluster.parent.id)}
+            initialPositions={initialPositions}
+            metricsLoadingKeys={metricsLoadingKeys}
+            inlineEditForms={inlineEditForms}
+            savingIds={savingIds}
+            onToggleExpand={onToggleExpand}
+            onUpdateForm={onUpdateForm}
+            onSave={onSave}
+            onOpenArticleEditor={onOpenArticleEditor}
+            onToggleLink={onToggleLink}
+          />
+          
+          {/* Children with tree connectors */}
+          <div className="ml-4 border-l-2 border-amber-500/30 pl-0">
+            {cluster.children.map((child, idx) => (
               <ClusterKeywordRow
-                kw={cluster.parent}
-                isNested={false}
-                isLastChild={false}
-                isMainKeyword={true}
-                clusterChildCount={cluster.children.length}
+                key={child.id}
+                kw={child}
+                isNested={true}
+                isLastChild={idx === cluster.children.length - 1}
+                isMainKeyword={false}
                 serpReports={serpReports}
                 keywordMetrics={keywordMetrics}
                 pageSpeedScores={pageSpeedScores}
                 linksIn={linksIn}
                 linksOut={linksOut}
                 selectedDomain={selectedDomain}
-                isExpanded={expandedIds.has(cluster.parent.id)}
+                isExpanded={expandedIds.has(child.id)}
                 initialPositions={initialPositions}
                 metricsLoadingKeys={metricsLoadingKeys}
                 inlineEditForms={inlineEditForms}
@@ -298,39 +394,10 @@ export const BronClusterCard = memo(({
                 onOpenArticleEditor={onOpenArticleEditor}
                 onToggleLink={onToggleLink}
               />
-              
-              {/* Children with tree connectors */}
-              <div className="ml-4 border-l-2 border-amber-500/30 pl-0">
-                {cluster.children.map((child, idx) => (
-                  <ClusterKeywordRow
-                    key={child.id}
-                    kw={child}
-                    isNested={true}
-                    isLastChild={idx === cluster.children.length - 1}
-                    isMainKeyword={false}
-                    serpReports={serpReports}
-                    keywordMetrics={keywordMetrics}
-                    pageSpeedScores={pageSpeedScores}
-                    linksIn={linksIn}
-                    linksOut={linksOut}
-                    selectedDomain={selectedDomain}
-                    isExpanded={expandedIds.has(child.id)}
-                    initialPositions={initialPositions}
-                    metricsLoadingKeys={metricsLoadingKeys}
-                    inlineEditForms={inlineEditForms}
-                    savingIds={savingIds}
-                    onToggleExpand={onToggleExpand}
-                    onUpdateForm={onUpdateForm}
-                    onSave={onSave}
-                    onOpenArticleEditor={onOpenArticleEditor}
-                    onToggleLink={onToggleLink}
-                  />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }, (prev, next) => {
