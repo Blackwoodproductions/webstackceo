@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { OnPageSEOPlatformWizard } from './OnPageSEOPlatformWizard';
 import { OnPageSEOHealthMonitor } from './OnPageSEOHealthMonitor';
+import { OnPageSEOPricingTiers } from './OnPageSEOPricingTiers';
 
 interface SEOIssue {
   id: string;
@@ -330,6 +331,10 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
             <Shield className="w-4 h-4" />
             Health Monitor
           </TabsTrigger>
+          <TabsTrigger value="pricing" className="gap-2">
+            <Crown className="w-4 h-4" />
+            Plans
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -481,6 +486,16 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
         {/* Health Monitor Tab */}
         <TabsContent value="health">
           <OnPageSEOHealthMonitor domain={domain} />
+        </TabsContent>
+
+        {/* Pricing Tab */}
+        <TabsContent value="pricing">
+          <OnPageSEOPricingTiers 
+            pageCount={stats.pagesScanned}
+            onSubscribe={(tier) => {
+              toast.success(`Subscribed to ${tier} plan!`);
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>
