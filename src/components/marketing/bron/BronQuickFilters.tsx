@@ -86,18 +86,21 @@ export const BronQuickFilters = memo(({
               size="sm"
               onClick={() => onFilterChange(filter.id)}
               className={cn(
-                "h-7 px-2.5 text-xs gap-1.5 transition-all",
-                isActive ? filter.color : "hover:bg-muted/50"
+                "h-8 px-3 text-xs gap-1.5 transition-all cursor-pointer select-none font-medium",
+                "border border-transparent",
+                isActive 
+                  ? cn(filter.color, "border-current/30 shadow-sm") 
+                  : "hover:bg-muted/60 hover:border-border/50 active:scale-95"
               )}
             >
-              {Icon && <Icon className="w-3 h-3" />}
-              {filter.label}
+              {Icon && <Icon className="w-3.5 h-3.5" />}
+              <span>{filter.label}</span>
               {count > 0 && (
                 <Badge 
                   variant="secondary" 
                   className={cn(
-                    "h-4 px-1 text-[10px] font-mono",
-                    isActive && "bg-background/50"
+                    "h-5 min-w-[20px] px-1.5 text-[10px] font-mono font-semibold",
+                    isActive ? "bg-background/60" : "bg-muted"
                   )}
                 >
                   {count}
