@@ -639,11 +639,12 @@ export const BronKeywordCard = memo(({
             className="grid items-center gap-2 w-full" 
             style={{ 
               // All cards use the same grid for perfect vertical alignment
-              gridTemplateColumns: '52px 48px 44px 1fr 68px 68px 68px 170px 140px',  // 9 columns
+              // Column 1 narrower (44px) to shift analytics button left over tree line
+              gridTemplateColumns: '44px 52px 44px 1fr 68px 68px 68px 170px 140px',  // 9 columns
             }}
           >
-            {/* Column 1: Chart/Analysis Button OR spacer for nested cards */}
-            <div className="flex items-center justify-center">
+            {/* Column 1: Chart/Analysis Button OR spacer for nested cards - left-aligned to center over tree line */}
+            <div className="flex items-center justify-start">
               {!isNested && onOpenAnalysis ? (
                 <button
                   onClick={(e) => {
@@ -660,8 +661,8 @@ export const BronKeywordCard = memo(({
               )}
             </div>
 
-            {/* Column 2: Page Speed Gauge - fixed height container for consistent alignment */}
-            <div className="flex items-center justify-center h-12">
+            {/* Column 2: Page Speed Gauge - fixed width and height for consistent alignment */}
+            <div className="flex items-center justify-center w-[52px] h-12">
               <PageSpeedGauge 
                 score={pageSpeedScore?.mobileScore || 0}
                 loading={pageSpeedScore?.loading}
