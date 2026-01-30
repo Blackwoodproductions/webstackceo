@@ -2,7 +2,8 @@ import { useState, useCallback, memo, useEffect, useRef, useMemo } from 'react';
 import { 
   BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
   ChevronDown, ChevronRight, Lightbulb, Sparkles, 
-  MessageSquare, Play, Pause, Calendar, History, RefreshCw
+  MessageSquare, Play, Pause, Calendar, History, RefreshCw,
+  TrendingUp, TrendingDown, Minus, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useBronApi } from '@/hooks/use-bron-api';
 import { getTargetKeyword } from './bron/BronKeywordCard';
-import { format, subDays, startOfDay, isToday } from 'date-fns';
+import { format, subDays, startOfDay, isToday, differenceInDays } from 'date-fns';
 
 interface LLMResult {
   model: string;
@@ -275,6 +276,209 @@ const KeywordAEOCard = memo(({
   );
 });
 KeywordAEOCard.displayName = 'KeywordAEOCard';
+
+// Trend analysis component showing improvements over time
+const TrendSummaryCard = memo(({ 
+  domain, 
+  currentStats, 
+  availableDates 
+}: { 
+  domain: string; 
+  currentStats: { checked: number; prominent: number; mentioned: number };
+  availableDates: string[];
+}) => {
+  const [historicalStats, setHistoricalStats] = useState<{
+    date: string;
+    prominent: number;
+    mentioned: number;
+    total: number;
+  }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!domain || availableDates.length < 2) return;
+    
+    const loadHistory = async () => {
+      setIsLoading(true);
+      try {
+        const { data } = await supabase
+          .from('aeo_check_results')
+          .select('check_date, prominent_count, mentioned_count')
+          .eq('domain', domain)
+          .order('check_date', { ascending: true });
+        
+        if (data) {
+          // Group by date
+          const dateMap = new Map<string, { prominent: number; mentioned: number; total: number }>();
+          data.forEach(row => {
+            const existing = dateMap.get(row.check_date) || { prominent: 0, mentioned: 0, total: 0 };
+            existing.prominent += row.prominent_count;
+            existing.mentioned += row.mentioned_count;
+            existing.total += 1;
+            dateMap.set(row.check_date, existing);
+          });
+          
+          const history = Array.from(dateMap.entries()).map(([date, stats]) => ({
+            date,
+            ...stats,
+          }));
+          setHistoricalStats(history);
+        }
+      } catch (e) {
+        console.error('Failed to load trend history:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadHistory();
+  }, [domain, availableDates]);
+
+  // Calculate improvements
+  const improvements = useMemo(() => {
+    if (historicalStats.length < 2) return null;
+    
+    const oldest = historicalStats[0];
+    const newest = historicalStats[historicalStats.length - 1];
+    const daysDiff = differenceInDays(new Date(newest.date), new Date(oldest.date));
+    
+    const prominentChange = newest.prominent - oldest.prominent;
+    const mentionedChange = newest.mentioned - oldest.mentioned;
+    const totalVisibilityChange = (newest.prominent + newest.mentioned) - (oldest.prominent + oldest.mentioned);
+    
+    return {
+      prominentChange,
+      mentionedChange,
+      totalVisibilityChange,
+      daysDiff,
+      oldestDate: oldest.date,
+      newestDate: newest.date,
+      checksCompleted: historicalStats.length,
+    };
+  }, [historicalStats]);
+
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30">
+        <CardContent className="py-4 flex items-center justify-center">
+          <Loader2 className="w-5 h-5 animate-spin text-emerald-400 mr-2" />
+          <span className="text-sm text-muted-foreground">Loading trend data...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!improvements) {
+    return (
+      <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
+        <CardContent className="py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">LLM Training Active</p>
+              <p className="text-xs text-muted-foreground">
+                Automated checks run 3x weekly (Mon, Wed, Fri). More data needed to show trends.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border-emerald-500/30">
+      <CardContent className="py-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            {improvements.totalVisibilityChange > 0 ? (
+              <TrendingUp className="w-6 h-6 text-white" />
+            ) : improvements.totalVisibilityChange < 0 ? (
+              <TrendingDown className="w-6 h-6 text-white" />
+            ) : (
+              <Minus className="w-6 h-6 text-white" />
+            )}
+          </div>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="font-semibold text-sm">LLM Visibility Trend</h3>
+              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                {improvements.checksCompleted} checks over {improvements.daysDiff} days
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-2 bg-background/50 rounded-lg">
+                <div className="flex items-center justify-center gap-1">
+                  {improvements.prominentChange > 0 ? (
+                    <TrendingUp className="w-3 h-3 text-emerald-400" />
+                  ) : improvements.prominentChange < 0 ? (
+                    <TrendingDown className="w-3 h-3 text-red-400" />
+                  ) : (
+                    <Minus className="w-3 h-3 text-muted-foreground" />
+                  )}
+                  <span className={`text-lg font-bold ${
+                    improvements.prominentChange > 0 ? 'text-emerald-400' : 
+                    improvements.prominentChange < 0 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {improvements.prominentChange > 0 ? '+' : ''}{improvements.prominentChange}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Prominent</p>
+              </div>
+              
+              <div className="text-center p-2 bg-background/50 rounded-lg">
+                <div className="flex items-center justify-center gap-1">
+                  {improvements.mentionedChange > 0 ? (
+                    <TrendingUp className="w-3 h-3 text-amber-400" />
+                  ) : improvements.mentionedChange < 0 ? (
+                    <TrendingDown className="w-3 h-3 text-red-400" />
+                  ) : (
+                    <Minus className="w-3 h-3 text-muted-foreground" />
+                  )}
+                  <span className={`text-lg font-bold ${
+                    improvements.mentionedChange > 0 ? 'text-amber-400' : 
+                    improvements.mentionedChange < 0 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {improvements.mentionedChange > 0 ? '+' : ''}{improvements.mentionedChange}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Mentioned</p>
+              </div>
+              
+              <div className="text-center p-2 bg-background/50 rounded-lg">
+                <div className="flex items-center justify-center gap-1">
+                  {improvements.totalVisibilityChange > 0 ? (
+                    <TrendingUp className="w-3 h-3 text-cyan-400" />
+                  ) : improvements.totalVisibilityChange < 0 ? (
+                    <TrendingDown className="w-3 h-3 text-red-400" />
+                  ) : (
+                    <Minus className="w-3 h-3 text-muted-foreground" />
+                  )}
+                  <span className={`text-lg font-bold ${
+                    improvements.totalVisibilityChange > 0 ? 'text-cyan-400' : 
+                    improvements.totalVisibilityChange < 0 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {improvements.totalVisibilityChange > 0 ? '+' : ''}{improvements.totalVisibilityChange}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Total Visibility</p>
+              </div>
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Comparing {format(new Date(improvements.oldestDate), 'MMM d')} → {format(new Date(improvements.newestDate), 'MMM d, yyyy')}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+TrendSummaryCard.displayName = 'TrendSummaryCard';
 
 export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   const bronApi = useBronApi();
@@ -762,6 +966,13 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
           )}
         </div>
       </div>
+      
+      {/* Trend Summary - Shows improvement over time */}
+      <TrendSummaryCard 
+        domain={domain} 
+        currentStats={stats} 
+        availableDates={availableDates} 
+      />
       
       {/* Keywords List - No animations for stability */}
       <div className="space-y-2">
