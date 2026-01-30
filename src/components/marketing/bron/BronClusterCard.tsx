@@ -266,7 +266,7 @@ export const BronClusterCard = memo(({
   // If no children, render as a simple card (no cluster wrapper)
   if (!hasChildren) {
     return (
-      <div className="space-y-1" style={{ contain: 'layout style paint' }}>
+      <div style={{ contain: 'layout style paint' }}>
         <ClusterKeywordRow
           kw={cluster.parent}
           isNested={false}
@@ -295,7 +295,7 @@ export const BronClusterCard = memo(({
 
   // Render all keywords in a flat list without cluster wrapper
   return (
-    <div className="space-y-2" style={{ contain: 'layout style paint' }}>
+    <div style={{ contain: 'layout style paint' }}>
       {/* Parent keyword row */}
       <ClusterKeywordRow
         kw={cluster.parent}

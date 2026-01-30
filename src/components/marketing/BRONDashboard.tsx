@@ -399,7 +399,8 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
 
       {/* Tab Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        {activeTab === "keywords" && <BronKeywordsInfoCards />}
+        {/* Only show info cards when keywords tab is active AND keywords have loaded */}
+        {activeTab === "keywords" && stableKeywords.length > 0 && <BronKeywordsInfoCards />}
 
         <TabsContent value="domains" className="mt-0">
           <BRONDomainsTab 

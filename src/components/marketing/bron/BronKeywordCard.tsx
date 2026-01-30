@@ -249,7 +249,7 @@ const RankingsDisplay = memo(({
   };
 
   const renderRanking = (pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
-    <div className="flex items-center justify-center gap-1 w-[70px] h-7">
+    <div className="flex items-center justify-center gap-1 w-[80px] h-7">
       <span className={`text-lg font-normal ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
         {pos !== null ? `#${pos}` : '—'}
       </span>
@@ -264,14 +264,14 @@ const RankingsDisplay = memo(({
   );
 
   return (
-    <div className="flex items-center justify-center gap-1">
-      <div className="w-[70px] flex justify-center">
+    <div className="flex items-center justify-center gap-2">
+      <div className="w-[80px] flex justify-center">
         {renderRanking(googlePos, getMovementFromDelta(googleMovement))}
       </div>
-      <div className="w-[70px] flex justify-center">
+      <div className="w-[80px] flex justify-center">
         {renderRanking(bingPos, getMovementFromDelta(bingMovement))}
       </div>
-      <div className="w-[70px] flex justify-center">
+      <div className="w-[80px] flex justify-center">
         {renderRanking(yahooPos, getMovementFromDelta(yahooMovement))}
       </div>
     </div>
@@ -482,10 +482,10 @@ export const BronKeywordCard = memo(({
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
           {/* Grid-based layout for consistent columns */}
           <div 
-            className="grid items-center gap-2" 
+            className="grid items-center gap-4" 
             style={{ 
-              gridTemplateColumns: '70px 1fr 140px 220px 140px 80px 40px',
-              minWidth: '900px'
+              gridTemplateColumns: '80px 1fr 160px 260px 160px 100px 48px',
+              minWidth: '1000px'
             }}
           >
             {/* Column 1: Page Speed Gauge */}
