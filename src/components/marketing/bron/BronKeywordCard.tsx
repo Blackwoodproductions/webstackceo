@@ -634,35 +634,31 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout - nested cards skip the chart column for alignment */}
+          {/* Grid-based layout - ALL cards use same 9-column grid for perfect alignment */}
           <div 
             className="grid items-center gap-2 w-full" 
             style={{ 
-              // Nested cards don't have chart button column - PageSpeed starts where parent's PageSpeed is
-              gridTemplateColumns: isNested 
-                ? '48px 44px 1fr 68px 68px 68px 170px 140px'  // 8 columns (no chart)
-                : '52px 48px 44px 1fr 68px 68px 68px 170px 140px',  // 9 columns
+              // All cards use the same grid for perfect vertical alignment
+              gridTemplateColumns: '52px 48px 44px 1fr 68px 68px 68px 170px 140px',  // 9 columns
             }}
           >
-            {/* Column 1: Chart/Analysis Button - only for non-nested cards */}
-            {!isNested && (
-              <div className="flex items-center justify-center">
-                {onOpenAnalysis ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenAnalysis(kw);
-                    }}
-                    className="w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
-                    title="View Keyword Analysis"
-                  >
-                    <BarChart3 className="w-5 h-5" />
-                  </button>
-                ) : (
-                  <div className="w-10 h-10" />
-                )}
-              </div>
-            )}
+            {/* Column 1: Chart/Analysis Button OR spacer for nested cards */}
+            <div className="flex items-center justify-center">
+              {!isNested && onOpenAnalysis ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenAnalysis(kw);
+                  }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
+                  title="View Keyword Analysis"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+              ) : (
+                <div className="w-10 h-10" /> 
+              )}
+            </div>
 
             {/* Column 2: Page Speed Gauge - fixed height container for consistent alignment */}
             <div className="flex items-center justify-center h-12">
