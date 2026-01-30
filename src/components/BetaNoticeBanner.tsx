@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, memo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   FlaskConical, MessageSquarePlus, Bug, Lightbulb, 
-  AlertTriangle, Send, Loader2, Check, ChevronLeft
+  AlertTriangle, Send, Loader2, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,6 @@ interface PageError {
 }
 
 const BetaNoticeBanner = memo(() => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<string>("feedback");
@@ -208,73 +207,16 @@ const BetaNoticeBanner = memo(() => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, x: 20, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 20, scale: 0.95 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="mr-2 relative overflow-hidden"
-            >
-              {/* Glassmorphism panel */}
-              <div className="relative backdrop-blur-xl bg-gradient-to-b from-violet-950/80 via-purple-900/70 to-cyan-950/80 border border-violet-400/30 rounded-2xl shadow-[0_0_40px_rgba(139,92,246,0.3)] p-4">
-                {/* Animated border glow */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/20 via-cyan-400/20 to-violet-500/20 animate-pulse" />
-                
-                {/* Inner content */}
-                <div className="relative flex flex-col gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("feedback")}
-                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
-                  >
-                    <MessageSquarePlus className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
-                    <span className="bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent font-medium">Feedback</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("feature_request")}
-                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
-                  >
-                    <Lightbulb className="w-4 h-4 text-amber-400 group-hover:text-amber-300 transition-colors" />
-                    <span className="bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent font-medium">Ideas</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("bug_report")}
-                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
-                  >
-                    <Bug className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
-                    <span className="bg-gradient-to-r from-white to-rose-200 bg-clip-text text-transparent font-medium">Bug</span>
-                  </Button>
-                  {pageErrors.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openFeedbackDialog("error_report")}
-                      className="text-orange-300 hover:bg-orange-500/20 hover:text-orange-100 text-xs h-9 px-3 justify-start gap-2 animate-pulse"
-                    >
-                      <AlertTriangle className="w-4 h-4" />
-                      <span className="font-medium">{pageErrors.length} Error{pageErrors.length > 1 ? 's' : ''}</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Futuristic Tab Handle */}
+        {/* Futuristic Tab Handle - Opens form directly */}
         <motion.button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => {
+            setDialogOpen(true);
+            setSubmitted(false);
+          }}
           whileHover={{ scale: 1.02, x: -2 }}
           whileTap={{ scale: 0.98 }}
           className={`relative flex flex-col items-center gap-1.5 py-4 px-2 overflow-hidden rounded-l-2xl border border-r-0 transition-all duration-500 ${
-            isHovered || isExpanded
+            isHovered
               ? 'bg-gradient-to-b from-violet-600/95 via-purple-600/90 to-cyan-600/95 border-violet-400/50 shadow-[0_0_30px_rgba(139,92,246,0.5)]'
               : 'bg-gradient-to-b from-violet-700/80 via-purple-700/70 to-cyan-700/80 border-violet-500/30 shadow-lg'
           }`}
@@ -301,13 +243,10 @@ const BetaNoticeBanner = memo(() => {
             BETA
           </span>
           
-          {/* Chevron with animation */}
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ChevronLeft className="w-3.5 h-3.5 text-cyan-300" />
-          </motion.div>
+          {/* Feedback icon hint */}
+          <div className="relative">
+            <MessageSquarePlus className="w-3.5 h-3.5 text-cyan-300" />
+          </div>
         </motion.button>
       </div>
 
