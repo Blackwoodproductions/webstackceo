@@ -1029,8 +1029,8 @@ export const BRONKeywordsTab = memo(({
           </CardHeader>
         )}
         
-        {/* Quick Filters Bar */}
-        {selectedDomain && displayClusters.length > 0 && (
+        {/* Quick Filters Bar - hidden when cluster map is open */}
+        {selectedDomain && displayClusters.length > 0 && !showClusterMap && (
           <div className="px-6 pb-3">
             <BronQuickFilters
               activeFilter={activeFilter}
