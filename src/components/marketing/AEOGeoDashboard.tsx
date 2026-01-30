@@ -95,19 +95,19 @@ const LLMResultCard = memo(({ result }: { result: LLMResult }) => {
   const icon = LLM_ICONS[result.modelDisplayName] || '🤖';
   
   return (
-    <div className={`p-4 rounded-lg border ${
+    <div className={`p-5 rounded-xl border-2 ${
       result.position === 'prominent' 
-        ? 'bg-emerald-500/5 border-emerald-500/30' 
+        ? 'bg-emerald-500/10 border-emerald-500/40' 
         : result.position === 'mentioned'
-        ? 'bg-amber-500/5 border-amber-500/30'
-        : 'bg-muted/30 border-border/50'
+        ? 'bg-amber-500/10 border-amber-500/40'
+        : 'bg-muted/40 border-border/60'
     }`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{icon}</span>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">{icon}</span>
           <div>
-            <p className="font-semibold text-sm">{result.modelDisplayName}</p>
-            <p className="text-[10px] text-muted-foreground capitalize">
+            <p className="font-bold text-base">{result.modelDisplayName}</p>
+            <p className="text-xs text-muted-foreground capitalize mt-0.5">
               {result.queryUsed} query
             </p>
           </div>
@@ -116,16 +116,20 @@ const LLMResultCard = memo(({ result }: { result: LLMResult }) => {
       </div>
       
       {result.error ? (
-        <p className="mt-3 text-xs text-red-400 bg-red-500/10 p-2 rounded">
+        <p className="mt-4 text-sm text-red-400 bg-red-500/10 p-3 rounded-lg">
           Error: {result.error}
         </p>
       ) : result.snippet ? (
-        <div className="mt-3 p-3 bg-background/50 rounded-lg border border-border/30">
-          <p className="text-xs text-muted-foreground leading-relaxed">
+        <div className="mt-4 p-4 bg-background/60 rounded-lg border border-border/40">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             "{result.snippet}"
           </p>
         </div>
-      ) : null}
+      ) : (
+        <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-border/30">
+          <p className="text-xs text-muted-foreground italic">No snippet available</p>
+        </div>
+      )}
     </div>
   );
 });
@@ -500,153 +504,164 @@ const KeywordAEOCard = memo(({
                   ))}
                 </div>
                 
-                {/* Expanded Training Insights & LLM Optimization Panel */}
-                <div className="p-4 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-cyan-500/5 border border-violet-500/30 rounded-xl space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Lightbulb className="w-5 h-5 text-violet-400" />
-                    <h4 className="font-semibold text-sm">Training Insights & LLM Optimization</h4>
-                    <Badge variant="outline" className="text-[9px] ml-auto bg-violet-500/10 text-violet-400 border-violet-500/30">
-                      {data.suggestions.length + 6} insights
-                    </Badge>
-                  </div>
-                  
-                  {/* Keyword Performance Summary */}
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Brain className="w-4 h-4 text-cyan-400" />
-                      <span className="text-xs font-semibold text-cyan-400">Keyword Intelligence</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      <span className="font-medium text-foreground">"{data.keyword}"</span> has been analyzed across {totalChecked} LLM platforms. 
-                      {prominentCount === totalChecked && totalChecked > 0 
-                        ? " Excellent! Your brand is prominently cited in all models - maintain content freshness to hold this position."
-                        : prominentCount > 0 
-                          ? ` Currently prominent in ${prominentCount} model${prominentCount > 1 ? 's' : ''}. Focus on the non-prominent platforms to expand coverage.`
-                          : mentionedCount > 0
-                            ? ` Getting mentioned in ${mentionedCount} model${mentionedCount > 1 ? 's' : ''} - improve content authority to upgrade to prominent citations.`
-                            : " Not yet visible in AI models - implement the suggestions below to establish presence."
-                      }
-                    </p>
-                  </div>
-                  
-                  {/* LLM-Specific Tips Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Model Coverage Tips */}
-                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-semibold text-emerald-400">Model Coverage</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-emerald-400 mt-0.5">•</span>
-                          Google Gemini prioritizes structured, factual content with clear citations
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-emerald-400 mt-0.5">•</span>
-                          Perplexity favors recent content and authoritative sources
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-emerald-400 mt-0.5">•</span>
-                          Multi-platform consistency improves cross-model recognition
-                        </li>
-                      </ul>
-                    </div>
+                {/* Collapsible Training Insights & LLM Optimization Panel */}
+                <Collapsible defaultOpen={false}>
+                  <div className="bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-cyan-500/5 border border-violet-500/30 rounded-xl overflow-hidden">
+                    <CollapsibleTrigger asChild>
+                      <button className="w-full flex items-center justify-between gap-2 p-3 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="w-4 h-4 text-violet-400" />
+                          <h4 className="font-semibold text-sm">Training Insights & LLM Optimization</h4>
+                          <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-400 border-violet-500/30">
+                            {data.suggestions.length + 6} insights
+                          </Badge>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+                      </button>
+                    </CollapsibleTrigger>
                     
-                    {/* Content Authority Tips */}
-                    <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Zap className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-semibold text-amber-400">Content Authority</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-amber-400 mt-0.5">•</span>
-                          Include expert quotes, statistics, and original research
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-amber-400 mt-0.5">•</span>
-                          Publish comprehensive guides that LLMs cite as references
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-amber-400 mt-0.5">•</span>
-                          Update cornerstone content regularly to maintain freshness signals
-                        </li>
-                      </ul>
-                    </div>
-                    
-                    {/* Semantic SEO Tips */}
-                    <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <BrainCircuit className="w-4 h-4 text-cyan-400" />
-                        <span className="text-xs font-semibold text-cyan-400">Semantic SEO</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-cyan-400 mt-0.5">•</span>
-                          Use natural language that matches user search intent
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-cyan-400 mt-0.5">•</span>
-                          Answer questions directly in the first paragraph
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-cyan-400 mt-0.5">•</span>
-                          Include FAQ schema markup for structured data recognition
-                        </li>
-                      </ul>
-                    </div>
-                    
-                    {/* Citation Building Tips */}
-                    <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <GitBranch className="w-4 h-4 text-violet-400" />
-                        <span className="text-xs font-semibold text-violet-400">Citation Building</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-violet-400 mt-0.5">•</span>
-                          Build citations on Wikipedia, industry directories & trusted sources
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-violet-400 mt-0.5">•</span>
-                          Ensure NAP consistency across all platforms LLMs crawl
-                        </li>
-                        <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                          <span className="text-violet-400 mt-0.5">•</span>
-                          Get mentioned in news articles and press releases
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  {/* AI-Generated Suggestions + Pro Tip - Compact Horizontal Footer */}
-                  {data.suggestions.length > 0 && (
-                    <div className="pt-2 border-t border-violet-500/20">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-                        <span className="text-[11px] font-semibold text-violet-400">Recommendations</span>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                        {data.suggestions.slice(0, 5).map((suggestion, idx) => (
-                          <div 
-                            key={idx} 
-                            className="flex items-start gap-1.5 p-2 bg-muted/20 rounded-lg border border-border/30 text-[10px] text-muted-foreground leading-tight"
-                          >
-                            <Sparkles className="w-2.5 h-2.5 text-violet-400 mt-0.5 shrink-0" />
-                            <span className="line-clamp-2">{suggestion}</span>
+                    <CollapsibleContent>
+                      <div className="px-4 pb-4 space-y-3">
+                        {/* Keyword Performance Summary */}
+                        <div className="p-3 bg-muted/30 rounded-lg border border-border/30">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Brain className="w-4 h-4 text-cyan-400" />
+                            <span className="text-xs font-semibold text-cyan-400">Keyword Intelligence</span>
                           </div>
-                        ))}
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            <span className="font-medium text-foreground">"{data.keyword}"</span> has been analyzed across {totalChecked} LLM platforms. 
+                            {prominentCount === totalChecked && totalChecked > 0 
+                              ? " Excellent! Your brand is prominently cited in all models - maintain content freshness to hold this position."
+                              : prominentCount > 0 
+                                ? ` Currently prominent in ${prominentCount} model${prominentCount > 1 ? 's' : ''}. Focus on the non-prominent platforms to expand coverage.`
+                                : mentionedCount > 0
+                                  ? ` Getting mentioned in ${mentionedCount} model${mentionedCount > 1 ? 's' : ''} - improve content authority to upgrade to prominent citations.`
+                                  : " Not yet visible in AI models - implement the suggestions below to establish presence."
+                            }
+                          </p>
+                        </div>
+                        
+                        {/* LLM-Specific Tips Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Model Coverage Tips */}
+                          <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="w-4 h-4 text-emerald-400" />
+                              <span className="text-xs font-semibold text-emerald-400">Model Coverage</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-emerald-400 mt-0.5">•</span>
+                                Google Gemini prioritizes structured, factual content with clear citations
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-emerald-400 mt-0.5">•</span>
+                                Perplexity favors recent content and authoritative sources
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-emerald-400 mt-0.5">•</span>
+                                Multi-platform consistency improves cross-model recognition
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          {/* Content Authority Tips */}
+                          <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Zap className="w-4 h-4 text-amber-400" />
+                              <span className="text-xs font-semibold text-amber-400">Content Authority</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-amber-400 mt-0.5">•</span>
+                                Include expert quotes, statistics, and original research
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-amber-400 mt-0.5">•</span>
+                                Publish comprehensive guides that LLMs cite as references
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-amber-400 mt-0.5">•</span>
+                                Update cornerstone content regularly to maintain freshness signals
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          {/* Semantic SEO Tips */}
+                          <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <BrainCircuit className="w-4 h-4 text-cyan-400" />
+                              <span className="text-xs font-semibold text-cyan-400">Semantic SEO</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-cyan-400 mt-0.5">•</span>
+                                Use natural language that matches user search intent
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-cyan-400 mt-0.5">•</span>
+                                Answer questions directly in the first paragraph
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-cyan-400 mt-0.5">•</span>
+                                Include FAQ schema markup for structured data recognition
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          {/* Citation Building Tips */}
+                          <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <GitBranch className="w-4 h-4 text-violet-400" />
+                              <span className="text-xs font-semibold text-violet-400">Citation Building</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-violet-400 mt-0.5">•</span>
+                                Build citations on Wikipedia, industry directories & trusted sources
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-violet-400 mt-0.5">•</span>
+                                Ensure NAP consistency across all platforms LLMs crawl
+                              </li>
+                              <li className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                                <span className="text-violet-400 mt-0.5">•</span>
+                                Get mentioned in news articles and press releases
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                        
+                        {/* AI-Generated Suggestions + Pro Tip - Compact Horizontal Footer */}
+                        {data.suggestions.length > 0 && (
+                          <div className="pt-2 border-t border-violet-500/20">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                              <span className="text-[11px] font-semibold text-violet-400">Recommendations</span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                              {data.suggestions.slice(0, 5).map((suggestion, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className="flex items-start gap-1.5 p-2 bg-muted/20 rounded-lg border border-border/30 text-[10px] text-muted-foreground leading-tight"
+                                >
+                                  <Sparkles className="w-2.5 h-2.5 text-violet-400 mt-0.5 shrink-0" />
+                                  <span className="line-clamp-2">{suggestion}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Compact Pro Tip Inline */}
+                        <div className="flex items-center gap-2 pt-2 text-[9px] text-muted-foreground/70">
+                          <MessageSquare className="w-2.5 h-2.5 shrink-0" />
+                          <span><strong className="text-muted-foreground">Pro Tip:</strong> Consistent content creation over 2-4 weeks improves LLM citation probability.</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Compact Pro Tip Inline */}
-                  <div className="flex items-center gap-2 pt-2 text-[9px] text-muted-foreground/70">
-                    <MessageSquare className="w-2.5 h-2.5 shrink-0" />
-                    <span><strong className="text-muted-foreground">Pro Tip:</strong> Consistent content creation over 2-4 weeks improves LLM citation probability.</span>
+                    </CollapsibleContent>
                   </div>
-                </div>
+                </Collapsible>
               </div>
             ) : data.isLoading ? (
               <div className="text-center py-8">
