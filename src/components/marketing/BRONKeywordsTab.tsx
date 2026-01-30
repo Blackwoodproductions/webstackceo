@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition, lazy, Suspense } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2 } from "lucide-react";
+import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,7 @@ import {
   BronQuickFilters,
   QuickFilterType,
   BronClusterCard,
+  BronClusterVisualization,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -98,6 +99,7 @@ export const BRONKeywordsTab = memo(({
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
   const [savingIds, setSavingIds] = useState<Set<number | string>>(new Set());
   const [articleEditorId, setArticleEditorId] = useState<number | string | null>(null);
+  const [showClusterMap, setShowClusterMap] = useState(false);
   
   // Quick filter state
   const [activeFilter, setActiveFilter] = useState<"all" | "top10" | "top50" | "hasContent" | "noContent" | "improved" | "dropped">("all");
@@ -849,6 +851,17 @@ export const BRONKeywordsTab = memo(({
             >
               <Save className="w-4 h-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowClusterMap(true)}
+              disabled={!selectedDomain || displayClusters.length === 0}
+              className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
+              title="View keyword clusters as visual map"
+            >
+              <GitBranch className="w-4 h-4 mr-1" />
+              Cluster Map
+            </Button>
             <Button 
               size="sm" 
               onClick={() => setShowAddModal(true)}
@@ -1136,6 +1149,20 @@ export const BRONKeywordsTab = memo(({
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Cluster Visualization Modal */}
+      <BronClusterVisualization
+        isOpen={showClusterMap}
+        onClose={() => setShowClusterMap(false)}
+        clusters={displayClusters}
+        serpReports={activeSerpReports}
+        keywordMetrics={keywordMetrics}
+        pageSpeedScores={pageSpeedScores}
+        linksIn={linksIn}
+        linksOut={linksOut}
+        selectedDomain={selectedDomain}
+        initialPositions={initialPositions}
+      />
     </div>
   );
 });
