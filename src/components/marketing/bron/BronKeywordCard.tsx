@@ -273,25 +273,22 @@ const RankingsDisplay = memo(({
     
     if (pos === null) {
       return (
-        <div className="flex items-center justify-center w-[70px] h-7">
+        <div className="flex items-center justify-center h-8">
           <span className="text-sm text-muted-foreground/40">—</span>
         </div>
       );
     }
     
     return (
-      <div className={`flex items-center justify-center gap-0.5 w-[70px] h-7 rounded-md ${styles.bgColor}`}>
-        {/* Arrow icon first */}
+      <div className={`flex items-center justify-center gap-1 h-8 px-2 rounded-md ${styles.bgColor}`}>
         {styles.icon && (
           <div className={`flex items-center ${styles.textColor}`}>
             {styles.icon}
           </div>
         )}
-        {/* Position number */}
         <span className={`text-sm font-bold ${styles.textColor}`}>
           #{pos}
         </span>
-        {/* Delta value */}
         {movement !== 0 && (
           <span className={`text-[10px] font-semibold ${styles.textColor}`}>
             {movement > 0 ? `+${movement}` : movement}
@@ -302,17 +299,11 @@ const RankingsDisplay = memo(({
   };
 
   return (
-    <div className="flex items-center justify-center gap-1">
-      <div className="w-[70px] flex justify-center">
-        {renderRanking(googlePos, googleMovement)}
-      </div>
-      <div className="w-[70px] flex justify-center">
-        {renderRanking(bingPos, bingMovement)}
-      </div>
-      <div className="w-[70px] flex justify-center">
-        {renderRanking(yahooPos, yahooMovement)}
-      </div>
-    </div>
+    <>
+      {renderRanking(googlePos, googleMovement)}
+      {renderRanking(bingPos, bingMovement)}
+      {renderRanking(yahooPos, yahooMovement)}
+    </>
   );
 });
 RankingsDisplay.displayName = 'RankingsDisplay';
@@ -518,12 +509,11 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout for consistent columns - tighter spacing */}
+          {/* Grid-based layout - proportional columns to fill available space */}
           <div 
-            className="grid items-center gap-2" 
+            className="grid items-center gap-3 w-full" 
             style={{ 
-              gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
-              minWidth: '800px'
+              gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 36px',
             }}
           >
             {/* Column 1: Page Speed Gauge - centered for vertical alignment */}
@@ -609,17 +599,15 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 4: SERP Rankings */}
-            <div className="flex items-center justify-center">
-              <RankingsDisplay
-                googlePos={googlePos}
-                bingPos={bingPos}
-                yahooPos={yahooPos}
-                googleMovement={googleMovement}
-                bingMovement={bingMovement}
-                yahooMovement={yahooMovement}
-              />
-            </div>
+            {/* Columns 4-6: SERP Rankings (Google, Bing, Yahoo as separate columns) */}
+            <RankingsDisplay
+              googlePos={googlePos}
+              bingPos={bingPos}
+              yahooPos={yahooPos}
+              googleMovement={googleMovement}
+              bingMovement={bingMovement}
+              yahooMovement={yahooMovement}
+            />
 
             {/* Column 5: Keyword Metrics */}
             <div className="flex items-center justify-center">
