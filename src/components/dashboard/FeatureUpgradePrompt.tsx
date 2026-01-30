@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Crown, Lock, Zap, TrendingUp, FileText, BrainCircuit, MapPin, Activity, FileSearch, Target
+  Crown, Lock, Zap, TrendingUp, FileText, BrainCircuit, MapPin, Activity, FileSearch, Target, Globe
 } from 'lucide-react';
 
-export type FeatureType = 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain';
+export type FeatureType = 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain' | 'web-builder';
 
 interface FeatureUpgradePromptProps {
   feature: FeatureType;
@@ -156,6 +156,24 @@ const featureConfig: Record<FeatureType, {
     ],
     cta: 'Add Domain',
     tier: 'Add-on'
+  },
+  'web-builder': {
+    name: 'AI Website Generator',
+    description: 'Build unlimited websites and applications with AI assistance',
+    icon: Globe,
+    price: '$125',
+    priceSubtext: '/month',
+    color: 'fuchsia',
+    benefits: [
+      'Unlimited AI website generation',
+      'All templates included',
+      'Inline AI editing assistant',
+      'Export to any platform',
+      'Mobile-responsive designs',
+      'SEO-optimized code output'
+    ],
+    cta: 'Activate WEB Builder',
+    tier: 'Premium Add-on'
   }
 };
 
@@ -201,6 +219,12 @@ const colorClasses: Record<string, { bg: string; border: string; text: string; g
     border: 'border-cyan-500/30',
     text: 'text-cyan-400',
     glow: 'shadow-cyan-500/20'
+  },
+  fuchsia: {
+    bg: 'from-fuchsia-500/20 to-fuchsia-500/5',
+    border: 'border-fuchsia-500/30',
+    text: 'text-fuchsia-400',
+    glow: 'shadow-fuchsia-500/20'
   }
 };
 

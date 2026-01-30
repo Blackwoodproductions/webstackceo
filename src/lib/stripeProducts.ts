@@ -382,6 +382,24 @@ export const PPC_PRODUCTS: StripeProduct[] = [
 ];
 
 // =====================
+// WEB Builder (AI Website Generator)
+// =====================
+export const WEB_BUILDER_PRODUCTS: StripeProduct[] = [
+  {
+    id: 'web-builder-monthly',
+    priceId: 'price_1SvPF2DhwTkpKWXvqgqQcstn',
+    productId: 'prod_TtBcCEQ9vreUId',
+    name: 'WEB Builder - AI Website Generator',
+    description: 'AI-powered website and application generator with unlimited site builds.',
+    price: 12500,
+    currency: 'usd',
+    type: 'recurring',
+    interval: 'month',
+    category: 'addon',
+  },
+];
+
+// =====================
 // All Products Combined
 // =====================
 export const ALL_PRODUCTS: StripeProduct[] = [
@@ -393,6 +411,7 @@ export const ALL_PRODUCTS: StripeProduct[] = [
   ...VI_ADDON_PRODUCTS,
   ...AEO_GEO_PRODUCTS,
   ...PPC_PRODUCTS,
+  ...WEB_BUILDER_PRODUCTS,
 ];
 
 // Helper to get product by ID
