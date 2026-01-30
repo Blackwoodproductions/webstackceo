@@ -262,7 +262,27 @@ export const BronKeywordAnalysisDialog = memo(({
       const dataMap = new Map<string, BronSerpReport[]>();
       
       try {
-        const reportsToFetch = filteredHistory.slice(0, 20);
+        // IMPORTANT:
+        // Keywords can be added after older reports were generated.
+        // If we only fetch the oldest reports, the chart will appear empty even though
+        // the ranking pills (latest report) show data. We always include the newest
+        // reports + the oldest baseline report.
+        const MAX_REPORTS = 30;
+        const oldest = filteredHistory[0];
+        const recent = filteredHistory.slice(-MAX_REPORTS);
+        const uniqueByReportId = new Map<string, BronSerpListItem>();
+        [oldest, ...recent].forEach((item) => {
+          if (!item) return;
+          const rid = getReportId(item);
+          if (!rid) return;
+          uniqueByReportId.set(rid, item);
+        });
+
+        const reportsToFetch = [...uniqueByReportId.values()].sort((a, b) => {
+          const tsA = getSerpListItemTimestamp(a) ?? 0;
+          const tsB = getSerpListItemTimestamp(b) ?? 0;
+          return tsA - tsB;
+        });
         
         console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports for keyword:', mainKeywordText);
         
@@ -331,7 +351,6 @@ export const BronKeywordAnalysisDialog = memo(({
       if (timestamp === null) return;
       
       const point: ChartDataPoint = { date: format(new Date(timestamp), 'MMM d'), timestamp };
-      let hasAnyPosition = false;
       
       allKeywords.forEach(kw => {
         // Try multiple matching strategies
@@ -368,7 +387,6 @@ export const BronKeywordAnalysisDialog = memo(({
         
         if (pos !== null) {
           positionsPerKeyword[kw.id].push(pos);
-          hasAnyPosition = true;
         }
         
         // Use UNRANKED_POSITION for nulls so they appear at bottom
@@ -377,9 +395,9 @@ export const BronKeywordAnalysisDialog = memo(({
       
       debugLogged = true;
       
-      if (hasAnyPosition) {
-        data.push(point);
-      }
+      // Always include the data point when we have report data so the timeline
+      // can show "unranked" periods leading up to first rankings.
+      data.push(point);
     });
     
     // Log summary
