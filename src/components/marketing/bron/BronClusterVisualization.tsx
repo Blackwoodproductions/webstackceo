@@ -827,11 +827,11 @@ export const BronClusterVisualization = memo(({
               style={{ left: centerX, top: centerY }}
             >
               <div 
-                className="relative w-40 h-40 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.35)] cursor-pointer hover:scale-105 transition-transform"
+                className="relative w-44 h-44 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.35)] cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
               >
-                {/* White circle background for favicon */}
-                <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center mb-1.5">
+                {/* White circle background for favicon - centered */}
+                <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center">
                   {selectedDomain ? (
                     <img 
                       src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`}
@@ -846,10 +846,31 @@ export const BronClusterVisualization = memo(({
                   ) : null}
                   <Globe className={`w-8 h-8 text-violet-500 ${selectedDomain ? 'hidden' : ''}`} />
                 </div>
-                <span className="text-sm font-bold text-violet-300 text-center px-4 leading-tight">
-                  {selectedDomain || 'Main Site'}
-                </span>
                 
+                {/* Curved text around bottom edge */}
+                <svg 
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  viewBox="0 0 176 176"
+                >
+                  <defs>
+                    <path
+                      id="curvedTextPath"
+                      d="M 88,88 m -70,0 a 70,70 0 1,0 140,0 a 70,70 0 1,0 -140,0"
+                      fill="none"
+                    />
+                  </defs>
+                  <text 
+                    className="fill-violet-300 text-[11px] font-semibold"
+                    textAnchor="middle"
+                  >
+                    <textPath 
+                      href="#curvedTextPath" 
+                      startOffset="75%"
+                    >
+                      {selectedDomain || 'Main Site'}
+                    </textPath>
+                  </text>
+                </svg>
               </div>
             </div>
             
