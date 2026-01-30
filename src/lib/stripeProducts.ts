@@ -383,20 +383,69 @@ export const PPC_PRODUCTS: StripeProduct[] = [
 
 // =====================
 // WEB Builder (AI Website Generator)
+// Tiered pricing based on sites and pages
 // =====================
 export const WEB_BUILDER_PRODUCTS: StripeProduct[] = [
   {
-    id: 'web-builder-monthly',
-    priceId: 'price_1SvPF2DhwTkpKWXvqgqQcstn',
-    productId: 'prod_TtBcCEQ9vreUId',
-    name: 'WEB Builder - AI Website Generator',
-    description: 'AI-powered website and application generator with unlimited site builds.',
-    price: 12500,
+    id: 'web-builder-starter',
+    priceId: 'price_1SvPMNDhwTkpKWXv38FHpUs5',
+    productId: 'prod_TtBjfbIrRtt7vv',
+    name: 'WEB Builder - Starter',
+    description: '1 site, up to 10 pages, full reporting dashboard access.',
+    price: 4900,
     currency: 'usd',
     type: 'recurring',
     interval: 'month',
     category: 'addon',
+    tier: 'starter',
   },
+  {
+    id: 'web-builder-pro',
+    priceId: 'price_1SvPF2DhwTkpKWXvqgqQcstn', // Original $125 price for pro tier
+    productId: 'prod_TtBcCEQ9vreUId',
+    name: 'WEB Builder - Pro',
+    description: '3 sites, up to 25 pages each, priority AI generation.',
+    price: 9900,
+    currency: 'usd',
+    type: 'recurring',
+    interval: 'month',
+    category: 'addon',
+    tier: 'pro',
+  },
+  {
+    id: 'web-builder-agency',
+    priceId: 'price_web_builder_agency', // Placeholder - needs Stripe product
+    productId: 'prod_web_builder_agency',
+    name: 'WEB Builder - Agency',
+    description: '10 sites, up to 50 pages each, white-label exports.',
+    price: 19900,
+    currency: 'usd',
+    type: 'recurring',
+    interval: 'month',
+    category: 'addon',
+    tier: 'enterprise',
+  },
+  {
+    id: 'web-builder-unlimited',
+    priceId: 'price_web_builder_unlimited', // Placeholder - needs Stripe product
+    productId: 'prod_web_builder_unlimited',
+    name: 'WEB Builder - Unlimited',
+    description: 'Unlimited sites and pages, dedicated support, API access.',
+    price: 49900,
+    currency: 'usd',
+    type: 'recurring',
+    interval: 'month',
+    category: 'addon',
+    tier: 'unlimited',
+  },
+];
+
+// Page-based add-on pricing for exceeding page limits
+export const WEB_BUILDER_PAGE_ADDONS = [
+  { pages: '11-25', pricePerMonth: 1900 },
+  { pages: '26-50', pricePerMonth: 2900 },
+  { pages: '51-100', pricePerMonth: 4900 },
+  { pages: '100+', pricePerMonth: 7900 },
 ];
 
 // =====================
