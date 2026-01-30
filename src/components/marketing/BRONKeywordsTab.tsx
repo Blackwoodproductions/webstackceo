@@ -1292,6 +1292,11 @@ export const BRONKeywordsTab = memo(({
         linksOut={linksOut}
         selectedDomain={selectedDomain}
         initialPositions={initialPositions}
+        isBaselineReport={
+          selectedHistoryReportId !== null && baselineReportId !== null
+            ? String(selectedHistoryReportId) === String(baselineReportId)
+            : false
+        }
       />
       
       {/* Keyword Analysis Dialog */}

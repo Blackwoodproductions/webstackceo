@@ -52,6 +52,7 @@ interface BronClusterVisualizationProps {
   linksOut: BronLink[];
   selectedDomain?: string;
   initialPositions: Record<string, InitialPositions>;
+  isBaselineReport?: boolean; // True when viewing the baseline (oldest) report - suppress movements
 }
 
 interface NodeData {
@@ -465,6 +466,7 @@ export const BronClusterVisualization = memo(({
   linksOut,
   selectedDomain,
   initialPositions,
+  isBaselineReport = false,
 }: BronClusterVisualizationProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -610,11 +612,13 @@ export const BronClusterVisualization = memo(({
         serpData: parentSerpData,
         metrics: keywordMetrics[parentKey],
         pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
-        movement: {
-          google: parentInitial.google && parentGooglePos ? parentInitial.google - parentGooglePos : 0,
-          bing: parentInitial.bing && getPosition(parentSerpData?.bing) ? parentInitial.bing - getPosition(parentSerpData?.bing)! : 0,
-          yahoo: parentInitial.yahoo && getPosition(parentSerpData?.yahoo) ? parentInitial.yahoo - getPosition(parentSerpData?.yahoo)! : 0,
-        },
+        movement: isBaselineReport
+          ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
+          : {
+              google: parentInitial.google && parentGooglePos ? parentInitial.google - parentGooglePos : 0,
+              bing: parentInitial.bing && getPosition(parentSerpData?.bing) ? parentInitial.bing - getPosition(parentSerpData?.bing)! : 0,
+              yahoo: parentInitial.yahoo && getPosition(parentSerpData?.yahoo) ? parentInitial.yahoo - getPosition(parentSerpData?.yahoo)! : 0,
+            },
         linksInCount: parentLinkCounts?.in ?? 0,
         linksOutCount: parentLinkCounts?.out ?? 0,
       });
@@ -653,11 +657,13 @@ export const BronClusterVisualization = memo(({
           serpData: childSerpData,
           metrics: keywordMetrics[childKey],
           pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
-          movement: {
-            google: childInitial.google && childGooglePos ? childInitial.google - childGooglePos : 0,
-            bing: childInitial.bing && getPosition(childSerpData?.bing) ? childInitial.bing - getPosition(childSerpData?.bing)! : 0,
-            yahoo: childInitial.yahoo && getPosition(childSerpData?.yahoo) ? childInitial.yahoo - getPosition(childSerpData?.yahoo)! : 0,
-          },
+          movement: isBaselineReport
+            ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
+            : {
+                google: childInitial.google && childGooglePos ? childInitial.google - childGooglePos : 0,
+                bing: childInitial.bing && getPosition(childSerpData?.bing) ? childInitial.bing - getPosition(childSerpData?.bing)! : 0,
+                yahoo: childInitial.yahoo && getPosition(childSerpData?.yahoo) ? childInitial.yahoo - getPosition(childSerpData?.yahoo)! : 0,
+              },
           linksInCount: childLinkCounts?.in ?? 0,
           linksOutCount: childLinkCounts?.out ?? 0,
         });
@@ -665,7 +671,7 @@ export const BronClusterVisualization = memo(({
     });
     
     return result;
-  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl]);
+  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl, isBaselineReport]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, NodeData>();
