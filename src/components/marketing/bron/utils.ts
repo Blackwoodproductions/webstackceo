@@ -526,9 +526,10 @@ export function decodeHtmlContent(html: string): string {
 //
 // LINKS OUT (Outbound):
 // - These are from each keyword page going TO other sites (Business Collective partners)
-// - The link's source URL contains the keyword's BRON token
-// - We match by finding the BRON token in the link's source URL
-// - BRON API: `link` = URL that the outbound link points TO, source is implied by the API context
+// - Each outbound link has a keyword/anchor text that identifies which keyword page it belongs to
+// - The `domain_name` field shows the partner domain receiving the link
+// - We match by comparing the link's keyword/anchor text with the current keyword
+// - BRON API: Partners listed by domain (e.g., houstondental.ca) with their keyword association
 //
 // BRON Token Format: Unique ID suffix like "-582231bc" at the end of page URLs
 //
@@ -540,6 +541,7 @@ export function filterLinksForKeyword(
 ): { keywordLinksIn: BronLink[]; keywordLinksOut: BronLink[] } {
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
+  const keywordLower = keywordText.toLowerCase().trim();
 
   // Extract BRON token (e.g., "582231" or "582231bc") from URLs
   // BRON pages have two URL patterns:
@@ -600,7 +602,7 @@ export function filterLinksForKeyword(
   if (keywordUrl) {
     const urlPath = keywordUrl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
     const pathSlug = urlPath.split('/').pop() || '';
-    const cleanSlug = pathSlug.replace(/-\d+bc$/, '');
+    const cleanSlug = pathSlug.replace(/-\d+bc$/, '').replace(/-\d+$/, '');
     if (cleanSlug.length > 3) urlPatterns.push(cleanSlug);
     urlPatterns.push(normalize(keywordUrl));
   }
@@ -629,7 +631,7 @@ export function filterLinksForKeyword(
     const normalizedValue = normalize(value);
     if (!normalizedValue) return false;
     const urlPath = normalizedValue.split('/').pop() || normalizedValue;
-    const urlSlug = urlPath.replace(/-\d+bc$/, '');
+    const urlSlug = urlPath.replace(/-\d+bc$/, '').replace(/-\d+$/, '');
     return urlPatterns.some((pattern) => {
       if (!pattern) return false;
       if (normalizedValue.includes(pattern)) return true;
@@ -640,8 +642,8 @@ export function filterLinksForKeyword(
     });
   };
 
-  // Check multiple link fields for a match
-  const linkMatchesKeyword = (link: BronLink): boolean => {
+  // Check multiple link fields for a match (used for INBOUND links)
+  const linkMatchesKeywordByUrl = (link: BronLink): boolean => {
     // Check all possible URL fields in the link object
     const urlFields = [
       link.link,
@@ -661,19 +663,69 @@ export function filterLinksForKeyword(
     return false;
   };
 
+  // NEW: Match link by keyword/anchor text association (for OUTBOUND links)
+  // BRON API associates outbound links with keywords via the anchor text or keyword field
+  const matchesKeywordByText = (link: BronLink): boolean => {
+    // Get anchor text or keyword from the link
+    const linkTexts = [
+      link.anchor_text,
+      (link as Record<string, unknown>).keyword as string,
+      (link as Record<string, unknown>).keyword_text as string,
+      (link as Record<string, unknown>).keywordtitle as string,
+      (link as Record<string, unknown>).title as string,
+    ].filter(Boolean);
+
+    for (const text of linkTexts) {
+      if (!text) continue;
+      const linkTextLower = String(text).toLowerCase().trim();
+      
+      // Exact match
+      if (linkTextLower === keywordLower) return true;
+      
+      // Fuzzy match: check if significant words overlap
+      const linkWords = linkTextLower.split(/\s+/).filter(w => w.length > 2);
+      const keywordWords = keywordLower.split(/\s+/).filter(w => w.length > 2);
+      
+      // If most words match (70%+), consider it a match
+      if (keywordWords.length >= 2 && linkWords.length >= 2) {
+        const matchingWords = keywordWords.filter(w => linkWords.includes(w));
+        const matchRatio = matchingWords.length / Math.min(keywordWords.length, linkWords.length);
+        if (matchRatio >= 0.7) return true;
+      }
+      
+      // Contains match for shorter keywords
+      if (keywordLower.length >= 5) {
+        if (linkTextLower.includes(keywordLower) || keywordLower.includes(linkTextLower)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
   // LINKS IN: Filter for inbound links TO this specific keyword's page
   // Each partner in the Business Collective links to specific pages
   // We match links where the target URL contains our keyword's BRON token
   const keywordLinksIn = linksIn.filter((link) => {
     // For inbound links, the `link` field typically contains the target URL on our domain
-    return linkMatchesKeyword(link);
+    // First try URL-based matching (most reliable for inbound)
+    if (linkMatchesKeywordByUrl(link)) return true;
+    // Fallback: check if the link's anchor/keyword matches this keyword
+    if (matchesKeywordByText(link)) return true;
+    return false;
   });
   
   // LINKS OUT: Filter for outbound links FROM this keyword's page
   // These are links from our keyword page to partner sites
+  // BRON API shows: domain_name (partner), keyword/anchor_text association, category
   const keywordLinksOut = linksOut.filter((link) => {
-    // For outbound links, we need to match the source page
-    return linkMatchesKeyword(link);
+    // Primary: Match by keyword/anchor text association
+    // This is how BRON API organizes outbound links - each link has a keyword it belongs to
+    if (matchesKeywordByText(link)) return true;
+    // Fallback: Try URL-based matching (in case source URL is provided)
+    if (linkMatchesKeywordByUrl(link)) return true;
+    return false;
   });
 
   return { keywordLinksIn, keywordLinksOut };
