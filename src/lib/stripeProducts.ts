@@ -355,6 +355,8 @@ export const AEO_GEO_PRODUCTS: StripeProduct[] = [
 
 // =====================
 // PPC Landing Pages
+// Pricing: $25/keyword for A/B testing + heatmaps
+// Page Editor: $250/session (10x Lovable cost markup)
 // =====================
 export const PPC_PRODUCTS: StripeProduct[] = [
   {
@@ -362,8 +364,8 @@ export const PPC_PRODUCTS: StripeProduct[] = [
     priceId: 'price_1SvPAUDhwTkpKWXvBY3aJiCt',
     productId: 'prod_TtBXrEm6rL7K4d',
     name: 'PPC Keyword A/B Testing',
-    description: 'A/B tested landing page per keyword with heatmapping and conversion analytics.',
-    price: 2500,
+    description: 'A/B tested landing page per keyword with heatmapping, Quality Score optimization, and conversion analytics.',
+    price: 2500, // $25.00 per keyword
     currency: 'usd',
     type: 'one_time',
     category: 'addon',
@@ -373,8 +375,8 @@ export const PPC_PRODUCTS: StripeProduct[] = [
     priceId: 'price_1SvPAjDhwTkpKWXv57mbSW0h',
     productId: 'prod_TtBXTbm9dAm8uo',
     name: 'PPC Page Editor Session',
-    description: 'AI page editing session - design changes, copy updates, and conversion optimizations.',
-    price: 25000,
+    description: 'Premium AI page editing session - design changes, copy updates, and conversion optimizations. 10x value with natural language editing.',
+    price: 25000, // $250.00 per session (10x markup)
     currency: 'usd',
     type: 'one_time',
     category: 'addon',
