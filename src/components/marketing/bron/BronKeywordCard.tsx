@@ -456,7 +456,7 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   const showVolLoading = loading && !hasCachedVolume;
   
   return (
-    <div className="grid grid-cols-3 gap-1.5" style={{ contain: 'layout style' }}>
+    <div className="flex items-center gap-1.5 flex-nowrap" style={{ contain: 'layout style' }}>
       <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
         <div className="flex items-center gap-0.5">
           <DollarSign className="w-2.5 h-2.5 text-amber-400" />
@@ -640,10 +640,10 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-2 w-full" 
             style={{ 
-              // Reduced gap back to gap-2, tightened keyword column spacing
+              // Widened metrics column from 150px to 180px to fit all 3 badges
               gridTemplateColumns: isNested 
-                ? '52px 44px 1fr 90px 90px 90px 150px 120px'  // 8 columns
-                : '44px 52px 44px 1fr 90px 90px 90px 150px 120px',  // 9 columns with chart
+                ? '52px 44px 1fr 90px 90px 90px 180px 120px'  // 8 columns
+                : '44px 52px 44px 1fr 90px 90px 90px 180px 120px',  // 9 columns with chart
             }}
           >
             {/* Column 1: Chart/Analysis Button - only for non-nested cards */}
