@@ -425,6 +425,66 @@ const KeywordAEOCard = memo(({
               </div>
             ) : data.results.length > 0 ? (
               <div className="space-y-4">
+                {/* Quick Stats Summary Row */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-muted/20 rounded-xl border border-border/30">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-foreground">{totalChecked}</p>
+                    <p className="text-[10px] text-muted-foreground">Models Checked</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-2xl font-bold ${prominentCount > 0 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                      {prominentCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Prominent</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-2xl font-bold ${mentionedCount > 0 ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                      {mentionedCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Mentioned</p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-2xl font-bold ${roundCount > 0 ? 'text-violet-400' : 'text-muted-foreground'}`}>
+                      {roundCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Rounds Trained</p>
+                  </div>
+                </div>
+                
+                {/* Improvement Indicators */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {prominentCount === totalChecked && totalChecked > 0 && (
+                    <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-black border-0">
+                      🏆 #1 in All Models
+                    </Badge>
+                  )}
+                  {prominentCount > 0 && prominentCount < totalChecked && (
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      ✓ {prominentCount}/{totalChecked} Prominent
+                    </Badge>
+                  )}
+                  {mentionedCount > 0 && prominentCount === 0 && (
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                      📌 Mentioned in {mentionedCount} Models
+                    </Badge>
+                  )}
+                  {roundCount >= 5 && (
+                    <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30">
+                      🔄 Intensive Training ({roundCount} rounds)
+                    </Badge>
+                  )}
+                  {data.suggestions.some(s => s.includes('Improved')) && (
+                    <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                      📈 Recent Improvement
+                    </Badge>
+                  )}
+                  {hasTrainingData && (
+                    <Badge variant="outline" className="text-[9px]">
+                      Last checked: {data.timestamp ? new Date(data.timestamp).toLocaleString() : 'Unknown'}
+                    </Badge>
+                  )}
+                </div>
+                
                 {/* Training details panel if we have training data */}
                 {hasTrainingData && (
                   <TrainingDetailsPanel results={data.results} suggestions={data.suggestions} />
@@ -440,14 +500,18 @@ const KeywordAEOCard = memo(({
                   ))}
                 </div>
                 
-                {data.suggestions.length > 0 && data.results.some(r => r.position === 'not_found') && (
-                  <div className="mt-6 p-4 bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/30 rounded-xl">
+                {/* Optimization Suggestions - Always show if any exist */}
+                {data.suggestions.length > 0 && (
+                  <div className="p-4 bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/30 rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <Lightbulb className="w-5 h-5 text-violet-400" />
-                      <h4 className="font-semibold text-sm">Optimization Suggestions</h4>
+                      <h4 className="font-semibold text-sm">Training Insights & Suggestions</h4>
+                      <Badge variant="outline" className="text-[9px] ml-auto">
+                        {data.suggestions.length} tips
+                      </Badge>
                     </div>
                     <ul className="space-y-2">
-                      {data.suggestions.filter(s => !s.includes('Training')).slice(0, 5).map((suggestion, idx) => (
+                      {data.suggestions.slice(0, 6).map((suggestion, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
                           <Sparkles className="w-3 h-3 text-violet-400 mt-0.5 shrink-0" />
                           {suggestion}
@@ -463,9 +527,16 @@ const KeywordAEOCard = memo(({
                 <p className="text-sm text-muted-foreground">Querying AI models...</p>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <BrainCircuit className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Waiting to check this keyword...</p>
+              <div className="p-4 bg-muted/20 rounded-xl border border-border/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                    <BrainCircuit className="w-5 h-5 text-violet-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Ready to Check</p>
+                    <p className="text-xs text-muted-foreground">Click "Start Training" to check AI visibility</p>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
