@@ -34,6 +34,17 @@ interface Platform {
 
 const platforms: Platform[] = [
   {
+    id: "php-bron",
+    name: "PHP / HTML",
+    icon: Globe,
+    color: "text-indigo-500",
+    gradientFrom: "from-indigo-500",
+    gradientTo: "to-blue-400",
+    description: "Direct BRON API integration",
+    steps: ["Click Connect", "Get API key", "Add PHP snippet", "Go live!"],
+    authType: "api-key",
+  },
+  {
     id: "wordpress",
     name: "WordPress",
     icon: Globe,
@@ -117,8 +128,8 @@ export const CADEPlatformConnect = ({ domain, onConnectionComplete }: CADEPlatfo
     setConnecting(platformId);
     
     try {
-      if (platformId === "lovable") {
-        const { error } = await supabase.functions.invoke("bron-platform-connect", {
+      if (platformId === "lovable" || platformId === "php-bron") {
+        const { data, error } = await supabase.functions.invoke("bron-platform-connect", {
           body: { 
             action: "generate_api_key",
             platform: platformId,
@@ -132,12 +143,14 @@ export const CADEPlatformConnect = ({ domain, onConnectionComplete }: CADEPlatfo
           platform: platformId,
           connected: true,
           lastSync: new Date().toISOString(),
-          siteName: domain || "Lovable App"
+          siteName: domain || (platformId === "php-bron" ? "PHP Site" : "Lovable App")
         }]);
 
         toast({
-          title: "Lovable Connected!",
-          description: "Your API key has been generated. Content will stream automatically.",
+          title: platformId === "php-bron" ? "PHP/HTML Connected!" : "Lovable Connected!",
+          description: platformId === "php-bron" 
+            ? `API key generated: ${data?.api_key?.slice(0, 12)}...`
+            : "Your API key has been generated. Content will stream automatically.",
         });
 
         onConnectionComplete?.(platformId);

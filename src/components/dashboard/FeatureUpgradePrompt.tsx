@@ -111,13 +111,16 @@ const featureConfig: Record<FeatureType, {
     description: 'AI-powered optimization that makes real changes to your website—not pixel injections',
     icon: FileSearch,
     price: '$99',
-    priceSubtext: '/month',
+    priceSubtext: '/mo (≤500 pages)',
     color: 'amber',
     benefits: [
-      'Direct platform editing (WordPress, Shopify, Wix)',
+      'Direct platform editing (WordPress, Shopify, Wix, PHP/HTML)',
       'Auto meta tag & schema optimization',
       'Image alt text generation',
-      'Real-time monitoring & auto-fix'
+      'Real-time monitoring & auto-fix',
+      '$199/mo for 501-2000 pages',
+      '$299/mo for 2001-5000 pages',
+      '$499/mo for 5000+ pages'
     ],
     cta: 'Activate On-Page SEO',
     tier: 'Premium Add-on'

@@ -3,10 +3,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Globe, ShoppingBag, Palette, Rocket, CheckCircle2, 
   ArrowRight, ExternalLink, Loader2, Shield,
-  Plug, Sparkles
+  Plug, Sparkles, Code, Copy, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -21,6 +28,15 @@ interface Platform {
 }
 
 const platforms: Platform[] = [
+  {
+    id: "php-bron",
+    name: "PHP / HTML",
+    icon: Code,
+    color: "text-indigo-500",
+    gradientFrom: "from-indigo-500",
+    gradientTo: "to-blue-400",
+    description: "Direct BRON API integration",
+  },
   {
     id: "wordpress",
     name: "WordPress",
@@ -75,6 +91,9 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connections, setConnections] = useState<ConnectionStatus[]>([]);
   const [hoveredPlatform, setHoveredPlatform] = useState<string | null>(null);
+  const [showPhpDialog, setShowPhpDialog] = useState(false);
+  const [phpApiKey, setPhpApiKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const getAuthUrl = (platformId: string): string => {
     const redirectUri = `${window.location.origin}/auth/callback/${platformId}`;
@@ -93,10 +112,18 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
         const wixClientId = import.meta.env.VITE_WIX_CLIENT_ID || "YOUR_WIX_CLIENT_ID";
         return `https://www.wix.com/installer/install?appId=${wixClientId}&redirectUrl=${encodeURIComponent(redirectUri)}&state=${state}`;
       case "lovable":
-        return `#lovable-connect`;
+      case "php-bron":
+        return `#bron-connect`;
       default:
         return "#";
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({ title: "Copied!", description: "API key copied to clipboard." });
   };
 
   const handleConnect = async (platformId: string) => {
@@ -106,8 +133,8 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
       const platform = platforms.find(p => p.id === platformId);
       if (!platform) return;
 
-      if (platformId === "lovable") {
-        const { error } = await supabase.functions.invoke("bron-platform-connect", {
+      if (platformId === "lovable" || platformId === "php-bron") {
+        const { data, error } = await supabase.functions.invoke("bron-platform-connect", {
           body: { 
             action: "generate_api_key",
             platform: platformId,
@@ -117,16 +144,23 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
 
         if (error) throw error;
 
+        if (platformId === "php-bron" && data?.api_key) {
+          setPhpApiKey(data.api_key);
+          setShowPhpDialog(true);
+        }
+
         setConnections(prev => [...prev.filter(c => c.platform !== platformId), {
           platform: platformId,
           connected: true,
           lastSync: new Date().toISOString(),
-          siteName: domain || "Lovable App"
+          siteName: domain || (platformId === "php-bron" ? "PHP Site" : "Lovable App")
         }]);
 
         toast({
-          title: "Lovable Connected!",
-          description: "On-page SEO optimization is now active.",
+          title: platformId === "php-bron" ? "PHP/HTML Connected!" : "Lovable Connected!",
+          description: platformId === "php-bron" 
+            ? "Add the BRON PHP snippet to your website header."
+            : "On-page SEO optimization is now active.",
         });
 
         onConnectionComplete?.(platformId);
@@ -289,6 +323,87 @@ export const OnPageSEOConnect = ({ domain, onConnectionComplete }: OnPageSEOConn
           </div>
         </div>
       </div>
+
+      {/* PHP/BRON API Key Dialog */}
+      <Dialog open={showPhpDialog} onOpenChange={setShowPhpDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-400 flex items-center justify-center">
+                <Code className="w-4 h-4 text-white" />
+              </div>
+              PHP / HTML Site Connected
+            </DialogTitle>
+            <DialogDescription>
+              Add this BRON PHP snippet to your website header to enable on-page SEO optimization.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* API Key Display */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Your API Key</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-muted rounded-md text-xs font-mono overflow-x-auto">
+                  {phpApiKey || "Generating..."}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => phpApiKey && copyToClipboard(phpApiKey)}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* PHP Snippet */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Add to your &lt;head&gt; tag</label>
+              <div className="relative">
+                <pre className="p-4 bg-muted rounded-lg text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+{`<?php
+// BRON On-Page SEO Optimization
+$bron_api_key = "${phpApiKey || 'YOUR_API_KEY'}";
+include_once("https://api.bfrg.io/seo/onpage.php?key=" . $bron_api_key);
+?>`}
+                </pre>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => copyToClipboard(`<?php\n// BRON On-Page SEO Optimization\n$bron_api_key = "${phpApiKey}";\ninclude_once("https://api.bfrg.io/seo/onpage.php?key=" . $bron_api_key);\n?>`)}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-foreground">How it works:</strong> The BRON PHP snippet connects directly to our SEO optimization engine. 
+                It will automatically update meta tags, schema markup, and content structure on your pages without any CMS plugins required.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowPhpDialog(false)}>
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowPhpDialog(false);
+                toast({ title: "Setup Complete", description: "Your PHP site is now connected to BRON." });
+              }}
+              className="bg-gradient-to-r from-indigo-500 to-blue-400 text-white"
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
