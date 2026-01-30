@@ -97,41 +97,65 @@ export function EmbeddedCheckoutDialog({ open, onOpenChange }: EmbeddedCheckoutD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
-          <DialogTitle className="flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-primary" />
-            Secure Checkout
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden p-0 bg-gradient-to-b from-card via-card to-background border-primary/20">
+        {/* Decorative header gradient */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-violet-500 to-cyan-500" />
+        
+        <DialogHeader className="p-6 pb-4 flex flex-row items-center justify-between border-b border-border/50">
+          <DialogTitle className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent font-bold">
+                Secure Checkout
+              </span>
+              <p className="text-xs text-muted-foreground font-normal mt-0.5">
+                Powered by Stripe
+              </p>
+            </div>
           </DialogTitle>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onOpenChange(false)}
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
         
-        <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-100px)]">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Preparing checkout...</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-violet-500 blur-xl opacity-50 animate-pulse" />
+                <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-foreground font-medium">Preparing checkout...</p>
+                <p className="text-xs text-muted-foreground mt-1">Setting up secure payment</p>
+              </div>
             </div>
           )}
 
           {error && (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <p className="text-destructive text-center">{error}</p>
-              <Button onClick={fetchClientSecret} variant="outline">
+              <div className="p-4 rounded-full bg-destructive/10 border border-destructive/20">
+                <X className="w-6 h-6 text-destructive" />
+              </div>
+              <p className="text-destructive text-center font-medium">{error}</p>
+              <Button onClick={fetchClientSecret} variant="outline" className="gap-2">
+                <Loader2 className="w-4 h-4" />
                 Try Again
               </Button>
             </div>
           )}
 
           {clientSecret && !loading && !error && (
-            <div className="stripe-checkout-container">
+            <div className="stripe-checkout-container mt-2 rounded-xl overflow-hidden border border-border/50 bg-background">
               <EmbeddedCheckoutProvider
                 stripe={stripePromise}
                 options={{ clientSecret, onComplete: handleComplete }}
@@ -140,6 +164,14 @@ export function EmbeddedCheckoutDialog({ open, onOpenChange }: EmbeddedCheckoutD
               </EmbeddedCheckoutProvider>
             </div>
           )}
+        </div>
+        
+        {/* Security badge */}
+        <div className="px-6 pb-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span>256-bit SSL Encrypted • PCI Compliant</span>
         </div>
       </DialogContent>
     </Dialog>

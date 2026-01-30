@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, BarChart3, Zap, ChevronRight, Gift } from 'lucide-react';
+import { X, Sparkles, BarChart3, Zap, ChevronRight, Gift, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { lovable } from '@/integrations/lovable/index';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ interface FreeTrialPromoProps {
 export function FreeTrialPromo({ variant = 'popup', onClose }: FreeTrialPromoProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
@@ -112,66 +113,119 @@ export function FreeTrialPromo({ variant = 'popup', onClose }: FreeTrialPromoPro
   // Already logged in - don't show promo
   if (user) return null;
 
-  // Side tab variant (left side of screen)
+  // Side tab variant (left side of screen) - Futuristic Design
   if (variant === 'side-tab') {
     if (tabOpacity === 0) return null;
     
     return (
       <div 
-        className="fixed left-0 z-[100] flex items-center transition-opacity duration-300"
+        className="fixed left-0 z-[100] flex items-center transition-all duration-500"
         style={{ top: topPosition, opacity: tabOpacity }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Tab handle */}
-        <button
+        {/* Futuristic Tab Handle */}
+        <motion.button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex flex-col items-center gap-1 py-3 px-1.5 bg-gradient-to-b from-emerald-500/90 to-primary/90 text-white text-xs font-medium shadow-lg hover:shadow-xl transition-shadow backdrop-blur-sm rounded-r-lg border border-white/20 border-l-0"
+          whileHover={{ scale: 1.02, x: 2 }}
+          whileTap={{ scale: 0.98 }}
+          className={`relative flex flex-col items-center gap-1.5 py-4 px-2 overflow-hidden rounded-r-2xl border border-l-0 transition-all duration-500 ${
+            isHovered || isExpanded
+              ? 'bg-gradient-to-b from-emerald-500/95 via-teal-500/90 to-cyan-600/95 border-emerald-400/50 shadow-[0_0_30px_rgba(16,185,129,0.5)]'
+              : 'bg-gradient-to-b from-emerald-600/80 via-teal-600/70 to-cyan-700/80 border-emerald-500/30 shadow-lg'
+          }`}
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
         >
-          <Gift className="w-4 h-4 mb-1 rotate-90" />
-          <span className="tracking-wider">FREE</span>
-          <ChevronRight className={`w-3 h-3 mt-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-        </button>
+          {/* Scanning line effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-transparent"
+            animate={{ y: ['-100%', '100%'] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            style={{ height: '50%' }}
+          />
+          
+          {/* Glow pulse */}
+          <div className={`absolute inset-0 bg-gradient-to-b from-emerald-300/20 via-transparent to-cyan-300/20 transition-opacity duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+          
+          {/* Icon with glow */}
+          <div className="relative">
+            <Gift className="w-5 h-5 text-white rotate-90 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+          </div>
+          
+          {/* Text with gradient */}
+          <span className="relative tracking-[0.2em] text-[11px] font-bold bg-gradient-to-b from-white via-emerald-100 to-cyan-200 bg-clip-text text-transparent drop-shadow-lg">
+            FREE
+          </span>
+          
+          {/* Chevron with animation */}
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-cyan-200" />
+          </motion.div>
+        </motion.button>
 
         <AnimatePresence>
           {isExpanded && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="ml-1 bg-gradient-to-b from-emerald-600/95 via-primary/95 to-violet-600/95 backdrop-blur-sm border border-white/10 rounded-r-xl shadow-lg p-4 max-w-[280px]"
+              initial={{ opacity: 0, x: -20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -20, scale: 0.95 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="ml-2 relative overflow-hidden"
             >
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-white" />
-                  <span className="text-white font-semibold text-sm">Start Free!</span>
-                </div>
-                <p className="text-white/80 text-xs leading-relaxed">
-                  Get your first website <strong className="text-white">FREE</strong> with Google Sign-in. No credit card required.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-1 text-[10px] text-white/70 bg-white/10 rounded px-2 py-1">
-                    <BarChart3 className="w-3 h-3" />
-                    Analytics
+              {/* Glassmorphism panel */}
+              <div className="relative backdrop-blur-xl bg-gradient-to-b from-emerald-950/80 via-teal-900/70 to-cyan-950/80 border border-emerald-400/30 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.3)] p-5 max-w-[300px]">
+                {/* Animated border glow */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-cyan-400/20 to-emerald-500/20 animate-pulse" />
+                
+                {/* Inner content */}
+                <div className="relative flex flex-col gap-4">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-400/30 to-cyan-400/30 border border-emerald-400/30">
+                      <Sparkles className="w-5 h-5 text-emerald-300" />
+                    </div>
+                    <span className="text-white font-bold text-base bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">
+                      Start Free!
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-white/70 bg-white/10 rounded px-2 py-1">
-                    <Zap className="w-3 h-3" />
-                    SEO Tools
+                  
+                  {/* Description */}
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    Get your first website <strong className="text-emerald-300">FREE</strong> with Google Sign-in. No credit card required.
+                  </p>
+                  
+                  {/* Feature pills */}
+                  <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-200/90 bg-emerald-500/20 border border-emerald-400/30 rounded-full px-3 py-1.5">
+                      <BarChart3 className="w-3 h-3" />
+                      Analytics
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-cyan-200/90 bg-cyan-500/20 border border-cyan-400/30 rounded-full px-3 py-1.5">
+                      <Zap className="w-3 h-3" />
+                      SEO Tools
+                    </div>
                   </div>
+                  
+                  {/* CTA Button */}
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-white via-emerald-50 to-white text-emerald-700 hover:from-emerald-50 hover:via-white hover:to-emerald-50 text-sm h-10 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 group"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    {isLoading ? 'Signing in...' : 'Claim Free'}
+                    <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  className="w-full bg-white text-primary hover:bg-white/90 text-xs h-8"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  <svg className="w-4 h-4 mr-1.5" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  {isLoading ? 'Signing in...' : 'Claim Free'}
-                </Button>
               </div>
             </motion.div>
           )}
