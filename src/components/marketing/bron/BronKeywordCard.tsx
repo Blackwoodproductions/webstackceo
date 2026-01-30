@@ -754,8 +754,8 @@ export const BronKeywordCard = memo(({
               isBaselineReport={isBaselineReport}
             />
 
-            {/* Column 8: Keyword Metrics - added right margin for spacing */}
-            <div className="flex items-center justify-center mr-3">
+            {/* Column 8: Keyword Metrics - left margin for gap from Yahoo, right margin for spacing */}
+            <div className="flex items-center justify-center ml-8 mr-3">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
