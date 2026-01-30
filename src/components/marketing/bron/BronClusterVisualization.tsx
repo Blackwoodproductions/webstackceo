@@ -496,15 +496,9 @@ export const BronClusterVisualization = memo(({
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
     
-    // Calculate dynamic radius based on number of clusters - more clusters = larger radius
-    const moneyCount = sortedClusters.length;
-    const baseRadius = Math.min(cx, cy);
-    
-    // Scale radius based on cluster count to prevent overlapping
-    // More clusters need more space
-    const minMoneyRadius = baseRadius * 0.35;
-    const maxMoneyRadius = baseRadius * 0.55;
-    const moneyPageRadius = Math.min(maxMoneyRadius, minMoneyRadius + (moneyCount * 4));
+    // Radii for the three tiers
+    const moneyPageRadius = Math.min(cx, cy) * 0.42; // Money pages orbit
+    const supportingBaseRadius = Math.min(cx, cy) * 0.72; // Supporting pages base radius
     
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
@@ -529,7 +523,9 @@ export const BronClusterVisualization = memo(({
     const supporting: NodeData[] = [];
     const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' }> = [];
     
-    // Position money pages in a circle around the center with more spacing
+    const moneyCount = sortedClusters.length;
+    
+    // Position money pages in a circle around the center
     sortedClusters.forEach((cluster, clusterIndex) => {
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
       const parentSerpData = getSerp(parentKeywordText);
@@ -540,9 +536,8 @@ export const BronClusterVisualization = memo(({
       const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
       const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
       
-      // Distribute money pages evenly around the center with offset for visual variety
-      const angleOffset = (clusterIndex % 2) * 0.02; // Slight stagger
-      const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2 + angleOffset;
+      // Distribute money pages evenly around the center
+      const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2;
       const moneyX = cx + Math.cos(moneyAngle) * moneyPageRadius;
       const moneyY = cy + Math.sin(moneyAngle) * moneyPageRadius;
       
@@ -571,13 +566,12 @@ export const BronClusterVisualization = memo(({
       
       money.push(moneyNode);
       
-      // Position supporting pages in an arc around this money page - more spread out
+      // Position supporting pages in an arc around this money page
       const supportingCount = cluster.children.length;
       if (supportingCount > 0) {
-        // Wider arc span for better separation
-        const arcSpan = Math.min(Math.PI * 0.75, (supportingCount / 4) * Math.PI);
-        // Increased distance from money page
-        const supportingRadius = 110 + Math.min(supportingCount * 12, 80);
+        // Calculate arc span based on how many supporting pages
+        const arcSpan = Math.min(Math.PI * 0.6, (supportingCount / 6) * Math.PI);
+        const supportingRadius = 90 + Math.min(supportingCount * 8, 60); // Distance from money page
         
         cluster.children.forEach((child, childIndex) => {
           const childKeywordText = getKeywordDisplayText(child);
@@ -759,34 +753,34 @@ export const BronClusterVisualization = memo(({
                 </radialGradient>
               </defs>
               
-              {/* Connections from money pages TO center - particles flow INWARD */}
+              {/* Connections from money pages to center */}
               {moneyNodes.map((node, index) => {
                 const googlePos = getPosition(node.serpData?.google);
                 return (
                   <ElectricLine
-                    key={`money-to-center-${node.id}`}
-                    x1={node.x}
-                    y1={node.y}
-                    x2={centerX}
-                    y2={centerY}
-                    delay={index * 0.1}
+                    key={`center-to-${node.id}`}
+                    x1={centerX}
+                    y1={centerY}
+                    x2={node.x}
+                    y2={node.y}
+                    delay={index * 0.12}
                     isHighlighted={hoveredNode?.id === node.id}
                     googlePos={googlePos}
                   />
                 );
               })}
               
-              {/* Connections from supporting pages TO their money pages - particles flow INWARD */}
+              {/* Connections from supporting pages to their money pages */}
               {connections.map((conn, index) => {
                 const googlePos = getPosition(conn.from.serpData?.google);
                 return (
                   <ElectricLine
-                    key={`support-to-money-${conn.from.id}`}
-                    x1={conn.from.x}
-                    y1={conn.from.y}
-                    x2={conn.to.x}
-                    y2={conn.to.y}
-                    delay={0.3 + index * 0.05}
+                    key={`support-${conn.from.id}-to-${conn.to.id}`}
+                    x1={conn.to.x}
+                    y1={conn.to.y}
+                    x2={conn.from.x}
+                    y2={conn.from.y}
+                    delay={0.5 + index * 0.08}
                     isHighlighted={hoveredNode?.id === conn.from.id || hoveredNode?.id === conn.to.id}
                     googlePos={googlePos}
                     isSupportingLink
@@ -853,34 +847,34 @@ export const BronClusterVisualization = memo(({
                   onClick={() => handleNodeClick(node)}
                 >
                   <div className="relative cursor-pointer">
-                    {/* Money page node - compact for less overlap */}
+                    {/* Money page node - larger */}
                     <div 
-                      className={`w-12 h-12 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center ${style.glow}`}
-                      style={{ boxShadow: isHovered ? '0 0 25px rgba(168,85,247,0.5)' : undefined }}
+                      className={`w-16 h-16 rounded-full ${style.bg} border-2 ${style.border} flex items-center justify-center ${style.glow}`}
+                      style={{ boxShadow: isHovered ? '0 0 30px rgba(168,85,247,0.5)' : undefined }}
                     >
-                      <span className={`font-bold text-xs ${style.text}`}>
+                      <span className={`font-bold text-sm ${style.text}`}>
                         {googlePos !== null ? `#${googlePos}` : '—'}
                       </span>
                       
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-1 -right-1 min-w-5 h-5 px-0.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-1.5 -right-1.5 min-w-6 h-6 px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
                       )}
                       
                       {hasExternalLinkout && (
-                        <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-                          <Link2 className="w-2 h-2 text-white" />
+                        <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                          <Link2 className="w-2.5 h-2.5 text-white" />
                         </div>
                       )}
                     </div>
                     
-                    {/* Label - more compact */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-20 text-center">
-                      <span className="text-[9px] text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-1 py-0.5 rounded shadow-sm">
-                        {node.keywordText.length > 20 ? node.keywordText.substring(0, 17) + '…' : node.keywordText}
+                    {/* Label */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-24 text-center">
+                      <span className="text-[10px] text-foreground font-medium leading-tight line-clamp-2 bg-background/90 px-1.5 py-0.5 rounded shadow-sm">
+                        {node.keywordText.length > 24 ? node.keywordText.substring(0, 21) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
@@ -912,34 +906,34 @@ export const BronClusterVisualization = memo(({
                   onClick={() => handleNodeClick(node)}
                 >
                   <div className="relative cursor-pointer">
-                    {/* Supporting page node - compact */}
+                    {/* Supporting page node - smaller */}
                     <div 
-                      className={`w-8 h-8 rounded-full ${style.bg} border-[1.5px] ${style.border} flex items-center justify-center`}
-                      style={{ boxShadow: isHovered ? '0 0 15px rgba(168,85,247,0.4)' : undefined }}
+                      className={`w-10 h-10 rounded-full ${style.bg} border-[1.5px] ${style.border} flex items-center justify-center`}
+                      style={{ boxShadow: isHovered ? '0 0 20px rgba(168,85,247,0.4)' : undefined }}
                     >
-                      <span className={`font-semibold text-[10px] ${style.text}`}>
+                      <span className={`font-semibold text-xs ${style.text}`}>
                         {googlePos !== null ? googlePos : '—'}
                       </span>
                       
                       {node.movement.google !== 0 && (
                         <div 
-                          className={`absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full flex items-center justify-center text-[7px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          className={`absolute -top-1 -right-1 min-w-4 h-4 px-0.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white shadow ${node.movement.google > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
                         >
                           {node.movement.google > 0 ? '+' : ''}{Math.min(99, Math.max(-99, node.movement.google))}
                         </div>
                       )}
                       
                       {hasExternalLinkout && (
-                        <div className="absolute -top-0.5 -left-0.5 w-3 h-3 rounded-full bg-cyan-500 flex items-center justify-center shadow">
-                          <Link2 className="w-1.5 h-1.5 text-white" />
+                        <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center shadow">
+                          <Link2 className="w-2 h-2 text-white" />
                         </div>
                       )}
                     </div>
                     
-                    {/* Compact label for supporting */}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-16 text-center">
-                      <span className="text-[8px] text-muted-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-0.5 py-0.5 rounded">
-                        {node.keywordText.length > 16 ? node.keywordText.substring(0, 13) + '…' : node.keywordText}
+                    {/* Smaller label for supporting */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1.5 w-20 text-center">
+                      <span className="text-[9px] text-muted-foreground font-medium leading-tight line-clamp-2 bg-background/80 px-1 py-0.5 rounded">
+                        {node.keywordText.length > 20 ? node.keywordText.substring(0, 17) + '…' : node.keywordText}
                       </span>
                     </div>
                   </div>
