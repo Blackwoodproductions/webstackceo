@@ -185,7 +185,7 @@ function ClusterKeywordRowImpl({
   return (
     <div 
       className="no-theme-transition"
-      style={{ contain: 'layout style', contentVisibility: 'auto', containIntrinsicSize: '0 60px' }}
+      style={{ contain: 'layout style' }}
       data-no-theme-transition
     >
       <div className="flex items-stretch">
