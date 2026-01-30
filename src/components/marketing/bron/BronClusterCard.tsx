@@ -150,9 +150,9 @@ function ClusterKeywordRowImpl({
   // Filter links for this specific keyword - memoized
   const { keywordLinksIn, keywordLinksOut } = useMemo(() => {
     const result = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
-    // Debug logging for link counts
-    if (linksIn.length > 0 || linksOut.length > 0) {
-      console.log(`[BRON Links] Keyword: "${keywordText.slice(0, 40)}..." | Domain Links In: ${linksIn.length} | Domain Links Out: ${linksOut.length} | Filtered In: ${result.keywordLinksIn.length} | Filtered Out: ${result.keywordLinksOut.length}`);
+    // Debug logging for link counts - only log when there are links to filter
+    if (result.keywordLinksIn.length > 0 || result.keywordLinksOut.length > 0) {
+      console.log(`[BRON Links] "${keywordText.slice(0, 30)}..." | URL: ${kw.linkouturl?.slice(-20) || 'N/A'} | In: ${result.keywordLinksIn.length}/${linksIn.length} | Out: ${result.keywordLinksOut.length}/${linksOut.length}`);
     }
     return result;
   }, [kw, linksIn, linksOut, selectedDomain, keywordText]);
