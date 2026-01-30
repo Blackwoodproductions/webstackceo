@@ -225,14 +225,14 @@ export const BronMultiKeywordTrendChart = memo(({
   }
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm overflow-hidden">
+    <div className="h-full flex flex-col rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-border/30">
+      <div className="px-5 py-3 border-b border-border/30 flex-shrink-0">
         <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{title}</h3>
       </div>
       
       {/* Legend */}
-      <div className="px-5 py-3 flex flex-wrap gap-3 border-b border-border/30 bg-background/30">
+      <div className="px-5 py-3 flex flex-wrap gap-3 border-b border-border/30 bg-background/30 flex-shrink-0">
         {keywordsWithColors.map((kw) => (
           <div key={kw.id} className="flex items-center gap-2">
             <div 
@@ -246,9 +246,9 @@ export const BronMultiKeywordTrendChart = memo(({
         ))}
       </div>
       
-      {/* Chart */}
-      <div className="px-5 py-4">
-        <div className="h-[280px] w-full">
+      {/* Chart - fills available space */}
+      <div className="px-5 py-4 flex-1 min-h-0">
+        <div className="h-full w-full min-h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 10, right: 40, left: 10, bottom: 10 }}>
               <XAxis 
@@ -290,7 +290,7 @@ export const BronMultiKeywordTrendChart = memo(({
       </div>
       
       {/* Summary Cards */}
-      <div className="px-5 pb-5">
+      <div className="px-5 py-4 flex-shrink-0 border-t border-border/30">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {summaries.map((summary) => (
             <div 
