@@ -1941,7 +1941,10 @@ const MarketingDashboard = () => {
         </div>
         
         {/* Row 2: Domain Selector - Integrated into header */}
-        <div className="relative z-10 px-8 py-2 flex items-center justify-between border-t border-border/30 bg-background/30">
+        <div
+          className="relative z-[120] px-8 py-2 flex items-center justify-between border-t border-border/30 bg-background/30"
+          style={{ isolation: 'isolate' }}
+        >
           {/* Left: Domain Selector & Time Range */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Domain Selector */}
@@ -1959,10 +1962,10 @@ const MarketingDashboard = () => {
                   setGscDomainHasTracking(hasTracking);
                 }}
               >
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50">
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative z-[130]">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px]">
+                <SelectContent className="bg-popover border border-border shadow-2xl z-[500] max-w-[400px] pointer-events-auto">
                   {(() => {
                     const trackedSet = new Set(trackedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
                     const userAddedSet = new Set(userAddedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
