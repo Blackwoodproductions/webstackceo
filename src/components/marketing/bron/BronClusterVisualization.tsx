@@ -282,65 +282,63 @@ const MiniClusterCard = memo(({
           className={`${bgColor} ${borderColor} border-2 rounded-full flex items-center justify-center relative`}
           style={{ width: size, height: size }}
         >
-          <span className={`font-bold text-xs ${textColor}`}>
+          <span className={`font-bold text-[10px] ${textColor}`}>
             {googlePos !== null ? `#${googlePos}` : '—'}
           </span>
           
           {/* Movement badge */}
           {movement !== 0 && (
             <div 
-              className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center text-[6px] font-bold text-white ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
             >
-              {movement > 0 ? '+' : ''}{movement > 99 ? '99+' : movement < -99 ? '-99' : movement}
+              {movement > 0 ? '+' : ''}{movement > 99 ? '99' : movement < -99 ? '-99' : movement}
             </div>
           )}
         </div>
         
-        {/* Label */}
-        <span className="text-[9px] text-muted-foreground mt-1 max-w-[60px] truncate text-center">
-          {node.keywordText.length > 12 ? node.keywordText.substring(0, 10) + '…' : node.keywordText}
-        </span>
-        
-        {/* Badge */}
-        <span className={`text-[7px] px-1.5 py-0.5 rounded-full mt-0.5 ${node.isMainNode ? 'bg-amber-500/80 text-white' : 'bg-violet-500/70 text-white'}`}>
-          {node.isMainNode ? 'MONEY' : 'SUPPORT'}
+        {/* Label - hidden for compactness */}
+        <span className="text-[7px] text-muted-foreground mt-0.5 max-w-[40px] truncate text-center leading-tight">
+          {node.keywordText.length > 8 ? node.keywordText.substring(0, 6) + '…' : node.keywordText}
         </span>
       </div>
     );
   };
 
   return (
-    <div className="bg-card/50 border border-border/40 rounded-lg p-3 hover:border-primary/30 transition-colors">
+    <div 
+      className="bg-card/30 border border-border/30 rounded p-1.5 hover:border-primary/30 transition-colors"
+      style={{ minWidth: 0 }}
+    >
       {/* Cluster title */}
-      <div className="text-xs font-medium text-foreground mb-3 truncate text-center" title={parentKeywordText}>
-        {parentKeywordText.length > 30 ? parentKeywordText.substring(0, 28) + '…' : parentKeywordText}
+      <div className="text-[8px] font-medium text-foreground mb-1.5 truncate text-center leading-tight" title={parentKeywordText}>
+        {parentKeywordText.length > 20 ? parentKeywordText.substring(0, 18) + '…' : parentKeywordText}
       </div>
       
       {/* Visual layout: Parent on top, children below */}
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-0.5">
         {/* Parent (Money Page) */}
-        {renderNode(parentNode, 44)}
+        {renderNode(parentNode, 28)}
         
         {/* Connection lines (simplified as a visual indicator) */}
         {childNodes.length > 0 && (
-          <div className="flex items-center justify-center gap-1 -my-1">
-            {childNodes.map((child, i) => (
+          <div className="flex items-center justify-center gap-0.5 h-2">
+            {childNodes.slice(0, 2).map((child, i) => (
               <div 
                 key={`line-${i}`}
-                className={`w-px h-4 ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
-                style={{ transform: `rotate(${childNodes.length > 1 ? (i - (childNodes.length - 1) / 2) * 25 : 0}deg)` }}
+                className={`w-px h-2 ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
+                style={{ transform: `rotate(${childNodes.length > 1 ? (i - 0.5) * 20 : 0}deg)` }}
               />
             ))}
           </div>
         )}
         
-        {/* Children (Supporting Pages) */}
+        {/* Children (Supporting Pages) - max 2 shown */}
         {childNodes.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2">
-            {childNodes.slice(0, 3).map(child => renderNode(child, 36))}
-            {childNodes.length > 3 && (
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 border border-muted-foreground/20">
-                <span className="text-[9px] text-muted-foreground">+{childNodes.length - 3}</span>
+          <div className="flex flex-wrap justify-center gap-0.5">
+            {childNodes.slice(0, 2).map(child => renderNode(child, 22))}
+            {childNodes.length > 2 && (
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted/50 border border-muted-foreground/20">
+                <span className="text-[7px] text-muted-foreground">+{childNodes.length - 2}</span>
               </div>
             )}
           </div>
@@ -349,6 +347,7 @@ const MiniClusterCard = memo(({
     </div>
   );
 });
+MiniClusterCard.displayName = 'MiniClusterCard';
 MiniClusterCard.displayName = 'MiniClusterCard';
 
 // Tooltip Component
@@ -515,12 +514,15 @@ export const BronClusterVisualization = memo(({
   return (
     <div className="relative">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50">
-        <div className="flex items-center gap-3">
-          <h3 className="text-base font-semibold text-foreground">Keyword Cluster Map</h3>
-          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-card/50">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-foreground">Keyword Cluster Map</h3>
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px] px-1.5 py-0">
             {clusters.length} Clusters
           </Badge>
+          <span className="text-[10px] text-muted-foreground">
+            Hover for details · Click to open URL
+          </span>
         </div>
         <button
           onClick={onClose}
@@ -533,43 +535,42 @@ export const BronClusterVisualization = memo(({
         </button>
       </div>
       
-      <p className="text-xs text-muted-foreground px-4 py-2 border-b border-border/30">
-        Hover for details · Click to open URL · Money pages (amber) and supporting pages (violet)
-      </p>
-      
-      {/* Content */}
-      <ScrollArea className="h-[500px]">
-        <div className="p-4">
-          {clusters.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center text-muted-foreground">
-                <p className="text-sm mb-1">No clusters to display</p>
-                <p className="text-xs">Add keywords with parent-child relationships</p>
-              </div>
+      {/* Content - no scroll, fit all in view */}
+      <div className="p-2">
+        {clusters.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center text-muted-foreground">
+              <p className="text-sm mb-1">No clusters to display</p>
+              <p className="text-xs">Add keywords with parent-child relationships</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {clusters.map((cluster) => (
-                <MiniClusterCard
-                  key={cluster.parentId}
-                  cluster={cluster}
-                  serpReports={serpReports}
-                  keywordMetrics={keywordMetrics}
-                  pageSpeedScores={pageSpeedScores}
-                  selectedDomain={selectedDomain}
-                  initialPositions={initialPositions}
-                  linkCountsByUrl={linkCountsByUrl}
-                  linksOut={linksOut}
-                  isBaselineReport={isBaselineReport}
-                  onNodeHover={handleNodeHover}
-                  onNodeClick={handleNodeClick}
-                  hoveredNode={hoveredNode}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+          </div>
+        ) : (
+          <div 
+            className="grid gap-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(10, Math.ceil(Math.sqrt(clusters.length * 2)))}, minmax(80px, 1fr))`,
+            }}
+          >
+            {clusters.map((cluster) => (
+              <MiniClusterCard
+                key={cluster.parentId}
+                cluster={cluster}
+                serpReports={serpReports}
+                keywordMetrics={keywordMetrics}
+                pageSpeedScores={pageSpeedScores}
+                selectedDomain={selectedDomain}
+                initialPositions={initialPositions}
+                linkCountsByUrl={linkCountsByUrl}
+                linksOut={linksOut}
+                isBaselineReport={isBaselineReport}
+                onNodeHover={handleNodeHover}
+                onNodeClick={handleNodeClick}
+                hoveredNode={hoveredNode}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       
       {/* Tooltip */}
       {tooltipData && (
