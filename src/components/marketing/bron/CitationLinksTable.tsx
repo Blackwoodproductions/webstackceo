@@ -57,11 +57,37 @@ function categoryWordOverlap(keywordText: string, categoryText: string) {
 }
 
 /**
- * Extract a keyword/topic text from a BRON link URL.
- * Example: "https://seolocal.it.com/local-seo-for-dentists-575290bc/" -> "Local Seo For Dentists"
+ * Extract a keyword/topic text from a BRON link.
+ * 
+ * BRON API provides keyword info in multiple ways:
+ * 1. Direct anchor_text/keyword field (most reliable) - e.g., "Family Dentist Burlington"
+ * 2. URL path parsing as fallback - e.g., "local-seo-for-dentists-575290bc" -> "Local Seo For Dentists"
  */
 export function extractKeywordFromLink(link: BronLink): string {
-  // Try to extract from the link URL
+  // First, try direct keyword/anchor text fields from the API
+  const directFields = [
+    (link as Record<string, unknown>).anchor_text as string,
+    (link as Record<string, unknown>).keyword as string,
+    (link as Record<string, unknown>).keyword_text as string,
+    (link as Record<string, unknown>).keywordtitle as string,
+    (link as Record<string, unknown>).title as string,
+    (link as Record<string, unknown>).text as string,
+  ];
+  
+  for (const field of directFields) {
+    if (field && typeof field === 'string' && field.trim().length > 0) {
+      // Clean up HTML entities and return
+      return field
+        .replace(/&amp;/g, '&')
+        .replace(/&rsquo;/g, "'")
+        .replace(/&lsquo;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&nbsp;/g, ' ')
+        .trim();
+    }
+  }
+  
+  // Fallback: extract from the link URL
   const url = link.link || link.source_url || link.target_url;
   if (!url) return "";
   
@@ -84,7 +110,7 @@ export function extractKeywordFromLink(link: BronLink): string {
     }
     
     // Remove trailing ID pattern like "-575290bc" or "-568071bc"
-    const cleanSlug = slug.replace(/-\d+bc$/i, '');
+    const cleanSlug = slug.replace(/-\d+bc$/i, '').replace(/-\d+$/i, '');
     
     // Convert slug to readable text: "local-seo-for-dentists" -> "Local Seo For Dentists"
     const keyword = cleanSlug.replace(/-/g, ' ');
