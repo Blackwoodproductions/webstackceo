@@ -70,11 +70,41 @@ const Auth = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, [navigate, redirectTo, toast]);
 
-  // Handle Google OAuth sign in via popup
+  // Detect if we're on a custom domain (not lovable.app preview)
+  const isCustomDomain = !window.location.hostname.includes('lovable.app') && 
+                         !window.location.hostname.includes('lovableproject.com') &&
+                         !window.location.hostname.includes('localhost');
+
+  // Handle Google OAuth sign in
   const handleGoogleSignIn = useCallback(async () => {
     setIsGoogleLoading(true);
 
     try {
+      // For custom domains, use direct redirect (no popup) to avoid 404 on callback
+      // Apache serves index.html for all routes, so the SPA handles the callback
+      if (isCustomDomain) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            scopes: EXTENDED_GOOGLE_SCOPES,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent select_account',
+              include_granted_scopes: 'true',
+            },
+            // Don't skip browser redirect on custom domains - let Supabase handle it
+          },
+        });
+
+        if (error) {
+          throw new Error(error.message || "Failed to start Google sign-in.");
+        }
+        // Browser will redirect to Google, then back to /auth/callback
+        return;
+      }
+
+      // For Lovable domains, use popup flow (auth-bridge handles it)
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -180,15 +210,16 @@ const Auth = () => {
         }
       }, 500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       setIsGoogleLoading(false);
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign in with Google.";
       toast({
         title: "Sign-in failed",
-        description: error.message || "Failed to sign in with Google.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
-  }, [toast, navigate, redirectTo, EXTENDED_GOOGLE_SCOPES]);
+  }, [toast, navigate, redirectTo, EXTENDED_GOOGLE_SCOPES, isCustomDomain]);
 
   // Loading screen
   if (isCheckingAuth) {

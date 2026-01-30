@@ -413,6 +413,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [checkAdminStatus, syncGoogleTokens]);
 
   const signInWithGoogle = useCallback(async () => {
+    // Detect if we're on a custom domain
+    const isCustomDomain = !window.location.hostname.includes('lovable.app') && 
+                           !window.location.hostname.includes('lovableproject.com') &&
+                           !window.location.hostname.includes('localhost');
+
+    // For custom domains, use direct redirect flow
+    if (isCustomDomain) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: EXTENDED_GOOGLE_SCOPES,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent select_account',
+            include_granted_scopes: 'true',
+          },
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to start Google sign-in.');
+      }
+      return;
+    }
+
+    // For Lovable domains, use popup flow
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

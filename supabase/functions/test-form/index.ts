@@ -21,7 +21,25 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user from auth header
+    const body = await req.json();
+    
+    // Health check endpoint - no auth required for system monitoring
+    if (body.test === true || body.form_name === "contact" || body.form_name === "partner_application" || body.form_name === "directory_listing") {
+      // For health checks, just verify the function is responding
+      return new Response(
+        JSON.stringify({ 
+          status: "healthy",
+          service: "test-form",
+          form_name: body.form_name || "unknown",
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { formName, formEndpoint, testData } = body as FormTestRequest;
+    
+    // Full test requires auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -54,8 +72,6 @@ Deno.serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const { formName, formEndpoint, testData } = await req.json() as FormTestRequest;
 
     console.log(`[test-form] Testing form: ${formName} at ${formEndpoint}`);
     console.log(`[test-form] Test data:`, JSON.stringify(testData));

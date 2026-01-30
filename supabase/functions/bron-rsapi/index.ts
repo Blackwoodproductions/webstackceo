@@ -121,6 +121,21 @@ serve(async (req) => {
 
     console.log(`BRON RSAPI - Action: ${action}, Domain: ${domain || "N/A"}`);
 
+    // Health check endpoint for system monitoring
+    if (action === "health_check") {
+      const apiId = Deno.env.get("BRON_API_ID");
+      const apiKey = Deno.env.get("BRON_API_KEY");
+      return new Response(
+        JSON.stringify({ 
+          status: "healthy",
+          service: "bron-rsapi",
+          credentials_configured: !!(apiId && apiKey),
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let response: Response;
     let result: unknown;
 
