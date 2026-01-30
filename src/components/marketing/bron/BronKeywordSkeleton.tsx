@@ -291,15 +291,14 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
     <div 
       className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
       style={{ 
-        gridTemplateColumns: '72px 1fr 140px 230px 140px 90px 40px',
+        gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
         minWidth: '900px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
     >
-      {/* Speed gauge placeholder with target indicator space */}
-      <div className="flex items-center gap-1">
-        <div className="w-6" />
+      {/* Speed gauge placeholder - centered for alignment */}
+      <div className="flex items-center justify-center">
         <div className="w-10 h-10 rounded-full bg-muted/40" />
       </div>
       
@@ -349,13 +348,12 @@ export const BronKeywordTableHeader = memo(() => (
   <div 
     className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
     style={{ 
-      gridTemplateColumns: '72px 1fr 140px 230px 140px 90px 40px',
+      gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
       minWidth: '900px',
       contain: 'layout style' 
     }}
   >
-    <div className="flex items-center gap-1">
-      <div className="w-6" />
+    <div className="flex items-center justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Speed</span>
     </div>
     <div className="pr-2">
@@ -395,8 +393,8 @@ export const BronKeywordSkeletonList = memo(({ count = 8 }: { count?: number }) 
     {/* AI Animation hero - using shared component for consistency with CADE */}
     <AIMetricsAnimation title="Analyzing Keywords" />
     
-    {/* Faded skeleton rows below for context */}
-    <div className="space-y-2 opacity-40 mt-4">
+    {/* Faded skeleton rows below for context - reduced top margin */}
+    <div className="space-y-2 opacity-40 mt-1">
       <BronKeywordTableHeader />
       {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
         <BronKeywordSkeleton key={i} index={i} />

@@ -522,23 +522,14 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-3" 
             style={{ 
-              gridTemplateColumns: '72px 1fr 140px 230px 140px 90px 40px',
+              gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
               minWidth: '900px'
             }}
           >
-            {/* Column 1: Page Speed Gauge + Main indicator */}
-            <div className="flex items-center gap-1">
-              {/* Main keyword target indicator on the left */}
-              {isMainKeyword && !isNested ? (
-                <div className="w-6 flex items-center justify-center shrink-0">
-                  <div className="w-1.5 h-8 rounded-full bg-gradient-to-b from-blue-400 to-blue-600" title="Main Target Page" />
-                </div>
-              ) : (
-                <div className="w-6" />
-              )}
-              
-              {/* PageSpeed gauge - always same size for alignment */}
-              <div className="w-10 h-10 shrink-0">
+            {/* Column 1: Page Speed Gauge - centered for vertical alignment */}
+            <div className="flex items-center justify-center">
+              {/* PageSpeed gauge - fixed size for alignment */}
+              <div className="w-12 h-12 shrink-0 flex items-center justify-center">
                 <PageSpeedGauge 
                   score={pageSpeedScore?.mobileScore || 0}
                   loading={pageSpeedScore?.loading}
@@ -551,22 +542,28 @@ export const BronKeywordCard = memo(({
             {/* Column 2: Keyword Text */}
             <div className="min-w-0 pr-2">
               <div className="flex items-center gap-2">
-                <span 
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    isNested 
-                      ? 'bg-amber-500' 
-                      : isMainKeyword 
-                        ? 'bg-blue-500'
+                {/* Gold TARGET badge for main keywords - replaces the side indicator */}
+                {isMainKeyword && !isNested ? (
+                  <Badge className={`${badgeSize} bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-500 border-amber-400/50 whitespace-nowrap font-bold uppercase tracking-wide`}>
+                    <Target className="w-2.5 h-2.5 mr-0.5" />
+                    Target
+                  </Badge>
+                ) : (
+                  <span 
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      isNested 
+                        ? 'bg-amber-500' 
                         : 'bg-primary/60'
-                  }`} 
-                />
+                    }`} 
+                  />
+                )}
                 
                 <h3 
                   className={`font-medium truncate ${textSize} ${
                     isNested 
                       ? 'text-amber-600 dark:text-amber-400' 
                       : isMainKeyword 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                        ? 'text-amber-500' 
                         : 'text-foreground'
                   }`}
                   title={keywordText}
