@@ -8,6 +8,14 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 // ─── Types ───
+
+// Extend PerformanceEntry for browsers that support event timing
+interface PerformanceEventTimingLike {
+  processingStart: number;
+  processingEnd: number;
+  startTime: number;
+}
+
 interface PerformanceMetrics {
   // Core Web Vitals
   lcp?: number;  // Largest Contentful Paint
@@ -98,8 +106,8 @@ function observeWebVitals(callback: (metrics: Partial<PerformanceMetrics>) => vo
   try {
     const fidObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
-      const firstEntry = entries[0] as PerformanceEventTiming | undefined;
-      if (firstEntry) {
+      const firstEntry = entries[0] as unknown as PerformanceEventTimingLike | undefined;
+      if (firstEntry && 'processingStart' in firstEntry) {
         metrics.fid = firstEntry.processingStart - firstEntry.startTime;
         callback({ fid: metrics.fid });
       }
@@ -152,12 +160,15 @@ function observeWebVitals(callback: (metrics: Partial<PerformanceMetrics>) => vo
   // INP Observer (Interaction to Next Paint)
   try {
     const inpObserver = new PerformanceObserver((list) => {
-      const entries = list.getEntries() as PerformanceEventTiming[];
+      const entries = list.getEntries();
       for (const entry of entries) {
-        const inp = entry.processingEnd - entry.startTime;
-        if (!metrics.inp || inp > metrics.inp) {
-          metrics.inp = inp;
-          callback({ inp: metrics.inp });
+        const eventEntry = entry as unknown as PerformanceEventTimingLike;
+        if ('processingEnd' in eventEntry && 'startTime' in eventEntry) {
+          const inp = eventEntry.processingEnd - eventEntry.startTime;
+          if (!metrics.inp || inp > metrics.inp) {
+            metrics.inp = inp;
+            callback({ inp: metrics.inp });
+          }
         }
       }
     });
