@@ -776,16 +776,26 @@ export function filterLinksForKeyword(
     const linkRecord = link as Record<string, unknown>;
     const linkTexts = [
       link.anchor_text,
-      linkRecord.keyword as string,
-      linkRecord.keyword_text as string,
+      link.keyword,
+      link.keyword_text,
       linkRecord.keywordtitle as string,
       linkRecord.title as string,
       linkRecord.text as string,
       linkRecord.phrase as string,
-      // For BRON links table, the "keyword" field often contains the target keyword
       linkRecord.target_keyword as string,
       linkRecord.link_keyword as string,
+      // BRON API often uses 'name' field for keyword
+      linkRecord.name as string,
     ].filter(Boolean);
+
+    // Extract core service words from keyword (without location)
+    // e.g., "Best Dentist in Port Coquitlam" -> ["best", "dentist"]
+    const keywordCoreWords = keywordLower
+      .replace(/\s+in\s+.+$/i, '')
+      .replace(/\s+near\s+.+$/i, '')
+      .replace(/\s+(port coquitlam|vancouver|burnaby|surrey|bc|canada|los angeles|la|ca)$/i, '')
+      .split(/\s+/)
+      .filter(w => w.length > 2);
 
     for (const text of linkTexts) {
       if (!text) continue;
@@ -811,19 +821,32 @@ export function filterLinksForKeyword(
         return true;
       }
       
+      // Core service word matching - link keyword contains same core service
+      // e.g., "Dental Clinic Port Coquitlam" matches "Best Dentist in Port Coquitlam" 
+      // if both contain "dentist" or "dental" related terms
+      const linkCoreWords = normalizeForMatch(linkTextLower).split(/\s+/).filter(w => w.length > 2);
+      
+      // Check for dental-specific stem matching
+      const dentalStems = ['dent', 'tooth', 'teeth', 'oral', 'molar', 'gum', 'ortho', 'endo', 'perio', 'invisalign', 'implant'];
+      const hasStemMatch = dentalStems.some(stem => 
+        keywordCoreWords.some(kw => kw.includes(stem)) && 
+        linkCoreWords.some(lw => lw.includes(stem))
+      );
+      if (hasStemMatch) return true;
+      
       // Fuzzy match: check if significant words overlap
       const linkWords = linkTextLower.split(/\s+/).filter(w => w.length > 2);
       const keywordWords = keywordLower.split(/\s+/).filter(w => w.length > 2);
       
-      // If most words match (60%+ for better recall), consider it a match
+      // Lower threshold to 50% for better recall (was 60%)
       if (keywordWords.length >= 2 && linkWords.length >= 2) {
         const matchingWords = keywordWords.filter(w => linkWords.includes(w));
         const matchRatio = matchingWords.length / Math.min(keywordWords.length, linkWords.length);
-        if (matchRatio >= 0.6) return true;
+        if (matchRatio >= 0.5) return true;
       }
       
-      // Contains match for shorter keywords (min 5 chars for precision)
-      if (keywordLower.length >= 5 && linkTextLower.length >= 5) {
+      // Contains match for shorter keywords (min 4 chars for better precision)
+      if (keywordLower.length >= 4 && linkTextLower.length >= 4) {
         if (linkTextLower.includes(keywordLower) || keywordLower.includes(linkTextLower)) {
           return true;
         }

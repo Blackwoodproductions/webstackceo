@@ -1029,18 +1029,7 @@ export const BRONKeywordsTab = memo(({
           </CardHeader>
         )}
         
-        {/* Quick Filters Bar - hidden when cluster map is open */}
-        {selectedDomain && displayClusters.length > 0 && !showClusterMap && (
-          <div className="px-6 pb-3">
-            <BronQuickFilters
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              compactMode={compactMode}
-              onCompactModeChange={setCompactMode}
-              counts={filterCounts}
-            />
-          </div>
-        )}
+        {/* Quick Filters Bar removed per user request */}
         
         <CardContent className={`relative ${compactMode ? "px-4 py-2" : ""}`}>
           {/* Loading Historical Data Overlay */}
