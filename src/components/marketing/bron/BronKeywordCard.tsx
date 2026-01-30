@@ -493,6 +493,9 @@ export const BronKeywordCard = memo(({
   const active = kw.active === 1 && !deleted;
   const intent = useMemo(() => getKeywordIntent(keywordText), [keywordText]);
   const IntentIcon = intent.icon;
+
+  // Keep action icon sizing consistent across all keyword cards
+  const actionIconSize = 'w-4 h-4';
   
   // SERP positions
   const googlePos = getPosition(serpData?.google);
@@ -562,7 +565,7 @@ export const BronKeywordCard = memo(({
                   className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]`}
                   title="View Keyword Analysis"
                 >
-                  <BarChart3 className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                  <BarChart3 className={actionIconSize} />
                 </button>
               ) : (
                 <div className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'}`} />
@@ -632,7 +635,7 @@ export const BronKeywordCard = memo(({
                     className="flex-shrink-0 p-1 rounded-md hover:bg-primary/20"
                     title={`Open ${keywordUrl}`}
                   >
-                    <ArrowUpRight className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-muted-foreground hover:text-primary`} />
+                    <ArrowUpRight className={`${actionIconSize} text-muted-foreground hover:text-primary`} />
                   </a>
                 )}
                 
@@ -676,11 +679,26 @@ export const BronKeywordCard = memo(({
               <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
                 <div className="flex items-center gap-1">
                   <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-cyan-400`}>{linksInCount}</span>
-                  <ArrowDownLeft className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-cyan-400`} />
+                  <ArrowDownLeft className={`${actionIconSize} text-cyan-400`} />
                 </div>
-                <div className={`w-px ${isCompact ? 'h-3' : 'h-4'} bg-border/40`} />
+
+                {/* Center info button (opens link report / expands keyword) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Open (but don't toggle closed) to show link report
+                    if (!isExpanded && !isTrackingOnly) onToggleExpand();
+                  }}
+                  className="shrink-0 w-7 h-7 rounded-full bg-background/40 border border-border/50 flex items-center justify-center hover:bg-background/60"
+                  title={isTrackingOnly ? 'Link report not available for tracking-only keywords' : 'Open link report'}
+                  aria-label="Open link report"
+                >
+                  <Info className={`${actionIconSize} text-muted-foreground`} />
+                </button>
+
                 <div className="flex items-center gap-1">
-                  <ArrowUpRight className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-violet-400`} />
+                  <ArrowUpRight className={`${actionIconSize} text-violet-400`} />
                   <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-violet-400`}>{linksOutCount}</span>
                 </div>
               </div>

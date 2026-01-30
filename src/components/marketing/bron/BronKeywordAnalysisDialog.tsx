@@ -7,6 +7,42 @@ import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { format } from "date-fns";
 
+function getSerpListItemTimestamp(item: BronSerpListItem): number | null {
+  const candidates: Array<string | number | undefined | null> = [
+    item.started,
+    item.start_date,
+    item.startdate,
+    item.date,
+    item.created_at,
+    item.created,
+    item.timestamp,
+  ];
+
+  for (const c of candidates) {
+    if (c === undefined || c === null) continue;
+    if (typeof c === 'number') {
+      // Heuristic: treat 10-digit values as seconds.
+      const ms = c < 2_000_000_000 ? c * 1000 : c;
+      if (Number.isFinite(ms) && ms > 0) return ms;
+      continue;
+    }
+    const s = String(c).trim();
+    if (!s) continue;
+    // Numeric string timestamp
+    if (/^\d{10,13}$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) continue;
+      const ms = s.length === 10 ? n * 1000 : n;
+      if (Number.isFinite(ms) && ms > 0) return ms;
+      continue;
+    }
+    const ms = Date.parse(s);
+    if (Number.isFinite(ms)) return ms;
+  }
+
+  return null;
+}
+
 interface BronKeywordAnalysisDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,8 +131,8 @@ export const BronKeywordAnalysisDialog = memo(({
   // Sort history by date
   const sortedHistory = useMemo(() => {
     return [...serpHistory].sort((a, b) => {
-      const dateA = new Date(a.started || a.created_at || 0).getTime();
-      const dateB = new Date(b.started || b.created_at || 0).getTime();
+      const dateA = getSerpListItemTimestamp(a) ?? 0;
+      const dateB = getSerpListItemTimestamp(b) ?? 0;
       return dateA - dateB;
     });
   }, [serpHistory]);
@@ -111,8 +147,8 @@ export const BronKeywordAnalysisDialog = memo(({
     
     const cutoff = now - (days * 24 * 60 * 60 * 1000);
     return sortedHistory.filter(item => {
-      const date = new Date(item.started || item.created_at || 0).getTime();
-      return date >= cutoff;
+      const ts = getSerpListItemTimestamp(item);
+      return ts !== null && ts >= cutoff;
     });
   }, [sortedHistory, dateRange]);
   
@@ -167,12 +203,12 @@ export const BronKeywordAnalysisDialog = memo(({
       const reportId = String(item.report_id || item.id);
       const reportData = historicalData.get(reportId);
       if (!reportData) return;
-      
-      const dateStr = item.started || item.created_at || '';
-      const timestamp = new Date(dateStr).getTime();
+
+      const timestamp = getSerpListItemTimestamp(item);
+      if (timestamp === null) return;
       
       const point: ChartDataPoint = {
-        date: format(new Date(dateStr), 'MMM d'),
+        date: format(new Date(timestamp), 'MMM d'),
         timestamp,
       };
       
@@ -230,76 +266,77 @@ export const BronKeywordAnalysisDialog = memo(({
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)]">
-        {/* Futuristic header */}
-        <DialogHeader className="border-b border-border/50 pb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 via-violet-500/20 to-cyan-500/20 border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                <Activity className="w-7 h-7 text-primary" />
+      <DialogContent className="max-w-5xl h-[85vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
+        <div className="flex h-full flex-col overflow-hidden p-6">
+          {/* Futuristic header */}
+          <DialogHeader className="border-b border-border/50 pb-4 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 via-violet-500/20 to-cyan-500/20 border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+                  <Activity className="w-7 h-7 text-primary" />
+                </div>
+                <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber-400" />
               </div>
-              <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber-400" />
+              <div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                  Keyword Trend Analysis
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">Historical ranking performance over time</p>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
-                Keyword Trend Analysis
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">Historical ranking performance over time</p>
+          </DialogHeader>
+
+          {/* Main Keyword Title */}
+          <div className="flex items-center justify-center py-3 shrink-0">
+            <div className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-cyan-500/10 border border-primary/30">
+              <div className="flex items-center gap-3">
+                <Target className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold text-foreground">{mainKeywordText}</h2>
+              </div>
             </div>
           </div>
-        </DialogHeader>
-        
-        {/* Main Keyword Title */}
-        <div className="flex items-center justify-center py-4">
-          <div className="px-6 py-3 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-cyan-500/10 border border-primary/30">
-            <div className="flex items-center gap-3">
-              <Target className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold text-foreground">{mainKeywordText}</h2>
-            </div>
-          </div>
-        </div>
-        
-        {/* Date Range Selector - Futuristic tabs */}
-        <div className="flex justify-center gap-2 py-2">
-          {dateRangeButtons.map(btn => (
-            <Button
-              key={btn.value}
-              variant="ghost"
-              size="sm"
-              onClick={() => setDateRange(btn.value)}
-              className={`relative px-4 py-2 rounded-xl transition-all duration-300 ${
-                dateRange === btn.value 
-                  ? "bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary border border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.2)]" 
-                  : "bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground border border-transparent"
-              }`}
-            >
-              {btn.label}
-            </Button>
-          ))}
-        </div>
-        
-        {/* Chart Section - Glassmorphism container */}
-        <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 mb-6">
-            {keywordSummaries.map((summary, idx) => (
-              <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
-                <div 
-                  className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
-                  style={{ backgroundColor: summary.color, color: summary.color }}
-                />
-                <span className="text-sm text-foreground truncate max-w-[200px]">
-                  {summary.keyword.length > 30 
-                    ? `${summary.keyword.slice(0, 30)}...` 
-                    : summary.keyword
-                  }
-                </span>
-              </div>
+
+          {/* Date Range Selector - Futuristic tabs */}
+          <div className="flex justify-center gap-2 py-2 shrink-0">
+            {dateRangeButtons.map(btn => (
+              <Button
+                key={btn.value}
+                variant="ghost"
+                size="sm"
+                onClick={() => setDateRange(btn.value)}
+                className={`relative px-4 py-2 rounded-xl transition-all duration-300 ${
+                  dateRange === btn.value 
+                    ? "bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary border border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.2)]" 
+                    : "bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground border border-transparent"
+                }`}
+              >
+                {btn.label}
+              </Button>
             ))}
           </div>
-          
-          {/* Chart */}
-          <div className="h-[350px] w-full">
+
+          {/* Chart Section - Glassmorphism container */}
+          <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] flex-1 min-h-0">
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3 mb-4">
+              {keywordSummaries.map((summary, idx) => (
+                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
+                  <div 
+                    className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
+                    style={{ backgroundColor: summary.color, color: summary.color }}
+                  />
+                  <span className="text-sm text-foreground truncate max-w-[200px]">
+                    {summary.keyword.length > 30 
+                      ? `${summary.keyword.slice(0, 30)}...` 
+                      : summary.keyword
+                    }
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Chart */}
+            <div className="h-full w-full">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
@@ -360,71 +397,72 @@ export const BronKeywordAnalysisDialog = memo(({
               </ResponsiveContainer>
             )}
           </div>
-        </div>
-        
-        {/* Keyword Summary Cards - Futuristic grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {keywordSummaries.map((summary, idx) => (
-            <div 
-              key={idx}
-              className={`relative rounded-2xl border border-border/50 bg-gradient-to-br ${summary.gradient} backdrop-blur-sm p-5 overflow-hidden`}
-            >
-              {/* Accent glow */}
+			</div>
+
+          {/* Keyword Summary Cards - horizontal strip (no vertical scrolling) */}
+          <div className="mt-4 flex gap-4 overflow-x-auto pb-2 shrink-0">
+            {keywordSummaries.map((summary, idx) => (
               <div 
-                className="absolute top-0 left-0 w-32 h-32 rounded-full blur-3xl opacity-20"
-                style={{ backgroundColor: summary.color }}
-              />
-              
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div 
-                    className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" 
-                    style={{ backgroundColor: summary.color, color: summary.color }}
-                  />
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {summary.keyword.length > 25 
-                      ? `${summary.keyword.slice(0, 25)}...` 
-                      : summary.keyword
-                    }
-                  </span>
-                </div>
+                key={idx}
+                className={`relative rounded-2xl border border-border/50 bg-gradient-to-br ${summary.gradient} backdrop-blur-sm p-4 overflow-hidden min-w-[260px]`}
+              >
+                {/* Accent glow */}
+                <div 
+                  className="absolute top-0 left-0 w-32 h-32 rounded-full blur-3xl opacity-20"
+                  style={{ backgroundColor: summary.color }}
+                />
                 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
-                    <p className="text-xl font-bold text-cyan-400">
-                      {summary.best !== null ? `#${summary.best}` : '—'}
-                    </p>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div 
+                      className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" 
+                      style={{ backgroundColor: summary.color, color: summary.color }}
+                    />
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {summary.keyword.length > 25 
+                        ? `${summary.keyword.slice(0, 25)}...` 
+                        : summary.keyword
+                      }
+                    </span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
-                    <p className="text-xl font-bold text-violet-400">
-                      {summary.current !== null ? `#${summary.current}` : '—'}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
-                    <div className={`flex items-center justify-center gap-1 ${
-                      summary.change > 0 
-                        ? 'text-emerald-400' 
-                        : summary.change < 0 
-                          ? 'text-red-400' 
-                          : 'text-muted-foreground'
-                    }`}>
-                      {summary.change > 0 && <TrendingUp className="w-4 h-4" />}
-                      {summary.change < 0 && <TrendingDown className="w-4 h-4" />}
-                      {summary.change === 0 && <Minus className="w-4 h-4" />}
-                      <span className="text-xl font-bold">
-                        {summary.change !== 0 ? (
-                          summary.change > 0 ? `+${summary.change}` : summary.change
-                        ) : '—'}
-                      </span>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
+                      <p className="text-xl font-bold text-cyan-400">
+                        {summary.best !== null ? `#${summary.best}` : '—'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
+                      <p className="text-xl font-bold text-violet-400">
+                        {summary.current !== null ? `#${summary.current}` : '—'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
+                      <div className={`flex items-center justify-center gap-1 ${
+                        summary.change > 0 
+                          ? 'text-emerald-400' 
+                          : summary.change < 0 
+                            ? 'text-red-400' 
+                            : 'text-muted-foreground'
+                      }`}>
+                        {summary.change > 0 && <TrendingUp className="w-4 h-4" />}
+                        {summary.change < 0 && <TrendingDown className="w-4 h-4" />}
+                        {summary.change === 0 && <Minus className="w-4 h-4" />}
+                        <span className="text-xl font-bold">
+                          {summary.change !== 0 ? (
+                            summary.change > 0 ? `+${summary.change}` : summary.change
+                          ) : '—'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
