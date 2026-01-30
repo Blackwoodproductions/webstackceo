@@ -372,24 +372,11 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
     keywordById.set(String(kw.id), kw);
   }
   
-  // ─── Cache Check ───
+  // ─── Skip cache to ensure new clustering logic is used ───
+  // (Cache was causing stale clusters with 0 children due to old threshold)
   const cacheKey = domain || 'default';
-  const currentSignature = getKeywordSignature(keywords, cacheKey);
   
-  try {
-    const clusterCache = loadCachedClusters();
-    const cached = clusterCache[cacheKey];
-    
-    if (cached && arraysEqual(cached.keywordIds, currentSignature)) {
-      // Cache hit - reconstruct clusters with current keyword objects
-      const reconstructed = reconstructClustersFromCache(cached.clusters, keywordById);
-      if (reconstructed && reconstructed.length > 0) {
-        return reconstructed;
-      }
-    }
-  } catch (e) {
-    // Cache read failed, proceed with fresh computation
-  }
+  console.log('[groupKeywords] Processing', keywords.length, 'keywords for domain:', domain);
   
   // ─── Fresh Computation ───
   // Cache getKeywordDisplayText for every keyword
@@ -468,8 +455,16 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
     }
   }
   
-  if (childIds.size > 0) {
+  console.log('[groupKeywords] API-based childIds found:', childIds.size, 'out of', contentKeywords.length, 'keywords');
+  console.log('[groupKeywords] Content keywords count:', contentKeywords.length);
+  
+  // Only use explicit API relationships if we have enough children defined (at least 20% of keywords)
+  // Otherwise fall back to similarity-based clustering which produces better results
+  const useApiRelationships = childIds.size > 0 && (childIds.size >= contentKeywords.length * 0.2);
+  
+  if (useApiRelationships) {
     // Explicit API relationships present
+    console.log('[groupKeywords] Using explicit API relationships (', childIds.size, 'children defined)');
     for (const kw of contentKeywords) {
       if (childIds.has(String(kw.id))) continue;
       let children = parentChildMap.get(String(kw.id)) || [];
@@ -478,6 +473,7 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
     }
   } else {
     // Similarity-based clustering fallback
+    console.log('[groupKeywords] Using similarity-based clustering (insufficient API parent-child data:', childIds.size, ')');
     // Pre-compute word arrays once per keyword
     const keywordsWithWords = contentKeywords.map(kw => {
       const text = getText(kw);
@@ -500,6 +496,7 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
         supportingPool.push(keywordsWithWords[i]);
       }
     }
+    console.log('[groupKeywords] Similarity clustering - Main keywords:', mainKeywords.length, 'Supporting pool:', supportingPool.length);
     
     for (const main of mainKeywords) {
       const children: BronKeyword[] = [];
@@ -508,13 +505,19 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
       const scored: { kw: BronKeyword; score: number }[] = [];
       for (const s of supportingPool) {
         if (assigned.has(String(s.kw.id))) continue;
-        scored.push({ kw: s.kw, score: calculateWordSimilarity(main.words, s.words) });
+        const score = calculateWordSimilarity(main.words, s.words);
+        scored.push({ kw: s.kw, score });
       }
       scored.sort((a, b) => b.score - a.score);
       
+      // Log top scores for debugging
+      if (scored.length > 0 && mainKeywords.indexOf(main) < 3) {
+        console.log(`[groupKeywords] Scores for "${main.text}":`, scored.slice(0, 3).map(s => `${getText(s.kw)}:${s.score.toFixed(2)}`));
+      }
+      
       for (let i = 0; i < Math.min(5, scored.length); i++) {
-        // Lower threshold to 0.15 (was 0.3) for better clustering
-        if (scored[i].score >= 0.15) {
+        // Lower threshold to 0.10 for better clustering (was 0.15, originally 0.3)
+        if (scored[i].score >= 0.10) {
           children.push(scored[i].kw);
           assigned.add(String(scored[i].kw.id));
         }
@@ -529,6 +532,8 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
         clusters.push({ parent: s.kw, children: [], parentId: s.kw.id });
       }
     }
+    
+    console.log('[groupKeywords] Clusters created:', clusters.length, 'with children:', clusters.filter(c => c.children.length > 0).length);
   }
   
   // Sort clusters by keyword text (use cached text)
@@ -540,27 +545,8 @@ export function groupKeywords(keywords: BronKeyword[], domain?: string): Keyword
     clusters.push({ parent: kw, children: [], parentId: kw.id });
   }
   
-  // ─── Save to Cache ───
-  try {
-    const clusterCache = loadCachedClusters();
-    // IMPORTANT: only store IDs.
-    // Storing full keyword objects (especially resfeedtext HTML) makes the cache massive,
-    // often exceeding localStorage quota and causing repeated 3–5s reclustering.
-    const serialized: SerializedCluster[] = clusters.map((c) => ({
-      parentId: c.parentId,
-      childIds: c.children.map((ch) => ch.id),
-    }));
-    
-    clusterCache[cacheKey] = {
-      keywordIds: currentSignature,
-      clusters: serialized,
-      cachedAt: Date.now(),
-    };
-    
-    saveCachedClusters(clusterCache);
-  } catch (e) {
-    // Cache write failed, continue without caching
-  }
+  // ─── Skip Cache for now to ensure new clustering logic is applied ───
+  // (Old cache had 0 children due to previous high threshold)
   
   return clusters;
 }
