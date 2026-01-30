@@ -25,6 +25,7 @@ interface BronClusterCardProps {
   inlineEditForms: Record<string | number, Record<string, string>>;
   savingIds: Set<number | string>;
   compactMode?: boolean;
+  isBaselineReport?: boolean; // True when viewing the baseline (oldest) report
   onToggleExpand: (kw: BronKeyword) => void;
   onUpdateForm: (id: number | string, field: string, value: string) => void;
   onSave: (kw: BronKeyword) => void;
@@ -207,9 +208,26 @@ function ClusterKeywordRowImpl({
     // Movement = initial position - current position
     // Positive = improved (was #10, now #5 = 10 - 5 = +5)
     // Negative = dropped (was #5, now #10 = 5 - 10 = -5)
-    const gMove = initial.google && currentGoogle ? initial.google - currentGoogle : 0;
-    const bMove = initial.bing && currentBing ? initial.bing - currentBing : 0;
-    const yMove = initial.yahoo && currentYahoo ? initial.yahoo - currentYahoo : 0;
+    // Special case: If baseline was null (unranked) but now ranked, show huge improvement (+999)
+    // If current is null but baseline existed, show huge drop (-999)
+    const calculateMovement = (baseline: number | null, current: number | null): number => {
+      if (baseline === null && current !== null) {
+        // Newly ranked - huge improvement (was unranked, now ranked)
+        return 999;
+      }
+      if (baseline !== null && current === null) {
+        // Dropped off entirely - huge drop
+        return -999;
+      }
+      if (baseline !== null && current !== null) {
+        return baseline - current;
+      }
+      return 0;
+    };
+    
+    const gMove = calculateMovement(initial.google, currentGoogle);
+    const bMove = calculateMovement(initial.bing, currentBing);
+    const yMove = calculateMovement(initial.yahoo, currentYahoo);
     
     // Get PageSpeed URL
     let keywordUrl = kw.linkouturl;

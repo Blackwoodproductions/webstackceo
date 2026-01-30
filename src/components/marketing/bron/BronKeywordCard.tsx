@@ -42,6 +42,7 @@ interface BronKeywordCardProps {
   bingMovement: number;
   yahooMovement: number;
   metricsLoading?: boolean;
+  isBaselineReport?: boolean; // True when viewing the baseline (oldest) report
   onToggleExpand: () => void;
   onOpenAnalysis?: (keyword: BronKeyword) => void; // NEW: Open analysis dialog
 }
@@ -249,6 +250,7 @@ const RankingsDisplay = memo(({
   googlePos, bingPos, yahooPos, 
   googleMovement, bingMovement, yahooMovement,
   googlePrevDelta, bingPrevDelta, yahooPrevDelta,
+  isBaselineReport,
 }: { 
   googlePos: number | null;
   bingPos: number | null;
@@ -259,6 +261,7 @@ const RankingsDisplay = memo(({
   googlePrevDelta: number;
   bingPrevDelta: number;
   yahooPrevDelta: number;
+  isBaselineReport?: boolean; // When true, show no movement (this IS the baseline)
 }) => {
   // Color coding: Green = UP (improved), Amber/Yellow = DOWN (dropped), Blue = NO MOVEMENT
   const getMovementStyles = (movement: number, hasPosition: boolean) => {
@@ -289,8 +292,26 @@ const RankingsDisplay = memo(({
     };
   };
 
-  const renderRanking = (pos: number | null, movement: number, prevDelta: number) => {
-    const styles = getMovementStyles(movement, pos !== null);
+  const renderRanking = (
+    pos: number | null, 
+    movement: number, 
+    prevDelta: number,
+    engineName: 'Google' | 'Bing' | 'Yahoo'
+  ) => {
+    // If this is the baseline report, force movement to 0 (no movement on baseline)
+    const effectiveMovement = isBaselineReport ? 0 : movement;
+    const styles = getMovementStyles(effectiveMovement, pos !== null);
+    
+    // Show "API Issue" badge for Bing/Yahoo when position is null (API not returning data)
+    if (pos === null && (engineName === 'Bing' || engineName === 'Yahoo')) {
+      return (
+        <div className="flex items-center justify-center h-6">
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 whitespace-nowrap">
+            API Issue
+          </span>
+        </div>
+      );
+    }
     
     if (pos === null) {
       return (
@@ -299,6 +320,13 @@ const RankingsDisplay = memo(({
         </div>
       );
     }
+    
+    // Format movement display - cap at ±999 for "newly ranked" / "dropped off"
+    const formatMovement = (mv: number) => {
+      if (mv >= 999) return '+NEW';
+      if (mv <= -999) return 'LOST';
+      return mv > 0 ? `+${mv}` : String(mv);
+    };
     
     return (
       <div className={`flex items-center justify-center gap-0.5 h-6 px-1.5 rounded ${styles.bgColor} ${styles.glow}`}>
@@ -310,12 +338,12 @@ const RankingsDisplay = memo(({
         <span className={`text-xs font-semibold ${styles.textColor}`}>
           #{pos}
         </span>
-        {movement !== 0 && (
+        {effectiveMovement !== 0 && (
           <span className={`text-[9px] font-semibold ${styles.textColor}`}>
-            {movement > 0 ? `+${movement}` : movement}
+            {formatMovement(effectiveMovement)}
           </span>
         )}
-        {prevDelta !== 0 && (
+        {prevDelta !== 0 && !isBaselineReport && (
           <span
             className="text-[8px] text-muted-foreground/80"
             title="Change vs previous report"
@@ -329,9 +357,9 @@ const RankingsDisplay = memo(({
 
   return (
     <>
-      {renderRanking(googlePos, googleMovement, googlePrevDelta)}
-      {renderRanking(bingPos, bingMovement, bingPrevDelta)}
-      {renderRanking(yahooPos, yahooMovement, yahooPrevDelta)}
+      {renderRanking(googlePos, googleMovement, googlePrevDelta, 'Google')}
+      {renderRanking(bingPos, bingMovement, bingPrevDelta, 'Bing')}
+      {renderRanking(yahooPos, yahooMovement, yahooPrevDelta, 'Yahoo')}
     </>
   );
 });
@@ -464,7 +492,8 @@ function areBronKeywordCardPropsEqual(prev: BronKeywordCardProps, next: BronKeyw
     prev.googleMovement === next.googleMovement &&
     prev.bingMovement === next.bingMovement &&
     prev.yahooMovement === next.yahooMovement &&
-    prev.metricsLoading === next.metricsLoading
+    prev.metricsLoading === next.metricsLoading &&
+    prev.isBaselineReport === next.isBaselineReport
   );
 }
 
@@ -485,6 +514,7 @@ export const BronKeywordCard = memo(({
   bingMovement,
   yahooMovement,
   metricsLoading,
+  isBaselineReport = false,
   onToggleExpand,
   onOpenAnalysis,
 }: BronKeywordCardProps) => {
@@ -663,6 +693,7 @@ export const BronKeywordCard = memo(({
               googlePrevDelta={googlePrevDelta}
               bingPrevDelta={bingPrevDelta}
               yahooPrevDelta={yahooPrevDelta}
+              isBaselineReport={isBaselineReport}
             />
 
             {/* Column 8: Keyword Metrics */}
