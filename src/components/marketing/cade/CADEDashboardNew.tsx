@@ -613,15 +613,15 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         progressPercent={domainContextProgress}
       />
 
-      {/* Hero Banner - Enhanced futuristic design */}
-      <div className="relative rounded-2xl overflow-hidden border border-violet-500/30 bg-gradient-to-br from-violet-600/90 via-purple-600/90 to-violet-500/90 p-6 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
+      {/* Hero Banner - Dark theme matching dashboard cards */}
+      <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30 bg-gradient-to-br from-card via-card/95 to-background p-6 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Grid pattern */}
           <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(rgba(6,182,212,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(6,182,212,0.5) 1px, transparent 1px)`,
               backgroundSize: '24px 24px',
             }}
           />
@@ -629,23 +629,25 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           <div 
             className="absolute inset-0"
             style={{
-              backgroundImage: `radial-gradient(circle at 90% 50%, rgba(255,255,255,0.15) 0%, transparent 40%), radial-gradient(circle at 10% 80%, rgba(168,85,247,0.2) 0%, transparent 30%)`,
+              backgroundImage: `radial-gradient(circle at 90% 50%, rgba(6,182,212,0.1) 0%, transparent 40%), radial-gradient(circle at 10% 80%, rgba(139,92,246,0.08) 0%, transparent 30%)`,
             }}
           />
           {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
+          {/* Left accent border glow */}
+          <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500/60 via-cyan-500/40 to-cyan-500/60" />
         </div>
         
         <div className="relative flex items-center justify-between gap-6">
           {/* Left: Title & Description */}
           <div className="flex-shrink-0">
-            <h1 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
               Welcome to CADE Content Writer
-              <Badge className="bg-white/10 border-white/20 text-white/90 text-[10px] px-2 py-0.5">
+              <Badge className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-[10px] px-2 py-0.5">
                 Pro
               </Badge>
             </h1>
-            <p className="text-white/70 text-sm">AI-Powered content generation and SEO Optimization</p>
+            <p className="text-muted-foreground text-sm">AI-Powered content generation and SEO Optimization</p>
           </div>
           
           {/* Center & Right: Platform Cards with Settings */}
