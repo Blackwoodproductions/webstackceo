@@ -437,7 +437,7 @@ const NodeTooltip = memo(({
 });
 NodeTooltip.displayName = 'NodeTooltip';
 
-// Main Visualization Component - All clusters on one page
+// Main Visualization Component - Inline (not a popup/dialog)
 export const BronClusterVisualization = memo(({
   isOpen,
   onClose,
@@ -509,62 +509,73 @@ export const BronClusterVisualization = memo(({
     }
   }, []);
 
+  // Don't render if not open
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[900px] max-h-[85vh] overflow-hidden p-0">
-        <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-lg">Keyword Cluster Map</DialogTitle>
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
-                {clusters.length} Clusters
-              </Badge>
+    <div className="relative">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/50">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-semibold text-foreground">Keyword Cluster Map</h3>
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+            {clusters.length} Clusters
+          </Badge>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50"
+        >
+          <span className="sr-only">Close</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground px-4 py-2 border-b border-border/30">
+        Hover for details · Click to open URL · Money pages (amber) and supporting pages (violet)
+      </p>
+      
+      {/* Content */}
+      <ScrollArea className="h-[500px]">
+        <div className="p-4">
+          {clusters.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center text-muted-foreground">
+                <p className="text-sm mb-1">No clusters to display</p>
+                <p className="text-xs">Add keywords with parent-child relationships</p>
+              </div>
             </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Hover for details · Click to open URL · Money pages (amber) and supporting pages (violet)
-          </p>
-        </DialogHeader>
-        
-        <ScrollArea className="h-[calc(85vh-80px)]">
-          <div className="p-4">
-            {clusters.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-sm mb-1">No clusters to display</p>
-                  <p className="text-xs">Add keywords with parent-child relationships</p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {clusters.map((cluster) => (
-                  <MiniClusterCard
-                    key={cluster.parentId}
-                    cluster={cluster}
-                    serpReports={serpReports}
-                    keywordMetrics={keywordMetrics}
-                    pageSpeedScores={pageSpeedScores}
-                    selectedDomain={selectedDomain}
-                    initialPositions={initialPositions}
-                    linkCountsByUrl={linkCountsByUrl}
-                    linksOut={linksOut}
-                    isBaselineReport={isBaselineReport}
-                    onNodeHover={handleNodeHover}
-                    onNodeClick={handleNodeClick}
-                    hoveredNode={hoveredNode}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-        
-        {/* Tooltip */}
-        {tooltipData && (
-          <NodeTooltip data={tooltipData} position={mousePos} />
-        )}
-      </DialogContent>
-    </Dialog>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {clusters.map((cluster) => (
+                <MiniClusterCard
+                  key={cluster.parentId}
+                  cluster={cluster}
+                  serpReports={serpReports}
+                  keywordMetrics={keywordMetrics}
+                  pageSpeedScores={pageSpeedScores}
+                  selectedDomain={selectedDomain}
+                  initialPositions={initialPositions}
+                  linkCountsByUrl={linkCountsByUrl}
+                  linksOut={linksOut}
+                  isBaselineReport={isBaselineReport}
+                  onNodeHover={handleNodeHover}
+                  onNodeClick={handleNodeClick}
+                  hoveredNode={hoveredNode}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+      
+      {/* Tooltip */}
+      {tooltipData && (
+        <NodeTooltip data={tooltipData} position={mousePos} />
+      )}
+    </div>
   );
 });
 
