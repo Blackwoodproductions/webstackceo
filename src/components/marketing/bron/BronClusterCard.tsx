@@ -37,15 +37,13 @@ interface BronClusterCardProps {
 // Tree connector horizontal branch - connects from left border to card
 const TreeBranch = memo(({ isLast }: { isLast: boolean }) => (
   <div 
-    className="absolute top-1/2 -translate-y-1/2 pointer-events-none flex items-center"
-    style={{ left: '-24px', width: '24px', contain: 'strict' }}
+    className="absolute top-1/2 -translate-y-1/2 pointer-events-none flex items-center z-10"
+    style={{ left: '-24px', width: '22px' }}
   >
-    {/* Horizontal line from border to dot */}
-    <div className="w-3 h-px bg-amber-500/40" />
-    {/* Connection dot */}
-    <div className="w-2 h-2 rounded-full bg-amber-500/60 border border-amber-400/80 shrink-0" />
-    {/* Horizontal line from dot to card */}
-    <div className="flex-1 h-px bg-amber-500/40" />
+    {/* Horizontal line from vertical border to card */}
+    <div className="w-full h-0.5 bg-amber-500/50" />
+    {/* Connection dot at the end */}
+    <div className="absolute right-0 w-2.5 h-2.5 rounded-full bg-amber-500/70 border-2 border-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
   </div>
 ));
 TreeBranch.displayName = 'TreeBranch';
