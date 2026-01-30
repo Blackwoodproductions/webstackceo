@@ -417,8 +417,10 @@ export const BronClusterCard = memo(({
       />
       
       {/* Children container with left border as vertical connector line */}
+      {/* Offset: Parent has px-4 (16px) + chart column (44px) = 60px before PageSpeed */}
+      {/* Nested container needs ml + pl to position PageSpeed at same X coordinate */}
       {cluster.children.length > 0 && (
-        <div className="relative ml-[32px] pl-[24px] border-l-2 border-amber-500/30">
+        <div className="relative ml-[20px] pl-[24px] border-l-2 border-amber-500/30">
           {cluster.children.map((child, idx) => (
             <ClusterKeywordRow
               key={child.id}
