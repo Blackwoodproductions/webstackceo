@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      aeo_check_results: {
+        Row: {
+          check_date: string
+          checked_at: string
+          created_at: string
+          domain: string
+          id: string
+          keyword: string
+          mentioned_count: number
+          prominent_count: number
+          results: Json
+          suggestions: Json
+        }
+        Insert: {
+          check_date?: string
+          checked_at?: string
+          created_at?: string
+          domain: string
+          id?: string
+          keyword: string
+          mentioned_count?: number
+          prominent_count?: number
+          results?: Json
+          suggestions?: Json
+        }
+        Update: {
+          check_date?: string
+          checked_at?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          keyword?: string
+          mentioned_count?: number
+          prominent_count?: number
+          results?: Json
+          suggestions?: Json
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           content: string
