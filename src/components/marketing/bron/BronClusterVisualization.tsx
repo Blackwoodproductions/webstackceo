@@ -876,11 +876,12 @@ export const BronClusterVisualization = memo(({
   
   return (
     <div 
-      className="fixed inset-0 z-50 bg-background/98 backdrop-blur-md"
+      className="fixed inset-0 z-[100] bg-background overflow-hidden"
+      style={{ isolation: 'isolate' }}
       onClick={(e) => e.target === e.currentTarget && e.stopPropagation()}
     >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border/50 flex items-center justify-between px-6 z-10">
+      <div className="absolute top-0 left-0 right-0 h-16 bg-background border-b border-border/50 flex items-center justify-between px-6 z-20">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold text-foreground">Keyword Cluster Map</h2>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
@@ -910,7 +911,7 @@ export const BronClusterVisualization = memo(({
       </div>
       
       {/* Legend */}
-      <div className="absolute top-20 left-6 z-10 bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl p-4">
+      <div className="absolute top-20 left-6 z-20 bg-card border border-border/50 rounded-xl p-4 shadow-lg">
         <h4 className="text-sm font-medium mb-3 text-foreground">Ranking Legend</h4>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
@@ -1008,7 +1009,7 @@ export const BronClusterVisualization = memo(({
       )}
       
       {/* Instructions */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-xl border border-border/50 rounded-full px-4 py-2 text-sm text-muted-foreground">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-card border border-border/50 rounded-full px-4 py-2 text-sm text-muted-foreground shadow-lg">
         Click & drag to pan · Hover for details · Click node to open URL · Press ESC to close
       </div>
     </div>
