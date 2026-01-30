@@ -1,4 +1,5 @@
 import { memo, useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ExternalLink, TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -873,11 +874,13 @@ export const BronClusterVisualization = memo(({
   }, []);
   
   if (!isOpen) return null;
-  
-  return (
-    <div 
-      className="fixed inset-0 z-[100] bg-background overflow-hidden"
-      style={{ isolation: 'isolate' }}
+
+  // IMPORTANT: Render in a portal so this fullscreen overlay is never clipped by
+  // any parent stacking context / transforms / scroll containers.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-background overflow-hidden"
+      style={{ isolation: "isolate" }}
       onClick={(e) => e.target === e.currentTarget && e.stopPropagation()}
     >
       {/* Header */}
@@ -1013,7 +1016,7 @@ export const BronClusterVisualization = memo(({
         Click & drag to pan · Hover for details · Click node to open URL · Press ESC to close
       </div>
     </div>
-  );
+  , document.body);
 });
 
 BronClusterVisualization.displayName = 'BronClusterVisualization';
